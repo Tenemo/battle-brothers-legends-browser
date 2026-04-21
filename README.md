@@ -9,7 +9,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Browses the Legends perk catalog in a fast client-side UI.
 - Searches across perk names, descriptions, perk groups, tree names, background sources, scenario overlays, and favored enemy targets.
 - Filters by category, perk group, and tier.
-- Lets you pick perks into a simple build planner and shows the perk groups that can unlock each selected slot.
+- Lets you pick perks into a build planner and shows the unique perk groups that can unlock the selected build.
 - Shows exact tree placement, tree descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favored enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
 - Keeps the runtime deterministic by committing the generated data snapshot instead of fetching live data in the app.
@@ -20,10 +20,10 @@ The current committed dataset in this repository contains:
 
 - `367` perks
 - `116` perk trees
-- `131` parsed source files
+- `132` parsed source files
 - `1087` exact technical-name label mappings
-- Legends reference version `19.3.16`
-- dataset generation timestamp `2026-04-21T19:11:05.162Z`
+- Legends reference version `19.3.17`
+- dataset generation timestamp `2026-04-21T21:59:35.975Z`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 
@@ -31,7 +31,7 @@ These values change whenever `pnpm sync:perks` is run against a newer or differe
 
 The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` directly into the bundle. The UI has four main areas:
 
-- a build planner strip for selected perks and their matching perk-group options
+- a build planner strip for selected perks and their grouped perk-group requirements
 - a category sidebar with expandable perk groups
 - a searchable result list
 - a detail panel for the currently selected perk
@@ -81,6 +81,7 @@ The importer in `scripts/legends-perks-importer.mjs` is tailored to the parts of
 
 - `!!config/perks_defs.nut`
 - `!!config/perk_strings.nut`
+- `hooks/config/perk_strings.nut`
 - `!!config/_global.nut`
 - `afterHooks/perk_to_perk_groups_mapping.nut`
 - `config/z_perks_tree_*.nut`
@@ -136,7 +137,7 @@ Useful follow-up commands:
 - `pnpm build:netlify` builds the production bundle without refreshing the cached Legends reference first. This is the command used by Netlify because deployment only needs the committed dataset and icons.
 - `pnpm preview` serves the built bundle locally.
 - `pnpm test` runs the Vitest suite.
-- `pnpm test:e2e` runs the Playwright browser flow.
+- `pnpm test:e2e` runs the Playwright browser suite.
 
 If the Legends cache does not exist yet, the first `pnpm dev` or `pnpm build` will fetch and extract it automatically.
 
@@ -195,7 +196,7 @@ The repository now includes a root `netlify.toml` tailored for this app.
 - `pnpm test`
   Runs the Vitest test suite in `tests/**/*.test.ts` and `tests/**/*.test.tsx`.
 - `pnpm test:e2e`
-  Runs the Playwright browser tests. The Playwright config starts the dedicated `pnpm run dev:test` server on port `4173`, with a Windows-specific `pnpm.cmd` fallback for local command resolution.
+  Runs the Playwright browser suite. The Playwright config starts the dedicated `pnpm run dev:test` server on port `4173`, with a Windows-specific `pnpm.cmd` fallback for local command resolution.
 - `pnpm ensure:legends-reference`
   Downloads or refreshes the cached Legends source dependency under `.cache/legends-public/current`.
 - `pnpm sync:icons`
@@ -210,7 +211,7 @@ The repository now includes a root `netlify.toml` tailored for this app.
 - `src/lib/perk-search.ts`
   Client-side search ranking, filtering, tier handling, and perk preview selection.
 - `src/lib/build-planner.ts`
-  Build-planner helpers for deduping perk-group options and formatting slot requirements.
+  Build-planner helpers for deduping perk-group options, collapsing shared build requirements, and formatting grouped labels.
 - `src/lib/game-icon-url.ts`
   Runtime mapping from dataset icon paths to served URLs.
 - `src/lib/technical-name-display.ts`

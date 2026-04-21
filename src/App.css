@@ -280,15 +280,19 @@
 }
 
 .planner-track {
-  display: grid;
+  display: flex;
+  align-items: stretch;
   gap: 0.42rem;
-  min-width: max-content;
+  min-width: 100%;
+  width: max-content;
 }
 
 .planner-slot {
+  flex: 0 0 auto;
   min-width: 0;
   height: var(--planner-row-height);
   min-height: var(--planner-row-height);
+  width: 14rem;
   padding: 0.44rem 0.5rem;
   border: 1px solid rgb(204 155 84 / 0.11);
   border-radius: 0.62rem;
@@ -307,12 +311,16 @@
   grid-template-columns: 1.95rem minmax(0, 1fr);
   gap: 0.58rem;
   align-items: start;
+  width: 15.5rem;
 }
 
 .planner-slot-group {
   display: flex;
   flex-direction: column;
   gap: 0.24rem;
+  align-items: flex-start;
+  text-align: left;
+  width: 13rem;
 }
 
 .planner-slot-placeholder {
@@ -320,11 +328,15 @@
   flex-direction: column;
   justify-content: center;
   gap: 0.24rem;
+  align-items: flex-start;
+  text-align: left;
+  width: 15rem;
 }
 
 .planner-slot-copy {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   min-width: 0;
 }
 
@@ -336,13 +348,20 @@
 }
 
 .planner-slot-order,
+.planner-slot-category,
 .build-slot-badge {
   color: var(--accent-soft);
   font-size: 0.7rem;
 }
 
+.planner-slot-group-count {
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
 .planner-slot-name {
   display: block;
+  width: 100%;
   margin-top: 0.18rem;
   line-height: 1.12;
   font-size: 0.84rem;
@@ -353,6 +372,7 @@
 }
 
 .planner-slot-meta {
+  width: 100%;
   margin: 0.18rem 0 0;
   color: var(--text-muted);
   font-size: 0.74rem;

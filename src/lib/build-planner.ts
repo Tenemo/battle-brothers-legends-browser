@@ -6,6 +6,15 @@ export type BuildPlannerPerkGroupRequirement = {
   treeName: string
 }
 
+export type GroupedBuildPlannerPerkGroupRequirement = {
+  categoryName: string
+  perkIds: string[]
+  perkNames: string[]
+  treeId: string
+  treeLabel: string
+  treeName: string
+}
+
 function getUniquePerkGroupRequirements(
   placements: LegendsPerkPlacement[],
 ): BuildPlannerPerkGroupRequirement[] {
@@ -57,4 +66,55 @@ export function getPerkGroupRequirementLabel(perk: LegendsPerkRecord): string {
         : `${perkGroupRequirement.categoryName}: ${perkGroupRequirement.treeName}`,
     )
     .join(' / ')
+}
+
+export function getGroupedBuildPerkGroupRequirements(
+  pickedPerks: LegendsPerkRecord[],
+): GroupedBuildPlannerPerkGroupRequirement[] {
+  const groupedRequirementsByTreeId = new Map<
+    string,
+    Omit<GroupedBuildPlannerPerkGroupRequirement, 'treeLabel'>
+  >()
+
+  for (const pickedPerk of pickedPerks) {
+    for (const perkGroupRequirement of getPerkGroupRequirements(pickedPerk)) {
+      if (!groupedRequirementsByTreeId.has(perkGroupRequirement.treeId)) {
+        groupedRequirementsByTreeId.set(perkGroupRequirement.treeId, {
+          categoryName: perkGroupRequirement.categoryName,
+          perkIds: [],
+          perkNames: [],
+          treeId: perkGroupRequirement.treeId,
+          treeName: perkGroupRequirement.treeName,
+        })
+      }
+
+      const groupedRequirement = groupedRequirementsByTreeId.get(perkGroupRequirement.treeId)
+
+      if (!groupedRequirement) {
+        continue
+      }
+
+      if (!groupedRequirement.perkIds.includes(pickedPerk.id)) {
+        groupedRequirement.perkIds.push(pickedPerk.id)
+        groupedRequirement.perkNames.push(pickedPerk.perkName)
+      }
+    }
+  }
+
+  const treeNameCounts = new Map<string, number>()
+
+  for (const groupedRequirement of groupedRequirementsByTreeId.values()) {
+    treeNameCounts.set(
+      groupedRequirement.treeName,
+      (treeNameCounts.get(groupedRequirement.treeName) ?? 0) + 1,
+    )
+  }
+
+  return [...groupedRequirementsByTreeId.values()].map((groupedRequirement) => ({
+    ...groupedRequirement,
+    treeLabel:
+      treeNameCounts.get(groupedRequirement.treeName) === 1
+        ? groupedRequirement.treeName
+        : `${groupedRequirement.categoryName}: ${groupedRequirement.treeName}`,
+  }))
 }

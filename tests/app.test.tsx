@@ -121,6 +121,37 @@ describe('app', () => {
     ).not.toBeInTheDocument()
   })
 
+  test('shows imported effect previews for perks whose descriptions come from hook overrides', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const searchInput = screen.getByLabelText('Search perks')
+    const resultsList = screen.getByTestId('results-list')
+
+    await user.type(searchInput, 'Berserk')
+    expect(
+      within(resultsList).getByText(
+        /Passive: .*upon killing an enemy 4 Action Points are immediately restored/i,
+      ),
+    ).toBeInTheDocument()
+    expect(within(resultsList).queryByText(/^is vicious$/i)).not.toBeInTheDocument()
+
+    await user.clear(searchInput)
+    await user.type(searchInput, 'Killing Frenzy')
+    expect(
+      within(resultsList).getByText(/Passive: .*A kill increases all damage by 25% for two turns/i),
+    ).toBeInTheDocument()
+    expect(within(resultsList).queryByText(/^axes$/i)).not.toBeInTheDocument()
+
+    await user.clear(searchInput)
+    await user.type(searchInput, 'Fearsome')
+    expect(
+      within(resultsList).getByText(
+        /Passive: .*triggers a morale check for the opponent with a penalty equal to 20% of your current Resolve/i,
+      ),
+    ).toBeInTheDocument()
+    expect(within(resultsList).queryByText(/^cleavers$/i)).not.toBeInTheDocument()
+  })
+
   test('can filter by multiple categories at the same time while keeping subgroup filters scoped', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -169,7 +200,7 @@ describe('app', () => {
     expect(screen.getByRole('button', { name: 'Enable category Traits' })).toBeInTheDocument()
   })
 
-  test('can pick perks into a build and show the matching perk groups for each slot', async () => {
+  test('can pick perks into a build and collapse duplicate perk groups into grouped tiles', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -191,16 +222,18 @@ describe('app', () => {
     expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 
     await user.clear(screen.getByLabelText('Search perks'))
-    await user.type(screen.getByLabelText('Search perks'), 'Prayer of Hope')
+    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
-        name: 'Inspect Prayer of Hope',
+        name: 'Inspect Perfect Focus',
       }),
     )
-    await user.click(screen.getByRole('button', { name: 'Add Prayer of Hope to build' }))
+    await user.click(screen.getByRole('button', { name: 'Add Perfect Focus to build' }))
 
-    expect(within(buildPerksBar).getByText('Prayer of Hope')).toBeInTheDocument()
-    expect(within(buildGroupsBar).getByText('Faith / Druidic Arts')).toBeInTheDocument()
+    expect(within(buildPerksBar).getByText('Perfect Focus')).toBeInTheDocument()
+    expect(within(buildGroupsBar).getAllByText('Calm')).toHaveLength(1)
+    expect(within(buildGroupsBar).getByText('Deadeye')).toBeInTheDocument()
+    expect(within(buildGroupsBar).getByText('Clarity, Perfect Focus')).toBeInTheDocument()
     expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
   })
 

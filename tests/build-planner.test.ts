@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  getGroupedBuildPerkGroupRequirements,
   getPerkGroupRequirementLabel,
   getPerkGroupRequirements,
 } from '../src/lib/build-planner'
@@ -52,6 +53,50 @@ const samplePerk: LegendsPerkRecord = {
   sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_defense.nut'],
 }
 
+const overlappingPerk: LegendsPerkRecord = {
+  ...samplePerk,
+  id: 'perk.legend_overlapping',
+  perkConstName: 'LegendOverlapping',
+  perkName: 'Overlapping perk',
+  placements: [
+    {
+      ...samplePerk.placements[0],
+      categoryName: 'Defense',
+      treeId: 'ClothArmorTree',
+      treeName: 'Cloth Armor',
+    },
+    {
+      ...samplePerk.placements[1],
+      categoryName: 'Magic',
+      treeId: 'FaithTree',
+      treeName: 'Faith',
+    },
+  ],
+  searchText: 'Overlapping perk cloth armor faith',
+}
+
+const repeatedTreeNamePerk: LegendsPerkRecord = {
+  ...samplePerk,
+  id: 'perk.legend_repeated_tree_name',
+  perkConstName: 'LegendRepeatedTreeName',
+  perkName: 'Repeated tree name perk',
+  placements: [
+    {
+      ...samplePerk.placements[0],
+      categoryName: 'Class',
+      treeId: 'ClassBlacksmithTree',
+      treeName: 'Blacksmith',
+    },
+    {
+      ...samplePerk.placements[1],
+      categoryName: 'Profession',
+      treeId: 'ProfessionBlacksmithTree',
+      treeName: 'Blacksmith',
+    },
+  ],
+  searchText: 'Repeated tree name perk blacksmith',
+}
+
 describe('build planner', () => {
   test('dedupes repeated tree placements when deriving perk group requirements', () => {
     expect(getPerkGroupRequirements(samplePerk)).toEqual([
@@ -101,5 +146,55 @@ describe('build planner', () => {
         placements: [],
       }),
     ).toBe('No perk group placement')
+  })
+
+  test('collapses duplicate group requirements across a picked build while preserving first-seen order', () => {
+    expect(getGroupedBuildPerkGroupRequirements([samplePerk, overlappingPerk])).toEqual([
+      {
+        categoryName: 'Defense',
+        perkIds: ['perk.legend_sample', 'perk.legend_overlapping'],
+        perkNames: ['Sample perk', 'Overlapping perk'],
+        treeId: 'ClothArmorTree',
+        treeLabel: 'Cloth Armor',
+        treeName: 'Cloth Armor',
+      },
+      {
+        categoryName: 'Traits',
+        perkIds: ['perk.legend_sample'],
+        perkNames: ['Sample perk'],
+        treeId: 'TenaciousTree',
+        treeLabel: 'Tenacious',
+        treeName: 'Tenacious',
+      },
+      {
+        categoryName: 'Magic',
+        perkIds: ['perk.legend_overlapping'],
+        perkNames: ['Overlapping perk'],
+        treeId: 'FaithTree',
+        treeLabel: 'Faith',
+        treeName: 'Faith',
+      },
+    ])
+  })
+
+  test('disambiguates grouped build requirements when different categories share a tree name', () => {
+    expect(getGroupedBuildPerkGroupRequirements([repeatedTreeNamePerk])).toEqual([
+      {
+        categoryName: 'Class',
+        perkIds: ['perk.legend_repeated_tree_name'],
+        perkNames: ['Repeated tree name perk'],
+        treeId: 'ClassBlacksmithTree',
+        treeLabel: 'Class: Blacksmith',
+        treeName: 'Blacksmith',
+      },
+      {
+        categoryName: 'Profession',
+        perkIds: ['perk.legend_repeated_tree_name'],
+        perkNames: ['Repeated tree name perk'],
+        treeId: 'ProfessionBlacksmithTree',
+        treeLabel: 'Profession: Blacksmith',
+        treeName: 'Blacksmith',
+      },
+    ])
   })
 })

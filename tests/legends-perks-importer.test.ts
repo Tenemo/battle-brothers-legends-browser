@@ -49,6 +49,33 @@ describe('legends perks importer', () => {
     ])
   })
 
+  test('merges perk string overrides from hooks after the base perk strings file', () => {
+    const clarity = dataset.perks.find((perk) => perk.perkConstName === 'LegendClarity')
+
+    expect(clarity?.descriptionParagraphs).toEqual([
+      'The hook override replaces the base string.',
+      'Passive: â€¢ Gain calm certainty from the hook override.',
+    ])
+    expect(clarity?.sourceFilePaths).toEqual(
+      expect.arrayContaining([
+        'tests/fixtures/legends-reference/mod_legends/!!config/perk_strings.nut',
+        'tests/fixtures/legends-reference/mod_legends/hooks/config/perk_strings.nut',
+      ]),
+    )
+    expect(dataset.sourceFiles).toEqual(
+      expect.arrayContaining([
+        {
+          path: 'tests/fixtures/legends-reference/mod_legends/!!config/perk_strings.nut',
+          role: 'perk strings',
+        },
+        {
+          path: 'tests/fixtures/legends-reference/mod_legends/hooks/config/perk_strings.nut',
+          role: 'perk strings',
+        },
+      ]),
+    )
+  })
+
   test('parses favored enemy targets, scaling values, and entity names from the local files', () => {
     const favoredEnemyBeast = dataset.perks.find(
       (perk) => perk.perkConstName === 'LegendFavouredEnemyBeast',

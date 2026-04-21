@@ -83,6 +83,18 @@ async function readReferenceVersionFromMetadata(referenceRootDirectoryPath) {
   }
 }
 
+async function readFileIfExists(filePath) {
+  try {
+    return await readFile(filePath, 'utf8')
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return null
+    }
+
+    throw error
+  }
+}
+
 function getLastPathSegment(value) {
   return value.split('.').at(-1) ?? value
 }
@@ -398,6 +410,26 @@ function parsePerkStringsFile(fileSource) {
 
     if (statement.target.startsWith('::Const.Strings.PerkDescription.')) {
       descriptionsByConstName.set(getLastPathSegment(statement.target), assignedValue)
+    }
+  }
+
+  return {
+    descriptionsByConstName,
+    namesByConstName,
+  }
+}
+
+function mergePerkStringData(perkStringDataEntries) {
+  const descriptionsByConstName = new Map()
+  const namesByConstName = new Map()
+
+  for (const perkStringData of perkStringDataEntries) {
+    for (const [constName, perkName] of perkStringData.namesByConstName.entries()) {
+      namesByConstName.set(constName, perkName)
+    }
+
+    for (const [constName, perkDescription] of perkStringData.descriptionsByConstName.entries()) {
+      descriptionsByConstName.set(constName, perkDescription)
     }
   }
 
@@ -981,7 +1013,10 @@ export async function createDataset(
   options = {},
 ) {
   const perkDefinitionsFilePath = path.join(referenceRootDirectoryPath, '!!config', 'perks_defs.nut')
-  const perkStringsFilePath = path.join(referenceRootDirectoryPath, '!!config', 'perk_strings.nut')
+  const perkStringCandidateFilePaths = [
+    path.join(referenceRootDirectoryPath, '!!config', 'perk_strings.nut'),
+    path.join(referenceRootDirectoryPath, 'hooks', 'config', 'perk_strings.nut'),
+  ]
   const entityNamesFilePath = path.join(referenceRootDirectoryPath, '!!config', '_global.nut')
   const categoryOrderFilePath = path.join(
     referenceRootDirectoryPath,
@@ -1000,19 +1035,40 @@ export async function createDataset(
 
   const [
     perkDefinitionsFileSource,
-    perkStringsFileSource,
     entityNamesFileSource,
     categoryOrderFileSource,
     favoriteEnemyConfigFileSource,
     characterBackgroundFileSource,
   ] = await Promise.all([
     readFile(perkDefinitionsFilePath, 'utf8'),
-    readFile(perkStringsFilePath, 'utf8'),
     readFile(entityNamesFilePath, 'utf8'),
     readFile(categoryOrderFilePath, 'utf8'),
     readFile(favoriteEnemyConfigFilePath, 'utf8'),
     readFile(characterBackgroundFilePath, 'utf8'),
   ])
+
+  const perkStringFileEntries = (
+    await Promise.all(
+      perkStringCandidateFilePaths.map(async (perkStringFilePath) => {
+        const fileSource = await readFileIfExists(perkStringFilePath)
+
+        if (fileSource === null) {
+          return null
+        }
+
+        return {
+          fileSource,
+          sourceFilePath: toPosixRelativePath(perkStringFilePath),
+        }
+      }),
+    )
+  ).filter((perkStringFileEntry) => perkStringFileEntry !== null)
+
+  if (perkStringFileEntries.length === 0) {
+    throw new Error(
+      `Unable to locate any perk strings files in ${referenceRootDirectoryPath}. Expected at least ${perkStringCandidateFilePaths[0]}.`,
+    )
+  }
 
   const treeFileNames = (await readdir(treeDirectoryPath))
     .filter((fileName) => /^z_perks_tree_.*\.nut$/i.test(fileName))
@@ -1057,7 +1113,9 @@ export async function createDataset(
   )
 
   const categoryOrder = parseCategoryOrderFile(categoryOrderFileSource)
-  const perkStringData = parsePerkStringsFile(perkStringsFileSource)
+  const perkStringData = mergePerkStringData(
+    perkStringFileEntries.map((perkStringFileEntry) => parsePerkStringsFile(perkStringFileEntry.fileSource)),
+  )
   const perkDefinitions = parsePerkDefinitionsFile(
     perkDefinitionsFileSource,
     toPosixRelativePath(perkDefinitionsFilePath),
@@ -1323,7 +1381,7 @@ export async function createDataset(
       }))
     const sourceFilePaths = sortUniqueStrings([
       perkDefinition.sourceFilePath,
-      toPosixRelativePath(perkStringsFilePath),
+      ...perkStringFileEntries.map((perkStringFileEntry) => perkStringFileEntry.sourceFilePath),
       ...placements.map((placement) => placement.sourceFilePath),
       ...backgroundSources.map((backgroundSource) => backgroundSource.sourceFilePath),
       ...scenarioSources.map((scenarioSource) => scenarioSource.sourceFilePath),
@@ -1359,7 +1417,10 @@ export async function createDataset(
 
   const sourceFiles = [
     { path: toPosixRelativePath(perkDefinitionsFilePath), role: 'perk definitions' },
-    { path: toPosixRelativePath(perkStringsFilePath), role: 'perk strings' },
+    ...perkStringFileEntries.map((perkStringFileEntry) => ({
+      path: perkStringFileEntry.sourceFilePath,
+      role: 'perk strings',
+    })),
     { path: toPosixRelativePath(entityNamesFilePath), role: 'entity names' },
     { path: toPosixRelativePath(categoryOrderFilePath), role: 'perk category order' },
     { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favored enemy metadata' },

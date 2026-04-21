@@ -5,7 +5,7 @@ import '@fontsource/source-sans-3/600.css'
 import './App.css'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import { getGameIconUrl } from './lib/game-icon-url'
-import { getPerkGroupRequirementLabel } from './lib/build-planner'
+import { getGroupedBuildPerkGroupRequirements } from './lib/build-planner'
 import {
   allTiersFilterValue,
   buildTierOptions,
@@ -181,6 +181,10 @@ function formatScenarioGrantLabel(scenarioSource: LegendsPerkScenarioSource): st
   return `Random pool: ${scenarioSource.candidatePerkNames.join(', ')}`
 }
 
+function formatPickedPerkCountLabel(perkCount: number): string {
+  return `${perkCount} picked perk${perkCount === 1 ? '' : 's'}`
+}
+
 function renderPlacementDescription(placement: LegendsPerkPlacement) {
   return (
     <>
@@ -341,6 +345,7 @@ export default function App() {
 
     return pickedPerk ? [pickedPerk] : []
   })
+  const groupedBuildPerkGroups = getGroupedBuildPerkGroupRequirements(pickedPerks)
   const pickedPerkOrderById = new Map(
     pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
   )
@@ -349,9 +354,6 @@ export default function App() {
     ? groupBackgroundSources(selectedPerk.backgroundSources)
     : []
   const hasPickedPerks = pickedPerks.length > 0
-  const buildPlannerTrackStyle = {
-    gridTemplateColumns: `repeat(${Math.max(pickedPerks.length, 1)}, minmax(11rem, 1fr))`,
-  }
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
     (treeCount, selectedTreeIds) => treeCount + selectedTreeIds.length,
@@ -504,7 +506,7 @@ export default function App() {
             <p className="eyebrow">Build planner</p>
             <h2>Picked perks</h2>
             <p className="build-planner-summary">
-              Use the star in the detail panel or search results to map each perk to the groups that can unlock it.
+              Use the star in the detail panel or search results to collect perk picks, then review the unique perk groups they require below.
             </p>
           </div>
           <div className="build-planner-actions">
@@ -529,11 +531,7 @@ export default function App() {
           <div className="planner-row">
             <span className="planner-row-label">Perks</span>
             <div className="planner-track-scroll">
-              <div
-                className="planner-track planner-track-perks"
-                data-testid="build-perks-bar"
-                style={buildPlannerTrackStyle}
-              >
+              <div className="planner-track planner-track-perks" data-testid="build-perks-bar">
                 {hasPickedPerks ? (
                   pickedPerks.map((pickedPerk, pickedPerkIndex) => (
                     <div className="planner-slot planner-slot-perk" key={pickedPerk.id}>
@@ -576,26 +574,37 @@ export default function App() {
           <div className="planner-row">
             <span className="planner-row-label">Perk groups</span>
             <div className="planner-track-scroll">
-              <div
-                className="planner-track planner-track-groups"
-                data-testid="build-groups-bar"
-                style={buildPlannerTrackStyle}
-              >
-                {hasPickedPerks ? (
-                  pickedPerks.map((pickedPerk, pickedPerkIndex) => (
-                    <div className="planner-slot planner-slot-group" key={pickedPerk.id}>
-                      <span className="planner-slot-order">#{pickedPerkIndex + 1}</span>
-                      <strong className="planner-slot-name">
-                        {getPerkGroupRequirementLabel(pickedPerk)}
+              <div className="planner-track planner-track-groups" data-testid="build-groups-bar">
+                {groupedBuildPerkGroups.length > 0 ? (
+                  groupedBuildPerkGroups.map((groupedBuildPerkGroup) => (
+                    <div className="planner-slot planner-slot-group" key={groupedBuildPerkGroup.treeId}>
+                      <div className="planner-slot-topline">
+                        <span className="planner-slot-category">
+                          {groupedBuildPerkGroup.categoryName}
+                        </span>
+                        <span className="planner-slot-group-count">
+                          {formatPickedPerkCountLabel(groupedBuildPerkGroup.perkNames.length)}
+                        </span>
+                      </div>
+                      <strong
+                        className="planner-slot-name"
+                        title={groupedBuildPerkGroup.treeLabel}
+                      >
+                        {groupedBuildPerkGroup.treeLabel}
                       </strong>
-                      <p className="planner-slot-meta">Possible perk groups for this slot.</p>
+                      <p
+                        className="planner-slot-meta"
+                        title={groupedBuildPerkGroup.perkNames.join(', ')}
+                      >
+                        {groupedBuildPerkGroup.perkNames.join(', ')}
+                      </p>
                     </div>
                   ))
                 ) : (
                   <div className="planner-slot planner-slot-placeholder is-placeholder">
                     <strong className="planner-slot-name">Required perk groups will appear here</strong>
                     <p className="planner-slot-meta">
-                      Each slot lists every tree that can unlock the perk above it.
+                      Shared perk groups collapse together so the build keeps one grouped unlock list.
                     </p>
                   </div>
                 )}
