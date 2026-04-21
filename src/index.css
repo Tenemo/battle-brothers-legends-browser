@@ -1,0 +1,61 @@
+:root {
+  color-scheme: dark;
+  font-family: var(--body-font-family);
+  line-height: 1.5;
+  font-weight: 400;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  --body-font-family: 'Source Sans 3', serif;
+  --heading-font-family: 'Cinzel', serif;
+  --background-color: #0c0908;
+  --panel-background: rgb(27 21 18 / 0.82);
+  --button-background: rgb(37 29 25 / 0.82);
+  --button-background-active: rgb(53 39 30 / 0.95);
+  --input-background: rgb(18 15 13 / 0.95);
+  --text-primary: #f5efe1;
+  --text-secondary: #d3c7b3;
+  --text-muted: #9f9078;
+  --accent-color: #c68a49;
+  --accent-soft: #ddb07b;
+  --border-color: rgb(198 138 73 / 0.18);
+  --panel-shadow: 0 24px 80px rgb(0 0 0 / 0.32);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scrollbar-gutter: stable;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background: var(--background-color);
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: var(--body-font-family);
+}
+
+a {
+  text-decoration: none;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
