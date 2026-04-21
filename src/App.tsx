@@ -31,6 +31,15 @@ type CategoryTreeOption = {
   treeName: string
 }
 
+type GroupedBackgroundSource = {
+  backgroundNames: string[]
+  categoryName: string
+  chance: number | null
+  minimumTrees: number | null
+  treeId: string
+  treeName: string
+}
+
 function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
   const counts = new Map<string, number>()
 
@@ -41,6 +50,37 @@ function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
   }
 
   return counts
+}
+
+function groupBackgroundSources(
+  backgroundSources: LegendsPerkBackgroundSource[],
+): GroupedBackgroundSource[] {
+  const groupedBackgroundSources = new Map<string, GroupedBackgroundSource>()
+
+  for (const backgroundSource of backgroundSources) {
+    const key = [
+      backgroundSource.categoryName,
+      backgroundSource.treeId,
+      backgroundSource.treeName,
+      backgroundSource.minimumTrees ?? 'none',
+      backgroundSource.chance ?? 'none',
+    ].join('::')
+
+    if (!groupedBackgroundSources.has(key)) {
+      groupedBackgroundSources.set(key, {
+        backgroundNames: [],
+        categoryName: backgroundSource.categoryName,
+        chance: backgroundSource.chance,
+        minimumTrees: backgroundSource.minimumTrees,
+        treeId: backgroundSource.treeId,
+        treeName: backgroundSource.treeName,
+      })
+    }
+
+    groupedBackgroundSources.get(key)?.backgroundNames.push(backgroundSource.backgroundName)
+  }
+
+  return [...groupedBackgroundSources.values()]
 }
 
 function getCategoryTreeOptions(perks: LegendsPerkRecord[]): Map<string, CategoryTreeOption[]> {
@@ -152,11 +192,11 @@ function renderPlacementDescription(placement: LegendsPerkPlacement) {
   )
 }
 
-function renderBackgroundSource(backgroundSource: LegendsPerkBackgroundSource) {
+function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
   return (
     <>
       <div>
-        <strong>{backgroundSource.backgroundName}</strong>
+        <strong>{backgroundSource.backgroundNames.join(', ')}</strong>
         <p className="detail-support">
           {backgroundSource.categoryName} / {backgroundSource.treeName}
         </p>
@@ -235,6 +275,9 @@ export default function App() {
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(() => visiblePerks[0]?.id ?? null)
   const selectedPerk =
     visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null
+  const groupedBackgroundSources = selectedPerk
+    ? groupBackgroundSources(selectedPerk.backgroundSources)
+    : []
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
     (treeCount, selectedTreeIds) => treeCount + selectedTreeIds.length,
@@ -607,11 +650,11 @@ export default function App() {
 
               <div className="detail-section">
                 <h3>Background sources</h3>
-                {selectedPerk.backgroundSources.length > 0 ? (
+                {groupedBackgroundSources.length > 0 ? (
                   <ul className="detail-list">
-                    {selectedPerk.backgroundSources.map((backgroundSource) => (
+                    {groupedBackgroundSources.map((backgroundSource) => (
                       <li
-                        key={`${backgroundSource.backgroundId}-${backgroundSource.categoryName}-${backgroundSource.treeId}`}
+                        key={`${backgroundSource.categoryName}-${backgroundSource.treeId}-${backgroundSource.minimumTrees ?? 'none'}-${backgroundSource.chance ?? 'none'}`}
                       >
                         {renderBackgroundSource(backgroundSource)}
                       </li>

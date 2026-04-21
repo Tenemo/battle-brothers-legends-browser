@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   allTiersFilterValue,
   filterAndSortPerks,
+  getPerkPreview,
 } from '../src/lib/perk-search'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
@@ -247,5 +248,31 @@ describe('perk search', () => {
       'Favoured Enemy - Beasts',
       'Clarity',
     ])
+  })
+
+  test('prefers an explicit effect paragraph over a flavor quote for the perk preview', () => {
+    const preview = getPerkPreview({
+      ...samplePerks[0],
+      descriptionParagraphs: [
+        "'In short, we tailored.'",
+        'Passive: Repairs armor after combat.',
+        'Costs no AP.',
+      ],
+    })
+
+    expect(preview).toBe('Passive: Repairs armor after combat.')
+  })
+
+  test('prefers an explicit effect paragraph over an unquoted flavor sentence for the perk preview', () => {
+    const preview = getPerkPreview({
+      ...samplePerks[0],
+      descriptionParagraphs: [
+        'An ace up your sleeve.',
+        'Passive: Currently equipped throwing items regain 1 ammo each turn.',
+        'Costs no AP.',
+      ],
+    })
+
+    expect(preview).toBe('Passive: Currently equipped throwing items regain 1 ammo each turn.')
   })
 })

@@ -28,14 +28,18 @@
 }
 
 html {
+  height: 100%;
   scrollbar-gutter: stable;
+  overflow: hidden;
 }
 
 body {
   min-width: 320px;
   min-height: 100vh;
+  height: 100%;
   margin: 0;
   background: var(--background-color);
+  overflow: hidden;
 }
 
 body,
@@ -57,5 +61,7 @@ select {
 }
 
 #root {
+  height: 100%;
   min-height: 100vh;
+  overflow: hidden;
 }

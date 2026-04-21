@@ -2,10 +2,15 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
   min-height: 100vh;
   gap: 0.75rem;
   padding: 0.8rem;
   color: var(--text-primary);
+  overflow: hidden;
 }
 
 .background-runes {
@@ -116,6 +121,7 @@
   grid-template-columns: minmax(190px, 0.54fr) minmax(330px, 0.94fr) minmax(360px, 1.02fr);
   gap: 0.7rem;
   align-items: stretch;
+  overflow: hidden;
 }
 
 .sidebar,
@@ -562,20 +568,15 @@
 }
 
 @media (max-width: 1100px) {
-  .app-shell {
-    min-height: auto;
-  }
-
   .workspace {
-    flex: none;
-    min-height: auto;
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 0.9fr) minmax(0, 1fr) minmax(0, 1.2fr);
   }
 
   .sidebar,
   .results-panel,
   .detail-panel {
-    height: auto;
+    height: 100%;
   }
 }
 

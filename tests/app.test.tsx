@@ -65,6 +65,49 @@ describe('app', () => {
     expect(screen.queryByText('LegendBear')).not.toBeInTheDocument()
   })
 
+  test('groups repeated background sources with the same values into one entry', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    await user.click(screen.getByRole('button', { name: /Perfect Focus/i }))
+
+    expect(screen.getByText(/Anatomist, Assassin, Beast Slayer/i)).toBeInTheDocument()
+    expect(screen.getAllByText('Minimum 7 / No chance override')).toHaveLength(1)
+  })
+
+  test('uses the actual effect instead of a flavor quote in result previews', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Evasion')
+    const resultsList = screen.getByTestId('results-list')
+
+    expect(
+      within(resultsList).getByText(/Active: • Enables the character to move swiftly and safely/i),
+    ).toBeInTheDocument()
+    expect(within(resultsList).queryByText("'Excuse me'")).not.toBeInTheDocument()
+  })
+
+  test('uses the actual effect instead of an unquoted flavor sentence in result previews', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Blacksmiths Technique')
+    const resultsList = screen.getByTestId('results-list')
+
+    expect(
+      within(resultsList).getByText(
+        /Passive: .*While using a Blacksmith's Hammer gain \+12 chance to hit and \+30% effectiveness vs armor/i,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(resultsList).queryByText(
+        /Diligent practice with the hammer each day has proven to be equally good at crafting armor/i,
+      ),
+    ).not.toBeInTheDocument()
+  })
+
   test('can filter by multiple categories at the same time while keeping subgroup filters scoped', async () => {
     const user = userEvent.setup()
     render(<App />)

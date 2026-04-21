@@ -44,6 +44,33 @@ function getPerkTierValues(perk: LegendsPerkRecord): string[] {
   return [...new Set(perk.placements.map((placement) => getTierFilterValue(placement.tier)))]
 }
 
+function isFlavorQuoteParagraph(paragraph: string): boolean {
+  const trimmedParagraph = paragraph.trim()
+
+  return (
+    (trimmedParagraph.startsWith("'") && trimmedParagraph.endsWith("'")) ||
+    (trimmedParagraph.startsWith('"') && trimmedParagraph.endsWith('"'))
+  )
+}
+
+function isEffectDescriptionParagraph(paragraph: string): boolean {
+  const trimmedParagraph = paragraph.trim()
+
+  return /^(Passive|Active|Specialist Weapon Perk):/u.test(trimmedParagraph)
+}
+
+function getPreviewDescriptionParagraph(descriptionParagraphs: string[]): string | null {
+  if (descriptionParagraphs.length === 0) {
+    return null
+  }
+
+  return (
+    descriptionParagraphs.find((paragraph) => isEffectDescriptionParagraph(paragraph)) ??
+    descriptionParagraphs.find((paragraph) => !isFlavorQuoteParagraph(paragraph)) ??
+    descriptionParagraphs[0]
+  )
+}
+
 export function getPerkPreview(perk: LegendsPerkRecord): string {
   const primaryPlacement = getPrimaryPlacement(perk)
   const favoredEnemyTarget = perk.favoredEnemyTargets?.[0]
@@ -51,7 +78,7 @@ export function getPerkPreview(perk: LegendsPerkRecord): string {
   const scenarioSource = perk.scenarioSources[0]
 
   return (
-    perk.descriptionParagraphs[0] ??
+    getPreviewDescriptionParagraph(perk.descriptionParagraphs) ??
     primaryPlacement?.treeAttributes[0] ??
     primaryPlacement?.treeDescriptions[0] ??
     (favoredEnemyTarget

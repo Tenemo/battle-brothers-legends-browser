@@ -3,6 +3,32 @@ import { expect, test } from '@playwright/test'
 test('browses and searches the perks catalog', async ({ page }) => {
   await page.goto('/')
 
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const detailPanel = document.querySelector('.detail-panel') as HTMLElement | null
+        const resultsList = document.querySelector('.results-list') as HTMLElement | null
+
+        return {
+          detailPanelIsScrollable:
+            detailPanel !== null && detailPanel.scrollHeight > detailPanel.clientHeight,
+          documentScrollHeight: document.documentElement.scrollHeight,
+          resultsListIsScrollable:
+            resultsList !== null && resultsList.scrollHeight > resultsList.clientHeight,
+          viewportHeight: window.innerHeight,
+        }
+      }),
+    )
+    .toMatchObject({
+      detailPanelIsScrollable: true,
+      resultsListIsScrollable: true,
+    })
+  await expect
+    .poll(async () =>
+      page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight),
+    )
+    .toBeLessThanOrEqual(2)
+
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await expect(page.locator('.subgroup-heading')).toHaveText('Perk groups')
   await page.getByRole('button', { name: 'Disable category Traits' }).click()
@@ -39,4 +65,10 @@ test('browses and searches the perks catalog', async ({ page }) => {
   await expect(page.getByText('Bear', { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Scenario overlays' })).toBeVisible()
   await expect(page.getByText(/Random pool: Favoured Enemy - Occult, Favoured Enemy - Beasts/i)).toBeVisible()
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight),
+    )
+    .toBeLessThanOrEqual(2)
 })
