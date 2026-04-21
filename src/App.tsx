@@ -5,6 +5,7 @@ import '@fontsource/source-sans-3/600.css'
 import './App.css'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import { getGameIconUrl } from './lib/game-icon-url'
+import { getPerkGroupRequirementLabel } from './lib/build-planner'
 import {
   allTiersFilterValue,
   buildTierOptions,
@@ -23,6 +24,7 @@ import type {
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const allPerks = legendsPerksDataset.perks
+const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const categoryOrder = ['Weapon', 'Defense', 'Traits', 'Enemy', 'Class', 'Profession', 'Magic', 'Other']
 
 type CategoryTreeOption = {
@@ -254,6 +256,64 @@ function TreeChevron({ isExpanded }: { isExpanded: boolean }) {
   )
 }
 
+function BuildStar({ isPicked }: { isPicked: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={isPicked ? 'build-star is-picked' : 'build-star'}
+      viewBox="0 0 24 24"
+    >
+      <path
+        d="m12 3.45 2.67 5.41 5.97.87-4.32 4.21 1.02 5.95L12 17.07 6.66 19.89l1.02-5.95-4.32-4.21 5.97-.87L12 3.45Z"
+        fill={isPicked ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.6"
+      />
+    </svg>
+  )
+}
+
+function BuildToggleButton({
+  isCompact = false,
+  isPicked,
+  onClick,
+  perkName,
+  source,
+}: {
+  isCompact?: boolean
+  isPicked: boolean
+  onClick: () => void
+  perkName: string
+  source: 'detail' | 'results'
+}) {
+  const locationSuffix = source === 'results' ? ' from results' : ''
+  const actionLabel = isPicked
+    ? `Remove ${perkName} from build${locationSuffix}`
+    : `Add ${perkName} to build${locationSuffix}`
+  const titleLabel = isPicked ? `Remove ${perkName} from build` : `Add ${perkName} to build`
+
+  return (
+    <button
+      aria-label={actionLabel}
+      className={
+        isCompact
+          ? isPicked
+            ? 'build-toggle-button is-compact is-picked'
+            : 'build-toggle-button is-compact'
+          : isPicked
+            ? 'build-toggle-button is-picked'
+            : 'build-toggle-button'
+      }
+      onClick={onClick}
+      title={titleLabel}
+      type="button"
+    >
+      <BuildStar isPicked={isPicked} />
+    </button>
+  )
+}
+
 const groupCounts = getGroupCounts(allPerks)
 const categoryTreeOptionsByGroup = getCategoryTreeOptions(allPerks)
 const availableGroups = [...groupCounts.keys()].toSorted(compareGroupNames)
@@ -261,6 +321,7 @@ const tierOptions = buildTierOptions(allPerks)
 
 export default function App() {
   const [query, setQuery] = useState('')
+  const [pickedPerkIds, setPickedPerkIds] = useState<string[]>([])
   const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([])
   const [expandedGroupNames, setExpandedGroupNames] = useState<string[]>([])
   const [selectedTreeIdsByGroup, setSelectedTreeIdsByGroup] = useState<Record<string, string[]>>({})
@@ -275,9 +336,22 @@ export default function App() {
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(() => visiblePerks[0]?.id ?? null)
   const selectedPerk =
     visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null
+  const pickedPerks = pickedPerkIds.flatMap((pickedPerkId) => {
+    const pickedPerk = allPerksById.get(pickedPerkId)
+
+    return pickedPerk ? [pickedPerk] : []
+  })
+  const pickedPerkOrderById = new Map(
+    pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
+  )
+  const selectedPerkBuildSlot = selectedPerk ? pickedPerkOrderById.get(selectedPerk.id) ?? null : null
   const groupedBackgroundSources = selectedPerk
     ? groupBackgroundSources(selectedPerk.backgroundSources)
     : []
+  const hasPickedPerks = pickedPerks.length > 0
+  const buildPlannerTrackStyle = {
+    gridTemplateColumns: `repeat(${Math.max(pickedPerks.length, 1)}, minmax(11rem, 1fr))`,
+  }
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
     (treeCount, selectedTreeIds) => treeCount + selectedTreeIds.length,
@@ -305,6 +379,28 @@ export default function App() {
       setSelectedGroupNames([])
       setSelectedTreeIdsByGroup({})
     })
+  }
+
+  function handleTogglePerkPicked(perkId: string) {
+    startTransition(() =>
+      setPickedPerkIds((currentPickedPerkIds) =>
+        currentPickedPerkIds.includes(perkId)
+          ? currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId)
+          : [...currentPickedPerkIds, perkId],
+      ),
+    )
+  }
+
+  function handleRemovePickedPerk(perkId: string) {
+    startTransition(() =>
+      setPickedPerkIds((currentPickedPerkIds) =>
+        currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId),
+      ),
+    )
+  }
+
+  function handleClearBuild() {
+    startTransition(() => setPickedPerkIds([]))
   }
 
   function handleGroupToggle(nextGroupName: string) {
@@ -401,6 +497,113 @@ export default function App() {
           </div>
         </dl>
       </header>
+
+      <section className="build-planner" aria-label="Build planner">
+        <div className="build-planner-header">
+          <div>
+            <p className="eyebrow">Build planner</p>
+            <h2>Picked perks</h2>
+            <p className="build-planner-summary">
+              Use the star in the detail panel or search results to map each perk to the groups that can unlock it.
+            </p>
+          </div>
+          <div className="build-planner-actions">
+            <p className="build-planner-count">
+              {!hasPickedPerks
+                ? 'No perks picked yet.'
+                : `${pickedPerks.length} perk${pickedPerks.length === 1 ? '' : 's'} picked.`}
+            </p>
+            <button
+              aria-label="Clear build"
+              className="planner-action-button"
+              disabled={pickedPerks.length === 0}
+              onClick={handleClearBuild}
+              type="button"
+            >
+              Clear build
+            </button>
+          </div>
+        </div>
+
+        <div className="planner-board">
+          <div className="planner-row">
+            <span className="planner-row-label">Perks</span>
+            <div className="planner-track-scroll">
+              <div
+                className="planner-track planner-track-perks"
+                data-testid="build-perks-bar"
+                style={buildPlannerTrackStyle}
+              >
+                {hasPickedPerks ? (
+                  pickedPerks.map((pickedPerk, pickedPerkIndex) => (
+                    <div className="planner-slot planner-slot-perk" key={pickedPerk.id}>
+                      {renderGameIcon({
+                        className: 'perk-icon perk-icon-tiny',
+                        iconPath: getPerkDisplayIconPath(pickedPerk),
+                        label: `${pickedPerk.perkName} build icon`,
+                      })}
+                      <div className="planner-slot-copy">
+                        <div className="planner-slot-topline">
+                          <span className="planner-slot-order">#{pickedPerkIndex + 1}</span>
+                          <button
+                            aria-label={`Remove ${pickedPerk.perkName} from build`}
+                            className="planner-slot-remove"
+                            onClick={() => handleRemovePickedPerk(pickedPerk.id)}
+                            type="button"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <strong className="planner-slot-name">{pickedPerk.perkName}</strong>
+                        <p className="planner-slot-meta">{getPerkContextLabel(pickedPerk)}</p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="planner-slot planner-slot-placeholder is-placeholder">
+                    <div className="planner-slot-copy">
+                      <strong className="planner-slot-name">Pick a perk to start</strong>
+                      <p className="planner-slot-meta">
+                        Use the star in the detail panel or the search results list.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div className="planner-row">
+            <span className="planner-row-label">Perk groups</span>
+            <div className="planner-track-scroll">
+              <div
+                className="planner-track planner-track-groups"
+                data-testid="build-groups-bar"
+                style={buildPlannerTrackStyle}
+              >
+                {hasPickedPerks ? (
+                  pickedPerks.map((pickedPerk, pickedPerkIndex) => (
+                    <div className="planner-slot planner-slot-group" key={pickedPerk.id}>
+                      <span className="planner-slot-order">#{pickedPerkIndex + 1}</span>
+                      <strong className="planner-slot-name">
+                        {getPerkGroupRequirementLabel(pickedPerk)}
+                      </strong>
+                      <p className="planner-slot-meta">Possible perk groups for this slot.</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="planner-slot planner-slot-placeholder is-placeholder">
+                    <strong className="planner-slot-name">Required perk groups will appear here</strong>
+                    <p className="planner-slot-meta">
+                      Each slot lists every tree that can unlock the perk above it.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
       <main className="workspace">
         <aside className="sidebar" aria-label="Perk categories">
@@ -541,34 +744,59 @@ export default function App() {
             ) : (
               visiblePerks.map((perk) => {
                 const isSelected = perk.id === selectedPerk?.id
+                const pickedPerkOrder = pickedPerkOrderById.get(perk.id) ?? null
+                const isPicked = pickedPerkOrder !== null
 
                 return (
-                  <button
+                  <div
                     key={perk.id}
-                    className={isSelected ? 'perk-row is-selected' : 'perk-row'}
-                    onClick={() => setSelectedPerkId(perk.id)}
-                    type="button"
+                    className={isPicked
+                      ? isSelected
+                        ? 'perk-row is-selected is-picked'
+                        : 'perk-row is-picked'
+                      : isSelected
+                        ? 'perk-row is-selected'
+                        : 'perk-row'}
                   >
-                    <div className="perk-row-layout">
-                      {renderGameIcon({
-                        className: 'perk-icon perk-icon-small',
-                        iconPath: getPerkDisplayIconPath(perk),
-                        label: `${perk.perkName} icon`,
-                      })}
-                      <div className="perk-row-copy">
-                        <div className="perk-row-topline">
-                          <span className="perk-name">{perk.perkName}</span>
-                          <span className="tier-badge">
-                            {getTierLabel(perk.placements[0]?.tier ?? null)}
-                          </span>
+                    <button
+                      aria-label={`Inspect ${perk.perkName}`}
+                      className="perk-row-select"
+                      onClick={() => setSelectedPerkId(perk.id)}
+                      type="button"
+                    >
+                      <div className="perk-row-layout">
+                        {renderGameIcon({
+                          className: 'perk-icon perk-icon-small',
+                          iconPath: getPerkDisplayIconPath(perk),
+                          label: `${perk.perkName} icon`,
+                        })}
+                        <div className="perk-row-copy">
+                          <div className="perk-row-topline">
+                            <span className="perk-name">{perk.perkName}</span>
+                            <div className="perk-row-badges">
+                              <span className="tier-badge">
+                                {getTierLabel(perk.placements[0]?.tier ?? null)}
+                              </span>
+                              {pickedPerkOrder !== null ? (
+                                <span className="build-slot-badge">Build {pickedPerkOrder}</span>
+                              ) : null}
+                            </div>
+                          </div>
+                          <p className="perk-context">
+                            {getPerkContextLabel(perk)}
+                          </p>
+                          <p className="perk-preview">{getPerkPreview(perk)}</p>
                         </div>
-                        <p className="perk-context">
-                          {getPerkContextLabel(perk)}
-                        </p>
-                        <p className="perk-preview">{getPerkPreview(perk)}</p>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                    <BuildToggleButton
+                      isCompact
+                      isPicked={isPicked}
+                      onClick={() => handleTogglePerkPicked(perk.id)}
+                      perkName={perk.perkName}
+                      source="results"
+                    />
+                  </div>
                 )
               })
             )}
@@ -595,6 +823,19 @@ export default function App() {
                     <h2>{selectedPerk.perkName}</h2>
                     <p className="detail-meta">{selectedPerk.groupNames.join(', ')}</p>
                   </div>
+                </div>
+                <div className="detail-header-actions">
+                  <p className="detail-header-build-status">
+                    {selectedPerkBuildSlot === null
+                      ? 'Not in build'
+                      : `Build slot ${selectedPerkBuildSlot}`}
+                  </p>
+                  <BuildToggleButton
+                    isPicked={selectedPerkBuildSlot !== null}
+                    onClick={() => handleTogglePerkPicked(selectedPerk.id)}
+                    perkName={selectedPerk.perkName}
+                    source="detail"
+                  />
                 </div>
               </div>
 

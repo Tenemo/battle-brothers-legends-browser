@@ -9,6 +9,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Browses the Legends perk catalog in a fast client-side UI.
 - Searches across perk names, descriptions, perk groups, tree names, background sources, scenario overlays, and favored enemy targets.
 - Filters by category, perk group, and tier.
+- Lets you pick perks into a simple build planner and shows the perk groups that can unlock each selected slot.
 - Shows exact tree placement, tree descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favored enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
 - Keeps the runtime deterministic by committing the generated data snapshot instead of fetching live data in the app.
@@ -28,8 +29,9 @@ These values change whenever `pnpm sync:perks` is run against a newer or differe
 
 ## Runtime behavior
 
-The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` directly into the bundle. The UI has three main areas:
+The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` directly into the bundle. The UI has four main areas:
 
+- a build planner strip for selected perks and their matching perk-group options
 - a category sidebar with expandable perk groups
 - a searchable result list
 - a detail panel for the currently selected perk
@@ -207,6 +209,8 @@ The repository now includes a root `netlify.toml` tailored for this app.
   The browser UI shell, filters, result list, and detail panel.
 - `src/lib/perk-search.ts`
   Client-side search ranking, filtering, tier handling, and perk preview selection.
+- `src/lib/build-planner.ts`
+  Build-planner helpers for deduping perk-group options and formatting slot requirements.
 - `src/lib/game-icon-url.ts`
   Runtime mapping from dataset icon paths to served URLs.
 - `src/lib/technical-name-display.ts`

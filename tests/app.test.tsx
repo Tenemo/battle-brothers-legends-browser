@@ -9,6 +9,8 @@ describe('app', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
     expect(screen.getByLabelText('Search perks')).toBeInTheDocument()
+    expect(screen.getByTestId('build-perks-bar')).toBeInTheDocument()
+    expect(screen.getByTestId('build-groups-bar')).toBeInTheDocument()
     expect(screen.queryByText(/Reference root/i)).not.toBeInTheDocument()
   })
 
@@ -24,15 +26,18 @@ describe('app', () => {
   test('can expand and collapse a category, then filter by perk group and inspect a trait perk', async () => {
     const user = userEvent.setup()
     render(<App />)
+    const categoriesPanel = screen.getByRole('complementary', { name: 'Perk categories' })
 
     await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
-    expect(screen.getByText('Perk groups')).toBeInTheDocument()
+    expect(within(categoriesPanel).getByText('Perk groups')).toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Disable category Traits' }))
-    expect(screen.queryByText('Perk groups')).not.toBeInTheDocument()
+    expect(within(categoriesPanel).queryByText('Perk groups')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
     await user.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
     await user.type(screen.getByLabelText('Search perks'), 'Clarity')
-    await user.click(screen.getByRole('button', { name: /Clarity/i }))
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Clarity' }),
+    )
 
     const detailHeading = screen.getByRole('heading', { level: 2, name: 'Clarity' })
     const detailHeader = detailHeading.closest('.detail-header')
@@ -54,7 +59,11 @@ describe('app', () => {
 
     await user.click(screen.getByRole('button', { name: 'Enable category Enemy' }))
     await user.type(screen.getByLabelText('Search perks'), 'Favoured Enemy - Beasts')
-    await user.click(screen.getByRole('button', { name: /Favoured Enemy - Beasts/i }))
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Inspect Favoured Enemy - Beasts',
+      }),
+    )
 
     expect(screen.getByRole('heading', { level: 3, name: 'Favored enemy targets' })).toBeInTheDocument()
     expect(screen.getByText('Bear')).toBeInTheDocument()
@@ -70,7 +79,11 @@ describe('app', () => {
     render(<App />)
 
     await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
-    await user.click(screen.getByRole('button', { name: /Perfect Focus/i }))
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Inspect Perfect Focus',
+      }),
+    )
 
     expect(screen.getByText(/Anatomist, Assassin, Beast Slayer/i)).toBeInTheDocument()
     expect(screen.getAllByText('Minimum 7 / No chance override')).toHaveLength(1)
@@ -117,16 +130,16 @@ describe('app', () => {
 
     const resultsList = screen.getByTestId('results-list')
 
-    expect(within(resultsList).getByRole('button', { name: /Clarity/i })).toBeInTheDocument()
+    expect(within(resultsList).getByRole('button', { name: 'Inspect Clarity' })).toBeInTheDocument()
     expect(
-      within(resultsList).queryByRole('button', { name: /Favoured Enemy - Beasts/i }),
+      within(resultsList).queryByRole('button', { name: 'Inspect Favoured Enemy - Beasts' }),
     ).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Enable category Enemy' }))
 
-    expect(within(resultsList).getByRole('button', { name: /Clarity/i })).toBeInTheDocument()
+    expect(within(resultsList).getByRole('button', { name: 'Inspect Clarity' })).toBeInTheDocument()
     expect(
-      within(resultsList).getByRole('button', { name: /Favoured Enemy - Beasts/i }),
+      within(resultsList).getByRole('button', { name: 'Inspect Favoured Enemy - Beasts' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Filtered to 2 categories and 1 perk group.')).toBeInTheDocument()
   })
@@ -154,6 +167,71 @@ describe('app', () => {
     expect(clearAllButton).toBeDisabled()
     expect(screen.getByText(/Ranked by exact perk names first/i)).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Enable category Traits' })).toBeInTheDocument()
+  })
+
+  test('can pick perks into a build and show the matching perk groups for each slot', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Clarity' }),
+    )
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Clarity to build from results',
+      }),
+    )
+
+    const buildPerksBar = screen.getByTestId('build-perks-bar')
+    const buildGroupsBar = screen.getByTestId('build-groups-bar')
+
+    expect(within(buildPerksBar).getByText('Clarity')).toBeInTheDocument()
+    expect(within(buildGroupsBar).getByText('Calm')).toBeInTheDocument()
+    expect(screen.getByText('Build slot 1')).toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText('Search perks'))
+    await user.type(screen.getByLabelText('Search perks'), 'Prayer of Hope')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Inspect Prayer of Hope',
+      }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add Prayer of Hope to build' }))
+
+    expect(within(buildPerksBar).getByText('Prayer of Hope')).toBeInTheDocument()
+    expect(within(buildGroupsBar).getByText('Faith / Druidic Arts')).toBeInTheDocument()
+    expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
+  })
+
+  test('can remove perks from the build and clear the planner', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Clarity' }),
+    )
+    await user.click(screen.getByRole('button', { name: 'Add Clarity to build' }))
+
+    expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
+
+    await user.click(
+      within(screen.getByTestId('build-perks-bar')).getByRole('button', {
+        name: 'Remove Clarity from build',
+      }),
+    )
+
+    expect(screen.getByText('No perks picked yet.')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-perks-bar')).getByText('Pick a perk to start')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Add Clarity to build' }))
+    await user.click(screen.getByRole('button', { name: 'Clear build' }))
+
+    expect(screen.getByText('No perks picked yet.')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('build-groups-bar')).getByText('Required perk groups will appear here'),
+    ).toBeInTheDocument()
   })
 
   test('renders explicit separators between the category and perk group in result rows', async () => {
