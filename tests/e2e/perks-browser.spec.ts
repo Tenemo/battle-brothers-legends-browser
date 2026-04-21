@@ -3,11 +3,23 @@ import { expect, test } from '@playwright/test'
 test('browses and searches the perks catalog', async ({ page }) => {
   await page.goto('/')
 
-  await page.getByRole('button', { name: 'Expand category Traits' }).click()
+  await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await expect(page.locator('.subgroup-heading')).toHaveText('Perk groups')
-  await page.getByRole('button', { name: 'Collapse category Traits' }).click()
+  await page.getByRole('button', { name: 'Disable category Traits' }).click()
   await expect(page.locator('.subgroup-heading')).toHaveCount(0)
-  await page.getByRole('button', { name: 'Expand category Traits' }).click()
+  await page.getByRole('button', { name: 'Enable category Traits' }).click()
+  await page.getByRole('button', { name: 'Toggle perk group Calm' }).click()
+  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
+  await page.getByRole('button', { name: 'Enable category Enemy' }).click()
+  await expect(page.getByText('Filtered to 2 categories and 1 perk group.')).toBeVisible()
+  await expect(page.getByTestId('results-list').getByRole('button', { name: /Favoured Enemy - Beasts/i })).toBeVisible()
+  await page.getByRole('button', { name: 'Clear all filters' }).click()
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByLabel('Filter by tier')).toHaveValue('all-tiers')
+  await expect(page.getByText(/Ranked by exact perk names first/i)).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await page.getByRole('button', { name: 'Toggle perk group Calm' }).click()
   await page.getByLabel('Search perks').fill('Clarity')
   await page.getByRole('button', { name: /Clarity/i }).click()
@@ -19,7 +31,7 @@ test('browses and searches the perks catalog', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 3, name: 'Source files' })).toHaveCount(0)
   await expect(page.getByText(/Reference root/i)).toHaveCount(0)
 
-  await page.getByRole('button', { name: 'Expand category Enemy' }).click()
+  await page.getByRole('button', { name: 'Enable category Enemy' }).click()
   await page.getByLabel('Search perks').fill('Favoured Enemy - Beasts')
   await page.getByRole('button', { name: /Favoured Enemy - Beasts/i }).click()
 

@@ -189,9 +189,9 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
-  margin-bottom: 0.26rem;
-  padding: 0.46rem 0.58rem;
-  border-radius: 0.64rem;
+  margin-bottom: 0.18rem;
+  padding: 0.3rem 0.46rem;
+  border-radius: 0.56rem;
   background: var(--button-background);
   text-align: left;
   font-size: 0.84rem;
@@ -224,10 +224,10 @@
 }
 
 .category-card {
-  margin-bottom: 0.24rem;
+  margin-bottom: 0.16rem;
   border: 1px solid transparent;
-  border-radius: 0.72rem;
-  background: rgb(16 13 11 / 0.35);
+  border-radius: 0.58rem;
+  background: rgb(16 13 11 / 0.24);
 }
 
 .category-card > .group-chip {
@@ -240,15 +240,15 @@
 
 .subgroup-panel {
   display: grid;
-  gap: 0.22rem;
-  padding: 0.16rem 0.4rem 0.42rem 0.95rem;
-  margin-left: 0.62rem;
-  border-left: 1px solid rgb(204 155 84 / 0.15);
+  gap: 0.16rem;
+  padding: 0.08rem 0.18rem 0.24rem 0.55rem;
+  margin-left: 0.38rem;
+  border-left: 1px solid rgb(204 155 84 / 0.11);
   animation: fade-in 180ms ease-out;
 }
 
 .subgroup-heading {
-  margin: 0 0 0.08rem;
+  margin: 0 0 0.04rem;
   color: var(--text-muted);
   font-size: 0.68rem;
   letter-spacing: 0.08em;
@@ -260,9 +260,9 @@
   justify-content: space-between;
   gap: 0.55rem;
   width: 100%;
-  padding: 0.38rem 0.52rem;
-  border: 1px solid rgb(204 155 84 / 0.12);
-  border-radius: 0.56rem;
+  padding: 0.24rem 0.4rem;
+  border: 1px solid rgb(204 155 84 / 0.08);
+  border-radius: 0.48rem;
   background: rgb(21 17 14 / 0.9);
   color: var(--text-secondary);
   text-align: left;
@@ -323,6 +323,35 @@
 .tier-filter span {
   font-size: 0.74rem;
   color: var(--text-muted);
+}
+
+.clear-filters-button {
+  min-height: 2.35rem;
+  border: 1px solid rgb(204 155 84 / 0.16);
+  border-radius: 0.7rem;
+  padding: 0.54rem 0.72rem;
+  background: rgb(20 17 14 / 0.92);
+  color: var(--text-secondary);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    opacity 160ms ease;
+}
+
+.clear-filters-button:hover:not(:disabled) {
+  border-color: var(--accent-color);
+  background: var(--button-background-active);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.clear-filters-button:disabled {
+  opacity: 0.48;
+  cursor: default;
 }
 
 .results-summary {

@@ -6,7 +6,6 @@ import './App.css'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import { getGameIconUrl } from './lib/game-icon-url'
 import {
-  allGroupsFilterValue,
   allTiersFilterValue,
   buildTierOptions,
   filterAndSortPerks,
@@ -222,53 +221,100 @@ const tierOptions = buildTierOptions(allPerks)
 
 export default function App() {
   const [query, setQuery] = useState('')
-  const [groupName, setGroupName] = useState(allGroupsFilterValue)
-  const [expandedGroupName, setExpandedGroupName] = useState<string | null>(null)
-  const [selectedTreeIds, setSelectedTreeIds] = useState<string[]>([])
+  const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([])
+  const [expandedGroupNames, setExpandedGroupNames] = useState<string[]>([])
+  const [selectedTreeIdsByGroup, setSelectedTreeIdsByGroup] = useState<Record<string, string[]>>({})
   const [tierValue, setTierValue] = useState(allTiersFilterValue)
   const deferredQuery = useDeferredValue(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
-    groupName,
     query: deferredQuery,
-    selectedTreeIds,
+    selectedGroupNames,
+    selectedTreeIdsByGroup,
     tierValue,
   })
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(() => visiblePerks[0]?.id ?? null)
   const selectedPerk =
     visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null
-  const activeTreeOptions =
-    expandedGroupName === null ? [] : (categoryTreeOptionsByGroup.get(expandedGroupName) ?? [])
+  const selectedCategoryCount = selectedGroupNames.length
+  const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
+    (treeCount, selectedTreeIds) => treeCount + selectedTreeIds.length,
+    0,
+  )
+  const hasActiveFilters =
+    query.trim().length > 0 ||
+    tierValue !== allTiersFilterValue ||
+    selectedCategoryCount > 0 ||
+    selectedTreeCount > 0
 
   function handleResetGroups() {
     startTransition(() => {
-      setExpandedGroupName(null)
-      setGroupName(allGroupsFilterValue)
-      setSelectedTreeIds([])
+      setExpandedGroupNames([])
+      setSelectedGroupNames([])
+      setSelectedTreeIdsByGroup({})
+    })
+  }
+
+  function handleClearAllFilters() {
+    startTransition(() => {
+      setQuery('')
+      setTierValue(allTiersFilterValue)
+      setExpandedGroupNames([])
+      setSelectedGroupNames([])
+      setSelectedTreeIdsByGroup({})
     })
   }
 
   function handleGroupToggle(nextGroupName: string) {
     startTransition(() => {
-      if (groupName === nextGroupName) {
-        setExpandedGroupName(null)
-        setGroupName(allGroupsFilterValue)
-        setSelectedTreeIds([])
+      const isSelected = selectedGroupNames.includes(nextGroupName)
+
+      if (isSelected) {
+        setExpandedGroupNames((currentExpandedGroupNames) =>
+          currentExpandedGroupNames.filter((groupName) => groupName !== nextGroupName),
+        )
+        setSelectedGroupNames((currentSelectedGroupNames) =>
+          currentSelectedGroupNames.filter((groupName) => groupName !== nextGroupName),
+        )
+        setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => {
+          const remainingSelectedTreeIdsByGroup = { ...currentSelectedTreeIdsByGroup }
+          delete remainingSelectedTreeIdsByGroup[nextGroupName]
+
+          return remainingSelectedTreeIdsByGroup
+        })
         return
       }
 
-      setExpandedGroupName(nextGroupName)
-      setGroupName(nextGroupName)
-      setSelectedTreeIds([])
+      setExpandedGroupNames((currentExpandedGroupNames) =>
+        currentExpandedGroupNames.includes(nextGroupName)
+          ? currentExpandedGroupNames
+          : [...currentExpandedGroupNames, nextGroupName],
+      )
+      setSelectedGroupNames((currentSelectedGroupNames) => [...currentSelectedGroupNames, nextGroupName])
     })
   }
 
-  function handleTreeToggle(nextTreeId: string) {
+  function handleResetGroupTrees(groupName: string) {
     startTransition(() =>
-      setSelectedTreeIds((currentSelectedTreeIds) =>
-        currentSelectedTreeIds.includes(nextTreeId)
+      setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => ({
+        ...currentSelectedTreeIdsByGroup,
+        [groupName]: [],
+      })),
+    )
+  }
+
+  function handleTreeToggle(groupName: string, nextTreeId: string) {
+    startTransition(() =>
+      setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => {
+        const currentSelectedTreeIds = currentSelectedTreeIdsByGroup[groupName] ?? []
+        const nextSelectedTreeIds = currentSelectedTreeIds.includes(nextTreeId)
           ? currentSelectedTreeIds.filter((treeId) => treeId !== nextTreeId)
-          : [...currentSelectedTreeIds, nextTreeId],
-      ),
+          : [...currentSelectedTreeIds, nextTreeId]
+
+        return {
+          ...currentSelectedTreeIdsByGroup,
+          [groupName]: nextSelectedTreeIds,
+        }
+      }),
     )
   }
 
@@ -317,11 +363,11 @@ export default function App() {
         <aside className="sidebar" aria-label="Perk categories">
           <div className="panel-heading">
             <h2>Categories</h2>
-            <p>Open a category, then narrow it to one or more perk groups.</p>
+            <p>Enable one or more categories, then narrow each one to the perk groups you want.</p>
           </div>
           <button
-            aria-label="Filter all groups"
-            className={groupName === allGroupsFilterValue ? 'group-chip is-active' : 'group-chip'}
+            aria-label="Reset all category filters"
+            className={selectedGroupNames.length === 0 ? 'group-chip is-active' : 'group-chip'}
             onClick={handleResetGroups}
             type="button"
           >
@@ -331,14 +377,16 @@ export default function App() {
             <span>{allPerks.length}</span>
           </button>
           {availableGroups.map((availableGroupName) => {
-            const isExpanded = expandedGroupName === availableGroupName
-            const isActive = groupName === availableGroupName
+            const activeTreeOptions = categoryTreeOptionsByGroup.get(availableGroupName) ?? []
+            const isExpanded = expandedGroupNames.includes(availableGroupName)
+            const isActive = selectedGroupNames.includes(availableGroupName)
+            const selectedTreeIds = selectedTreeIdsByGroup[availableGroupName] ?? []
 
             return (
               <div className={isExpanded ? 'category-card is-active' : 'category-card'} key={availableGroupName}>
                 <button
                   aria-expanded={isExpanded}
-                  aria-label={`${isExpanded ? 'Collapse' : 'Expand'} category ${availableGroupName}`}
+                  aria-label={`${isActive ? 'Disable' : 'Enable'} category ${availableGroupName}`}
                   className={isActive ? 'group-chip is-active' : 'group-chip'}
                   onClick={() => handleGroupToggle(availableGroupName)}
                   type="button"
@@ -356,7 +404,7 @@ export default function App() {
                   <button
                     aria-label="Show all perk groups"
                     className={selectedTreeIds.length === 0 ? 'subgroup-chip is-active' : 'subgroup-chip'}
-                    onClick={() => setSelectedTreeIds([])}
+                    onClick={() => handleResetGroupTrees(availableGroupName)}
                     type="button"
                   >
                     <span>All perk groups</span>
@@ -371,7 +419,7 @@ export default function App() {
                           : 'subgroup-chip'
                       }
                       key={treeOption.treeId}
-                      onClick={() => handleTreeToggle(treeOption.treeId)}
+                      onClick={() => handleTreeToggle(availableGroupName, treeOption.treeId)}
                       type="button"
                     >
                       <span>{treeOption.treeName}</span>
@@ -415,6 +463,16 @@ export default function App() {
                 ))}
               </select>
             </label>
+
+            <button
+              aria-label="Clear all filters"
+              className="clear-filters-button"
+              disabled={!hasActiveFilters}
+              onClick={handleClearAllFilters}
+              type="button"
+            >
+              Clear all
+            </button>
           </div>
 
           <div className="results-summary">
@@ -423,8 +481,10 @@ export default function App() {
               {visiblePerks.length === 1 ? '' : 's'}
             </p>
             <p className="results-note">
-              {selectedTreeIds.length > 0
-                ? `Filtered to ${selectedTreeIds.length} perk group${selectedTreeIds.length === 1 ? '' : 's'}.`
+              {selectedTreeCount > 0
+                ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'} and ${selectedTreeCount} perk group${selectedTreeCount === 1 ? '' : 's'}.`
+                : selectedCategoryCount > 0
+                  ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'}.`
                 : 'Ranked by exact perk names first, then tree and category matches, then background, scenario, and full text.'}
             </p>
           </div>
@@ -433,7 +493,7 @@ export default function App() {
             {visiblePerks.length === 0 ? (
               <div className="empty-state">
                 <h2>No perks found</h2>
-                <p>Try a broader search, switch the category filter, or reset the tier filter.</p>
+                <p>Try a broader search, switch the category filters, or reset the tier filter.</p>
               </div>
             ) : (
               visiblePerks.map((perk) => {

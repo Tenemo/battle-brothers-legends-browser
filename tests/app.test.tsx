@@ -25,11 +25,11 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Expand category Traits' }))
+    await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
     expect(screen.getByText('Perk groups')).toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Collapse category Traits' }))
+    await user.click(screen.getByRole('button', { name: 'Disable category Traits' }))
     expect(screen.queryByText('Perk groups')).not.toBeInTheDocument()
-    await user.click(screen.getByRole('button', { name: 'Expand category Traits' }))
+    await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
     await user.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
     await user.type(screen.getByLabelText('Search perks'), 'Clarity')
     await user.click(screen.getByRole('button', { name: /Clarity/i }))
@@ -52,7 +52,7 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.click(screen.getByRole('button', { name: 'Expand category Enemy' }))
+    await user.click(screen.getByRole('button', { name: 'Enable category Enemy' }))
     await user.type(screen.getByLabelText('Search perks'), 'Favoured Enemy - Beasts')
     await user.click(screen.getByRole('button', { name: /Favoured Enemy - Beasts/i }))
 
@@ -63,6 +63,54 @@ describe('app', () => {
     expect(screen.getByText(/Random pool: Favoured Enemy - Occult, Favoured Enemy - Beasts/i)).toBeInTheDocument()
     expect(screen.queryByText('onBuildPerkTree')).not.toBeInTheDocument()
     expect(screen.queryByText('LegendBear')).not.toBeInTheDocument()
+  })
+
+  test('can filter by multiple categories at the same time while keeping subgroup filters scoped', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
+    await user.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
+
+    const resultsList = screen.getByTestId('results-list')
+
+    expect(within(resultsList).getByRole('button', { name: /Clarity/i })).toBeInTheDocument()
+    expect(
+      within(resultsList).queryByRole('button', { name: /Favoured Enemy - Beasts/i }),
+    ).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Enable category Enemy' }))
+
+    expect(within(resultsList).getByRole('button', { name: /Clarity/i })).toBeInTheDocument()
+    expect(
+      within(resultsList).getByRole('button', { name: /Favoured Enemy - Beasts/i }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Filtered to 2 categories and 1 perk group.')).toBeInTheDocument()
+  })
+
+  test('can clear all active filters at once', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const clearAllButton = screen.getByRole('button', { name: 'Clear all filters' })
+
+    expect(clearAllButton).toBeDisabled()
+
+    await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
+    await user.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
+    await user.selectOptions(screen.getByLabelText('Filter by tier'), '5')
+    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+
+    expect(clearAllButton).toBeEnabled()
+    expect(screen.getByText('Filtered to 1 category and 1 perk group.')).toBeInTheDocument()
+
+    await user.click(clearAllButton)
+
+    expect(screen.getByLabelText('Search perks')).toHaveValue('')
+    expect(screen.getByLabelText('Filter by tier')).toHaveValue('all-tiers')
+    expect(clearAllButton).toBeDisabled()
+    expect(screen.getByText(/Ranked by exact perk names first/i)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Enable category Traits' })).toBeInTheDocument()
   })
 
   test('renders explicit separators between the category and perk group in result rows', async () => {

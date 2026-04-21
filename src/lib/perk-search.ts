@@ -5,9 +5,9 @@ export const allTiersFilterValue = 'all-tiers'
 export const noTierFilterValue = 'no-tier'
 
 export type PerkBrowserFilters = {
-  groupName: string
   query: string
-  selectedTreeIds: string[]
+  selectedGroupNames: string[]
+  selectedTreeIdsByGroup: Record<string, string[]>
   tierValue: string
 }
 
@@ -100,18 +100,29 @@ function comparePerksAlphabetically(leftPerk: LegendsPerkRecord, rightPerk: Lege
 }
 
 function perkMatchesFilters(perk: LegendsPerkRecord, filters: PerkBrowserFilters): boolean {
-  if (filters.groupName !== allGroupsFilterValue && !perk.groupNames.includes(filters.groupName)) {
-    return false
-  }
-
-  if (filters.selectedTreeIds.length > 0) {
-    const matchesSelectedTree = perk.placements.some(
-      (placement) =>
-        placement.categoryName === filters.groupName &&
-        filters.selectedTreeIds.includes(placement.treeId),
+  if (filters.selectedGroupNames.length > 0) {
+    const matchingSelectedGroupNames = filters.selectedGroupNames.filter((groupName) =>
+      perk.groupNames.includes(groupName),
     )
 
-    if (!matchesSelectedTree) {
+    if (matchingSelectedGroupNames.length === 0) {
+      return false
+    }
+
+    const matchesSelectedCategoryTreeFilter = matchingSelectedGroupNames.some((groupName) => {
+      const selectedTreeIds = filters.selectedTreeIdsByGroup[groupName] ?? []
+
+      if (selectedTreeIds.length === 0) {
+        return true
+      }
+
+      return perk.placements.some(
+        (placement) =>
+          placement.categoryName === groupName && selectedTreeIds.includes(placement.treeId),
+      )
+    })
+
+    if (!matchesSelectedCategoryTreeFilter) {
       return false
     }
   }
