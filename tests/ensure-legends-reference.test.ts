@@ -60,7 +60,7 @@ describe('ensure legends reference', () => {
             html_url: 'https://github.com/Battle-Brothers-Legends/Legends-public/releases/tag/19.3.15',
             published_at: '2026-04-21T20:09:00Z',
             tag_name: '19.3.15',
-            zipball_url: 'https://example.invalid/legends-public-19.3.15.zip',
+            tarball_url: 'https://example.invalid/legends-public-19.3.15.tar.gz',
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         )
@@ -136,7 +136,7 @@ describe('ensure legends reference', () => {
             html_url: 'https://github.com/Battle-Brothers-Legends/Legends-public/releases/tag/19.3.15',
             published_at: '2026-04-21T20:09:00Z',
             tag_name: '19.3.15',
-            zipball_url: 'https://example.invalid/legends-public-19.3.15.zip',
+            tarball_url: 'https://example.invalid/legends-public-19.3.15.tar.gz',
           }),
           { status: 200, headers: { 'Content-Type': 'application/json' } },
         ),
@@ -151,5 +151,55 @@ describe('ensure legends reference', () => {
 
     expect(cachedReferenceMetadata.tagName).toBe('19.3.15')
     expect(cachedReferenceMetadata.cacheFallbackReason).toContain('GitHub is unavailable')
+  })
+
+  test('normalizes cached metadata to the current repo cache path even if the stored path is stale', async () => {
+    const cacheDirectoryPath = await createTemporaryDirectory()
+    const currentDirectoryPath = path.join(cacheDirectoryPath, 'current')
+    const expectedReferenceRootDirectoryPath = path.join(currentDirectoryPath, 'mod_legends')
+    const staleReferenceRootDirectoryPath = path.join(cacheDirectoryPath, '..', 'stale-cache', 'mod_legends')
+
+    await mkdir(expectedReferenceRootDirectoryPath, { recursive: true })
+    await mkdir(staleReferenceRootDirectoryPath, { recursive: true })
+    await writeFile(
+      path.join(currentDirectoryPath, 'reference-metadata.json'),
+      `${JSON.stringify(
+        {
+          archiveDownloadUrl: 'https://example.invalid/legends-public-19.3.15.tar.gz',
+          cachedAt: '2026-04-21T20:09:00Z',
+          githubRepository: 'Battle-Brothers-Legends/Legends-public',
+          publishedAt: '2026-04-21T20:09:00Z',
+          referenceRootDirectoryPath: staleReferenceRootDirectoryPath,
+          releasePageUrl:
+            'https://github.com/Battle-Brothers-Legends/Legends-public/releases/tag/19.3.15',
+          tagName: '19.3.15',
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    )
+
+    const referenceMetadata = await ensureLatestLegendsReference({
+      cacheDirectoryPath,
+      downloadArchiveImpl: async () => {
+        throw new Error('unexpected archive download')
+      },
+      extractArchiveImpl: async () => {
+        throw new Error('unexpected extraction')
+      },
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            html_url: 'https://github.com/Battle-Brothers-Legends/Legends-public/releases/tag/19.3.15',
+            published_at: '2026-04-21T20:09:00Z',
+            tag_name: '19.3.15',
+            tarball_url: 'https://example.invalid/legends-public-19.3.15.tar.gz',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    })
+
+    expect(referenceMetadata.referenceRootDirectoryPath).toBe(expectedReferenceRootDirectoryPath)
   })
 })

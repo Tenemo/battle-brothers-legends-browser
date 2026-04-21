@@ -185,7 +185,7 @@ export async function fetchLatestLegendsReleaseDescriptor({
   const releasePayload = await response.json()
 
   return {
-    archiveDownloadUrl: releasePayload.zipball_url,
+    archiveDownloadUrl: releasePayload.tarball_url,
     publishedAt: releasePayload.published_at,
     releasePageUrl: releasePayload.html_url,
     tagName: releasePayload.tag_name,
@@ -222,7 +222,7 @@ async function populateCurrentReferenceDirectory({
   try {
     const archiveFilePath = path.join(
       temporaryDirectoryPath,
-      `${sanitizeReleaseTagName(releaseDescriptor.tagName)}.zip`,
+      `${sanitizeReleaseTagName(releaseDescriptor.tagName)}.tar.gz`,
     )
     const extractionDirectoryPath = path.join(temporaryDirectoryPath, 'extract')
 
@@ -268,9 +268,16 @@ export async function ensureLatestLegendsReference({
   requestedTagName = process.env.LEGENDS_REFERENCE_TAG ?? null,
 } = {}) {
   const currentDirectoryPath = path.join(cacheDirectoryPath, 'current')
-  const cachedReferenceMetadata = await readCachedLegendsReferenceMetadata(
+  const expectedReferenceRootDirectoryPath = path.join(currentDirectoryPath, 'mod_legends')
+  const cachedReferenceMetadataFromDisk = await readCachedLegendsReferenceMetadata(
     path.join(currentDirectoryPath, 'reference-metadata.json'),
   )
+  const cachedReferenceMetadata = cachedReferenceMetadataFromDisk
+    ? {
+        ...cachedReferenceMetadataFromDisk,
+        referenceRootDirectoryPath: expectedReferenceRootDirectoryPath,
+      }
+    : null
 
   try {
     const releaseDescriptor = await fetchLatestLegendsReleaseDescriptor({
@@ -280,12 +287,9 @@ export async function ensureLatestLegendsReference({
       requestedTagName,
     })
 
-    const cachedReferenceRootDirectoryPath = cachedReferenceMetadata?.referenceRootDirectoryPath
-
     if (
       cachedReferenceMetadata?.tagName === releaseDescriptor.tagName &&
-      cachedReferenceRootDirectoryPath &&
-      (await pathExists(cachedReferenceRootDirectoryPath))
+      (await pathExists(expectedReferenceRootDirectoryPath))
     ) {
       return cachedReferenceMetadata
     }
@@ -303,8 +307,8 @@ export async function ensureLatestLegendsReference({
     })
   } catch (error) {
     if (
-      cachedReferenceMetadata?.referenceRootDirectoryPath &&
-      (await pathExists(cachedReferenceMetadata.referenceRootDirectoryPath))
+      cachedReferenceMetadata &&
+      (await pathExists(expectedReferenceRootDirectoryPath))
     ) {
       return {
         ...cachedReferenceMetadata,

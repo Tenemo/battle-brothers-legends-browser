@@ -8,6 +8,7 @@
     "dev": "vite",
     "prebuild": "npm run ensure:legends-reference",
     "build": "npm run tsc && vite build",
+    "build:netlify": "npm run tsc && vite build",
     "preview": "vite preview",
     "tsc": "tsc -b",
     "eslint": "eslint .",
