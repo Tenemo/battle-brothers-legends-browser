@@ -57,6 +57,21 @@ const favoriteEnemyPerkConstByArrayName = {
   FavoriteUndead: 'LegendFavouredEnemyUndead',
 }
 
+const fallbackPerkNamesByIdentifier = {
+  'perk.mastery.axe': 'Axe Mastery',
+  'perk.mastery.bow': 'Bow Mastery',
+  'perk.mastery.cleaver': 'Cleaver Mastery',
+  'perk.mastery.crossbow': 'Crossbow Mastery',
+  'perk.mastery.dagger': 'Dagger Mastery',
+  'perk.mastery.flail': 'Flail Mastery',
+  'perk.mastery.hammer': 'Hammer Mastery',
+  'perk.mastery.mace': 'Mace Mastery',
+  'perk.mastery.polearm': 'Polearm Mastery',
+  'perk.mastery.spear': 'Spear Mastery',
+  'perk.mastery.sword': 'Sword Mastery',
+  'perk.mastery.throwing': 'Throwing Mastery',
+}
+
 function normalizeWhitespace(value) {
   return value.replace(/\u00a0/g, ' ').replace(/[ \t]+/g, ' ').trim()
 }
@@ -105,6 +120,18 @@ function prettifyIdentifier(value) {
       .replace(/^Legend/, 'Legend ')
       .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
       .replace(/_/g, ' '),
+  )
+}
+
+function resolveFallbackPerkName(perkIdentifier, perkConstName) {
+  return fallbackPerkNamesByIdentifier[perkIdentifier] ?? prettifyIdentifier(perkConstName)
+}
+
+function resolvePerkName(perkDefinition, perkStringData) {
+  return (
+    (perkDefinition.nameConstName
+      ? perkStringData.namesByConstName.get(perkDefinition.nameConstName)
+      : null) ?? resolveFallbackPerkName(perkDefinition.identifier, perkDefinition.constName)
   )
 }
 
@@ -1307,10 +1334,7 @@ export async function createDataset(
   const perkRecords = []
 
   for (const perkDefinition of perkDefinitions.values()) {
-    const perkName =
-      (perkDefinition.nameConstName
-        ? perkStringData.namesByConstName.get(perkDefinition.nameConstName)
-        : null) ?? prettifyIdentifier(perkDefinition.constName)
+    const perkName = resolvePerkName(perkDefinition, perkStringData)
     const descriptionSourceText = perkDefinition.descriptionConstName
       ? perkStringData.descriptionsByConstName.get(perkDefinition.descriptionConstName) ?? ''
       : ''
@@ -1365,13 +1389,13 @@ export async function createDataset(
       .toSorted(compareScenarioSources)
       .map((scenarioSource) => ({
         candidatePerkNames: scenarioSource.candidatePerkConstNames
-          .map((candidatePerkConstName) =>
-            perkDefinitions.get(candidatePerkConstName)?.nameConstName
-              ? perkStringData.namesByConstName.get(
-                  perkDefinitions.get(candidatePerkConstName).nameConstName,
-                )
-              : prettifyIdentifier(candidatePerkConstName),
-          )
+          .map((candidatePerkConstName) => {
+            const candidatePerkDefinition = perkDefinitions.get(candidatePerkConstName)
+
+            return candidatePerkDefinition
+              ? resolvePerkName(candidatePerkDefinition, perkStringData)
+              : prettifyIdentifier(candidatePerkConstName)
+          })
           .filter(Boolean),
         grantType: scenarioSource.grantType,
         scenarioId: scenarioSource.scenarioId,

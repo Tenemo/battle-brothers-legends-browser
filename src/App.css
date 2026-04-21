@@ -754,6 +754,15 @@
   margin: 0.32rem 0 0;
 }
 
+.perk-preview {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.perk-preview p {
+  margin: 0;
+}
+
 .detail-header {
   display: flex;
   justify-content: space-between;

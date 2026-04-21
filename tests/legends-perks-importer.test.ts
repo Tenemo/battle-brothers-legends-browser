@@ -106,6 +106,28 @@ describe('legends perks importer', () => {
     ])
   })
 
+  test('normalizes fallback mastery perk names when the source strings only define descriptions', () => {
+    const axeMastery = dataset.perks.find((perk) => perk.perkConstName === 'SpecAxe')
+
+    expect(axeMastery).toMatchObject({
+      groupNames: ['Weapon'],
+      id: 'perk.mastery.axe',
+      perkName: 'Axe Mastery',
+      placements: [
+        {
+          categoryName: 'Weapon',
+          tier: 3,
+          treeName: 'Axe',
+        },
+      ],
+    })
+    expect(axeMastery?.descriptionParagraphs).toEqual([
+      'Master combat with axes and destroying shields.',
+      'Passive: â€¢ Skills build up less fatigue.',
+      'â€¢ Split Shield deals more damage and Round Swing gains accuracy.',
+    ])
+  })
+
   test('parses direct and random scenario overlays plus local source provenance', () => {
     const favoredEnemyBeast = dataset.perks.find(
       (perk) => perk.perkConstName === 'LegendFavouredEnemyBeast',
@@ -162,6 +184,8 @@ describe('legends perks importer', () => {
       CalmTree: 'Calm',
       LegendBear: 'Bear',
       LegendClarity: 'Clarity',
+      'perk.mastery.axe': 'Axe Mastery',
+      SpecAxe: 'Axe Mastery',
       'scenario.beast_hunters': 'Beast Slayers',
     })
     expect(technicalNameMappings.labelsByTechnicalName).not.toHaveProperty('onBuildPerkTree')

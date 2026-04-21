@@ -7,10 +7,15 @@ import legendsPerksDatasetJson from './data/legends-perks.json'
 import { getGameIconUrl } from './lib/game-icon-url'
 import { getGroupedBuildPerkGroupRequirements } from './lib/build-planner'
 import {
+  buildPerkBrowserUrlSearch,
+  readPerkBrowserUrlStateFromLocation,
+  type PerkBrowserUrlTreeOption,
+} from './lib/perk-browser-url-state'
+import {
   allTiersFilterValue,
   buildTierOptions,
   filterAndSortPerks,
-  getPerkPreview,
+  getPerkPreviewParagraphs,
   getTierLabel,
 } from './lib/perk-search'
 import type {
@@ -27,10 +32,8 @@ const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const categoryOrder = ['Weapon', 'Defense', 'Traits', 'Enemy', 'Class', 'Profession', 'Magic', 'Other']
 
-type CategoryTreeOption = {
+type CategoryTreeOption = PerkBrowserUrlTreeOption & {
   perkCount: number
-  treeId: string
-  treeName: string
 }
 
 type GroupedBackgroundSource = {
@@ -324,12 +327,26 @@ const availableGroups = [...groupCounts.keys()].toSorted(compareGroupNames)
 const tierOptions = buildTierOptions(allPerks)
 
 export default function App() {
-  const [query, setQuery] = useState('')
-  const [pickedPerkIds, setPickedPerkIds] = useState<string[]>([])
-  const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>([])
-  const [expandedGroupNames, setExpandedGroupNames] = useState<string[]>([])
-  const [selectedTreeIdsByGroup, setSelectedTreeIdsByGroup] = useState<Record<string, string[]>>({})
-  const [tierValue, setTierValue] = useState(allTiersFilterValue)
+  const [initialUrlState] = useState(() =>
+    readPerkBrowserUrlStateFromLocation({
+      availableGroupNames: availableGroups,
+      perks: allPerks,
+      tierOptions,
+      treeOptionsByGroup: categoryTreeOptionsByGroup,
+    }),
+  )
+  const [query, setQuery] = useState(initialUrlState.query)
+  const [pickedPerkIds, setPickedPerkIds] = useState<string[]>(initialUrlState.pickedPerkIds)
+  const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>(
+    initialUrlState.selectedGroupNames,
+  )
+  const [expandedGroupNames, setExpandedGroupNames] = useState<string[]>(
+    initialUrlState.selectedGroupNames,
+  )
+  const [selectedTreeIdsByGroup, setSelectedTreeIdsByGroup] = useState<Record<string, string[]>>(
+    initialUrlState.selectedTreeIdsByGroup,
+  )
+  const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
   const deferredQuery = useDeferredValue(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
     query: deferredQuery,
@@ -472,6 +489,37 @@ export default function App() {
       startTransition(() => setSelectedPerkId(visiblePerks[0].id))
     }
   }, [selectedPerkId, visiblePerks])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const nextSearch = buildPerkBrowserUrlSearch(
+      {
+        pickedPerkIds,
+        query,
+        selectedGroupNames,
+        selectedTreeIdsByGroup,
+        tierValue,
+      },
+      {
+        availableGroupNames: availableGroups,
+        perksById: allPerksById,
+        treeOptionsByGroup: categoryTreeOptionsByGroup,
+      },
+    )
+
+    if (window.location.search === nextSearch) {
+      return
+    }
+
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${nextSearch}${window.location.hash}`,
+    )
+  }, [pickedPerkIds, query, selectedGroupNames, selectedTreeIdsByGroup, tierValue])
 
   return (
     <div className="app-shell">
@@ -755,6 +803,7 @@ export default function App() {
                 const isSelected = perk.id === selectedPerk?.id
                 const pickedPerkOrder = pickedPerkOrderById.get(perk.id) ?? null
                 const isPicked = pickedPerkOrder !== null
+                const previewParagraphs = getPerkPreviewParagraphs(perk)
 
                 return (
                   <div
@@ -794,7 +843,13 @@ export default function App() {
                           <p className="perk-context">
                             {getPerkContextLabel(perk)}
                           </p>
-                          <p className="perk-preview">{getPerkPreview(perk)}</p>
+                          <div className="perk-preview">
+                            {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
+                              <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
+                                {previewParagraph}
+                              </p>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </button>

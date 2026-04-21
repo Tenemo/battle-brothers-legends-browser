@@ -55,6 +55,9 @@ test('shows real effect previews for hooked perk descriptions instead of tree te
   await expect(
     resultsList.getByText(/Passive: .*A kill increases all damage by 25% for two turns/i),
   ).toBeVisible()
+  await expect(
+    resultsList.getByText(/Does not stack, but another kill will reset the timer/i),
+  ).toBeVisible()
   await expect(resultsList.getByText('axes', { exact: true })).toHaveCount(0)
 
   await searchPerks(page, 'Fearsome')
@@ -64,4 +67,15 @@ test('shows real effect previews for hooked perk descriptions instead of tree te
     ),
   ).toBeVisible()
   await expect(resultsList.getByText('cleavers', { exact: true })).toHaveCount(0)
+})
+
+test('shows normalized mastery labels in the result list', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Axe Mastery')
+
+  await expect(
+    getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
+  ).toBeVisible()
+  await expect(getResultsList(page).getByText('Spec Axe', { exact: true })).toHaveCount(0)
 })

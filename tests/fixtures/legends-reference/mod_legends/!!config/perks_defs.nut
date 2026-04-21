@@ -39,3 +39,13 @@ perkDefObjects.push({
   IconDisabled = "ui/perks/peaceful_circle_bw.png",
   Const = "LegendPeaceful"
 });
+
+perkDefObjects.push({
+  ID = "perk.mastery.axe",
+  Script = "scripts/skills/perks/perk_mastery_axe",
+  Name = ::Const.Strings.PerkName.SpecAxe,
+  Tooltip = ::Const.Strings.PerkDescription.SpecAxe,
+  Icon = "ui/perks/perk_axe_mastery.png",
+  IconDisabled = "ui/perks/perk_axe_mastery_bw.png",
+  Const = "SpecAxe"
+});

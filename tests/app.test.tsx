@@ -1,7 +1,11 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test } from 'vitest'
 import App from '../src/App'
+
+afterEach(() => {
+  window.history.replaceState({}, '', '/')
+})
 
 describe('app', () => {
   test('renders the catalog shell without the old reference root footer', () => {
@@ -99,6 +103,11 @@ describe('app', () => {
     expect(
       within(resultsList).getByText(/Active: • Enables the character to move swiftly and safely/i),
     ).toBeInTheDocument()
+    expect(
+      within(resultsList).getByText(
+        /• Costs 4 AP and 20 Fatigue/i,
+      ),
+    ).toBeInTheDocument()
     expect(within(resultsList).queryByText("'Excuse me'")).not.toBeInTheDocument()
   })
 
@@ -112,6 +121,11 @@ describe('app', () => {
     expect(
       within(resultsList).getByText(
         /Passive: .*While using a Blacksmith's Hammer gain \+12 chance to hit and \+30% effectiveness vs armor/i,
+      ),
+    ).toBeInTheDocument()
+    expect(
+      within(resultsList).getByText(
+        /• When taking Hammer Mastery you will also gain 10% bonus damage/i,
       ),
     ).toBeInTheDocument()
     expect(
@@ -140,6 +154,9 @@ describe('app', () => {
     expect(
       within(resultsList).getByText(/Passive: .*A kill increases all damage by 25% for two turns/i),
     ).toBeInTheDocument()
+    expect(
+      within(resultsList).getByText(/Does not stack, but another kill will reset the timer/i),
+    ).toBeInTheDocument()
     expect(within(resultsList).queryByText(/^axes$/i)).not.toBeInTheDocument()
 
     await user.clear(searchInput)
@@ -150,6 +167,20 @@ describe('app', () => {
       ),
     ).toBeInTheDocument()
     expect(within(resultsList).queryByText(/^cleavers$/i)).not.toBeInTheDocument()
+  })
+
+  test('shows normalized mastery labels from the imported technical names', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+
+    expect(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Inspect Axe Mastery',
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('Spec Axe')).not.toBeInTheDocument()
   })
 
   test('can filter by multiple categories at the same time while keeping subgroup filters scoped', async () => {
@@ -275,5 +306,28 @@ describe('app', () => {
 
     expect(screen.getByText('Class / Butcher / Tier 1')).toBeInTheDocument()
     expect(screen.queryByText('ClassButcher / Tier 1')).not.toBeInTheDocument()
+  })
+
+  test('restores filters and the picked build from a shared url', () => {
+    window.history.replaceState(
+      {},
+      '',
+      '/?search=Perfect+Focus&tier=7&category=Traits&category=Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity&build=Perfect+Focus',
+    )
+
+    render(<App />)
+    const categoriesPanel = screen.getByRole('complementary', { name: 'Perk categories' })
+
+    expect(screen.getByLabelText('Search perks')).toHaveValue('Perfect Focus')
+    expect(screen.getByLabelText('Filter by tier')).toHaveValue('7')
+    expect(within(categoriesPanel).getAllByText('Perk groups')).toHaveLength(2)
+    expect(screen.getByRole('button', { name: 'Disable category Traits' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Disable category Magic' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Inspect Perfect Focus' })).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Inspect Clarity' })).not.toBeInTheDocument()
+    expect(within(screen.getByTestId('build-perks-bar')).getByText('Clarity')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-perks-bar')).getByText('Perfect Focus')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-groups-bar')).getByText('Calm')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-groups-bar')).getByText('Deadeye')).toBeInTheDocument()
   })
 })

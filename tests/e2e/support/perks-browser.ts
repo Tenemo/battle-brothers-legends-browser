@@ -89,7 +89,14 @@ export async function togglePerkGroup(page: Page, treeName: string): Promise<voi
 }
 
 export async function inspectPerkFromResults(page: Page, perkName: string): Promise<void> {
-  await getResultsList(page).getByRole('button', { name: `Inspect ${perkName}` }).click()
+  const inspectButton = getResultsList(page).getByRole('button', {
+    name: `Inspect ${perkName}`,
+  })
+
+  await expect(inspectButton).toBeVisible()
+  await inspectButton.scrollIntoViewIfNeeded()
+  await inspectButton.focus()
+  await inspectButton.press('Enter')
 }
 
 export async function addPerkToBuildFromResults(page: Page, perkName: string): Promise<void> {

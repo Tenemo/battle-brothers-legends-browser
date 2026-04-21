@@ -59,35 +59,64 @@ function isEffectDescriptionParagraph(paragraph: string): boolean {
   return /^(Passive|Active|Specialist Weapon Perk):/u.test(trimmedParagraph)
 }
 
-function getPreviewDescriptionParagraph(descriptionParagraphs: string[]): string | null {
+function getPreviewDescriptionParagraphs(descriptionParagraphs: string[]): string[] | null {
   if (descriptionParagraphs.length === 0) {
     return null
   }
 
-  return (
-    descriptionParagraphs.find((paragraph) => isEffectDescriptionParagraph(paragraph)) ??
-    descriptionParagraphs.find((paragraph) => !isFlavorQuoteParagraph(paragraph)) ??
-    descriptionParagraphs[0]
+  const firstEffectParagraphIndex = descriptionParagraphs.findIndex((paragraph) =>
+    isEffectDescriptionParagraph(paragraph),
   )
+
+  if (firstEffectParagraphIndex !== -1) {
+    return descriptionParagraphs.slice(firstEffectParagraphIndex)
+  }
+
+  const nonFlavorParagraphs = descriptionParagraphs.filter(
+    (paragraph) => !isFlavorQuoteParagraph(paragraph),
+  )
+
+  return nonFlavorParagraphs.length > 0 ? nonFlavorParagraphs : [descriptionParagraphs[0]]
 }
 
-export function getPerkPreview(perk: LegendsPerkRecord): string {
+export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
   const primaryPlacement = getPrimaryPlacement(perk)
   const favoredEnemyTarget = perk.favoredEnemyTargets?.[0]
   const backgroundSource = perk.backgroundSources[0]
   const scenarioSource = perk.scenarioSources[0]
+  const descriptionParagraphs = getPreviewDescriptionParagraphs(perk.descriptionParagraphs)
 
-  return (
-    getPreviewDescriptionParagraph(perk.descriptionParagraphs) ??
-    primaryPlacement?.treeAttributes[0] ??
-    primaryPlacement?.treeDescriptions[0] ??
-    (favoredEnemyTarget
-      ? `${favoredEnemyTarget.entityName} (${favoredEnemyTarget.killsPerPercentBonus ?? 'varies'})`
-      : null) ??
-    (backgroundSource ? `${backgroundSource.backgroundName} via ${backgroundSource.treeName}` : null) ??
-    (scenarioSource ? `${scenarioSource.scenarioName} (${scenarioSource.grantType})` : null) ??
-    'No description available.'
-  )
+  if (descriptionParagraphs !== null) {
+    return descriptionParagraphs
+  }
+
+  if (primaryPlacement?.treeAttributes[0]) {
+    return [primaryPlacement.treeAttributes[0]]
+  }
+
+  if (primaryPlacement?.treeDescriptions[0]) {
+    return [primaryPlacement.treeDescriptions[0]]
+  }
+
+  if (favoredEnemyTarget) {
+    return [
+      `${favoredEnemyTarget.entityName} (${favoredEnemyTarget.killsPerPercentBonus ?? 'varies'})`,
+    ]
+  }
+
+  if (backgroundSource) {
+    return [`${backgroundSource.backgroundName} via ${backgroundSource.treeName}`]
+  }
+
+  if (scenarioSource) {
+    return [`${scenarioSource.scenarioName} (${scenarioSource.grantType})`]
+  }
+
+  return ['No description available.']
+}
+
+export function getPerkPreview(perk: LegendsPerkRecord): string {
+  return getPerkPreviewParagraphs(perk).join(' ')
 }
 
 export function buildTierOptions(perks: LegendsPerkRecord[]): string[] {

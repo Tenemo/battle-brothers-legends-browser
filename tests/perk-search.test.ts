@@ -3,6 +3,7 @@ import {
   allTiersFilterValue,
   filterAndSortPerks,
   getPerkPreview,
+  getPerkPreviewParagraphs,
 } from '../src/lib/perk-search'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
@@ -250,8 +251,8 @@ describe('perk search', () => {
     ])
   })
 
-  test('prefers an explicit effect paragraph over a flavor quote for the perk preview', () => {
-    const preview = getPerkPreview({
+  test('returns the full effect block after skipping a flavor quote in the perk preview', () => {
+    const previewParagraphs = getPerkPreviewParagraphs({
       ...samplePerks[0],
       descriptionParagraphs: [
         "'In short, we tailored.'",
@@ -260,11 +261,14 @@ describe('perk search', () => {
       ],
     })
 
-    expect(preview).toBe('Passive: Repairs armor after combat.')
+    expect(previewParagraphs).toEqual([
+      'Passive: Repairs armor after combat.',
+      'Costs no AP.',
+    ])
   })
 
-  test('prefers an explicit effect paragraph over an unquoted flavor sentence for the perk preview', () => {
-    const preview = getPerkPreview({
+  test('returns the full effect block after skipping unquoted flavor text in the perk preview', () => {
+    const previewParagraphs = getPerkPreviewParagraphs({
       ...samplePerks[0],
       descriptionParagraphs: [
         'An ace up your sleeve.',
@@ -273,6 +277,25 @@ describe('perk search', () => {
       ],
     })
 
-    expect(preview).toBe('Passive: Currently equipped throwing items regain 1 ammo each turn.')
+    expect(previewParagraphs).toEqual([
+      'Passive: Currently equipped throwing items regain 1 ammo each turn.',
+      'Costs no AP.',
+    ])
+  })
+
+  test('keeps the string preview readable by joining the full effect block', () => {
+    const preview = getPerkPreview({
+      ...samplePerks[0],
+      descriptionParagraphs: [
+        'Master the bow.',
+        'Passive: Attacks build up less fatigue.',
+        'Active: Gain a burst of focus for the next attack.',
+        'Costs 15 fatigue.',
+      ],
+    })
+
+    expect(preview).toBe(
+      'Passive: Attacks build up less fatigue. Active: Gain a burst of focus for the next attack. Costs 15 fatigue.',
+    )
   })
 })

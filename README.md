@@ -10,6 +10,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Searches across perk names, descriptions, perk groups, tree names, background sources, scenario overlays, and favored enemy targets.
 - Filters by category, perk group, and tier.
 - Lets you pick perks into a build planner and shows the unique perk groups that can unlock the selected build.
+- Persists the current filters and picked build in a readable query string so the current setup can be shared or reloaded directly from the URL.
 - Shows exact tree placement, tree descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favored enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
 - Keeps the runtime deterministic by committing the generated data snapshot instead of fetching live data in the app.
@@ -23,7 +24,7 @@ The current committed dataset in this repository contains:
 - `132` parsed source files
 - `1087` exact technical-name label mappings
 - Legends reference version `19.3.17`
-- dataset generation timestamp `2026-04-21T21:59:35.975Z`
+- dataset generation timestamp `2026-04-21T22:40:02.129Z`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 
@@ -37,6 +38,8 @@ The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` di
 - a detail panel for the currently selected perk
 
 Search and filtering are fully client-side. The ranking logic in `src/lib/perk-search.ts` prefers exact perk-name matches first, then prefix and substring matches, then tree names and category names, and finally broader text matches from descriptions and related metadata. When there is no search query, results are sorted by category, tree, tier, and perk name.
+
+The app also keeps the current search, tier, selected categories, selected perk groups, and picked build in the URL query string. Shared links restore that state on load.
 
 The detail panel can show:
 
@@ -131,6 +134,8 @@ pnpm install
 pnpm dev
 ```
 
+`pnpm install` also runs `pnpm prepare`, which wires the local Husky Git hooks. The committed pre-commit hook runs linting, typechecking, unit tests, and the production build before each commit. End-to-end tests stay outside pre-commit and are still available through `pnpm test:e2e`.
+
 Useful follow-up commands:
 
 - `pnpm build` builds the production bundle.
@@ -187,6 +192,12 @@ The repository now includes a root `netlify.toml` tailored for this app.
   Runs the same production build as `pnpm build`, but without the `prebuild` cache refresh step. Use this for Netlify deployments.
 - `pnpm preview`
   Serves the built application locally.
+- `pnpm prepare`
+  Installs Husky hooks for the local checkout.
+- `pnpm lint`
+  Alias for the repository ESLint run.
+- `pnpm typecheck`
+  Alias for the TypeScript project build check.
 - `pnpm tsc`
   Runs the TypeScript project build check with `tsc -b`.
 - `pnpm eslint`
@@ -210,6 +221,8 @@ The repository now includes a root `netlify.toml` tailored for this app.
   The browser UI shell, filters, result list, and detail panel.
 - `src/lib/perk-search.ts`
   Client-side search ranking, filtering, tier handling, and perk preview selection.
+- `src/lib/perk-browser-url-state.ts`
+  Human-readable query-string parsing and serialization for shared filter and build state.
 - `src/lib/build-planner.ts`
   Build-planner helpers for deduping perk-group options, collapsing shared build requirements, and formatting grouped labels.
 - `src/lib/game-icon-url.ts`

@@ -27,3 +27,12 @@ See through occult tricks.
 ::Const.Strings.PerkDescription.LegendPeaceful <- @"
 Choose words before steel.
 ";
+
+::Const.Strings.PerkDescription.SpecAxe <- @"
+Master combat with axes and destroying shields.
+
+[color=%passive%][u]Passive:[/u][/color]
+â€¢ Skills build up less fatigue.
+
+â€¢ Split Shield deals more damage and Round Swing gains accuracy.
+";

@@ -1,0 +1,65 @@
+import { expect, test } from '@playwright/test'
+import {
+  addPerkToBuildFromResults,
+  getBuildGroupsBar,
+  getBuildPerksBar,
+  gotoPerksBrowser,
+  inspectPerkFromResults,
+  searchPerks,
+} from './support/perks-browser'
+
+test('stores readable filters and build state in the url and restores them on a shared link', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page)
+
+  await page.getByRole('button', { name: 'Enable category Traits' }).click()
+  await page.getByRole('button', { name: 'Enable category Magic' }).click()
+  await page.getByRole('button', { name: 'Toggle perk group Calm' }).click()
+  await page.getByRole('button', { name: 'Toggle perk group Deadeye' }).click()
+  await page.getByLabel('Filter by tier').selectOption('7')
+  await searchPerks(page, 'Perfect Focus')
+  await inspectPerkFromResults(page, 'Perfect Focus')
+  await addPerkToBuildFromResults(page, 'Perfect Focus')
+
+  await page.getByLabel('Filter by tier').selectOption('5')
+  await searchPerks(page, 'Clarity')
+  await inspectPerkFromResults(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+  await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
+
+  const savedUrl = page.url()
+
+  expect(savedUrl).toContain('search=Clarity')
+  expect(savedUrl).toContain('tier=5')
+  expect(savedUrl).toContain('category=Traits')
+  expect(savedUrl).toContain('category=Magic')
+  expect(savedUrl).toContain('group-traits=Calm')
+  expect(savedUrl).toContain('group-magic=Deadeye')
+  expect(savedUrl).toContain('build=Perfect+Focus')
+  expect(savedUrl).toContain('build=Clarity')
+
+  const sharedPage = await page.context().newPage()
+
+  try {
+    await sharedPage.setViewportSize({ width: 900, height: 720 })
+    await sharedPage.goto(savedUrl)
+
+    await expect(sharedPage.getByLabel('Search perks')).toHaveValue('Clarity')
+    await expect(sharedPage.getByLabel('Filter by tier')).toHaveValue('5')
+    await expect(sharedPage.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+    await expect(sharedPage.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
+    await expect(sharedPage.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
+      /is-active/,
+    )
+    await expect(sharedPage.getByRole('button', { name: 'Toggle perk group Deadeye' })).toHaveClass(
+      /is-active/,
+    )
+    await expect(getBuildPerksBar(sharedPage).getByText('Perfect Focus')).toBeVisible()
+    await expect(getBuildPerksBar(sharedPage).getByText('Clarity')).toBeVisible()
+    await expect(getBuildGroupsBar(sharedPage).getByText('Calm')).toBeVisible()
+    await expect(getBuildGroupsBar(sharedPage).getByText('Deadeye')).toBeVisible()
+  } finally {
+    await sharedPage.close()
+  }
+})

@@ -7,6 +7,8 @@ import {
 describe('technical name display', () => {
   test('uses exact labels generated from the local reference data', () => {
     expect(getTechnicalNameLabel('AxeTree')).toBe('Axe')
+    expect(getTechnicalNameLabel('SpecAxe')).toBe('Axe Mastery')
+    expect(getTechnicalNameLabel('perk.mastery.axe')).toBe('Axe Mastery')
     expect(getTechnicalNameLabel('LegendFavouredEnemyBeast')).toBe('Favoured Enemy - Beasts')
     expect(getTechnicalNameLabel('LegendBear')).toBe('Bear')
   })
@@ -19,6 +21,7 @@ describe('technical name display', () => {
   test('can detect when a technical name resolves to the same visible label', () => {
     expect(technicalNameMatchesDisplayName('LegendBear', 'Bear')).toBe(true)
     expect(technicalNameMatchesDisplayName('AxeTree', 'Axe')).toBe(true)
+    expect(technicalNameMatchesDisplayName('perk.mastery.axe', 'Axe Mastery')).toBe(true)
     expect(technicalNameMatchesDisplayName('onBuildPerkTree', 'Build-time perk tree')).toBe(false)
     expect(technicalNameMatchesDisplayName('LegendBear', 'Direwolf')).toBe(false)
   })
