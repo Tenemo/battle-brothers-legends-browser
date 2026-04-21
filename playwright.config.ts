@@ -1,5 +1,10 @@
 import { defineConfig } from '@playwright/test'
 
+const developmentServerCommand =
+  process.platform === 'win32'
+    ? 'pnpm.cmd run dev:test'
+    : 'pnpm run dev:test'
+
 export default defineConfig({
   testDir: './tests/e2e',
   use: {
@@ -7,7 +12,7 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   webServer: {
-    command: 'npm run dev -- --host 127.0.0.1 --port 4173',
+    command: developmentServerCommand,
     port: 4173,
     reuseExistingServer: true,
     timeout: 120000,

@@ -1,12 +1,12 @@
 [build]
-command = "npm run build:netlify"
+command = "pnpm build:netlify"
 publish = "dist"
 
 [build.environment]
 NODE_VERSION = "22"
 
 [dev]
-command = "npm run dev"
+command = "pnpm dev"
 port = 8888
 targetPort = 5173
 framework = "#custom"
