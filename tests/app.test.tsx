@@ -249,6 +249,8 @@ describe('app', () => {
     const buildGroupsBar = screen.getByTestId('build-groups-bar')
 
     expect(within(buildPerksBar).getByText('Clarity')).toBeInTheDocument()
+    expect(within(buildPerksBar).queryByText(/Tier 5/i)).not.toBeInTheDocument()
+    expect(within(buildPerksBar).queryByText(/^Remove$/i)).not.toBeInTheDocument()
     expect(within(buildGroupsBar).getByText('Calm')).toBeInTheDocument()
     expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 

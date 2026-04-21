@@ -128,9 +128,11 @@
 }
 
 .build-planner {
-  --planner-row-height: 5.35rem;
+  --planner-group-row-min-height: 6rem;
+  --planner-perk-row-min-height: 2.8rem;
   display: flex;
   flex-direction: column;
+  height: clamp(13rem, 32vh, 14rem);
   gap: 0.5rem;
   flex-shrink: 0;
   overflow: hidden;
@@ -249,8 +251,11 @@
 
 .planner-board {
   display: grid;
+  flex: 1 1 auto;
   gap: 0.42rem;
   min-height: 0;
+  overflow: auto;
+  padding-right: 0.12rem;
 }
 
 .planner-row {
@@ -262,9 +267,9 @@
 
 .planner-row-label {
   display: inline-flex;
-  height: var(--planner-row-height);
-  min-height: var(--planner-row-height);
-  align-items: center;
+  min-height: 0;
+  padding-top: 0.42rem;
+  align-items: flex-start;
 }
 
 .planner-row-label {
@@ -275,29 +280,37 @@
 }
 
 .planner-track-scroll {
-  overflow: auto hidden;
-  padding-bottom: 0.1rem;
+  min-width: 0;
 }
 
 .planner-track {
   display: flex;
+  flex-wrap: wrap;
   align-items: stretch;
+  align-content: flex-start;
   gap: 0.42rem;
-  min-width: 100%;
-  width: max-content;
+  min-width: 0;
+  width: 100%;
 }
 
 .planner-slot {
   flex: 0 0 auto;
   min-width: 0;
-  height: var(--planner-row-height);
-  min-height: var(--planner-row-height);
-  width: 14rem;
+  width: min(14rem, 100%);
   padding: 0.44rem 0.5rem;
   border: 1px solid rgb(204 155 84 / 0.11);
   border-radius: 0.62rem;
   background: rgb(18 15 13 / 0.84);
   overflow: hidden;
+}
+
+.planner-track-perks .planner-slot {
+  min-height: var(--planner-perk-row-min-height);
+}
+
+.planner-track-groups .planner-slot {
+  height: var(--planner-group-row-min-height);
+  min-height: var(--planner-group-row-min-height);
 }
 
 .planner-slot.is-placeholder {
@@ -307,11 +320,28 @@
 }
 
 .planner-slot-perk {
-  display: grid;
-  grid-template-columns: 1.95rem minmax(0, 1fr);
-  gap: 0.58rem;
-  align-items: start;
-  width: 15.5rem;
+  position: relative;
+  appearance: none;
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  width: min(10.4rem, 100%);
+  padding: 0.38rem 0.46rem;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  isolation: isolate;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms ease;
+}
+
+.planner-slot-perk:hover {
+  border-color: var(--accent-color);
+  background: var(--button-background-active);
+  transform: translateY(-1px);
 }
 
 .planner-slot-group {
@@ -320,7 +350,8 @@
   gap: 0.24rem;
   align-items: flex-start;
   text-align: left;
-  width: 13rem;
+  width: min(13rem, 100%);
+  min-height: var(--planner-group-row-min-height);
 }
 
 .planner-slot-placeholder {
@@ -330,7 +361,11 @@
   gap: 0.24rem;
   align-items: flex-start;
   text-align: left;
-  width: 15rem;
+  width: min(15rem, 100%);
+}
+
+.planner-track-perks .planner-slot-placeholder {
+  min-height: var(--planner-perk-row-min-height);
 }
 
 .planner-slot-copy {
@@ -347,7 +382,6 @@
   align-items: center;
 }
 
-.planner-slot-order,
 .planner-slot-category,
 .build-slot-badge {
   color: var(--accent-soft);
@@ -381,25 +415,37 @@
   text-overflow: ellipsis;
 }
 
-.planner-slot-remove {
-  border: 1px solid rgb(204 155 84 / 0.14);
-  border-radius: 999px;
-  padding: 0.14rem 0.42rem;
-  background: transparent;
-  color: var(--text-secondary);
-  font: inherit;
-  font-size: 0.72rem;
-  cursor: pointer;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease;
+.planner-picked-perk-name {
+  display: block;
+  min-width: 0;
+  line-height: 1.08;
+  font-size: 0.8rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.planner-slot-remove:hover {
-  border-color: var(--accent-color);
-  background: rgb(46 35 28 / 0.92);
-  color: var(--text-primary);
+.planner-picked-perk-remove-indicator {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background:
+    linear-gradient(180deg, rgb(118 28 28 / 0.16), rgb(92 17 17 / 0.78)),
+    rgb(92 17 17 / 0.46);
+  color: rgb(255 203 203 / 0.95);
+  font-size: 1.05rem;
+  font-weight: 700;
+  opacity: 0;
+  transition: opacity 160ms ease;
+  pointer-events: none;
+}
+
+.planner-slot-perk:hover .planner-picked-perk-remove-indicator,
+.planner-slot-perk:focus-visible .planner-picked-perk-remove-indicator {
+  opacity: 1;
 }
 
 .build-toggle-button {
@@ -435,7 +481,7 @@
 
 .build-toggle-button:focus-visible,
 .planner-action-button:focus-visible,
-.planner-slot-remove:focus-visible,
+.planner-slot-perk:focus-visible,
 .perk-row-select:focus-visible,
 .clear-filters-button:focus-visible,
 .group-chip:focus-visible,
@@ -872,6 +918,12 @@
   border-radius: 0.5rem;
 }
 
+.planner-slot-perk .perk-icon-tiny {
+  width: 1.72rem;
+  height: 1.72rem;
+  border-radius: 0.42rem;
+}
+
 .empty-state {
   display: grid;
   place-items: center;
@@ -940,6 +992,10 @@
 
   .planner-row {
     grid-template-columns: 1fr;
+  }
+
+  .planner-row-label {
+    padding-top: 0;
   }
 
   .hero-meta {

@@ -581,29 +581,25 @@ export default function App() {
             <div className="planner-track-scroll">
               <div className="planner-track planner-track-perks" data-testid="build-perks-bar">
                 {hasPickedPerks ? (
-                  pickedPerks.map((pickedPerk, pickedPerkIndex) => (
-                    <div className="planner-slot planner-slot-perk" key={pickedPerk.id}>
+                  pickedPerks.map((pickedPerk) => (
+                    <button
+                      aria-label={`Remove ${pickedPerk.perkName} from build`}
+                      className="planner-slot planner-slot-perk"
+                      key={pickedPerk.id}
+                      onClick={() => handleRemovePickedPerk(pickedPerk.id)}
+                      title={`Remove ${pickedPerk.perkName} from build`}
+                      type="button"
+                    >
                       {renderGameIcon({
                         className: 'perk-icon perk-icon-tiny',
                         iconPath: getPerkDisplayIconPath(pickedPerk),
                         label: `${pickedPerk.perkName} build icon`,
                       })}
-                      <div className="planner-slot-copy">
-                        <div className="planner-slot-topline">
-                          <span className="planner-slot-order">#{pickedPerkIndex + 1}</span>
-                          <button
-                            aria-label={`Remove ${pickedPerk.perkName} from build`}
-                            className="planner-slot-remove"
-                            onClick={() => handleRemovePickedPerk(pickedPerk.id)}
-                            type="button"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                        <strong className="planner-slot-name">{pickedPerk.perkName}</strong>
-                        <p className="planner-slot-meta">{getPerkContextLabel(pickedPerk)}</p>
-                      </div>
-                    </div>
+                      <strong className="planner-picked-perk-name">{pickedPerk.perkName}</strong>
+                      <span aria-hidden="true" className="planner-picked-perk-remove-indicator">
+                        ×
+                      </span>
+                    </button>
                   ))
                 ) : (
                   <div className="planner-slot planner-slot-placeholder is-placeholder">

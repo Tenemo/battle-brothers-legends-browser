@@ -71,6 +71,50 @@ test('build planner uses left-aligned perk tiles and grouped perk-group tiles wi
   expect(perkTilePositions[0].top).toBe(perkTilePositions[1].top)
   expect(perkTilePositions[1].top).toBe(perkTilePositions[2].top)
   await expect(page.getByText('Build 3', { exact: true })).toBeVisible()
+
+  await page.goto(
+    '/?build=Clarity&build=Peaceable&build=Perfect+Focus&build=Berserk&build=Killing+Frenzy&build=Fearsome&build=Colossus',
+  )
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(7)
+
+  const plannerBarOverflow = await page.evaluate(() => {
+    const buildPerksBar = document.querySelector('[data-testid="build-perks-bar"]') as HTMLElement | null
+    const buildGroupsBar = document.querySelector('[data-testid="build-groups-bar"]') as HTMLElement | null
+
+    return {
+      buildGroupsBarHorizontalOverflow:
+        buildGroupsBar === null ? Number.POSITIVE_INFINITY : buildGroupsBar.scrollWidth - buildGroupsBar.clientWidth,
+      buildPerksBarHorizontalOverflow:
+        buildPerksBar === null ? Number.POSITIVE_INFINITY : buildPerksBar.scrollWidth - buildPerksBar.clientWidth,
+    }
+  })
+
+  expect(plannerBarOverflow.buildPerksBarHorizontalOverflow).toBeLessThanOrEqual(1)
+  expect(plannerBarOverflow.buildGroupsBarHorizontalOverflow).toBeLessThanOrEqual(1)
+
+  const wrappedPerkTilePositions = await getBuildPerksBar(page)
+    .locator('.planner-slot-perk')
+    .evaluateAll((elements) =>
+      elements.map((element) => {
+        const rectangle = element.getBoundingClientRect()
+
+        return {
+          left: Math.round(rectangle.left),
+          top: Math.round(rectangle.top),
+        }
+      }),
+    )
+
+  const wrappedPerkRowTops = [...new Set(wrappedPerkTilePositions.map((position) => position.top))]
+
+  expect(wrappedPerkRowTops.length).toBeGreaterThan(1)
+  expect(
+    Math.abs(
+      wrappedPerkTilePositions.find((position) => position.top === wrappedPerkRowTops[0])!.left -
+        wrappedPerkTilePositions.find((position) => position.top === wrappedPerkRowTops[1])!.left,
+    ),
+  ).toBeLessThanOrEqual(2)
 })
 
 test('clears the build and restores grouped planner placeholders', async ({ page }) => {
