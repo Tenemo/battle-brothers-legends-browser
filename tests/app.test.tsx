@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test } from 'vitest'
 import App from '../src/App'
@@ -269,12 +269,37 @@ describe('app', () => {
 
     expect(within(buildPerksBar).getByText('Perfect Focus')).toBeInTheDocument()
     expect(within(buildGroupsBar).getAllByText('Calm')).toHaveLength(1)
-    expect(within(buildGroupsBar).getByText('Deadeye')).toBeInTheDocument()
+    expect(within(buildGroupsBar).getByText('Calm / Deadeye')).toBeInTheDocument()
     expect(
       within(buildGroupsBar).getByRole('img', { name: 'Deadeye perk group icon' }),
     ).toHaveAttribute('src', '/game-icons/ui/perks/triplestrike56.png')
-    expect(within(buildGroupsBar).getByText('Clarity, Perfect Focus')).toBeInTheDocument()
+    expect(within(buildGroupsBar).getByText('Clarity')).toBeInTheDocument()
+    expect(within(buildGroupsBar).getByText('Perfect Focus')).toBeInTheDocument()
     expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
+  })
+
+  test('shows an immediate tooltip with the perk effect when a picked perk tile is focused', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Clarity to build from results',
+      }),
+    )
+
+    const pickedPerkTile = within(screen.getByTestId('build-perks-bar')).getByRole('button', {
+      name: 'Remove Clarity from build',
+    })
+
+    fireEvent.focus(pickedPerkTile)
+    const buildPerkTooltip = screen.getByRole('tooltip')
+
+    expect(buildPerkTooltip).toBeInTheDocument()
+    expect(
+      within(buildPerkTooltip).getByText(/An additional \+10% of any damage ignores armor/i),
+    ).toBeInTheDocument()
   })
 
   test('can remove perks from the build and clear the planner', async () => {
@@ -337,6 +362,6 @@ describe('app', () => {
     expect(within(screen.getByTestId('build-perks-bar')).getByText('Clarity')).toBeInTheDocument()
     expect(within(screen.getByTestId('build-perks-bar')).getByText('Perfect Focus')).toBeInTheDocument()
     expect(within(screen.getByTestId('build-groups-bar')).getByText('Calm')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-groups-bar')).getByText('Deadeye')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-groups-bar')).getByText('Calm / Deadeye')).toBeInTheDocument()
   })
 })

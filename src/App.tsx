@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useState } from 'react'
+import { startTransition, useDeferredValue, useEffect, useState, type CSSProperties } from 'react'
 import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
@@ -43,6 +43,17 @@ type GroupedBackgroundSource = {
   minimumTrees: number | null
   treeId: string
   treeName: string
+}
+
+type HoveredBuildPerkTooltip = {
+  anchorRectangle: {
+    bottom: number
+    left: number
+    right: number
+    top: number
+    width: number
+  }
+  perkId: string
 }
 
 function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
@@ -251,6 +262,36 @@ function renderGameIcon({
   return <img alt={label} className={className} decoding="async" loading="lazy" src={iconUrl} />
 }
 
+function getBuildPerkTooltipStyle(
+  hoveredBuildPerkTooltip: HoveredBuildPerkTooltip,
+): CSSProperties {
+  if (typeof window === 'undefined') {
+    return {}
+  }
+
+  const viewportPadding = 12
+  const tooltipMaximumWidth = Math.min(360, window.innerWidth - viewportPadding * 2)
+  const left = Math.max(
+    viewportPadding,
+    Math.min(
+      hoveredBuildPerkTooltip.anchorRectangle.left,
+      window.innerWidth - tooltipMaximumWidth - viewportPadding,
+    ),
+  )
+
+  return {
+    left: `${left}px`,
+    maxWidth: `${tooltipMaximumWidth}px`,
+    top: `${hoveredBuildPerkTooltip.anchorRectangle.bottom + 8}px`,
+  }
+}
+
+function getPlannerGroupSlotStyle(perkGroupOptionCount: number): CSSProperties {
+  return {
+    ['--planner-group-span' as string]: String(Math.max(1, perkGroupOptionCount)),
+  }
+}
+
 function TreeChevron({ isExpanded }: { isExpanded: boolean }) {
   return (
     <svg
@@ -346,6 +387,8 @@ export default function App() {
   const [selectedTreeIdsByGroup, setSelectedTreeIdsByGroup] = useState<Record<string, string[]>>(
     initialUrlState.selectedTreeIdsByGroup,
   )
+  const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
+    useState<HoveredBuildPerkTooltip | null>(null)
   const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
   const deferredQuery = useDeferredValue(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
@@ -370,6 +413,12 @@ export default function App() {
   const groupedBackgroundSources = selectedPerk
     ? groupBackgroundSources(selectedPerk.backgroundSources)
     : []
+  const hoveredBuildPerk =
+    hoveredBuildPerkTooltip === null || !pickedPerkIds.includes(hoveredBuildPerkTooltip.perkId)
+      ? null
+      : allPerksById.get(hoveredBuildPerkTooltip.perkId) ?? null
+  const hoveredBuildPerkTooltipId =
+    hoveredBuildPerk === null ? undefined : `build-perk-tooltip-${hoveredBuildPerk.id}`
   const hasPickedPerks = pickedPerks.length > 0
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
@@ -401,25 +450,53 @@ export default function App() {
   }
 
   function handleTogglePerkPicked(perkId: string) {
-    startTransition(() =>
+    startTransition(() => {
       setPickedPerkIds((currentPickedPerkIds) =>
         currentPickedPerkIds.includes(perkId)
           ? currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId)
           : [...currentPickedPerkIds, perkId],
-      ),
-    )
+      )
+      setHoveredBuildPerkTooltip((currentTooltip) =>
+        currentTooltip?.perkId === perkId ? null : currentTooltip,
+      )
+    })
   }
 
   function handleRemovePickedPerk(perkId: string) {
-    startTransition(() =>
+    startTransition(() => {
       setPickedPerkIds((currentPickedPerkIds) =>
         currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId),
-      ),
-    )
+      )
+      setHoveredBuildPerkTooltip((currentTooltip) =>
+        currentTooltip?.perkId === perkId ? null : currentTooltip,
+      )
+    })
   }
 
   function handleClearBuild() {
-    startTransition(() => setPickedPerkIds([]))
+    startTransition(() => {
+      setPickedPerkIds([])
+      setHoveredBuildPerkTooltip(null)
+    })
+  }
+
+  function handleOpenBuildPerkTooltip(perkId: string, currentTarget: HTMLButtonElement) {
+    const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
+
+    setHoveredBuildPerkTooltip({
+      anchorRectangle: {
+        bottom,
+        left,
+        right,
+        top,
+        width,
+      },
+      perkId,
+    })
+  }
+
+  function handleCloseBuildPerkTooltip() {
+    setHoveredBuildPerkTooltip(null)
   }
 
   function handleGroupToggle(nextGroupName: string) {
@@ -521,6 +598,22 @@ export default function App() {
     )
   }, [pickedPerkIds, query, selectedGroupNames, selectedTreeIdsByGroup, tierValue])
 
+  useEffect(() => {
+    if (hoveredBuildPerkTooltip === null || typeof window === 'undefined') {
+      return
+    }
+
+    const handleWindowResize = () => {
+      setHoveredBuildPerkTooltip(null)
+    }
+
+    window.addEventListener('resize', handleWindowResize)
+
+    return () => {
+      window.removeEventListener('resize', handleWindowResize)
+    }
+  }, [hoveredBuildPerkTooltip])
+
   return (
     <div className="app-shell">
       <div className="background-runes" aria-hidden="true" />
@@ -575,7 +668,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="planner-board">
+        <div className="planner-board" onScrollCapture={handleCloseBuildPerkTooltip}>
           <div className="planner-row">
             <span className="planner-row-label">Perks</span>
             <div className="planner-track-scroll">
@@ -584,10 +677,18 @@ export default function App() {
                   pickedPerks.map((pickedPerk) => (
                     <button
                       aria-label={`Remove ${pickedPerk.perkName} from build`}
+                      aria-describedby={
+                        hoveredBuildPerk?.id === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
+                      }
                       className="planner-slot planner-slot-perk"
                       key={pickedPerk.id}
+                      onBlur={handleCloseBuildPerkTooltip}
                       onClick={() => handleRemovePickedPerk(pickedPerk.id)}
-                      title={`Remove ${pickedPerk.perkName} from build`}
+                      onFocus={(event) => handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)}
+                      onMouseEnter={(event) =>
+                        handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)
+                      }
+                      onMouseLeave={handleCloseBuildPerkTooltip}
                       type="button"
                     >
                       {renderGameIcon({
@@ -621,17 +722,30 @@ export default function App() {
               <div className="planner-track planner-track-groups" data-testid="build-groups-bar">
                 {groupedBuildPerkGroups.length > 0 ? (
                   groupedBuildPerkGroups.map((groupedBuildPerkGroup) => (
-                    <div className="planner-slot planner-slot-group" key={groupedBuildPerkGroup.treeId}>
+                    <div
+                      className="planner-slot planner-slot-group"
+                      key={groupedBuildPerkGroup.requirementId}
+                      style={getPlannerGroupSlotStyle(groupedBuildPerkGroup.perkGroupOptions.length)}
+                    >
                       <div className="planner-slot-group-main">
-                        {renderGameIcon({
-                          className: 'perk-icon perk-icon-group',
-                          iconPath: groupedBuildPerkGroup.treeIconPath,
-                          label: `${groupedBuildPerkGroup.treeLabel} perk group icon`,
-                        })}
+                        <div className="planner-slot-group-icons">
+                          {groupedBuildPerkGroup.perkGroupOptions.map((perkGroupOption, perkGroupOptionIndex) => (
+                            <div className="planner-slot-group-option" key={perkGroupOption.treeId}>
+                              {renderGameIcon({
+                                className: 'perk-icon perk-icon-group',
+                                iconPath: perkGroupOption.treeIconPath,
+                                label: `${perkGroupOption.treeLabel} perk group icon`,
+                              })}
+                              {perkGroupOptionIndex < groupedBuildPerkGroup.perkGroupOptions.length - 1 ? (
+                                <span className="planner-slot-group-separator">/</span>
+                              ) : null}
+                            </div>
+                          ))}
+                        </div>
                         <div className="planner-slot-group-copy">
                           <div className="planner-slot-topline">
                             <span className="planner-slot-category">
-                              {groupedBuildPerkGroup.categoryName}
+                              {groupedBuildPerkGroup.categoryLabel}
                             </span>
                             <span className="planner-slot-group-count">
                               {formatPickedPerkCountLabel(groupedBuildPerkGroup.perkNames.length)}
@@ -666,6 +780,22 @@ export default function App() {
           </div>
         </div>
       </section>
+
+      {hoveredBuildPerk !== null && hoveredBuildPerkTooltip !== null ? (
+        <div
+          className="build-perk-tooltip"
+          id={hoveredBuildPerkTooltipId}
+          role="tooltip"
+          style={getBuildPerkTooltipStyle(hoveredBuildPerkTooltip)}
+        >
+          <strong className="build-perk-tooltip-title">{hoveredBuildPerk.perkName}</strong>
+          <div className="build-perk-tooltip-copy">
+            {getPerkPreviewParagraphs(hoveredBuildPerk).map((previewParagraph, previewParagraphIndex) => (
+              <p key={`${hoveredBuildPerk.id}-tooltip-${previewParagraphIndex}`}>{previewParagraph}</p>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       <main className="workspace">
         <aside className="sidebar" aria-label="Perk categories">

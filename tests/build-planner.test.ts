@@ -76,6 +76,14 @@ const overlappingPerk: LegendsPerkRecord = {
   searchText: 'Overlapping perk cloth armor faith',
 }
 
+const matchingAlternativeSetPerk: LegendsPerkRecord = {
+  ...samplePerk,
+  id: 'perk.legend_matching_alternative_set',
+  perkConstName: 'LegendMatchingAlternativeSet',
+  perkName: 'Matching alternative set perk',
+  searchText: 'Matching alternative set perk cloth armor tenacious',
+}
+
 const repeatedTreeNamePerk: LegendsPerkRecord = {
   ...samplePerk,
   id: 'perk.legend_repeated_tree_name',
@@ -153,57 +161,109 @@ describe('build planner', () => {
     ).toBe('No perk group placement')
   })
 
-  test('collapses duplicate group requirements across a picked build while preserving first-seen order', () => {
-    expect(getGroupedBuildPerkGroupRequirements([samplePerk, overlappingPerk])).toEqual([
+  test('groups a perk alternative set into one slash-separated requirement tile', () => {
+    expect(getGroupedBuildPerkGroupRequirements([samplePerk])).toEqual([
       {
-        categoryName: 'Defense',
-        perkIds: ['perk.legend_sample', 'perk.legend_overlapping'],
-        perkNames: ['Sample perk', 'Overlapping perk'],
-        treeIconPath: 'ui/perks/cloth_armor_tree.png',
-        treeId: 'ClothArmorTree',
-        treeLabel: 'Cloth Armor',
-        treeName: 'Cloth Armor',
-      },
-      {
-        categoryName: 'Traits',
+        categoryLabel: 'Defense / Traits',
         perkIds: ['perk.legend_sample'],
         perkNames: ['Sample perk'],
-        treeIconPath: 'ui/perks/tenacious_tree.png',
-        treeId: 'TenaciousTree',
-        treeLabel: 'Tenacious',
-        treeName: 'Tenacious',
-      },
-      {
-        categoryName: 'Magic',
-        perkIds: ['perk.legend_overlapping'],
-        perkNames: ['Overlapping perk'],
-        treeIconPath: 'ui/perks/faith_tree.png',
-        treeId: 'FaithTree',
-        treeLabel: 'Faith',
-        treeName: 'Faith',
+        perkGroupOptions: [
+          {
+            categoryName: 'Defense',
+            treeIconPath: 'ui/perks/cloth_armor_tree.png',
+            treeId: 'ClothArmorTree',
+            treeLabel: 'Cloth Armor',
+            treeName: 'Cloth Armor',
+          },
+          {
+            categoryName: 'Traits',
+            treeIconPath: 'ui/perks/tenacious_tree.png',
+            treeId: 'TenaciousTree',
+            treeLabel: 'Tenacious',
+            treeName: 'Tenacious',
+          },
+        ],
+        requirementId: 'ClothArmorTree::TenaciousTree',
+        treeLabel: 'Cloth Armor / Tenacious',
       },
     ])
   })
 
-  test('disambiguates grouped build requirements when different categories share a tree name', () => {
-    expect(getGroupedBuildPerkGroupRequirements([repeatedTreeNamePerk])).toEqual([
+  test('collapses identical perk alternative sets across a picked build while preserving first-seen order', () => {
+    expect(getGroupedBuildPerkGroupRequirements([samplePerk, matchingAlternativeSetPerk, overlappingPerk])).toEqual([
       {
-        categoryName: 'Class',
-        perkIds: ['perk.legend_repeated_tree_name'],
-        perkNames: ['Repeated tree name perk'],
-        treeIconPath: 'ui/perks/blacksmith_class.png',
-        treeId: 'ClassBlacksmithTree',
-        treeLabel: 'Class: Blacksmith',
-        treeName: 'Blacksmith',
+        categoryLabel: 'Defense / Traits',
+        perkIds: ['perk.legend_sample', 'perk.legend_matching_alternative_set'],
+        perkNames: ['Sample perk', 'Matching alternative set perk'],
+        perkGroupOptions: [
+          {
+            categoryName: 'Defense',
+            treeIconPath: 'ui/perks/cloth_armor_tree.png',
+            treeId: 'ClothArmorTree',
+            treeLabel: 'Cloth Armor',
+            treeName: 'Cloth Armor',
+          },
+          {
+            categoryName: 'Traits',
+            treeIconPath: 'ui/perks/tenacious_tree.png',
+            treeId: 'TenaciousTree',
+            treeLabel: 'Tenacious',
+            treeName: 'Tenacious',
+          },
+        ],
+        requirementId: 'ClothArmorTree::TenaciousTree',
+        treeLabel: 'Cloth Armor / Tenacious',
       },
       {
-        categoryName: 'Profession',
+        categoryLabel: 'Defense / Magic',
+        perkIds: ['perk.legend_overlapping'],
+        perkNames: ['Overlapping perk'],
+        perkGroupOptions: [
+          {
+            categoryName: 'Defense',
+            treeIconPath: 'ui/perks/cloth_armor_tree.png',
+            treeId: 'ClothArmorTree',
+            treeLabel: 'Cloth Armor',
+            treeName: 'Cloth Armor',
+          },
+          {
+            categoryName: 'Magic',
+            treeIconPath: 'ui/perks/faith_tree.png',
+            treeId: 'FaithTree',
+            treeLabel: 'Faith',
+            treeName: 'Faith',
+          },
+        ],
+        requirementId: 'ClothArmorTree::FaithTree',
+        treeLabel: 'Cloth Armor / Faith',
+      },
+    ])
+  })
+
+  test('disambiguates grouped build requirement alternatives when different categories share a tree name', () => {
+    expect(getGroupedBuildPerkGroupRequirements([repeatedTreeNamePerk])).toEqual([
+      {
+        categoryLabel: 'Class / Profession',
         perkIds: ['perk.legend_repeated_tree_name'],
         perkNames: ['Repeated tree name perk'],
-        treeIconPath: 'ui/perks/blacksmith_profession.png',
-        treeId: 'ProfessionBlacksmithTree',
-        treeLabel: 'Profession: Blacksmith',
-        treeName: 'Blacksmith',
+        perkGroupOptions: [
+          {
+            categoryName: 'Class',
+            treeIconPath: 'ui/perks/blacksmith_class.png',
+            treeId: 'ClassBlacksmithTree',
+            treeLabel: 'Class: Blacksmith',
+            treeName: 'Blacksmith',
+          },
+          {
+            categoryName: 'Profession',
+            treeIconPath: 'ui/perks/blacksmith_profession.png',
+            treeId: 'ProfessionBlacksmithTree',
+            treeLabel: 'Profession: Blacksmith',
+            treeName: 'Blacksmith',
+          },
+        ],
+        requirementId: 'ClassBlacksmithTree::ProfessionBlacksmithTree',
+        treeLabel: 'Class: Blacksmith / Profession: Blacksmith',
       },
     ])
   })

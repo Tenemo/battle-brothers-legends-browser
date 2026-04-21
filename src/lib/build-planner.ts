@@ -7,14 +7,17 @@ export type BuildPlannerPerkGroupRequirement = {
   treeName: string
 }
 
+export type BuildPlannerPerkGroupRequirementOption = BuildPlannerPerkGroupRequirement & {
+  treeLabel: string
+}
+
 export type GroupedBuildPlannerPerkGroupRequirement = {
-  categoryName: string
+  categoryLabel: string
   perkIds: string[]
   perkNames: string[]
-  treeIconPath: string | null
-  treeId: string
+  perkGroupOptions: BuildPlannerPerkGroupRequirementOption[]
+  requirementId: string
   treeLabel: string
-  treeName: string
 }
 
 function getUniquePerkGroupRequirements(
@@ -46,13 +49,9 @@ export function getPerkGroupRequirements(
   return getUniquePerkGroupRequirements(perk.placements)
 }
 
-export function getPerkGroupRequirementLabel(perk: LegendsPerkRecord): string {
-  const perkGroupRequirements = getPerkGroupRequirements(perk)
-
-  if (perkGroupRequirements.length === 0) {
-    return 'No perk group placement'
-  }
-
+function getRequirementOptionsWithLabels(
+  perkGroupRequirements: BuildPlannerPerkGroupRequirement[],
+): BuildPlannerPerkGroupRequirementOption[] {
   const treeNameCounts = new Map<string, number>()
 
   for (const perkGroupRequirement of perkGroupRequirements) {
@@ -62,63 +61,77 @@ export function getPerkGroupRequirementLabel(perk: LegendsPerkRecord): string {
     )
   }
 
-  return perkGroupRequirements
-    .map((perkGroupRequirement) =>
+  return perkGroupRequirements.map((perkGroupRequirement) => ({
+    ...perkGroupRequirement,
+    treeLabel:
       treeNameCounts.get(perkGroupRequirement.treeName) === 1
         ? perkGroupRequirement.treeName
         : `${perkGroupRequirement.categoryName}: ${perkGroupRequirement.treeName}`,
-    )
-    .join(' / ')
+  }))
+}
+
+export function getPerkGroupRequirementLabel(perk: LegendsPerkRecord): string {
+  const perkGroupRequirements = getRequirementOptionsWithLabels(getPerkGroupRequirements(perk))
+
+  if (perkGroupRequirements.length === 0) {
+    return 'No perk group placement'
+  }
+
+  return perkGroupRequirements.map((perkGroupRequirement) => perkGroupRequirement.treeLabel).join(' / ')
 }
 
 export function getGroupedBuildPerkGroupRequirements(
   pickedPerks: LegendsPerkRecord[],
 ): GroupedBuildPlannerPerkGroupRequirement[] {
-  const groupedRequirementsByTreeId = new Map<
+  const groupedRequirementsByRequirementId = new Map<
     string,
-    Omit<GroupedBuildPlannerPerkGroupRequirement, 'treeLabel'>
+    Omit<GroupedBuildPlannerPerkGroupRequirement, 'categoryLabel' | 'treeLabel'>
   >()
 
   for (const pickedPerk of pickedPerks) {
-    for (const perkGroupRequirement of getPerkGroupRequirements(pickedPerk)) {
-      if (!groupedRequirementsByTreeId.has(perkGroupRequirement.treeId)) {
-        groupedRequirementsByTreeId.set(perkGroupRequirement.treeId, {
-          categoryName: perkGroupRequirement.categoryName,
-          perkIds: [],
-          perkNames: [],
-          treeIconPath: perkGroupRequirement.treeIconPath,
-          treeId: perkGroupRequirement.treeId,
-          treeName: perkGroupRequirement.treeName,
-        })
-      }
+    const perkGroupOptions = getRequirementOptionsWithLabels(getPerkGroupRequirements(pickedPerk))
+    const requirementId =
+      perkGroupOptions.length === 0
+        ? 'no-perk-group-placement'
+        : perkGroupOptions
+            .map((perkGroupOption) => perkGroupOption.treeId)
+            .toSorted((leftTreeId, rightTreeId) => leftTreeId.localeCompare(rightTreeId))
+            .join('::')
 
-      const groupedRequirement = groupedRequirementsByTreeId.get(perkGroupRequirement.treeId)
+    if (!groupedRequirementsByRequirementId.has(requirementId)) {
+      groupedRequirementsByRequirementId.set(requirementId, {
+        perkGroupOptions,
+        perkIds: [],
+        perkNames: [],
+        requirementId,
+      })
+    }
 
-      if (!groupedRequirement) {
-        continue
-      }
+    const groupedRequirement = groupedRequirementsByRequirementId.get(requirementId)
 
-      if (!groupedRequirement.perkIds.includes(pickedPerk.id)) {
-        groupedRequirement.perkIds.push(pickedPerk.id)
-        groupedRequirement.perkNames.push(pickedPerk.perkName)
-      }
+    if (!groupedRequirement) {
+      continue
+    }
+
+    if (!groupedRequirement.perkIds.includes(pickedPerk.id)) {
+      groupedRequirement.perkIds.push(pickedPerk.id)
+      groupedRequirement.perkNames.push(pickedPerk.perkName)
     }
   }
 
-  const treeNameCounts = new Map<string, number>()
-
-  for (const groupedRequirement of groupedRequirementsByTreeId.values()) {
-    treeNameCounts.set(
-      groupedRequirement.treeName,
-      (treeNameCounts.get(groupedRequirement.treeName) ?? 0) + 1,
-    )
-  }
-
-  return [...groupedRequirementsByTreeId.values()].map((groupedRequirement) => ({
+  return [...groupedRequirementsByRequirementId.values()].map((groupedRequirement) => ({
     ...groupedRequirement,
+    categoryLabel:
+      groupedRequirement.perkGroupOptions.length === 0
+        ? 'No perk group'
+        : [...new Set(groupedRequirement.perkGroupOptions.map((perkGroupOption) => perkGroupOption.categoryName))].join(
+            ' / ',
+          ),
     treeLabel:
-      treeNameCounts.get(groupedRequirement.treeName) === 1
-        ? groupedRequirement.treeName
-        : `${groupedRequirement.categoryName}: ${groupedRequirement.treeName}`,
+      groupedRequirement.perkGroupOptions.length === 0
+        ? 'No perk group placement'
+        : groupedRequirement.perkGroupOptions
+            .map((perkGroupOption) => perkGroupOption.treeLabel)
+            .join(' / '),
   }))
 }

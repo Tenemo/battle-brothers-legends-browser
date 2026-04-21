@@ -40,22 +40,9 @@ test('build planner uses left-aligned perk tiles and grouped perk-group tiles wi
 
   const pickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk').first()
   const hoverMetricsBefore = await pickedPerkTile.evaluate((element) => {
-    const indicator = element.querySelector('.planner-picked-perk-remove-indicator') as HTMLElement | null
     const tileRectangle = element.getBoundingClientRect()
-    const indicatorRectangle = indicator?.getBoundingClientRect()
 
     return {
-      indicatorOpacity: indicator === null ? Number.NaN : Number(getComputedStyle(indicator).opacity),
-      indicatorRectangle:
-        indicatorRectangle === undefined
-          ? null
-          : {
-              bottom: indicatorRectangle.bottom,
-              height: indicatorRectangle.height,
-              right: indicatorRectangle.right,
-              top: indicatorRectangle.top,
-              width: indicatorRectangle.width,
-            },
       tileRectangle: {
         bottom: tileRectangle.bottom,
         right: tileRectangle.right,
@@ -67,33 +54,14 @@ test('build planner uses left-aligned perk tiles and grouped perk-group tiles wi
 
   await pickedPerkTile.hover()
 
-  await expect
-    .poll(async () =>
-      pickedPerkTile.evaluate((element) => {
-        const indicator = element.querySelector('.planner-picked-perk-remove-indicator') as HTMLElement | null
-
-        return indicator === null ? Number.NaN : Number(getComputedStyle(indicator).opacity)
-      }),
-    )
-    .toBeGreaterThan(0.9)
+  await expect(pickedPerkTile.locator('.planner-picked-perk-remove-indicator')).toBeHidden()
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
+  await expect(page.getByRole('tooltip')).toContainText(/An additional \+10% of any damage ignores armor/i)
 
   const hoverMetricsAfter = await pickedPerkTile.evaluate((element) => {
-    const indicator = element.querySelector('.planner-picked-perk-remove-indicator') as HTMLElement | null
     const tileRectangle = element.getBoundingClientRect()
-    const indicatorRectangle = indicator?.getBoundingClientRect()
 
     return {
-      indicatorOpacity: indicator === null ? Number.NaN : Number(getComputedStyle(indicator).opacity),
-      indicatorRectangle:
-        indicatorRectangle === undefined
-          ? null
-          : {
-              bottom: indicatorRectangle.bottom,
-              height: indicatorRectangle.height,
-              right: indicatorRectangle.right,
-              top: indicatorRectangle.top,
-              width: indicatorRectangle.width,
-            },
       tileRectangle: {
         bottom: tileRectangle.bottom,
         right: tileRectangle.right,
@@ -104,44 +72,75 @@ test('build planner uses left-aligned perk tiles and grouped perk-group tiles wi
   })
 
   expect(Math.abs(hoverMetricsAfter.tileRectangle.top - hoverMetricsBefore.tileRectangle.top)).toBeLessThanOrEqual(1)
-  expect(hoverMetricsBefore.indicatorOpacity).toBe(0)
-  expect(hoverMetricsAfter.indicatorOpacity).toBeGreaterThan(0.9)
-  expect(hoverMetricsAfter.indicatorRectangle).not.toBeNull()
-  expect(hoverMetricsAfter.indicatorRectangle!.width).toBeLessThan(hoverMetricsAfter.tileRectangle.width / 4)
-  expect(hoverMetricsAfter.indicatorRectangle!.top).toBeGreaterThanOrEqual(hoverMetricsAfter.tileRectangle.top)
-  expect(hoverMetricsAfter.indicatorRectangle!.right).toBeLessThanOrEqual(
-    hoverMetricsAfter.tileRectangle.right,
-  )
 
-  await searchPerks(page, 'Peaceable')
-  await inspectPerkFromResults(page, 'Peaceable')
-  await addSelectedPerkToBuild(page, 'Peaceable')
+  await page.getByRole('button', { name: 'Clear build' }).click()
+  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(0)
 
   await searchPerks(page, 'Perfect Focus')
   await inspectPerkFromResults(page, 'Perfect Focus')
   await addPerkToBuildFromResults(page, 'Perfect Focus')
 
+  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(1)
+  await expect(getBuildGroupsBar(page).locator('.planner-slot-group')).toHaveCount(1)
+  await expect(getBuildGroupsBar(page).getByText('Calm / Deadeye', { exact: true })).toBeVisible()
+  await expect(
+    getBuildGroupsBar(page).getByRole('img', { name: 'Calm perk group icon' }),
+  ).toBeVisible()
+  await expect(
+    getBuildGroupsBar(page).getByRole('img', { name: 'Deadeye perk group icon' }),
+  ).toBeVisible()
+  await expect(getBuildGroupsBar(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
+
+  await searchPerks(page, 'Peaceable')
+  await inspectPerkFromResults(page, 'Peaceable')
+  await addSelectedPerkToBuild(page, 'Peaceable')
+
+  await searchPerks(page, 'Clarity')
+  await inspectPerkFromResults(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(3)
   await expect(getBuildPerksBar(page).getByText('Perfect Focus')).toBeVisible()
   await expect(getBuildGroupsBar(page).locator('.planner-slot-group')).toHaveCount(2)
   await expect(getBuildGroupsBar(page).getByText('Calm', { exact: true })).toHaveCount(1)
-  await expect(getBuildGroupsBar(page).getByText('Deadeye', { exact: true })).toHaveCount(1)
-  await expect(getBuildGroupsBar(page).getByRole('img', { name: 'Calm perk group icon' })).toBeVisible()
-  await expect(getBuildGroupsBar(page).getByRole('img', { name: 'Deadeye perk group icon' })).toBeVisible()
-  await expect(getBuildGroupsBar(page).getByText('Clarity, Peaceable, Perfect Focus')).toBeVisible()
+  await expect(getBuildGroupsBar(page).getByText('Calm / Deadeye', { exact: true })).toHaveCount(1)
+  await expect(getBuildGroupsBar(page).getByRole('img', { name: 'Calm perk group icon' })).toHaveCount(2)
+  await expect(getBuildGroupsBar(page).getByRole('img', { name: 'Deadeye perk group icon' })).toHaveCount(1)
+  await expect(getBuildGroupsBar(page).getByText('Peaceable, Clarity')).toBeVisible()
+  await expect(getBuildGroupsBar(page).getByText('Perfect Focus')).toBeVisible()
 
   const plannerTileWidths = await page.evaluate(() => {
     const perkTile = document.querySelector('.planner-slot-perk') as HTMLElement | null
-    const perkGroupTile = document.querySelector('.planner-slot-group') as HTMLElement | null
+    const buildGroupsBar = document.querySelector('[data-testid="build-groups-bar"]') as HTMLElement | null
+    const plannerGroupTiles = [...document.querySelectorAll('.planner-slot-group')] as HTMLElement[]
+    const groupGap =
+      buildGroupsBar === null ? Number.NaN : Number.parseFloat(getComputedStyle(buildGroupsBar).columnGap)
+    const singleGroupTile = plannerGroupTiles.find(
+      (plannerGroupTile) =>
+        plannerGroupTile.querySelector('.planner-slot-name')?.textContent?.trim() === 'Calm',
+    )
+    const mergedGroupTile = plannerGroupTiles.find(
+      (plannerGroupTile) =>
+        plannerGroupTile.querySelector('.planner-slot-name')?.textContent?.trim() === 'Calm / Deadeye',
+    )
 
     return {
-      perkGroupTileWidth:
-        perkGroupTile === null ? Number.NaN : Math.round(perkGroupTile.getBoundingClientRect().width),
+      groupGap: Math.round(groupGap),
+      mergedGroupTileWidth:
+        mergedGroupTile === undefined ? Number.NaN : Math.round(mergedGroupTile.getBoundingClientRect().width),
       perkTileWidth: perkTile === null ? Number.NaN : Math.round(perkTile.getBoundingClientRect().width),
+      singleGroupTileWidth:
+        singleGroupTile === undefined ? Number.NaN : Math.round(singleGroupTile.getBoundingClientRect().width),
     }
   })
 
-  expect(plannerTileWidths.perkGroupTileWidth).toBe(plannerTileWidths.perkTileWidth)
+  expect(plannerTileWidths.singleGroupTileWidth).toBe(plannerTileWidths.perkTileWidth)
+  expect(
+    Math.abs(
+      plannerTileWidths.mergedGroupTileWidth -
+        (plannerTileWidths.singleGroupTileWidth * 2 + plannerTileWidths.groupGap),
+    ),
+  ).toBeLessThanOrEqual(1)
 
   const perkTilePositions = await getBuildPerksBar(page)
     .locator('.planner-slot-perk')
