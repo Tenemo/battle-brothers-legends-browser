@@ -185,7 +185,7 @@ function formatScenarioGrantLabel(scenarioSource: LegendsPerkScenarioSource): st
 }
 
 function formatPickedPerkCountLabel(perkCount: number): string {
-  return `${perkCount} picked perk${perkCount === 1 ? '' : 's'}`
+  return `${perkCount} perk${perkCount === 1 ? '' : 's'}`
 }
 
 function renderPlacementDescription(placement: LegendsPerkPlacement) {
@@ -622,26 +622,35 @@ export default function App() {
                 {groupedBuildPerkGroups.length > 0 ? (
                   groupedBuildPerkGroups.map((groupedBuildPerkGroup) => (
                     <div className="planner-slot planner-slot-group" key={groupedBuildPerkGroup.treeId}>
-                      <div className="planner-slot-topline">
-                        <span className="planner-slot-category">
-                          {groupedBuildPerkGroup.categoryName}
-                        </span>
-                        <span className="planner-slot-group-count">
-                          {formatPickedPerkCountLabel(groupedBuildPerkGroup.perkNames.length)}
-                        </span>
+                      <div className="planner-slot-group-main">
+                        {renderGameIcon({
+                          className: 'perk-icon perk-icon-group',
+                          iconPath: groupedBuildPerkGroup.treeIconPath,
+                          label: `${groupedBuildPerkGroup.treeLabel} perk group icon`,
+                        })}
+                        <div className="planner-slot-group-copy">
+                          <div className="planner-slot-topline">
+                            <span className="planner-slot-category">
+                              {groupedBuildPerkGroup.categoryName}
+                            </span>
+                            <span className="planner-slot-group-count">
+                              {formatPickedPerkCountLabel(groupedBuildPerkGroup.perkNames.length)}
+                            </span>
+                          </div>
+                          <strong
+                            className="planner-slot-name"
+                            title={groupedBuildPerkGroup.treeLabel}
+                          >
+                            {groupedBuildPerkGroup.treeLabel}
+                          </strong>
+                          <p
+                            className="planner-slot-meta"
+                            title={groupedBuildPerkGroup.perkNames.join(', ')}
+                          >
+                            {groupedBuildPerkGroup.perkNames.join(', ')}
+                          </p>
+                        </div>
                       </div>
-                      <strong
-                        className="planner-slot-name"
-                        title={groupedBuildPerkGroup.treeLabel}
-                      >
-                        {groupedBuildPerkGroup.treeLabel}
-                      </strong>
-                      <p
-                        className="planner-slot-meta"
-                        title={groupedBuildPerkGroup.perkNames.join(', ')}
-                      >
-                        {groupedBuildPerkGroup.perkNames.join(', ')}
-                      </p>
                     </div>
                   ))
                 ) : (

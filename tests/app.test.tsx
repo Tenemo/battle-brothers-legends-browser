@@ -120,7 +120,7 @@ describe('app', () => {
 
     expect(
       within(resultsList).getByText(
-        /Passive: .*While using a Blacksmith's Hammer gain \+12 chance to hit and \+30% effectiveness vs armor/i,
+        /While using a Blacksmith's Hammer gain \+12 chance to hit and \+30% effectiveness vs armor/i,
       ),
     ).toBeInTheDocument()
     expect(
@@ -144,15 +144,16 @@ describe('app', () => {
     await user.type(searchInput, 'Berserk')
     expect(
       within(resultsList).getByText(
-        /Passive: .*upon killing an enemy 4 Action Points are immediately restored/i,
+        /upon killing an enemy 4 Action Points are immediately restored/i,
       ),
     ).toBeInTheDocument()
+    expect(within(resultsList).queryByText(/Passive:/i)).not.toBeInTheDocument()
     expect(within(resultsList).queryByText(/^is vicious$/i)).not.toBeInTheDocument()
 
     await user.clear(searchInput)
     await user.type(searchInput, 'Killing Frenzy')
     expect(
-      within(resultsList).getByText(/Passive: .*A kill increases all damage by 25% for two turns/i),
+      within(resultsList).getByText(/A kill increases all damage by 25% for two turns/i),
     ).toBeInTheDocument()
     expect(
       within(resultsList).getByText(/Does not stack, but another kill will reset the timer/i),
@@ -163,7 +164,7 @@ describe('app', () => {
     await user.type(searchInput, 'Fearsome')
     expect(
       within(resultsList).getByText(
-        /Passive: .*triggers a morale check for the opponent with a penalty equal to 20% of your current Resolve/i,
+        /triggers a morale check for the opponent with a penalty equal to 20% of your current Resolve/i,
       ),
     ).toBeInTheDocument()
     expect(within(resultsList).queryByText(/^cleavers$/i)).not.toBeInTheDocument()
@@ -252,6 +253,9 @@ describe('app', () => {
     expect(within(buildPerksBar).queryByText(/Tier 5/i)).not.toBeInTheDocument()
     expect(within(buildPerksBar).queryByText(/^Remove$/i)).not.toBeInTheDocument()
     expect(within(buildGroupsBar).getByText('Calm')).toBeInTheDocument()
+    expect(
+      within(buildGroupsBar).getByRole('img', { name: 'Calm perk group icon' }),
+    ).toHaveAttribute('src', '/game-icons/ui/perks/clarity_circle.png')
     expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 
     await user.clear(screen.getByLabelText('Search perks'))
@@ -266,6 +270,9 @@ describe('app', () => {
     expect(within(buildPerksBar).getByText('Perfect Focus')).toBeInTheDocument()
     expect(within(buildGroupsBar).getAllByText('Calm')).toHaveLength(1)
     expect(within(buildGroupsBar).getByText('Deadeye')).toBeInTheDocument()
+    expect(
+      within(buildGroupsBar).getByRole('img', { name: 'Deadeye perk group icon' }),
+    ).toHaveAttribute('src', '/game-icons/ui/perks/triplestrike56.png')
     expect(within(buildGroupsBar).getByText('Clarity, Perfect Focus')).toBeInTheDocument()
     expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
   })

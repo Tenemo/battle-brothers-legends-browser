@@ -2,6 +2,7 @@ import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-p
 
 export type BuildPlannerPerkGroupRequirement = {
   categoryName: string
+  treeIconPath: string | null
   treeId: string
   treeName: string
 }
@@ -10,6 +11,7 @@ export type GroupedBuildPlannerPerkGroupRequirement = {
   categoryName: string
   perkIds: string[]
   perkNames: string[]
+  treeIconPath: string | null
   treeId: string
   treeLabel: string
   treeName: string
@@ -29,6 +31,7 @@ function getUniquePerkGroupRequirements(
     seenTreeIds.add(placement.treeId)
     perkGroupRequirements.push({
       categoryName: placement.categoryName,
+      treeIconPath: placement.treeIconPath,
       treeId: placement.treeId,
       treeName: placement.treeName,
     })
@@ -83,6 +86,7 @@ export function getGroupedBuildPerkGroupRequirements(
           categoryName: perkGroupRequirement.categoryName,
           perkIds: [],
           perkNames: [],
+          treeIconPath: perkGroupRequirement.treeIconPath,
           treeId: perkGroupRequirement.treeId,
           treeName: perkGroupRequirement.treeName,
         })

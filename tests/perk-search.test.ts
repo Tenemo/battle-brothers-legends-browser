@@ -262,7 +262,7 @@ describe('perk search', () => {
     })
 
     expect(previewParagraphs).toEqual([
-      'Passive: Repairs armor after combat.',
+      'Repairs armor after combat.',
       'Costs no AP.',
     ])
   })
@@ -278,7 +278,7 @@ describe('perk search', () => {
     })
 
     expect(previewParagraphs).toEqual([
-      'Passive: Currently equipped throwing items regain 1 ammo each turn.',
+      'Currently equipped throwing items regain 1 ammo each turn.',
       'Costs no AP.',
     ])
   })
@@ -295,7 +295,7 @@ describe('perk search', () => {
     })
 
     expect(preview).toBe(
-      'Passive: Attacks build up less fatigue. Active: Gain a burst of focus for the next attack. Costs 15 fatigue.',
+      'Attacks build up less fatigue. Active: Gain a burst of focus for the next attack. Costs 15 fatigue.',
     )
   })
 })

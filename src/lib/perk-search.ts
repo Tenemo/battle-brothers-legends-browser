@@ -59,6 +59,10 @@ function isEffectDescriptionParagraph(paragraph: string): boolean {
   return /^(Passive|Active|Specialist Weapon Perk):/u.test(trimmedParagraph)
 }
 
+function formatPreviewParagraph(paragraph: string): string {
+  return paragraph.trim().replace(/^Passive:\s*/u, '')
+}
+
 function getPreviewDescriptionParagraphs(descriptionParagraphs: string[]): string[] | null {
   if (descriptionParagraphs.length === 0) {
     return null
@@ -87,7 +91,7 @@ export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
   const descriptionParagraphs = getPreviewDescriptionParagraphs(perk.descriptionParagraphs)
 
   if (descriptionParagraphs !== null) {
-    return descriptionParagraphs
+    return descriptionParagraphs.map(formatPreviewParagraph)
   }
 
   if (primaryPlacement?.treeAttributes[0]) {

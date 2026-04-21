@@ -47,13 +47,14 @@ test('shows real effect previews for hooked perk descriptions instead of tree te
 
   await searchPerks(page, 'Berserk')
   await expect(
-    resultsList.getByText(/Passive: .*upon killing an enemy 4 Action Points are immediately restored/i),
+    resultsList.getByText(/upon killing an enemy 4 Action Points are immediately restored/i),
   ).toBeVisible()
+  await expect(resultsList.getByText(/Passive:/i)).toHaveCount(0)
   await expect(resultsList.getByText('is vicious', { exact: true })).toHaveCount(0)
 
   await searchPerks(page, 'Killing Frenzy')
   await expect(
-    resultsList.getByText(/Passive: .*A kill increases all damage by 25% for two turns/i),
+    resultsList.getByText(/A kill increases all damage by 25% for two turns/i),
   ).toBeVisible()
   await expect(
     resultsList.getByText(/Does not stack, but another kill will reset the timer/i),
@@ -63,7 +64,7 @@ test('shows real effect previews for hooked perk descriptions instead of tree te
   await searchPerks(page, 'Fearsome')
   await expect(
     resultsList.getByText(
-      /Passive: .*triggers a morale check for the opponent with a penalty equal to 20% of your current Resolve/i,
+      /triggers a morale check for the opponent with a penalty equal to 20% of your current Resolve/i,
     ),
   ).toBeVisible()
   await expect(resultsList.getByText('cleavers', { exact: true })).toHaveCount(0)

@@ -18,4 +18,15 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   ).toBeVisible()
   await expect(buildPlanner.getByText('Perks', { exact: true })).toBeVisible()
   await expect(buildPlanner.getByText('Perk groups', { exact: true })).toBeVisible()
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+
+        return plannerBoard === null
+          ? Number.POSITIVE_INFINITY
+          : plannerBoard.scrollHeight - plannerBoard.clientHeight
+      }),
+    )
+    .toBeLessThanOrEqual(1)
 })
