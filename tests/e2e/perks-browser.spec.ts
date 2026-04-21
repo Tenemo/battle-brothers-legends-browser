@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test('browses and searches the perks catalog', async ({ page }) => {
+  await page.setViewportSize({ width: 900, height: 720 })
   await page.goto('/')
 
   await expect
@@ -53,11 +54,25 @@ test('browses and searches the perks catalog', async ({ page }) => {
   await page.getByRole('button', { name: 'Toggle perk group Calm' }).click()
   await page.getByLabel('Search perks').fill('Clarity')
   await page.getByTestId('results-list').getByRole('button', { name: 'Inspect Clarity' }).click()
+  const buildPlannerHeightBeforePicking = await page
+    .locator('.build-planner')
+    .evaluate((element) => element.getBoundingClientRect().height)
+  const resultsRowHeightBeforePicking = await page
+    .locator('.results-list .perk-row')
+    .evaluate((element) => element.getBoundingClientRect().height)
 
   await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
   await expect(page.locator('.detail-header').getByRole('img', { name: 'Clarity icon' })).toBeVisible()
   await page.getByTestId('results-list').getByRole('button', { name: 'Add Clarity to build from results' }).click()
   await expect(page.getByTestId('build-perks-bar').getByText('Clarity')).toBeVisible()
+  const buildPlannerHeightAfterPicking = await page
+    .locator('.build-planner')
+    .evaluate((element) => element.getBoundingClientRect().height)
+  const resultsRowHeightAfterPicking = await page
+    .locator('.results-list .perk-row')
+    .evaluate((element) => element.getBoundingClientRect().height)
+  expect(Math.abs(buildPlannerHeightAfterPicking - buildPlannerHeightBeforePicking)).toBeLessThanOrEqual(1)
+  expect(Math.abs(resultsRowHeightAfterPicking - resultsRowHeightBeforePicking)).toBeLessThanOrEqual(1)
   await expect(page.getByTestId('build-groups-bar').getByText('Calm')).toBeVisible()
   await expect(page.getByText('Build slot 1')).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Tree placement' })).toBeVisible()

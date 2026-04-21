@@ -128,6 +128,7 @@
 }
 
 .build-planner {
+  --planner-row-height: 5.35rem;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -261,7 +262,8 @@
 
 .planner-row-label {
   display: inline-flex;
-  min-height: 3.2rem;
+  height: var(--planner-row-height);
+  min-height: var(--planner-row-height);
   align-items: center;
 }
 
@@ -285,11 +287,13 @@
 
 .planner-slot {
   min-width: 0;
-  min-height: 3.2rem;
+  height: var(--planner-row-height);
+  min-height: var(--planner-row-height);
   padding: 0.44rem 0.5rem;
   border: 1px solid rgb(204 155 84 / 0.11);
   border-radius: 0.62rem;
   background: rgb(18 15 13 / 0.84);
+  overflow: hidden;
 }
 
 .planner-slot.is-placeholder {
@@ -319,6 +323,8 @@
 }
 
 .planner-slot-copy {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
 }
 
@@ -340,12 +346,19 @@
   margin-top: 0.18rem;
   line-height: 1.12;
   font-size: 0.84rem;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .planner-slot-meta {
   margin: 0.18rem 0 0;
   color: var(--text-muted);
   font-size: 0.74rem;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .planner-slot-remove {
@@ -648,7 +661,7 @@
   width: 100%;
   border: 0;
   border-radius: inherit;
-  padding: 0.68rem 3rem 2.35rem 0.72rem;
+  padding: 0.68rem 3.7rem 2.35rem 0.72rem;
   background: transparent;
   color: inherit;
   text-align: left;
@@ -674,17 +687,19 @@
 
 .perk-row-topline {
   display: flex;
-  justify-content: space-between;
   gap: 0.8rem;
   align-items: baseline;
 }
 
 .perk-row-badges {
+  position: absolute;
+  top: 0.72rem;
+  right: 0.7rem;
   display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: 0.3rem;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.14rem;
+  pointer-events: none;
 }
 
 .perk-name {
@@ -694,7 +709,9 @@
 
 .tier-badge,
 .build-slot-badge {
+  display: inline-flex;
   flex-shrink: 0;
+  align-items: center;
   border: 1px solid rgb(204 155 84 / 0.25);
   border-radius: 999px;
   padding: 0.12rem 0.42rem;
