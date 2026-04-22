@@ -703,6 +703,7 @@
 
 .subgroup-chip {
   display: flex;
+  align-items: center;
   justify-content: space-between;
   gap: 0.55rem;
   width: 100%;
@@ -718,6 +719,18 @@
     border-color 160ms ease,
     background-color 160ms ease,
     transform 160ms ease;
+}
+
+.subgroup-chip-start {
+  min-width: 0;
+}
+
+.subgroup-chip-end {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  flex-shrink: 0;
 }
 
 .subgroup-chip:hover,

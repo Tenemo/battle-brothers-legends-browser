@@ -84,6 +84,18 @@ function getPickedPerkCountsByGroup(pickedPerks: LegendsPerkRecord[]): Map<strin
   return countsByGroup
 }
 
+function getPickedPerkCountsByTree(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
+  const countsByTree = new Map<string, number>()
+
+  for (const pickedPerk of pickedPerks) {
+    for (const treeId of new Set(pickedPerk.placements.map((placement) => placement.treeId))) {
+      countsByTree.set(treeId, (countsByTree.get(treeId) ?? 0) + 1)
+    }
+  }
+
+  return countsByTree
+}
+
 function groupBackgroundSources(
   backgroundSources: LegendsPerkBackgroundSource[],
 ): GroupedBackgroundSource[] {
@@ -486,6 +498,7 @@ export default function App() {
   const sharedPerkGroups = buildPlannerGroups.sharedPerkGroups
   const individualPerkGroups = buildPlannerGroups.individualPerkGroups
   const pickedPerkCountsByGroup = getPickedPerkCountsByGroup(pickedPerks)
+  const pickedPerkCountsByTree = getPickedPerkCountsByTree(pickedPerks)
   const pickedPerkOrderById = new Map(
     pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
   )
@@ -938,25 +951,38 @@ export default function App() {
                     onClick={() => handleResetGroupTrees(availableGroupName)}
                     type="button"
                   >
-                    <span>All perk groups</span>
-                    <span>{groupCounts.get(availableGroupName)}</span>
+                    <span className="subgroup-chip-start">All perk groups</span>
+                    <span className="subgroup-chip-end">{groupCounts.get(availableGroupName)}</span>
                   </button>
-                  {activeTreeOptions.map((treeOption) => (
-                    <button
-                      aria-label={`Toggle perk group ${treeOption.treeName}`}
-                      className={
-                        selectedTreeIds.includes(treeOption.treeId)
-                          ? 'subgroup-chip is-active'
-                          : 'subgroup-chip'
-                      }
-                      key={treeOption.treeId}
-                      onClick={() => handleTreeToggle(availableGroupName, treeOption.treeId)}
-                      type="button"
-                    >
-                      <span>{treeOption.treeName}</span>
-                      <span>{treeOption.perkCount}</span>
-                    </button>
-                  ))}
+                  {activeTreeOptions.map((treeOption) => {
+                    const pickedPerkCountInTree = pickedPerkCountsByTree.get(treeOption.treeId) ?? 0
+
+                    return (
+                      <button
+                        aria-label={`Toggle perk group ${treeOption.treeName}`}
+                        className={
+                          selectedTreeIds.includes(treeOption.treeId)
+                            ? 'subgroup-chip is-active'
+                            : 'subgroup-chip'
+                        }
+                        key={treeOption.treeId}
+                        onClick={() => handleTreeToggle(availableGroupName, treeOption.treeId)}
+                        type="button"
+                      >
+                        <span className="subgroup-chip-start">{treeOption.treeName}</span>
+                        <span className="subgroup-chip-end">
+                          {pickedPerkCountInTree > 0 ? (
+                            <span aria-hidden="true" className="group-chip-picked-stars">
+                              {Array.from({ length: pickedPerkCountInTree }, (_, pickedPerkIndex) => (
+                                <BuildStar isPicked key={`${treeOption.treeId}-picked-${pickedPerkIndex}`} />
+                              ))}
+                            </span>
+                          ) : null}
+                          <span>{treeOption.perkCount}</span>
+                        </span>
+                      </button>
+                    )
+                  })}
                 </div>
                 ) : null}
               </div>

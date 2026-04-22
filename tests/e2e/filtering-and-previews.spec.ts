@@ -81,7 +81,7 @@ test('shows normalized mastery labels in the result list', async ({ page }) => {
   await expect(getResultsList(page).getByText('Spec Axe', { exact: true })).toHaveCount(0)
 })
 
-test('shows picked categories with stars and keeps picked result rows outlined while selection changes the background', async ({
+test('shows picked categories and subgroups with stars and keeps picked result rows outlined while selection changes the background', async ({
   page,
 }) => {
   await gotoPerksBrowser(page)
@@ -107,6 +107,19 @@ test('shows picked categories with stars and keeps picked result rows outlined w
   await expect(
     page.getByRole('button', { name: 'Enable category Magic' }).locator('.group-chip-picked-stars .build-star'),
   ).toHaveCount(1)
+
+  await enableCategory(page, 'Traits')
+  await enableCategory(page, 'Magic')
+
+  await expect(
+    page.getByRole('button', { name: 'Toggle perk group Calm' }).locator('.group-chip-picked-stars .build-star'),
+  ).toHaveCount(2)
+  await expect(
+    page.getByRole('button', { name: 'Toggle perk group Deadeye' }).locator('.group-chip-picked-stars .build-star'),
+  ).toHaveCount(1)
+
+  await disableCategory(page, 'Traits')
+  await disableCategory(page, 'Magic')
 
   await searchPerks(page, 'Perfect')
   await getResultsList(page)

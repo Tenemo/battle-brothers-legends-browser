@@ -284,7 +284,7 @@ describe('app', () => {
     expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
   })
 
-  test('shows picked-perk stars next to category counts based on the current build', async () => {
+  test('shows picked-perk stars next to category and subgroup counts based on the current build', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -312,6 +312,19 @@ describe('app', () => {
 
     expect(traitsCategoryStarCount).toBe(2)
     expect(magicCategoryStarCount).toBe(1)
+
+    await user.click(traitsCategoryButton)
+    await user.click(magicCategoryButton)
+
+    const calmSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Calm' })
+    const deadeyeSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Deadeye' })
+    const calmSubgroupStarCount =
+      calmSubgroupButton.querySelectorAll('.group-chip-picked-stars .build-star').length
+    const deadeyeSubgroupStarCount =
+      deadeyeSubgroupButton.querySelectorAll('.group-chip-picked-stars .build-star').length
+
+    expect(calmSubgroupStarCount).toBe(2)
+    expect(deadeyeSubgroupStarCount).toBe(1)
   })
 
   test('merges individual perk groups that unlock the same picked perk into one card', () => {
