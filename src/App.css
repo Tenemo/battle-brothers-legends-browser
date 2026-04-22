@@ -504,6 +504,10 @@
   overflow-wrap: anywhere;
 }
 
+.background-fit-summary-badge {
+  cursor: help;
+}
+
 .background-fit-accordion-chevron-frame {
   display: inline-flex;
   flex: 0 0 auto;

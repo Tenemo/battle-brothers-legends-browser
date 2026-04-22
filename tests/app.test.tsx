@@ -520,6 +520,20 @@ describe('app', () => {
       (apprenticeCard as HTMLElement).querySelectorAll('.background-fit-accordion-summary-row'),
     ).toHaveLength(2)
 
+    fireEvent.mouseEnter(
+      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total groups/),
+    )
+
+    const backgroundFitSummaryTooltip = screen.getByRole('tooltip')
+
+    expect(backgroundFitSummaryTooltip).toBeInTheDocument()
+    expect(
+      within(backgroundFitSummaryTooltip).getByText(/Overall hard cap for this background/i),
+    ).toBeInTheDocument()
+    expect(
+      within(backgroundFitSummaryTooltip).getByText(/not limited to your build/i),
+    ).toBeInTheDocument()
+
     await user.click(apprenticeToggle)
 
     expect(

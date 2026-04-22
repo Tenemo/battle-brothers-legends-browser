@@ -68,6 +68,20 @@ type HoveredBuildPerkTooltip = {
   perkId: string
 }
 
+type TooltipAnchorRectangle = {
+  bottom: number
+  left: number
+  right: number
+  top: number
+  width: number
+}
+
+type HoveredBackgroundFitSummaryTooltip = {
+  anchorRectangle: TooltipAnchorRectangle
+  descriptionParagraphs: string[]
+  title: string
+}
+
 function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
   const counts = new Map<string, number>()
 
@@ -286,6 +300,43 @@ function formatBackgroundFitMaximumTotalGroupsLabel(maximumTotalGroupCount: numb
   return `Maximum ${maximumTotalGroupCount} total groups`
 }
 
+function getBackgroundFitPickablePerksTooltipCopy(
+  coveredPickedPerkCount: number,
+  pickedPerkCount: number,
+): string[] {
+  return [
+    `Best-case picked-perk coverage for this background: up to ${coveredPickedPerkCount} of your ${pickedPerkCount} picked perks can be covered if every relevant non-guaranteed tree roll lands.`,
+    'This counts picked perks, not perk groups, so multiple picked perks can be covered by the same matched group.',
+  ]
+}
+
+function getBackgroundFitGuaranteedPerksTooltipCopy(
+  guaranteedCoveredPickedPerkCount: number,
+  pickedPerkCount: number,
+): string[] {
+  return [
+    `Guaranteed picked-perk coverage for this background: ${guaranteedCoveredPickedPerkCount} of your ${pickedPerkCount} picked perks are covered before any optional rolls.`,
+    'Only always-present tree matches count here. Optional Enemy, Class, and Profession additions do not.',
+  ]
+}
+
+function getBackgroundFitMatchedGroupsTooltipCopy(
+  matchedGroupCount: number,
+  supportedBuildTargetTreeCount: number,
+): string[] {
+  return [
+    `Build-tree overlap for this build: this background matches ${matchedGroupCount} of the ${supportedBuildTargetTreeCount} supported build groups.`,
+    'A matched group means the background can roll that tree, whether the match is guaranteed or probabilistic.',
+  ]
+}
+
+function getBackgroundFitMaximumTotalGroupsTooltipCopy(maximumTotalGroupCount: number): string[] {
+  return [
+    `Overall hard cap for this background across all dynamic perk groups: it can end up with at most ${maximumTotalGroupCount} total groups.`,
+    'This is not limited to your build. It includes every dynamic group the background can gain after all fills and optional rolls.',
+  ]
+}
+
 function getPlannerGroupCategoryLabel(
   perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],
 ): string {
@@ -336,9 +387,40 @@ function renderBackgroundFitMatch(match: BackgroundFitMatch) {
   )
 }
 
+function renderBackgroundFitSummaryBadge({
+  label,
+  onCloseTooltip,
+  onOpenTooltip,
+  tooltipCopy,
+  tooltipTitle,
+}: {
+  label: string
+  onCloseTooltip: () => void
+  onOpenTooltip: (
+    title: string,
+    descriptionParagraphs: string[],
+    currentTarget: HTMLSpanElement,
+  ) => void
+  tooltipCopy: string[]
+  tooltipTitle: string
+}) {
+  return (
+    <span
+      aria-label={`${label}. ${tooltipCopy.join(' ')}`}
+      className="detail-badge background-fit-summary-badge"
+      onMouseEnter={(event) => onOpenTooltip(tooltipTitle, tooltipCopy, event.currentTarget)}
+      onMouseLeave={onCloseTooltip}
+    >
+      {label}
+    </span>
+  )
+}
+
 function renderBackgroundFitCard({
   backgroundFit,
   expandedBackgroundFitKey,
+  onCloseSummaryTooltip,
+  onOpenSummaryTooltip,
   onToggle,
   pickedPerkCount,
   rank,
@@ -346,6 +428,12 @@ function renderBackgroundFitCard({
 }: {
   backgroundFit: RankedBackgroundFit
   expandedBackgroundFitKey: string | null
+  onCloseSummaryTooltip: () => void
+  onOpenSummaryTooltip: (
+    title: string,
+    descriptionParagraphs: string[],
+    currentTarget: HTMLSpanElement,
+  ) => void
   onToggle: (backgroundFitKey: string) => void
   pickedPerkCount: number
   rank: number
@@ -364,18 +452,17 @@ function renderBackgroundFitCard({
   const accordionPanelId = `background-fit-card-panel-${rank}`
 
   return (
-    <article
-      className={
-        backgroundFit.matches.length === 0
-          ? isExpanded
-            ? 'background-fit-card is-empty is-expanded'
-            : 'background-fit-card is-empty'
-          : isExpanded
-            ? 'background-fit-card is-expanded'
-            : 'background-fit-card'
-      }
-      title={backgroundFit.sourceFilePath}
-    >
+      <article
+        className={
+          backgroundFit.matches.length === 0
+            ? isExpanded
+              ? 'background-fit-card is-empty is-expanded'
+              : 'background-fit-card is-empty'
+            : isExpanded
+              ? 'background-fit-card is-expanded'
+              : 'background-fit-card'
+        }
+      >
       <button
         aria-controls={accordionPanelId}
         aria-expanded={isExpanded}
@@ -404,26 +491,58 @@ function renderBackgroundFitCard({
 
           <div className="background-fit-accordion-summary">
             <div className="background-fit-accordion-summary-row">
-              <span className="detail-badge">
-                {formatBackgroundFitPickablePerksLabel(coveredPickedPerkCount, pickedPerkCount)}
-              </span>
-              <span className="detail-badge">
-                {formatBackgroundFitGuaranteedPerksLabel(
+              {renderBackgroundFitSummaryBadge({
+                label: formatBackgroundFitPickablePerksLabel(
+                  coveredPickedPerkCount,
+                  pickedPerkCount,
+                ),
+                onCloseTooltip: onCloseSummaryTooltip,
+                onOpenTooltip: onOpenSummaryTooltip,
+                tooltipCopy: getBackgroundFitPickablePerksTooltipCopy(
+                  coveredPickedPerkCount,
+                  pickedPerkCount,
+                ),
+                tooltipTitle: 'Up to perks pickable',
+              })}
+              {renderBackgroundFitSummaryBadge({
+                label: formatBackgroundFitGuaranteedPerksLabel(
                   guaranteedCoveredPickedPerkCount,
                   pickedPerkCount,
-                )}
-              </span>
+                ),
+                onCloseTooltip: onCloseSummaryTooltip,
+                onOpenTooltip: onOpenSummaryTooltip,
+                tooltipCopy: getBackgroundFitGuaranteedPerksTooltipCopy(
+                  guaranteedCoveredPickedPerkCount,
+                  pickedPerkCount,
+                ),
+                tooltipTitle: 'Guaranteed perks pickable',
+              })}
             </div>
             <div className="background-fit-accordion-summary-row">
-              <span className="detail-badge">
-                {formatBackgroundFitMatchedGroupsLabel(
+              {renderBackgroundFitSummaryBadge({
+                label: formatBackgroundFitMatchedGroupsLabel(
                   backgroundFit.matches.length,
                   supportedBuildTargetTreeCount,
-                )}
-              </span>
-              <span className="detail-badge">
-                {formatBackgroundFitMaximumTotalGroupsLabel(backgroundFit.maximumTotalGroupCount)}
-              </span>
+                ),
+                onCloseTooltip: onCloseSummaryTooltip,
+                onOpenTooltip: onOpenSummaryTooltip,
+                tooltipCopy: getBackgroundFitMatchedGroupsTooltipCopy(
+                  backgroundFit.matches.length,
+                  supportedBuildTargetTreeCount,
+                ),
+                tooltipTitle: 'Matched groups',
+              })}
+              {renderBackgroundFitSummaryBadge({
+                label: formatBackgroundFitMaximumTotalGroupsLabel(
+                  backgroundFit.maximumTotalGroupCount,
+                ),
+                onCloseTooltip: onCloseSummaryTooltip,
+                onOpenTooltip: onOpenSummaryTooltip,
+                tooltipCopy: getBackgroundFitMaximumTotalGroupsTooltipCopy(
+                  backgroundFit.maximumTotalGroupCount,
+                ),
+                tooltipTitle: 'Maximum total groups',
+              })}
             </div>
           </div>
         </div>
@@ -634,6 +753,10 @@ function renderPlannerGroupCard({
 function getBuildPerkTooltipStyle(
   hoveredBuildPerkTooltip: HoveredBuildPerkTooltip,
 ): CSSProperties {
+  return getAnchoredTooltipStyle(hoveredBuildPerkTooltip.anchorRectangle)
+}
+
+function getAnchoredTooltipStyle(anchorRectangle: TooltipAnchorRectangle): CSSProperties {
   if (typeof window === 'undefined') {
     return {}
   }
@@ -643,7 +766,7 @@ function getBuildPerkTooltipStyle(
   const left = Math.max(
     viewportPadding,
     Math.min(
-      hoveredBuildPerkTooltip.anchorRectangle.left,
+      anchorRectangle.left,
       window.innerWidth - tooltipMaximumWidth - viewportPadding,
     ),
   )
@@ -651,7 +774,7 @@ function getBuildPerkTooltipStyle(
   return {
     left: `${left}px`,
     maxWidth: `${tooltipMaximumWidth}px`,
-    top: `${hoveredBuildPerkTooltip.anchorRectangle.bottom + 8}px`,
+    top: `${anchorRectangle.bottom + 8}px`,
   }
 }
 
@@ -776,6 +899,8 @@ export default function App() {
   )
   const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
     useState<HoveredBuildPerkTooltip | null>(null)
+  const [hoveredBackgroundFitSummaryTooltip, setHoveredBackgroundFitSummaryTooltip] =
+    useState<HoveredBackgroundFitSummaryTooltip | null>(null)
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [backgroundFitAccordionState, setBackgroundFitAccordionState] = useState<{
     expandedBackgroundFitKey: string | null
@@ -822,6 +947,8 @@ export default function App() {
       : allPerksById.get(hoveredBuildPerkTooltip.perkId) ?? null
   const hoveredBuildPerkTooltipId =
     hoveredBuildPerk === null ? undefined : `build-perk-tooltip-${hoveredBuildPerk.id}`
+  const hoveredBackgroundFitSummaryTooltipId =
+    hoveredBackgroundFitSummaryTooltip === null ? undefined : 'background-fit-summary-tooltip'
   const hasPickedPerks = pickedPerks.length > 0
   const hasSupportedBackgroundFitTargets = backgroundFitView.supportedBuildTargetTrees.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
@@ -865,6 +992,7 @@ export default function App() {
           ? currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId)
           : [...currentPickedPerkIds, perkId],
       )
+      setHoveredBackgroundFitSummaryTooltip(null)
       setHoveredBuildPerkTooltip((currentTooltip) =>
         currentTooltip?.perkId === perkId ? null : currentTooltip,
       )
@@ -876,6 +1004,7 @@ export default function App() {
       setPickedPerkIds((currentPickedPerkIds) =>
         currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId),
       )
+      setHoveredBackgroundFitSummaryTooltip(null)
       setHoveredBuildPerkTooltip((currentTooltip) =>
         currentTooltip?.perkId === perkId ? null : currentTooltip,
       )
@@ -885,15 +1014,18 @@ export default function App() {
   function handleClearBuild() {
     startTransition(() => {
       setPickedPerkIds([])
+      setHoveredBackgroundFitSummaryTooltip(null)
       setHoveredBuildPerkTooltip(null)
     })
   }
 
   function handleBackgroundFitPanelToggle() {
+    setHoveredBackgroundFitSummaryTooltip(null)
     setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)
   }
 
   function handleBackgroundFitCardToggle(backgroundFitKey: string) {
+    setHoveredBackgroundFitSummaryTooltip(null)
     setBackgroundFitAccordionState({
       expandedBackgroundFitKey: expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
       rankedBackgroundFitKeySignature,
@@ -907,6 +1039,7 @@ export default function App() {
   function handleOpenBuildPerkTooltip(perkId: string, currentTarget: HTMLButtonElement) {
     const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
 
+    setHoveredBackgroundFitSummaryTooltip(null)
     setHoveredBuildPerkTooltip({
       anchorRectangle: {
         bottom,
@@ -921,6 +1054,31 @@ export default function App() {
 
   function handleCloseBuildPerkTooltip() {
     setHoveredBuildPerkTooltip(null)
+  }
+
+  function handleOpenBackgroundFitSummaryTooltip(
+    title: string,
+    descriptionParagraphs: string[],
+    currentTarget: HTMLSpanElement,
+  ) {
+    const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
+
+    setHoveredBuildPerkTooltip(null)
+    setHoveredBackgroundFitSummaryTooltip({
+      anchorRectangle: {
+        bottom,
+        left,
+        right,
+        top,
+        width,
+      },
+      descriptionParagraphs,
+      title,
+    })
+  }
+
+  function handleCloseBackgroundFitSummaryTooltip() {
+    setHoveredBackgroundFitSummaryTooltip(null)
   }
 
   function handleGroupToggle(nextGroupName: string) {
@@ -1037,6 +1195,22 @@ export default function App() {
       window.removeEventListener('resize', handleWindowResize)
     }
   }, [hoveredBuildPerkTooltip])
+
+  useEffect(() => {
+    if (hoveredBackgroundFitSummaryTooltip === null || typeof window === 'undefined') {
+      return
+    }
+
+    const handleWindowResize = () => {
+      setHoveredBackgroundFitSummaryTooltip(null)
+    }
+
+    window.addEventListener('resize', handleWindowResize)
+
+    return () => {
+      window.removeEventListener('resize', handleWindowResize)
+    }
+  }, [hoveredBackgroundFitSummaryTooltip])
 
   return (
     <div className="app-shell">
@@ -1239,6 +1413,28 @@ export default function App() {
         </div>
       ) : null}
 
+      {hoveredBackgroundFitSummaryTooltip !== null ? (
+        <div
+          className="build-perk-tooltip"
+          id={hoveredBackgroundFitSummaryTooltipId}
+          role="tooltip"
+          style={getAnchoredTooltipStyle(hoveredBackgroundFitSummaryTooltip.anchorRectangle)}
+        >
+          <strong className="build-perk-tooltip-title">
+            {hoveredBackgroundFitSummaryTooltip.title}
+          </strong>
+          <div className="build-perk-tooltip-copy">
+            {hoveredBackgroundFitSummaryTooltip.descriptionParagraphs.map(
+              (descriptionParagraph, descriptionParagraphIndex) => (
+                <p key={`background-fit-summary-tooltip-${descriptionParagraphIndex}`}>
+                  {descriptionParagraph}
+                </p>
+              ),
+            )}
+          </div>
+        </div>
+      ) : null}
+
       <main
         className={
           isBackgroundFitPanelExpanded
@@ -1259,6 +1455,7 @@ export default function App() {
             aria-hidden={!isBackgroundFitPanelExpanded}
             className="background-fit-panel-body"
             data-testid="background-fit-panel-body"
+            onScrollCapture={handleCloseBackgroundFitSummaryTooltip}
           >
             {!hasPickedPerks ? (
               <div className="background-fit-empty-state">
@@ -1283,6 +1480,8 @@ export default function App() {
                           {renderBackgroundFitCard({
                             backgroundFit,
                             expandedBackgroundFitKey,
+                            onCloseSummaryTooltip: handleCloseBackgroundFitSummaryTooltip,
+                            onOpenSummaryTooltip: handleOpenBackgroundFitSummaryTooltip,
                             onToggle: handleBackgroundFitCardToggle,
                             pickedPerkCount: pickedPerks.length,
                             rank: backgroundFitIndex,
