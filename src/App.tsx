@@ -5,7 +5,10 @@ import '@fontsource/source-sans-3/600.css'
 import './App.css'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import { getGameIconUrl } from './lib/game-icon-url'
-import { getGroupedBuildPerkGroupRequirements } from './lib/build-planner'
+import {
+  getBuildPlannerRecommendation,
+  type BuildPlannerPerkGroupRequirementOption,
+} from './lib/build-planner'
 import {
   buildPerkBrowserUrlSearch,
   readPerkBrowserUrlStateFromLocation,
@@ -66,6 +69,18 @@ function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
   }
 
   return counts
+}
+
+function getPickedPerkCountsByGroup(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
+  const countsByGroup = new Map<string, number>()
+
+  for (const pickedPerk of pickedPerks) {
+    for (const groupName of new Set(pickedPerk.groupNames)) {
+      countsByGroup.set(groupName, (countsByGroup.get(groupName) ?? 0) + 1)
+    }
+  }
+
+  return countsByGroup
 }
 
 function groupBackgroundSources(
@@ -199,6 +214,22 @@ function formatPickedPerkCountLabel(perkCount: number): string {
   return `${perkCount} perk${perkCount === 1 ? '' : 's'}`
 }
 
+function getPlannerGroupCategoryLabel(
+  perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],
+): string {
+  return [...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.categoryName))].join(
+    ' / ',
+  )
+}
+
+function getPlannerGroupLabel(
+  perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],
+): string {
+  return [...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.treeLabel))].join(
+    ' / ',
+  )
+}
+
 function renderPlacementDescription(placement: LegendsPerkPlacement) {
   return (
     <>
@@ -283,12 +314,6 @@ function getBuildPerkTooltipStyle(
     left: `${left}px`,
     maxWidth: `${tooltipMaximumWidth}px`,
     top: `${hoveredBuildPerkTooltip.anchorRectangle.bottom + 8}px`,
-  }
-}
-
-function getPlannerGroupSlotStyle(perkGroupOptionCount: number): CSSProperties {
-  return {
-    ['--planner-group-span' as string]: String(Math.max(1, perkGroupOptionCount)),
   }
 }
 
@@ -405,7 +430,10 @@ export default function App() {
 
     return pickedPerk ? [pickedPerk] : []
   })
-  const groupedBuildPerkGroups = getGroupedBuildPerkGroupRequirements(pickedPerks)
+  const buildPlannerRecommendation = getBuildPlannerRecommendation(pickedPerks)
+  const recommendedBuildGroups = buildPlannerRecommendation.recommendedGroups
+  const buildPlannerAlternativeGroups = buildPlannerRecommendation.alternativeGroups
+  const pickedPerkCountsByGroup = getPickedPerkCountsByGroup(pickedPerks)
   const pickedPerkOrderById = new Map(
     pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
   )
@@ -420,6 +448,7 @@ export default function App() {
   const hoveredBuildPerkTooltipId =
     hoveredBuildPerk === null ? undefined : `build-perk-tooltip-${hoveredBuildPerk.id}`
   const hasPickedPerks = pickedPerks.length > 0
+  const hasAlternativeBuildGroups = buildPlannerAlternativeGroups.length > 0
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
     (treeCount, selectedTreeIds) => treeCount + selectedTreeIds.length,
@@ -647,7 +676,7 @@ export default function App() {
             <p className="eyebrow">Build planner</p>
             <h2>Picked perks</h2>
             <p className="build-planner-summary">
-              Use the star in the detail panel or search results to collect perk picks, then review the unique perk groups they require below.
+              Use the star in the detail panel or search results to collect perk picks, then review the recommended unlock plan and any remaining alternative groups below.
             </p>
           </div>
           <div className="build-planner-actions">
@@ -717,65 +746,135 @@ export default function App() {
           </div>
 
           <div className="planner-row">
-            <span className="planner-row-label">Perk groups</span>
-            <div className="planner-track-scroll">
-              <div className="planner-track planner-track-groups" data-testid="build-groups-bar">
-                {groupedBuildPerkGroups.length > 0 ? (
-                  groupedBuildPerkGroups.map((groupedBuildPerkGroup) => (
-                    <div
-                      className="planner-slot planner-slot-group"
-                      key={groupedBuildPerkGroup.requirementId}
-                      style={getPlannerGroupSlotStyle(groupedBuildPerkGroup.perkGroupOptions.length)}
-                    >
-                      <div className="planner-slot-group-main">
-                        <div className="planner-slot-group-icons">
-                          {groupedBuildPerkGroup.perkGroupOptions.map((perkGroupOption, perkGroupOptionIndex) => (
-                            <div className="planner-slot-group-option" key={perkGroupOption.treeId}>
-                              {renderGameIcon({
-                                className: 'perk-icon perk-icon-group',
-                                iconPath: perkGroupOption.treeIconPath,
-                                label: `${perkGroupOption.treeLabel} perk group icon`,
-                              })}
-                              {perkGroupOptionIndex < groupedBuildPerkGroup.perkGroupOptions.length - 1 ? (
-                                <span className="planner-slot-group-separator">/</span>
-                              ) : null}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="planner-slot-group-copy">
+            <span className="planner-row-label">Plan</span>
+            <div className="planner-section" data-testid="build-plan-list">
+              {recommendedBuildGroups.length > 0 ? (
+                <div className="planner-plan-grid">
+                  {recommendedBuildGroups.map((recommendedBuildGroup) => (
+                    <article className="planner-plan-card" key={recommendedBuildGroup.treeId}>
+                      <div className="planner-plan-card-header">
+                        {renderGameIcon({
+                          className: 'perk-icon perk-icon-group',
+                          iconPath: recommendedBuildGroup.treeIconPath,
+                          label: `${recommendedBuildGroup.treeLabel} perk group icon`,
+                        })}
+                        <div className="planner-plan-card-copy">
                           <div className="planner-slot-topline">
                             <span className="planner-slot-category">
-                              {groupedBuildPerkGroup.categoryLabel}
+                              {recommendedBuildGroup.categoryName}
                             </span>
                             <span className="planner-slot-group-count">
-                              {formatPickedPerkCountLabel(groupedBuildPerkGroup.perkNames.length)}
+                              {formatPickedPerkCountLabel(recommendedBuildGroup.perkNames.length)}
                             </span>
                           </div>
-                          <strong
-                            className="planner-slot-name"
-                            title={groupedBuildPerkGroup.treeLabel}
-                          >
-                            {groupedBuildPerkGroup.treeLabel}
+                          <strong className="planner-slot-name" title={recommendedBuildGroup.treeLabel}>
+                            {recommendedBuildGroup.treeLabel}
                           </strong>
-                          <p
-                            className="planner-slot-meta"
-                            title={groupedBuildPerkGroup.perkNames.join(', ')}
-                          >
-                            {groupedBuildPerkGroup.perkNames.join(', ')}
-                          </p>
                         </div>
                       </div>
-                    </div>
-                  ))
+                      <div className="planner-pill-list">
+                        {recommendedBuildGroup.perkNames.map((recommendedPerkName) => (
+                          <span
+                            className="planner-pill"
+                            key={`${recommendedBuildGroup.treeId}-${recommendedPerkName}`}
+                          >
+                            {recommendedPerkName}
+                          </span>
+                        ))}
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className="planner-section-placeholder">
+                  <strong className="planner-slot-name">Recommended perk groups will appear here</strong>
+                  <p className="planner-slot-meta">
+                    Pick perks first, then the planner will suggest a minimal unlock route and group
+                    overlapping picks together.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="planner-row">
+            <span className="planner-row-label">Alternatives</span>
+            <div className="planner-section" data-testid="build-alternative-groups-list">
+              {hasPickedPerks ? (
+                hasAlternativeBuildGroups ? (
+                  <div className="planner-alternative-list">
+                    {buildPlannerAlternativeGroups.map((buildPlannerAlternativeGroup) => {
+                      const alternativeGroupLabel = getPlannerGroupLabel(
+                        buildPlannerAlternativeGroup.perkGroupOptions,
+                      )
+
+                      return (
+                        <article
+                          className="planner-alternative-card"
+                          key={`${buildPlannerAlternativeGroup.perkIds.join('::')}::${alternativeGroupLabel}`}
+                        >
+                          <div className="planner-alternative-card-header">
+                            <div className="planner-card-icon-stack">
+                              {buildPlannerAlternativeGroup.perkGroupOptions.map((perkGroupOption) => (
+                                <span
+                                  className="planner-card-icon-stack-item"
+                                  key={perkGroupOption.treeId}
+                                >
+                                  {renderGameIcon({
+                                    className: 'perk-icon perk-icon-group',
+                                    iconPath: perkGroupOption.treeIconPath,
+                                    label: `${perkGroupOption.treeLabel} perk group icon`,
+                                  })}
+                                </span>
+                              ))}
+                            </div>
+                            <div className="planner-alternative-card-copy">
+                              <div className="planner-slot-topline">
+                                <span className="planner-slot-category">
+                                  {getPlannerGroupCategoryLabel(
+                                    buildPlannerAlternativeGroup.perkGroupOptions,
+                                  )}
+                                </span>
+                                <span className="planner-slot-group-count">
+                                  {formatPickedPerkCountLabel(
+                                    buildPlannerAlternativeGroup.perkNames.length,
+                                  )}
+                                </span>
+                              </div>
+                              <strong className="planner-slot-name" title={alternativeGroupLabel}>
+                                {alternativeGroupLabel}
+                              </strong>
+                            </div>
+                          </div>
+                          <div className="planner-pill-list">
+                            {buildPlannerAlternativeGroup.perkNames.map((perkName) => (
+                              <span className="planner-pill" key={`${alternativeGroupLabel}-${perkName}`}>
+                                {perkName}
+                              </span>
+                            ))}
+                          </div>
+                        </article>
+                      )
+                    })}
+                  </div>
                 ) : (
-                  <div className="planner-slot planner-slot-placeholder is-placeholder">
-                    <strong className="planner-slot-name">Required perk groups will appear here</strong>
+                  <div className="planner-section-placeholder">
+                    <strong className="planner-slot-name">This build has no alternative groups</strong>
                     <p className="planner-slot-meta">
-                      Shared perk groups collapse together so the build keeps one grouped unlock list.
+                      Every picked perk already fits cleanly into the recommended perk groups shown
+                      above.
                     </p>
                   </div>
-                )}
-              </div>
+                )
+              ) : (
+                <div className="planner-section-placeholder">
+                  <strong className="planner-slot-name">Alternative perk groups will appear here</strong>
+                  <p className="planner-slot-meta">
+                    When picked perks can fit into other valid groups, the planner will collapse
+                    those alternatives by the perks they unlock.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -818,6 +917,7 @@ export default function App() {
             const activeTreeOptions = categoryTreeOptionsByGroup.get(availableGroupName) ?? []
             const isExpanded = expandedGroupNames.includes(availableGroupName)
             const isActive = selectedGroupNames.includes(availableGroupName)
+            const pickedPerkCountInGroup = pickedPerkCountsByGroup.get(availableGroupName) ?? 0
             const selectedTreeIds = selectedTreeIdsByGroup[availableGroupName] ?? []
 
             return (
@@ -833,7 +933,19 @@ export default function App() {
                     <TreeChevron isExpanded={isExpanded} />
                     <span className="group-label">{availableGroupName}</span>
                   </span>
-                  <span>{groupCounts.get(availableGroupName)}</span>
+                  <span className="group-chip-end">
+                    {pickedPerkCountInGroup > 0 ? (
+                      <span aria-hidden="true" className="group-chip-picked-stars">
+                        {Array.from({ length: pickedPerkCountInGroup }, (_, pickedPerkIndex) => (
+                          <BuildStar
+                            isPicked
+                            key={`${availableGroupName}-picked-${pickedPerkIndex}`}
+                          />
+                        ))}
+                      </span>
+                    ) : null}
+                    <span>{groupCounts.get(availableGroupName)}</span>
+                  </span>
                 </button>
 
                 {isExpanded ? (
@@ -943,13 +1055,15 @@ export default function App() {
                 return (
                   <div
                     key={perk.id}
-                    className={isPicked
-                      ? isSelected
-                        ? 'perk-row is-selected is-picked'
-                        : 'perk-row is-picked'
-                      : isSelected
-                        ? 'perk-row is-selected'
-                        : 'perk-row'}
+                    className={
+                      isPicked
+                        ? isSelected
+                          ? 'perk-row is-picked is-selected'
+                          : 'perk-row is-picked'
+                        : isSelected
+                          ? 'perk-row is-selected'
+                          : 'perk-row'
+                    }
                   >
                     <button
                       aria-label={`Inspect ${perk.perkName}`}

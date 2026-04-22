@@ -80,3 +80,67 @@ test('shows normalized mastery labels in the result list', async ({ page }) => {
   ).toBeVisible()
   await expect(getResultsList(page).getByText('Spec Axe', { exact: true })).toHaveCount(0)
 })
+
+test('shows picked categories with stars and keeps picked result rows outlined while selection changes the background', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Clarity')
+  await getResultsList(page)
+    .getByRole('button', { name: 'Add Clarity to build from results' })
+    .click()
+
+  await searchPerks(page, 'Perfect Focus')
+  await getResultsList(page)
+    .getByRole('button', { name: 'Add Perfect Focus to build from results' })
+    .click()
+  await getResultsList(page)
+    .getByRole('button', { name: 'Inspect Perfect Focus' })
+    .click()
+
+  await searchPerks(page, '')
+
+  await expect(
+    page.getByRole('button', { name: 'Enable category Traits' }).locator('.group-chip-picked-stars .build-star'),
+  ).toHaveCount(2)
+  await expect(
+    page.getByRole('button', { name: 'Enable category Magic' }).locator('.group-chip-picked-stars .build-star'),
+  ).toHaveCount(1)
+
+  await searchPerks(page, 'Perfect')
+  await getResultsList(page)
+    .getByRole('button', { name: 'Inspect Perfect Fit' })
+    .click()
+
+  const rowStyles = await page.evaluate(() => {
+    function getPerkRowStyles(perkName: string) {
+      const inspectButton = document.querySelector(
+        `button[aria-label="Inspect ${perkName}"]`,
+      ) as HTMLButtonElement | null
+      const perkRow = inspectButton?.closest('.perk-row') as HTMLElement | null | undefined
+
+      if (perkRow == null) {
+        return null
+      }
+
+      const computedStyle = window.getComputedStyle(perkRow)
+
+      return {
+        backgroundColor: computedStyle.backgroundColor,
+        borderColor: computedStyle.borderTopColor,
+      }
+    }
+
+    return {
+      picked: getPerkRowStyles('Perfect Focus'),
+      selected: getPerkRowStyles('Perfect Fit'),
+    }
+  })
+
+  expect(rowStyles.picked).not.toBeNull()
+  expect(rowStyles.selected).not.toBeNull()
+
+  expect(rowStyles.picked?.borderColor).not.toBe(rowStyles.selected?.borderColor)
+  expect(rowStyles.picked?.backgroundColor).not.toBe(rowStyles.selected?.backgroundColor)
+})

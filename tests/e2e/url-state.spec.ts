@@ -1,8 +1,9 @@
 import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
-  getBuildGroupsBar,
+  getBuildAlternativeGroupsList,
   getBuildPerksBar,
+  getBuildPlanList,
   gotoPerksBrowser,
   inspectPerkFromResults,
   searchPerks,
@@ -57,9 +58,11 @@ test('stores readable filters and build state in the url and restores them on a 
     )
     await expect(getBuildPerksBar(sharedPage).getByText('Perfect Focus')).toBeVisible()
     await expect(getBuildPerksBar(sharedPage).getByText('Clarity')).toBeVisible()
-    await expect(getBuildGroupsBar(sharedPage).getByText('Calm', { exact: true })).toBeVisible()
-    await expect(getBuildGroupsBar(sharedPage).getByText('Calm / Deadeye', { exact: true })).toBeVisible()
-    await expect(getBuildGroupsBar(sharedPage).getByText('Deadeye', { exact: true })).toHaveCount(0)
+    await expect(getBuildPlanList(sharedPage).getByText('Calm', { exact: true })).toBeVisible()
+    await expect(getBuildPlanList(sharedPage).getByText('Perfect Focus', { exact: true })).toBeVisible()
+    await expect(getBuildPlanList(sharedPage).getByText('Clarity', { exact: true })).toBeVisible()
+    await expect(getBuildAlternativeGroupsList(sharedPage).getByText('Deadeye', { exact: true })).toBeVisible()
+    await expect(getBuildAlternativeGroupsList(sharedPage).getByText('Perfect Focus', { exact: true })).toBeVisible()
   } finally {
     await sharedPage.close()
   }

@@ -15,8 +15,12 @@ export const mediumPerksBrowserViewport = {
   width: 820,
 } as const
 
-export function getBuildGroupsBar(page: Page): Locator {
-  return page.getByTestId('build-groups-bar')
+export function getBuildAlternativeGroupsList(page: Page): Locator {
+  return page.getByTestId('build-alternative-groups-list')
+}
+
+export function getBuildPlanList(page: Page): Locator {
+  return page.getByTestId('build-plan-list')
 }
 
 export function getBuildPerksBar(page: Page): Locator {
@@ -36,7 +40,8 @@ export async function gotoPerksBrowser(
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
   await expect(page.getByLabel('Search perks')).toBeVisible()
   await expect(getBuildPerksBar(page)).toBeVisible()
-  await expect(getBuildGroupsBar(page)).toBeVisible()
+  await expect(getBuildPlanList(page)).toBeVisible()
+  await expect(getBuildAlternativeGroupsList(page)).toBeVisible()
 }
 
 export async function expectViewportLocked(page: Page): Promise<void> {
