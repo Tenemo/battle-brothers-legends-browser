@@ -112,6 +112,8 @@ The generated artifacts that the runtime actually uses are:
   This maps technical ids such as perk const names, tree ids, scenario ids, background ids, and entity const names to exact in-mod display labels.
 - `public/game-icons/**`
   These are the extracted icon files served by Vite at runtime.
+- `public/favicon/**`
+  These are the committed student-icon favicon assets and manifest served across desktop browsers, iOS home-screen shortcuts, and installed web apps.
 
 ## Requirements
 
