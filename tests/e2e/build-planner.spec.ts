@@ -97,6 +97,18 @@ test('build planner splits shared and individual perk groups without internal sc
   await expect(getBuildSharedGroupsList(page).getByText('Clarity', { exact: true })).toBeVisible()
   await getBuildSharedGroupsList(page).getByRole('button', { name: 'Perfect Focus' }).hover()
   await expect(page.getByRole('tooltip')).toContainText(/Unlocks the Perfect Focus skill/i)
+  await expect(
+    getBuildSharedGroupsList(page).getByRole('button', { name: 'Perfect Focus' }),
+  ).toHaveClass(/is-highlighted/)
+  await expect(
+    getBuildIndividualGroupsList(page).getByRole('button', { name: 'Perfect Focus' }),
+  ).toHaveClass(/is-highlighted/)
+  await expect(
+    getBuildPerksBar(page).getByRole('button', { name: 'Remove Perfect Focus from build' }),
+  ).toHaveClass(/is-highlighted/)
+  await expect(
+    getBuildSharedGroupsList(page).getByRole('button', { name: 'Clarity' }),
+  ).not.toHaveClass(/is-highlighted/)
   await expect(getBuildIndividualGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
   await expect(getBuildIndividualGroupsList(page).getByText('Deadeye', { exact: true })).toBeVisible()
   await expect(getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()

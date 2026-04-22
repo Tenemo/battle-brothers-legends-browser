@@ -72,6 +72,37 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expectViewportLocked(page)
 })
 
+test('filters the background fit list with the background search field', async ({ page }) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+
+  await expect(backgroundSearchInput).toBeVisible()
+  await backgroundSearchInput.fill('Oathtaker')
+  await expect(
+    backgroundFitPanel.getByRole('heading', {
+      level: 3,
+      name: 'Oathtaker',
+    }),
+  ).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByRole('button', {
+      name: 'Expand background Oathtaker',
+    }),
+  ).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByRole('button', {
+      name: 'Expand background Apprentice',
+    }),
+  ).toHaveCount(0)
+
+  await backgroundSearchInput.fill('zzzz impossible background')
+  await expect(backgroundFitPanel.getByText('No backgrounds match "zzzz impossible background".')).toBeVisible()
+})
+
 test('keeps dense background names readable from a shared build url and starts collapsed', async ({
   page,
 }) => {

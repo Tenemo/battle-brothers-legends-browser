@@ -269,6 +269,25 @@ function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string {
   return `${backgroundFit.backgroundId}::${backgroundFit.sourceFilePath}`
 }
 
+function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): string {
+  const sourceFileName = backgroundFit.sourceFilePath.split('/').at(-1) ?? backgroundFit.sourceFilePath
+  const searchParts = [
+    backgroundFit.backgroundName,
+    backgroundFit.disambiguator,
+    backgroundFit.disambiguator === null
+      ? null
+      : formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator),
+    backgroundFit.backgroundId,
+    sourceFileName,
+    backgroundFit.sourceFilePath,
+  ]
+
+  return searchParts
+    .filter((searchPart): searchPart is string => typeof searchPart === 'string' && searchPart.length > 0)
+    .join(' ')
+    .toLocaleLowerCase()
+}
+
 function getCoveredPickedPerkNames(matches: BackgroundFitMatch[]): string[] {
   return [...new Set(matches.flatMap((match) => match.pickedPerkNames))]
 }
@@ -725,14 +744,14 @@ function renderPlannerGroupCard({
         {groupedPerkGroup.perkNames.map((perkName, perkIndex) => {
           const perkId = groupedPerkGroup.perkIds[perkIndex]
 
-          return perkId ? (
-            <button
-              aria-describedby={hoveredPerkId === perkId ? hoveredTooltipId : undefined}
-              className="planner-pill"
-              key={`${plannerGroupLabel}-${perkId}`}
-              onBlur={onCloseTooltip}
-              onClick={() => onInspectPerk(perkId)}
-              onFocus={(event) => onOpenTooltip(perkId, event.currentTarget)}
+            return perkId ? (
+              <button
+                aria-describedby={hoveredPerkId === perkId ? hoveredTooltipId : undefined}
+                className={hoveredPerkId === perkId ? 'planner-pill is-highlighted' : 'planner-pill'}
+                key={`${plannerGroupLabel}-${perkId}`}
+                onBlur={onCloseTooltip}
+                onClick={() => onInspectPerk(perkId)}
+                onFocus={(event) => onOpenTooltip(perkId, event.currentTarget)}
               onMouseEnter={(event) => onOpenTooltip(perkId, event.currentTarget)}
               onMouseLeave={onCloseTooltip}
               type="button"
@@ -910,7 +929,9 @@ export default function App() {
     rankedBackgroundFitKeySignature: '',
   })
   const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
+  const [backgroundFitQuery, setBackgroundFitQuery] = useState('')
   const deferredQuery = useDeferredValue(query)
+  const deferredBackgroundFitQuery = useDeferredValue(backgroundFitQuery)
   const visiblePerks = filterAndSortPerks(allPerks, {
     query: deferredQuery,
     selectedGroupNames,
@@ -927,9 +948,16 @@ export default function App() {
   })
   const buildPlannerGroups = getBuildPlannerGroups(pickedPerks)
   const backgroundFitView = backgroundFitEngine.getBackgroundFitView(pickedPerks)
+  const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLocaleLowerCase()
+  const visibleRankedBackgroundFits =
+    normalizedBackgroundFitQuery.length === 0
+      ? backgroundFitView.rankedBackgroundFits
+      : backgroundFitView.rankedBackgroundFits.filter((backgroundFit) =>
+          getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery),
+        )
   const rankedBackgroundFitKeySignature = backgroundFitView.rankedBackgroundFits
-    .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
-    .join('|')
+      .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
+      .join('|')
   const sharedPerkGroups = buildPlannerGroups.sharedPerkGroups
   const individualPerkGroups = buildPlannerGroups.individualPerkGroups
   const pickedPerkCountsByGroup = getPickedPerkCountsByGroup(pickedPerks)
@@ -951,6 +979,7 @@ export default function App() {
     hoveredBackgroundFitSummaryTooltip === null ? undefined : 'background-fit-summary-tooltip'
   const hasPickedPerks = pickedPerks.length > 0
   const hasSupportedBackgroundFitTargets = backgroundFitView.supportedBuildTargetTrees.length > 0
+  const hasVisibleRankedBackgroundFits = visibleRankedBackgroundFits.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
@@ -1282,17 +1311,21 @@ export default function App() {
             <div className="planner-track-scroll">
               <div className="planner-track planner-track-perks" data-testid="build-perks-bar">
                 {hasPickedPerks ? (
-                  pickedPerks.map((pickedPerk) => (
-                    <button
-                      aria-label={`Remove ${pickedPerk.perkName} from build`}
-                      aria-describedby={
-                        hoveredBuildPerk?.id === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
-                      }
-                      className="planner-slot planner-slot-perk"
-                      key={pickedPerk.id}
-                      onBlur={handleCloseBuildPerkTooltip}
-                      onClick={() => handleRemovePickedPerk(pickedPerk.id)}
-                      onFocus={(event) => handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)}
+                    pickedPerks.map((pickedPerk) => (
+                      <button
+                        aria-label={`Remove ${pickedPerk.perkName} from build`}
+                        aria-describedby={
+                          hoveredBuildPerk?.id === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
+                        }
+                        className={
+                          hoveredBuildPerk?.id === pickedPerk.id
+                            ? 'planner-slot planner-slot-perk is-highlighted'
+                            : 'planner-slot planner-slot-perk'
+                        }
+                        key={pickedPerk.id}
+                        onBlur={handleCloseBuildPerkTooltip}
+                        onClick={() => handleRemovePickedPerk(pickedPerk.id)}
+                        onFocus={(event) => handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)}
                       onMouseEnter={(event) =>
                         handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)
                       }
@@ -1451,50 +1484,75 @@ export default function App() {
           }
           data-testid="background-fit-panel"
         >
-          <div
-            aria-hidden={!isBackgroundFitPanelExpanded}
-            className="background-fit-panel-body"
-            data-testid="background-fit-panel-body"
-            onScrollCapture={handleCloseBackgroundFitSummaryTooltip}
-          >
-            {!hasPickedPerks ? (
-              <div className="background-fit-empty-state">
-                <p className="background-fit-summary-copy">
-                  Pick perks into the build planner to rank backgrounds by guaranteed and exact
-                  probabilistic tree coverage.
+            <div
+              aria-hidden={!isBackgroundFitPanelExpanded}
+              className="background-fit-panel-body"
+              data-testid="background-fit-panel-body"
+              onScrollCapture={handleCloseBackgroundFitSummaryTooltip}
+            >
+              <label className="search-field background-fit-search-field">
+                <span className="visually-hidden">Search backgrounds</span>
+                <input
+                  aria-label="Search backgrounds"
+                  disabled={!hasPickedPerks || !hasSupportedBackgroundFitTargets}
+                  onChange={(event) => {
+                    setHoveredBackgroundFitSummaryTooltip(null)
+                    setBackgroundFitQuery(event.target.value)
+                  }}
+                  placeholder="Search backgrounds"
+                  type="search"
+                  value={backgroundFitQuery}
+                />
+              </label>
+              {!hasPickedPerks ? (
+                <div className="background-fit-empty-state">
+                  <p className="background-fit-summary-copy">
+                    Pick perks into the build planner to rank backgrounds by guaranteed and exact
+                    probabilistic tree coverage.
                 </p>
                 <p className="background-fit-summary-copy">
                   Exact probabilities come from the Legends background tree rules, not simulation.
                 </p>
               </div>
-            ) : (
-              <>
-                {hasSupportedBackgroundFitTargets ? (
-                  <>
-                    <p className="background-fit-ranking-summary">
-                      Ranked by guaranteed build weight first, then expected extra coverage.
-                    </p>
-                    <ol className="background-fit-ranking" data-testid="background-fit-ranking">
-                      {backgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
-                        <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
-                          {renderBackgroundFitCard({
-                            backgroundFit,
-                            expandedBackgroundFitKey,
-                            onCloseSummaryTooltip: handleCloseBackgroundFitSummaryTooltip,
+              ) : (
+                <>
+                  {hasSupportedBackgroundFitTargets ? (
+                    hasVisibleRankedBackgroundFits ? (
+                      <>
+                      <p className="background-fit-ranking-summary">
+                        Ranked by guaranteed build weight first, then expected extra coverage.
+                      </p>
+                      <ol className="background-fit-ranking" data-testid="background-fit-ranking">
+                        {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
+                          <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
+                            {renderBackgroundFitCard({
+                              backgroundFit,
+                              expandedBackgroundFitKey,
+                              onCloseSummaryTooltip: handleCloseBackgroundFitSummaryTooltip,
                             onOpenSummaryTooltip: handleOpenBackgroundFitSummaryTooltip,
                             onToggle: handleBackgroundFitCardToggle,
                             pickedPerkCount: pickedPerks.length,
                             rank: backgroundFitIndex,
                             supportedBuildTargetTreeCount:
-                              backgroundFitView.supportedBuildTargetTrees.length,
-                          })}
-                        </li>
-                      ))}
-                    </ol>
-                  </>
-                ) : (
-                  <div className="background-fit-empty-state">
-                    <p className="background-fit-summary-copy">
+                                backgroundFitView.supportedBuildTargetTrees.length,
+                            })}
+                          </li>
+                        ))}
+                      </ol>
+                      </>
+                    ) : (
+                      <div className="background-fit-empty-state">
+                        <p className="background-fit-summary-copy">
+                          No backgrounds match "{backgroundFitQuery.trim()}".
+                        </p>
+                        <p className="background-fit-summary-copy">
+                          Try a different background name or clear the search.
+                        </p>
+                      </div>
+                    )
+                  ) : (
+                    <div className="background-fit-empty-state">
+                      <p className="background-fit-summary-copy">
                       {backgroundFitView.unsupportedBuildTargetTrees.length > 0
                         ? 'This build only contains unsupported categories for dynamic background trees.'
                         : 'Pick perks from Weapon, Defense, Traits, Enemy, Class, Profession, or Magic to rank backgrounds exactly.'}
