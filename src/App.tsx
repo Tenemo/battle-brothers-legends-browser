@@ -6,6 +6,12 @@ import './App.css'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import { getGameIconUrl } from './lib/game-icon-url'
 import {
+  createBackgroundFitEngine,
+  type BackgroundFitMatch,
+  type BuildTargetTree,
+  type RankedBackgroundFit,
+} from './lib/background-fit'
+import {
   getBuildPlannerGroups,
   type BuildPlannerGroupedPerkGroup,
   type BuildPlannerPerkGroupRequirementOption,
@@ -34,6 +40,8 @@ import type {
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
+const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
+const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 const categoryOrder = ['Weapon', 'Defense', 'Traits', 'Enemy', 'Class', 'Profession', 'Magic', 'Other']
 
 type CategoryTreeOption = PerkBrowserUrlTreeOption & {
@@ -227,6 +235,22 @@ function formatPickedPerkCountLabel(perkCount: number): string {
   return `${perkCount} perk${perkCount === 1 ? '' : 's'}`
 }
 
+function formatBackgroundFitProbabilityLabel(probability: number): string {
+  const percentage = Math.round(probability * 1000) / 10
+
+  return `${Number.isInteger(percentage) ? percentage.toFixed(0) : percentage.toFixed(1)}%`
+}
+
+function formatBackgroundFitScoreLabel(score: number): string {
+  const roundedScore = Math.round(score * 10) / 10
+
+  return Number.isInteger(roundedScore) ? roundedScore.toFixed(0) : roundedScore.toFixed(1)
+}
+
+function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
+  return disambiguator.replace(/^background\./, '').replaceAll('_', ' ')
+}
+
 function getPlannerGroupCategoryLabel(
   perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],
 ): string {
@@ -240,6 +264,103 @@ function getPlannerGroupLabel(
 ): string {
   return [...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.treeLabel))].join(
     ' / ',
+  )
+}
+
+function renderBackgroundFitTargetTree(buildTargetTree: BuildTargetTree, keyPrefix: string) {
+  return (
+    <li
+      className="background-fit-target"
+      key={`${keyPrefix}-${buildTargetTree.categoryName}-${buildTargetTree.treeId}`}
+    >
+      <div>
+        <strong>{buildTargetTree.treeName}</strong>
+        <p className="detail-support">
+          {buildTargetTree.categoryName} / {buildTargetTree.pickedPerkNames.join(', ')}
+        </p>
+      </div>
+      <span className="detail-badge">{formatPickedPerkCountLabel(buildTargetTree.pickedPerkCount)}</span>
+    </li>
+  )
+}
+
+function renderBackgroundFitMatch(match: BackgroundFitMatch) {
+  return (
+    <li className="background-fit-match" key={`${match.categoryName}-${match.treeId}`}>
+      <div>
+        <strong>{match.treeName}</strong>
+        <p className="detail-support">
+          {match.categoryName} / {formatPickedPerkCountLabel(match.pickedPerkCount)} /{' '}
+          {match.pickedPerkNames.join(', ')}
+        </p>
+      </div>
+      <span className="detail-badge">
+        {match.isGuaranteed ? 'Guaranteed' : formatBackgroundFitProbabilityLabel(match.probability)}
+      </span>
+    </li>
+  )
+}
+
+function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit, rank: number) {
+  const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
+  const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
+
+  return (
+    <article
+      className={backgroundFit.matches.length === 0 ? 'background-fit-card is-empty' : 'background-fit-card'}
+      title={backgroundFit.sourceFilePath}
+    >
+      <div className="background-fit-card-header">
+        <div className="background-fit-card-heading">
+          <span className="background-fit-rank">{rank + 1}</span>
+          <div>
+            <h3>{backgroundFit.backgroundName}</h3>
+            {backgroundFit.disambiguator ? (
+              <span className="background-fit-disambiguator">
+                {formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)}
+              </span>
+            ) : null}
+          </div>
+        </div>
+      </div>
+
+      <div className="background-fit-score-row">
+        <span className="detail-badge">
+          Guaranteed weight {formatBackgroundFitScoreLabel(backgroundFit.guaranteedMatchedBuildWeight)}
+        </span>
+        <span className="detail-badge">
+          Expected +{formatBackgroundFitScoreLabel(backgroundFit.expectedExtraMatchedBuildWeight)}
+        </span>
+        <span className="detail-badge">
+          Guaranteed groups {backgroundFit.guaranteedMatchedTreeCount}
+        </span>
+        <span className="detail-badge">
+          Expected groups {formatBackgroundFitScoreLabel(backgroundFit.expectedMatchedTreeCount)}
+        </span>
+      </div>
+
+      {guaranteedMatches.length > 0 ? (
+        <div className="background-fit-match-section">
+          <p className="background-fit-section-label">Guaranteed</p>
+          <ul className="background-fit-match-list">
+            {guaranteedMatches.map((match) => renderBackgroundFitMatch(match))}
+          </ul>
+        </div>
+      ) : null}
+
+      {probabilisticMatches.length > 0 ? (
+        <div className="background-fit-match-section">
+          <p className="background-fit-section-label">Possible</p>
+          <ul className="background-fit-match-list">
+            {probabilisticMatches.map((match) => renderBackgroundFitMatch(match))}
+          </ul>
+        </div>
+      ) : null}
+
+      {backgroundFit.matches.length === 0 ? (
+        <p className="background-fit-empty-card">No supported build tree overlap.</p>
+      ) : null}
+    </article>
   )
 }
 
@@ -285,6 +406,14 @@ function renderFavoredEnemyTarget(favoredEnemyTarget: LegendsFavoredEnemyTarget)
           : `${favoredEnemyTarget.killsPerPercentBonus} kills / 1%`}
       </span>
     </>
+  )
+}
+
+function GitHubIcon({ className }: { className: string }) {
+  return (
+    <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M12 .297a12 12 0 0 0-3.79 23.39c.6.111.82-.26.82-.577v-2.234c-3.338.726-4.042-1.61-4.042-1.61a3.183 3.183 0 0 0-1.336-1.756c-1.092-.746.083-.731.083-.731a2.52 2.52 0 0 1 1.84 1.235 2.548 2.548 0 0 0 3.478.995 2.55 2.55 0 0 1 .76-1.598c-2.665-.303-5.466-1.332-5.466-5.93a4.64 4.64 0 0 1 1.235-3.22 4.3 4.3 0 0 1 .117-3.176s1.008-.322 3.3 1.23a11.47 11.47 0 0 1 6.006 0c2.29-1.552 3.297-1.23 3.297-1.23a4.297 4.297 0 0 1 .12 3.176 4.63 4.63 0 0 1 1.233 3.22c0 4.609-2.806 5.624-5.479 5.921a2.869 2.869 0 0 1 .814 2.228v3.301c0 .319.216.694.825.576A12.004 12.004 0 0 0 12 .297" />
+    </svg>
   )
 }
 
@@ -393,6 +522,18 @@ function TreeChevron({ isExpanded }: { isExpanded: boolean }) {
   )
 }
 
+function BackgroundFitRailChevron({ isExpanded }: { isExpanded: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={isExpanded ? 'background-fit-rail-chevron is-expanded' : 'background-fit-rail-chevron'}
+      viewBox="0 0 12 12"
+    >
+      <path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
+    </svg>
+  )
+}
+
 function BuildStar({ isPicked }: { isPicked: boolean }) {
   return (
     <svg
@@ -478,6 +619,7 @@ export default function App() {
   )
   const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
     useState<HoveredBuildPerkTooltip | null>(null)
+  const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
   const deferredQuery = useDeferredValue(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
@@ -495,6 +637,7 @@ export default function App() {
     return pickedPerk ? [pickedPerk] : []
   })
   const buildPlannerGroups = getBuildPlannerGroups(pickedPerks)
+  const backgroundFitView = backgroundFitEngine.getBackgroundFitView(pickedPerks)
   const sharedPerkGroups = buildPlannerGroups.sharedPerkGroups
   const individualPerkGroups = buildPlannerGroups.individualPerkGroups
   const pickedPerkCountsByGroup = getPickedPerkCountsByGroup(pickedPerks)
@@ -513,6 +656,7 @@ export default function App() {
   const hoveredBuildPerkTooltipId =
     hoveredBuildPerk === null ? undefined : `build-perk-tooltip-${hoveredBuildPerk.id}`
   const hasPickedPerks = pickedPerks.length > 0
+  const hasSupportedBackgroundFitTargets = backgroundFitView.supportedBuildTargetTrees.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
@@ -572,6 +716,10 @@ export default function App() {
       setPickedPerkIds([])
       setHoveredBuildPerkTooltip(null)
     })
+  }
+
+  function handleBackgroundFitPanelToggle() {
+    setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)
   }
 
   function handleOpenBuildPerkTooltip(perkId: string, currentTarget: HTMLButtonElement) {
@@ -712,6 +860,15 @@ export default function App() {
     <div className="app-shell">
       <div className="background-runes" aria-hidden="true" />
       <header className="hero">
+        <a
+          aria-label="Open the battle-brothers-legends-browser repository on GitHub"
+          className="hero-repository-link"
+          href={repositoryUrl}
+          rel="noopener noreferrer"
+          target="_blank"
+        >
+          <GitHubIcon className="hero-repository-link-icon" />
+        </a>
         <div className="hero-copy">
           <p className="eyebrow">Battle Brothers legends</p>
           <h1>Perks browser</h1>
@@ -890,7 +1047,97 @@ export default function App() {
         </div>
       ) : null}
 
-      <main className="workspace">
+      <main
+        className={
+          isBackgroundFitPanelExpanded
+            ? 'workspace is-background-fit-expanded'
+            : 'workspace is-background-fit-collapsed'
+        }
+      >
+        <aside
+          aria-label="Background fit"
+          className={
+            isBackgroundFitPanelExpanded
+              ? 'background-fit-panel is-expanded'
+              : 'background-fit-panel is-collapsed'
+          }
+          data-testid="background-fit-panel"
+        >
+          <div
+            aria-hidden={!isBackgroundFitPanelExpanded}
+            className="background-fit-panel-body"
+            data-testid="background-fit-panel-body"
+          >
+            {!hasPickedPerks ? (
+              <div className="background-fit-empty-state">
+                <p className="background-fit-summary-copy">
+                  Pick perks into the build planner to rank backgrounds by guaranteed and exact
+                  probabilistic tree coverage.
+                </p>
+                <p className="background-fit-summary-copy">
+                  Exact probabilities come from the Legends background tree rules, not simulation.
+                </p>
+              </div>
+            ) : (
+              <>
+                {hasSupportedBackgroundFitTargets ? (
+                  <>
+                    <p className="background-fit-ranking-summary">
+                      Ranked by guaranteed build weight first, then expected extra coverage.
+                    </p>
+                    <ol className="background-fit-ranking" data-testid="background-fit-ranking">
+                      {backgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
+                        <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
+                          {renderBackgroundFitCard(backgroundFit, backgroundFitIndex)}
+                        </li>
+                      ))}
+                    </ol>
+                  </>
+                ) : (
+                  <div className="background-fit-empty-state">
+                    <p className="background-fit-summary-copy">
+                      {backgroundFitView.unsupportedBuildTargetTrees.length > 0
+                        ? 'This build only contains unsupported categories for dynamic background trees.'
+                        : 'Pick perks from Weapon, Defense, Traits, Enemy, Class, Profession, or Magic to rank backgrounds exactly.'}
+                    </p>
+                    {backgroundFitView.unsupportedBuildTargetTrees.length > 0 ? (
+                      <>
+                        <p className="background-fit-section-label">Unsupported build trees</p>
+                        <p className="results-note">
+                          Background dynamic trees only roll Weapon, Defense, Traits, Enemy, Class,
+                          Profession, and Magic.
+                        </p>
+                        <ul className="background-fit-target-list is-unsupported">
+                          {backgroundFitView.unsupportedBuildTargetTrees.map((buildTargetTree) =>
+                            renderBackgroundFitTargetTree(buildTargetTree, 'unsupported'),
+                          )}
+                        </ul>
+                      </>
+                    ) : null}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <button
+            aria-expanded={isBackgroundFitPanelExpanded}
+            aria-label={`${isBackgroundFitPanelExpanded ? 'Collapse' : 'Expand'} background fit`}
+            className="background-fit-rail-button"
+            onClick={handleBackgroundFitPanelToggle}
+            type="button"
+          >
+            <span aria-hidden="true" className="background-fit-rail-button-icon">
+              <BackgroundFitRailChevron isExpanded={isBackgroundFitPanelExpanded} />
+            </span>
+            {!isBackgroundFitPanelExpanded ? (
+              <span aria-hidden="true" className="background-fit-rail-button-label">
+                Background fit
+              </span>
+            ) : null}
+          </button>
+        </aside>
+
         <aside className="sidebar" aria-label="Perk categories">
           <div className="panel-heading">
             <h2>Categories</h2>

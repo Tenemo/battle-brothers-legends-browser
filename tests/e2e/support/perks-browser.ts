@@ -27,6 +27,10 @@ export function getBuildPerksBar(page: Page): Locator {
   return page.getByTestId('build-perks-bar')
 }
 
+export function getBackgroundFitPanel(page: Page): Locator {
+  return page.getByTestId('background-fit-panel')
+}
+
 export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
 }

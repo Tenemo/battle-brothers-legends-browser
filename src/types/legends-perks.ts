@@ -3,6 +3,15 @@ export type LegendsSourceFile = {
   role: string
 }
 
+export type LegendsDynamicBackgroundCategoryName =
+  | 'Weapon'
+  | 'Defense'
+  | 'Traits'
+  | 'Enemy'
+  | 'Class'
+  | 'Profession'
+  | 'Magic'
+
 export type LegendsPerkPlacement = {
   categoryName: string
   sourceFilePath: string
@@ -57,7 +66,33 @@ export type LegendsPerkRecord = {
   sourceFilePaths: string[]
 }
 
+export type LegendsBackgroundFitCategoryDefinition = {
+  chance: number | null
+  minimumTrees: number | null
+  treeIds: string[]
+}
+
+export type LegendsBackgroundFitBackgroundDefinition = {
+  backgroundId: string
+  backgroundName: string
+  categories: Partial<
+    Record<LegendsDynamicBackgroundCategoryName, LegendsBackgroundFitCategoryDefinition>
+  >
+  sourceFilePath: string
+}
+
+export type LegendsBackgroundFitClassWeaponDependency = {
+  classTreeId: string
+  weaponTreeId: string
+}
+
+export type LegendsBackgroundFitRules = {
+  classWeaponDependencies: LegendsBackgroundFitClassWeaponDependency[]
+}
+
 export type LegendsPerksDataset = {
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[]
+  backgroundFitRules: LegendsBackgroundFitRules
   generatedAt: string
   perkCount: number
   perks: LegendsPerkRecord[]

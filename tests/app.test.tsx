@@ -12,6 +12,11 @@ describe('app', () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', {
+        name: 'Open the battle-brothers-legends-browser repository on GitHub',
+      }),
+    ).toHaveAttribute('href', 'https://github.com/Tenemo/battle-brothers-legends-browser')
     expect(screen.getByLabelText('Search perks')).toBeInTheDocument()
     expect(screen.getByTestId('build-perks-bar')).toBeInTheDocument()
     expect(screen.getByTestId('build-shared-groups-list')).toBeInTheDocument()
@@ -441,5 +446,69 @@ describe('app', () => {
         { exact: true },
       ),
     ).toBeInTheDocument()
+  })
+
+  test('shows the background fit ranking for the current build and can collapse the panel', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Axe Mastery to build from results',
+      }),
+    )
+
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const backgroundFitPanelBody = screen.getByTestId('background-fit-panel-body')
+    const backgroundFitToggle = within(backgroundFitPanel).getByRole('button', {
+      name: 'Collapse background fit',
+    })
+
+    expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
+    expect(within(backgroundFitPanel).queryByText('Background fit')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText(/Ranked by guaranteed build weight first/i)).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('Apprentice')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('53.3%')).toBeInTheDocument()
+
+    await user.click(backgroundFitToggle)
+
+    expect(backgroundFitToggle).toHaveAttribute('aria-expanded', 'false')
+    expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'true')
+    expect(within(backgroundFitPanel).getByText('Background fit')).toBeInTheDocument()
+
+    await user.click(
+      within(backgroundFitPanel).getByRole('button', {
+        name: 'Expand background fit',
+      }),
+    )
+
+    expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
+  })
+
+  test('shows duplicate-name disambiguators only for repeated backgrounds in the background fit list', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Axe Mastery to build from results',
+      }),
+    )
+
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const apprenticeHeading = within(backgroundFitPanel).getByRole('heading', {
+      level: 3,
+      name: 'Apprentice',
+    })
+    const apprenticeCard = apprenticeHeading.closest('.background-fit-card')
+
+    expect(apprenticeCard).not.toBeNull()
+    expect(apprenticeCard?.querySelector('.background-fit-disambiguator')).toBeNull()
+    expect(within(backgroundFitPanel).getByText('companion 1h')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('companion 2h')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('companion ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('converted cultist')).toBeInTheDocument()
   })
 })

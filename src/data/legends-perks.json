@@ -1,5 +1,4325 @@
 {
-  "generatedAt": "2026-04-21T22:40:02.129Z",
+  "backgroundFitBackgrounds": [
+    {
+      "backgroundId": "background.adventurous_noble",
+      "backgroundName": "Adventurous Noble",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "PolearmTree",
+            "DaggerTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "InspirationalTree",
+            "IntelligentTree",
+            "TrainedTree",
+            "ViciousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/adventurous_noble_background.nut"
+    },
+    {
+      "backgroundId": "background.anatomist",
+      "backgroundName": "Anatomist",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "CleaverTree",
+            "SwordTree",
+            "SpearTree",
+            "CrossbowTree",
+            "PolearmTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IntelligentTree",
+            "CalmTree",
+            "DeviousTree",
+            "InspirationalTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "HealerClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "HealerProfessionTree",
+            "HerbalistProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "PhilosophyMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/anatomist_background.nut"
+    },
+    {
+      "backgroundId": "background.apprentice",
+      "backgroundName": "Apprentice",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "HammerTree",
+            "CrossbowTree",
+            "AxeTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IndestructibleTree",
+            "IntelligentTree",
+            "TrainedTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/apprentice_background.nut"
+    },
+    {
+      "backgroundId": "background.assassin",
+      "backgroundName": "Assassin",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "DaggerTree",
+            "CrossbowTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree",
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "CalmTree",
+            "AgileTree",
+            "ViciousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "SwordmastersTree",
+            "CivilizationTree",
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "AssassinMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/assassin_background.nut"
+    },
+    {
+      "backgroundId": "background.barbarian",
+      "backgroundName": "Barbarian",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "AxeTree",
+            "HammerTree",
+            "MaceTree",
+            "CleaverTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "TrainedTree",
+            "LargeTree",
+            "SturdyTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/barbarian_background.nut"
+    },
+    {
+      "backgroundId": "background.bastard",
+      "backgroundName": "Bastard",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "AxeTree",
+            "ShieldTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 3,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "IndestructibleTree",
+            "TrainedTree",
+            "LargeTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/bastard_background.nut"
+    },
+    {
+      "backgroundId": "background.beast_slayer",
+      "backgroundName": "Beast Slayer",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SpearTree",
+            "PolearmTree",
+            "ThrowingTree",
+            "BowTree",
+            "AxeTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "DeviousTree",
+            "AgileTree",
+            "CalmTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "OccultTree",
+            "BeastTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/beast_hunter_background.nut"
+    },
+    {
+      "backgroundId": "background.beggar",
+      "backgroundName": "Beggar",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "SlingTree",
+            "PolearmTree",
+            "FistsTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "IndestructibleTree",
+            "DeviousTree",
+            "CalmTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/beggar_background.nut"
+    },
+    {
+      "backgroundId": "background.belly_dancer",
+      "backgroundName": "Belly Dancer",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "PolearmTree",
+            "DaggerTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "FitTree",
+            "FastTree",
+            "AgileTree",
+            "DeviousTree",
+            "IntelligentTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "SwordmastersTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "JugglerClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "AssassinMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/belly_dancer_background.nut"
+    },
+    {
+      "backgroundId": "background.bowyer",
+      "backgroundName": "Bowyer",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "BowTree",
+            "CrossbowTree",
+            "ThrowingTree",
+            "DaggerTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "CalmTree",
+            "OrganisedTree",
+            "AgileTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/bowyer_background.nut"
+    },
+    {
+      "backgroundId": "background.brawler",
+      "backgroundName": "Brawler",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "MaceTree",
+            "ThrowingTree",
+            "FistsTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "LargeTree",
+            "FitTree",
+            "FastTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/brawler_background.nut"
+    },
+    {
+      "backgroundId": "background.butcher",
+      "backgroundName": "Butcher",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "CleaverTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "IndestructibleTree",
+            "CalmTree",
+            "LargeTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "ChefProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/butcher_background.nut"
+    },
+    {
+      "backgroundId": "background.caravan_hand",
+      "backgroundName": "Caravan Hand",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "SpearTree",
+            "AxeTree",
+            "ThrowingTree",
+            "ShieldTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "SturdyTree",
+            "OrganisedTree",
+            "FitTree",
+            "LargeTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CaravaneerProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/caravan_hand_background.nut"
+    },
+    {
+      "backgroundId": "background.companion",
+      "backgroundName": "Companion",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SpearTree",
+            "SwordTree",
+            "ShieldTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FastTree",
+            "TrainedTree",
+            "SturdyTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_1h_background.nut"
+    },
+    {
+      "backgroundId": "background.companion",
+      "backgroundName": "Companion",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "ThrowingTree",
+            "AxeTree",
+            "SwordTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "SturdyTree",
+            "TrainedTree",
+            "FitTree",
+            "LargeTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_2h_background.nut"
+    },
+    {
+      "backgroundId": "background.companion",
+      "backgroundName": "Companion",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "CrossbowTree",
+            "ThrowingTree",
+            "DaggerTree",
+            "BowTree",
+            "SlingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FastTree",
+            "AgileTree",
+            "FitTree",
+            "ViciousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_ranged_background.nut"
+    },
+    {
+      "backgroundId": "background.crucified",
+      "backgroundName": "Converted Crusader",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "FlailTree",
+            "CleaverTree",
+            "MaceTree",
+            "ShieldTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "LargeTree",
+            "IndestructibleTree",
+            "MartyrTree",
+            "IntelligentTree",
+            "InspirationalTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "OutlawTree",
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/crucified_background.nut"
+    },
+    {
+      "backgroundId": "background.cripple",
+      "backgroundName": "Cripple",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "SlingTree",
+            "PolearmTree",
+            "FistsTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "IntelligentTree",
+            "DeviousTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/cripple_background.nut"
+    },
+    {
+      "backgroundId": "background.crusader",
+      "backgroundName": "Crusader",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "ShieldTree",
+            "FlailTree",
+            "HammerTree",
+            "MaceTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "LargeTree",
+            "IndestructibleTree",
+            "MartyrTree",
+            "IntelligentTree",
+            "InspirationalTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "UndeadTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "FaithClassTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/crusader_background.nut"
+    },
+    {
+      "backgroundId": "background.converted_cultist",
+      "backgroundName": "Cultist",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "CleaverTree",
+            "FlailTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "ViciousTree",
+            "FastTree",
+            "IndestructibleTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "NinetailsClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/converted_cultist_background.nut"
+    },
+    {
+      "backgroundId": "background.cultist",
+      "backgroundName": "Cultist",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "CleaverTree",
+            "FlailTree",
+            "SlingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "ViciousTree",
+            "FastTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree",
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "NinetailsClassTree",
+            "BeastClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/cultist_background.nut"
+    },
+    {
+      "backgroundId": "background.daytaler",
+      "backgroundName": "Daytaler",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "HammerTree",
+            "AxeTree",
+            "MaceTree",
+            "SlingTree",
+            "ShieldTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "SturdyTree",
+            "LargeTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.21000000000000002,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/daytaler_background.nut"
+    },
+    {
+      "backgroundId": "background.deserter",
+      "backgroundName": "Deserter",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SpearTree",
+            "MaceTree",
+            "ShieldTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 3,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "LargeTree",
+            "TrainedTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "OutlawTree",
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/deserter_background.nut"
+    },
+    {
+      "backgroundId": "background.disowned_noble",
+      "backgroundName": "Disowned Noble",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "DaggerTree",
+            "SpearTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "IntelligentTree",
+            "TrainedTree",
+            "MartyrTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/disowned_noble_background.nut"
+    },
+    {
+      "backgroundId": "background.eunuch",
+      "backgroundName": "Eunuch",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "CleaverTree",
+            "DaggerTree",
+            "SlingTree",
+            "MaceTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IntelligentTree",
+            "DeviousTree",
+            "CalmTree",
+            "MartyrTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BarterProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/eunuch_background.nut"
+    },
+    {
+      "backgroundId": "background.farmhand",
+      "backgroundName": "Farmhand",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "FlailTree",
+            "SlingTree",
+            "CleaverTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "LargeTree",
+            "IndestructibleTree",
+            "SturdyTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/farmhand_background.nut"
+    },
+    {
+      "backgroundId": "background.fisherman",
+      "backgroundName": "Fisherman",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "ThrowingTree",
+            "SpearTree",
+            "DaggerTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "LargeTree",
+            "ViciousTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/fisherman_background.nut"
+    },
+    {
+      "backgroundId": "background.flagellant",
+      "backgroundName": "Flagellant",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "FlailTree",
+            "CleaverTree",
+            "SlingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "IndestructibleTree",
+            "ViciousTree",
+            "SturdyTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "NinetailsClassTree",
+            "FaithClassTree",
+            "HealerClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/flagellant_background.nut"
+    },
+    {
+      "backgroundId": "background.gambler",
+      "backgroundName": "Gambler",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "ThrowingTree",
+            "PolearmTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "DeviousTree",
+            "IntelligentTree",
+            "CalmTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "ConArtistTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/gambler_background.nut"
+    },
+    {
+      "backgroundId": "background.gladiator",
+      "backgroundName": "Gladiator",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "SwordTree",
+            "ShieldTree",
+            "DaggerTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree",
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "IndestructibleTree",
+            "AgileTree",
+            "LargeTree",
+            "FitTree",
+            "MartyrTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/gladiator_background.nut"
+    },
+    {
+      "backgroundId": "background.gravedigger",
+      "backgroundName": "Gravedigger",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "MaceTree",
+            "HammerTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "LargeTree",
+            "OrganisedTree",
+            "SturdyTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastTree",
+            "UndeadTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/gravedigger_background.nut"
+    },
+    {
+      "backgroundId": "background.graverobber",
+      "backgroundName": "Graverobber",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "MaceTree",
+            "HammerTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "LargeTree",
+            "ViciousTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastTree",
+            "UndeadTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/graverobber_background.nut"
+    },
+    {
+      "backgroundId": "background.assassin_southern",
+      "backgroundName": "Hashassin",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "DaggerTree",
+            "CleaverTree",
+            "BowTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree",
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "CalmTree",
+            "FitTree",
+            "AgileTree",
+            "ViciousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "AssassinMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/assassin_southern_background.nut"
+    },
+    {
+      "backgroundId": "background.hedge_knight",
+      "backgroundName": "Hedge Knight",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "AxeTree",
+            "MaceTree",
+            "FlailTree",
+            "HammerTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "ViciousTree",
+            "LargeTree",
+            "IndestructibleTree",
+            "MartyrTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "SwordmastersTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/hedge_knight_background.nut"
+    },
+    {
+      "backgroundId": "background.historian",
+      "backgroundName": "Historian",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "PolearmTree",
+            "ThrowingTree",
+            "SpearTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IntelligentTree",
+            "DeviousTree",
+            "OrganisedTree",
+            "InspirationalTree",
+            "CalmTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "PhilosophyMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/historian_background.nut"
+    },
+    {
+      "backgroundId": "background.houndmaster",
+      "backgroundName": "Houndmaster",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "ThrowingTree",
+            "PolearmTree",
+            "SlingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "FastTree",
+            "TrainedTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "HoundmasterClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "DogBreederProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/houndmaster_background.nut"
+    },
+    {
+      "backgroundId": "background.hunter",
+      "backgroundName": "Hunter",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "BowTree",
+            "CrossbowTree",
+            "SwordTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "AgileTree",
+            "FastTree",
+            "ViciousTree",
+            "FitTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastTree",
+            "OccultTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/hunter_background.nut"
+    },
+    {
+      "backgroundId": "background.slave",
+      "backgroundName": "Indebted",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "CleaverTree",
+            "FlailTree",
+            "SpearTree",
+            "SlingTree",
+            "FistsTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree",
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "SturdyTree",
+            "LargeTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/slave_background.nut"
+    },
+    {
+      "backgroundId": "background.juggler",
+      "backgroundName": "Juggler",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "ThrowingTree",
+            "MaceTree",
+            "FlailTree",
+            "DaggerTree",
+            "PolearmTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "AgileTree",
+            "FitTree",
+            "FastTree",
+            "CalmTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "JugglerClassTree",
+            "ConArtistTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/juggler_background.nut"
+    },
+    {
+      "backgroundId": "background.killer_on_the_run",
+      "backgroundName": "Killer on the Run",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "SwordTree",
+            "PolearmTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "DeviousTree",
+            "LargeTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree",
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "AssassinMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/killer_on_the_run_background.nut"
+    },
+    {
+      "backgroundId": "background.kings_guard",
+      "backgroundName": "King's Guard",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "PolearmTree",
+            "AxeTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "ViciousTree",
+            "LargeTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "SwordmastersTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "ImmortalMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/kings_guard_background.nut"
+    },
+    {
+      "backgroundId": "background.lindwurm_slayer",
+      "backgroundName": "Lindwurm Slayer",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "SpearTree",
+            "AxeTree",
+            "ThrowingTree",
+            "BowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree",
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "DeviousTree",
+            "AgileTree",
+            "TrainedTree",
+            "ViciousTree",
+            "LargeTree",
+            "IndestructibleTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/lindwurm_slayer_background.nut"
+    },
+    {
+      "backgroundId": "background.lumberjack",
+      "backgroundName": "Lumberjack",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "AxeTree",
+            "PolearmTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "AgileTree",
+            "LargeTree",
+            "SturdyTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "WoodworkingProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/lumberjack_background.nut"
+    },
+    {
+      "backgroundId": "background.manhunter",
+      "backgroundName": "Manhunter",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "MaceTree",
+            "PolearmTree",
+            "CleaverTree",
+            "SwordTree",
+            "BowTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree",
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "DeviousTree",
+            "AgileTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree",
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/manhunter_background.nut"
+    },
+    {
+      "backgroundId": "background.mason",
+      "backgroundName": "Mason",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "HammerTree",
+            "MaceTree",
+            "PolearmTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "AgileTree",
+            "LargeTree",
+            "IntelligentTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/mason_background.nut"
+    },
+    {
+      "backgroundId": "background.messenger",
+      "backgroundName": "Messenger",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "ThrowingTree",
+            "PolearmTree",
+            "SpearTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "AgileTree",
+            "OrganisedTree",
+            "FastTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/messenger_background.nut"
+    },
+    {
+      "backgroundId": "background.militia",
+      "backgroundName": "Militia",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SpearTree",
+            "SlingTree",
+            "ShieldTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree",
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "ViciousTree",
+            "FitTree",
+            "AgileTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/militia_background.nut"
+    },
+    {
+      "backgroundId": "background.miller",
+      "backgroundName": "Miller",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "MaceTree",
+            "CleaverTree",
+            "FlailTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "OrganisedTree",
+            "FitTree",
+            "LargeTree",
+            "SturdyTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "ChefProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/miller_background.nut"
+    },
+    {
+      "backgroundId": "background.miner",
+      "backgroundName": "Miner",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "HammerTree",
+            "AxeTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IndestructibleTree",
+            "LargeTree",
+            "TrainedTree",
+            "SturdyTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "GreenskinTree",
+            "BeastTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "MinerProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/miner_background.nut"
+    },
+    {
+      "backgroundId": "background.minstrel",
+      "backgroundName": "Minstrel",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "MaceTree",
+            "PolearmTree",
+            "ThrowingTree",
+            "CrossbowTree",
+            "DaggerTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IntelligentTree",
+            "FastTree",
+            "FitTree",
+            "InspirationalTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "JugglerClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BardMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/minstrel_background.nut"
+    },
+    {
+      "backgroundId": "background.monk",
+      "backgroundName": "Monk",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "FlailTree",
+            "MaceTree",
+            "HammerTree",
+            "SlingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IntelligentTree",
+            "CalmTree",
+            "IndestructibleTree",
+            "InspirationalTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "UndeadTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "FaithClassTree",
+            "HealerClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "HealerProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/monk_background.nut"
+    },
+    {
+      "backgroundId": "background.monk_turned_flagellant",
+      "backgroundName": "Monk turned Flagellant",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "FlailTree",
+            "MaceTree",
+            "CleaverTree",
+            "HammerTree",
+            "SlingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IntelligentTree",
+            "MartyrTree",
+            "InspirationalTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "NinetailsClassTree",
+            "FaithClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "HealerProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/monk_turned_flagellant_background.nut"
+    },
+    {
+      "backgroundId": "background.nomad",
+      "backgroundName": "Nomad",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "MaceTree",
+            "SpearTree",
+            "CleaverTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "FastTree",
+            "AgileTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree",
+            "BeastTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/nomad_background.nut"
+    },
+    {
+      "backgroundId": "background.paladin",
+      "backgroundName": "Oathtaker",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "ShieldTree",
+            "MaceTree",
+            "HammerTree",
+            "SwordTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "LargeTree",
+            "MartyrTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "UndeadTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/paladin_background.nut"
+    },
+    {
+      "backgroundId": "background.orc_slayer",
+      "backgroundName": "Orc Slayer",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "HammerTree",
+            "AxeTree",
+            "SwordTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "InspirationalTree",
+            "FitTree",
+            "LargeTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "GreenskinTree",
+            "BeastTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/orc_slayer_background.nut"
+    },
+    {
+      "backgroundId": "background.pacified_flagellant",
+      "backgroundName": "Pacified Flagellant",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "FlailTree",
+            "CleaverTree",
+            "SlingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "IndestructibleTree",
+            "IntelligentTree",
+            "InspirationalTree",
+            "SturdyTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "NinetailsClassTree",
+            "FaithClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "HealerProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/pacified_flagellant_background.nut"
+    },
+    {
+      "backgroundId": "background.peddler",
+      "backgroundName": "Peddler",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "DaggerTree",
+            "CrossbowTree",
+            "MaceTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "OrganisedTree",
+            "CalmTree",
+            "IntelligentTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BarterProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/peddler_background.nut"
+    },
+    {
+      "backgroundId": "background.pimp",
+      "backgroundName": "Pimp",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "ThrowingTree",
+            "DaggerTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "InspirationalTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree",
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BarterProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/pimp_background.nut"
+    },
+    {
+      "backgroundId": "background.poacher",
+      "backgroundName": "Poacher",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "BowTree",
+            "SlingTree",
+            "DaggerTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "CalmTree",
+            "FastTree",
+            "DeviousTree",
+            "AgileTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastTree",
+            "GreenskinTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/poacher_background.nut"
+    },
+    {
+      "backgroundId": "background.raider",
+      "backgroundName": "Raider",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "AxeTree",
+            "PolearmTree",
+            "ThrowingTree",
+            "FlailTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree",
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "LargeTree",
+            "TrainedTree",
+            "ViciousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree",
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/raider_background.nut"
+    },
+    {
+      "backgroundId": "background.ratcatcher",
+      "backgroundName": "Ratcatcher",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "ThrowingTree",
+            "SlingTree",
+            "SpearTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "DeviousTree",
+            "FastTree",
+            "CalmTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/ratcatcher_background.nut"
+    },
+    {
+      "backgroundId": "background.refugee",
+      "backgroundName": "Refugee",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "PolearmTree",
+            "SlingTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "MartyrTree",
+            "SturdyTree",
+            "FastTree",
+            "IndestructibleTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.21000000000000002,
+          "minimumTrees": 1,
+          "treeIds": [
+            "StaffClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/refugee_background.nut"
+    },
+    {
+      "backgroundId": "background.regent_in_absentia",
+      "backgroundName": "Regent in Absentia",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": []
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": []
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": []
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CaptainMagicTree"
+          ]
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/regent_in_absentia_background.nut"
+    },
+    {
+      "backgroundId": "background.retired_soldier",
+      "backgroundName": "Retired Soldier",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "AxeTree",
+            "ShieldTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 3,
+          "treeIds": [
+            "HeavyArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "OrganisedTree",
+            "InspirationalTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 2,
+          "treeIds": [
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "FencingTeacherProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/retired_soldier_background.nut"
+    },
+    {
+      "backgroundId": "background.sellsword",
+      "backgroundName": "Sellsword",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "ShieldTree",
+            "CrossbowTree",
+            "AxeTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 3,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "ViciousTree",
+            "SturdyTree",
+            "FitTree",
+            "LargeTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 2,
+          "treeIds": [
+            "OutlawTree",
+            "OutlawTree",
+            "CivilizationTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/sellsword_background.nut"
+    },
+    {
+      "backgroundId": "background.servant",
+      "backgroundName": "Servant",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "MaceTree",
+            "PolearmTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "OrganisedTree",
+            "CalmTree",
+            "IntelligentTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BarterProfessionTree",
+            "ChefProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/servant_background.nut"
+    },
+    {
+      "backgroundId": "background.shepherd",
+      "backgroundName": "Shepherd",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SlingTree",
+            "PolearmTree",
+            "ThrowingTree",
+            "CleaverTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "FitTree",
+            "CalmTree",
+            "FastTree",
+            "AgileTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "BeastTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/shepherd_background.nut"
+    },
+    {
+      "backgroundId": "background.squire",
+      "backgroundName": "Squire",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "PolearmTree",
+            "HammerTree",
+            "CrossbowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "HeavyArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IntelligentTree",
+            "TrainedTree",
+            "FitTree",
+            "FastTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/squire_background.nut"
+    },
+    {
+      "backgroundId": "background.swordmaster",
+      "backgroundName": "Swordmaster",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "PolearmTree",
+            "DaggerTree",
+            "ThrowingTree",
+            "FistsTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "TrainedTree",
+            "CalmTree",
+            "LargeTree",
+            "ViciousTree",
+            "AgileTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "SwordmastersTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "FencingTeacherProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/swordmaster_background.nut"
+    },
+    {
+      "backgroundId": "background.tailor",
+      "backgroundName": "Tailor",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "DaggerTree",
+            "SwordTree",
+            "SpearTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "CalmTree",
+            "OrganisedTree",
+            "FastTree",
+            "ViciousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "TailorClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "RepairProfessionTree"
+          ]
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/tailor_background.nut"
+    },
+    {
+      "backgroundId": "background.thief",
+      "backgroundName": "Thief",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "SwordTree",
+            "DaggerTree",
+            "BowTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "ClothArmorTree",
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "ViciousTree",
+            "MartyrTree",
+            "AgileTree",
+            "DeviousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "CivilizationTree",
+            "OutlawTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "ConArtistTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/thief_background.nut"
+    },
+    {
+      "backgroundId": "background.vagabond",
+      "backgroundName": "Vagabond",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "HammerTree",
+            "CleaverTree",
+            "PolearmTree",
+            "ThrowingTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "MediumArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "IndestructibleTree",
+            "OrganisedTree",
+            "FastTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/vagabond_background.nut"
+    },
+    {
+      "backgroundId": "background.wildman",
+      "backgroundName": "Wildman",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "MaceTree",
+            "AxeTree",
+            "ThrowingTree",
+            "FistsTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "SturdyTree",
+            "IndestructibleTree",
+            "LargeTree",
+            "FitTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "GreenskinTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/wildman_background.nut"
+    },
+    {
+      "backgroundId": "background.witchhunter",
+      "backgroundName": "Witchhunter",
+      "categories": {
+        "Weapon": {
+          "chance": null,
+          "minimumTrees": 8,
+          "treeIds": [
+            "CrossbowTree",
+            "CleaverTree",
+            "SwordTree",
+            "DaggerTree"
+          ]
+        },
+        "Defense": {
+          "chance": null,
+          "minimumTrees": 2,
+          "treeIds": [
+            "LightArmorTree"
+          ]
+        },
+        "Traits": {
+          "chance": null,
+          "minimumTrees": 7,
+          "treeIds": [
+            "AgileTree",
+            "InspirationalTree",
+            "IntelligentTree",
+            "CalmTree",
+            "ViciousTree"
+          ]
+        },
+        "Enemy": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "UndeadTree",
+            "OccultTree"
+          ]
+        },
+        "Class": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": [
+            "PoisonClassTree"
+          ]
+        },
+        "Profession": {
+          "chance": 0.01,
+          "minimumTrees": 1,
+          "treeIds": []
+        },
+        "Magic": {
+          "chance": 0,
+          "minimumTrees": 1,
+          "treeIds": []
+        }
+      },
+      "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/witchhunter_background.nut"
+    }
+  ],
+  "backgroundFitRules": {
+    "classWeaponDependencies": [
+      {
+        "classTreeId": "ButcherClassTree",
+        "weaponTreeId": "CleaverTree"
+      },
+      {
+        "classTreeId": "ClubClassTree",
+        "weaponTreeId": "MaceTree"
+      },
+      {
+        "classTreeId": "HammerClassTree",
+        "weaponTreeId": "HammerTree"
+      },
+      {
+        "classTreeId": "InquisitionClassTree",
+        "weaponTreeId": "CrossbowTree"
+      },
+      {
+        "classTreeId": "InventorClassTree",
+        "weaponTreeId": "CrossbowTree"
+      },
+      {
+        "classTreeId": "KnifeClassTree",
+        "weaponTreeId": "DaggerTree"
+      },
+      {
+        "classTreeId": "LongswordClassTree",
+        "weaponTreeId": "SwordTree"
+      },
+      {
+        "classTreeId": "MilitiaClassTree",
+        "weaponTreeId": "SpearTree"
+      },
+      {
+        "classTreeId": "NinetailsClassTree",
+        "weaponTreeId": "FlailTree"
+      },
+      {
+        "classTreeId": "PickaxeClassTree",
+        "weaponTreeId": "HammerTree"
+      },
+      {
+        "classTreeId": "PitchforkClassTree",
+        "weaponTreeId": "PolearmTree"
+      },
+      {
+        "classTreeId": "ScytheClassTree",
+        "weaponTreeId": "PolearmTree"
+      },
+      {
+        "classTreeId": "ShortbowClassTree",
+        "weaponTreeId": "BowTree"
+      },
+      {
+        "classTreeId": "ShovelClassTree",
+        "weaponTreeId": "MaceTree"
+      },
+      {
+        "classTreeId": "SickleClassTree",
+        "weaponTreeId": "SwordTree"
+      },
+      {
+        "classTreeId": "SlingClassTree",
+        "weaponTreeId": "SlingTree"
+      },
+      {
+        "classTreeId": "StaffClassTree",
+        "weaponTreeId": "PolearmTree"
+      },
+      {
+        "classTreeId": "WoodaxeClassTree",
+        "weaponTreeId": "AxeTree"
+      }
+    ]
+  },
+  "generatedAt": "2026-04-22T08:46:28.329Z",
   "perkCount": 367,
   "perks": [
     {
@@ -50185,6 +54505,10 @@
     {
       "path": ".cache/legends-public/current/mod_legends/afterHooks/perk_to_perk_groups_mapping.nut",
       "role": "perk category order"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/config/perks_tree.nut",
+      "role": "background fit rules"
     },
     {
       "path": ".cache/legends-public/current/mod_legends/config/z_legends_fav_enemies.nut",

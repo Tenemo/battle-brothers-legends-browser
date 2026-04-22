@@ -30,6 +30,16 @@ const defaultCategoryOrder = [
   'Other',
 ]
 
+const dynamicBackgroundCategoryNames = [
+  'Weapon',
+  'Defense',
+  'Traits',
+  'Enemy',
+  'Class',
+  'Profession',
+  'Magic',
+]
+
 const categoryMinimumKeyMap = {
   Class: 'Class',
   Defense: 'Defense',
@@ -740,6 +750,124 @@ function parseBackgroundHookFile(fileSource, sourceFilePath, baseDynamicTreeValu
   }
 }
 
+function parseBackgroundFitRulesFile(fileSource, treeDefinitions) {
+  const dynamicPerkTreeAssignment = collectTopLevelStatements(fileSource).find(
+    (statement) =>
+      statement.type === 'assignment' &&
+      statement.target === '::Const.Perks.GetDynamicPerkTree' &&
+      typeof statement.value === 'object' &&
+      statement.value !== null &&
+      statement.value.type === 'function',
+  )
+
+  if (!dynamicPerkTreeAssignment || dynamicPerkTreeAssignment.value.type !== 'function') {
+    return {
+      classWeaponDependencies: [],
+    }
+  }
+
+  const localAssignments = extractLocalAssignments(dynamicPerkTreeAssignment.value.body)
+  const weaponClassMapValue = localAssignments.get('weaponClassMap')
+
+  if (!weaponClassMapValue) {
+    return {
+      classWeaponDependencies: [],
+    }
+  }
+
+  return {
+    classWeaponDependencies: arrayValues(weaponClassMapValue)
+      .map((dependencyPairValue) => referenceArrayValue(dependencyPairValue).map(getLastPathSegment))
+      .flatMap((dependencyPair) => {
+        const [classTreeConstName, weaponTreeConstName] = dependencyPair
+        const classTreeDefinition =
+          classTreeConstName === undefined ? undefined : treeDefinitions.get(classTreeConstName)
+        const weaponTreeDefinition =
+          weaponTreeConstName === undefined ? undefined : treeDefinitions.get(weaponTreeConstName)
+
+        if (!classTreeDefinition || !weaponTreeDefinition) {
+          return []
+        }
+
+        return [
+          {
+            classTreeId: classTreeDefinition.id,
+            weaponTreeId: weaponTreeDefinition.id,
+          },
+        ]
+      })
+      .filter(
+        (dependency, index, dependencies) =>
+          dependencies.findIndex(
+            (candidate) =>
+              candidate.classTreeId === dependency.classTreeId &&
+              candidate.weaponTreeId === dependency.weaponTreeId,
+          ) === index,
+      )
+      .toSorted(
+        (leftDependency, rightDependency) =>
+          leftDependency.classTreeId.localeCompare(rightDependency.classTreeId) ||
+          leftDependency.weaponTreeId.localeCompare(rightDependency.weaponTreeId),
+      ),
+  }
+}
+
+function buildBackgroundFitBackgrounds(backgrounds, treeDefinitions) {
+  return backgrounds
+    .map((background) => {
+      const dynamicTreeEntries = tableEntriesToMap(background.dynamicTreeValue)
+
+      return {
+        backgroundId: background.backgroundIdentifier,
+        backgroundName: background.backgroundName,
+        categories: Object.fromEntries(
+          dynamicBackgroundCategoryNames.map((categoryName) => {
+            const treeValue = dynamicTreeEntries.get(categoryName)
+
+            return [
+              categoryName,
+              {
+                chance: resolveChanceValue(background.minimums, categoryName),
+                minimumTrees: resolveMinimumValue(background.minimums, categoryName),
+                treeIds: referenceArrayValue(treeValue)
+                  .map(getLastPathSegment)
+                  .flatMap((treeConstName) => {
+                    const treeDefinition = treeDefinitions.get(treeConstName)
+                    return treeDefinition ? [treeDefinition.id] : []
+                  }),
+              },
+            ]
+          }),
+        ),
+        sourceFilePath: background.sourceFilePath,
+      }
+    })
+    .toSorted(
+      (leftBackground, rightBackground) =>
+        leftBackground.backgroundName.localeCompare(rightBackground.backgroundName) ||
+        leftBackground.backgroundId.localeCompare(rightBackground.backgroundId) ||
+        leftBackground.sourceFilePath.localeCompare(rightBackground.sourceFilePath) ||
+        dynamicBackgroundCategoryNames.reduce((difference, categoryName) => {
+          if (difference !== 0) {
+            return difference
+          }
+
+          const leftCategory = leftBackground.categories[categoryName]
+          const rightCategory = rightBackground.categories[categoryName]
+
+          return (
+            (leftCategory?.minimumTrees ?? Number.NEGATIVE_INFINITY) -
+              (rightCategory?.minimumTrees ?? Number.NEGATIVE_INFINITY) ||
+            (leftCategory?.chance ?? Number.NEGATIVE_INFINITY) -
+              (rightCategory?.chance ?? Number.NEGATIVE_INFINITY) ||
+            (leftCategory?.treeIds.join('::') ?? '').localeCompare(
+              rightCategory?.treeIds.join('::') ?? '',
+            )
+          )
+        }, 0),
+    )
+}
+
 function parseScenarioHookFile(fileSource, sourceFilePath) {
   const wrapperFunction = extractHookWrapperFunction(fileSource)
 
@@ -1055,6 +1183,7 @@ export async function createDataset(
     'config',
     'z_legends_fav_enemies.nut',
   )
+  const perksTreeRulesFilePath = path.join(referenceRootDirectoryPath, 'config', 'perks_tree.nut')
   const backgroundDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'skills', 'backgrounds')
   const scenarioDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'scenarios', 'world')
   const treeDirectoryPath = path.join(referenceRootDirectoryPath, 'config')
@@ -1065,12 +1194,14 @@ export async function createDataset(
     entityNamesFileSource,
     categoryOrderFileSource,
     favoriteEnemyConfigFileSource,
+    perksTreeRulesFileSource,
     characterBackgroundFileSource,
   ] = await Promise.all([
     readFile(perkDefinitionsFilePath, 'utf8'),
     readFile(entityNamesFilePath, 'utf8'),
     readFile(categoryOrderFilePath, 'utf8'),
     readFile(favoriteEnemyConfigFilePath, 'utf8'),
+    readFile(perksTreeRulesFilePath, 'utf8'),
     readFile(characterBackgroundFilePath, 'utf8'),
   ])
 
@@ -1226,6 +1357,11 @@ export async function createDataset(
       ),
     )
     .filter((background) => background !== null)
+  const backgroundFitRules = parseBackgroundFitRulesFile(perksTreeRulesFileSource, treeDefinitions)
+  const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(
+    backgrounds,
+    treeDefinitions,
+  )
 
   const scenarios = scenarioFileEntries
     .map((scenarioFileEntry) => parseScenarioHookFile(scenarioFileEntry.fileSource, scenarioFileEntry.sourceFilePath))
@@ -1448,6 +1584,7 @@ export async function createDataset(
     { path: toPosixRelativePath(entityNamesFilePath), role: 'entity names' },
     { path: toPosixRelativePath(categoryOrderFilePath), role: 'perk category order' },
     { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favored enemy metadata' },
+    { path: toPosixRelativePath(perksTreeRulesFilePath), role: 'background fit rules' },
     { path: toPosixRelativePath(characterBackgroundFilePath), role: 'background defaults' },
     ...treeFileEntries.map((treeFileEntry) => ({
       path: treeFileEntry.sourceFilePath,
@@ -1469,6 +1606,8 @@ export async function createDataset(
     .toSorted((leftSourceFile, rightSourceFile) => leftSourceFile.path.localeCompare(rightSourceFile.path))
 
   return {
+    backgroundFitBackgrounds,
+    backgroundFitRules,
     generatedAt: new Date().toISOString(),
     perkCount: perkRecords.length,
     perks: perkRecords.toSorted((leftPerk, rightPerk) => leftPerk.perkName.localeCompare(rightPerk.perkName)),

@@ -7,6 +7,10 @@ import {
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const sampleDataset: LegendsPerksDataset = {
+  backgroundFitBackgrounds: [],
+  backgroundFitRules: {
+    classWeaponDependencies: [],
+  },
   generatedAt: '2026-04-21T00:00:00.000Z',
   perkCount: 2,
   perks: [

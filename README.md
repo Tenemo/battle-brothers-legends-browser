@@ -10,7 +10,8 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Searches across perk names, descriptions, perk groups, tree names, background sources, scenario overlays, and favored enemy targets.
 - Filters by category, perk group, and tier.
 - Lets you pick perks into a build planner, splits matching perk groups into shared 2-plus-perk coverage and individual-perk coverage, merges identical match sets, and previews picked-perk effects on hover.
-- Persists the current filters and picked build in a readable query string so the current setup can be shared or reloaded directly from the URL.
+- Ranks parsed Legends backgrounds against the current build by exact perk-tree fit, separating guaranteed matches from probabilistic matches and showing exact marginal probabilities for non-guaranteed trees.
+- Persists the current filters and picked build in grouped readable query params so the current setup can be shared or reloaded directly from the URL.
 - Serves static SEO metadata for the root app URL, including canonical tags, an Open Graph preview image, JSON-LD, `robots.txt`, and a one-page sitemap.
 - Shows exact tree placement, tree descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favored enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
@@ -22,25 +23,30 @@ The current committed dataset in this repository contains:
 
 - `367` perks
 - `116` perk trees
-- `132` parsed source files
+- `133` parsed source files
 - `1087` exact technical-name label mappings
 - Legends reference version `19.3.17`
-- dataset generation timestamp `2026-04-21T22:40:02.129Z`
+- dataset generation timestamp `2026-04-22T08:46:28.329Z`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 
 ## Runtime behavior
 
-The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` directly into the bundle. The UI has four main areas:
+The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` directly into the bundle. The UI has five main areas:
 
 - a build planner strip for selected perks, shared perk groups covering 2 or more picked perks, individual-perk group matches, and hover previews
+- a collapsible background-fit sidebar that ranks every parsed background against the current build
 - a category sidebar with expandable perk groups
 - a searchable result list
 - a detail panel for the currently selected perk
 
 Search and filtering are fully client-side. The ranking logic in `src/lib/perk-search.ts` prefers exact perk-name matches first, then prefix and substring matches, then tree names and category names, and finally broader text matches from descriptions and related metadata. When there is no search query, results are sorted by category, tree, tier, and perk name.
 
-The app also keeps the current search, tier, selected categories, selected perk groups, and picked build in the URL query string. Shared links restore that state on load.
+The app also keeps the current search, tier, selected categories, selected perk groups, and picked build in the URL query string. The canonical format groups repeated values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`. Older repeated-param links are still accepted and are normalized to the canonical grouped format after load.
+
+The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique tree targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build trees such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed matched build weight first, then expected extra matched build weight, then guaranteed and expected matched tree counts.
+
+The probability model is exact and deterministic. Explicit trees on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy`, `Magic`, and `Profession` use the same chance-attempt loops as the Legends source. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-tree probabilities change when a background can or cannot produce the required weapon trees.
 
 The detail panel can show:
 
@@ -88,6 +94,7 @@ The importer in `scripts/legends-perks-importer.mjs` is tailored to the parts of
 - `hooks/config/perk_strings.nut`
 - `!!config/_global.nut`
 - `afterHooks/perk_to_perk_groups_mapping.nut`
+- `config/perks_tree.nut`
 - `config/z_perks_tree_*.nut`
 - `config/z_legends_fav_enemies.nut`
 - `hooks/skills/backgrounds/*.nut`
@@ -99,6 +106,7 @@ From those files it builds a dataset with:
 - perk definitions and descriptions
 - category and tree placement
 - background dynamic-tree sources
+- aggregated background-fit definitions and class-to-weapon dependency rules
 - scenario overlay and direct-grant data
 - favored enemy targets and scaling values
 - exact technical-name to display-name mappings
@@ -231,7 +239,7 @@ The repository now includes a root `netlify.toml` tailored for this app.
 - `src/lib/perk-search.ts`
   Client-side search ranking, filtering, tier handling, and perk preview selection.
 - `src/lib/perk-browser-url-state.ts`
-  Human-readable query-string parsing and serialization for shared filter and build state.
+  Grouped readable query-string parsing and serialization for shared filter and build state, including canonicalization of older repeated-param links.
 - `src/lib/build-planner.ts`
   Build-planner helpers for deduping perk-group options, grouping perk coverage across the current build, and formatting grouped labels.
 - `src/lib/game-icon-url.ts`

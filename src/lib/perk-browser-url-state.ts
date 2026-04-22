@@ -61,6 +61,33 @@ function createGroupParamKey(groupName: string): string {
   return `${groupParamKeyPrefix}${createUrlToken(groupName)}`
 }
 
+function encodeQueryValue(value: string): string {
+  return encodeURIComponent(value).replace(/%20/gu, '+')
+}
+
+function splitGroupedParamValue(value: string): string[] {
+  return value
+    .split(',')
+    .map((item) => collapseWhitespace(item))
+    .filter((item) => item.length > 0)
+}
+
+function getGroupedParamValues(params: URLSearchParams, key: string): string[] {
+  return params.getAll(key).flatMap((value) => splitGroupedParamValue(value))
+}
+
+function appendScalarQueryEntry(entries: string[], key: string, value: string): void {
+  entries.push(`${encodeQueryValue(key)}=${encodeQueryValue(value)}`)
+}
+
+function appendGroupedQueryEntry(entries: string[], key: string, values: string[]): void {
+  if (values.length === 0) {
+    return
+  }
+
+  entries.push(`${encodeQueryValue(key)}=${values.map((value) => encodeQueryValue(value)).join(',')}`)
+}
+
 function createDefaultUrlState(): PerkBrowserUrlState {
   return {
     pickedPerkIds: [],
@@ -101,7 +128,7 @@ export function readPerkBrowserUrlState(
     ? (params.get(tierParamName) as string)
     : allTiersFilterValue
 
-  for (const categoryValue of params.getAll(categoryParamName)) {
+  for (const categoryValue of getGroupedParamValues(params, categoryParamName)) {
     const groupName = groupNameByLookupValue.get(normalizeLookupValue(categoryValue))
 
     if (groupName) {
@@ -115,27 +142,31 @@ export function readPerkBrowserUrlState(
     }
 
     const groupName = groupNameByParamKey.get(paramKey)
-    const treeId =
-      groupName === undefined
-        ? undefined
-        : treeIdByLookupValueByGroup.get(groupName)?.get(normalizeLookupValue(paramValue))
 
-    if (!groupName || !treeId) {
+    if (!groupName) {
       continue
     }
 
-    selectedGroupNameSet.add(groupName)
+    for (const groupValue of splitGroupedParamValue(paramValue)) {
+      const treeId = treeIdByLookupValueByGroup.get(groupName)?.get(normalizeLookupValue(groupValue))
 
-    if (!(groupName in selectedTreeIdsByGroup)) {
-      selectedTreeIdsByGroup[groupName] = []
-    }
+      if (!treeId) {
+        continue
+      }
 
-    if (!selectedTreeIdsByGroup[groupName].includes(treeId)) {
-      selectedTreeIdsByGroup[groupName].push(treeId)
+      selectedGroupNameSet.add(groupName)
+
+      if (!(groupName in selectedTreeIdsByGroup)) {
+        selectedTreeIdsByGroup[groupName] = []
+      }
+
+      if (!selectedTreeIdsByGroup[groupName].includes(treeId)) {
+        selectedTreeIdsByGroup[groupName].push(treeId)
+      }
     }
   }
 
-  for (const buildValue of params.getAll(buildParamName)) {
+  for (const buildValue of getGroupedParamValues(params, buildParamName)) {
     const perkId = perkIdByLookupValue.get(normalizeLookupValue(buildValue))
 
     if (!perkId || pickedPerkIdSet.has(perkId)) {
@@ -161,7 +192,7 @@ export function buildPerkBrowserUrlSearch(
   urlState: PerkBrowserUrlState,
   options: PerkBrowserUrlStateWriteOptions,
 ): string {
-  const params = new URLSearchParams()
+  const entries: string[] = []
   const selectedGroupNameSet = new Set(urlState.selectedGroupNames)
   const orderedSelectedGroupNames = options.availableGroupNames.filter((groupName) =>
     selectedGroupNameSet.has(groupName),
@@ -169,37 +200,42 @@ export function buildPerkBrowserUrlSearch(
   const normalizedQuery = collapseWhitespace(urlState.query)
 
   if (normalizedQuery) {
-    params.set(searchParamName, normalizedQuery)
+    appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
   }
 
   if (urlState.tierValue !== allTiersFilterValue) {
-    params.set(tierParamName, urlState.tierValue)
+    appendScalarQueryEntry(entries, tierParamName, urlState.tierValue)
   }
 
-  for (const groupName of orderedSelectedGroupNames) {
-    params.append(categoryParamName, groupName)
-  }
+  appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedGroupNames)
 
   for (const groupName of orderedSelectedGroupNames) {
     const selectedTreeIdSet = new Set(urlState.selectedTreeIdsByGroup[groupName] ?? [])
     const treeOptions = options.treeOptionsByGroup.get(groupName) ?? []
+    const selectedTreeNames: string[] = []
 
     for (const treeOption of treeOptions) {
       if (selectedTreeIdSet.has(treeOption.treeId)) {
-        params.append(createGroupParamKey(groupName), treeOption.treeName)
+        selectedTreeNames.push(treeOption.treeName)
       }
     }
+
+    appendGroupedQueryEntry(entries, createGroupParamKey(groupName), selectedTreeNames)
   }
+
+  const pickedPerkNames: string[] = []
 
   for (const pickedPerkId of urlState.pickedPerkIds) {
     const perk = options.perksById.get(pickedPerkId)
 
     if (perk) {
-      params.append(buildParamName, perk.perkName)
+      pickedPerkNames.push(perk.perkName)
     }
   }
 
-  const searchString = params.toString()
+  appendGroupedQueryEntry(entries, buildParamName, pickedPerkNames)
+
+  const searchString = entries.join('&')
   return searchString ? `?${searchString}` : ''
 }
 

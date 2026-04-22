@@ -23,6 +23,9 @@ describe('legends perks importer', () => {
 
   test('parses local tree placement and background dynamic sources', () => {
     const clarity = dataset.perks.find((perk) => perk.perkConstName === 'LegendClarity')
+    const beastSlayerBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.beast_slayer',
+    )
 
     expect(clarity).toMatchObject({
       groupNames: ['Traits'],
@@ -47,6 +50,30 @@ describe('legends perks importer', () => {
         treeName: 'Calm',
       }),
     ])
+
+    expect(beastSlayerBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.beast_slayer',
+        backgroundName: 'Beast Slayer',
+        categories: expect.objectContaining({
+          Enemy: expect.objectContaining({
+            chance: 0.05,
+            minimumTrees: 2,
+            treeIds: ['BeastTree'],
+          }),
+          Traits: expect.objectContaining({
+            chance: null,
+            minimumTrees: 7,
+            treeIds: ['CalmTree'],
+          }),
+          Weapon: expect.objectContaining({
+            chance: null,
+            minimumTrees: 8,
+            treeIds: [],
+          }),
+        }),
+      }),
+    )
   })
 
   test('merges perk string overrides from hooks after the base perk strings file', () => {
@@ -189,5 +216,14 @@ describe('legends perks importer', () => {
       'scenario.beast_hunters': 'Beast Slayers',
     })
     expect(technicalNameMappings.labelsByTechnicalName).not.toHaveProperty('onBuildPerkTree')
+  })
+
+  test('extracts class-to-weapon dependency rules from the dynamic perk tree builder', () => {
+    expect(dataset.backgroundFitRules.classWeaponDependencies).toEqual([
+      {
+        classTreeId: 'MilitiaClassTree',
+        weaponTreeId: 'AxeTree',
+      },
+    ])
   })
 })
