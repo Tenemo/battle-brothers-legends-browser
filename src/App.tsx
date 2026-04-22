@@ -259,20 +259,31 @@ function getCoveredPickedPerkNames(matches: BackgroundFitMatch[]): string[] {
   return [...new Set(matches.flatMap((match) => match.pickedPerkNames))]
 }
 
-function formatBackgroundFitCoveredPerksLabel(
+function formatBackgroundFitPickablePerksLabel(
   coveredPickedPerkCount: number,
   pickedPerkCount: number,
-  isProbabilistic: boolean,
 ): string {
-  const perkLabel = pickedPerkCount === 1 ? 'picked perk' : 'picked perks'
-
-  return isProbabilistic
-    ? `Up to ${coveredPickedPerkCount} of ${pickedPerkCount} ${perkLabel}`
-    : `Covers ${coveredPickedPerkCount} of ${pickedPerkCount} ${perkLabel}`
+  return `Up to ${coveredPickedPerkCount}/${pickedPerkCount} perks pickable`
 }
 
-function formatBackgroundFitGuaranteedCoverageLabel(guaranteedCoveredPickedPerkCount: number): string {
-  return `Guaranteed ${formatPickedPerkCountLabel(guaranteedCoveredPickedPerkCount)}`
+function formatBackgroundFitGuaranteedPerksLabel(
+  guaranteedCoveredPickedPerkCount: number,
+  pickedPerkCount: number,
+): string {
+  return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
+}
+
+function formatBackgroundFitMatchedGroupsLabel(
+  matchedGroupCount: number,
+  supportedBuildTargetTreeCount: number,
+): string {
+  return `${matchedGroupCount}/${supportedBuildTargetTreeCount} matched group${
+    supportedBuildTargetTreeCount === 1 ? '' : 's'
+  }`
+}
+
+function formatBackgroundFitMaximumTotalGroupsLabel(maximumTotalGroupCount: number): string {
+  return `Maximum ${maximumTotalGroupCount} total groups`
 }
 
 function getPlannerGroupCategoryLabel(
@@ -331,12 +342,14 @@ function renderBackgroundFitCard({
   onToggle,
   pickedPerkCount,
   rank,
+  supportedBuildTargetTreeCount,
 }: {
   backgroundFit: RankedBackgroundFit
   expandedBackgroundFitKey: string | null
   onToggle: (backgroundFitKey: string) => void
   pickedPerkCount: number
   rank: number
+  supportedBuildTargetTreeCount: number
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
   const disambiguatorLabel = backgroundFit.disambiguator
@@ -346,7 +359,6 @@ function renderBackgroundFitCard({
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
   const coveredPickedPerkCount = getCoveredPickedPerkNames(backgroundFit.matches).length
   const guaranteedCoveredPickedPerkCount = getCoveredPickedPerkNames(guaranteedMatches).length
-  const isCoverageProbabilistic = guaranteedCoveredPickedPerkCount < coveredPickedPerkCount
   const isExpanded = expandedBackgroundFitKey === backgroundFitKey
   const accordionButtonId = `background-fit-card-button-${rank}`
   const accordionPanelId = `background-fit-card-panel-${rank}`
@@ -391,21 +403,28 @@ function renderBackgroundFitCard({
           </div>
 
           <div className="background-fit-accordion-summary">
-            <span className="detail-badge">
-              {formatBackgroundFitCoveredPerksLabel(
-                coveredPickedPerkCount,
-                pickedPerkCount,
-                isCoverageProbabilistic,
-              )}
-            </span>
-            {isCoverageProbabilistic ? (
+            <div className="background-fit-accordion-summary-row">
               <span className="detail-badge">
-                {formatBackgroundFitGuaranteedCoverageLabel(guaranteedCoveredPickedPerkCount)}
+                {formatBackgroundFitPickablePerksLabel(coveredPickedPerkCount, pickedPerkCount)}
               </span>
-            ) : null}
-            <span className="detail-badge">
-              {backgroundFit.matches.length} matched group{backgroundFit.matches.length === 1 ? '' : 's'}
-            </span>
+              <span className="detail-badge">
+                {formatBackgroundFitGuaranteedPerksLabel(
+                  guaranteedCoveredPickedPerkCount,
+                  pickedPerkCount,
+                )}
+              </span>
+            </div>
+            <div className="background-fit-accordion-summary-row">
+              <span className="detail-badge">
+                {formatBackgroundFitMatchedGroupsLabel(
+                  backgroundFit.matches.length,
+                  supportedBuildTargetTreeCount,
+                )}
+              </span>
+              <span className="detail-badge">
+                {formatBackgroundFitMaximumTotalGroupsLabel(backgroundFit.maximumTotalGroupCount)}
+              </span>
+            </div>
           </div>
         </div>
       </button>
@@ -1267,6 +1286,8 @@ export default function App() {
                             onToggle: handleBackgroundFitCardToggle,
                             pickedPerkCount: pickedPerks.length,
                             rank: backgroundFitIndex,
+                            supportedBuildTargetTreeCount:
+                              backgroundFitView.supportedBuildTargetTrees.length,
                           })}
                         </li>
                       ))}

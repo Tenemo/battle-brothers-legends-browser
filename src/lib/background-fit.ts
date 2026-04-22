@@ -37,11 +37,14 @@ const dynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategor
 
 type BackgroundProbabilityRecord = {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  maximumTotalGroupCount: number
   probabilitiesByTreeId: Map<string, number>
 }
 
+type ClassWeaponDependencyByClassTreeId = Map<string, Set<string>>
+
 type BackgroundProbabilityContext = {
-  classWeaponDependencyByClassTreeId: Map<string, string>
+  classWeaponDependencyByClassTreeId: ClassWeaponDependencyByClassTreeId
   treeIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, string[]>
 }
 
@@ -66,6 +69,7 @@ export type RankedBackgroundFit = {
   expectedMatchedTreeCount: number
   guaranteedMatchedBuildWeight: number
   guaranteedMatchedTreeCount: number
+  maximumTotalGroupCount: number
   matches: BackgroundFitMatch[]
   sourceFilePath: string
 }
@@ -192,13 +196,20 @@ function buildTreeIdsByCategory(perks: LegendsPerkRecord[]): Map<LegendsDynamicB
 
 function buildClassWeaponDependencyByClassTreeId(
   classWeaponDependencies: LegendsBackgroundFitClassWeaponDependency[],
-): Map<string, string> {
-  return new Map(
-    classWeaponDependencies.map((classWeaponDependency) => [
-      classWeaponDependency.classTreeId,
-      classWeaponDependency.weaponTreeId,
-    ]),
-  )
+): ClassWeaponDependencyByClassTreeId {
+  const classWeaponDependencyByClassTreeId: ClassWeaponDependencyByClassTreeId = new Map()
+
+  for (const classWeaponDependency of classWeaponDependencies) {
+    if (!classWeaponDependencyByClassTreeId.has(classWeaponDependency.classTreeId)) {
+      classWeaponDependencyByClassTreeId.set(classWeaponDependency.classTreeId, new Set())
+    }
+
+    classWeaponDependencyByClassTreeId
+      .get(classWeaponDependency.classTreeId)
+      ?.add(classWeaponDependency.weaponTreeId)
+  }
+
+  return classWeaponDependencyByClassTreeId
 }
 
 function addExplicitTreeProbabilities(
@@ -220,6 +231,39 @@ function getRemainingTreeIds(
   explicitTreeIdSet: Set<string>,
 ): string[] {
   return poolTreeIds.filter((treeId) => !explicitTreeIdSet.has(treeId))
+}
+
+function isClassTreeEligible(
+  classTreeId: string,
+  presentWeaponTreeIdSet: Set<string>,
+  classWeaponDependencyByClassTreeId: ClassWeaponDependencyByClassTreeId,
+): boolean {
+  const requiredWeaponTreeIdSet = classWeaponDependencyByClassTreeId.get(classTreeId)
+
+  if (!requiredWeaponTreeIdSet || requiredWeaponTreeIdSet.size === 0) {
+    return true
+  }
+
+  for (const requiredWeaponTreeId of requiredWeaponTreeIdSet) {
+    if (presentWeaponTreeIdSet.has(requiredWeaponTreeId)) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function getEligibleRemainingClassTreeIds(
+  poolTreeIds: string[],
+  explicitTreeIdSet: Set<string>,
+  presentWeaponTreeIdSet: Set<string>,
+  classWeaponDependencyByClassTreeId: ClassWeaponDependencyByClassTreeId,
+): string[] {
+  return poolTreeIds.filter(
+    (treeId) =>
+      !explicitTreeIdSet.has(treeId) &&
+      isClassTreeEligible(treeId, presentWeaponTreeIdSet, classWeaponDependencyByClassTreeId),
+  )
 }
 
 function addDeterministicCategoryProbabilities(
@@ -318,7 +362,7 @@ function addClassCategoryProbabilities(
   poolTreeIds: string[],
   weaponCategoryDefinition: LegendsBackgroundFitCategoryDefinition,
   weaponPoolTreeIds: string[],
-  classWeaponDependencyByClassTreeId: Map<string, string>,
+  classWeaponDependencyByClassTreeId: ClassWeaponDependencyByClassTreeId,
 ): void {
   const explicitTreeIdSet = addExplicitTreeProbabilities(probabilitiesByTreeId, categoryDefinition.treeIds)
   const explicitWeaponTreeIdSet = new Set<string>(weaponCategoryDefinition.treeIds)
@@ -338,11 +382,11 @@ function addClassCategoryProbabilities(
 
   if (randomWeaponTreeCount === 0) {
     const presentWeaponTreeIdSet = new Set<string>(explicitWeaponTreeIdSet)
-    const eligibleRemainingTreeIds = poolTreeIds.filter(
-      (treeId) =>
-        !explicitTreeIdSet.has(treeId) &&
-        (!classWeaponDependencyByClassTreeId.has(treeId) ||
-          presentWeaponTreeIdSet.has(classWeaponDependencyByClassTreeId.get(treeId) as string)),
+    const eligibleRemainingTreeIds = getEligibleRemainingClassTreeIds(
+      poolTreeIds,
+      explicitTreeIdSet,
+      presentWeaponTreeIdSet,
+      classWeaponDependencyByClassTreeId,
     )
 
     const marginalProbability =
@@ -368,11 +412,11 @@ function addClassCategoryProbabilities(
       presentWeaponTreeIdSet.add(weaponTreeId)
     }
 
-    const eligibleRemainingTreeIds = poolTreeIds.filter(
-      (treeId) =>
-        !explicitTreeIdSet.has(treeId) &&
-        (!classWeaponDependencyByClassTreeId.has(treeId) ||
-          presentWeaponTreeIdSet.has(classWeaponDependencyByClassTreeId.get(treeId) as string)),
+    const eligibleRemainingTreeIds = getEligibleRemainingClassTreeIds(
+      poolTreeIds,
+      explicitTreeIdSet,
+      presentWeaponTreeIdSet,
+      classWeaponDependencyByClassTreeId,
     )
 
     if (eligibleRemainingTreeIds.length === 0) {
@@ -392,6 +436,122 @@ function addClassCategoryProbabilities(
       probabilitiesByTreeId.set(treeId, (probabilitiesByTreeId.get(treeId) ?? 0) + marginalProbability)
     }
   })
+}
+
+function getMaximumEligibleRemainingClassTreeCount(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  poolTreeIds: string[],
+  weaponCategoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  weaponPoolTreeIds: string[],
+  classWeaponDependencyByClassTreeId: ClassWeaponDependencyByClassTreeId,
+): number {
+  const explicitTreeIdSet = new Set<string>(categoryDefinition.treeIds)
+  const explicitWeaponTreeIdSet = new Set<string>(weaponCategoryDefinition.treeIds)
+  const remainingWeaponTreeIds = getRemainingTreeIds(weaponPoolTreeIds, explicitWeaponTreeIdSet)
+  const randomWeaponTreeCount = getAdditionalRandomTreeCount(
+    weaponCategoryDefinition,
+    remainingWeaponTreeIds.length,
+  )
+
+  if (randomWeaponTreeCount === 0) {
+    return getEligibleRemainingClassTreeIds(
+      poolTreeIds,
+      explicitTreeIdSet,
+      explicitWeaponTreeIdSet,
+      classWeaponDependencyByClassTreeId,
+    ).length
+  }
+
+  let maximumEligibleRemainingClassTreeCount = 0
+
+  forEachSubsetOfSize(remainingWeaponTreeIds, randomWeaponTreeCount, (weaponTreeSubset) => {
+    const presentWeaponTreeIdSet = new Set<string>(explicitWeaponTreeIdSet)
+
+    for (const weaponTreeId of weaponTreeSubset) {
+      presentWeaponTreeIdSet.add(weaponTreeId)
+    }
+
+    maximumEligibleRemainingClassTreeCount = Math.max(
+      maximumEligibleRemainingClassTreeCount,
+      getEligibleRemainingClassTreeIds(
+        poolTreeIds,
+        explicitTreeIdSet,
+        presentWeaponTreeIdSet,
+        classWeaponDependencyByClassTreeId,
+      ).length,
+    )
+  })
+
+  return maximumEligibleRemainingClassTreeCount
+}
+
+function getMaximumCategoryTreeCount(
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
+  categoryName: LegendsDynamicBackgroundCategoryName,
+  context: BackgroundProbabilityContext,
+): number {
+  const categoryDefinition = backgroundDefinition.categories[categoryName]
+
+  if (!categoryDefinition) {
+    return 0
+  }
+
+  const poolTreeIds = context.treeIdsByCategory.get(categoryName) ?? []
+  const explicitTreeIdSet = new Set<string>(categoryDefinition.treeIds)
+  const remainingTreeIds = getRemainingTreeIds(poolTreeIds, explicitTreeIdSet)
+
+  if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
+    return categoryDefinition.treeIds.length + getAdditionalRandomTreeCount(
+      categoryDefinition,
+      remainingTreeIds.length,
+    )
+  }
+
+  if (categoryName === 'Enemy' || categoryName === 'Profession') {
+    if (clampProbability(categoryDefinition.chance ?? 0) <= 0) {
+      return categoryDefinition.treeIds.length
+    }
+
+    return categoryDefinition.treeIds.length + Math.min(
+      getChanceAttemptCount(categoryDefinition),
+      remainingTreeIds.length,
+    )
+  }
+
+  if (categoryName === 'Class') {
+    if (clampProbability(categoryDefinition.chance ?? 0) <= 0) {
+      return categoryDefinition.treeIds.length
+    }
+
+    return categoryDefinition.treeIds.length + Math.min(
+      getChanceAttemptCount(categoryDefinition),
+      getMaximumEligibleRemainingClassTreeCount(
+        categoryDefinition,
+        poolTreeIds,
+        backgroundDefinition.categories.Weapon ?? {
+          chance: null,
+          minimumTrees: 0,
+          treeIds: [],
+        },
+        context.treeIdsByCategory.get('Weapon') ?? [],
+        context.classWeaponDependencyByClassTreeId,
+      ),
+    )
+  }
+
+  // In Legends 19.3.17, GetDynamicPerkTree's magic loop never appends random trees.
+  return categoryDefinition.treeIds.length
+}
+
+function getMaximumTotalGroupCount(
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
+  context: BackgroundProbabilityContext,
+): number {
+  return dynamicBackgroundCategoryNames.reduce(
+    (maximumTotalGroupCount, categoryName) =>
+      maximumTotalGroupCount + getMaximumCategoryTreeCount(backgroundDefinition, categoryName, context),
+    0,
+  )
 }
 
 export function calculateBackgroundTreeProbabilities(
@@ -542,6 +702,10 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   const classWeaponDependencyByClassTreeId = buildClassWeaponDependencyByClassTreeId(
     dataset.backgroundFitRules.classWeaponDependencies,
   )
+  const backgroundProbabilityContext = {
+    classWeaponDependencyByClassTreeId,
+    treeIdsByCategory,
+  } satisfies BackgroundProbabilityContext
   const duplicateBackgroundNameCountByName = new Map<string, number>()
 
   for (const backgroundDefinition of dataset.backgroundFitBackgrounds) {
@@ -554,10 +718,14 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   const backgroundProbabilityRecords: BackgroundProbabilityRecord[] = dataset.backgroundFitBackgrounds.map(
     (backgroundDefinition) => ({
       backgroundDefinition,
-      probabilitiesByTreeId: calculateBackgroundTreeProbabilities(backgroundDefinition, {
-        classWeaponDependencyByClassTreeId,
-        treeIdsByCategory,
-      }),
+      maximumTotalGroupCount: getMaximumTotalGroupCount(
+        backgroundDefinition,
+        backgroundProbabilityContext,
+      ),
+      probabilitiesByTreeId: calculateBackgroundTreeProbabilities(
+        backgroundDefinition,
+        backgroundProbabilityContext,
+      ),
     }),
   )
 
@@ -567,7 +735,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
 
       return {
         rankedBackgroundFits: backgroundProbabilityRecords
-          .map(({ backgroundDefinition, probabilitiesByTreeId }) => {
+          .map(({ backgroundDefinition, maximumTotalGroupCount, probabilitiesByTreeId }) => {
             const matches = supportedBuildTargetTrees
               .flatMap((buildTargetTree) => {
                 const probability = probabilitiesByTreeId.get(buildTargetTree.treeId) ?? 0
@@ -608,6 +776,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                 0,
               ),
               guaranteedMatchedTreeCount: matches.filter((match) => match.isGuaranteed).length,
+              maximumTotalGroupCount,
               matches,
               sourceFilePath: backgroundDefinition.sourceFilePath,
             }

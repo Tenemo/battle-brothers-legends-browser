@@ -507,9 +507,18 @@ describe('app', () => {
     expect(apprenticeCard).not.toBeNull()
     expect(apprenticePanel).not.toBeNull()
     expect(within(apprenticeCard as HTMLElement).getByText('Apprentice')).toBeInTheDocument()
-    expect(within(apprenticeCard as HTMLElement).getByText('Covers 1 of 1 picked perk')).toBeInTheDocument()
+    expect(within(apprenticeCard as HTMLElement).getByText('Up to 1/1 perks pickable')).toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).getByText('Guaranteed 1/1 perks pickable'),
+    ).toBeInTheDocument()
     expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'true')
-    expect(within(apprenticeCard as HTMLElement).getByText('1 matched group')).toBeInTheDocument()
+    expect(within(apprenticeCard as HTMLElement).getByText('1/1 matched group')).toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total groups/),
+    ).toBeInTheDocument()
+    expect(
+      (apprenticeCard as HTMLElement).querySelectorAll('.background-fit-accordion-summary-row'),
+    ).toHaveLength(2)
 
     await user.click(apprenticeToggle)
 

@@ -327,7 +327,7 @@ describe('background fit', () => {
         classWeaponDependencyByClassTreeId: new Map(
           sampleDataset.backgroundFitRules.classWeaponDependencies.map((dependency) => [
             dependency.classTreeId,
-            dependency.weaponTreeId,
+            new Set([dependency.weaponTreeId]),
           ]),
         ),
         treeIdsByCategory: new Map([
@@ -428,5 +428,30 @@ describe('background fit', () => {
         guaranteedMatchedBuildWeight: 1,
       }),
     ])
+  })
+
+  test('tracks each backgrounds overall group cap separately from build matches', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const backgroundFitView = engine.getBackgroundFitView([samplePerks[7]])
+
+    expect(
+      backgroundFitView.rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.enemy_roll',
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        guaranteedMatchedTreeCount: 0,
+        maximumTotalGroupCount: 2,
+      }),
+    )
+    expect(
+      backgroundFitView.rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.class_roll',
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        maximumTotalGroupCount: 2,
+      }),
+    )
   })
 })

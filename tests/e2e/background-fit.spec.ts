@@ -28,7 +28,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
   )
   await expect(backgroundFitPanel.getByText(/Ranked by guaranteed build weight first/i)).toBeVisible()
   await expect(backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' })).toBeVisible()
-  await expect(apprenticeCard.getByText('Covers 1 of 1 picked perk')).toBeVisible()
+  await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
+  await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
+  await expect(apprenticeCard.getByText('1/1 matched group')).toBeVisible()
+  await expect(apprenticeCard.getByText(/Maximum \d+ total groups/)).toBeVisible()
+  await expect(apprenticeCard.locator('.background-fit-accordion-summary-row')).toHaveCount(2)
   await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute('aria-hidden', 'true')
   await expect
     .poll(async () =>

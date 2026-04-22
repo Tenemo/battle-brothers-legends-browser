@@ -481,6 +481,12 @@
 }
 
 .background-fit-accordion-summary {
+  display: grid;
+  gap: 0.32rem;
+  min-width: 0;
+}
+
+.background-fit-accordion-summary-row {
   display: flex;
   flex-wrap: wrap;
   gap: 0.32rem;
