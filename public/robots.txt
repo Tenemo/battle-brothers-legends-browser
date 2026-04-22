@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: http://battlebrothers.academy/sitemap.xml

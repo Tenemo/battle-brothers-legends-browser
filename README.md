@@ -11,6 +11,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Filters by category, perk group, and tier.
 - Lets you pick perks into a build planner, splits matching perk groups into shared 2-plus-perk coverage and individual-perk coverage, merges identical match sets, and previews picked-perk effects on hover.
 - Persists the current filters and picked build in a readable query string so the current setup can be shared or reloaded directly from the URL.
+- Serves static SEO metadata for the root app URL, including canonical tags, an Open Graph preview image, JSON-LD, `robots.txt`, and a one-page sitemap.
 - Shows exact tree placement, tree descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favored enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
 - Keeps the runtime deterministic by committing the generated data snapshot instead of fetching live data in the app.
@@ -114,6 +115,12 @@ The generated artifacts that the runtime actually uses are:
   These are the extracted icon files served by Vite at runtime.
 - `public/favicon/**`
   These are the committed student-icon favicon assets and manifest served across desktop browsers, iOS home-screen shortcuts, and installed web apps.
+- `public/seo/og-image.png`
+  This is the committed social preview image used by the Open Graph and Twitter card metadata.
+- `public/robots.txt`
+  This declares crawl access and points search engines at the sitemap.
+- `public/sitemap.xml`
+  This lists the single canonical root URL for the current static app.
 
 ## Requirements
 
