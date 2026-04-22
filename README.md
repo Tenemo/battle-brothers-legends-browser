@@ -9,7 +9,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Browses the Legends perk catalog in a fast client-side UI.
 - Searches across perk names, descriptions, perk groups, tree names, background sources, scenario overlays, and favored enemy targets.
 - Filters by category, perk group, and tier.
-- Lets you pick perks into a build planner, recommends a minimal perk-group unlock plan for the selected build, surfaces remaining alternative perk groups grouped by the perks they unlock, and previews picked-perk effects on hover.
+- Lets you pick perks into a build planner, splits matching perk groups into shared 2-plus-perk coverage and individual-perk coverage, merges identical match sets, and previews picked-perk effects on hover.
 - Persists the current filters and picked build in a readable query string so the current setup can be shared or reloaded directly from the URL.
 - Shows exact tree placement, tree descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favored enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
@@ -32,7 +32,7 @@ These values change whenever `pnpm sync:perks` is run against a newer or differe
 
 The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` directly into the bundle. The UI has four main areas:
 
-- a build planner strip for selected perks, a recommended unlock plan, grouped alternative perk groups, and hover previews
+- a build planner strip for selected perks, shared perk groups covering 2 or more picked perks, individual-perk group matches, and hover previews
 - a category sidebar with expandable perk groups
 - a searchable result list
 - a detail panel for the currently selected perk
@@ -226,7 +226,7 @@ The repository now includes a root `netlify.toml` tailored for this app.
 - `src/lib/perk-browser-url-state.ts`
   Human-readable query-string parsing and serialization for shared filter and build state.
 - `src/lib/build-planner.ts`
-  Build-planner helpers for deduping perk-group options, collapsing shared build requirements, and formatting grouped labels.
+  Build-planner helpers for deduping perk-group options, grouping perk coverage across the current build, and formatting grouped labels.
 - `src/lib/game-icon-url.ts`
   Runtime mapping from dataset icon paths to served URLs.
 - `src/lib/technical-name-display.ts`

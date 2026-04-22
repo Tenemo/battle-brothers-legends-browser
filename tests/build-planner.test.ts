@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
-  getBuildPlannerRecommendation,
+  getBuildPlannerGroups,
   getPerkGroupRequirementLabel,
   getPerkGroupRequirements,
 } from '../src/lib/build-planner'
@@ -76,19 +76,19 @@ const overlappingPerk: LegendsPerkRecord = {
   searchText: 'Overlapping perk cloth armor faith',
 }
 
-const matchingAlternativeSetPerk: LegendsPerkRecord = {
+const matchingSharedCoveragePerk: LegendsPerkRecord = {
   ...samplePerk,
-  id: 'perk.legend_matching_alternative_set',
-  perkConstName: 'LegendMatchingAlternativeSet',
-  perkName: 'Matching alternative set perk',
-  searchText: 'Matching alternative set perk cloth armor tenacious',
+  id: 'perk.legend_matching_shared_coverage',
+  perkConstName: 'LegendMatchingSharedCoverage',
+  perkName: 'Matching shared coverage perk',
+  searchText: 'Matching shared coverage perk cloth armor tenacious',
 }
 
-const multiAlternativePerk: LegendsPerkRecord = {
+const multiOptionPerk: LegendsPerkRecord = {
   ...samplePerk,
-  id: 'perk.legend_multi_alternative',
-  perkConstName: 'LegendMultiAlternative',
-  perkName: 'Multi alternative perk',
+  id: 'perk.legend_multi_option',
+  perkConstName: 'LegendMultiOption',
+  perkName: 'Multi option perk',
   placements: [
     {
       ...samplePerk.placements[0],
@@ -111,7 +111,7 @@ const multiAlternativePerk: LegendsPerkRecord = {
       treeName: 'Faith',
     },
   ],
-  searchText: 'Multi alternative perk cloth armor tenacious faith',
+  searchText: 'Multi option perk cloth armor tenacious faith',
 }
 
 const repeatedTreeNamePerk: LegendsPerkRecord = {
@@ -175,11 +175,18 @@ describe('build planner', () => {
     ).toBe('No perk group placement')
   })
 
-  test('recommends one best-fit perk group and keeps the remaining options as grouped alternatives', () => {
-    expect(getBuildPlannerRecommendation([samplePerk])).toEqual({
-      alternativeGroups: [
+  test('groups all single-perk matches into the individual row', () => {
+    expect(getBuildPlannerGroups([samplePerk])).toEqual({
+      individualPerkGroups: [
         {
           perkGroupOptions: [
+            {
+              categoryName: 'Defense',
+              treeIconPath: 'ui/perks/cloth_armor_tree.png',
+              treeId: 'ClothArmorTree',
+              treeLabel: 'Cloth Armor',
+              treeName: 'Cloth Armor',
+            },
             {
               categoryName: 'Traits',
               treeIconPath: 'ui/perks/tenacious_tree.png',
@@ -192,38 +199,15 @@ describe('build planner', () => {
           perkNames: ['Sample perk'],
         },
       ],
-      recommendedGroups: [
-        {
-          categoryName: 'Defense',
-          perkIds: ['perk.legend_sample'],
-          perkNames: ['Sample perk'],
-          treeIconPath: 'ui/perks/cloth_armor_tree.png',
-          treeId: 'ClothArmorTree',
-          treeLabel: 'Cloth Armor',
-          treeName: 'Cloth Armor',
-        },
-      ],
+      sharedPerkGroups: [],
     })
   })
 
-  test('prefers a shared minimal unlock plan when one perk group can cover the full build', () => {
+  test('splits shared and individual groups by how many picked perks they cover', () => {
     expect(
-      getBuildPlannerRecommendation([samplePerk, matchingAlternativeSetPerk, overlappingPerk]),
+      getBuildPlannerGroups([samplePerk, matchingSharedCoveragePerk, overlappingPerk]),
     ).toEqual({
-      alternativeGroups: [
-        {
-          perkGroupOptions: [
-            {
-              categoryName: 'Traits',
-              treeIconPath: 'ui/perks/tenacious_tree.png',
-              treeId: 'TenaciousTree',
-              treeLabel: 'Tenacious',
-              treeName: 'Tenacious',
-            },
-          ],
-          perkIds: ['perk.legend_sample', 'perk.legend_matching_alternative_set'],
-          perkNames: ['Sample perk', 'Matching alternative set perk'],
-        },
+      individualPerkGroups: [
         {
           perkGroupOptions: [
             {
@@ -238,29 +222,53 @@ describe('build planner', () => {
           perkNames: ['Overlapping perk'],
         },
       ],
-      recommendedGroups: [
+      sharedPerkGroups: [
         {
-          categoryName: 'Defense',
+          perkGroupOptions: [
+            {
+              categoryName: 'Defense',
+              treeIconPath: 'ui/perks/cloth_armor_tree.png',
+              treeId: 'ClothArmorTree',
+              treeLabel: 'Cloth Armor',
+              treeName: 'Cloth Armor',
+            },
+          ],
           perkIds: [
             'perk.legend_sample',
-            'perk.legend_matching_alternative_set',
+            'perk.legend_matching_shared_coverage',
             'perk.legend_overlapping',
           ],
-          perkNames: ['Sample perk', 'Matching alternative set perk', 'Overlapping perk'],
-          treeIconPath: 'ui/perks/cloth_armor_tree.png',
-          treeId: 'ClothArmorTree',
-          treeLabel: 'Cloth Armor',
-          treeName: 'Cloth Armor',
+          perkNames: ['Sample perk', 'Matching shared coverage perk', 'Overlapping perk'],
+        },
+        {
+          perkGroupOptions: [
+            {
+              categoryName: 'Traits',
+              treeIconPath: 'ui/perks/tenacious_tree.png',
+              treeId: 'TenaciousTree',
+              treeLabel: 'Tenacious',
+              treeName: 'Tenacious',
+            },
+          ],
+          perkIds: ['perk.legend_sample', 'perk.legend_matching_shared_coverage'],
+          perkNames: ['Sample perk', 'Matching shared coverage perk'],
         },
       ],
     })
   })
 
-  test('merges multiple alternative groups when they unlock the same picked perk set', () => {
-    expect(getBuildPlannerRecommendation([multiAlternativePerk])).toEqual({
-      alternativeGroups: [
+  test('merges multiple group options when they unlock the same single picked perk', () => {
+    expect(getBuildPlannerGroups([multiOptionPerk])).toEqual({
+      individualPerkGroups: [
         {
           perkGroupOptions: [
+            {
+              categoryName: 'Defense',
+              treeIconPath: 'ui/perks/cloth_armor_tree.png',
+              treeId: 'ClothArmorTree',
+              treeLabel: 'Cloth Armor',
+              treeName: 'Cloth Armor',
+            },
             {
               categoryName: 'Traits',
               treeIconPath: 'ui/perks/tenacious_tree.png',
@@ -276,29 +284,26 @@ describe('build planner', () => {
               treeName: 'Faith',
             },
           ],
-          perkIds: ['perk.legend_multi_alternative'],
-          perkNames: ['Multi alternative perk'],
+          perkIds: ['perk.legend_multi_option'],
+          perkNames: ['Multi option perk'],
         },
       ],
-      recommendedGroups: [
-        {
-          categoryName: 'Defense',
-          perkIds: ['perk.legend_multi_alternative'],
-          perkNames: ['Multi alternative perk'],
-          treeIconPath: 'ui/perks/cloth_armor_tree.png',
-          treeId: 'ClothArmorTree',
-          treeLabel: 'Cloth Armor',
-          treeName: 'Cloth Armor',
-        },
-      ],
+      sharedPerkGroups: [],
     })
   })
 
-  test('keeps disambiguated labels in the recommended plan and grouped alternatives', () => {
-    expect(getBuildPlannerRecommendation([repeatedTreeNamePerk])).toEqual({
-      alternativeGroups: [
+  test('keeps disambiguated labels when grouped perk options share the same perk', () => {
+    expect(getBuildPlannerGroups([repeatedTreeNamePerk])).toEqual({
+      individualPerkGroups: [
         {
           perkGroupOptions: [
+            {
+              categoryName: 'Class',
+              treeIconPath: 'ui/perks/blacksmith_class.png',
+              treeId: 'ClassBlacksmithTree',
+              treeLabel: 'Class: Blacksmith',
+              treeName: 'Blacksmith',
+            },
             {
               categoryName: 'Profession',
               treeIconPath: 'ui/perks/blacksmith_profession.png',
@@ -311,23 +316,13 @@ describe('build planner', () => {
           perkNames: ['Repeated tree name perk'],
         },
       ],
-      recommendedGroups: [
-        {
-          categoryName: 'Class',
-          perkIds: ['perk.legend_repeated_tree_name'],
-          perkNames: ['Repeated tree name perk'],
-          treeIconPath: 'ui/perks/blacksmith_class.png',
-          treeId: 'ClassBlacksmithTree',
-          treeLabel: 'Class: Blacksmith',
-          treeName: 'Blacksmith',
-        },
-      ],
+      sharedPerkGroups: [],
     })
   })
 
-  test('surfaces perks without any perk-group placement as direct plan items', () => {
+  test('surfaces perks without any perk-group placement in the individual row', () => {
     expect(
-      getBuildPlannerRecommendation([
+      getBuildPlannerGroups([
         {
           ...samplePerk,
           id: 'perk.legend_direct',
@@ -337,18 +332,22 @@ describe('build planner', () => {
         },
       ]),
     ).toEqual({
-      alternativeGroups: [],
-      recommendedGroups: [
+      individualPerkGroups: [
         {
-          categoryName: 'No perk group',
+          perkGroupOptions: [
+            {
+              categoryName: 'No perk group',
+              treeIconPath: null,
+              treeId: 'no-perk-group-placement::perk.legend_direct',
+              treeLabel: 'No perk group placement',
+              treeName: 'No perk group placement',
+            },
+          ],
           perkIds: ['perk.legend_direct'],
           perkNames: ['Direct perk'],
-          treeIconPath: null,
-          treeId: 'no-perk-group-placement',
-          treeLabel: 'No perk group placement',
-          treeName: 'No perk group placement',
         },
       ],
+      sharedPerkGroups: [],
     })
   })
 })

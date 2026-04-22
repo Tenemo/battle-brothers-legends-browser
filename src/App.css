@@ -408,15 +408,13 @@
   min-width: 0;
 }
 
-.planner-plan-grid,
-.planner-alternative-list {
+.planner-group-list {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
   gap: 0.42rem;
 }
 
-.planner-plan-card,
-.planner-alternative-card,
+.planner-group-card,
 .planner-section-placeholder {
   min-width: 0;
   border: 1px solid rgb(204 155 84 / 0.11);
@@ -425,34 +423,30 @@
   padding: 0.46rem 0.52rem;
 }
 
-.planner-plan-card-header,
-.planner-alternative-card-header {
+.planner-group-card-header {
   display: grid;
   grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
   gap: 0.42rem;
   align-items: start;
 }
 
-.planner-plan-card-copy,
-.planner-alternative-card-copy {
+.planner-group-card-copy {
   min-width: 0;
 }
 
-.planner-alternative-card .planner-slot-name,
-.planner-plan-card .planner-slot-name {
+.planner-group-card .planner-slot-name {
   margin-top: 0.08rem;
   font-size: 0.78rem;
   -webkit-line-clamp: 1;
 }
 
-.planner-alternative-card .planner-slot-meta,
-.planner-plan-card .planner-slot-meta {
+.planner-group-card .planner-slot-meta {
   margin-top: 0.1rem;
   font-size: 0.68rem;
 }
 
 .planner-section-placeholder .planner-slot-meta,
-.planner-alternative-card .planner-slot-meta {
+.planner-group-card .planner-slot-meta {
   white-space: normal;
   overflow: visible;
   text-overflow: clip;

@@ -2,16 +2,16 @@ import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
-  getBuildAlternativeGroupsList,
+  getBuildIndividualGroupsList,
   getBuildPerksBar,
-  getBuildPlanList,
+  getBuildSharedGroupsList,
   gotoPerksBrowser,
   inspectPerkFromResults,
   mediumPerksBrowserViewport,
   searchPerks,
 } from './support/perks-browser'
 
-test('build planner shows a recommended unlock plan and grouped alternatives without internal scrolling', async ({
+test('build planner splits shared and individual perk groups without internal scrolling', async ({
   page,
 }) => {
   await gotoPerksBrowser(page, mediumPerksBrowserViewport)
@@ -25,9 +25,11 @@ test('build planner shows a recommended unlock plan and grouped alternatives wit
 
   await addPerkToBuildFromResults(page, 'Clarity')
   await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
-  await expect(getBuildPlanList(page).getByText('Calm', { exact: true })).toBeVisible()
-  await expect(getBuildPlanList(page).getByText('Clarity', { exact: true })).toBeVisible()
-  await expect(getBuildAlternativeGroupsList(page).getByText('This build has no alternative groups')).toBeVisible()
+  await expect(
+    getBuildSharedGroupsList(page).getByText('Perk groups covering 2 or more picked perks will appear here'),
+  ).toBeVisible()
+  await expect(getBuildIndividualGroupsList(page).getByText('Calm', { exact: true })).toBeVisible()
+  await expect(getBuildIndividualGroupsList(page).getByText('Clarity', { exact: true })).toBeVisible()
 
   const resultsRowHeightAfterPicking = await page
     .locator('.results-list .perk-row')
@@ -74,12 +76,10 @@ test('build planner shows a recommended unlock plan and grouped alternatives wit
   await addPerkToBuildFromResults(page, 'Perfect Focus')
 
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(1)
-  await expect(getBuildPlanList(page).locator('.planner-plan-card')).toHaveCount(1)
-  await expect(getBuildPlanList(page).getByText('Calm', { exact: true })).toBeVisible()
-  await expect(getBuildPlanList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
-  await expect(getBuildAlternativeGroupsList(page).locator('.planner-alternative-card')).toHaveCount(1)
-  await expect(getBuildAlternativeGroupsList(page).getByText('Deadeye', { exact: true })).toBeVisible()
-  await expect(getBuildAlternativeGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
+  await expect(getBuildSharedGroupsList(page).getByText('Perk groups covering 2 or more picked perks will appear here')).toBeVisible()
+  await expect(getBuildIndividualGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
+  await expect(getBuildIndividualGroupsList(page).getByText('Calm / Deadeye', { exact: true })).toBeVisible()
+  await expect(getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
 
   await searchPerks(page, 'Peaceable')
   await inspectPerkFromResults(page, 'Peaceable')
@@ -90,14 +90,14 @@ test('build planner shows a recommended unlock plan and grouped alternatives wit
   await addPerkToBuildFromResults(page, 'Clarity')
 
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(3)
-  await expect(getBuildPlanList(page).locator('.planner-plan-card')).toHaveCount(1)
-  await expect(getBuildPlanList(page).getByText('Calm', { exact: true })).toBeVisible()
-  await expect(getBuildPlanList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
-  await expect(getBuildPlanList(page).getByText('Peaceable', { exact: true })).toBeVisible()
-  await expect(getBuildPlanList(page).getByText('Clarity', { exact: true })).toBeVisible()
-  await expect(getBuildAlternativeGroupsList(page).locator('.planner-alternative-card')).toHaveCount(1)
-  await expect(getBuildAlternativeGroupsList(page).getByText('Deadeye', { exact: true })).toBeVisible()
-  await expect(getBuildAlternativeGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
+  await expect(getBuildSharedGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
+  await expect(getBuildSharedGroupsList(page).getByText('Calm', { exact: true })).toBeVisible()
+  await expect(getBuildSharedGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
+  await expect(getBuildSharedGroupsList(page).getByText('Peaceable', { exact: true })).toBeVisible()
+  await expect(getBuildSharedGroupsList(page).getByText('Clarity', { exact: true })).toBeVisible()
+  await expect(getBuildIndividualGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
+  await expect(getBuildIndividualGroupsList(page).getByText('Deadeye', { exact: true })).toBeVisible()
+  await expect(getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
   await expect(page.getByText('Build 3', { exact: true })).toBeVisible()
 
   await page.goto(
@@ -105,7 +105,7 @@ test('build planner shows a recommended unlock plan and grouped alternatives wit
   )
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(7)
-  expect(await getBuildPlanList(page).locator('.planner-plan-card').count()).toBeGreaterThan(0)
+  expect(await getBuildSharedGroupsList(page).locator('.planner-group-card').count()).toBeGreaterThan(0)
   expect(
     await page.evaluate(() => {
       const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
@@ -146,20 +146,24 @@ test('build planner shows a recommended unlock plan and grouped alternatives wit
   ).toBeLessThanOrEqual(2)
 })
 
-test('groups alternative perk groups by the picked perks they unlock', async ({ page }) => {
+test('groups perk groups by shared and individual perk coverage', async ({ page }) => {
   await gotoPerksBrowser(page)
 
   await page.goto('/?build=Battle+Forged&build=Immovable+Object&build=Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
 
-  const buildAlternativeGroupsList = getBuildAlternativeGroupsList(page)
+  const buildSharedGroupsList = getBuildSharedGroupsList(page)
+  const buildIndividualGroupsList = getBuildIndividualGroupsList(page)
 
-  await expect(buildAlternativeGroupsList.getByText('Forceful', { exact: true })).toBeVisible()
-  await expect(buildAlternativeGroupsList.getByText('Battle Forged', { exact: true })).toBeVisible()
-  await expect(buildAlternativeGroupsList.getByText('Immovable Object', { exact: true })).toBeVisible()
-  await expect(buildAlternativeGroupsList.getByText('Sturdy / Swordmasters', { exact: true })).toBeVisible()
-  await expect(buildAlternativeGroupsList.getByText('Steadfast', { exact: true })).toBeVisible()
-  await expect(buildAlternativeGroupsList.locator('.planner-alternative-card')).toHaveCount(2)
+  await expect(buildSharedGroupsList).toContainText('Heavy Armor')
+  await expect(buildSharedGroupsList).toContainText('Forceful')
+  await expect(buildSharedGroupsList).toContainText('Battle Forged')
+  await expect(buildSharedGroupsList).toContainText('Immovable Object')
+  await expect(buildSharedGroupsList).toContainText('Steadfast')
+  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
+  await expect(buildIndividualGroupsList.getByText('Sturdy / Swordmasters', { exact: true })).toBeVisible()
+  await expect(buildIndividualGroupsList.getByText('Steadfast', { exact: true })).toBeVisible()
+  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
 })
 
 test('clears the build and restores planner placeholders', async ({ page }) => {
@@ -174,6 +178,10 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
 
   await expect(page.getByText('No perks picked yet.')).toBeVisible()
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
-  await expect(getBuildPlanList(page).getByText('Recommended perk groups will appear here')).toBeVisible()
-  await expect(getBuildAlternativeGroupsList(page).getByText('Alternative perk groups will appear here')).toBeVisible()
+  await expect(
+    getBuildSharedGroupsList(page).getByText('Perk groups covering 2 or more picked perks will appear here'),
+  ).toBeVisible()
+  await expect(
+    getBuildIndividualGroupsList(page).getByText('Single-perk groups will appear here'),
+  ).toBeVisible()
 })

@@ -14,8 +14,8 @@ describe('app', () => {
     expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
     expect(screen.getByLabelText('Search perks')).toBeInTheDocument()
     expect(screen.getByTestId('build-perks-bar')).toBeInTheDocument()
-    expect(screen.getByTestId('build-plan-list')).toBeInTheDocument()
-    expect(screen.getByTestId('build-alternative-groups-list')).toBeInTheDocument()
+    expect(screen.getByTestId('build-shared-groups-list')).toBeInTheDocument()
+    expect(screen.getByTestId('build-individual-groups-list')).toBeInTheDocument()
     expect(screen.queryByText(/Reference root/i)).not.toBeInTheDocument()
   })
 
@@ -233,7 +233,7 @@ describe('app', () => {
     expect(screen.getByRole('button', { name: 'Enable category Traits' })).toBeInTheDocument()
   })
 
-  test('can pick perks into a build and show a recommended plan with grouped alternatives', async () => {
+  test('can pick perks into a build and split shared and individual perk groups', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -248,20 +248,22 @@ describe('app', () => {
     )
 
     const buildPerksBar = screen.getByTestId('build-perks-bar')
-    const buildPlanList = screen.getByTestId('build-plan-list')
-    const buildAlternativeGroupsList = screen.getByTestId('build-alternative-groups-list')
+    const buildSharedGroupsList = screen.getByTestId('build-shared-groups-list')
+    const buildIndividualGroupsList = screen.getByTestId('build-individual-groups-list')
 
     expect(within(buildPerksBar).getByText('Clarity')).toBeInTheDocument()
     expect(within(buildPerksBar).queryByText(/Tier 5/i)).not.toBeInTheDocument()
     expect(within(buildPerksBar).queryByText(/^Remove$/i)).not.toBeInTheDocument()
-    expect(within(buildPlanList).getByText('Calm')).toBeInTheDocument()
     expect(
-      within(buildPlanList).getByRole('img', { name: 'Calm perk group icon' }),
-    ).toHaveAttribute('src', '/game-icons/ui/perks/clarity_circle.png')
-    expect(within(buildPlanList).getByText('Clarity', { exact: true })).toBeInTheDocument()
-    expect(
-      within(buildAlternativeGroupsList).getByText('This build has no alternative groups'),
+      within(buildSharedGroupsList).getByText(
+        'Perk groups covering 2 or more picked perks will appear here',
+      ),
     ).toBeInTheDocument()
+    expect(within(buildIndividualGroupsList).getByText('Calm')).toBeInTheDocument()
+    expect(
+      within(buildIndividualGroupsList).getByRole('img', { name: 'Calm perk group icon' }),
+    ).toHaveAttribute('src', '/game-icons/ui/perks/clarity_circle.png')
+    expect(within(buildIndividualGroupsList).getByText('Clarity', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 
     await user.clear(screen.getByLabelText('Search perks'))
@@ -274,11 +276,11 @@ describe('app', () => {
     await user.click(screen.getByRole('button', { name: 'Add Perfect Focus to build' }))
 
     expect(within(buildPerksBar).getByText('Perfect Focus')).toBeInTheDocument()
-    expect(within(buildPlanList).getAllByText('Calm')).toHaveLength(1)
-    expect(within(buildPlanList).getByText('Clarity', { exact: true })).toBeInTheDocument()
-    expect(within(buildPlanList).getByText('Perfect Focus', { exact: true })).toBeInTheDocument()
-    expect(within(buildAlternativeGroupsList).getByText('Deadeye', { exact: true })).toBeInTheDocument()
-    expect(within(buildAlternativeGroupsList).getByText('Perfect Focus', { exact: true })).toBeInTheDocument()
+    expect(within(buildSharedGroupsList).getAllByText('Calm')).toHaveLength(1)
+    expect(within(buildSharedGroupsList).getByText('Clarity', { exact: true })).toBeInTheDocument()
+    expect(within(buildSharedGroupsList).getByText('Perfect Focus', { exact: true })).toBeInTheDocument()
+    expect(within(buildIndividualGroupsList).getByText('Deadeye', { exact: true })).toBeInTheDocument()
+    expect(within(buildIndividualGroupsList).getByText('Perfect Focus', { exact: true })).toBeInTheDocument()
     expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
   })
 
@@ -312,14 +314,16 @@ describe('app', () => {
     expect(magicCategoryStarCount).toBe(1)
   })
 
-  test('merges alternative groups that unlock the same picked perk set into one card', () => {
+  test('merges individual perk groups that unlock the same picked perk into one card', () => {
     window.history.replaceState({}, '', '/?build=Steadfast')
 
     render(<App />)
-    const buildAlternativeGroupsList = screen.getByTestId('build-alternative-groups-list')
+    const buildIndividualGroupsList = screen.getByTestId('build-individual-groups-list')
 
-    expect(within(buildAlternativeGroupsList).getByText('Sturdy / Swordmasters')).toBeInTheDocument()
-    expect(within(buildAlternativeGroupsList).getByText('Steadfast', { exact: true })).toBeInTheDocument()
+    expect(
+      within(buildIndividualGroupsList).getByText('Heavy Armor / Sturdy / Swordmasters'),
+    ).toBeInTheDocument()
+    expect(within(buildIndividualGroupsList).getByText('Steadfast', { exact: true })).toBeInTheDocument()
   })
 
   test('shows an immediate tooltip with the perk effect when a picked perk tile is focused', async () => {
@@ -372,11 +376,13 @@ describe('app', () => {
 
     expect(screen.getByText('No perks picked yet.')).toBeInTheDocument()
     expect(
-      within(screen.getByTestId('build-plan-list')).getByText('Recommended perk groups will appear here'),
+      within(screen.getByTestId('build-shared-groups-list')).getByText(
+        'Perk groups covering 2 or more picked perks will appear here',
+      ),
     ).toBeInTheDocument()
     expect(
-      within(screen.getByTestId('build-alternative-groups-list')).getByText(
-        'Alternative perk groups will appear here',
+      within(screen.getByTestId('build-individual-groups-list')).getByText(
+        'Single-perk groups will appear here',
       ),
     ).toBeInTheDocument()
   })
@@ -410,14 +416,14 @@ describe('app', () => {
     expect(screen.queryByRole('button', { name: 'Inspect Clarity' })).not.toBeInTheDocument()
     expect(within(screen.getByTestId('build-perks-bar')).getByText('Clarity')).toBeInTheDocument()
     expect(within(screen.getByTestId('build-perks-bar')).getByText('Perfect Focus')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-plan-list')).getByText('Calm')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-plan-list')).getByText('Clarity')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-plan-list')).getByText('Perfect Focus')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-shared-groups-list')).getByText('Calm')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-shared-groups-list')).getByText('Clarity')).toBeInTheDocument()
+    expect(within(screen.getByTestId('build-shared-groups-list')).getByText('Perfect Focus')).toBeInTheDocument()
     expect(
-      within(screen.getByTestId('build-alternative-groups-list')).getByText('Deadeye'),
+      within(screen.getByTestId('build-individual-groups-list')).getByText('Deadeye'),
     ).toBeInTheDocument()
     expect(
-      within(screen.getByTestId('build-alternative-groups-list')).getByText(
+      within(screen.getByTestId('build-individual-groups-list')).getByText(
         'Perfect Focus',
         { exact: true },
       ),
