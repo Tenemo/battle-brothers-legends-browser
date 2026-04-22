@@ -251,6 +251,30 @@ function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
   return disambiguator.replace(/^background\./, '').replaceAll('_', ' ')
 }
 
+function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string {
+  return `${backgroundFit.backgroundId}::${backgroundFit.sourceFilePath}`
+}
+
+function getCoveredPickedPerkNames(matches: BackgroundFitMatch[]): string[] {
+  return [...new Set(matches.flatMap((match) => match.pickedPerkNames))]
+}
+
+function formatBackgroundFitCoveredPerksLabel(
+  coveredPickedPerkCount: number,
+  pickedPerkCount: number,
+  isProbabilistic: boolean,
+): string {
+  const perkLabel = pickedPerkCount === 1 ? 'picked perk' : 'picked perks'
+
+  return isProbabilistic
+    ? `Up to ${coveredPickedPerkCount} of ${pickedPerkCount} ${perkLabel}`
+    : `Covers ${coveredPickedPerkCount} of ${pickedPerkCount} ${perkLabel}`
+}
+
+function formatBackgroundFitGuaranteedCoverageLabel(guaranteedCoveredPickedPerkCount: number): string {
+  return `Guaranteed ${formatPickedPerkCountLabel(guaranteedCoveredPickedPerkCount)}`
+}
+
 function getPlannerGroupCategoryLabel(
   perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],
 ): string {
@@ -301,65 +325,139 @@ function renderBackgroundFitMatch(match: BackgroundFitMatch) {
   )
 }
 
-function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit, rank: number) {
+function renderBackgroundFitCard({
+  backgroundFit,
+  expandedBackgroundFitKey,
+  onToggle,
+  pickedPerkCount,
+  rank,
+}: {
+  backgroundFit: RankedBackgroundFit
+  expandedBackgroundFitKey: string | null
+  onToggle: (backgroundFitKey: string) => void
+  pickedPerkCount: number
+  rank: number
+}) {
+  const backgroundFitKey = getBackgroundFitKey(backgroundFit)
+  const disambiguatorLabel = backgroundFit.disambiguator
+    ? formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)
+    : null
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
+  const coveredPickedPerkCount = getCoveredPickedPerkNames(backgroundFit.matches).length
+  const guaranteedCoveredPickedPerkCount = getCoveredPickedPerkNames(guaranteedMatches).length
+  const isCoverageProbabilistic = guaranteedCoveredPickedPerkCount < coveredPickedPerkCount
+  const isExpanded = expandedBackgroundFitKey === backgroundFitKey
+  const accordionButtonId = `background-fit-card-button-${rank}`
+  const accordionPanelId = `background-fit-card-panel-${rank}`
 
   return (
     <article
-      className={backgroundFit.matches.length === 0 ? 'background-fit-card is-empty' : 'background-fit-card'}
+      className={
+        backgroundFit.matches.length === 0
+          ? isExpanded
+            ? 'background-fit-card is-empty is-expanded'
+            : 'background-fit-card is-empty'
+          : isExpanded
+            ? 'background-fit-card is-expanded'
+            : 'background-fit-card'
+      }
       title={backgroundFit.sourceFilePath}
     >
-      <div className="background-fit-card-header">
-        <div className="background-fit-card-heading">
-          <span className="background-fit-rank">{rank + 1}</span>
-          <div>
-            <h3>{backgroundFit.backgroundName}</h3>
-            {backgroundFit.disambiguator ? (
-              <span className="background-fit-disambiguator">
-                {formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)}
+      <button
+        aria-controls={accordionPanelId}
+        aria-expanded={isExpanded}
+        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background ${backgroundFit.backgroundName}${disambiguatorLabel ? ` (${disambiguatorLabel})` : ''}`}
+        className="background-fit-accordion-trigger"
+        id={accordionButtonId}
+        onClick={() => onToggle(backgroundFitKey)}
+        type="button"
+      >
+        <div className="background-fit-card-header">
+          <div className="background-fit-card-header-main">
+            <div className="background-fit-card-heading">
+              <span className="background-fit-rank">{rank + 1}</span>
+              <div>
+                <h3>{backgroundFit.backgroundName}</h3>
+                {disambiguatorLabel ? (
+                  <span className="background-fit-disambiguator">{disambiguatorLabel}</span>
+                ) : null}
+              </div>
+            </div>
+
+            <span aria-hidden="true" className="background-fit-accordion-chevron-frame">
+              <BackgroundFitAccordionChevron isExpanded={isExpanded} />
+            </span>
+          </div>
+
+          <div className="background-fit-accordion-summary">
+            <span className="detail-badge">
+              {formatBackgroundFitCoveredPerksLabel(
+                coveredPickedPerkCount,
+                pickedPerkCount,
+                isCoverageProbabilistic,
+              )}
+            </span>
+            {isCoverageProbabilistic ? (
+              <span className="detail-badge">
+                {formatBackgroundFitGuaranteedCoverageLabel(guaranteedCoveredPickedPerkCount)}
               </span>
+            ) : null}
+            <span className="detail-badge">
+              {backgroundFit.matches.length} matched group{backgroundFit.matches.length === 1 ? '' : 's'}
+            </span>
+          </div>
+        </div>
+      </button>
+
+      <div
+        aria-hidden={!isExpanded}
+        aria-labelledby={accordionButtonId}
+        className="background-fit-card-panel"
+        id={accordionPanelId}
+        role="region"
+      >
+        <div className="background-fit-card-panel-inner">
+          <div className="background-fit-card-content">
+            <div className="background-fit-score-row">
+              <span className="detail-badge">
+                Guaranteed weight {formatBackgroundFitScoreLabel(backgroundFit.guaranteedMatchedBuildWeight)}
+              </span>
+              <span className="detail-badge">
+                Expected +{formatBackgroundFitScoreLabel(backgroundFit.expectedExtraMatchedBuildWeight)}
+              </span>
+              <span className="detail-badge">
+                Guaranteed groups {backgroundFit.guaranteedMatchedTreeCount}
+              </span>
+              <span className="detail-badge">
+                Expected groups {formatBackgroundFitScoreLabel(backgroundFit.expectedMatchedTreeCount)}
+              </span>
+            </div>
+
+            {guaranteedMatches.length > 0 ? (
+              <div className="background-fit-match-section">
+                <p className="background-fit-section-label">Guaranteed</p>
+                <ul className="background-fit-match-list">
+                  {guaranteedMatches.map((match) => renderBackgroundFitMatch(match))}
+                </ul>
+              </div>
+            ) : null}
+
+            {probabilisticMatches.length > 0 ? (
+              <div className="background-fit-match-section">
+                <p className="background-fit-section-label">Possible</p>
+                <ul className="background-fit-match-list">
+                  {probabilisticMatches.map((match) => renderBackgroundFitMatch(match))}
+                </ul>
+              </div>
+            ) : null}
+
+            {backgroundFit.matches.length === 0 ? (
+              <p className="background-fit-empty-card">No supported build tree overlap.</p>
             ) : null}
           </div>
         </div>
       </div>
-
-      <div className="background-fit-score-row">
-        <span className="detail-badge">
-          Guaranteed weight {formatBackgroundFitScoreLabel(backgroundFit.guaranteedMatchedBuildWeight)}
-        </span>
-        <span className="detail-badge">
-          Expected +{formatBackgroundFitScoreLabel(backgroundFit.expectedExtraMatchedBuildWeight)}
-        </span>
-        <span className="detail-badge">
-          Guaranteed groups {backgroundFit.guaranteedMatchedTreeCount}
-        </span>
-        <span className="detail-badge">
-          Expected groups {formatBackgroundFitScoreLabel(backgroundFit.expectedMatchedTreeCount)}
-        </span>
-      </div>
-
-      {guaranteedMatches.length > 0 ? (
-        <div className="background-fit-match-section">
-          <p className="background-fit-section-label">Guaranteed</p>
-          <ul className="background-fit-match-list">
-            {guaranteedMatches.map((match) => renderBackgroundFitMatch(match))}
-          </ul>
-        </div>
-      ) : null}
-
-      {probabilisticMatches.length > 0 ? (
-        <div className="background-fit-match-section">
-          <p className="background-fit-section-label">Possible</p>
-          <ul className="background-fit-match-list">
-            {probabilisticMatches.map((match) => renderBackgroundFitMatch(match))}
-          </ul>
-        </div>
-      ) : null}
-
-      {backgroundFit.matches.length === 0 ? (
-        <p className="background-fit-empty-card">No supported build tree overlap.</p>
-      ) : null}
     </article>
   )
 }
@@ -438,9 +536,19 @@ function renderGameIcon({
 function renderPlannerGroupCard({
   groupedPerkGroup,
   keyPrefix,
+  onCloseTooltip,
+  onInspectPerk,
+  onOpenTooltip,
+  hoveredPerkId,
+  hoveredTooltipId,
 }: {
   groupedPerkGroup: BuildPlannerGroupedPerkGroup
   keyPrefix: string
+  onCloseTooltip: () => void
+  onInspectPerk: (perkId: string) => void
+  onOpenTooltip: (perkId: string, currentTarget: HTMLButtonElement) => void
+  hoveredPerkId: string | null
+  hoveredTooltipId: string | undefined
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
 
@@ -476,11 +584,29 @@ function renderPlannerGroupCard({
         </div>
       </div>
       <div className="planner-pill-list">
-        {groupedPerkGroup.perkNames.map((perkName) => (
-          <span className="planner-pill" key={`${plannerGroupLabel}-${perkName}`}>
-            {perkName}
-          </span>
-        ))}
+        {groupedPerkGroup.perkNames.map((perkName, perkIndex) => {
+          const perkId = groupedPerkGroup.perkIds[perkIndex]
+
+          return perkId ? (
+            <button
+              aria-describedby={hoveredPerkId === perkId ? hoveredTooltipId : undefined}
+              className="planner-pill"
+              key={`${plannerGroupLabel}-${perkId}`}
+              onBlur={onCloseTooltip}
+              onClick={() => onInspectPerk(perkId)}
+              onFocus={(event) => onOpenTooltip(perkId, event.currentTarget)}
+              onMouseEnter={(event) => onOpenTooltip(perkId, event.currentTarget)}
+              onMouseLeave={onCloseTooltip}
+              type="button"
+            >
+              {perkName}
+            </button>
+          ) : (
+            <span className="planner-pill" key={`${plannerGroupLabel}-${perkName}`}>
+              {perkName}
+            </span>
+          )
+        })}
       </div>
     </article>
   )
@@ -527,6 +653,18 @@ function BackgroundFitRailChevron({ isExpanded }: { isExpanded: boolean }) {
     <svg
       aria-hidden="true"
       className={isExpanded ? 'background-fit-rail-chevron is-expanded' : 'background-fit-rail-chevron'}
+      viewBox="0 0 12 12"
+    >
+      <path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
+    </svg>
+  )
+}
+
+function BackgroundFitAccordionChevron({ isExpanded }: { isExpanded: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={isExpanded ? 'background-fit-accordion-chevron is-expanded' : 'background-fit-accordion-chevron'}
       viewBox="0 0 12 12"
     >
       <path d="M4 2.5 7.5 6 4 9.5" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
@@ -620,6 +758,13 @@ export default function App() {
   const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
     useState<HoveredBuildPerkTooltip | null>(null)
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
+  const [backgroundFitAccordionState, setBackgroundFitAccordionState] = useState<{
+    expandedBackgroundFitKey: string | null
+    rankedBackgroundFitKeySignature: string
+  }>({
+    expandedBackgroundFitKey: null,
+    rankedBackgroundFitKeySignature: '',
+  })
   const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
   const deferredQuery = useDeferredValue(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
@@ -638,6 +783,9 @@ export default function App() {
   })
   const buildPlannerGroups = getBuildPlannerGroups(pickedPerks)
   const backgroundFitView = backgroundFitEngine.getBackgroundFitView(pickedPerks)
+  const rankedBackgroundFitKeySignature = backgroundFitView.rankedBackgroundFits
+    .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
+    .join('|')
   const sharedPerkGroups = buildPlannerGroups.sharedPerkGroups
   const individualPerkGroups = buildPlannerGroups.individualPerkGroups
   const pickedPerkCountsByGroup = getPickedPerkCountsByGroup(pickedPerks)
@@ -668,6 +816,10 @@ export default function App() {
     tierValue !== allTiersFilterValue ||
     selectedCategoryCount > 0 ||
     selectedTreeCount > 0
+  const expandedBackgroundFitKey =
+    backgroundFitAccordionState.rankedBackgroundFitKeySignature === rankedBackgroundFitKeySignature
+      ? backgroundFitAccordionState.expandedBackgroundFitKey
+      : null
 
   function handleResetGroups() {
     startTransition(() => {
@@ -720,6 +872,17 @@ export default function App() {
 
   function handleBackgroundFitPanelToggle() {
     setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)
+  }
+
+  function handleBackgroundFitCardToggle(backgroundFitKey: string) {
+    setBackgroundFitAccordionState({
+      expandedBackgroundFitKey: expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
+      rankedBackgroundFitKeySignature,
+    })
+  }
+
+  function handleInspectPlannerPerk(perkId: string) {
+    setSelectedPerkId(perkId)
   }
 
   function handleOpenBuildPerkTooltip(perkId: string, currentTarget: HTMLButtonElement) {
@@ -976,7 +1139,12 @@ export default function App() {
                   {sharedPerkGroups.map((sharedPerkGroup) =>
                     renderPlannerGroupCard({
                       groupedPerkGroup: sharedPerkGroup,
+                      hoveredPerkId: hoveredBuildPerk?.id ?? null,
+                      hoveredTooltipId: hoveredBuildPerkTooltipId,
                       keyPrefix: 'shared',
+                      onCloseTooltip: handleCloseBuildPerkTooltip,
+                      onInspectPerk: handleInspectPlannerPerk,
+                      onOpenTooltip: handleOpenBuildPerkTooltip,
                     }),
                   )}
                 </div>
@@ -1003,7 +1171,12 @@ export default function App() {
                     {individualPerkGroups.map((individualPerkGroup) =>
                       renderPlannerGroupCard({
                         groupedPerkGroup: individualPerkGroup,
+                        hoveredPerkId: hoveredBuildPerk?.id ?? null,
+                        hoveredTooltipId: hoveredBuildPerkTooltipId,
                         keyPrefix: 'individual',
+                        onCloseTooltip: handleCloseBuildPerkTooltip,
+                        onInspectPerk: handleInspectPlannerPerk,
+                        onOpenTooltip: handleOpenBuildPerkTooltip,
                       }),
                     )}
                   </div>
@@ -1088,7 +1261,13 @@ export default function App() {
                     <ol className="background-fit-ranking" data-testid="background-fit-ranking">
                       {backgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
                         <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
-                          {renderBackgroundFitCard(backgroundFit, backgroundFitIndex)}
+                          {renderBackgroundFitCard({
+                            backgroundFit,
+                            expandedBackgroundFitKey,
+                            onToggle: handleBackgroundFitCardToggle,
+                            pickedPerkCount: pickedPerks.length,
+                            rank: backgroundFitIndex,
+                          })}
                         </li>
                       ))}
                     </ol>

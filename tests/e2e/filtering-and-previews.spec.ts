@@ -5,6 +5,7 @@ import {
   enableCategory,
   getResultsList,
   gotoPerksBrowser,
+  inspectPerkFromResults,
   searchPerks,
   togglePerkGroup,
 } from './support/perks-browser'
@@ -95,9 +96,7 @@ test('shows picked categories and subgroups with stars and keeps picked result r
   await getResultsList(page)
     .getByRole('button', { name: 'Add Perfect Focus to build from results' })
     .click()
-  await getResultsList(page)
-    .getByRole('button', { name: 'Inspect Perfect Focus' })
-    .click()
+  await inspectPerkFromResults(page, 'Perfect Focus')
 
   await searchPerks(page, '')
 
@@ -122,9 +121,7 @@ test('shows picked categories and subgroups with stars and keeps picked result r
   await disableCategory(page, 'Magic')
 
   await searchPerks(page, 'Perfect')
-  await getResultsList(page)
-    .getByRole('button', { name: 'Inspect Perfect Fit' })
-    .click()
+  await inspectPerkFromResults(page, 'Perfect Fit')
 
   const rowStyles = await page.evaluate(() => {
     function getPerkRowStyles(perkName: string) {

@@ -368,6 +368,36 @@ describe('app', () => {
     ).toBeInTheDocument()
   })
 
+  test('shows the same tooltip when a covered perk in planner perk groups is focused', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Clarity to build from results',
+      }),
+    )
+
+    await user.clear(screen.getByLabelText('Search perks'))
+    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Perfect Focus to build from results',
+      }),
+    )
+
+    const coveredPerkButton = within(screen.getByTestId('build-shared-groups-list')).getByRole('button', {
+      name: 'Perfect Focus',
+    })
+
+    fireEvent.focus(coveredPerkButton)
+    const buildPerkTooltip = screen.getByRole('tooltip')
+
+    expect(buildPerkTooltip).toBeInTheDocument()
+    expect(within(buildPerkTooltip).getByText(/Unlocks the Perfect Focus skill/i)).toBeInTheDocument()
+  })
+
   test('can remove perks from the build and clear the planner', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -448,7 +478,7 @@ describe('app', () => {
     ).toBeInTheDocument()
   })
 
-  test('shows the background fit ranking for the current build and can collapse the panel', async () => {
+  test('shows the background fit ranking with the panel open and cards collapsed by default', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -461,19 +491,39 @@ describe('app', () => {
 
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundFitPanelBody = screen.getByTestId('background-fit-panel-body')
-    const backgroundFitToggle = within(backgroundFitPanel).getByRole('button', {
+    const backgroundFitCollapseToggle = within(backgroundFitPanel).getByRole('button', {
       name: 'Collapse background fit',
     })
+    const apprenticeToggle = within(backgroundFitPanel).getByRole('button', {
+      name: 'Expand background Apprentice',
+    })
+    const apprenticeCard = apprenticeToggle.closest('.background-fit-card')
+    const apprenticePanel = apprenticeCard?.querySelector('.background-fit-card-panel')
 
     expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
+    expect(backgroundFitCollapseToggle).toHaveAttribute('aria-expanded', 'true')
     expect(within(backgroundFitPanel).queryByText('Background fit')).not.toBeInTheDocument()
     expect(within(backgroundFitPanel).getByText(/Ranked by guaranteed build weight first/i)).toBeInTheDocument()
-    expect(within(backgroundFitPanel).getByText('Apprentice')).toBeInTheDocument()
-    expect(within(backgroundFitPanel).getByText('53.3%')).toBeInTheDocument()
+    expect(apprenticeCard).not.toBeNull()
+    expect(apprenticePanel).not.toBeNull()
+    expect(within(apprenticeCard as HTMLElement).getByText('Apprentice')).toBeInTheDocument()
+    expect(within(apprenticeCard as HTMLElement).getByText('Covers 1 of 1 picked perk')).toBeInTheDocument()
+    expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'true')
+    expect(within(apprenticeCard as HTMLElement).getByText('1 matched group')).toBeInTheDocument()
 
-    await user.click(backgroundFitToggle)
+    await user.click(apprenticeToggle)
 
-    expect(backgroundFitToggle).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      within(apprenticeCard as HTMLElement).getByRole('button', {
+        name: 'Collapse background Apprentice',
+      }),
+    ).toBeInTheDocument()
+    expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'false')
+    expect(within(apprenticeCard as HTMLElement).getByText('Guaranteed groups 1')).toBeInTheDocument()
+
+    await user.click(backgroundFitCollapseToggle)
+
+    expect(backgroundFitCollapseToggle).toHaveAttribute('aria-expanded', 'false')
     expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'true')
     expect(within(backgroundFitPanel).getByText('Background fit')).toBeInTheDocument()
 

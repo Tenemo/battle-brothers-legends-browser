@@ -28,6 +28,8 @@ test('stores readable filters and build state in the url and restores them on a 
   await inspectPerkFromResults(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
   await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
+  await expect.poll(() => page.url()).toContain('build=Perfect+Focus,Clarity')
+  await expect.poll(() => page.url()).toContain('category=Traits,Magic')
 
   const savedUrl = page.url()
 
