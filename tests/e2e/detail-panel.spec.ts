@@ -12,9 +12,13 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
   await searchPerks(page, 'Perfect Focus')
   await inspectPerkFromResults(page, 'Perfect Focus')
 
+  const backgroundSourcesSection = page
+    .locator('.detail-section')
+    .filter({ has: page.getByRole('heading', { level: 3, name: 'Background sources' }) })
+
   await expect(page.getByRole('heading', { level: 2, name: 'Perfect Focus' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Background sources' })).toBeVisible()
-  await expect(page.getByText(/Anatomist, Assassin, Beast Slayer/i)).toBeVisible()
+  await expect(backgroundSourcesSection.locator('strong').getByText(/Anatomist.*Beast Slayer.*Youngblood/i)).toBeVisible()
   await expect(page.getByText('Minimum 7 / No chance override')).toHaveCount(1)
 })
 

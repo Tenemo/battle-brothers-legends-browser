@@ -1,11 +1,69 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
+import type { LegendsPerksDataset } from '../src/types/legends-perks'
+
+const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoisted(() => ({
+  backgroundFitSourceFileNamesForAppTests: new Set([
+    'apprentice_background.nut',
+    'companion_1h_background.nut',
+    'companion_2h_background.nut',
+    'companion_ranged_background.nut',
+    'converted_cultist_background.nut',
+    'cultist_background.nut',
+    'paladin_background.nut',
+  ]),
+  perkNamesForAppTests: new Set([
+    'Axe Mastery',
+    'Berserk',
+    'Blacksmiths Technique',
+    'Butchers Fillet',
+    'Clarity',
+    'Evasion',
+    'Favoured Enemy - Beasts',
+    'Fearsome',
+    'Killing Frenzy',
+    'Perfect Focus',
+    'Steadfast',
+  ]),
+}))
+
+vi.mock('../src/data/legends-perks.json', async () => {
+  const actualDataset = (await vi.importActual('../src/data/legends-perks.json')) as LegendsPerksDataset
+  const perks = actualDataset.perks.filter((perk) => perkNamesForAppTests.has(perk.perkName))
+  const treeCount = new Set(
+    perks.flatMap((perk) =>
+      perk.placements.map((placement) => `${placement.categoryName}::${placement.treeId}`),
+    ),
+  ).size
+  const backgroundFitBackgrounds = actualDataset.backgroundFitBackgrounds.filter((backgroundFit) =>
+    backgroundFitSourceFileNamesForAppTests.has(
+      backgroundFit.sourceFilePath.split('/').at(-1) ?? '',
+    ),
+  )
+
+  return {
+    default: {
+      ...actualDataset,
+      backgroundFitBackgrounds,
+      perkCount: perks.length,
+      perks,
+      treeCount,
+    },
+  }
+})
+
 import App from '../src/App'
 
 afterEach(() => {
   window.history.replaceState({}, '', '/')
 })
+
+function setPerkSearchQuery(nextQuery: string) {
+  fireEvent.change(screen.getByLabelText('Search perks'), {
+    target: { value: nextQuery },
+  })
+}
 
 describe('app', () => {
   test('renders the catalog shell without the old reference root footer', () => {
@@ -25,10 +83,9 @@ describe('app', () => {
   })
 
   test('shows an empty state when the search returns no results', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'zzzz impossible perk')
+    setPerkSearchQuery('zzzz impossible perk')
 
     expect(screen.getByRole('heading', { level: 2, name: 'No perks found' })).toBeInTheDocument()
   })
@@ -44,7 +101,7 @@ describe('app', () => {
     expect(within(categoriesPanel).queryByText('Perk groups')).not.toBeInTheDocument()
     await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
     await user.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    setPerkSearchQuery('Clarity')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Clarity' }),
     )
@@ -68,7 +125,7 @@ describe('app', () => {
     render(<App />)
 
     await user.click(screen.getByRole('button', { name: 'Enable category Enemy' }))
-    await user.type(screen.getByLabelText('Search perks'), 'Favoured Enemy - Beasts')
+    setPerkSearchQuery('Favoured Enemy - Beasts')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Inspect Favoured Enemy - Beasts',
@@ -88,22 +145,28 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    setPerkSearchQuery('Perfect Focus')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Inspect Perfect Focus',
       }),
     )
 
-    expect(screen.getByText(/Anatomist, Assassin, Beast Slayer/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        (content) =>
+          content.includes('Anatomist') &&
+          content.includes('Beast Slayer') &&
+          content.includes('Youngblood'),
+      ),
+    ).toBeInTheDocument()
     expect(screen.getAllByText('Minimum 7 / No chance override')).toHaveLength(1)
   })
 
   test('uses the actual effect instead of a flavor quote in result previews', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Evasion')
+    setPerkSearchQuery('Evasion')
     const resultsList = screen.getByTestId('results-list')
 
     expect(
@@ -118,10 +181,9 @@ describe('app', () => {
   })
 
   test('uses the actual effect instead of an unquoted flavor sentence in result previews', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Blacksmiths Technique')
+    setPerkSearchQuery('Blacksmiths Technique')
     const resultsList = screen.getByTestId('results-list')
 
     expect(
@@ -142,12 +204,11 @@ describe('app', () => {
   })
 
   test('shows imported effect previews for perks whose descriptions come from hook overrides', async () => {
-    const user = userEvent.setup()
     render(<App />)
     const searchInput = screen.getByLabelText('Search perks')
     const resultsList = screen.getByTestId('results-list')
 
-    await user.type(searchInput, 'Berserk')
+    fireEvent.change(searchInput, { target: { value: 'Berserk' } })
     expect(
       within(resultsList).getByText(
         /upon killing an enemy 4 Action Points are immediately restored/i,
@@ -156,8 +217,7 @@ describe('app', () => {
     expect(within(resultsList).queryByText(/Passive:/i)).not.toBeInTheDocument()
     expect(within(resultsList).queryByText(/^is vicious$/i)).not.toBeInTheDocument()
 
-    await user.clear(searchInput)
-    await user.type(searchInput, 'Killing Frenzy')
+    fireEvent.change(searchInput, { target: { value: 'Killing Frenzy' } })
     expect(
       within(resultsList).getByText(/A kill increases all damage by 25% for two turns/i),
     ).toBeInTheDocument()
@@ -166,8 +226,7 @@ describe('app', () => {
     ).toBeInTheDocument()
     expect(within(resultsList).queryByText(/^axes$/i)).not.toBeInTheDocument()
 
-    await user.clear(searchInput)
-    await user.type(searchInput, 'Fearsome')
+    fireEvent.change(searchInput, { target: { value: 'Fearsome' } })
     expect(
       within(resultsList).getByText(
         /triggers a morale check for the opponent with a penalty equal to 20% of your current Resolve/i,
@@ -177,10 +236,9 @@ describe('app', () => {
   })
 
   test('shows normalized mastery labels from the imported technical names', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+    setPerkSearchQuery('Axe Mastery')
 
     expect(
       within(screen.getByTestId('results-list')).getByRole('button', {
@@ -213,23 +271,24 @@ describe('app', () => {
     expect(screen.getByText('Filtered to 2 categories and 1 perk group.')).toBeInTheDocument()
   })
 
-  test('can clear all active filters at once', async () => {
-    const user = userEvent.setup()
+  test('can clear all active filters at once', () => {
     render(<App />)
 
     const clearAllButton = screen.getByRole('button', { name: 'Clear all filters' })
 
     expect(clearAllButton).toBeDisabled()
 
-    await user.click(screen.getByRole('button', { name: 'Enable category Traits' }))
-    await user.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
-    await user.selectOptions(screen.getByLabelText('Filter by tier'), '5')
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    fireEvent.click(screen.getByRole('button', { name: 'Enable category Traits' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
+    fireEvent.change(screen.getByLabelText('Filter by tier'), {
+      target: { value: '5' },
+    })
+    setPerkSearchQuery('Clarity')
 
     expect(clearAllButton).toBeEnabled()
     expect(screen.getByText('Filtered to 1 category and 1 perk group.')).toBeInTheDocument()
 
-    await user.click(clearAllButton)
+    fireEvent.click(clearAllButton)
 
     expect(screen.getByLabelText('Search perks')).toHaveValue('')
     expect(screen.getByLabelText('Filter by tier')).toHaveValue('all-tiers')
@@ -242,7 +301,7 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    setPerkSearchQuery('Clarity')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Clarity' }),
     )
@@ -271,8 +330,7 @@ describe('app', () => {
     expect(within(buildIndividualGroupsList).getByText('Clarity', { exact: true })).toBeInTheDocument()
     expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 
-    await user.clear(screen.getByLabelText('Search perks'))
-    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    setPerkSearchQuery('Perfect Focus')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Inspect Perfect Focus',
@@ -293,15 +351,14 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-      await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+      setPerkSearchQuery('Clarity')
       await user.click(
         within(screen.getByTestId('results-list')).getByRole('button', {
           name: 'Add Clarity to build from results',
         }),
       )
 
-      await user.clear(screen.getByLabelText('Search perks'))
-      await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+      setPerkSearchQuery('Perfect Focus')
       await user.click(
         within(screen.getByTestId('results-list')).getByRole('button', {
           name: 'Add Perfect Focus to build from results',
@@ -336,15 +393,14 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    setPerkSearchQuery('Clarity')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Clarity to build from results',
       }),
     )
 
-    await user.clear(screen.getByLabelText('Search perks'))
-    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    setPerkSearchQuery('Perfect Focus')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Perfect Focus to build from results',
@@ -391,15 +447,14 @@ describe('app', () => {
     const user = userEvent.setup()
       render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    setPerkSearchQuery('Clarity')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Clarity to build from results',
       }),
     )
 
-    await user.clear(screen.getByLabelText('Search perks'))
-    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    setPerkSearchQuery('Perfect Focus')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Perfect Focus to build from results',
@@ -446,7 +501,7 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    setPerkSearchQuery('Clarity')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Clarity to build from results',
@@ -470,15 +525,14 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    setPerkSearchQuery('Clarity')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Clarity to build from results',
       }),
     )
 
-    await user.clear(screen.getByLabelText('Search perks'))
-    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    setPerkSearchQuery('Perfect Focus')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Perfect Focus to build from results',
@@ -500,7 +554,7 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    setPerkSearchQuery('Clarity')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Clarity' }),
     )
@@ -534,10 +588,9 @@ describe('app', () => {
   })
 
   test('renders explicit separators between the category and perk group in result rows', async () => {
-    const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Butchers Fillet')
+    setPerkSearchQuery('Butchers Fillet')
 
     expect(screen.getByText('Class / Butcher / Tier 1')).toBeInTheDocument()
     expect(screen.queryByText('ClassButcher / Tier 1')).not.toBeInTheDocument()
@@ -580,7 +633,7 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+    setPerkSearchQuery('Axe Mastery')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Axe Mastery to build from results',
@@ -661,7 +714,7 @@ describe('app', () => {
       const user = userEvent.setup()
       render(<App />)
 
-      await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+      setPerkSearchQuery('Axe Mastery')
       await user.click(
         within(screen.getByTestId('results-list')).getByRole('button', {
           name: 'Add Axe Mastery to build from results',
@@ -724,7 +777,7 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+    setPerkSearchQuery('Axe Mastery')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Axe Mastery to build from results',
@@ -747,7 +800,7 @@ describe('app', () => {
     const user = userEvent.setup()
     render(<App />)
 
-    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+    setPerkSearchQuery('Axe Mastery')
     await user.click(
       within(screen.getByTestId('results-list')).getByRole('button', {
         name: 'Add Axe Mastery to build from results',

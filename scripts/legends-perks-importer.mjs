@@ -120,8 +120,146 @@ async function readFileIfExists(filePath) {
   }
 }
 
+async function readDirectoryNamesIfExists(directoryPath) {
+  try {
+    return await readdir(directoryPath, { withFileTypes: true })
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') {
+      return []
+    }
+
+    throw error
+  }
+}
+
+async function collectNutFileEntriesRecursively(directoryPath) {
+  const nutFileEntries = []
+  const directoryEntries = await readDirectoryNamesIfExists(directoryPath)
+
+  for (const directoryEntry of directoryEntries) {
+    const childPath = path.join(directoryPath, directoryEntry.name)
+
+    if (directoryEntry.isDirectory()) {
+      nutFileEntries.push(...(await collectNutFileEntriesRecursively(childPath)))
+      continue
+    }
+
+    if (!directoryEntry.isFile() || !directoryEntry.name.endsWith('.nut')) {
+      continue
+    }
+
+    nutFileEntries.push({
+      fileSource: await readFile(childPath, 'utf8'),
+      sourceFilePath: toPosixRelativePath(childPath),
+    })
+  }
+
+  return nutFileEntries.toSorted((leftEntry, rightEntry) =>
+    leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+  )
+}
+
 function getLastPathSegment(value) {
   return value.split('.').at(-1) ?? value
+}
+
+function getBackgroundScriptIdFromSourceFilePath(sourceFilePath) {
+  return path.basename(sourceFilePath, path.extname(sourceFilePath))
+}
+
+function getScriptsRootDirectoryPath(referenceRootDirectoryPath) {
+  return path.join(path.dirname(referenceRootDirectoryPath), 'scripts')
+}
+
+function normalizeConstReference(reference) {
+  if (reference.startsWith('this.Const.')) {
+    return `::Const.${reference.slice('this.Const.'.length)}`
+  }
+
+  return reference
+}
+
+function stripSquirrelComments(source) {
+  let strippedSource = ''
+  let index = 0
+
+  while (index < source.length) {
+    const twoCharacters = source.slice(index, index + 2)
+    const character = source[index]
+
+    if (twoCharacters === '//') {
+      while (index < source.length && source[index] !== '\n') {
+        strippedSource += ' '
+        index += 1
+      }
+
+      continue
+    }
+
+    if (twoCharacters === '/*') {
+      strippedSource += '  '
+      index += 2
+
+      while (index < source.length && source.slice(index, index + 2) !== '*/') {
+        strippedSource += source[index] === '\n' ? '\n' : ' '
+        index += 1
+      }
+
+      if (source.slice(index, index + 2) === '*/') {
+        strippedSource += '  '
+        index += 2
+      }
+
+      continue
+    }
+
+    if (twoCharacters === '@"') {
+      strippedSource += twoCharacters
+      index += 2
+
+      while (index < source.length) {
+        strippedSource += source[index]
+
+        if (source[index] === '"') {
+          index += 1
+          break
+        }
+
+        index += 1
+      }
+
+      continue
+    }
+
+    if (character === '"') {
+      strippedSource += character
+      index += 1
+
+      while (index < source.length) {
+        strippedSource += source[index]
+
+        if (source[index] === '\\' && index + 1 < source.length) {
+          strippedSource += source[index + 1]
+          index += 2
+          continue
+        }
+
+        if (source[index] === '"') {
+          index += 1
+          break
+        }
+
+        index += 1
+      }
+
+      continue
+    }
+
+    strippedSource += character
+    index += 1
+  }
+
+  return strippedSource
 }
 
 function prettifyIdentifier(value) {
@@ -696,30 +834,37 @@ function buildMinimumsObject(tableValue) {
   return minimums
 }
 
-function parseBackgroundHookFile(fileSource, sourceFilePath, baseDynamicTreeValue, baseMinimums) {
-  const wrapperFunction = extractHookWrapperFunction(fileSource)
-
-  if (wrapperFunction === null) {
-    return null
+function createDefaultBackgroundDefinition(
+  backgroundScriptId,
+  baseDynamicTreeValue,
+  baseMinimums,
+  sourceFilePath,
+) {
+  return {
+    backgroundIdentifier: null,
+    backgroundName: null,
+    backgroundScriptId,
+    dynamicTreeValue: baseDynamicTreeValue,
+    minimums: cloneMinimums(baseMinimums),
+    sourceFilePath,
   }
+}
 
-  const wrapperStatements = collectTopLevelStatements(wrapperFunction.body)
-  const createFunctionLiteral = readFunctionAssignmentBody(wrapperStatements, 'o.create')
-
-  if (createFunctionLiteral === null) {
-    return null
-  }
-
-  const createBody = createFunctionLiteral.body
-  const backgroundIdentifier = stringValue(extractAssignedValue(createBody, 'this.m.ID'))
-  const backgroundName = stringValue(extractAssignedValue(createBody, 'this.m.Name'))
-
-  if (backgroundIdentifier === null || backgroundName === null) {
-    return null
-  }
-
-  const dynamicTreeValue = extractAssignedValue(createBody, 'this.m.PerkTreeDynamic') ?? baseDynamicTreeValue
-  const minimums = cloneMinimums(baseMinimums)
+function applyBackgroundCreateBody({
+  backgroundScriptId,
+  baseBackgroundDefinition,
+  createBody,
+  preferScriptIdWhenIdentifierIsInherited,
+  sourceFilePath,
+}) {
+  const explicitBackgroundIdentifier = stringValue(extractAssignedValue(createBody, 'this.m.ID'))
+  const backgroundName =
+    stringValue(extractAssignedValue(createBody, 'this.m.Name')) ??
+    baseBackgroundDefinition.backgroundName
+  const dynamicTreeValue =
+    extractAssignedValue(createBody, 'this.m.PerkTreeDynamic') ??
+    baseBackgroundDefinition.dynamicTreeValue
+  const minimums = cloneMinimums(baseBackgroundDefinition.minimums)
 
   for (const operation of extractNumericOperations(createBody, 'this.m.PerkTreeDynamicMins.')) {
     if (!(operation.key in minimums)) {
@@ -742,12 +887,157 @@ function parseBackgroundHookFile(fileSource, sourceFilePath, baseDynamicTreeValu
   }
 
   return {
-    backgroundIdentifier,
+    backgroundIdentifier:
+      explicitBackgroundIdentifier ??
+      (preferScriptIdWhenIdentifierIsInherited
+        ? backgroundScriptId
+        : (baseBackgroundDefinition.backgroundIdentifier ?? backgroundScriptId)),
     backgroundName,
+    backgroundScriptId,
     dynamicTreeValue,
     minimums,
     sourceFilePath,
   }
+}
+
+function parseBackgroundHookFile(fileSource, sourceFilePath, baseDynamicTreeValue, baseMinimums) {
+  const wrapperFunction = extractHookWrapperFunction(fileSource)
+
+  if (wrapperFunction === null) {
+    return null
+  }
+
+  const wrapperStatements = collectTopLevelStatements(wrapperFunction.body)
+  const createFunctionLiteral = readFunctionAssignmentBody(wrapperStatements, 'o.create')
+
+  if (createFunctionLiteral === null) {
+    return null
+  }
+
+  const backgroundDefinition = applyBackgroundCreateBody({
+    backgroundScriptId: getBackgroundScriptIdFromSourceFilePath(sourceFilePath),
+    baseBackgroundDefinition: createDefaultBackgroundDefinition(
+      getBackgroundScriptIdFromSourceFilePath(sourceFilePath),
+      baseDynamicTreeValue,
+      baseMinimums,
+      sourceFilePath,
+    ),
+    createBody: createFunctionLiteral.body,
+    preferScriptIdWhenIdentifierIsInherited: false,
+    sourceFilePath,
+  })
+
+  if (backgroundDefinition.backgroundIdentifier === null || backgroundDefinition.backgroundName === null) {
+    return null
+  }
+
+  return backgroundDefinition
+}
+
+function parseBackgroundScriptFileDefinition(fileSource, sourceFilePath) {
+  const backgroundScriptId = getBackgroundScriptIdFromSourceFilePath(sourceFilePath)
+  const rootAssignment = collectTopLevelStatements(fileSource).find(
+    (statement) =>
+      statement.type === 'assignment' &&
+      statement.target.startsWith('this.') &&
+      getLastPathSegment(statement.target) === backgroundScriptId &&
+      unwrapCall(statement.value)?.callee === 'this.inherit',
+  )
+
+  if (!rootAssignment) {
+    return null
+  }
+
+  const inheritCall = unwrapCall(rootAssignment.value)
+  const inheritedBackgroundScriptPath = stringValue(inheritCall?.arguments[0] ?? null)
+  const backgroundDefinitionTable = inheritCall ? unwrapTable(inheritCall.arguments[1] ?? null) : null
+
+  if (
+    !inheritedBackgroundScriptPath?.startsWith('scripts/skills/backgrounds/') ||
+    backgroundDefinitionTable === null
+  ) {
+    return null
+  }
+
+  const createFunctionEntry = backgroundDefinitionTable.entries.find(
+    (entry) => entry.type === 'function-entry' && entry.name === 'create',
+  )
+
+  if (!createFunctionEntry) {
+    return null
+  }
+
+  return {
+    backgroundScriptId,
+    createBody: createFunctionEntry.body,
+    parentBackgroundScriptId: path.posix.basename(inheritedBackgroundScriptPath),
+    sourceFilePath,
+  }
+}
+
+function resolveScriptBackgroundDefinitions(
+  rawBackgroundDefinitionsByScriptId,
+  baseDynamicTreeValue,
+  baseMinimums,
+) {
+  const resolvedBackgroundDefinitionsByScriptId = new Map()
+
+  function resolveBackground(backgroundScriptId, resolutionPath = new Set()) {
+    if (resolvedBackgroundDefinitionsByScriptId.has(backgroundScriptId)) {
+      return resolvedBackgroundDefinitionsByScriptId.get(backgroundScriptId)
+    }
+
+    const rawBackgroundDefinition = rawBackgroundDefinitionsByScriptId.get(backgroundScriptId)
+
+    if (!rawBackgroundDefinition || resolutionPath.has(backgroundScriptId)) {
+      return null
+    }
+
+    const nextResolutionPath = new Set(resolutionPath)
+    nextResolutionPath.add(backgroundScriptId)
+
+    const parentBackgroundDefinition =
+      rawBackgroundDefinition.parentBackgroundScriptId === 'character_background'
+        ? null
+        : resolveBackground(rawBackgroundDefinition.parentBackgroundScriptId, nextResolutionPath)
+
+    const baseBackgroundDefinition = parentBackgroundDefinition
+      ? {
+          ...parentBackgroundDefinition,
+          backgroundScriptId,
+          minimums: cloneMinimums(parentBackgroundDefinition.minimums),
+          sourceFilePath: rawBackgroundDefinition.sourceFilePath,
+        }
+      : createDefaultBackgroundDefinition(
+          backgroundScriptId,
+          baseDynamicTreeValue,
+          baseMinimums,
+          rawBackgroundDefinition.sourceFilePath,
+        )
+
+    const resolvedBackgroundDefinition = applyBackgroundCreateBody({
+      backgroundScriptId,
+      baseBackgroundDefinition,
+      createBody: rawBackgroundDefinition.createBody,
+      preferScriptIdWhenIdentifierIsInherited:
+        parentBackgroundDefinition !== null &&
+        rawBackgroundDefinition.parentBackgroundScriptId !== backgroundScriptId,
+      sourceFilePath: rawBackgroundDefinition.sourceFilePath,
+    })
+
+    if (resolvedBackgroundDefinition.backgroundName === null) {
+      return null
+    }
+
+    resolvedBackgroundDefinitionsByScriptId.set(backgroundScriptId, resolvedBackgroundDefinition)
+    return resolvedBackgroundDefinition
+  }
+
+  for (const backgroundScriptId of rawBackgroundDefinitionsByScriptId.keys()) {
+    resolveBackground(backgroundScriptId)
+  }
+
+  return resolvedBackgroundDefinitionsByScriptId
 }
 
 function parseBackgroundFitRulesFile(fileSource, treeDefinitions) {
@@ -866,6 +1156,149 @@ function buildBackgroundFitBackgrounds(backgrounds, treeDefinitions) {
           )
         }, 0),
     )
+}
+
+function setBackgroundScriptIdsByReference(
+  backgroundScriptIdsByReference,
+  reference,
+  backgroundScriptIds,
+) {
+  backgroundScriptIdsByReference.set(normalizeConstReference(reference), backgroundScriptIds)
+}
+
+function parseCharacterBackgroundReferenceFile(fileSource, knownBackgroundScriptIds) {
+  const backgroundScriptIdsByReference = new Map()
+  const directlyPlayableBackgroundScriptIds = new Set()
+
+  for (const statement of collectTopLevelStatements(fileSource)) {
+    if (statement.type !== 'assignment') {
+      continue
+    }
+
+    const referencedBackgroundScriptIds = stringArrayValue(statement.value).filter((backgroundScriptId) =>
+      knownBackgroundScriptIds.has(backgroundScriptId),
+    )
+
+    if (referencedBackgroundScriptIds.length === 0) {
+      continue
+    }
+
+    setBackgroundScriptIdsByReference(
+      backgroundScriptIdsByReference,
+      statement.target,
+      referencedBackgroundScriptIds,
+    )
+
+    if (statement.target.startsWith('::Const.Character')) {
+      for (const backgroundScriptId of referencedBackgroundScriptIds) {
+        directlyPlayableBackgroundScriptIds.add(backgroundScriptId)
+      }
+    }
+  }
+
+  return {
+    backgroundScriptIdsByReference,
+    directlyPlayableBackgroundScriptIds,
+  }
+}
+
+function resolveBackgroundScriptIdsFromValue(
+  value,
+  {
+    backgroundScriptIdsByReference,
+    knownBackgroundScriptIds,
+    localValues,
+  },
+  visitedReferences = new Set(),
+) {
+  const directString = stringValue(value)
+
+  if (directString !== null) {
+    return knownBackgroundScriptIds.has(directString) ? [directString] : []
+  }
+
+  const arrayValue = unwrapArray(value)
+
+  if (arrayValue !== null) {
+    return arrayValue.values.flatMap((item) =>
+      resolveBackgroundScriptIdsFromValue(
+        item,
+        {
+          backgroundScriptIdsByReference,
+          knownBackgroundScriptIds,
+          localValues,
+        },
+        visitedReferences,
+      ),
+    )
+  }
+
+  const reference = referenceValue(value)
+
+  if (reference === null || visitedReferences.has(reference)) {
+    return []
+  }
+
+  if (localValues.has(reference)) {
+    const nextVisitedReferences = new Set(visitedReferences)
+    nextVisitedReferences.add(reference)
+
+    return resolveBackgroundScriptIdsFromValue(
+      localValues.get(reference),
+      {
+        backgroundScriptIdsByReference,
+        knownBackgroundScriptIds,
+        localValues,
+      },
+      nextVisitedReferences,
+    )
+  }
+
+  return backgroundScriptIdsByReference.get(normalizeConstReference(reference)) ?? []
+}
+
+function collectPlayableBackgroundScriptIdsFromFileEntries(
+  fileEntries,
+  knownBackgroundScriptIds,
+  backgroundScriptIdsByReference,
+) {
+  const playableBackgroundScriptIds = new Set()
+
+  for (const fileEntry of fileEntries) {
+    const uncommentedFileSource = stripSquirrelComments(fileEntry.fileSource)
+    const localValues = extractLocalAssignments(uncommentedFileSource)
+
+    for (const callee of ['setStartValuesEx', 'setStartValues', 'addBroToRoster']) {
+      for (const argumentList of extractCallArgumentLists(uncommentedFileSource, callee)) {
+        const candidateArgumentSources =
+          callee === 'addBroToRoster' ? argumentList : argumentList.slice(0, 1)
+
+        for (const candidateArgumentSource of candidateArgumentSources) {
+          if (!candidateArgumentSource) {
+            continue
+          }
+
+          let parsedValue
+
+          try {
+            parsedValue = parseSquirrelValue(candidateArgumentSource).value
+          } catch {
+            continue
+          }
+
+          for (const backgroundScriptId of resolveBackgroundScriptIdsFromValue(parsedValue, {
+            backgroundScriptIdsByReference,
+            knownBackgroundScriptIds,
+            localValues,
+          })) {
+            playableBackgroundScriptIds.add(backgroundScriptId)
+          }
+        }
+      }
+    }
+  }
+
+  return playableBackgroundScriptIds
 }
 
 function parseScenarioHookFile(fileSource, sourceFilePath) {
@@ -1167,7 +1600,13 @@ export async function createDataset(
   referenceRootDirectoryPath = defaultReferenceRootDirectoryPath,
   options = {},
 ) {
+  const scriptsRootDirectoryPath = getScriptsRootDirectoryPath(referenceRootDirectoryPath)
   const perkDefinitionsFilePath = path.join(referenceRootDirectoryPath, '!!config', 'perks_defs.nut')
+  const characterBackgroundReferencesFilePath = path.join(
+    referenceRootDirectoryPath,
+    '!!config',
+    'character_backgrounds.nut',
+  )
   const perkStringCandidateFilePaths = [
     path.join(referenceRootDirectoryPath, '!!config', 'perk_strings.nut'),
     path.join(referenceRootDirectoryPath, 'hooks', 'config', 'perk_strings.nut'),
@@ -1184,12 +1623,30 @@ export async function createDataset(
     'z_legends_fav_enemies.nut',
   )
   const perksTreeRulesFilePath = path.join(referenceRootDirectoryPath, 'config', 'perks_tree.nut')
-  const backgroundDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'skills', 'backgrounds')
+  const hookBackgroundDirectoryPath = path.join(
+    referenceRootDirectoryPath,
+    'hooks',
+    'skills',
+    'backgrounds',
+  )
+  const scriptBackgroundDirectoryPath = path.join(scriptsRootDirectoryPath, 'skills', 'backgrounds')
   const scenarioDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'scenarios', 'world')
   const treeDirectoryPath = path.join(referenceRootDirectoryPath, 'config')
-  const characterBackgroundFilePath = path.join(backgroundDirectoryPath, 'character_background.nut')
+  const characterBackgroundFilePath = path.join(
+    hookBackgroundDirectoryPath,
+    'character_background.nut',
+  )
+  const playableBackgroundScanDirectoryPaths = [
+    path.join(referenceRootDirectoryPath, 'hooks', 'entity', 'world', 'settlements', 'buildings'),
+    path.join(referenceRootDirectoryPath, 'hooks', 'events', 'events'),
+    path.join(referenceRootDirectoryPath, 'hooks', 'scenarios', 'world'),
+    path.join(scriptsRootDirectoryPath, 'entity', 'world', 'settlements', 'buildings'),
+    path.join(scriptsRootDirectoryPath, 'events', 'events'),
+    path.join(scriptsRootDirectoryPath, 'scenarios', 'world'),
+  ]
 
   const [
+    characterBackgroundReferencesFileSource,
     perkDefinitionsFileSource,
     entityNamesFileSource,
     categoryOrderFileSource,
@@ -1197,6 +1654,7 @@ export async function createDataset(
     perksTreeRulesFileSource,
     characterBackgroundFileSource,
   ] = await Promise.all([
+    readFileIfExists(characterBackgroundReferencesFilePath),
     readFile(perkDefinitionsFilePath, 'utf8'),
     readFile(entityNamesFilePath, 'utf8'),
     readFile(categoryOrderFilePath, 'utf8'),
@@ -1242,19 +1700,22 @@ export async function createDataset(
     }),
   )
 
-  const backgroundFileNames = (await readdir(backgroundDirectoryPath))
+  const hookBackgroundFileNames = (await readdir(hookBackgroundDirectoryPath))
     .filter((fileName) => fileName.endsWith('.nut') && fileName !== 'character_background.nut')
     .toSorted((left, right) => left.localeCompare(right))
 
-  const backgroundFileEntries = await Promise.all(
-    backgroundFileNames.map(async (fileName) => {
-      const absolutePath = path.join(backgroundDirectoryPath, fileName)
+  const hookBackgroundFileEntries = await Promise.all(
+    hookBackgroundFileNames.map(async (fileName) => {
+      const absolutePath = path.join(hookBackgroundDirectoryPath, fileName)
       return {
         fileSource: await readFile(absolutePath, 'utf8'),
         sourceFilePath: toPosixRelativePath(absolutePath),
       }
     }),
   )
+
+  const scriptBackgroundFileEntries = (await collectNutFileEntriesRecursively(scriptBackgroundDirectoryPath))
+    .filter((backgroundFileEntry) => !backgroundFileEntry.sourceFilePath.endsWith('/character_background.nut'))
 
   const scenarioFileNames = (await readdir(scenarioDirectoryPath))
     .filter((fileName) => fileName.endsWith('.nut'))
@@ -1269,6 +1730,21 @@ export async function createDataset(
       }
     }),
   )
+
+  const playableBackgroundScanFileEntries = (
+    await Promise.all(
+      playableBackgroundScanDirectoryPaths.map((directoryPath) =>
+        collectNutFileEntriesRecursively(directoryPath),
+      ),
+    )
+  )
+    .flat()
+    .filter(
+      (fileEntry, index, fileEntries) =>
+        fileEntries.findIndex((candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath) ===
+        index,
+    )
+    .toSorted((leftEntry, rightEntry) => leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath))
 
   const categoryOrder = parseCategoryOrderFile(categoryOrderFileSource)
   const perkStringData = mergePerkStringData(
@@ -1347,7 +1823,7 @@ export async function createDataset(
   }
 
   const baseMinimums = buildMinimumsObject(baseMinimumsValue)
-  const backgrounds = backgroundFileEntries
+  const hookBackgrounds = hookBackgroundFileEntries
     .map((backgroundFileEntry) =>
       parseBackgroundHookFile(
         backgroundFileEntry.fileSource,
@@ -1357,6 +1833,68 @@ export async function createDataset(
       ),
     )
     .filter((background) => background !== null)
+  const rawScriptBackgroundDefinitionsByScriptId = new Map(
+    scriptBackgroundFileEntries
+      .map((backgroundFileEntry) =>
+        parseBackgroundScriptFileDefinition(
+          backgroundFileEntry.fileSource,
+          backgroundFileEntry.sourceFilePath,
+        ),
+      )
+      .filter((backgroundDefinition) => backgroundDefinition !== null)
+      .map((backgroundDefinition) => [
+        backgroundDefinition.backgroundScriptId,
+        backgroundDefinition,
+      ]),
+  )
+  const resolvedScriptBackgroundDefinitionsByScriptId = resolveScriptBackgroundDefinitions(
+    rawScriptBackgroundDefinitionsByScriptId,
+    baseDynamicTreeValue,
+    baseMinimums,
+  )
+  const knownBackgroundScriptIds = new Set([
+    ...hookBackgroundFileEntries.map((backgroundFileEntry) =>
+      getBackgroundScriptIdFromSourceFilePath(backgroundFileEntry.sourceFilePath),
+    ),
+    ...scriptBackgroundFileEntries.map((backgroundFileEntry) =>
+      getBackgroundScriptIdFromSourceFilePath(backgroundFileEntry.sourceFilePath),
+    ),
+  ])
+  const {
+    backgroundScriptIdsByReference,
+    directlyPlayableBackgroundScriptIds,
+  } = characterBackgroundReferencesFileSource
+    ? parseCharacterBackgroundReferenceFile(
+        characterBackgroundReferencesFileSource,
+        knownBackgroundScriptIds,
+      )
+    : {
+        backgroundScriptIdsByReference: new Map(),
+        directlyPlayableBackgroundScriptIds: new Set(),
+      }
+  const playableBackgroundScriptIds = new Set(directlyPlayableBackgroundScriptIds)
+
+  for (const backgroundScriptId of collectPlayableBackgroundScriptIdsFromFileEntries(
+    playableBackgroundScanFileEntries,
+    knownBackgroundScriptIds,
+    backgroundScriptIdsByReference,
+  )) {
+    playableBackgroundScriptIds.add(backgroundScriptId)
+  }
+
+  const hookBackgroundScriptIds = new Set(
+    hookBackgrounds.map((background) => background.backgroundScriptId),
+  )
+  const scriptBackgrounds = [...playableBackgroundScriptIds]
+    .filter((backgroundScriptId) => !hookBackgroundScriptIds.has(backgroundScriptId))
+    .flatMap((backgroundScriptId) => {
+      const backgroundDefinition =
+        resolvedScriptBackgroundDefinitionsByScriptId.get(backgroundScriptId) ?? null
+      return backgroundDefinition && backgroundDefinition.backgroundName !== null
+        ? [backgroundDefinition]
+        : []
+    })
+  const backgrounds = [...hookBackgrounds, ...scriptBackgrounds]
   const backgroundFitRules = parseBackgroundFitRulesFile(perksTreeRulesFileSource, treeDefinitions)
   const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(
     backgrounds,
@@ -1585,12 +2123,20 @@ export async function createDataset(
     { path: toPosixRelativePath(categoryOrderFilePath), role: 'perk category order' },
     { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favored enemy metadata' },
     { path: toPosixRelativePath(perksTreeRulesFilePath), role: 'background fit rules' },
+    ...(characterBackgroundReferencesFileSource
+      ? [
+          {
+            path: toPosixRelativePath(characterBackgroundReferencesFilePath),
+            role: 'playable background references',
+          },
+        ]
+      : []),
     { path: toPosixRelativePath(characterBackgroundFilePath), role: 'background defaults' },
     ...treeFileEntries.map((treeFileEntry) => ({
       path: treeFileEntry.sourceFilePath,
       role: 'perk trees',
     })),
-    ...backgroundFileEntries.map((backgroundFileEntry) => ({
+    ...[...hookBackgroundFileEntries, ...scriptBackgroundFileEntries].map((backgroundFileEntry) => ({
       path: backgroundFileEntry.sourceFilePath,
       role: 'background dynamic pools',
     })),

@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
@@ -80,8 +80,16 @@ describe('ensure legends reference', () => {
         await mkdir(path.join(extractionDirectoryPath, 'repo-root', 'mod_legends'), {
           recursive: true,
         })
+        await mkdir(path.join(extractionDirectoryPath, 'repo-root', 'scripts'), {
+          recursive: true,
+        })
         await writeFile(
           path.join(extractionDirectoryPath, 'repo-root', 'mod_legends', 'placeholder.nut'),
+          '// fixture',
+          'utf8',
+        )
+        await writeFile(
+          path.join(extractionDirectoryPath, 'repo-root', 'scripts', 'placeholder.nut'),
           '// fixture',
           'utf8',
         )
@@ -93,6 +101,7 @@ describe('ensure legends reference', () => {
     expect(referenceMetadata.referenceRootDirectoryPath).toBe(
       path.join(cacheDirectoryPath, 'current', 'mod_legends'),
     )
+    await expect(access(path.join(cacheDirectoryPath, 'current', 'scripts'))).resolves.toBeUndefined()
     expect(apiRequestCount).toBe(1)
     expect(archiveDownloadCount).toBe(0)
 
@@ -124,8 +133,16 @@ describe('ensure legends reference', () => {
         await mkdir(path.join(extractionDirectoryPath, 'repo-root', 'mod_legends'), {
           recursive: true,
         })
+        await mkdir(path.join(extractionDirectoryPath, 'repo-root', 'scripts'), {
+          recursive: true,
+        })
         await writeFile(
           path.join(extractionDirectoryPath, 'repo-root', 'mod_legends', 'placeholder.nut'),
+          '// fixture',
+          'utf8',
+        )
+        await writeFile(
+          path.join(extractionDirectoryPath, 'repo-root', 'scripts', 'placeholder.nut'),
           '// fixture',
           'utf8',
         )
@@ -201,5 +218,71 @@ describe('ensure legends reference', () => {
     })
 
     expect(referenceMetadata.referenceRootDirectoryPath).toBe(expectedReferenceRootDirectoryPath)
+  })
+
+  test('refreshes the cache when the release tag matches but the sibling scripts tree is missing', async () => {
+    const cacheDirectoryPath = await createTemporaryDirectory()
+    const currentDirectoryPath = path.join(cacheDirectoryPath, 'current')
+    const expectedReferenceRootDirectoryPath = path.join(currentDirectoryPath, 'mod_legends')
+    let extractionCount = 0
+
+    await mkdir(expectedReferenceRootDirectoryPath, { recursive: true })
+    await writeFile(
+      path.join(currentDirectoryPath, 'reference-metadata.json'),
+      `${JSON.stringify(
+        {
+          archiveDownloadUrl: 'https://example.invalid/legends-public-19.3.15.tar.gz',
+          cachedAt: '2026-04-21T20:09:00Z',
+          githubRepository: 'Battle-Brothers-Legends/Legends-public',
+          publishedAt: '2026-04-21T20:09:00Z',
+          referenceRootDirectoryPath: expectedReferenceRootDirectoryPath,
+          releasePageUrl:
+            'https://github.com/Battle-Brothers-Legends/Legends-public/releases/tag/19.3.15',
+          tagName: '19.3.15',
+        },
+        null,
+        2,
+      )}\n`,
+      'utf8',
+    )
+
+    await ensureLatestLegendsReference({
+      cacheDirectoryPath,
+      downloadArchiveImpl: async (_downloadUrl, archiveFilePath) => {
+        await mkdir(path.dirname(archiveFilePath), { recursive: true })
+        await writeFile(archiveFilePath, 'placeholder archive', 'utf8')
+      },
+      extractArchiveImpl: async (_archiveFilePath, extractionDirectoryPath) => {
+        extractionCount += 1
+        await mkdir(path.join(extractionDirectoryPath, 'repo-root', 'mod_legends'), {
+          recursive: true,
+        })
+        await mkdir(path.join(extractionDirectoryPath, 'repo-root', 'scripts'), {
+          recursive: true,
+        })
+        await writeFile(
+          path.join(extractionDirectoryPath, 'repo-root', 'mod_legends', 'placeholder.nut'),
+          '// fixture',
+          'utf8',
+        )
+        await writeFile(
+          path.join(extractionDirectoryPath, 'repo-root', 'scripts', 'placeholder.nut'),
+          '// fixture',
+          'utf8',
+        )
+      },
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            html_url: 'https://github.com/Battle-Brothers-Legends/Legends-public/releases/tag/19.3.15',
+            published_at: '2026-04-21T20:09:00Z',
+            tag_name: '19.3.15',
+            tarball_url: 'https://example.invalid/legends-public-19.3.15.tar.gz',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        ),
+    })
+
+    expect(extractionCount).toBe(1)
   })
 })

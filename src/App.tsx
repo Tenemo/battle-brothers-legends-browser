@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useRef, useState, type CSSProperties } from 'react'
+import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
@@ -958,10 +958,9 @@ export default function App() {
   })
   const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
   const [backgroundFitQuery, setBackgroundFitQuery] = useState('')
-  const deferredQuery = useDeferredValue(query)
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitQuery)
   const visiblePerks = filterAndSortPerks(allPerks, {
-    query: deferredQuery,
+    query,
     selectedGroupNames,
     selectedTreeIdsByGroup,
     tierValue,
@@ -969,24 +968,38 @@ export default function App() {
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(() => visiblePerks[0]?.id ?? null)
   const selectedPerk =
     visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null
-  const pickedPerks = pickedPerkIds.flatMap((pickedPerkId) => {
-    const pickedPerk = allPerksById.get(pickedPerkId)
+  const pickedPerks = useMemo(
+    () =>
+      pickedPerkIds.flatMap((pickedPerkId) => {
+        const pickedPerk = allPerksById.get(pickedPerkId)
 
-    return pickedPerk ? [pickedPerk] : []
-  })
-  const buildPlannerGroups = getBuildPlannerGroups(pickedPerks)
-  const backgroundFitView = backgroundFitEngine.getBackgroundFitView(pickedPerks)
+        return pickedPerk ? [pickedPerk] : []
+      }),
+    [pickedPerkIds],
+  )
+  const buildPlannerGroups = useMemo(() => getBuildPlannerGroups(pickedPerks), [pickedPerks])
+  const backgroundFitView = useMemo(
+    () => backgroundFitEngine.getBackgroundFitView(pickedPerks),
+    [pickedPerks],
+  )
   const hasActiveBackgroundFitSearch = backgroundFitQuery.trim().length > 0
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLocaleLowerCase()
-  const visibleRankedBackgroundFits =
-    normalizedBackgroundFitQuery.length === 0
-      ? backgroundFitView.rankedBackgroundFits
-      : backgroundFitView.rankedBackgroundFits.filter((backgroundFit) =>
-          getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery),
-        )
-  const rankedBackgroundFitKeySignature = backgroundFitView.rankedBackgroundFits
-      .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
-      .join('|')
+  const visibleRankedBackgroundFits = useMemo(
+    () =>
+      normalizedBackgroundFitQuery.length === 0
+        ? backgroundFitView.rankedBackgroundFits
+        : backgroundFitView.rankedBackgroundFits.filter((backgroundFit) =>
+            getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery),
+          ),
+    [backgroundFitView, normalizedBackgroundFitQuery],
+  )
+  const rankedBackgroundFitKeySignature = useMemo(
+    () =>
+      backgroundFitView.rankedBackgroundFits
+        .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
+        .join('|'),
+    [backgroundFitView],
+  )
   const sharedPerkGroups = buildPlannerGroups.sharedPerkGroups
   const individualPerkGroups = buildPlannerGroups.individualPerkGroups
   const pickedPerkCountsByGroup = getPickedPerkCountsByGroup(pickedPerks)
@@ -1007,7 +1020,6 @@ export default function App() {
   const hasPickedPerks = pickedPerks.length > 0
   const hasSupportedBackgroundFitTargets = backgroundFitView.supportedBuildTargetTrees.length > 0
   const hasUnsupportedBackgroundFitTargets = backgroundFitView.unsupportedBuildTargetTrees.length > 0
-  const hasVisibleRankedBackgroundFits = visibleRankedBackgroundFits.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
   const selectedCategoryCount = selectedGroupNames.length
   const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
@@ -1023,6 +1035,194 @@ export default function App() {
     backgroundFitAccordionState.rankedBackgroundFitKeySignature === rankedBackgroundFitKeySignature
       ? backgroundFitAccordionState.expandedBackgroundFitKey
       : null
+  const backgroundFitPanel = useMemo(
+    () => (
+      <>
+        {hoveredBackgroundFitSummaryTooltip !== null ? (
+          <div
+            className="build-perk-tooltip"
+            id={hoveredBackgroundFitSummaryTooltipId}
+            role="tooltip"
+            style={getAnchoredTooltipStyle(hoveredBackgroundFitSummaryTooltip.anchorRectangle)}
+          >
+            <strong className="build-perk-tooltip-title">
+              {hoveredBackgroundFitSummaryTooltip.title}
+            </strong>
+            <div className="build-perk-tooltip-copy">
+              {hoveredBackgroundFitSummaryTooltip.descriptionParagraphs.map(
+                (descriptionParagraph, descriptionParagraphIndex) => (
+                  <p key={`background-fit-summary-tooltip-${descriptionParagraphIndex}`}>
+                    {descriptionParagraph}
+                  </p>
+                ),
+              )}
+            </div>
+          </div>
+        ) : null}
+
+        <aside
+          aria-label="Background fit"
+          className={
+            isBackgroundFitPanelExpanded
+              ? 'background-fit-panel is-expanded'
+              : 'background-fit-panel is-collapsed'
+          }
+          data-testid="background-fit-panel"
+        >
+          <div
+            aria-hidden={!isBackgroundFitPanelExpanded}
+            className="background-fit-panel-body"
+            data-testid="background-fit-panel-body"
+            onScrollCapture={() => setHoveredBackgroundFitSummaryTooltip(null)}
+            ref={backgroundFitPanelBodyRef}
+          >
+            <label className="search-field background-fit-search-field">
+              <span className="visually-hidden">Search backgrounds</span>
+              <input
+                aria-label="Search backgrounds"
+                onChange={(event) => {
+                  setHoveredBackgroundFitSummaryTooltip(null)
+                  setBackgroundFitQuery(event.target.value)
+                }}
+                placeholder="Search backgrounds"
+                type="search"
+                value={backgroundFitQuery}
+              />
+            </label>
+            {!hasPickedPerks ? (
+              <div className="background-fit-empty-state">
+                <p className="background-fit-summary-copy">
+                  Showing all backgrounds. Pick perks into the build planner to rank them by
+                  guaranteed and exact probabilistic tree coverage.
+                </p>
+                <p className="background-fit-summary-copy">
+                  Exact probabilities come from the Legends background tree rules, not simulation.
+                </p>
+              </div>
+            ) : (
+              hasSupportedBackgroundFitTargets ? (
+                <p className="background-fit-ranking-summary">
+                  Ranked by guaranteed build weight first, then expected extra coverage.
+                </p>
+              ) : (
+                <div className="background-fit-empty-state">
+                  <p className="background-fit-summary-copy">
+                    {hasUnsupportedBackgroundFitTargets
+                      ? 'This build only contains unsupported categories for dynamic background trees.'
+                      : 'Pick perks from Weapon, Defense, Traits, Enemy, Class, Profession, or Magic to rank backgrounds exactly.'}
+                  </p>
+                  {hasUnsupportedBackgroundFitTargets ? (
+                    <>
+                      <p className="background-fit-section-label">Unsupported build trees</p>
+                      <p className="results-note">
+                        Background dynamic trees only roll Weapon, Defense, Traits, Enemy, Class,
+                        Profession, and Magic.
+                      </p>
+                      <ul className="background-fit-target-list is-unsupported">
+                        {backgroundFitView.unsupportedBuildTargetTrees.map((buildTargetTree) =>
+                          renderBackgroundFitTargetTree(buildTargetTree, 'unsupported'),
+                        )}
+                      </ul>
+                    </>
+                  ) : null}
+                </div>
+              )
+            )}
+            {visibleRankedBackgroundFits.length > 0 ? (
+              <ol className="background-fit-ranking" data-testid="background-fit-ranking">
+                {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
+                  <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
+                    {renderBackgroundFitCard({
+                      backgroundFit,
+                      expandedBackgroundFitKey,
+                      onCloseSummaryTooltip: () => setHoveredBackgroundFitSummaryTooltip(null),
+                      onOpenSummaryTooltip: (
+                        title: string,
+                        descriptionParagraphs: string[],
+                        currentTarget: HTMLSpanElement,
+                      ) => {
+                        const { bottom, left, right, top, width } =
+                          currentTarget.getBoundingClientRect()
+
+                        setHoveredPerkId(null)
+                        setHoveredBuildPerkTooltip(null)
+                        setHoveredBackgroundFitSummaryTooltip({
+                          anchorRectangle: {
+                            bottom,
+                            left,
+                            right,
+                            top,
+                            width,
+                          },
+                          descriptionParagraphs,
+                          title,
+                        })
+                      },
+                      onToggle: (backgroundFitKey: string) => {
+                        setHoveredBackgroundFitSummaryTooltip(null)
+                        setBackgroundFitAccordionState({
+                          expandedBackgroundFitKey:
+                            expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
+                          rankedBackgroundFitKeySignature,
+                        })
+                      },
+                      pickedPerkCount: pickedPerks.length,
+                      rank: backgroundFitIndex,
+                      supportedBuildTargetTreeCount:
+                        backgroundFitView.supportedBuildTargetTrees.length,
+                    })}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className="background-fit-empty-state">
+                <p className="background-fit-summary-copy">
+                  No backgrounds match "{backgroundFitQuery.trim()}".
+                </p>
+                <p className="background-fit-summary-copy">
+                  Try a different background name or clear the search.
+                </p>
+              </div>
+            )}
+          </div>
+
+          <button
+            aria-expanded={isBackgroundFitPanelExpanded}
+            aria-label={`${isBackgroundFitPanelExpanded ? 'Collapse' : 'Expand'} background fit`}
+            className="background-fit-rail-button"
+            onClick={() => {
+              setHoveredBackgroundFitSummaryTooltip(null)
+              setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)
+            }}
+            type="button"
+          >
+            <span aria-hidden="true" className="background-fit-rail-button-icon">
+              <BackgroundFitRailChevron isExpanded={isBackgroundFitPanelExpanded} />
+            </span>
+            {!isBackgroundFitPanelExpanded ? (
+              <span aria-hidden="true" className="background-fit-rail-button-label">
+                Background fit
+              </span>
+            ) : null}
+          </button>
+        </aside>
+      </>
+    ),
+    [
+      backgroundFitQuery,
+      backgroundFitView,
+      expandedBackgroundFitKey,
+      hasPickedPerks,
+      hasSupportedBackgroundFitTargets,
+      hasUnsupportedBackgroundFitTargets,
+      hoveredBackgroundFitSummaryTooltip,
+      hoveredBackgroundFitSummaryTooltipId,
+      isBackgroundFitPanelExpanded,
+      pickedPerks.length,
+      rankedBackgroundFitKeySignature,
+      visibleRankedBackgroundFits,
+    ],
+  )
 
   function handleResetGroups() {
     startTransition(() => {
@@ -1083,19 +1283,6 @@ export default function App() {
     })
   }
 
-  function handleBackgroundFitPanelToggle() {
-    setHoveredBackgroundFitSummaryTooltip(null)
-    setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)
-  }
-
-  function handleBackgroundFitCardToggle(backgroundFitKey: string) {
-    setHoveredBackgroundFitSummaryTooltip(null)
-    setBackgroundFitAccordionState({
-      expandedBackgroundFitKey: expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
-      rankedBackgroundFitKeySignature,
-    })
-  }
-
   function handleInspectPlannerPerk(perkId: string) {
     setSelectedPerkId(perkId)
   }
@@ -1132,32 +1319,6 @@ export default function App() {
     setHoveredPerkId((currentHoveredPerkId) =>
       currentHoveredPerkId === perkId ? null : currentHoveredPerkId,
     )
-  }
-
-  function handleOpenBackgroundFitSummaryTooltip(
-    title: string,
-    descriptionParagraphs: string[],
-    currentTarget: HTMLSpanElement,
-  ) {
-    const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
-
-    setHoveredPerkId(null)
-    setHoveredBuildPerkTooltip(null)
-    setHoveredBackgroundFitSummaryTooltip({
-      anchorRectangle: {
-        bottom,
-        left,
-        right,
-        top,
-        width,
-      },
-      descriptionParagraphs,
-      title,
-    })
-  }
-
-  function handleCloseBackgroundFitSummaryTooltip() {
-    setHoveredBackgroundFitSummaryTooltip(null)
   }
 
   function handleGroupToggle(nextGroupName: string) {
@@ -1524,28 +1685,6 @@ export default function App() {
         </div>
       ) : null}
 
-      {hoveredBackgroundFitSummaryTooltip !== null ? (
-        <div
-          className="build-perk-tooltip"
-          id={hoveredBackgroundFitSummaryTooltipId}
-          role="tooltip"
-          style={getAnchoredTooltipStyle(hoveredBackgroundFitSummaryTooltip.anchorRectangle)}
-        >
-          <strong className="build-perk-tooltip-title">
-            {hoveredBackgroundFitSummaryTooltip.title}
-          </strong>
-          <div className="build-perk-tooltip-copy">
-            {hoveredBackgroundFitSummaryTooltip.descriptionParagraphs.map(
-              (descriptionParagraph, descriptionParagraphIndex) => (
-                <p key={`background-fit-summary-tooltip-${descriptionParagraphIndex}`}>
-                  {descriptionParagraph}
-                </p>
-              ),
-            )}
-          </div>
-        </div>
-      ) : null}
-
       <main
         className={
           isBackgroundFitPanelExpanded
@@ -1555,120 +1694,7 @@ export default function App() {
             : 'workspace is-background-fit-collapsed'
         }
       >
-        <aside
-          aria-label="Background fit"
-          className={
-            isBackgroundFitPanelExpanded
-              ? 'background-fit-panel is-expanded'
-              : 'background-fit-panel is-collapsed'
-          }
-          data-testid="background-fit-panel"
-        >
-            <div
-              aria-hidden={!isBackgroundFitPanelExpanded}
-              className="background-fit-panel-body"
-              data-testid="background-fit-panel-body"
-              onScrollCapture={handleCloseBackgroundFitSummaryTooltip}
-              ref={backgroundFitPanelBodyRef}
-            >
-              <label className="search-field background-fit-search-field">
-                <span className="visually-hidden">Search backgrounds</span>
-                <input
-                  aria-label="Search backgrounds"
-                  onChange={(event) => {
-                    setHoveredBackgroundFitSummaryTooltip(null)
-                    setBackgroundFitQuery(event.target.value)
-                  }}
-                  placeholder="Search backgrounds"
-                  type="search"
-                  value={backgroundFitQuery}
-                />
-              </label>
-              {!hasPickedPerks ? (
-                <div className="background-fit-empty-state">
-                  <p className="background-fit-summary-copy">
-                    Showing all backgrounds. Pick perks into the build planner to rank them by
-                    guaranteed and exact probabilistic tree coverage.
-                  </p>
-                  <p className="background-fit-summary-copy">
-                    Exact probabilities come from the Legends background tree rules, not simulation.
-                  </p>
-                </div>
-              ) : (
-                hasSupportedBackgroundFitTargets ? (
-                  <p className="background-fit-ranking-summary">
-                    Ranked by guaranteed build weight first, then expected extra coverage.
-                  </p>
-                ) : (
-                  <div className="background-fit-empty-state">
-                    <p className="background-fit-summary-copy">
-                      {hasUnsupportedBackgroundFitTargets
-                        ? 'This build only contains unsupported categories for dynamic background trees.'
-                        : 'Pick perks from Weapon, Defense, Traits, Enemy, Class, Profession, or Magic to rank backgrounds exactly.'}
-                    </p>
-                    {hasUnsupportedBackgroundFitTargets ? (
-                      <>
-                        <p className="background-fit-section-label">Unsupported build trees</p>
-                        <p className="results-note">
-                          Background dynamic trees only roll Weapon, Defense, Traits, Enemy, Class,
-                          Profession, and Magic.
-                        </p>
-                        <ul className="background-fit-target-list is-unsupported">
-                          {backgroundFitView.unsupportedBuildTargetTrees.map((buildTargetTree) =>
-                            renderBackgroundFitTargetTree(buildTargetTree, 'unsupported'),
-                          )}
-                        </ul>
-                      </>
-                    ) : null}
-                  </div>
-                )
-              )}
-              {hasVisibleRankedBackgroundFits ? (
-                <ol className="background-fit-ranking" data-testid="background-fit-ranking">
-                  {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
-                    <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
-                      {renderBackgroundFitCard({
-                        backgroundFit,
-                        expandedBackgroundFitKey,
-                        onCloseSummaryTooltip: handleCloseBackgroundFitSummaryTooltip,
-                        onOpenSummaryTooltip: handleOpenBackgroundFitSummaryTooltip,
-                        onToggle: handleBackgroundFitCardToggle,
-                        pickedPerkCount: pickedPerks.length,
-                        rank: backgroundFitIndex,
-                        supportedBuildTargetTreeCount: backgroundFitView.supportedBuildTargetTrees.length,
-                      })}
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <div className="background-fit-empty-state">
-                  <p className="background-fit-summary-copy">
-                    No backgrounds match "{backgroundFitQuery.trim()}".
-                  </p>
-                  <p className="background-fit-summary-copy">
-                    Try a different background name or clear the search.
-                  </p>
-                </div>
-              )}
-          </div>
-
-          <button
-            aria-expanded={isBackgroundFitPanelExpanded}
-            aria-label={`${isBackgroundFitPanelExpanded ? 'Collapse' : 'Expand'} background fit`}
-            className="background-fit-rail-button"
-            onClick={handleBackgroundFitPanelToggle}
-            type="button"
-          >
-            <span aria-hidden="true" className="background-fit-rail-button-icon">
-              <BackgroundFitRailChevron isExpanded={isBackgroundFitPanelExpanded} />
-            </span>
-            {!isBackgroundFitPanelExpanded ? (
-              <span aria-hidden="true" className="background-fit-rail-button-label">
-                Background fit
-              </span>
-            ) : null}
-          </button>
-        </aside>
+        {backgroundFitPanel}
 
         <aside className="sidebar" aria-label="Perk categories">
           <div className="panel-heading">

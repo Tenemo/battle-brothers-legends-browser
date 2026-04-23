@@ -235,11 +235,22 @@ async function populateCurrentReferenceDirectory({
       throw new Error('Downloaded Legends archive did not contain a mod_legends directory.')
     }
 
+    const extractedScriptsDirectoryPath = path.join(
+      path.dirname(extractedReferenceRootDirectoryPath),
+      'scripts',
+    )
+
     await rm(currentDirectoryPath, { force: true, recursive: true })
     await mkdir(currentDirectoryPath, { recursive: true })
     await cp(extractedReferenceRootDirectoryPath, path.join(currentDirectoryPath, 'mod_legends'), {
       recursive: true,
     })
+
+    if (await pathExists(extractedScriptsDirectoryPath)) {
+      await cp(extractedScriptsDirectoryPath, path.join(currentDirectoryPath, 'scripts'), {
+        recursive: true,
+      })
+    }
 
     const referenceMetadata = createReferenceMetadata({
       githubRepository,
@@ -269,6 +280,7 @@ export async function ensureLatestLegendsReference({
 } = {}) {
   const currentDirectoryPath = path.join(cacheDirectoryPath, 'current')
   const expectedReferenceRootDirectoryPath = path.join(currentDirectoryPath, 'mod_legends')
+  const expectedScriptsDirectoryPath = path.join(currentDirectoryPath, 'scripts')
   const cachedReferenceMetadataFromDisk = await readCachedLegendsReferenceMetadata(
     path.join(currentDirectoryPath, 'reference-metadata.json'),
   )
@@ -289,7 +301,8 @@ export async function ensureLatestLegendsReference({
 
     if (
       cachedReferenceMetadata?.tagName === releaseDescriptor.tagName &&
-      (await pathExists(expectedReferenceRootDirectoryPath))
+      (await pathExists(expectedReferenceRootDirectoryPath)) &&
+      (await pathExists(expectedScriptsDirectoryPath))
     ) {
       return cachedReferenceMetadata
     }

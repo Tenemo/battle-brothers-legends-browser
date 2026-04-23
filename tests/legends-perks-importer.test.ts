@@ -40,16 +40,18 @@ describe('legends perks importer', () => {
       primaryGroupName: 'Traits',
     })
 
-    expect(clarity?.backgroundSources).toEqual([
-      expect.objectContaining({
-        backgroundId: 'background.beast_slayer',
-        backgroundName: 'Beast Slayer',
-        categoryName: 'Traits',
-        chance: null,
-        minimumTrees: 7,
-        treeName: 'Calm',
-      }),
-    ])
+    expect(clarity?.backgroundSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundId: 'background.beast_slayer',
+          backgroundName: 'Beast Slayer',
+          categoryName: 'Traits',
+          chance: null,
+          minimumTrees: 7,
+          treeName: 'Calm',
+        }),
+      ]),
+    )
 
     expect(beastSlayerBackground).toEqual(
       expect.objectContaining({
@@ -225,5 +227,83 @@ describe('legends perks importer', () => {
         weaponTreeId: 'AxeTree',
       },
     ])
+  })
+
+  test('adds script-only playable backgrounds and falls back to the script id when m.ID is missing', () => {
+    const clarity = dataset.perks.find((perk) => perk.perkConstName === 'LegendClarity')
+    const axeMastery = dataset.perks.find((perk) => perk.perkConstName === 'SpecAxe')
+    const prizefighterBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'legend_gladiator_prizefighter_background',
+    )
+    const legionaryBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.legend_legionary',
+    )
+
+    expect(prizefighterBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'legend_gladiator_prizefighter_background',
+        backgroundName: 'Gladiator Prizefighter',
+        categories: expect.objectContaining({
+          Enemy: expect.objectContaining({
+            treeIds: ['BeastTree'],
+          }),
+          Traits: expect.objectContaining({
+            treeIds: ['CalmTree'],
+          }),
+          Weapon: expect.objectContaining({
+            treeIds: ['AxeTree'],
+          }),
+        }),
+        sourceFilePath:
+          'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_gladiator_prizefighter_background.nut',
+      }),
+    )
+    expect(legionaryBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.legend_legionary',
+        backgroundName: 'Legionary',
+        sourceFilePath:
+          'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_legionary_background.nut',
+      }),
+    )
+
+    expect(clarity?.backgroundSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundId: 'legend_gladiator_prizefighter_background',
+          backgroundName: 'Gladiator Prizefighter',
+          sourceFilePath:
+            'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_gladiator_prizefighter_background.nut',
+          treeName: 'Calm',
+        }),
+      ]),
+    )
+    expect(axeMastery?.backgroundSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundId: 'legend_gladiator_prizefighter_background',
+          backgroundName: 'Gladiator Prizefighter',
+          treeName: 'Axe',
+        }),
+        expect.objectContaining({
+          backgroundId: 'background.legend_legionary',
+          backgroundName: 'Legionary',
+          treeName: 'Axe',
+        }),
+      ]),
+    )
+  })
+
+  test('keeps dormant script backgrounds out of the dataset when they are only commented out', () => {
+    expect(
+      dataset.backgroundFitBackgrounds.find(
+        (background) => background.backgroundId === 'background.legend_dormant',
+      ),
+    ).toBeUndefined()
+    expect(
+      dataset.perks.some((perk) =>
+        perk.backgroundSources.some((backgroundSource) => backgroundSource.backgroundName === 'Dormant'),
+      ),
+    ).toBe(false)
   })
 })

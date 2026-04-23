@@ -11,8 +11,43 @@ export type PerkBrowserFilters = {
   tierValue: string
 }
 
+type NormalizedPerkSearchIndex = {
+  backgroundNames: string[]
+  groupNames: string[]
+  perkName: string
+  scenarioNames: string[]
+  searchText: string
+  treeNames: string[]
+}
+
+const normalizedPerkSearchIndexByPerkId = new Map<string, NormalizedPerkSearchIndex>()
+
 function normalizeSearchValue(value: string): string {
   return value.trim().toLocaleLowerCase()
+}
+
+function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSearchIndex {
+  const cachedSearchIndex = normalizedPerkSearchIndexByPerkId.get(perk.id)
+
+  if (cachedSearchIndex) {
+    return cachedSearchIndex
+  }
+
+  const normalizedSearchIndex = {
+    backgroundNames: perk.backgroundSources.map((backgroundSource) =>
+      backgroundSource.backgroundName.toLocaleLowerCase(),
+    ),
+    groupNames: perk.groupNames.map((groupName) => groupName.toLocaleLowerCase()),
+    perkName: perk.perkName.toLocaleLowerCase(),
+    scenarioNames: perk.scenarioSources.map((scenarioSource) =>
+      scenarioSource.scenarioName.toLocaleLowerCase(),
+    ),
+    searchText: perk.searchText.toLocaleLowerCase(),
+    treeNames: perk.placements.map((placement) => placement.treeName.toLocaleLowerCase()),
+  }
+
+  normalizedPerkSearchIndexByPerkId.set(perk.id, normalizedSearchIndex)
+  return normalizedSearchIndex
 }
 
 function getLowestPlacementTier(perk: LegendsPerkRecord): number | null {
@@ -205,16 +240,9 @@ function getSearchScore(perk: LegendsPerkRecord, query: string): number | null {
 
   const normalizedQuery = normalizeSearchValue(query)
   const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean)
-  const perkName = perk.perkName.toLocaleLowerCase()
-  const treeNames = perk.placements.map((placement) => placement.treeName.toLocaleLowerCase())
-  const groupNames = perk.groupNames.map((groupName) => groupName.toLocaleLowerCase())
-  const backgroundNames = perk.backgroundSources.map((backgroundSource) =>
-    backgroundSource.backgroundName.toLocaleLowerCase(),
-  )
-  const scenarioNames = perk.scenarioSources.map((scenarioSource) =>
-    scenarioSource.scenarioName.toLocaleLowerCase(),
-  )
-  const searchText = perk.searchText.toLocaleLowerCase()
+  const normalizedSearchIndex = getNormalizedPerkSearchIndex(perk)
+  const { backgroundNames, groupNames, perkName, scenarioNames, searchText, treeNames } =
+    normalizedSearchIndex
 
   if (!searchTerms.every((searchTerm) => searchText.includes(searchTerm))) {
     return null
