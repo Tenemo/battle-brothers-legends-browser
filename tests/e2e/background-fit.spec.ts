@@ -29,7 +29,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
     'aria-expanded',
     'true',
   )
-  await expect(backgroundFitPanel.getByText(/Ranked by guaranteed build weight first/i)).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByText(
+      /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+    ),
+  ).toBeVisible()
   await expect(backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' })).toBeVisible()
   await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
     await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
@@ -85,6 +89,16 @@ test('filters the background fit list with the background search field', async (
   const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
 
   await expect(backgroundSearchInput).toBeVisible()
+  const oathtakerRankBeforeFiltering = await page.evaluate(() => {
+    const oathtakerCard = [...document.querySelectorAll('.background-fit-card')].find(
+      (backgroundFitCard) =>
+        backgroundFitCard.querySelector('h3')?.textContent?.trim() === 'Oathtaker',
+    )
+
+    return oathtakerCard?.querySelector('.background-fit-rank')?.textContent ?? null
+  })
+
+  expect(oathtakerRankBeforeFiltering).toMatch(/^\d+$/)
   await backgroundFitPanelBody.evaluate((element) => {
     element.scrollTop = element.scrollHeight
   })
@@ -94,7 +108,7 @@ test('filters the background fit list with the background search field', async (
     )
     .toBeGreaterThan(0)
 
-  await backgroundSearchInput.fill('Oathtaker')
+  await backgroundSearchInput.fill('Oath')
   await expect
     .poll(async () =>
       backgroundFitPanelBody.evaluate((element) => element.scrollTop),
@@ -110,6 +124,19 @@ test('filters the background fit list with the background search field', async (
 
   await expect(oathtakerHeading).toBeVisible()
   await expect(oathtakerToggle).toBeVisible()
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const oathtakerCard = [...document.querySelectorAll('.background-fit-card')].find(
+          (backgroundFitCard) =>
+            backgroundFitCard.querySelector('h3')?.textContent?.trim() === 'Oathtaker',
+        )
+
+        return oathtakerCard?.querySelector('.background-fit-rank')?.textContent ?? null
+      }),
+    )
+    .toBe(oathtakerRankBeforeFiltering)
+  await expect(backgroundFitPanel.locator('.search-highlight')).toContainText(['Oath'])
   await expect
     .poll(async () => {
       return page.evaluate(() => {
@@ -158,7 +185,7 @@ test('keeps the background search enabled without any picked perks', async ({ pa
   await expect(backgroundSearchInput).toBeEnabled()
   await expect(backgroundFitPanel.getByText(/Showing all backgrounds/i)).toBeVisible()
 
-  await backgroundSearchInput.fill('Oathtaker')
+  await backgroundSearchInput.fill('Oath')
 
   await expect(
     backgroundFitPanel.getByRole('heading', {
@@ -166,7 +193,42 @@ test('keeps the background search enabled without any picked perks', async ({ pa
       name: 'Oathtaker',
     }),
   ).toBeVisible()
-  await expect(backgroundFitPanel.getByText(/Ranked by guaranteed build weight first/i)).toHaveCount(0)
+  await expect(backgroundFitPanel.locator('.search-highlight')).toContainText(['Oath'])
+  await expect(
+    backgroundFitPanel.getByText(
+      /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+    ),
+  ).toHaveCount(0)
+})
+
+test('hides redundant background disambiguator pills when they only repeat the name', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+
+  await backgroundSearchInput.fill('Gladiator')
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() =>
+        [...document.querySelectorAll('.background-fit-card')]
+          .map((backgroundFitCard) => {
+            const heading = backgroundFitCard.querySelector('h3')?.textContent?.trim() ?? ''
+            const disambiguator =
+              backgroundFitCard.querySelector('.background-fit-disambiguator')?.textContent?.trim() ?? null
+
+            return { disambiguator, heading }
+          })
+          .filter((backgroundFitCard) => backgroundFitCard.heading === 'Gladiator'),
+      ),
+    )
+    .toContainEqual({
+      disambiguator: null,
+      heading: 'Gladiator',
+    })
 })
 
 test('keeps zero-match backgrounds after matching backgrounds in the full ranked list', async ({ page }) => {
@@ -195,7 +257,11 @@ test('keeps dense background names readable from a shared build url and starts c
     'aria-expanded',
     'true',
   )
-  await expect(backgroundFitPanel.getByText(/Ranked by guaranteed build weight first/i)).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByText(
+      /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+    ),
+  ).toBeVisible()
 
   const hedgeKnightCard = backgroundFitPanel
     .locator('.background-fit-card')

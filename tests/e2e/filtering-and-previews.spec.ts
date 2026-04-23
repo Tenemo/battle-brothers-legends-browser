@@ -82,6 +82,33 @@ test('shows normalized mastery labels in the result list', async ({ page }) => {
   await expect(getResultsList(page).getByText('Spec Axe', { exact: true })).toHaveCount(0)
 })
 
+test('reorders categories and perk groups around the active perk search query and highlights the match', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Shady')
+
+  const categoryButtons = page.locator('.sidebar .category-card > button.group-chip')
+
+  await expect(categoryButtons.first()).toHaveAttribute('aria-label', 'Enable category Other')
+
+  await enableCategory(page, 'Other')
+
+  const subgroupButtons = page.locator('.sidebar .subgroup-panel button[aria-label^="Toggle perk group "]')
+
+  await expect(subgroupButtons.first()).toHaveAttribute('aria-label', 'Toggle perk group Shady')
+  await expect(page.locator('.sidebar .search-highlight')).toContainText(['Shady'])
+})
+
+test('highlights the searched perk phrase in the visible perk results', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Axe')
+
+  await expect(getResultsList(page).locator('.search-highlight')).toContainText(['Axe'])
+})
+
 test('shows picked categories and subgroups with stars and keeps picked result rows outlined while selection changes the background', async ({
   page,
 }) => {

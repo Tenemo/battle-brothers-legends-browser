@@ -20,6 +20,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'Butchers Fillet',
     'Clarity',
     'Evasion',
+    'Feint',
     'Favoured Enemy - Beasts',
     'Fearsome',
     'Killing Frenzy',
@@ -246,6 +247,40 @@ describe('app', () => {
       }),
     ).toBeInTheDocument()
     expect(screen.queryByText('Spec Axe')).not.toBeInTheDocument()
+  })
+
+  test('reorders categories and perk groups around the active perk search query', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+
+    setPerkSearchQuery('Shady')
+
+    const categoryButtons = screen.getAllByRole('button', {
+      name: /^(Enable|Disable) category /,
+    })
+
+    expect(categoryButtons[0]).toHaveAccessibleName('Enable category Other')
+
+    await user.click(categoryButtons[0])
+
+    const subgroupButtons = screen.getAllByRole('button', { name: /Toggle perk group / })
+
+    expect(subgroupButtons[0]).toHaveAccessibleName('Toggle perk group Shady')
+    expect(container.querySelectorAll('.sidebar .search-highlight')).toHaveLength(1)
+    expect(container.querySelector('.sidebar .search-highlight')?.textContent).toBe('Shady')
+  })
+
+  test('highlights the searched perk phrase in visible perk result text', () => {
+    const { container } = render(<App />)
+
+    setPerkSearchQuery('Axe')
+
+    expect(container.querySelectorAll('.results-list .search-highlight').length).toBeGreaterThanOrEqual(1)
+    expect(
+      [...container.querySelectorAll('.results-list .search-highlight')].some(
+        (searchHighlight) => searchHighlight.textContent === 'Axe',
+      ),
+    ).toBe(true)
   })
 
   test('can filter by multiple categories at the same time while keeping subgroup filters scoped', async () => {
@@ -654,7 +689,11 @@ describe('app', () => {
     expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
     expect(backgroundFitCollapseToggle).toHaveAttribute('aria-expanded', 'true')
     expect(within(backgroundFitPanel).queryByText('Background fit')).not.toBeInTheDocument()
-    expect(within(backgroundFitPanel).getByText(/Ranked by guaranteed build weight first/i)).toBeInTheDocument()
+    expect(
+      within(backgroundFitPanel).getByText(
+        /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+      ),
+    ).toBeInTheDocument()
     expect(apprenticeCard).not.toBeNull()
     expect(apprenticePanel).not.toBeNull()
     expect(within(apprenticeCard as HTMLElement).getByText('Apprentice')).toBeInTheDocument()
@@ -710,9 +749,9 @@ describe('app', () => {
       expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
     })
 
-    test('filters background fit cards by background name', async () => {
-      const user = userEvent.setup()
-      render(<App />)
+  test('filters background fit cards by background name', async () => {
+    const user = userEvent.setup()
+    render(<App />)
 
       setPerkSearchQuery('Axe Mastery')
       await user.click(
@@ -724,28 +763,41 @@ describe('app', () => {
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
     const workspace = screen.getByRole('main')
+    const oathtakerHeadingBeforeFiltering = within(backgroundFitPanel).getByRole('heading', {
+      level: 3,
+      name: 'Oathtaker',
+    })
+    const oathtakerCardBeforeFiltering = oathtakerHeadingBeforeFiltering.closest('.background-fit-card')
+    const oathtakerRankBeforeFiltering =
+      oathtakerCardBeforeFiltering?.querySelector('.background-fit-rank')?.textContent ?? null
 
     expect(backgroundSearchInput).toHaveValue('')
     expect(workspace).not.toHaveClass('has-active-background-fit-search')
+    expect(oathtakerRankBeforeFiltering).toMatch(/^\d+$/)
 
-    await user.type(backgroundSearchInput, 'Oathtaker')
+    await user.type(backgroundSearchInput, 'Oath')
 
     expect(workspace).toHaveClass('has-active-background-fit-search')
-    expect(
-      within(backgroundFitPanel).getByRole('heading', {
+    const oathtakerCardAfterFiltering = within(backgroundFitPanel)
+      .getByRole('heading', {
         level: 3,
-          name: 'Oathtaker',
-        }),
-      ).toBeInTheDocument()
-      expect(
-        within(backgroundFitPanel).queryByRole('heading', {
-          level: 3,
-          name: 'Apprentice',
-        }),
-      ).not.toBeInTheDocument()
+        name: 'Oathtaker',
+      })
+      .closest('.background-fit-card')
 
-      await user.clear(backgroundSearchInput)
-      await user.type(backgroundSearchInput, 'zzzz impossible background')
+    expect(oathtakerCardAfterFiltering).not.toBeNull()
+    expect(
+      oathtakerCardAfterFiltering?.querySelector('.background-fit-rank')?.textContent ?? null,
+    ).toBe(oathtakerRankBeforeFiltering)
+    expect(
+      within(backgroundFitPanel).queryByRole('heading', {
+        level: 3,
+        name: 'Apprentice',
+      }),
+    ).not.toBeInTheDocument()
+
+    await user.clear(backgroundSearchInput)
+    await user.type(backgroundSearchInput, 'zzzz impossible background')
 
     expect(
       within(backgroundFitPanel).getByText('No backgrounds match "zzzz impossible background".'),
@@ -754,7 +806,7 @@ describe('app', () => {
 
   test('keeps background search enabled and usable without any picked perks', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    const { container } = render(<App />)
 
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
@@ -762,7 +814,7 @@ describe('app', () => {
     expect(backgroundSearchInput).toBeEnabled()
     expect(within(backgroundFitPanel).getByText(/Showing all backgrounds/i)).toBeInTheDocument()
 
-    await user.type(backgroundSearchInput, 'Oathtaker')
+    await user.type(backgroundSearchInput, 'Oath')
 
     expect(
       within(backgroundFitPanel).getByRole('heading', {
@@ -770,7 +822,13 @@ describe('app', () => {
         name: 'Oathtaker',
       }),
     ).toBeInTheDocument()
-    expect(within(backgroundFitPanel).queryByText(/Ranked by guaranteed build weight first/i)).not.toBeInTheDocument()
+    expect(container.querySelectorAll('.background-fit-panel .search-highlight')).toHaveLength(1)
+    expect(container.querySelector('.background-fit-panel .search-highlight')?.textContent).toBe('Oath')
+    expect(
+      within(backgroundFitPanel).queryByText(
+        /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+      ),
+    ).not.toBeInTheDocument()
   })
 
   test('keeps zero-match backgrounds in the list after matching backgrounds', async () => {

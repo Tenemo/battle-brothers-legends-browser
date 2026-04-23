@@ -674,18 +674,33 @@ function compareBackgroundFitMatches(leftMatch: BackgroundFitMatch, rightMatch: 
   )
 }
 
+function getCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
+  return new Set(matches.flatMap((match) => match.pickedPerkNames)).size
+}
+
+function getGuaranteedCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
+  return getCoveredPickedPerkCount(matches.filter((match) => match.isGuaranteed))
+}
+
 function compareRankedBackgroundFits(
   leftBackgroundFit: RankedBackgroundFit,
   rightBackgroundFit: RankedBackgroundFit,
 ): number {
+  const leftGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
+    leftBackgroundFit.matches,
+  )
+  const rightGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
+    rightBackgroundFit.matches,
+  )
+  const leftCoveredPickedPerkCount = getCoveredPickedPerkCount(leftBackgroundFit.matches)
+  const rightCoveredPickedPerkCount = getCoveredPickedPerkCount(rightBackgroundFit.matches)
+
   return (
-    Number(rightBackgroundFit.matches.length > 0) - Number(leftBackgroundFit.matches.length > 0) ||
-    rightBackgroundFit.guaranteedMatchedBuildWeight - leftBackgroundFit.guaranteedMatchedBuildWeight ||
-    rightBackgroundFit.expectedExtraMatchedBuildWeight - leftBackgroundFit.expectedExtraMatchedBuildWeight ||
-    rightBackgroundFit.guaranteedMatchedTreeCount - leftBackgroundFit.guaranteedMatchedTreeCount ||
-    rightBackgroundFit.expectedMatchedTreeCount - leftBackgroundFit.expectedMatchedTreeCount ||
+    rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
+    rightCoveredPickedPerkCount - leftCoveredPickedPerkCount ||
     leftBackgroundFit.backgroundName.localeCompare(rightBackgroundFit.backgroundName) ||
-    leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId)
+    leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId) ||
+    leftBackgroundFit.sourceFilePath.localeCompare(rightBackgroundFit.sourceFilePath)
   )
 }
 

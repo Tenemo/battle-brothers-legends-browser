@@ -1238,6 +1238,13 @@
   border-color: transparent;
 }
 
+.search-highlight {
+  border-radius: 0.24rem;
+  background: rgb(204 155 84 / 0.22);
+  color: inherit;
+  padding: 0 0.14em;
+}
+
 .toolbar {
   display: flex;
   gap: 0.5rem;

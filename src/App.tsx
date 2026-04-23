@@ -1,4 +1,13 @@
-import { startTransition, useDeferredValue, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import {
+  startTransition,
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
@@ -200,6 +209,177 @@ function compareGroupNames(leftGroupName: string, rightGroupName: string): numbe
   return normalizedLeftPriority - normalizedRightPriority || leftGroupName.localeCompare(rightGroupName)
 }
 
+function normalizeSearchPhrase(value: string): string {
+  return value.trim().toLocaleLowerCase()
+}
+
+function getSearchMatchPriority(text: string, normalizedSearchPhrase: string): number {
+  if (normalizedSearchPhrase.length === 0) {
+    return 2
+  }
+
+  const normalizedText = text.toLocaleLowerCase()
+
+  if (normalizedText === normalizedSearchPhrase) {
+    return 0
+  }
+
+  if (normalizedText.includes(normalizedSearchPhrase)) {
+    return 1
+  }
+
+  return 2
+}
+
+function getVisiblePerkCountsByGroup(perks: LegendsPerkRecord[]): Map<string, number> {
+  const countsByGroup = new Map<string, number>()
+
+  for (const perk of perks) {
+    for (const groupName of new Set(perk.groupNames)) {
+      countsByGroup.set(groupName, (countsByGroup.get(groupName) ?? 0) + 1)
+    }
+  }
+
+  return countsByGroup
+}
+
+function getVisiblePerkCountsByCategoryTree(perks: LegendsPerkRecord[]): Map<string, number> {
+  const countsByCategoryTree = new Map<string, number>()
+
+  for (const perk of perks) {
+    for (const placement of perk.placements) {
+      const categoryTreeKey = `${placement.categoryName}::${placement.treeId}`
+      countsByCategoryTree.set(categoryTreeKey, (countsByCategoryTree.get(categoryTreeKey) ?? 0) + 1)
+    }
+  }
+
+  return countsByCategoryTree
+}
+
+function compareDisplayedGroups({
+  leftGroupName,
+  normalizedSearchPhrase,
+  rightGroupName,
+  treeOptionsByGroup,
+  visiblePerkCountsByGroup,
+}: {
+  leftGroupName: string
+  normalizedSearchPhrase: string
+  rightGroupName: string
+  treeOptionsByGroup: Map<string, CategoryTreeOption[]>
+  visiblePerkCountsByGroup: Map<string, number>
+}): number {
+  if (normalizedSearchPhrase.length === 0) {
+    return compareGroupNames(leftGroupName, rightGroupName)
+  }
+
+  const leftTreeOptions = treeOptionsByGroup.get(leftGroupName) ?? []
+  const rightTreeOptions = treeOptionsByGroup.get(rightGroupName) ?? []
+  const leftGroupMatchPriority = getSearchMatchPriority(leftGroupName, normalizedSearchPhrase)
+  const rightGroupMatchPriority = getSearchMatchPriority(rightGroupName, normalizedSearchPhrase)
+  const leftTreeMatchPriority = Math.min(
+    ...leftTreeOptions.map((treeOption) =>
+      getSearchMatchPriority(treeOption.treeName, normalizedSearchPhrase),
+    ),
+    2,
+  )
+  const rightTreeMatchPriority = Math.min(
+    ...rightTreeOptions.map((treeOption) =>
+      getSearchMatchPriority(treeOption.treeName, normalizedSearchPhrase),
+    ),
+    2,
+  )
+  const leftVisiblePerkCount = visiblePerkCountsByGroup.get(leftGroupName) ?? 0
+  const rightVisiblePerkCount = visiblePerkCountsByGroup.get(rightGroupName) ?? 0
+  const leftHasVisiblePerksPriority = leftVisiblePerkCount > 0 ? 0 : 1
+  const rightHasVisiblePerksPriority = rightVisiblePerkCount > 0 ? 0 : 1
+
+  return (
+    leftGroupMatchPriority - rightGroupMatchPriority ||
+    leftTreeMatchPriority - rightTreeMatchPriority ||
+    leftHasVisiblePerksPriority - rightHasVisiblePerksPriority ||
+    rightVisiblePerkCount - leftVisiblePerkCount ||
+    compareGroupNames(leftGroupName, rightGroupName)
+  )
+}
+
+function compareDisplayedTreeOptions({
+  categoryName,
+  leftTreeOption,
+  normalizedSearchPhrase,
+  rightTreeOption,
+  visiblePerkCountsByCategoryTree,
+}: {
+  categoryName: string
+  leftTreeOption: CategoryTreeOption
+  normalizedSearchPhrase: string
+  rightTreeOption: CategoryTreeOption
+  visiblePerkCountsByCategoryTree: Map<string, number>
+}): number {
+  if (normalizedSearchPhrase.length === 0) {
+    return leftTreeOption.treeName.localeCompare(rightTreeOption.treeName)
+  }
+
+  const leftMatchPriority = getSearchMatchPriority(leftTreeOption.treeName, normalizedSearchPhrase)
+  const rightMatchPriority = getSearchMatchPriority(rightTreeOption.treeName, normalizedSearchPhrase)
+  const leftVisiblePerkCount =
+    visiblePerkCountsByCategoryTree.get(`${categoryName}::${leftTreeOption.treeId}`) ?? 0
+  const rightVisiblePerkCount =
+    visiblePerkCountsByCategoryTree.get(`${categoryName}::${rightTreeOption.treeId}`) ?? 0
+  const leftHasVisiblePerksPriority = leftVisiblePerkCount > 0 ? 0 : 1
+  const rightHasVisiblePerksPriority = rightVisiblePerkCount > 0 ? 0 : 1
+
+  return (
+    leftMatchPriority - rightMatchPriority ||
+    leftHasVisiblePerksPriority - rightHasVisiblePerksPriority ||
+    rightVisiblePerkCount - leftVisiblePerkCount ||
+    leftTreeOption.treeName.localeCompare(rightTreeOption.treeName)
+  )
+}
+
+function renderHighlightedText(
+  text: string,
+  query: string,
+  keyPrefix: string,
+): ReactNode {
+  const trimmedQuery = query.trim()
+  const normalizedSearchPhrase = normalizeSearchPhrase(trimmedQuery)
+
+  if (trimmedQuery.length === 0 || normalizedSearchPhrase.length === 0) {
+    return text
+  }
+
+  const normalizedText = text.toLocaleLowerCase()
+  const highlightedNodes: ReactNode[] = []
+  let currentIndex = 0
+  let matchIndex = normalizedText.indexOf(normalizedSearchPhrase)
+
+  if (matchIndex === -1) {
+    return text
+  }
+
+  while (matchIndex !== -1) {
+    if (matchIndex > currentIndex) {
+      highlightedNodes.push(text.slice(currentIndex, matchIndex))
+    }
+
+    const matchEndIndex = matchIndex + trimmedQuery.length
+    highlightedNodes.push(
+      <mark className="search-highlight" key={`${keyPrefix}-${matchIndex}`}>
+        {text.slice(matchIndex, matchEndIndex)}
+      </mark>,
+    )
+    currentIndex = matchEndIndex
+    matchIndex = normalizedText.indexOf(normalizedSearchPhrase, currentIndex)
+  }
+
+  if (currentIndex < text.length) {
+    highlightedNodes.push(text.slice(currentIndex))
+  }
+
+  return highlightedNodes
+}
+
 function getPerkContextLabel(perk: LegendsPerkRecord): string {
   const primaryPlacement = perk.placements[0]
 
@@ -263,6 +443,23 @@ function formatBackgroundFitScoreLabel(score: number): string {
 
 function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
   return disambiguator.replace(/^background\./, '').replaceAll('_', ' ')
+}
+
+function normalizeBackgroundLabelForComparison(label: string): string {
+  return label.trim().toLocaleLowerCase()
+}
+
+function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundFit): string | null {
+  if (backgroundFit.disambiguator === null) {
+    return null
+  }
+
+  const disambiguatorLabel = formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)
+
+  return normalizeBackgroundLabelForComparison(disambiguatorLabel) ===
+    normalizeBackgroundLabelForComparison(backgroundFit.backgroundName)
+    ? null
+    : disambiguatorLabel
 }
 
 function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string {
@@ -468,6 +665,7 @@ function renderBackgroundFitCard({
   onOpenSummaryTooltip,
   onToggle,
   pickedPerkCount,
+  query,
   rank,
   supportedBuildTargetTreeCount,
 }: {
@@ -481,13 +679,12 @@ function renderBackgroundFitCard({
   ) => void
   onToggle: (backgroundFitKey: string) => void
   pickedPerkCount: number
+  query: string
   rank: number
   supportedBuildTargetTreeCount: number
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
-  const disambiguatorLabel = backgroundFit.disambiguator
-    ? formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)
-    : null
+  const disambiguatorLabel = getVisibleBackgroundDisambiguatorLabel(backgroundFit)
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
   const coveredPickedPerkCount = getCoveredPickedPerkNames(backgroundFit.matches).length
@@ -522,9 +719,11 @@ function renderBackgroundFitCard({
             <div className="background-fit-card-heading">
               <span className="background-fit-rank">{rank + 1}</span>
               <div>
-                <h3>{backgroundFit.backgroundName}</h3>
+                <h3>{renderHighlightedText(backgroundFit.backgroundName, query, `${backgroundFitKey}-name`)}</h3>
                 {disambiguatorLabel ? (
-                  <span className="background-fit-disambiguator">{disambiguatorLabel}</span>
+                  <span className="background-fit-disambiguator">
+                    {renderHighlightedText(disambiguatorLabel, query, `${backgroundFitKey}-disambiguator`)}
+                  </span>
                 ) : null}
               </div>
             </div>
@@ -959,6 +1158,7 @@ export default function App() {
   const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
   const [backgroundFitQuery, setBackgroundFitQuery] = useState('')
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitQuery)
+  const normalizedPerkSearchPhrase = normalizeSearchPhrase(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
     query,
     selectedGroupNames,
@@ -982,6 +1182,46 @@ export default function App() {
     () => backgroundFitEngine.getBackgroundFitView(pickedPerks),
     [pickedPerks],
   )
+  const visiblePerkCountsByGroup = useMemo(() => getVisiblePerkCountsByGroup(visiblePerks), [visiblePerks])
+  const visiblePerkCountsByCategoryTree = useMemo(
+    () => getVisiblePerkCountsByCategoryTree(visiblePerks),
+    [visiblePerks],
+  )
+  const displayedGroupNames = useMemo(
+    () =>
+      [...availableGroups].toSorted((leftGroupName, rightGroupName) =>
+        compareDisplayedGroups({
+          leftGroupName,
+          normalizedSearchPhrase: normalizedPerkSearchPhrase,
+          rightGroupName,
+          treeOptionsByGroup: categoryTreeOptionsByGroup,
+          visiblePerkCountsByGroup,
+        }),
+      ),
+    [normalizedPerkSearchPhrase, visiblePerkCountsByGroup],
+  )
+  const displayedTreeOptionsByGroup = useMemo(
+    () =>
+      new Map(
+        displayedGroupNames.map((groupName) => {
+          const treeOptions = categoryTreeOptionsByGroup.get(groupName) ?? []
+
+          return [
+            groupName,
+            [...treeOptions].toSorted((leftTreeOption, rightTreeOption) =>
+              compareDisplayedTreeOptions({
+                categoryName: groupName,
+                leftTreeOption,
+                normalizedSearchPhrase: normalizedPerkSearchPhrase,
+                rightTreeOption,
+                visiblePerkCountsByCategoryTree,
+              }),
+            ),
+          ] as const
+        }),
+      ),
+    [displayedGroupNames, normalizedPerkSearchPhrase, visiblePerkCountsByCategoryTree],
+  )
   const hasActiveBackgroundFitSearch = backgroundFitQuery.trim().length > 0
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLocaleLowerCase()
   const visibleRankedBackgroundFits = useMemo(
@@ -992,6 +1232,16 @@ export default function App() {
             getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery),
           ),
     [backgroundFitView, normalizedBackgroundFitQuery],
+  )
+  const rankedBackgroundFitIndexByKey = useMemo(
+    () =>
+      new Map(
+        backgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => [
+          getBackgroundFitKey(backgroundFit),
+          backgroundFitIndex,
+        ]),
+      ),
+    [backgroundFitView],
   )
   const rankedBackgroundFitKeySignature = useMemo(
     () =>
@@ -1102,7 +1352,7 @@ export default function App() {
             ) : (
               hasSupportedBackgroundFitTargets ? (
                 <p className="background-fit-ranking-summary">
-                  Ranked by guaranteed build weight first, then expected extra coverage.
+                  Ranked by guaranteed perks pickable first, then total perks pickable.
                 </p>
               ) : (
                 <div className="background-fit-empty-state">
@@ -1167,7 +1417,10 @@ export default function App() {
                         })
                       },
                       pickedPerkCount: pickedPerks.length,
-                      rank: backgroundFitIndex,
+                      query: backgroundFitQuery,
+                      rank:
+                        rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
+                        backgroundFitIndex,
                       supportedBuildTargetTreeCount:
                         backgroundFitView.supportedBuildTargetTrees.length,
                     })}
@@ -1219,6 +1472,7 @@ export default function App() {
       hoveredBackgroundFitSummaryTooltipId,
       isBackgroundFitPanelExpanded,
       pickedPerks.length,
+      rankedBackgroundFitIndexByKey,
       rankedBackgroundFitKeySignature,
       visibleRankedBackgroundFits,
     ],
@@ -1712,8 +1966,8 @@ export default function App() {
             </span>
             <span>{allPerks.length}</span>
           </button>
-          {availableGroups.map((availableGroupName) => {
-            const activeTreeOptions = categoryTreeOptionsByGroup.get(availableGroupName) ?? []
+          {displayedGroupNames.map((availableGroupName) => {
+            const activeTreeOptions = displayedTreeOptionsByGroup.get(availableGroupName) ?? []
             const isExpanded = expandedGroupNames.includes(availableGroupName)
             const isActive = selectedGroupNames.includes(availableGroupName)
             const pickedPerkCountInGroup = pickedPerkCountsByGroup.get(availableGroupName) ?? 0
@@ -1730,7 +1984,9 @@ export default function App() {
                 >
                   <span className="group-chip-start">
                     <TreeChevron isExpanded={isExpanded} />
-                    <span className="group-label">{availableGroupName}</span>
+                    <span className="group-label">
+                      {renderHighlightedText(availableGroupName, query, `${availableGroupName}-group`)}
+                    </span>
                   </span>
                   <span className="group-chip-end">
                     {pickedPerkCountInGroup > 0 ? (
@@ -1774,7 +2030,13 @@ export default function App() {
                         onClick={() => handleTreeToggle(availableGroupName, treeOption.treeId)}
                         type="button"
                       >
-                        <span className="subgroup-chip-start">{treeOption.treeName}</span>
+                        <span className="subgroup-chip-start">
+                          {renderHighlightedText(
+                            treeOption.treeName,
+                            query,
+                            `${availableGroupName}-${treeOption.treeId}-tree`,
+                          )}
+                        </span>
                         <span className="subgroup-chip-end">
                           {pickedPerkCountInTree > 0 ? (
                             <span aria-hidden="true" className="group-chip-picked-stars">
@@ -1897,7 +2159,9 @@ export default function App() {
                         })}
                         <div className="perk-row-copy">
                           <div className="perk-row-topline">
-                            <span className="perk-name">{perk.perkName}</span>
+                            <span className="perk-name">
+                              {renderHighlightedText(perk.perkName, query, `${perk.id}-name`)}
+                            </span>
                             <div className="perk-row-badges">
                               <span className="tier-badge">
                                 {getTierLabel(perk.placements[0]?.tier ?? null)}
@@ -1908,12 +2172,20 @@ export default function App() {
                             </div>
                           </div>
                           <p className="perk-context">
-                            {getPerkContextLabel(perk)}
+                            {renderHighlightedText(
+                              getPerkContextLabel(perk),
+                              query,
+                              `${perk.id}-context`,
+                            )}
                           </p>
                           <div className="perk-preview">
                             {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
                               <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
-                                {previewParagraph}
+                                {renderHighlightedText(
+                                  previewParagraph,
+                                  query,
+                                  `${perk.id}-preview-${previewParagraphIndex}`,
+                                )}
                               </p>
                             ))}
                           </div>

@@ -406,28 +406,47 @@ describe('background fit', () => {
     )
   })
 
-  test('ranks guaranteed higher-weight fits ahead of lower-weight fits and disambiguates duplicate names', () => {
+  test(
+    'ranks backgrounds by guaranteed covered picked perks first and disambiguates duplicate names',
+    () => {
+      const engine = createBackgroundFitEngine(sampleDataset)
+      const backgroundFitView = engine.getBackgroundFitView([
+        samplePerks[0],
+        samplePerks[1],
+        samplePerks[2],
+      ])
+
+      expect(backgroundFitView.rankedBackgroundFits.slice(0, 2)).toEqual([
+        expect.objectContaining({
+          backgroundId: 'background.high_weight',
+          backgroundName: 'Champion',
+          disambiguator: 'background.high_weight',
+          guaranteedMatchedBuildWeight: 2,
+        }),
+        expect.objectContaining({
+          backgroundId: 'background.low_weight',
+          backgroundName: 'Champion',
+          disambiguator: 'background.low_weight',
+          guaranteedMatchedBuildWeight: 1,
+        }),
+      ])
+    },
+  )
+
+  test('breaks ties on guaranteed covered picked perks by total covered picked perks', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([
-      samplePerks[0],
-      samplePerks[1],
-      samplePerks[2],
+      samplePerks[3],
+      samplePerks[4],
+      samplePerks[5],
     ])
+    const orderedBackgroundIds = backgroundFitView.rankedBackgroundFits.map(
+      (backgroundFit) => backgroundFit.backgroundId,
+    )
 
-    expect(backgroundFitView.rankedBackgroundFits.slice(0, 2)).toEqual([
-      expect.objectContaining({
-        backgroundId: 'background.high_weight',
-        backgroundName: 'Champion',
-        disambiguator: 'background.high_weight',
-        guaranteedMatchedBuildWeight: 2,
-      }),
-      expect.objectContaining({
-        backgroundId: 'background.low_weight',
-        backgroundName: 'Champion',
-        disambiguator: 'background.low_weight',
-        guaranteedMatchedBuildWeight: 1,
-      }),
-    ])
+    expect(orderedBackgroundIds.indexOf('background.traits_fill')).toBeLessThan(
+      orderedBackgroundIds.indexOf('background.explicit_heavy'),
+    )
   })
 
   test('keeps matching backgrounds ahead of backgrounds with no supported build matches', () => {
