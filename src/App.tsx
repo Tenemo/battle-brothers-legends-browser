@@ -1,4 +1,4 @@
-import { startTransition, useDeferredValue, useEffect, useState, type CSSProperties } from 'react'
+import { startTransition, useDeferredValue, useEffect, useRef, useState, type CSSProperties } from 'react'
 import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
@@ -920,6 +920,7 @@ export default function App() {
     useState<HoveredBuildPerkTooltip | null>(null)
   const [hoveredBackgroundFitSummaryTooltip, setHoveredBackgroundFitSummaryTooltip] =
     useState<HoveredBackgroundFitSummaryTooltip | null>(null)
+  const backgroundFitPanelBodyRef = useRef<HTMLDivElement | null>(null)
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [backgroundFitAccordionState, setBackgroundFitAccordionState] = useState<{
     expandedBackgroundFitKey: string | null
@@ -948,6 +949,7 @@ export default function App() {
   })
   const buildPlannerGroups = getBuildPlannerGroups(pickedPerks)
   const backgroundFitView = backgroundFitEngine.getBackgroundFitView(pickedPerks)
+  const hasActiveBackgroundFitSearch = backgroundFitQuery.trim().length > 0
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLocaleLowerCase()
   const visibleRankedBackgroundFits =
     normalizedBackgroundFitQuery.length === 0
@@ -1241,6 +1243,27 @@ export default function App() {
     }
   }, [hoveredBackgroundFitSummaryTooltip])
 
+  useEffect(() => {
+    if (!isBackgroundFitPanelExpanded) {
+      return
+    }
+
+    const backgroundFitPanelBody = backgroundFitPanelBodyRef.current
+
+    if (backgroundFitPanelBody === null) {
+      return
+    }
+
+    if (typeof backgroundFitPanelBody.scrollTo === 'function') {
+      backgroundFitPanelBody.scrollTo({
+        top: 0,
+      })
+      return
+    }
+
+    backgroundFitPanelBody.scrollTop = 0
+  }, [isBackgroundFitPanelExpanded, normalizedBackgroundFitQuery])
+
   return (
     <div className="app-shell">
       <div className="background-runes" aria-hidden="true" />
@@ -1277,7 +1300,14 @@ export default function App() {
         </dl>
       </header>
 
-      <section className="build-planner" aria-label="Build planner">
+      <section
+        aria-label="Build planner"
+        className={
+          hasActiveBackgroundFitSearch
+            ? 'build-planner is-background-fit-search-active'
+            : 'build-planner'
+        }
+      >
         <div className="build-planner-header">
           <div>
             <p className="eyebrow">Build planner</p>
@@ -1471,7 +1501,9 @@ export default function App() {
       <main
         className={
           isBackgroundFitPanelExpanded
-            ? 'workspace is-background-fit-expanded'
+            ? hasActiveBackgroundFitSearch
+              ? 'workspace is-background-fit-expanded has-active-background-fit-search'
+              : 'workspace is-background-fit-expanded'
             : 'workspace is-background-fit-collapsed'
         }
       >
@@ -1489,6 +1521,7 @@ export default function App() {
               className="background-fit-panel-body"
               data-testid="background-fit-panel-body"
               onScrollCapture={handleCloseBackgroundFitSummaryTooltip}
+              ref={backgroundFitPanelBodyRef}
             >
               <label className="search-field background-fit-search-field">
                 <span className="visually-hidden">Search backgrounds</span>

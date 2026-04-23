@@ -163,6 +163,10 @@
   overflow: hidden;
 }
 
+.workspace.has-active-background-fit-search {
+  min-height: min(18rem, 38vh);
+}
+
 .build-planner {
   --planner-group-row-min-height: 3.8rem;
   --planner-perk-row-min-height: 2.8rem;
@@ -174,6 +178,12 @@
   flex-shrink: 0;
   overflow: visible;
   padding: 0.72rem;
+}
+
+.build-planner.is-background-fit-search-active {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .background-fit-panel,
@@ -233,10 +243,6 @@
   padding-left: 0;
   opacity: 0;
   transform: translateX(-0.9rem);
-}
-
-.background-fit-search-field {
-  flex: 0 0 auto;
 }
 
 .background-fit-rail-button {
@@ -697,6 +703,11 @@
   gap: 0.34rem;
   min-height: 0;
   overflow: visible;
+}
+
+.build-planner.is-background-fit-search-active .planner-board {
+  flex: 1 1 auto;
+  overflow: auto;
 }
 
 .planner-row {
@@ -1239,6 +1250,10 @@
   flex: 1;
 }
 
+.background-fit-search-field {
+  flex: 0 0 auto;
+}
+
 .search-field input,
 .tier-filter select {
   width: 100%;
@@ -1571,6 +1586,14 @@
   .workspace.is-background-fit-expanded {
     grid-template-columns: 1fr;
     grid-template-rows: minmax(0, 0.72fr) minmax(0, 0.84fr) minmax(0, 1fr) minmax(0, 1.2fr);
+  }
+
+  .workspace.is-background-fit-expanded.has-active-background-fit-search {
+    grid-template-rows: minmax(13.5rem, 3.6fr) minmax(0, 0.5fr) minmax(0, 0.74fr) minmax(0, 0.9fr);
+  }
+
+  .workspace.is-background-fit-expanded.has-active-background-fit-search .background-fit-ranking-summary {
+    display: none;
   }
 
   .workspace.is-background-fit-collapsed {

@@ -8,6 +8,9 @@ import {
   searchPerks,
 } from './support/perks-browser'
 
+const denseSharedBuildUrl =
+  '/?category=Other&group-other=Forceful&group-other=Ranger&group-other=Shady&build=Student&build=Muscularity&build=Battle+Forged&build=Immovable+Object&build=Brawny&build=Steadfast&build=Steel+Brow&build=Perfect+Fit&build=Axe+Mastery&build=Battle+Flow&build=Balance&build=Mind+over+Body&build=Lone+Wolf&build=Last+Stand&build=Berserk&build=Killing+Frenzy&build=Swagger&build=Rebound&build=Fortified+Mind&build=Hold+Out&build=Underdog&build=Assured+Conquest'
+
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
   page,
 }) => {
@@ -79,20 +82,63 @@ test('filters the background fit list with the background search field', async (
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
 
   await expect(backgroundSearchInput).toBeVisible()
+  await backgroundFitPanelBody.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await expect
+    .poll(async () =>
+      backgroundFitPanelBody.evaluate((element) => element.scrollTop),
+    )
+    .toBeGreaterThan(0)
+
   await backgroundSearchInput.fill('Oathtaker')
-  await expect(
-    backgroundFitPanel.getByRole('heading', {
-      level: 3,
-      name: 'Oathtaker',
-    }),
-  ).toBeVisible()
-  await expect(
-    backgroundFitPanel.getByRole('button', {
-      name: 'Expand background Oathtaker',
-    }),
-  ).toBeVisible()
+  await expect
+    .poll(async () =>
+      backgroundFitPanelBody.evaluate((element) => element.scrollTop),
+    )
+    .toBeLessThanOrEqual(1)
+  const oathtakerHeading = backgroundFitPanel.getByRole('heading', {
+    level: 3,
+    name: 'Oathtaker',
+  })
+  const oathtakerToggle = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background Oathtaker',
+  })
+
+  await expect(oathtakerHeading).toBeVisible()
+  await expect(oathtakerToggle).toBeVisible()
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const backgroundFitPanelBody = document.querySelector(
+          '[data-testid="background-fit-panel-body"]',
+        )
+        const oathtakerHeading = [...document.querySelectorAll('.background-fit-card h3')].find(
+          (heading) => heading.textContent?.trim() === 'Oathtaker',
+        )
+
+        if (!(backgroundFitPanelBody instanceof HTMLElement) || !(oathtakerHeading instanceof HTMLElement)) {
+          return false
+        }
+
+        const backgroundFitPanelBodyBox = backgroundFitPanelBody.getBoundingClientRect()
+        const oathtakerHeadingBox = oathtakerHeading.getBoundingClientRect()
+
+        return (
+          oathtakerHeadingBox.top >= backgroundFitPanelBodyBox.top &&
+          oathtakerHeadingBox.bottom <= backgroundFitPanelBodyBox.bottom
+        )
+      })
+    })
+    .toBe(true)
+  await expect
+    .poll(async () =>
+      backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeLessThanOrEqual(1)
   await expect(
     backgroundFitPanel.getByRole('button', {
       name: 'Expand background Apprentice',
@@ -107,9 +153,7 @@ test('keeps dense background names readable from a shared build url and starts c
   page,
 }) => {
   await page.setViewportSize({ width: 1400, height: 900 })
-  await page.goto(
-    '/?category=Other&group-other=Forceful&group-other=Ranger&group-other=Shady&build=Student&build=Muscularity&build=Battle+Forged&build=Immovable+Object&build=Brawny&build=Steadfast&build=Steel+Brow&build=Perfect+Fit&build=Axe+Mastery&build=Battle+Flow&build=Balance&build=Mind+over+Body&build=Lone+Wolf&build=Last+Stand&build=Berserk&build=Killing+Frenzy&build=Swagger&build=Rebound&build=Fortified+Mind&build=Hold+Out&build=Underdog&build=Assured+Conquest',
-  )
+  await page.goto(denseSharedBuildUrl)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
@@ -149,4 +193,135 @@ test('keeps dense background names readable from a shared build url and starts c
   expect(hedgeKnightBoundingBox).not.toBeNull()
   expect(hedgeKnightBoundingBox!.width).toBeGreaterThan(90)
   expect(hedgeKnightBoundingBox!.width).toBeGreaterThan(hedgeKnightBoundingBox!.height * 2)
+})
+
+test('keeps the dense build workspace visible while filtering backgrounds on desktop', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1365, height: 900 })
+  await page.goto(denseSharedBuildUrl)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+
+  await backgroundSearchInput.fill('hedge')
+
+  const hedgeKnightHeading = backgroundFitPanel.getByRole('heading', {
+    level: 3,
+    name: 'Hedge Knight',
+  })
+
+  await expect(hedgeKnightHeading).toBeVisible()
+  await expect
+    .poll(async () =>
+      page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight),
+    )
+    .toBeLessThanOrEqual(1)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const workspace = document.querySelector('.workspace') as HTMLElement | null
+
+        return workspace?.getBoundingClientRect().height ?? 0
+      }),
+    )
+    .toBeGreaterThanOrEqual(280)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+
+        return plannerBoard === null ? 0 : plannerBoard.scrollHeight - plannerBoard.clientHeight
+      }),
+    )
+    .toBeGreaterThan(200)
+  await expect
+    .poll(async () =>
+      backgroundFitPanelBody.evaluate((element) => element.clientHeight),
+    )
+    .toBeGreaterThanOrEqual(280)
+  await expect
+    .poll(async () =>
+      backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeLessThanOrEqual(1)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const backgroundFitPanelBody = document.querySelector(
+          '[data-testid="background-fit-panel-body"]',
+        )
+        const hedgeKnightHeading = [...document.querySelectorAll('.background-fit-card h3')].find(
+          (heading) => heading.textContent?.trim() === 'Hedge Knight',
+        )
+
+        if (!(backgroundFitPanelBody instanceof HTMLElement) || !(hedgeKnightHeading instanceof HTMLElement)) {
+          return false
+        }
+
+        const backgroundFitPanelBodyBox = backgroundFitPanelBody.getBoundingClientRect()
+        const hedgeKnightHeadingBox = hedgeKnightHeading.getBoundingClientRect()
+
+        return (
+          hedgeKnightHeadingBox.top >= backgroundFitPanelBodyBox.top &&
+          hedgeKnightHeadingBox.bottom <= backgroundFitPanelBodyBox.bottom
+        )
+      }),
+    )
+    .toBe(true)
+})
+
+test('does not stretch the background search field on tall desktop screens', async ({ page }) => {
+  await page.setViewportSize({ width: 1365, height: 1300 })
+  await page.goto(denseSharedBuildUrl)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+
+  await backgroundSearchInput.fill('hedge')
+  await expect(backgroundFitPanel.getByRole('heading', { level: 3, name: 'Hedge Knight' })).toBeVisible()
+  await expect
+    .poll(async () =>
+      backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeLessThanOrEqual(1)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const searchField = document.querySelector('.background-fit-search-field') as HTMLElement | null
+
+        return searchField?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY
+      }),
+    )
+    .toBeLessThanOrEqual(60)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const searchField = document.querySelector('.background-fit-search-field') as HTMLElement | null
+        const rankingSummary = document.querySelector('.background-fit-ranking-summary') as HTMLElement | null
+
+        if (searchField === null || rankingSummary === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        return rankingSummary.getBoundingClientRect().top - searchField.getBoundingClientRect().bottom
+      }),
+    )
+    .toBeLessThanOrEqual(24)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const rankingSummary = document.querySelector('.background-fit-ranking-summary') as HTMLElement | null
+        const firstCard = document.querySelector('.background-fit-card') as HTMLElement | null
+
+        if (rankingSummary === null || firstCard === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        return firstCard.getBoundingClientRect().top - rankingSummary.getBoundingClientRect().bottom
+      }),
+    )
+    .toBeLessThanOrEqual(24)
 })

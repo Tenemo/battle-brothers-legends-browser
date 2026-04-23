@@ -613,16 +613,19 @@ describe('app', () => {
         }),
       )
 
-      const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
-      const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
+    const workspace = screen.getByRole('main')
 
-      expect(backgroundSearchInput).toHaveValue('')
+    expect(backgroundSearchInput).toHaveValue('')
+    expect(workspace).not.toHaveClass('has-active-background-fit-search')
 
-      await user.type(backgroundSearchInput, 'Oathtaker')
+    await user.type(backgroundSearchInput, 'Oathtaker')
 
-      expect(
-        within(backgroundFitPanel).getByRole('heading', {
-          level: 3,
+    expect(workspace).toHaveClass('has-active-background-fit-search')
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
           name: 'Oathtaker',
         }),
       ).toBeInTheDocument()
