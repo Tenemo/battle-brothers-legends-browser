@@ -149,6 +149,40 @@ test('filters the background fit list with the background search field', async (
   await expect(backgroundFitPanel.getByText('No backgrounds match "zzzz impossible background".')).toBeVisible()
 })
 
+test('keeps the background search enabled without any picked perks', async ({ page }) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+
+  await expect(backgroundSearchInput).toBeEnabled()
+  await expect(backgroundFitPanel.getByText(/Showing all backgrounds/i)).toBeVisible()
+
+  await backgroundSearchInput.fill('Oathtaker')
+
+  await expect(
+    backgroundFitPanel.getByRole('heading', {
+      level: 3,
+      name: 'Oathtaker',
+    }),
+  ).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Ranked by guaranteed build weight first/i)).toHaveCount(0)
+})
+
+test('keeps zero-match backgrounds after matching backgrounds in the full ranked list', async ({ page }) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  const backgroundNameOrder = await page.evaluate(() =>
+    [...document.querySelectorAll('.background-fit-card h3')].map((heading) => heading.textContent?.trim()),
+  )
+
+  expect(backgroundNameOrder).toContain('Apprentice')
+  expect(backgroundNameOrder).toContain('Oathtaker')
+  expect(backgroundNameOrder.indexOf('Apprentice')).toBeLessThan(backgroundNameOrder.indexOf('Oathtaker'))
+})
+
 test('keeps dense background names readable from a shared build url and starts collapsed', async ({
   page,
 }) => {

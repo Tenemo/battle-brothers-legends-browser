@@ -289,9 +289,9 @@ describe('app', () => {
       expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
     })
 
-    test('highlights the same covered perk across all planner groups while hovering it', async () => {
-      const user = userEvent.setup()
-      render(<App />)
+  test('highlights the same covered perk across all planner groups while hovering it', async () => {
+    const user = userEvent.setup()
+    render(<App />)
 
       await user.type(screen.getByLabelText('Search perks'), 'Clarity')
       await user.click(
@@ -328,12 +328,67 @@ describe('app', () => {
 
       expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
       expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
-      expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
-      expect(sharedClarityButton).not.toHaveClass('is-highlighted')
+    expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(sharedClarityButton).not.toHaveClass('is-highlighted')
+  })
+
+  test('links hover highlighting between search results and the build planner', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Clarity')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Clarity to build from results',
+      }),
+    )
+
+    await user.clear(screen.getByLabelText('Search perks'))
+    await user.type(screen.getByLabelText('Search perks'), 'Perfect Focus')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Perfect Focus to build from results',
+      }),
+    )
+
+    const resultsList = screen.getByTestId('results-list')
+    const buildSharedGroupsList = screen.getByTestId('build-shared-groups-list')
+    const buildIndividualGroupsList = screen.getByTestId('build-individual-groups-list')
+    const buildPerksBar = screen.getByTestId('build-perks-bar')
+    const perfectFocusResultsButton = within(resultsList).getByRole('button', {
+      name: 'Inspect Perfect Focus',
+    })
+    const perfectFocusResultsRow = perfectFocusResultsButton.closest('.perk-row')
+    const sharedPerfectFocusButton = within(buildSharedGroupsList).getByRole('button', {
+      name: 'Perfect Focus',
+    })
+    const individualPerfectFocusButton = within(buildIndividualGroupsList).getByRole('button', {
+      name: 'Perfect Focus',
+    })
+    const pickedPerfectFocusButton = within(buildPerksBar).getByRole('button', {
+      name: 'Remove Perfect Focus from build',
     })
 
-    test('shows picked-perk stars next to category and subgroup counts based on the current build', async () => {
-      const user = userEvent.setup()
+    expect(perfectFocusResultsRow).not.toBeNull()
+
+    fireEvent.mouseEnter(perfectFocusResultsRow as HTMLElement)
+
+    expect(perfectFocusResultsRow).toHaveClass('is-highlighted')
+    expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
+
+    fireEvent.mouseLeave(perfectFocusResultsRow as HTMLElement)
+    fireEvent.mouseEnter(sharedPerfectFocusButton)
+
+    expect(perfectFocusResultsRow).toHaveClass('is-highlighted')
+    expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
+  })
+
+  test('shows picked-perk stars next to category and subgroup counts based on the current build', async () => {
+    const user = userEvent.setup()
       render(<App />)
 
     await user.type(screen.getByLabelText('Search perks'), 'Clarity')
@@ -639,14 +694,58 @@ describe('app', () => {
       await user.clear(backgroundSearchInput)
       await user.type(backgroundSearchInput, 'zzzz impossible background')
 
-      expect(
-        within(backgroundFitPanel).getByText('No backgrounds match "zzzz impossible background".'),
-      ).toBeInTheDocument()
-    })
+    expect(
+      within(backgroundFitPanel).getByText('No backgrounds match "zzzz impossible background".'),
+    ).toBeInTheDocument()
+  })
 
-    test('shows duplicate-name disambiguators only for repeated backgrounds in the background fit list', async () => {
-      const user = userEvent.setup()
-      render(<App />)
+  test('keeps background search enabled and usable without any picked perks', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
+
+    expect(backgroundSearchInput).toBeEnabled()
+    expect(within(backgroundFitPanel).getByText(/Showing all backgrounds/i)).toBeInTheDocument()
+
+    await user.type(backgroundSearchInput, 'Oathtaker')
+
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
+        name: 'Oathtaker',
+      }),
+    ).toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText(/Ranked by guaranteed build weight first/i)).not.toBeInTheDocument()
+  })
+
+  test('keeps zero-match backgrounds in the list after matching backgrounds', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Axe Mastery to build from results',
+      }),
+    )
+
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const orderedBackgroundNames = [...backgroundFitPanel.querySelectorAll('.background-fit-card h3')].map(
+      (heading) => heading.textContent?.trim(),
+    )
+
+    expect(orderedBackgroundNames).toContain('Apprentice')
+    expect(orderedBackgroundNames).toContain('Oathtaker')
+    expect(orderedBackgroundNames.indexOf('Apprentice')).toBeLessThan(
+      orderedBackgroundNames.indexOf('Oathtaker'),
+    )
+  })
+
+  test('shows duplicate-name disambiguators only for repeated backgrounds in the background fit list', async () => {
+    const user = userEvent.setup()
+    render(<App />)
 
     await user.type(screen.getByLabelText('Search perks'), 'Axe Mastery')
     await user.click(

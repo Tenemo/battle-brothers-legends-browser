@@ -430,6 +430,38 @@ describe('background fit', () => {
     ])
   })
 
+  test('keeps matching backgrounds ahead of backgrounds with no supported build matches', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const backgroundFitView = engine.getBackgroundFitView([samplePerks[0], samplePerks[1]])
+    const orderedBackgroundIds = backgroundFitView.rankedBackgroundFits.map(
+      (backgroundFit) => backgroundFit.backgroundId,
+    )
+
+    expect(orderedBackgroundIds.indexOf('background.high_weight')).toBeLessThan(
+      orderedBackgroundIds.indexOf('background.enemy_roll'),
+    )
+    expect(orderedBackgroundIds.indexOf('background.low_weight')).toBeLessThan(
+      orderedBackgroundIds.indexOf('background.enemy_roll'),
+    )
+  })
+
+  test('returns every background alphabetically when no perks are selected', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const backgroundFitView = engine.getBackgroundFitView([])
+
+    expect(backgroundFitView.supportedBuildTargetTrees).toEqual([])
+    expect(backgroundFitView.unsupportedBuildTargetTrees).toEqual([])
+    expect(backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName)).toEqual([
+      'Balanced scholar',
+      'Champion',
+      'Champion',
+      'Crafter',
+      'Heavy hand',
+      'Hunter',
+      'Militia captain',
+    ])
+  })
+
   test('tracks each backgrounds overall group cap separately from build matches', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([samplePerks[7]])

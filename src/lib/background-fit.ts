@@ -679,6 +679,7 @@ function compareRankedBackgroundFits(
   rightBackgroundFit: RankedBackgroundFit,
 ): number {
   return (
+    Number(rightBackgroundFit.matches.length > 0) - Number(leftBackgroundFit.matches.length > 0) ||
     rightBackgroundFit.guaranteedMatchedBuildWeight - leftBackgroundFit.guaranteedMatchedBuildWeight ||
     rightBackgroundFit.expectedExtraMatchedBuildWeight - leftBackgroundFit.expectedExtraMatchedBuildWeight ||
     rightBackgroundFit.guaranteedMatchedTreeCount - leftBackgroundFit.guaranteedMatchedTreeCount ||

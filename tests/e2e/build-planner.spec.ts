@@ -180,6 +180,45 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
   await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
 })
 
+test('links search result hover highlighting with matching build planner perks', async ({ page }) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  await searchPerks(page, 'Perfect Focus')
+  await addPerkToBuildFromResults(page, 'Perfect Focus')
+
+  const perfectFocusResultsButton = page.getByRole('button', { name: 'Inspect Perfect Focus' })
+  const perfectFocusResultsRow = page.locator('.perk-row', {
+    has: perfectFocusResultsButton,
+  })
+  const sharedPerfectFocusButton = getBuildSharedGroupsList(page).getByRole('button', {
+    name: 'Perfect Focus',
+  })
+  const individualPerfectFocusButton = getBuildIndividualGroupsList(page).getByRole('button', {
+    name: 'Perfect Focus',
+  })
+  const pickedPerfectFocusButton = getBuildPerksBar(page).getByRole('button', {
+    name: 'Remove Perfect Focus from build',
+  })
+
+  await perfectFocusResultsButton.hover()
+
+  await expect(perfectFocusResultsRow).toHaveClass(/is-highlighted/)
+  await expect(sharedPerfectFocusButton).toHaveClass(/is-highlighted/)
+  await expect(individualPerfectFocusButton).toHaveClass(/is-highlighted/)
+  await expect(pickedPerfectFocusButton).toHaveClass(/is-highlighted/)
+
+  await sharedPerfectFocusButton.hover()
+
+  await expect(perfectFocusResultsRow).toHaveClass(/is-highlighted/)
+  await expect(sharedPerfectFocusButton).toHaveClass(/is-highlighted/)
+  await expect(individualPerfectFocusButton).toHaveClass(/is-highlighted/)
+  await expect(pickedPerfectFocusButton).toHaveClass(/is-highlighted/)
+  await expect(perfectFocusResultsRow).toHaveCSS('transform', 'none')
+})
+
 test('clears the build and restores planner placeholders', async ({ page }) => {
   await gotoPerksBrowser(page)
 

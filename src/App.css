@@ -1221,6 +1221,11 @@
   transform: translateY(-1px);
 }
 
+.perk-row.is-highlighted {
+  border-color: var(--accent-color);
+  background: var(--button-background-active);
+}
+
 .perk-row.is-picked {
   border-color: var(--accent-color);
 }
@@ -1229,7 +1234,7 @@
   background: var(--button-background-active);
 }
 
-.perk-row.is-selected:not(.is-picked) {
+.perk-row.is-selected:not(.is-picked):not(.is-highlighted) {
   border-color: transparent;
 }
 
