@@ -1241,8 +1241,9 @@
 .search-highlight {
   border-radius: 0.24rem;
   background: rgb(204 155 84 / 0.22);
+  box-shadow: 0 0 0 0.08em rgb(204 155 84 / 0.14);
   color: inherit;
-  padding: 0 0.14em;
+  padding: 0;
 }
 
 .toolbar {

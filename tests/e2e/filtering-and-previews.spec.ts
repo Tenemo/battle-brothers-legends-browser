@@ -109,6 +109,36 @@ test('highlights the searched perk phrase in the visible perk results', async ({
   await expect(getResultsList(page).locator('.search-highlight')).toContainText(['Axe'])
 })
 
+test('keeps middle-of-word search highlights from adding visual gaps', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'tellige')
+
+  const intelligentHighlight = getResultsList(page)
+    .locator('.perk-context .search-highlight')
+    .filter({ hasText: 'tellige' })
+    .first()
+
+  await expect(intelligentHighlight).toBeVisible()
+  await expect(intelligentHighlight.locator('xpath=ancestor::*[contains(@class, "perk-context")][1]')).toContainText(
+    /Intelligent/,
+  )
+
+  const horizontalPadding = await intelligentHighlight.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element)
+
+    return {
+      left: computedStyle.paddingLeft,
+      right: computedStyle.paddingRight,
+    }
+  })
+
+  expect(horizontalPadding).toEqual({
+    left: '0px',
+    right: '0px',
+  })
+})
+
 test('shows picked categories and subgroups with stars and keeps picked result rows outlined while selection changes the background', async ({
   page,
 }) => {
