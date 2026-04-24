@@ -18,12 +18,10 @@ test('stores readable filters and build state in the url and restores them on a 
   await page.getByRole('button', { name: 'Enable category Magic' }).click()
   await page.getByRole('button', { name: 'Toggle perk group Calm' }).click()
   await page.getByRole('button', { name: 'Toggle perk group Deadeye' }).click()
-  await page.getByLabel('Filter by tier').selectOption('7')
   await searchPerks(page, 'Perfect Focus')
   await inspectPerkFromResults(page, 'Perfect Focus')
   await addPerkToBuildFromResults(page, 'Perfect Focus')
 
-  await page.getByLabel('Filter by tier').selectOption('5')
   await searchPerks(page, 'Clarity')
   await inspectPerkFromResults(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
@@ -34,7 +32,7 @@ test('stores readable filters and build state in the url and restores them on a 
   const savedUrl = page.url()
 
   expect(savedUrl).toContain('search=Clarity')
-  expect(savedUrl).toContain('tier=5')
+  expect(savedUrl).not.toContain('tier=')
   expect(savedUrl).toContain('category=Traits,Magic')
   expect(savedUrl).toContain('group-traits=Calm')
   expect(savedUrl).toContain('group-magic=Deadeye')
@@ -49,7 +47,7 @@ test('stores readable filters and build state in the url and restores them on a 
     await sharedPage.goto(savedUrl)
 
     await expect(sharedPage.getByLabel('Search perks')).toHaveValue('Clarity')
-    await expect(sharedPage.getByLabel('Filter by tier')).toHaveValue('5')
+    await expect(sharedPage.getByLabel('Filter by tier')).toHaveCount(0)
     await expect(sharedPage.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
@@ -73,7 +71,7 @@ test('stores readable filters and build state in the url and restores them on a 
     await sharedPage.goto(legacyUrl.toString())
 
     await expect(sharedPage.getByLabel('Search perks')).toHaveValue('Clarity')
-    await expect(sharedPage.getByLabel('Filter by tier')).toHaveValue('5')
+    await expect(sharedPage.getByLabel('Filter by tier')).toHaveCount(0)
     await expect(sharedPage.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
@@ -86,6 +84,7 @@ test('stores readable filters and build state in the url and restores them on a 
     await expect(getBuildPerksBar(sharedPage).getByText('Clarity')).toBeVisible()
     await expect.poll(() => sharedPage.url()).toContain('category=Traits,Magic')
     await expect.poll(() => sharedPage.url()).toContain('build=Perfect+Focus,Clarity')
+    await expect.poll(() => sharedPage.url()).not.toContain('tier=')
     await expect.poll(() => sharedPage.url()).not.toContain('category=Traits&category=Magic')
     await expect.poll(() => sharedPage.url()).not.toContain('build=Perfect+Focus&build=Clarity')
   } finally {

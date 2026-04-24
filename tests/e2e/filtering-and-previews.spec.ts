@@ -35,7 +35,8 @@ test('filters by multiple categories and scoped perk groups, then clears everyth
   await clearAllFilters(page)
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
-  await expect(page.getByLabel('Filter by tier')).toHaveValue('all-tiers')
+  await expect(page.getByLabel('Filter by tier')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Clear all filters' })).toHaveCount(0)
   await expect(page.getByText(/Ranked by exact perk names first/i)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
 })
@@ -107,6 +108,84 @@ test('highlights the searched perk phrase in the visible perk results', async ({
   await searchPerks(page, 'Axe')
 
   await expect(getResultsList(page).locator('.search-highlight')).toContainText(['Axe'])
+})
+
+test('keeps search result and repository hover states fixed in place', async ({ page }) => {
+  await gotoPerksBrowser(page)
+  await page.locator('.hero').evaluate(async (element) => {
+    await Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => undefined)))
+  })
+
+  await searchPerks(page, 'Clarity')
+
+  const clarityInspectButton = getResultsList(page).getByRole('button', {
+    name: 'Inspect Clarity',
+  })
+  const clarityResultRow = clarityInspectButton.locator(
+    'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
+  )
+  const repositoryLink = page.getByLabel(
+    'Open the battle-brothers-legends-browser repository on GitHub',
+  )
+
+  await expect(clarityResultRow).toBeVisible()
+  await clarityInspectButton.scrollIntoViewIfNeeded()
+
+  const resultRowBeforeHover = await clarityResultRow.evaluate((element) => {
+    const rectangle = element.getBoundingClientRect()
+
+    return {
+      height: rectangle.height,
+      top: rectangle.top,
+      width: rectangle.width,
+    }
+  })
+
+  await clarityInspectButton.hover()
+
+  await expect(clarityResultRow).toHaveCSS('transform', 'none')
+
+  const resultRowAfterHover = await clarityResultRow.evaluate((element) => {
+    const rectangle = element.getBoundingClientRect()
+
+    return {
+      height: rectangle.height,
+      top: rectangle.top,
+      width: rectangle.width,
+    }
+  })
+
+  expect(Math.abs(resultRowAfterHover.top - resultRowBeforeHover.top)).toBeLessThanOrEqual(1)
+  expect(Math.abs(resultRowAfterHover.height - resultRowBeforeHover.height)).toBeLessThanOrEqual(1)
+  expect(Math.abs(resultRowAfterHover.width - resultRowBeforeHover.width)).toBeLessThanOrEqual(1)
+
+  const repositoryLinkBeforeHover = await repositoryLink.evaluate((element) => {
+    const rectangle = element.getBoundingClientRect()
+
+    return {
+      height: rectangle.height,
+      top: rectangle.top,
+      width: rectangle.width,
+    }
+  })
+
+  await repositoryLink.hover()
+
+  await expect(repositoryLink).toHaveCSS('transform', 'none')
+
+  const repositoryLinkAfterHover = await repositoryLink.evaluate((element) => {
+    const rectangle = element.getBoundingClientRect()
+
+    return {
+      height: rectangle.height,
+      top: rectangle.top,
+      width: rectangle.width,
+    }
+  })
+
+  expect(Math.abs(repositoryLinkAfterHover.top - repositoryLinkBeforeHover.top)).toBeLessThanOrEqual(1)
+  expect(Math.abs(repositoryLinkAfterHover.height - repositoryLinkBeforeHover.height)).toBeLessThanOrEqual(1)
+  expect(Math.abs(repositoryLinkAfterHover.width - repositoryLinkBeforeHover.width)).toBeLessThanOrEqual(1)
 })
 
 test('keeps middle-of-word search highlights from adding visual gaps', async ({ page }) => {

@@ -78,7 +78,7 @@ describe('app', () => {
 
     expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
     expect(brandEmphasis).not.toBeNull()
-    expect(brandEmphasis).toHaveTextContent('legends')
+    expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
     expect(within(hero).getByText('Reference')).toBeInTheDocument()
     expect(within(hero).getByText('19.3.17')).toBeInTheDocument()
@@ -320,29 +320,22 @@ describe('app', () => {
     expect(screen.getByText('Filtered to 2 categories and 1 perk group.')).toBeInTheDocument()
   })
 
-  test('can clear all active filters at once', () => {
+  test('keeps perk search full-width without tier or clear-all controls', () => {
     render(<App />)
 
-    const clearAllButton = screen.getByRole('button', { name: 'Clear all filters' })
-
-    expect(clearAllButton).toBeDisabled()
+    expect(screen.getByLabelText('Search perks')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Filter by tier')).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Clear all filters' })).not.toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: 'Enable category Traits' }))
     fireEvent.click(screen.getByRole('button', { name: 'Toggle perk group Calm' }))
-    fireEvent.change(screen.getByLabelText('Filter by tier'), {
-      target: { value: '5' },
-    })
     setPerkSearchQuery('Clarity')
 
-    expect(clearAllButton).toBeEnabled()
     expect(screen.getByText('Filtered to 1 category and 1 perk group.')).toBeInTheDocument()
 
-    fireEvent.click(clearAllButton)
+    fireEvent.click(screen.getByRole('button', { name: 'Reset all category filters' }))
 
-    expect(screen.getByLabelText('Search perks')).toHaveValue('')
-    expect(screen.getByLabelText('Filter by tier')).toHaveValue('all-tiers')
-    expect(clearAllButton).toBeDisabled()
-    expect(screen.getByText(/Ranked by exact perk names first/i)).toBeInTheDocument()
+    expect(screen.getByLabelText('Search perks')).toHaveValue('Clarity')
     expect(screen.getByRole('button', { name: 'Enable category Traits' })).toBeInTheDocument()
   })
 
@@ -656,7 +649,7 @@ describe('app', () => {
     const categoriesPanel = screen.getByRole('complementary', { name: 'Perk categories' })
 
     expect(screen.getByLabelText('Search perks')).toHaveValue('Perfect Focus')
-    expect(screen.getByLabelText('Filter by tier')).toHaveValue('7')
+    expect(screen.queryByLabelText('Filter by tier')).not.toBeInTheDocument()
     expect(within(categoriesPanel).getAllByText('Perk groups')).toHaveLength(2)
     expect(screen.getByRole('button', { name: 'Disable category Traits' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Disable category Magic' })).toBeInTheDocument()
@@ -786,6 +779,7 @@ describe('app', () => {
 
     expect(selectedWeaponCategoryButton).toHaveClass('is-active')
     expect(selectedAxeGroupButton).toHaveClass('is-active')
+    expect(screen.getByLabelText('Search perks')).toHaveValue('')
     expect(screen.getByText('Filtered to 1 category and 1 perk group.')).toBeInTheDocument()
 
     fireEvent.mouseEnter(axeMatchButton)

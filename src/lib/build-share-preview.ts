@@ -198,7 +198,7 @@ export function createBuildSharePreviewPayloadFromPickedPerkIds(
       referenceVersion: legendsPerksDataset.referenceVersion,
       sharedGroups: [],
       status: 'empty',
-      title: 'Battle Brothers legends perks browser',
+      title: 'Battle Brothers Legends perks browser',
       topBackgroundFits: [],
       unsupportedTargetCount: 0,
     }

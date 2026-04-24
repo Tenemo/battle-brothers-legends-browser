@@ -72,6 +72,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
     )
     .toBe('0s')
 
+  await apprenticeCard.getByRole('button', { name: 'Select perk group Axe' }).click()
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Toggle perk group Axe' })).toHaveClass(/is-active/)
+
   await backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }).click()
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }),

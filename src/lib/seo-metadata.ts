@@ -122,7 +122,7 @@ const socialImage: SeoImageMetadata = {
 }
 
 export const rootSeoMetadata: SeoMetadata = {
-  applicationName: 'Battle Brothers legends perks browser',
+  applicationName: 'Battle Brothers Legends perks browser',
   canonicalUrl: rootUrl,
   colorScheme: 'dark',
   description:
@@ -137,11 +137,11 @@ export const rootSeoMetadata: SeoMetadata = {
     description:
       'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.',
     image: socialImage,
-    title: 'Battle Brothers legends perks browser',
+    title: 'Battle Brothers Legends perks browser',
     url: rootUrl,
   }),
   themeColor: '#0c0908',
-  title: 'Battle Brothers legends perks browser',
+  title: 'Battle Brothers Legends perks browser',
   url: rootUrl,
 }
 

@@ -338,7 +338,7 @@ export function createBuildSocialImageSvg(
     <rect x="64" y="64" width="512" height="502" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
     <rect x="624" y="64" width="512" height="250" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
     <rect x="624" y="344" width="512" height="222" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <text x="96" y="116" fill="#c89d66" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">Battle Brothers legends build</text>
+    <text x="96" y="116" fill="#c89d66" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">Battle Brothers Legends build</text>
     ${renderTextLines({
       fill: '#f6eee5',
       fontSize: 56,

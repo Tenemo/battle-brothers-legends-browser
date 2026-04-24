@@ -82,7 +82,8 @@ export async function searchPerks(page: Page, query: string): Promise<void> {
 }
 
 export async function clearAllFilters(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Clear all filters' }).click()
+  await page.getByRole('button', { name: 'Reset all category filters' }).click()
+  await page.getByLabel('Search perks').fill('')
 }
 
 export async function enableCategory(page: Page, categoryName: string): Promise<void> {

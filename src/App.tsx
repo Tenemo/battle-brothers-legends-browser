@@ -1552,13 +1552,12 @@ export default function App() {
   const [shareBuildStatus, setShareBuildStatus] = useState<'copied' | 'error' | 'idle'>('idle')
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
-  const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
   const normalizedPerkSearchPhrase = normalizeSearchPhrase(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
     query,
     selectedGroupNames,
     selectedTreeIdsByGroup,
-    tierValue,
+    tierValue: allTiersFilterValue,
   })
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(() => visiblePerks[0]?.id ?? null)
   const selectedPerk =
@@ -1643,24 +1642,9 @@ export default function App() {
     (treeCount, selectedTreeIds) => treeCount + selectedTreeIds.length,
     0,
   )
-  const hasActiveFilters =
-    query.trim().length > 0 ||
-    tierValue !== allTiersFilterValue ||
-    selectedCategoryCount > 0 ||
-    selectedTreeCount > 0
 
   function handleResetGroups() {
     startTransition(() => {
-      setExpandedGroupNames([])
-      setSelectedGroupNames([])
-      setSelectedTreeIdsByGroup({})
-    })
-  }
-
-  function handleClearAllFilters() {
-    startTransition(() => {
-      setQuery('')
-      setTierValue(allTiersFilterValue)
       setExpandedGroupNames([])
       setSelectedGroupNames([])
       setSelectedTreeIdsByGroup({})
@@ -1807,6 +1791,7 @@ export default function App() {
 
   function handleInspectPerkGroup(categoryName: string, treeId: string) {
     startTransition(() => {
+      setQuery('')
       setSelectedGroupNames((currentSelectedGroupNames) =>
         currentSelectedGroupNames.includes(categoryName)
           ? currentSelectedGroupNames
@@ -1911,7 +1896,7 @@ export default function App() {
         query,
         selectedGroupNames,
         selectedTreeIdsByGroup,
-        tierValue,
+        tierValue: allTiersFilterValue,
       },
       {
         availableGroupNames: availableGroups,
@@ -1929,7 +1914,7 @@ export default function App() {
       '',
       `${window.location.pathname}${nextSearch}${window.location.hash}`,
     )
-  }, [pickedPerkIds, query, selectedGroupNames, selectedTreeIdsByGroup, tierValue])
+  }, [pickedPerkIds, query, selectedGroupNames, selectedTreeIdsByGroup])
 
   useEffect(() => {
     if (hoveredBuildPerkTooltip === null || typeof window === 'undefined') {
@@ -1968,7 +1953,7 @@ export default function App() {
         <div className="hero-copy">
           <h1>Perks browser</h1>
           <p className="eyebrow hero-brand">
-            Battle Brothers <span className="hero-brand-emphasis">legends</span>
+            Battle Brothers <span className="hero-brand-emphasis">Legends</span>
           </p>
         </div>
         <div className="hero-top-bar">
@@ -2371,34 +2356,6 @@ export default function App() {
                 value={query}
               />
             </label>
-
-            <label className="tier-filter">
-              <span>Tier</span>
-              <select
-                aria-label="Filter by tier"
-                onChange={(event) => setTierValue(event.target.value)}
-                value={tierValue}
-              >
-                <option value={allTiersFilterValue}>All tiers</option>
-                {tierOptions.map((availableTierValue) => (
-                  <option key={availableTierValue} value={availableTierValue}>
-                    {availableTierValue === 'no-tier'
-                      ? 'No tier'
-                      : getTierLabel(Number(availableTierValue))}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <button
-              aria-label="Clear all filters"
-              className="clear-filters-button"
-              disabled={!hasActiveFilters}
-              onClick={handleClearAllFilters}
-              type="button"
-            >
-              Clear all
-            </button>
           </div>
 
           <div className="results-summary">
