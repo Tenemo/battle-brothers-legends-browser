@@ -116,45 +116,50 @@ test('keeps search result and repository hover states fixed in place', async ({ 
     await Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => undefined)))
   })
 
-  await searchPerks(page, 'Clarity')
+  await searchPerks(page, 'Perfect')
 
-  const clarityInspectButton = getResultsList(page).getByRole('button', {
-    name: 'Inspect Clarity',
+  const perfectFocusInspectButton = getResultsList(page).getByRole('button', {
+    name: 'Inspect Perfect Focus',
   })
-  const clarityResultRow = clarityInspectButton.locator(
+  const perfectFocusResultRow = perfectFocusInspectButton.locator(
     'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
   )
   const repositoryLink = page.getByLabel(
     'Open the battle-brothers-legends-browser repository on GitHub',
   )
 
-  await expect(clarityResultRow).toBeVisible()
-  await clarityInspectButton.scrollIntoViewIfNeeded()
+  await expect(perfectFocusResultRow).toBeVisible()
+  await perfectFocusInspectButton.scrollIntoViewIfNeeded()
 
-  const resultRowBeforeHover = await clarityResultRow.evaluate((element) => {
+  const resultRowBeforeHover = await perfectFocusResultRow.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(element)
 
     return {
+      backgroundColor: computedStyle.backgroundColor,
       height: rectangle.height,
       top: rectangle.top,
       width: rectangle.width,
     }
   })
 
-  await clarityInspectButton.hover()
+  await perfectFocusInspectButton.hover()
 
-  await expect(clarityResultRow).toHaveCSS('transform', 'none')
+  await expect(perfectFocusResultRow).toHaveCSS('transform', 'none')
 
-  const resultRowAfterHover = await clarityResultRow.evaluate((element) => {
+  const resultRowAfterHover = await perfectFocusResultRow.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(element)
 
     return {
+      backgroundColor: computedStyle.backgroundColor,
       height: rectangle.height,
       top: rectangle.top,
       width: rectangle.width,
     }
   })
 
+  expect(resultRowAfterHover.backgroundColor).toBe(resultRowBeforeHover.backgroundColor)
   expect(Math.abs(resultRowAfterHover.top - resultRowBeforeHover.top)).toBeLessThanOrEqual(1)
   expect(Math.abs(resultRowAfterHover.height - resultRowBeforeHover.height)).toBeLessThanOrEqual(1)
   expect(Math.abs(resultRowAfterHover.width - resultRowBeforeHover.width)).toBeLessThanOrEqual(1)

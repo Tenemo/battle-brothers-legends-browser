@@ -10,6 +10,10 @@ lerna-debug.log*
 node_modules
 .netlify
 .cache
+deno.lock
+netlify/generated-edge-functions
+public/seo/*.png
+!public/seo/.gitkeep
 dist
 dist-ssr
 *.local

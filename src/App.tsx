@@ -1,4 +1,4 @@
-import {
+﻿import {
   startTransition,
   useDeferredValue,
   useEffect,
@@ -2009,7 +2009,7 @@ export default function App() {
                 : `${pickedPerks.length} perk${pickedPerks.length === 1 ? '' : 's'} picked.`}
             </p>
             <button
-              aria-label="Copy shared build link"
+              aria-label="Copy build link"
               className={
                 shareBuildStatus === 'copied'
                   ? 'planner-action-button share-build-button is-confirmed'
@@ -2027,7 +2027,7 @@ export default function App() {
                 ? 'Copied'
                 : shareBuildStatus === 'error'
                   ? 'Copy failed'
-                  : 'Share build'}
+                  : 'Copy build link'}
             </button>
             <button
               aria-label="Clear build"
@@ -2047,21 +2047,21 @@ export default function App() {
             <div className="planner-track-scroll">
               <div className="planner-track planner-track-perks" data-testid="build-perks-bar">
                 {hasPickedPerks ? (
-                    pickedPerks.map((pickedPerk) => (
-                      <button
-                        aria-label={`Remove ${pickedPerk.perkName} from build`}
-                        aria-describedby={
-                          hoveredBuildPerk?.id === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
-                        }
-                        className={
-                          hoveredPerkId === pickedPerk.id
-                            ? 'planner-slot planner-slot-perk is-highlighted'
-                            : 'planner-slot planner-slot-perk'
-                        }
-                        key={pickedPerk.id}
-                        onBlur={handleCloseBuildPerkTooltip}
-                        onClick={() => handleRemovePickedPerk(pickedPerk.id)}
-                        onFocus={(event) => handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)}
+                  pickedPerks.map((pickedPerk) => (
+                    <button
+                      aria-label={`Remove ${pickedPerk.perkName} from build`}
+                      aria-describedby={
+                        hoveredBuildPerk?.id === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
+                      }
+                      className={
+                        hoveredPerkId === pickedPerk.id
+                          ? 'planner-slot planner-slot-perk is-highlighted'
+                          : 'planner-slot planner-slot-perk'
+                      }
+                      key={pickedPerk.id}
+                      onBlur={handleCloseBuildPerkTooltip}
+                      onClick={() => handleRemovePickedPerk(pickedPerk.id)}
+                      onFocus={(event) => handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)}
                       onMouseEnter={(event) =>
                         handleOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)
                       }
@@ -2074,9 +2074,6 @@ export default function App() {
                         label: `${pickedPerk.perkName} build icon`,
                       })}
                       <strong className="planner-picked-perk-name">{pickedPerk.perkName}</strong>
-                      <span aria-hidden="true" className="planner-picked-perk-remove-indicator">
-                        ×
-                      </span>
                     </button>
                   ))
                 ) : (
@@ -2376,7 +2373,7 @@ export default function App() {
             {visiblePerks.length === 0 ? (
               <div className="empty-state">
                 <h2>No perks found</h2>
-                <p>Try a broader search, switch the category filters, or reset the tier filter.</p>
+                <p>Try a broader search or switch the category filters.</p>
               </div>
             ) : (
               visiblePerks.map((perk) => {

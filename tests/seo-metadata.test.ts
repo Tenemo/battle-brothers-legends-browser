@@ -19,6 +19,15 @@ describe('SEO metadata', () => {
     expect(metadata.title).toBe(rootSeoMetadata.title)
     expect(metadata.robots).toBe('index, follow, max-image-preview:large')
     expect(metadata.canonicalUrl).toBe(rootSeoMetadata.canonicalUrl)
+    expect(metadata.image.url).toBe('https://battlebrothers.academy/seo/og-image-v2.png')
+  })
+
+  test('keeps SEO replacement markers around injected metadata', () => {
+    const html = injectSeoIntoHtml(baseHtml)
+
+    expect(html).toContain('<meta name="battle-brothers-seo-start" content="1" />')
+    expect(html).toContain('<title>Battle Brothers Legends perks browser</title>')
+    expect(html).toContain('<meta name="battle-brothers-seo-end" content="1" />')
   })
 
   test('creates noindex metadata for valid shared build urls', () => {

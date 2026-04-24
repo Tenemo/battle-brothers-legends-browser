@@ -75,6 +75,7 @@ test('build planner splits shared and individual perk groups without internal sc
   await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
   await expect(page.locator('.build-planner-summary')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Show build planner guidance' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy build link' })).toBeVisible()
   await expect
     .poll(async () =>
       page
@@ -124,11 +125,13 @@ test('build planner splits shared and individual perk groups without internal sc
 
     return {
       fontFamily: computedStyle.fontFamily,
+      cursor: computedStyle.cursor,
       textTransform: computedStyle.textTransform,
     }
   })
 
   expect(infoButtonText).toBe('i')
+  expect(infoButtonStyle.cursor).toBe('help')
   expect(infoButtonStyle.textTransform).toBe('none')
 
   await infoButton.hover()
@@ -147,8 +150,10 @@ test('build planner splits shared and individual perk groups without internal sc
   const pickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk').first()
   const hoverMetricsBefore = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(element)
 
     return {
+      backgroundColor: computedStyle.backgroundColor,
       tileRectangle: {
         right: tileRectangle.right,
         top: tileRectangle.top,
@@ -161,11 +166,18 @@ test('build planner splits shared and individual perk groups without internal sc
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
   await expect(page.getByRole('tooltip')).toContainText(/An additional \+10% of any damage ignores armor/i)
   await expect(pickedPerkTile).toHaveCSS('transform', 'none')
+  await expect
+    .poll(async () =>
+      pickedPerkTile.evaluate((element) => window.getComputedStyle(element, '::after').opacity),
+    )
+    .toBe('1')
 
   const hoverMetricsAfter = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(element)
 
     return {
+      backgroundColor: computedStyle.backgroundColor,
       tileRectangle: {
         right: tileRectangle.right,
         top: tileRectangle.top,
@@ -173,6 +185,7 @@ test('build planner splits shared and individual perk groups without internal sc
     }
   })
 
+  expect(hoverMetricsAfter.backgroundColor).toBe(hoverMetricsBefore.backgroundColor)
   expect(Math.abs(hoverMetricsAfter.tileRectangle.top - hoverMetricsBefore.tileRectangle.top)).toBeLessThanOrEqual(1)
   expect(Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right)).toBeLessThanOrEqual(1)
 
@@ -226,6 +239,12 @@ test('build planner splits shared and individual perk groups without internal sc
   await expect(getBuildIndividualGroupsList(page).getByText('Deadeye', { exact: true })).toBeVisible()
   await expect(getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
   await expect(page.getByText('Build 3', { exact: true })).toBeVisible()
+  const plannerGroupCardWidths = await page.locator('.planner-group-card').evaluateAll((elements) =>
+    elements.map((element) => Math.round(element.getBoundingClientRect().width)),
+  )
+
+  expect(plannerGroupCardWidths.length).toBeGreaterThan(0)
+  expect(Math.max(...plannerGroupCardWidths)).toBeLessThanOrEqual(230)
 
   await page.goto(
     '/?build=Clarity&build=Peaceable&build=Perfect+Focus&build=Berserk&build=Killing+Frenzy&build=Fearsome&build=Colossus',

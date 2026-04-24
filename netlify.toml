@@ -1,6 +1,6 @@
 [build]
 command = "pnpm build:netlify"
-edge_functions = ".netlify/generated-edge-functions"
+edge_functions = "netlify/generated-edge-functions"
 publish = "dist"
 
 [build.environment]

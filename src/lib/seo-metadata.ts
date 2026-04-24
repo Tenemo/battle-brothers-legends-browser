@@ -29,7 +29,7 @@ export type SeoMetadata = {
 
 const siteOrigin = 'https://battlebrothers.academy'
 const sitePath = '/'
-const socialImagePath = '/seo/og-image.png'
+const socialImagePath = '/seo/og-image-v2.png'
 const siteLanguage = 'en'
 const applicationCategory = 'ReferenceApplication'
 
@@ -217,8 +217,10 @@ export function injectSeoIntoHtml(html: string, metadata: SeoMetadata = rootSeoM
   }
 
   const endMarkerEndIndex = endMarkerMatch.index + endMarkerMatch[0].length
+  const startMarker = startMarkerMatch[0]
+  const endMarker = endMarkerMatch[0]
 
-  return `${html.slice(0, startMarkerMatch.index)}${renderRootSeoHead(metadata)}${html.slice(
+  return `${html.slice(0, startMarkerMatch.index)}${startMarker}\n    ${renderRootSeoHead(metadata)}\n    ${endMarker}${html.slice(
     endMarkerEndIndex,
   )}`
 }

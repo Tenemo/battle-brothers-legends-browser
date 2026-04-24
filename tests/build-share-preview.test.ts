@@ -6,7 +6,10 @@ import {
 
 describe('build share preview', () => {
   test('returns the empty preview for missing or invalid build params', () => {
-    expect(createBuildSharePreviewPayloadFromSearch('').status).toBe('empty')
+    const emptyPayload = createBuildSharePreviewPayloadFromSearch('')
+
+    expect(emptyPayload.status).toBe('empty')
+    expect(emptyPayload.imagePath).toBe('/seo/og-image-v2.png')
     expect(createBuildSharePreviewPayloadFromSearch('?build=Definitely+not+a+perk').status).toBe(
       'empty',
     )

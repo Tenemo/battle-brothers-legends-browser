@@ -124,7 +124,7 @@ const rootHtml = await fetchHtml(baseUrl)
 expectIncludes({
   label: 'root HTML',
   text: rootHtml,
-  value: '<title>Battle Brothers legends perks browser</title>',
+  value: '<title>Battle Brothers Legends perks browser</title>',
 })
 expectIncludes({
   label: 'root HTML',

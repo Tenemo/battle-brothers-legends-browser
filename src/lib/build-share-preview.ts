@@ -192,7 +192,7 @@ export function createBuildSharePreviewPayloadFromPickedPerkIds(
       canonicalSearch: '',
       description: 'Browse the Battle Brothers Legends perk catalog and plan shareable builds.',
       imageAlt: 'Battle Brothers Legends perks browser social preview.',
-      imagePath: '/seo/og-image.png',
+      imagePath: '/seo/og-image-v2.png',
       pickedPerkCount: 0,
       pickedPerks: [],
       referenceVersion: legendsPerksDataset.referenceVersion,

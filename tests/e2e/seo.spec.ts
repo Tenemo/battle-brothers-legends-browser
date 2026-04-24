@@ -138,6 +138,6 @@ test('serves robots, sitemap, and the social preview image', async ({ request })
   expect(sitemapText).toContain(`<loc>${productionSiteUrl}</loc>`)
   expect(sitemapText).not.toMatch(/<loc>[^<]*\?[^<]*<\/loc>/)
 
-  const socialImageResponse = await request.get('/seo/og-image.png')
+  const socialImageResponse = await request.get('/seo/og-image-v2.png')
   expect(socialImageResponse.ok()).toBe(true)
 })

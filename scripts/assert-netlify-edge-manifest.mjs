@@ -6,6 +6,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRootDirectoryPath = path.resolve(__dirname, '..')
 const manifestFilePathCandidates = [
+  path.join(projectRootDirectoryPath, '.netlify', 'generated-edge-functions', 'manifest.json'),
   path.join(projectRootDirectoryPath, '.netlify', 'edge-functions-dist', 'manifest.json'),
   path.join(projectRootDirectoryPath, '.netlify', 'edge-functions', 'manifest.json'),
 ]

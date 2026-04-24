@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename)
 const projectRootDirectoryPath = path.resolve(__dirname, '..')
 const edgeFunctionOutputDirectoryPath = path.join(
   projectRootDirectoryPath,
-  '.netlify',
+  'netlify',
   'generated-edge-functions',
 )
 

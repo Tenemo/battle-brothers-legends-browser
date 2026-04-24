@@ -1,5 +1,6 @@
 import { describe, expect, test, vi } from 'vitest'
 import buildSeo, { createBuildSeoHandler } from '../netlify/edge-functions/build-seo'
+import { injectSeoIntoHtml } from '../src/lib/seo-metadata'
 
 const baseHtml = `<!doctype html>
 <html lang="en">
@@ -41,6 +42,31 @@ describe('build SEO edge function', () => {
     expect(response.headers.get('last-modified')).toBeNull()
     expect(html).toContain('<title>Battle Brothers Legends build: 2 perks</title>')
     expect(html).toContain('content="noindex, follow, noarchive, max-image-preview:large"')
+  })
+
+  test('replaces root metadata after Vite has injected the static SEO head', async () => {
+    const rootHtml = injectSeoIntoHtml(baseHtml)
+    const response = await buildSeo(
+      new Request(
+        'https://battlebrothers.academy/?search=last+sta&build=Muscularity,Immovable+Object,Brawny,Steadfast,Steel+Brow',
+      ),
+      {
+        next: async () =>
+          new Response(rootHtml, {
+            headers: {
+              'content-type': 'text/html; charset=utf-8',
+            },
+          }),
+      } as never,
+    )
+    const html = await response.text()
+
+    expect(html).toContain('<title>Battle Brothers Legends build: 5 perks</title>')
+    expect(html).toContain('content="noindex, follow, noarchive, max-image-preview:large"')
+    expect(html).toContain('/social/build.png?')
+    expect(html).toContain('Muscularity')
+    expect(html).toContain('Steel+Brow')
+    expect(html).not.toContain('content="https://battlebrothers.academy/seo/og-image-v2.png"')
   })
 
   test('passes through non-GET requests', async () => {

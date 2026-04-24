@@ -126,8 +126,8 @@ The generated artifacts that the runtime actually uses are:
   These are the extracted icon files served by Vite at runtime.
 - `public/favicon/**`
   These are the committed student-icon favicon assets and manifest served across desktop browsers, iOS home-screen shortcuts, and installed web apps.
-- `public/seo/og-image.png`
-  This is the committed social preview image used by the Open Graph and Twitter card metadata.
+- `public/seo/og-image-v2.png`
+  This is the generated social preview image used by the Open Graph and Twitter card metadata. It is written by `pnpm run prepare:assets`.
 - `src/lib/seo-metadata.ts`
   This is the shared root SEO contract used by Vite to render the served and built HTML metadata.
 - `public/robots.txt`
