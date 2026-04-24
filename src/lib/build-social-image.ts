@@ -360,6 +360,6 @@ export function createBuildSocialImageSvg(
     ${renderBackgroundFits(payload)}
     <text x="682" y="554" fill="#80644a" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600">Legends ${escapeXml(
       payload.referenceVersion.replace(/^reference-mod_/u, ''),
-    )}${payload.unsupportedTargetCount > 0 ? ` · ${payload.unsupportedTargetCount} unsupported groups` : ''}</text>
+    )}${payload.unsupportedTargetCount > 0 ? ` - ${payload.unsupportedTargetCount} unsupported groups` : ''}</text>
   </svg>`
 }

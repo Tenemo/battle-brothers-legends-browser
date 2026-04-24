@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer'
 import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
 import type { Config } from '@netlify/functions'
 import { Resvg } from '@resvg/resvg-js'
@@ -24,8 +25,27 @@ type BuildSocialImageResponse = {
   status: number
 }
 
+type BuildSocialImageRenderResult = {
+  body: Uint8Array
+  usedFallback: boolean
+}
+
+type BuildSocialImageResponseOptions = {
+  renderPng?: (payload: BuildSharePreviewPayload) => Uint8Array
+}
+
+type BuildSocialImageHandlerOptions = {
+  createResponse?: (requestUrl: URL) => BuildSocialImageResponse
+}
+
 const dayInSeconds = 60 * 60 * 24
 const hourInSeconds = 60 * 60
+const socialImageFontFamily = 'Source Sans 3'
+const socialImageFontFileNames = [
+  'source-sans-3-latin-400-normal.woff',
+  'source-sans-3-latin-600-normal.woff',
+  'source-sans-3-latin-700-normal.woff',
+]
 const successfulImageCachePolicy: BuildSocialImageCachePolicy = {
   browser: 'public, max-age=0, must-revalidate',
   cdn: `public, max-age=${30 * dayInSeconds}, stale-while-revalidate=${30 * dayInSeconds}`,
@@ -39,6 +59,41 @@ const fallbackImageCachePolicy: BuildSocialImageCachePolicy = {
 
 function getGameIconsDirectory(): string {
   return path.resolve(process.cwd(), 'public', 'game-icons')
+}
+
+function getCurrentModuleDirectory(): string {
+  return path.dirname(fileURLToPath(import.meta.url))
+}
+
+function getSocialImageFontFileCandidates(fileName: string): string[] {
+  const moduleDirectory = getCurrentModuleDirectory()
+  const fontPath = path.join('@fontsource', 'source-sans-3', 'files', fileName)
+
+  return [
+    path.resolve(process.cwd(), 'node_modules', fontPath),
+    path.resolve(moduleDirectory, 'node_modules', fontPath),
+    path.resolve(moduleDirectory, '..', 'node_modules', fontPath),
+    path.resolve(moduleDirectory, '..', '..', 'node_modules', fontPath),
+    path.resolve(moduleDirectory, '..', '..', '..', 'node_modules', fontPath),
+  ]
+}
+
+export function resolveBuildSocialImageFontFiles(): string[] {
+  const resolvedFontFilePaths: string[] = []
+  const seenFontFilePaths = new Set<string>()
+
+  for (const fontFileName of socialImageFontFileNames) {
+    const fontFilePath = getSocialImageFontFileCandidates(fontFileName).find((candidatePath) =>
+      existsSync(candidatePath),
+    )
+
+    if (fontFilePath && !seenFontFilePaths.has(fontFilePath)) {
+      resolvedFontFilePaths.push(fontFilePath)
+      seenFontFilePaths.add(fontFilePath)
+    }
+  }
+
+  return resolvedFontFilePaths
 }
 
 function resolveIconFilePath(iconPath: string | null): string | null {
@@ -67,18 +122,21 @@ function getIconDataUrl(perk: BuildSharePreviewPerk): string | null {
   return `data:image/png;base64,${readFileSync(iconFilePath).toString('base64')}`
 }
 
-function renderBuildSocialImagePng(payload: BuildSharePreviewPayload): Uint8Array {
+export function renderBuildSocialImagePng(payload: BuildSharePreviewPayload): Uint8Array {
   const svg = createBuildSocialImageSvg(payload, {
     resolveIconDataUrl: getIconDataUrl,
   })
+  const fontFiles = resolveBuildSocialImageFontFiles()
   const resvg = new Resvg(svg, {
     fitTo: {
       mode: 'width',
       value: buildSocialImageWidth,
     },
     font: {
-      loadSystemFonts: true,
-      sansSerifFamily: 'Arial',
+      defaultFontFamily: socialImageFontFamily,
+      fontFiles,
+      loadSystemFonts: fontFiles.length === 0,
+      sansSerifFamily: socialImageFontFamily,
     },
   })
 
@@ -89,12 +147,21 @@ function createFallbackPayload(): BuildSharePreviewPayload {
   return createBuildSharePreviewPayloadFromSearch('')
 }
 
-function renderBuildSocialImagePngWithFallback(payload: BuildSharePreviewPayload): Uint8Array {
+function renderBuildSocialImagePngWithFallback(
+  payload: BuildSharePreviewPayload,
+  renderPng: (payload: BuildSharePreviewPayload) => Uint8Array = renderBuildSocialImagePng,
+): BuildSocialImageRenderResult {
   try {
-    return renderBuildSocialImagePng(payload)
+    return {
+      body: renderPng(payload),
+      usedFallback: false,
+    }
   } catch (renderError) {
     try {
-      return renderBuildSocialImagePng(createFallbackPayload())
+      return {
+        body: renderPng(createFallbackPayload()),
+        usedFallback: true,
+      }
     } catch (fallbackRenderError) {
       throw new AggregateError(
         [renderError, fallbackRenderError],
@@ -123,15 +190,21 @@ function buildHeaders({
   }
 }
 
-export function createBuildSocialImageResponse(requestUrl: URL): BuildSocialImageResponse {
+export function createBuildSocialImageResponse(
+  requestUrl: URL,
+  { renderPng }: BuildSocialImageResponseOptions = {},
+): BuildSocialImageResponse {
   const payload = createBuildSharePreviewPayloadFromSearch(requestUrl.searchParams)
-  const body = renderBuildSocialImagePngWithFallback(payload)
-  const cachePolicy = payload.status === 'found' ? successfulImageCachePolicy : fallbackImageCachePolicy
+  const renderedImage = renderBuildSocialImagePngWithFallback(payload, renderPng)
+  const cachePolicy =
+    payload.status === 'found' && !renderedImage.usedFallback
+      ? successfulImageCachePolicy
+      : fallbackImageCachePolicy
 
   return {
-    body,
+    body: renderedImage.body,
     headers: buildHeaders({
-      byteLength: body.byteLength,
+      byteLength: renderedImage.body.byteLength,
       cachePolicy,
     }),
     status: 200,
@@ -148,29 +221,37 @@ function createBuildSocialImageErrorResponse(requestMethod: string): Response {
   })
 }
 
-export default async function buildSocialImage(request: Request): Promise<Response> {
-  if (request.method !== 'GET' && request.method !== 'HEAD') {
-    return new Response(null, {
-      headers: {
-        allow: 'GET, HEAD',
-      },
-      status: 405,
-    })
-  }
+export function createBuildSocialImageHandler({
+  createResponse = createBuildSocialImageResponse,
+}: BuildSocialImageHandlerOptions = {}): (request: Request) => Promise<Response> {
+  return async function buildSocialImage(request: Request): Promise<Response> {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response(null, {
+        headers: {
+          allow: 'GET, HEAD',
+        },
+        status: 405,
+      })
+    }
 
-  try {
-    const imageResponse = createBuildSocialImageResponse(new URL(request.url))
+    try {
+      const imageResponse = createResponse(new URL(request.url))
 
-    return new Response(request.method === 'HEAD' ? null : Buffer.from(imageResponse.body), {
-      headers: imageResponse.headers,
-      status: imageResponse.status,
-    })
-  } catch (error) {
-    console.error(error instanceof Error ? error.message : 'Failed to render build social image.')
+      return new Response(request.method === 'HEAD' ? null : Buffer.from(imageResponse.body), {
+        headers: imageResponse.headers,
+        status: imageResponse.status,
+      })
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : 'Failed to render build social image.')
 
-    return createBuildSocialImageErrorResponse(request.method)
+      return createBuildSocialImageErrorResponse(request.method)
+    }
   }
 }
+
+const buildSocialImage = createBuildSocialImageHandler()
+
+export default buildSocialImage
 
 export const config: Config = {
   path: '/social/build.png',

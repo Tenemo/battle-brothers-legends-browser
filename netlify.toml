@@ -5,6 +5,7 @@ publish = "dist"
 
 [build.environment]
 NODE_VERSION = "22"
+PNPM_VERSION = "10.33.0"
 
 [dev]
 command = "pnpm dev"
@@ -13,7 +14,12 @@ targetPort = 5173
 framework = "#custom"
 
 [functions]
-included_files = ["public/game-icons/**/*"]
+included_files = [
+  "node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-400-normal.woff",
+  "node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-600-normal.woff",
+  "node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-700-normal.woff",
+  "public/game-icons/**/*",
+]
 
 [[edge_functions]]
 function = "build-seo"
