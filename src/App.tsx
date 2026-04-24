@@ -2009,24 +2009,13 @@ export default function App() {
         }
       >
         <div className="build-planner-header">
-          <div className={hasPickedPerks ? 'build-planner-title-row' : 'build-planner-title-row has-intro'}>
+          <div className="build-planner-title-row">
             <div className="build-planner-title">
-              <p className="eyebrow">Build planner</p>
               <h2>
-                Picked perks
+                BUILD PLANNER
                 {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
               </h2>
             </div>
-            <p
-              aria-hidden={hasPickedPerks}
-              className={
-                hasPickedPerks
-                  ? 'build-planner-summary is-layout-spacer'
-                  : 'build-planner-summary'
-              }
-            >
-              {buildPlannerGuidance}
-            </p>
           </div>
           <div className="build-planner-actions">
             <p className="build-planner-count">

@@ -53,27 +53,10 @@ test('build planner splits shared and individual perk groups without internal sc
   const initialHeaderHeight = await page
     .locator('.build-planner-header')
     .evaluate((element) => element.getBoundingClientRect().height)
-  const introLayout = await page.evaluate(() => {
-    const summary = document.querySelector('.build-planner-summary') as HTMLElement | null
-    const title = document.querySelector('.build-planner-title') as HTMLElement | null
 
-    if (!summary || !title) {
-      return null
-    }
-
-    const summaryRectangle = summary.getBoundingClientRect()
-    const titleRectangle = title.getBoundingClientRect()
-
-    return {
-      summaryLeft: summaryRectangle.left,
-      summaryOverflow: summary.scrollWidth - summary.clientWidth,
-      titleRight: titleRectangle.right,
-    }
-  })
-
-  expect(introLayout).not.toBeNull()
-  expect(introLayout!.titleRight).toBeLessThanOrEqual(introLayout!.summaryLeft + 1)
-  expect(introLayout!.summaryOverflow).toBeLessThanOrEqual(1)
+  await expect(page.getByRole('heading', { name: 'BUILD PLANNER' })).toBeVisible()
+  await expect(page.locator('.build-planner-summary')).toHaveCount(0)
+  expect(initialHeaderHeight).toBeLessThanOrEqual(40)
 
   await searchPerks(page, 'Clarity')
   await inspectPerkFromResults(page, 'Clarity')
@@ -90,8 +73,7 @@ test('build planner splits shared and individual perk groups without internal sc
 
   await addPerkToBuildFromResults(page, 'Clarity')
   await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
-  await expect(page.locator('.build-planner-summary:not(.is-layout-spacer)')).toHaveCount(0)
-  await expect(page.locator('.build-planner-summary.is-layout-spacer')).toBeHidden()
+  await expect(page.locator('.build-planner-summary')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Show build planner guidance' })).toBeVisible()
   await expect
     .poll(async () =>
