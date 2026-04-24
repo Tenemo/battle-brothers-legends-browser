@@ -1,4 +1,4 @@
-import type { Config, Context } from '@netlify/edge-functions'
+import type { Context } from '@netlify/edge-functions'
 import { renderDocumentHtml } from '../../src/lib/build-seo-metadata'
 
 function isHtmlResponse(response: Response): boolean {
@@ -40,17 +40,4 @@ export default async function buildSeo(request: Request, context: Context): Prom
 
     return response
   }
-}
-
-export const config: Config = {
-  excludedPath: [
-    '/assets/*',
-    '/favicon/*',
-    '/game-icons/*',
-    '/robots.txt',
-    '/seo/*',
-    '/sitemap.xml',
-    '/social/*',
-  ],
-  path: '/*',
 }

@@ -15,6 +15,19 @@ framework = "#custom"
 [functions]
 included_files = ["public/game-icons/**/*"]
 
+[[edge_functions]]
+function = "build-seo"
+path = "/*"
+excludedPath = [
+  "/assets/*",
+  "/favicon/*",
+  "/game-icons/*",
+  "/robots.txt",
+  "/seo/*",
+  "/sitemap.xml",
+  "/social/*",
+]
+
 [[headers]]
 for = "/*"
 [headers.values]
