@@ -64,6 +64,13 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
   await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute('aria-hidden', 'false')
   await expect(apprenticeCard.getByText('Guaranteed groups 1')).toBeVisible()
+  await expect
+    .poll(async () =>
+      apprenticeCard
+        .locator('.background-fit-card-panel')
+        .evaluate((element) => getComputedStyle(element).transitionDuration),
+    )
+    .toBe('0s')
 
   await backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }).click()
   await expect(

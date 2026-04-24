@@ -11,6 +11,7 @@ import {
 import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
+import '@fontsource/source-sans-3/700.css'
 import './App.css'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import { getGameIconUrl } from './lib/game-icon-url'
@@ -79,6 +80,11 @@ type HoveredBuildPerkTooltip = {
     width: number
   }
   perkId: string
+}
+
+type PerkGroupHoverTarget = {
+  categoryName: string
+  treeId: string
 }
 
 type TooltipAnchorRectangle = {
@@ -388,7 +394,7 @@ function getPerkContextLabel(perk: LegendsPerkRecord): string {
   const primaryPlacement = perk.placements[0]
 
   if (!primaryPlacement) {
-    return `${perk.primaryGroupName} / No tree placement`
+    return `${perk.primaryGroupName} / No perk group placement`
   }
 
   const additionalPlacementsCount = Math.max(0, perk.placements.length - 1)
@@ -446,7 +452,27 @@ function formatBackgroundFitScoreLabel(score: number): string {
 }
 
 function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
-  return disambiguator.replace(/^background\./, '').replaceAll('_', ' ')
+  const sourceLabel = disambiguator.replace(/^background\./, '')
+  const companionMatch = /^companion_(1h|2h|ranged)$/.exec(sourceLabel)
+  const originCompanionMatch = /^legend_companion_(melee|ranged)$/.exec(sourceLabel)
+
+  if (companionMatch) {
+    return companionMatch[1] === '1h'
+      ? 'starting shield'
+      : companionMatch[1] === '2h'
+        ? 'starting two-handed'
+        : 'starting ranged'
+  }
+
+  if (originCompanionMatch) {
+    return originCompanionMatch[1] === 'melee' ? 'origin melee' : 'origin ranged'
+  }
+
+  if (/^legend_.+_commander(?:_op)?$/.test(sourceLabel) || /^.+_legend_.+_commander$/.test(sourceLabel)) {
+    return 'origin commander'
+  }
+
+  return sourceLabel.replace(/^legend_legion_/, 'legion_').replace(/^legend_/, '').replaceAll('_', ' ')
 }
 
 function normalizeBackgroundLabelForComparison(label: string): string {
@@ -551,7 +577,7 @@ function getBackgroundFitPickablePerksTooltipCopy(
   pickedPerkCount: number,
 ): string[] {
   return [
-    `Best-case picked-perk coverage for this background: up to ${coveredPickedPerkCount} of your ${pickedPerkCount} picked perks can be covered if every relevant non-guaranteed tree roll lands.`,
+    `Best-case picked-perk coverage for this background: up to ${coveredPickedPerkCount} of your ${pickedPerkCount} picked perks can be covered if every relevant non-guaranteed perk group roll lands.`,
     'This counts picked perks, not perk groups, so multiple picked perks can be covered by the same matched group.',
   ]
 }
@@ -562,7 +588,7 @@ function getBackgroundFitGuaranteedPerksTooltipCopy(
 ): string[] {
   return [
     `Guaranteed picked-perk coverage for this background: ${guaranteedCoveredPickedPerkCount} of your ${pickedPerkCount} picked perks are covered before any optional rolls.`,
-    'Only always-present tree matches count here. Optional Enemy, Class, and Profession additions do not.',
+    'Only always-present perk group matches count here. Optional Enemy, Class, and Profession additions do not.',
   ]
 }
 
@@ -571,8 +597,8 @@ function getBackgroundFitMatchedGroupsTooltipCopy(
   supportedBuildTargetTreeCount: number,
 ): string[] {
   return [
-    `Build-tree overlap for this build: this background matches ${matchedGroupCount} of the ${supportedBuildTargetTreeCount} supported build groups.`,
-    'A matched group means the background can roll that tree, whether the match is guaranteed or probabilistic.',
+    `Build perk group overlap for this build: this background matches ${matchedGroupCount} of the ${supportedBuildTargetTreeCount} supported build groups.`,
+    'A matched group means the background can roll that perk group, whether the match is guaranteed or probabilistic.',
   ]
 }
 
@@ -599,6 +625,10 @@ function getPlannerGroupLabel(
   )
 }
 
+function getPerkGroupHoverKey({ categoryName, treeId }: PerkGroupHoverTarget): string {
+  return `${categoryName}::${treeId}`
+}
+
 function renderBackgroundFitTargetTree(buildTargetTree: BuildTargetTree, keyPrefix: string) {
   return (
     <li
@@ -616,19 +646,48 @@ function renderBackgroundFitTargetTree(buildTargetTree: BuildTargetTree, keyPref
   )
 }
 
-function renderBackgroundFitMatch(match: BackgroundFitMatch) {
+function renderBackgroundFitMatch({
+  hoveredPerkGroupKey,
+  match,
+  onClosePerkGroupHover,
+  onInspectPerkGroup,
+  onOpenPerkGroupHover,
+}: {
+  hoveredPerkGroupKey: string | null
+  match: BackgroundFitMatch
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerkGroup: (categoryName: string, treeId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, treeId: string) => void
+}) {
+  const perkGroupKey = getPerkGroupHoverKey(match)
+  const className =
+    hoveredPerkGroupKey === perkGroupKey
+      ? 'background-fit-match is-highlighted'
+      : 'background-fit-match'
+
   return (
-    <li className="background-fit-match" key={`${match.categoryName}-${match.treeId}`}>
-      <div>
-        <strong>{match.treeName}</strong>
-        <p className="detail-support">
-          {match.categoryName} / {formatPickedPerkCountLabel(match.pickedPerkCount)} /{' '}
-          {match.pickedPerkNames.join(', ')}
-        </p>
-      </div>
-      <span className="detail-badge">
-        {match.isGuaranteed ? 'Guaranteed' : formatBackgroundFitProbabilityLabel(match.probability)}
-      </span>
+    <li key={`${match.categoryName}-${match.treeId}`}>
+      <button
+        aria-label={`Select perk group ${match.treeName}`}
+        className={className}
+        onBlur={() => onClosePerkGroupHover(perkGroupKey)}
+        onClick={() => onInspectPerkGroup(match.categoryName, match.treeId)}
+        onFocus={() => onOpenPerkGroupHover(match.categoryName, match.treeId)}
+        onMouseEnter={() => onOpenPerkGroupHover(match.categoryName, match.treeId)}
+        onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
+        type="button"
+      >
+        <div>
+          <strong>{match.treeName}</strong>
+          <p className="detail-support">
+            {match.categoryName} / {formatPickedPerkCountLabel(match.pickedPerkCount)} /{' '}
+            {match.pickedPerkNames.join(', ')}
+          </p>
+        </div>
+        <span className="detail-badge">
+          {match.isGuaranteed ? 'Guaranteed' : formatBackgroundFitProbabilityLabel(match.probability)}
+        </span>
+      </button>
     </li>
   )
 }
@@ -665,7 +724,12 @@ function renderBackgroundFitSummaryBadge({
 function renderBackgroundFitCard({
   backgroundFit,
   expandedBackgroundFitKey,
+  hoveredPerkGroupKey,
+  onClearPerkGroupHover,
   onCloseSummaryTooltip,
+  onClosePerkGroupHover,
+  onInspectPerkGroup,
+  onOpenPerkGroupHover,
   onOpenSummaryTooltip,
   onToggle,
   pickedPerkCount,
@@ -675,7 +739,12 @@ function renderBackgroundFitCard({
 }: {
   backgroundFit: RankedBackgroundFit
   expandedBackgroundFitKey: string | null
+  hoveredPerkGroupKey: string | null
+  onClearPerkGroupHover: () => void
   onCloseSummaryTooltip: () => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerkGroup: (categoryName: string, treeId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, treeId: string) => void
   onOpenSummaryTooltip: (
     title: string,
     descriptionParagraphs: string[],
@@ -715,14 +784,17 @@ function renderBackgroundFitCard({
         aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background ${backgroundFit.backgroundName}${disambiguatorLabel ? ` (${disambiguatorLabel})` : ''}`}
         className="background-fit-accordion-trigger"
         id={accordionButtonId}
-        onClick={() => onToggle(backgroundFitKey)}
+        onClick={() => {
+          onClearPerkGroupHover()
+          onToggle(backgroundFitKey)
+        }}
         type="button"
       >
         <div className="background-fit-card-header">
           <div className="background-fit-card-header-main">
             <div className="background-fit-card-heading">
               <span className="background-fit-rank">{rank + 1}</span>
-              <div>
+              <div className="background-fit-card-title-row">
                 <h3>{renderHighlightedText(backgroundFit.backgroundName, query, `${backgroundFitKey}-name`)}</h3>
                 {disambiguatorLabel ? (
                   <span className="background-fit-disambiguator">
@@ -807,12 +879,6 @@ function renderBackgroundFitCard({
           <div className="background-fit-card-content">
             <div className="background-fit-score-row">
               <span className="detail-badge">
-                Guaranteed weight {formatBackgroundFitScoreLabel(backgroundFit.guaranteedMatchedBuildWeight)}
-              </span>
-              <span className="detail-badge">
-                Expected +{formatBackgroundFitScoreLabel(backgroundFit.expectedExtraMatchedBuildWeight)}
-              </span>
-              <span className="detail-badge">
                 Guaranteed groups {backgroundFit.guaranteedMatchedTreeCount}
               </span>
               <span className="detail-badge">
@@ -824,7 +890,15 @@ function renderBackgroundFitCard({
               <div className="background-fit-match-section">
                 <p className="background-fit-section-label">Guaranteed</p>
                 <ul className="background-fit-match-list">
-                  {guaranteedMatches.map((match) => renderBackgroundFitMatch(match))}
+                  {guaranteedMatches.map((match) =>
+                    renderBackgroundFitMatch({
+                      hoveredPerkGroupKey,
+                      match,
+                      onClosePerkGroupHover,
+                      onInspectPerkGroup,
+                      onOpenPerkGroupHover,
+                    }),
+                  )}
                 </ul>
               </div>
             ) : null}
@@ -833,13 +907,21 @@ function renderBackgroundFitCard({
               <div className="background-fit-match-section">
                 <p className="background-fit-section-label">Possible</p>
                 <ul className="background-fit-match-list">
-                  {probabilisticMatches.map((match) => renderBackgroundFitMatch(match))}
+                  {probabilisticMatches.map((match) =>
+                    renderBackgroundFitMatch({
+                      hoveredPerkGroupKey,
+                      match,
+                      onClosePerkGroupHover,
+                      onInspectPerkGroup,
+                      onOpenPerkGroupHover,
+                    }),
+                  )}
                 </ul>
               </div>
             ) : null}
 
             {backgroundFit.matches.length === 0 ? (
-              <p className="background-fit-empty-card">No supported build tree overlap.</p>
+              <p className="background-fit-empty-card">No supported build perk group overlap.</p>
             ) : null}
           </div>
         </div>
@@ -850,17 +932,27 @@ function renderBackgroundFitCard({
 
 function BackgroundFitPanel({
   backgroundFitView,
+  hoveredPerkGroupKey,
   isExpanded,
   onClearBuildPerkTooltip,
   onClearHoveredPerk,
+  onClearPerkGroupHover,
+  onClosePerkGroupHover,
+  onInspectPerkGroup,
+  onOpenPerkGroupHover,
   onSearchActivityChange,
   onToggleExpanded,
   pickedPerkCount,
 }: {
   backgroundFitView: BackgroundFitView
+  hoveredPerkGroupKey: string | null
   isExpanded: boolean
   onClearBuildPerkTooltip: () => void
   onClearHoveredPerk: () => void
+  onClearPerkGroupHover: () => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerkGroup: (categoryName: string, treeId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, treeId: string) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
   onToggleExpanded: () => void
   pickedPerkCount: number
@@ -989,7 +1081,10 @@ function BackgroundFitPanel({
           aria-hidden={!isExpanded}
           className="background-fit-panel-body"
           data-testid="background-fit-panel-body"
-          onScrollCapture={() => setHoveredBackgroundFitSummaryTooltip(null)}
+          onScrollCapture={() => {
+            setHoveredBackgroundFitSummaryTooltip(null)
+            onClearPerkGroupHover()
+          }}
           ref={backgroundFitPanelBodyRef}
         >
           <label className="search-field background-fit-search-field">
@@ -998,6 +1093,7 @@ function BackgroundFitPanel({
               aria-label="Search backgrounds"
               onChange={(event) => {
                 setHoveredBackgroundFitSummaryTooltip(null)
+                onClearPerkGroupHover()
                 setBackgroundFitInputValue(event.target.value)
               }}
               placeholder="Search backgrounds"
@@ -1013,14 +1109,14 @@ function BackgroundFitPanel({
             <div className="background-fit-empty-state">
               <p className="background-fit-summary-copy">
                 {hasUnsupportedBackgroundFitTargets
-                  ? 'This build only contains unsupported categories for dynamic background trees.'
+                  ? 'This build only contains unsupported categories for dynamic background perk groups.'
                   : 'Pick perks from Weapon, Defense, Traits, Enemy, Class, Profession, or Magic to rank backgrounds exactly.'}
               </p>
               {hasUnsupportedBackgroundFitTargets ? (
                 <>
-                  <p className="background-fit-section-label">Unsupported build trees</p>
+                  <p className="background-fit-section-label">Unsupported build perk groups</p>
                   <p className="results-note">
-                    Background dynamic trees only roll Weapon, Defense, Traits, Enemy, Class,
+                    Background dynamic perk groups only roll Weapon, Defense, Traits, Enemy, Class,
                     Profession, and Magic.
                   </p>
                   <ul className="background-fit-target-list is-unsupported">
@@ -1039,7 +1135,12 @@ function BackgroundFitPanel({
                   {renderBackgroundFitCard({
                     backgroundFit,
                     expandedBackgroundFitKey,
+                    hoveredPerkGroupKey,
+                    onClearPerkGroupHover,
                     onCloseSummaryTooltip: () => setHoveredBackgroundFitSummaryTooltip(null),
+                    onClosePerkGroupHover,
+                    onInspectPerkGroup,
+                    onOpenPerkGroupHover,
                     onOpenSummaryTooltip: (
                       title: string,
                       descriptionParagraphs: string[],
@@ -1064,6 +1165,7 @@ function BackgroundFitPanel({
                     },
                     onToggle: (backgroundFitKey: string) => {
                       setHoveredBackgroundFitSummaryTooltip(null)
+                      onClearPerkGroupHover()
                       setBackgroundFitAccordionState({
                         expandedBackgroundFitKey:
                           expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
@@ -1099,6 +1201,7 @@ function BackgroundFitPanel({
           className="background-fit-rail-button"
           onClick={() => {
             setHoveredBackgroundFitSummaryTooltip(null)
+            onClearPerkGroupHover()
             onToggleExpanded()
           }}
           type="button"
@@ -1190,6 +1293,7 @@ function renderGameIcon({
 
 function renderPlannerGroupCard({
   groupedPerkGroup,
+  hoveredPerkGroupKey,
   keyPrefix,
   onCloseTooltip,
   onInspectPerk,
@@ -1198,6 +1302,7 @@ function renderPlannerGroupCard({
   hoveredTooltipId,
 }: {
   groupedPerkGroup: BuildPlannerGroupedPerkGroup
+  hoveredPerkGroupKey: string | null
   keyPrefix: string
   onCloseTooltip: () => void
   onInspectPerk: (perkId: string) => void
@@ -1206,10 +1311,18 @@ function renderPlannerGroupCard({
   hoveredTooltipId: string | undefined
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
+  const isHighlighted = groupedPerkGroup.perkGroupOptions.some(
+    (perkGroupOption) =>
+      hoveredPerkGroupKey ===
+      getPerkGroupHoverKey({
+        categoryName: perkGroupOption.categoryName,
+        treeId: perkGroupOption.treeId,
+      }),
+  )
 
   return (
     <article
-      className="planner-group-card"
+      className={isHighlighted ? 'planner-group-card is-highlighted' : 'planner-group-card'}
       key={`${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`}
     >
       <div className="planner-group-card-header">
@@ -1433,6 +1546,7 @@ export default function App() {
     initialUrlState.selectedTreeIdsByGroup,
   )
   const [hoveredPerkId, setHoveredPerkId] = useState<string | null>(null)
+  const [hoveredPerkGroupKey, setHoveredPerkGroupKey] = useState<string | null>(null)
   const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
     useState<HoveredBuildPerkTooltip | null>(null)
   const [shareBuildStatus, setShareBuildStatus] = useState<'copied' | 'error' | 'idle'>('idle')
@@ -1577,6 +1691,7 @@ export default function App() {
       setHoveredBuildPerkTooltip((currentTooltip) =>
         currentTooltip?.perkId === perkId ? null : currentTooltip,
       )
+      setHoveredPerkGroupKey(null)
     })
   }
 
@@ -1584,6 +1699,7 @@ export default function App() {
     startTransition(() => {
       setPickedPerkIds([])
       setHoveredPerkId(null)
+      setHoveredPerkGroupKey(null)
       setHoveredBuildPerkTooltip(null)
       setShareBuildStatus('idle')
     })
@@ -1647,6 +1763,7 @@ export default function App() {
     const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
 
     setHoveredPerkId(perkId)
+    setHoveredPerkGroupKey(null)
     setHoveredBuildPerkTooltip({
       anchorRectangle: {
         bottom,
@@ -1666,6 +1783,7 @@ export default function App() {
 
   function handleOpenResultsPerkHover(perkId: string) {
     setHoveredPerkId(perkId)
+    setHoveredPerkGroupKey(null)
     setHoveredBuildPerkTooltip(null)
   }
 
@@ -1673,6 +1791,45 @@ export default function App() {
     setHoveredPerkId((currentHoveredPerkId) =>
       currentHoveredPerkId === perkId ? null : currentHoveredPerkId,
     )
+  }
+
+  function handleOpenPerkGroupHover(categoryName: string, treeId: string) {
+    setHoveredPerkGroupKey(getPerkGroupHoverKey({ categoryName, treeId }))
+    setHoveredPerkId(null)
+    setHoveredBuildPerkTooltip(null)
+  }
+
+  function handleClosePerkGroupHover(perkGroupKey: string) {
+    setHoveredPerkGroupKey((currentHoveredPerkGroupKey) =>
+      currentHoveredPerkGroupKey === perkGroupKey ? null : currentHoveredPerkGroupKey,
+    )
+  }
+
+  function handleInspectPerkGroup(categoryName: string, treeId: string) {
+    startTransition(() => {
+      setSelectedGroupNames((currentSelectedGroupNames) =>
+        currentSelectedGroupNames.includes(categoryName)
+          ? currentSelectedGroupNames
+          : [...currentSelectedGroupNames, categoryName],
+      )
+      setExpandedGroupNames((currentExpandedGroupNames) =>
+        currentExpandedGroupNames.includes(categoryName)
+          ? currentExpandedGroupNames
+          : [...currentExpandedGroupNames, categoryName],
+      )
+      setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => {
+        const currentSelectedTreeIds = currentSelectedTreeIdsByGroup[categoryName] ?? []
+
+        if (currentSelectedTreeIds.includes(treeId)) {
+          return currentSelectedTreeIdsByGroup
+        }
+
+        return {
+          ...currentSelectedTreeIdsByGroup,
+          [categoryName]: [...currentSelectedTreeIds, treeId],
+        }
+      })
+    })
   }
 
   function handleGroupToggle(nextGroupName: string) {
@@ -1805,39 +1962,42 @@ export default function App() {
   }, [shareBuildStatus])
 
   return (
-    <div className="app-shell">
+      <div className="app-shell">
       <div className="background-runes" aria-hidden="true" />
       <header className="hero">
-        <a
-          aria-label="Open the battle-brothers-legends-browser repository on GitHub"
-          className="hero-repository-link"
-          href={repositoryUrl}
-          rel="noopener noreferrer"
-          target="_blank"
-        >
-          <GitHubIcon className="hero-repository-link-icon" />
-        </a>
         <div className="hero-copy">
-          <p className="eyebrow">Battle Brothers legends</p>
           <h1>Perks browser</h1>
-          <p className="hero-summary">
-            Local Legends perk data, actual game icons, and exact in-mod labels.
+          <p className="eyebrow hero-brand">
+            Battle Brothers <span className="hero-brand-emphasis">legends</span>
           </p>
         </div>
-        <dl className="hero-meta">
-          <div>
-            <dt>Perks</dt>
-            <dd>{legendsPerksDataset.perkCount}</dd>
+        <div className="hero-top-bar">
+          <div className="hero-top-actions">
+            <dl className="hero-meta" aria-label="Perk catalog summary">
+              <div>
+                <dt>Perks</dt>
+                <dd>{legendsPerksDataset.perkCount}</dd>
+              </div>
+              <div>
+                <dt>Perk groups</dt>
+                <dd>{legendsPerksDataset.treeCount}</dd>
+              </div>
+              <div>
+                <dt>Reference</dt>
+                <dd>{legendsPerksDataset.referenceVersion.replace(/^reference-mod_/, '')}</dd>
+              </div>
+            </dl>
+            <a
+              aria-label="Open the battle-brothers-legends-browser repository on GitHub"
+              className="hero-repository-link"
+              href={repositoryUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <GitHubIcon className="hero-repository-link-icon" />
+            </a>
           </div>
-          <div>
-            <dt>Trees</dt>
-            <dd>{legendsPerksDataset.treeCount}</dd>
-          </div>
-          <div>
-            <dt>Reference</dt>
-            <dd>{legendsPerksDataset.referenceVersion.replace(/^reference-mod_/, '')}</dd>
-          </div>
-        </dl>
+        </div>
       </header>
 
       <section
@@ -1967,6 +2127,7 @@ export default function App() {
                   {sharedPerkGroups.map((sharedPerkGroup) =>
                     renderPlannerGroupCard({
                       groupedPerkGroup: sharedPerkGroup,
+                      hoveredPerkGroupKey,
                       hoveredPerkId,
                       hoveredTooltipId: hoveredBuildPerkTooltipId,
                       keyPrefix: 'shared',
@@ -1999,6 +2160,7 @@ export default function App() {
                     {individualPerkGroups.map((individualPerkGroup) =>
                       renderPlannerGroupCard({
                         groupedPerkGroup: individualPerkGroup,
+                        hoveredPerkGroupKey,
                         hoveredPerkId,
                         hoveredTooltipId: hoveredBuildPerkTooltipId,
                         keyPrefix: 'individual',
@@ -2059,9 +2221,14 @@ export default function App() {
       >
         <BackgroundFitPanel
           backgroundFitView={backgroundFitView}
+          hoveredPerkGroupKey={hoveredPerkGroupKey}
           isExpanded={isBackgroundFitPanelExpanded}
           onClearBuildPerkTooltip={() => setHoveredBuildPerkTooltip(null)}
           onClearHoveredPerk={() => setHoveredPerkId(null)}
+          onClearPerkGroupHover={() => setHoveredPerkGroupKey(null)}
+          onClosePerkGroupHover={handleClosePerkGroupHover}
+          onInspectPerkGroup={handleInspectPerkGroup}
+          onOpenPerkGroupHover={handleOpenPerkGroupHover}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}
           onToggleExpanded={() => setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)}
           pickedPerkCount={pickedPerks.length}
@@ -2089,13 +2256,33 @@ export default function App() {
             const isActive = selectedGroupNames.includes(availableGroupName)
             const pickedPerkCountInGroup = pickedPerkCountsByGroup.get(availableGroupName) ?? 0
             const selectedTreeIds = selectedTreeIdsByGroup[availableGroupName] ?? []
+            const isHoveredCategory = hoveredPerkGroupKey?.startsWith(`${availableGroupName}::`) ?? false
+            const hasVisibleHoveredTree =
+              isHoveredCategory &&
+              activeTreeOptions.some(
+                (treeOption) =>
+                  hoveredPerkGroupKey ===
+                  getPerkGroupHoverKey({
+                    categoryName: availableGroupName,
+                    treeId: treeOption.treeId,
+                  }),
+              )
+            const shouldHighlightCategory =
+              isHoveredCategory && (!isExpanded || !hasVisibleHoveredTree)
+            const categoryChipClassName = [
+              'group-chip',
+              isActive ? 'is-active' : '',
+              shouldHighlightCategory ? 'is-highlighted' : '',
+            ]
+              .filter(Boolean)
+              .join(' ')
 
             return (
               <div className={isExpanded ? 'category-card is-active' : 'category-card'} key={availableGroupName}>
                 <button
                   aria-expanded={isExpanded}
                   aria-label={`${isActive ? 'Disable' : 'Enable'} category ${availableGroupName}`}
-                  className={isActive ? 'group-chip is-active' : 'group-chip'}
+                  className={categoryChipClassName}
                   onClick={() => handleGroupToggle(availableGroupName)}
                   type="button"
                 >
@@ -2134,15 +2321,24 @@ export default function App() {
                   </button>
                   {activeTreeOptions.map((treeOption) => {
                     const pickedPerkCountInTree = pickedPerkCountsByTree.get(treeOption.treeId) ?? 0
+                    const isTreeHighlighted =
+                      hoveredPerkGroupKey ===
+                      getPerkGroupHoverKey({
+                        categoryName: availableGroupName,
+                        treeId: treeOption.treeId,
+                      })
+                    const treeChipClassName = [
+                      'subgroup-chip',
+                      selectedTreeIds.includes(treeOption.treeId) ? 'is-active' : '',
+                      isTreeHighlighted ? 'is-highlighted' : '',
+                    ]
+                      .filter(Boolean)
+                      .join(' ')
 
                     return (
                       <button
                         aria-label={`Toggle perk group ${treeOption.treeName}`}
-                        className={
-                          selectedTreeIds.includes(treeOption.treeId)
-                            ? 'subgroup-chip is-active'
-                            : 'subgroup-chip'
-                        }
+                        className={treeChipClassName}
                         key={treeOption.treeId}
                         onClick={() => handleTreeToggle(availableGroupName, treeOption.treeId)}
                         type="button"
@@ -2181,7 +2377,7 @@ export default function App() {
               <input
                 aria-label="Search perks"
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Search perks, trees, backgrounds, scenarios, or enemy targets"
+                placeholder="Search perks, perk groups, backgrounds, scenarios, or enemy targets"
                 type="search"
                 value={query}
               />
@@ -2226,7 +2422,7 @@ export default function App() {
                 ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'} and ${selectedTreeCount} perk group${selectedTreeCount === 1 ? '' : 's'}.`
                 : selectedCategoryCount > 0
                   ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'}.`
-                : 'Ranked by exact perk names first, then tree and category matches, then background, scenario, and full text.'}
+                : 'Ranked by exact perk names first, then perk group and category matches, then background, scenario, and full text.'}
             </p>
           </div>
 
@@ -2369,7 +2565,7 @@ export default function App() {
               </div>
 
               <div className="detail-section">
-                <h3>Tree placement</h3>
+                <h3>Perk group placement</h3>
                 {selectedPerk.placements.length > 0 ? (
                   <ul className="detail-list">
                     {selectedPerk.placements.map((placement) => (
@@ -2378,7 +2574,7 @@ export default function App() {
                           {renderGameIcon({
                             className: 'perk-icon perk-icon-tiny',
                             iconPath: placement.treeIconPath ?? getPerkDisplayIconPath(selectedPerk),
-                            label: `${placement.treeName} tree icon`,
+                            label: `${placement.treeName} perk group icon`,
                           })}
                           <div>
                             <strong>
@@ -2392,7 +2588,7 @@ export default function App() {
                     ))}
                   </ul>
                 ) : (
-                  <p>This perk is defined locally but not assigned to a parsed perk tree.</p>
+                  <p>This perk is defined locally but not assigned to a parsed perk group.</p>
                 )}
               </div>
 

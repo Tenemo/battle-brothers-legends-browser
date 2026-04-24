@@ -11,6 +11,10 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'companion_ranged_background.nut',
     'converted_cultist_background.nut',
     'cultist_background.nut',
+    'legend_berserker_background.nut',
+    'legend_berserker_commander_background.nut',
+    'legend_companion_melee_background.nut',
+    'legend_companion_ranged_background.nut',
     'paladin_background.nut',
   ]),
   perkNamesForAppTests: new Set([
@@ -68,9 +72,16 @@ function setPerkSearchQuery(nextQuery: string) {
 
 describe('app', () => {
   test('renders the catalog shell without the old reference root footer', () => {
-    render(<App />)
+    const { container } = render(<App />)
+    const hero = screen.getByRole('banner')
+    const brandEmphasis = container.querySelector('.hero-brand-emphasis')
 
     expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
+    expect(brandEmphasis).not.toBeNull()
+    expect(brandEmphasis).toHaveTextContent('legends')
+    expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
+    expect(within(hero).getByText('Reference')).toBeInTheDocument()
+    expect(within(hero).getByText('19.3.17')).toBeInTheDocument()
     expect(
       screen.getByRole('link', {
         name: 'Open the battle-brothers-legends-browser repository on GitHub',
@@ -80,6 +91,9 @@ describe('app', () => {
     expect(screen.getByTestId('build-perks-bar')).toBeInTheDocument()
     expect(screen.getByTestId('build-shared-groups-list')).toBeInTheDocument()
     expect(screen.getByTestId('build-individual-groups-list')).toBeInTheDocument()
+    expect(
+      screen.queryByText('Local Legends perk data, actual game icons, and exact in-mod labels.'),
+    ).not.toBeInTheDocument()
     expect(screen.queryByText(/Reference root/i)).not.toBeInTheDocument()
   })
 
@@ -116,7 +130,7 @@ describe('app', () => {
       'src',
       '/game-icons/ui/perks/clarity_circle.png',
     )
-    expect(screen.getByRole('heading', { level: 3, name: 'Tree placement' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 3, name: 'Perk group placement' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'Background sources' })).toBeInTheDocument()
     expect(screen.queryByRole('heading', { level: 3, name: 'Source files' })).not.toBeInTheDocument()
   })
@@ -733,6 +747,50 @@ describe('app', () => {
     ).toBeInTheDocument()
     expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'false')
     expect(within(apprenticeCard as HTMLElement).getByText('Guaranteed groups 1')).toBeInTheDocument()
+    expect(within(apprenticeCard as HTMLElement).queryByText(/^Guaranteed weight /)).not.toBeInTheDocument()
+    expect(within(apprenticeCard as HTMLElement).queryByText(/^Expected \+/)).not.toBeInTheDocument()
+
+    const categoriesPanel = screen.getByRole('complementary', { name: 'Perk categories' })
+    const axeMatchButton = within(apprenticeCard as HTMLElement).getByRole('button', {
+      name: 'Select perk group Axe',
+    })
+    const plannerAxeGroupCard = within(screen.getByTestId('build-individual-groups-list'))
+      .getByText('Axe', { exact: true })
+      .closest('.planner-group-card')
+    const weaponCategoryButton = within(categoriesPanel).getByRole('button', {
+      name: 'Enable category Weapon',
+    })
+
+    expect(plannerAxeGroupCard).not.toBeNull()
+
+    fireEvent.mouseEnter(axeMatchButton)
+
+    expect(axeMatchButton).toHaveClass('is-highlighted')
+    expect(plannerAxeGroupCard).toHaveClass('is-highlighted')
+    expect(weaponCategoryButton).toHaveClass('is-highlighted')
+
+    fireEvent.mouseLeave(axeMatchButton)
+
+    expect(axeMatchButton).not.toHaveClass('is-highlighted')
+    expect(plannerAxeGroupCard).not.toHaveClass('is-highlighted')
+    expect(weaponCategoryButton).not.toHaveClass('is-highlighted')
+
+    await user.click(axeMatchButton)
+
+    const selectedWeaponCategoryButton = within(categoriesPanel).getByRole('button', {
+      name: 'Disable category Weapon',
+    })
+    const selectedAxeGroupButton = within(categoriesPanel).getByRole('button', {
+      name: 'Toggle perk group Axe',
+    })
+
+    expect(selectedWeaponCategoryButton).toHaveClass('is-active')
+    expect(selectedAxeGroupButton).toHaveClass('is-active')
+    expect(screen.getByText('Filtered to 1 category and 1 perk group.')).toBeInTheDocument()
+
+    fireEvent.mouseEnter(axeMatchButton)
+
+    expect(selectedAxeGroupButton).toHaveClass('is-highlighted')
 
     await user.click(backgroundFitCollapseToggle)
 
@@ -875,9 +933,12 @@ describe('app', () => {
 
     expect(apprenticeCard).not.toBeNull()
     expect(apprenticeCard?.querySelector('.background-fit-disambiguator')).toBeNull()
-    expect(within(backgroundFitPanel).getByText('companion 1h')).toBeInTheDocument()
-    expect(within(backgroundFitPanel).getByText('companion 2h')).toBeInTheDocument()
-    expect(within(backgroundFitPanel).getByText('companion ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('starting shield')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('starting two-handed')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('starting ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getAllByText('origin commander').length).toBeGreaterThan(0)
     expect(within(backgroundFitPanel).getByText('converted cultist')).toBeInTheDocument()
   })
 })
