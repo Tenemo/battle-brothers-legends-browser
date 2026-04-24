@@ -1,5 +1,5 @@
 import type { Config, Context } from '@netlify/edge-functions'
-import { renderDocumentHtml } from '../../src/lib/build-seo-metadata.ts'
+import { renderDocumentHtml } from '../../src/lib/build-seo-metadata'
 
 function isHtmlResponse(response: Response): boolean {
   return (response.headers.get('content-type') ?? '').includes('text/html')

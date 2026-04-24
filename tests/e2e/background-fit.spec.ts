@@ -87,8 +87,13 @@ test('filters the background fit list with the background search field', async (
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
   const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
+  const oathtakerCard = backgroundFitPanel
+    .locator('.background-fit-card')
+    .filter({ hasText: 'Oathtaker' })
+    .first()
 
   await expect(backgroundSearchInput).toBeVisible()
+  await expect(oathtakerCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
   const oathtakerRankBeforeFiltering = await page.evaluate(() => {
     const oathtakerCard = [...document.querySelectorAll('.background-fit-card')].find(
       (backgroundFitCard) =>

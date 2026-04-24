@@ -112,8 +112,8 @@ jobs:
             - name: install dependencies
               run: pnpm install --frozen-lockfile
 
-            - name: run build
-              run: pnpm build
+            - name: run Netlify build command
+              run: pnpm build:netlify
 
     e2e:
         runs-on: ubuntu-latest

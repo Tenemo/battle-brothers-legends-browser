@@ -12,7 +12,7 @@
     "dev:test": "vite --host 127.0.0.1 --port 4173",
     "prebuild": "node ./scripts/ensure-legends-reference.mjs",
     "build": "tsc -b && vite build",
-    "build:netlify": "tsc -b && vite build",
+    "build:netlify": "tsc -b && vite build && node ./scripts/build-netlify-edge-functions.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "tsc": "tsc -b",
@@ -20,7 +20,7 @@
     "eslint": "eslint .",
     "eslint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "node ./node_modules/@playwright/test/cli.js test",
     "ensure:legends-reference": "node ./scripts/ensure-legends-reference.mjs",
     "sync:icons": "node ./scripts/sync-legends-icons.mjs",
     "sync:perks": "node ./scripts/sync-legends-perks.mjs"
@@ -44,6 +44,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "esbuild": "^0.27.7",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
@@ -54,5 +55,10 @@
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.9",
     "vitest": "^4.1.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }

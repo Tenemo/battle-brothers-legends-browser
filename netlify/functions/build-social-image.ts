@@ -5,12 +5,12 @@ import path from 'node:path'
 import type { Config } from '@netlify/functions'
 import { Resvg } from '@resvg/resvg-js'
 
-import { createBuildSharePreviewPayloadFromSearch } from '../../src/lib/build-share-preview.ts'
+import { createBuildSharePreviewPayloadFromSearch } from '../../src/lib/build-share-preview'
 import {
   buildSocialImageWidth,
   createBuildSocialImageSvg,
-} from '../../src/lib/build-social-image.ts'
-import type { BuildSharePreviewPayload, BuildSharePreviewPerk } from '../../src/lib/build-share-preview.ts'
+} from '../../src/lib/build-social-image'
+import type { BuildSharePreviewPayload, BuildSharePreviewPerk } from '../../src/lib/build-share-preview'
 
 type BuildSocialImageCachePolicy = {
   browser: string
