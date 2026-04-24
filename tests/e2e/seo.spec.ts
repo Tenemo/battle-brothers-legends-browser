@@ -1,24 +1,42 @@
 import { expect, test } from '@playwright/test'
+import { rootSeoMetadata } from '../../src/lib/seo-metadata'
 
-const productionSiteUrl = 'http://battlebrothers.academy/'
-const siteDescription =
-  'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.'
-const socialImageUrl = `${productionSiteUrl}seo/og-image.png`
+const productionSiteUrl = rootSeoMetadata.url
+const siteDescription = rootSeoMetadata.description
+const socialImageUrl = rootSeoMetadata.image.url
 
 test('exposes the expected static SEO metadata contract', async ({ page }) => {
   await page.goto('/')
 
-  await expect(page).toHaveTitle('Battle Brothers legends perks browser')
+  await expect(page).toHaveTitle(rootSeoMetadata.title)
+  await expect(page.locator('meta[name="application-name"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.applicationName,
+  )
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', siteDescription)
-  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'index, follow')
-  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', productionSiteUrl)
+  await expect(page.locator('meta[name="keywords"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.keywords,
+  )
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.robots,
+  )
+  await expect(page.locator('link[rel="canonical"]')).toHaveAttribute(
+    'href',
+    rootSeoMetadata.canonicalUrl,
+  )
   await expect(page.locator('meta[property="og:site_name"]')).toHaveAttribute(
     'content',
-    'Battle Brothers legends perks browser',
+    rootSeoMetadata.applicationName,
+  )
+  await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.locale,
   )
   await expect(page.locator('meta[property="og:title"]')).toHaveAttribute(
     'content',
-    'Battle Brothers legends perks browser',
+    rootSeoMetadata.title,
   )
   await expect(page.locator('meta[property="og:description"]')).toHaveAttribute(
     'content',
@@ -27,23 +45,46 @@ test('exposes the expected static SEO metadata contract', async ({ page }) => {
   await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website')
   await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', productionSiteUrl)
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', socialImageUrl)
-  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute('content', '1200')
-  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute('content', '630')
+  await expect(page.locator('meta[property="og:image:secure_url"]')).toHaveAttribute(
+    'content',
+    socialImageUrl,
+  )
+  await expect(page.locator('meta[property="og:image:type"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.image.type,
+  )
+  await expect(page.locator('meta[property="og:image:width"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.image.width.toString(),
+  )
+  await expect(page.locator('meta[property="og:image:height"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.image.height.toString(),
+  )
+  await expect(page.locator('meta[property="og:image:alt"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.image.alt,
+  )
   await expect(page.locator('meta[name="twitter:card"]')).toHaveAttribute(
     'content',
     'summary_large_image',
   )
   await expect(page.locator('meta[name="twitter:title"]')).toHaveAttribute(
     'content',
-    'Battle Brothers legends perks browser',
+    rootSeoMetadata.title,
   )
   await expect(page.locator('meta[name="twitter:description"]')).toHaveAttribute(
     'content',
     siteDescription,
   )
+  await expect(page.locator('meta[name="twitter:url"]')).toHaveAttribute('content', productionSiteUrl)
   await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
     'content',
     socialImageUrl,
+  )
+  await expect(page.locator('meta[name="twitter:image:alt"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.image.alt,
   )
 
   const structuredDataText = await page.locator('script[type="application/ld+json"]').textContent()
@@ -59,13 +100,25 @@ test('exposes the expected static SEO metadata contract', async ({ page }) => {
         '@type': 'WebSite',
         '@id': `${productionSiteUrl}#website`,
         url: productionSiteUrl,
-        name: 'Battle Brothers legends perks browser',
+        name: rootSeoMetadata.title,
+      }),
+      expect.objectContaining({
+        '@type': 'WebPage',
+        '@id': `${productionSiteUrl}#webpage`,
+        primaryImageOfPage: {
+          '@id': `${productionSiteUrl}#social-image`,
+        },
       }),
       expect.objectContaining({
         '@type': 'WebApplication',
         '@id': `${productionSiteUrl}#webapp`,
         url: productionSiteUrl,
         image: socialImageUrl,
+      }),
+      expect.objectContaining({
+        '@type': 'ImageObject',
+        '@id': `${productionSiteUrl}#social-image`,
+        contentUrl: socialImageUrl,
       }),
     ]),
   )
@@ -82,7 +135,7 @@ test('serves robots, sitemap, and the social preview image', async ({ request })
   const sitemapResponse = await request.get('/sitemap.xml')
   expect(sitemapResponse.ok()).toBe(true)
   const sitemapText = await sitemapResponse.text()
-  expect(sitemapText).toContain('<loc>http://battlebrothers.academy/</loc>')
+  expect(sitemapText).toContain(`<loc>${productionSiteUrl}</loc>`)
   expect(sitemapText).not.toMatch(/<loc>[^<]*\?[^<]*<\/loc>/)
 
   const socialImageResponse = await request.get('/seo/og-image.png')

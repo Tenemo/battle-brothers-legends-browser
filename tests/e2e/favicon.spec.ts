@@ -1,13 +1,20 @@
 import { expect, test } from '@playwright/test'
+import { rootSeoMetadata } from '../../src/lib/seo-metadata'
 
 test('serves the student favicon assets across platforms', async ({ page, request }) => {
   await page.goto('/')
 
-  await expect(page.locator('head meta[name="theme-color"]')).toHaveAttribute('content', '#0c0908')
-  await expect(page.locator('head meta[name="color-scheme"]')).toHaveAttribute('content', 'dark')
+  await expect(page.locator('head meta[name="theme-color"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.themeColor,
+  )
+  await expect(page.locator('head meta[name="color-scheme"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.colorScheme,
+  )
   await expect(page.locator('head meta[name="apple-mobile-web-app-title"]')).toHaveAttribute(
     'content',
-    'Legends perks',
+    rootSeoMetadata.shortName,
   )
   await expect(page.locator('head link[rel="icon"][sizes="96x96"]')).toHaveAttribute(
     'href',
@@ -53,8 +60,9 @@ test('serves the student favicon assets across platforms', async ({ page, reques
 
   const manifest = await manifestResponse.json()
   expect(manifest).toEqual({
-    name: 'Battle Brothers legends perks browser',
-    short_name: 'Legends perks',
+    name: rootSeoMetadata.applicationName,
+    short_name: rootSeoMetadata.shortName,
+    description: rootSeoMetadata.description,
     icons: [
       {
         src: '/favicon/web-app-manifest-192x192.png',
@@ -69,8 +77,9 @@ test('serves the student favicon assets across platforms', async ({ page, reques
         purpose: 'any maskable',
       },
     ],
-    theme_color: '#0c0908',
-    background_color: '#0c0908',
+    theme_color: rootSeoMetadata.themeColor,
+    background_color: rootSeoMetadata.themeColor,
     display: 'standalone',
+    start_url: '/',
   })
 })

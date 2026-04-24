@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: http://battlebrothers.academy/sitemap.xml
+Sitemap: https://battlebrothers.academy/sitemap.xml

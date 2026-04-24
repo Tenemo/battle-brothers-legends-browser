@@ -1,6 +1,7 @@
 {
   "name": "Battle Brothers legends perks browser",
   "short_name": "Legends perks",
+  "description": "Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.",
   "icons": [
     {
       "src": "/favicon/web-app-manifest-192x192.png",
@@ -17,5 +18,6 @@
   ],
   "theme_color": "#0c0908",
   "background_color": "#0c0908",
-  "display": "standalone"
+  "display": "standalone",
+  "start_url": "/"
 }
