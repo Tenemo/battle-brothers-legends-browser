@@ -812,7 +812,8 @@ describe('app', () => {
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
 
     expect(backgroundSearchInput).toBeEnabled()
-    expect(within(backgroundFitPanel).getByText(/Showing all backgrounds/i)).toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText(/Showing all backgrounds/i)).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText(/Exact probabilities/i)).not.toBeInTheDocument()
 
     await user.type(backgroundSearchInput, 'Oath')
 

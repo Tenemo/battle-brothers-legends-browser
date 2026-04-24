@@ -53,6 +53,8 @@ const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 const categoryOrder = ['Weapon', 'Defense', 'Traits', 'Enemy', 'Class', 'Profession', 'Magic', 'Other']
+const buildPlannerGuidance =
+  'Use the star in the detail panel or search results to collect perk picks, then review the shared perk groups and the remaining individual-perk groups below.'
 
 type CategoryTreeOption = PerkBrowserUrlTreeOption & {
   perkCount: number
@@ -1002,17 +1004,7 @@ function BackgroundFitPanel({
               value={backgroundFitInputValue}
             />
           </label>
-          {!hasPickedPerks ? (
-            <div className="background-fit-empty-state">
-              <p className="background-fit-summary-copy">
-                Showing all backgrounds. Pick perks into the build planner to rank them by
-                guaranteed and exact probabilistic tree coverage.
-              </p>
-              <p className="background-fit-summary-copy">
-                Exact probabilities come from the Legends background tree rules, not simulation.
-              </p>
-            </div>
-          ) : hasSupportedBackgroundFitTargets ? (
+          {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (
             <p className="background-fit-ranking-summary">
               Ranked by guaranteed perks pickable first, then total perks pickable.
             </p>
@@ -1353,6 +1345,24 @@ function BuildStar({ isPicked }: { isPicked: boolean }) {
         strokeWidth="1.6"
       />
     </svg>
+  )
+}
+
+function BuildPlannerInfoButton() {
+  return (
+    <span className="build-planner-info">
+      <button
+        aria-describedby="build-planner-info-tooltip"
+        aria-label="Show build planner guidance"
+        className="build-planner-info-button"
+        type="button"
+      >
+        i
+      </button>
+      <span className="build-planner-info-tooltip" id="build-planner-info-tooltip">
+        {buildPlannerGuidance}
+      </span>
+    </span>
   )
 }
 
@@ -1771,12 +1781,23 @@ export default function App() {
         }
       >
         <div className="build-planner-header">
-          <div>
-            <p className="eyebrow">Build planner</p>
-            <h2>Picked perks</h2>
-            <p className="build-planner-summary">
-              Use the star in the detail panel or search results to collect perk picks, then
-              review the shared perk groups and the remaining individual-perk groups below.
+          <div className={hasPickedPerks ? 'build-planner-title-row' : 'build-planner-title-row has-intro'}>
+            <div className="build-planner-title">
+              <p className="eyebrow">Build planner</p>
+              <h2>
+                Picked perks
+                {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
+              </h2>
+            </div>
+            <p
+              aria-hidden={hasPickedPerks}
+              className={
+                hasPickedPerks
+                  ? 'build-planner-summary is-layout-spacer'
+                  : 'build-planner-summary'
+              }
+            >
+              {buildPlannerGuidance}
             </p>
           </div>
           <div className="build-planner-actions">

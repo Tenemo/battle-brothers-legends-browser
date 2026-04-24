@@ -183,7 +183,8 @@ test('keeps the background search enabled without any picked perks', async ({ pa
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
   await expect(backgroundSearchInput).toBeEnabled()
-  await expect(backgroundFitPanel.getByText(/Showing all backgrounds/i)).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Showing all backgrounds/i)).toHaveCount(0)
+  await expect(backgroundFitPanel.getByText(/Exact probabilities/i)).toHaveCount(0)
 
   await backgroundSearchInput.fill('Oath')
 
