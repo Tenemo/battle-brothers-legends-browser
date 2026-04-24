@@ -129,7 +129,11 @@ const samplePerks: LegendsPerkRecord[] = [
     perkConstName: 'LegendHeavy',
     perkName: 'Heavy armor stance',
     placements: [
-      createPlacement({ categoryName: 'Defense', treeId: 'HeavyDefenseTree', treeName: 'Heavy armor' }),
+      createPlacement({
+        categoryName: 'Defense',
+        treeId: 'HeavyDefenseTree',
+        treeName: 'Heavy armor',
+      }),
     ],
   }),
   createPerk({
@@ -148,25 +152,33 @@ const samplePerks: LegendsPerkRecord[] = [
     id: 'perk.traits.lucky',
     perkConstName: 'LegendLucky',
     perkName: 'Lucky break',
-    placements: [createPlacement({ categoryName: 'Traits', treeId: 'LuckyTree', treeName: 'Lucky' })],
+    placements: [
+      createPlacement({ categoryName: 'Traits', treeId: 'LuckyTree', treeName: 'Lucky' }),
+    ],
   }),
   createPerk({
     id: 'perk.enemy.beasts',
     perkConstName: 'LegendEnemyBeasts',
     perkName: 'Favoured Enemy - Beasts',
-    placements: [createPlacement({ categoryName: 'Enemy', treeId: 'BeastTree', treeName: 'Beasts' })],
+    placements: [
+      createPlacement({ categoryName: 'Enemy', treeId: 'BeastTree', treeName: 'Beasts' }),
+    ],
   }),
   createPerk({
     id: 'perk.enemy.raiders',
     perkConstName: 'LegendEnemyRaiders',
     perkName: 'Favoured Enemy - Raiders',
-    placements: [createPlacement({ categoryName: 'Enemy', treeId: 'RaiderTree', treeName: 'Raiders' })],
+    placements: [
+      createPlacement({ categoryName: 'Enemy', treeId: 'RaiderTree', treeName: 'Raiders' }),
+    ],
   }),
   createPerk({
     id: 'perk.enemy.occult',
     perkConstName: 'LegendEnemyOccult',
     perkName: 'Favoured Enemy - Occult',
-    placements: [createPlacement({ categoryName: 'Enemy', treeId: 'OccultTree', treeName: 'Occult' })],
+    placements: [
+      createPlacement({ categoryName: 'Enemy', treeId: 'OccultTree', treeName: 'Occult' }),
+    ],
   }),
   createPerk({
     id: 'perk.class.militia',
@@ -212,7 +224,9 @@ const samplePerks: LegendsPerkRecord[] = [
     id: 'perk.other.forceful',
     perkConstName: 'LegendForceful',
     perkName: 'Forceful stance',
-    placements: [createPlacement({ categoryName: 'Other', treeId: 'ForcefulTree', treeName: 'Forceful' })],
+    placements: [
+      createPlacement({ categoryName: 'Other', treeId: 'ForcefulTree', treeName: 'Forceful' }),
+    ],
   }),
 ]
 
@@ -292,13 +306,7 @@ const sampleDataset: LegendsPerksDataset = {
 
 describe('background fit', () => {
   test('derives shared supported targets and separates unsupported categories', () => {
-    expect(
-      getBuildTargetTrees([
-        samplePerks[0],
-        samplePerks[1],
-        samplePerks[14],
-      ]),
-    ).toEqual({
+    expect(getBuildTargetTrees([samplePerks[0], samplePerks[1], samplePerks[14]])).toEqual({
       supportedBuildTargetTrees: [
         {
           categoryName: 'Weapon',
@@ -347,7 +355,11 @@ describe('background fit', () => {
 
   test('uses exact fill-to-minimum probabilities for deterministic categories', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
-    const backgroundFitView = engine.getBackgroundFitView([samplePerks[3], samplePerks[4], samplePerks[5]])
+    const backgroundFitView = engine.getBackgroundFitView([
+      samplePerks[3],
+      samplePerks[4],
+      samplePerks[5],
+    ])
     const balancedScholar = backgroundFitView.rankedBackgroundFits.find(
       (backgroundFit) => backgroundFit.backgroundId === 'background.traits_fill',
     )
@@ -372,10 +384,14 @@ describe('background fit', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const enemyRollFit = engine
       .getBackgroundFitView([samplePerks[7], samplePerks[8], samplePerks[9]])
-      .rankedBackgroundFits.find((backgroundFit) => backgroundFit.backgroundId === 'background.enemy_roll')
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.enemy_roll',
+      )
     const professionRollFit = engine
       .getBackgroundFitView([samplePerks[12], samplePerks[13]])
-      .rankedBackgroundFits.find((backgroundFit) => backgroundFit.backgroundId === 'background.profession_roll')
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.profession_roll',
+      )
 
     expect(enemyRollFit?.matches).toEqual(
       expect.arrayContaining([
@@ -396,7 +412,9 @@ describe('background fit', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const classRollFit = engine
       .getBackgroundFitView([samplePerks[10], samplePerks[11]])
-      .rankedBackgroundFits.find((backgroundFit) => backgroundFit.backgroundId === 'background.class_roll')
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.class_roll',
+      )
 
     expect(classRollFit?.matches).toEqual(
       expect.arrayContaining([
@@ -406,32 +424,29 @@ describe('background fit', () => {
     )
   })
 
-  test(
-    'ranks backgrounds by guaranteed covered picked perks first and disambiguates duplicate names',
-    () => {
-      const engine = createBackgroundFitEngine(sampleDataset)
-      const backgroundFitView = engine.getBackgroundFitView([
-        samplePerks[0],
-        samplePerks[1],
-        samplePerks[2],
-      ])
+  test('ranks backgrounds by guaranteed covered picked perks first and disambiguates duplicate names', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const backgroundFitView = engine.getBackgroundFitView([
+      samplePerks[0],
+      samplePerks[1],
+      samplePerks[2],
+    ])
 
-      expect(backgroundFitView.rankedBackgroundFits.slice(0, 2)).toEqual([
-        expect.objectContaining({
-          backgroundId: 'background.high_weight',
-          backgroundName: 'Champion',
-          disambiguator: 'background.high_weight',
-          guaranteedMatchedBuildWeight: 2,
-        }),
-        expect.objectContaining({
-          backgroundId: 'background.low_weight',
-          backgroundName: 'Champion',
-          disambiguator: 'background.low_weight',
-          guaranteedMatchedBuildWeight: 1,
-        }),
-      ])
-    },
-  )
+    expect(backgroundFitView.rankedBackgroundFits.slice(0, 2)).toEqual([
+      expect.objectContaining({
+        backgroundId: 'background.high_weight',
+        backgroundName: 'Champion',
+        disambiguator: 'background.high_weight',
+        matches: [expect.objectContaining({ pickedPerkCount: 2, treeId: 'AxeTree' })],
+      }),
+      expect.objectContaining({
+        backgroundId: 'background.low_weight',
+        backgroundName: 'Champion',
+        disambiguator: 'background.low_weight',
+        matches: [expect.objectContaining({ pickedPerkCount: 1, treeId: 'BowTree' })],
+      }),
+    ])
+  })
 
   test('breaks ties on guaranteed covered picked perks by total covered picked perks', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
@@ -470,7 +485,9 @@ describe('background fit', () => {
 
     expect(backgroundFitView.supportedBuildTargetTrees).toEqual([])
     expect(backgroundFitView.unsupportedBuildTargetTrees).toEqual([])
-    expect(backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName)).toEqual([
+    expect(
+      backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName),
+    ).toEqual([
       'Balanced scholar',
       'Champion',
       'Champion',

@@ -264,11 +264,11 @@ export class SquirrelSubsetParser {
     this.expectSymbol('(')
     const parametersStartIndex = this.index
     const parametersEndIndex = this.findMatchingBoundary('(', ')', parametersStartIndex - 1)
-    const parametersSource = this.source
-      .slice(parametersStartIndex, parametersEndIndex)
-      .trim()
+    const parametersSource = this.source.slice(parametersStartIndex, parametersEndIndex).trim()
     const parameters = parametersSource
-      ? splitTopLevelCommaSeparated(parametersSource).map((parameter) => parameter.trim()).filter(Boolean)
+      ? splitTopLevelCommaSeparated(parametersSource)
+          .map((parameter) => parameter.trim())
+          .filter(Boolean)
       : []
 
     this.index = parametersEndIndex + 1
@@ -435,7 +435,11 @@ export class SquirrelSubsetParser {
   parseValue() {
     const primaryValue = this.parsePrimaryValue()
 
-    if (primaryValue === null || typeof primaryValue !== 'object' || primaryValue.type !== 'reference') {
+    if (
+      primaryValue === null ||
+      typeof primaryValue !== 'object' ||
+      primaryValue.type !== 'reference'
+    ) {
       return primaryValue
     }
 
@@ -499,7 +503,18 @@ export class SquirrelSubsetParser {
       return null
     }
 
-    const skippedKeywords = ['if', 'else', 'for', 'foreach', 'while', 'switch', 'case', 'return', 'break', 'continue']
+    const skippedKeywords = [
+      'if',
+      'else',
+      'for',
+      'foreach',
+      'while',
+      'switch',
+      'case',
+      'return',
+      'break',
+      'continue',
+    ]
 
     for (const keyword of skippedKeywords) {
       const checkpoint = this.index
@@ -741,7 +756,11 @@ export class SquirrelSubsetParser {
       position += 1
     }
 
-    throw createError(`Unable to find matching "${closeCharacter}"`, openCharacterIndex, this.source)
+    throw createError(
+      `Unable to find matching "${closeCharacter}"`,
+      openCharacterIndex,
+      this.source,
+    )
   }
 }
 
@@ -878,12 +897,7 @@ export function splitTopLevelCommaSeparated(source) {
       continue
     }
 
-    if (
-      character === ',' &&
-      braceDepth === 0 &&
-      bracketDepth === 0 &&
-      parenthesesDepth === 0
-    ) {
+    if (character === ',' && braceDepth === 0 && bracketDepth === 0 && parenthesesDepth === 0) {
       const item = source.slice(startIndex, index).trim()
 
       if (item) {

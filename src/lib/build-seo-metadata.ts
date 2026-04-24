@@ -1,8 +1,4 @@
-import {
-  injectSeoIntoHtml,
-  rootSeoMetadata,
-  type SeoMetadata,
-} from './seo-metadata'
+import { injectSeoIntoHtml, rootSeoMetadata, type SeoMetadata } from './seo-metadata'
 import { createBuildSharePreviewPayloadFromSearch } from './build-share-preview'
 import { buildSocialImageHeight, buildSocialImageWidth } from './build-social-image'
 
@@ -97,7 +93,7 @@ function createBuildStructuredData({
   }
 }
 
-export function createBuildSeoMetadata({
+function createBuildSeoMetadata({
   origin,
   search,
 }: {

@@ -1,157 +1,157 @@
 name: ci
 
 on:
-    push:
-        branches: [master, main]
-    pull_request:
-        branches: [master, main]
-    merge_group:
-    workflow_dispatch:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  merge_group:
+  workflow_dispatch:
 
 concurrency:
-    group: ci-${{ github.workflow }}-${{ github.ref }}
-    cancel-in-progress: true
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
-    contents: read
+  contents: read
 
 env:
-    CI: true
+  CI: true
 
 jobs:
-    lint:
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-            - uses: pnpm/action-setup@v5
-              with:
-                  version: 10.33.0
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
 
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 22
-                  cache: pnpm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
 
-            - name: install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: run lint
-              run: pnpm lint
+      - name: run lint
+        run: pnpm lint
 
-    typecheck:
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
+  typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-            - uses: pnpm/action-setup@v5
-              with:
-                  version: 10.33.0
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
 
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 22
-                  cache: pnpm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
 
-            - name: install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: run typecheck
-              run: pnpm typecheck
+      - name: run typecheck
+        run: pnpm typecheck
 
-    test:
-        runs-on: ubuntu-latest
-        timeout-minutes: 15
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
 
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-            - uses: pnpm/action-setup@v5
-              with:
-                  version: 10.33.0
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
 
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 22
-                  cache: pnpm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
 
-            - name: install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: run tests
-              run: pnpm test
+      - name: run tests
+        run: pnpm test
 
-    build:
-        runs-on: ubuntu-latest
-        timeout-minutes: 20
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
 
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-            - uses: pnpm/action-setup@v5
-              with:
-                  version: 10.33.0
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
 
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 22
-                  cache: pnpm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
 
-            - name: install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: run Netlify build
-              run: pnpm netlify:build
+      - name: run Netlify build
+        run: pnpm netlify:build
 
-            - name: verify Netlify edge manifest
-              run: pnpm check:netlify-manifest
+      - name: verify Netlify edge manifest
+        run: pnpm check:netlify-manifest
 
-    e2e:
-        runs-on: ubuntu-latest
-        timeout-minutes: 30
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
 
-        steps:
-            - uses: actions/checkout@v6
-              with:
-                  fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-            - uses: pnpm/action-setup@v5
-              with:
-                  version: 10.33.0
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
 
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 22
-                  cache: pnpm
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
 
-            - name: install dependencies
-              run: pnpm install --frozen-lockfile
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
 
-            - name: install Playwright browsers
-              run: pnpm exec playwright install --with-deps chromium
+      - name: install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
 
-            - name: run e2e tests
-              run: pnpm test:e2e
+      - name: run e2e tests
+        run: pnpm test:e2e
 
-            - name: upload Playwright artifacts
-              if: failure()
-              uses: actions/upload-artifact@v7
-              with:
-                  name: playwright-artifacts
-                  path: |
-                      test-results
-                      playwright-report
-                  if-no-files-found: ignore
-                  retention-days: 7
+      - name: upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-artifacts
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7

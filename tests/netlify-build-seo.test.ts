@@ -70,12 +70,15 @@ describe('build SEO edge function', () => {
   })
 
   test('passes through non-GET requests', async () => {
-    const response = await buildSeo(new Request('https://battlebrothers.academy/', { method: 'POST' }), {
-      next: async () =>
-        new Response('passed through', {
-          status: 202,
-        }),
-    } as never)
+    const response = await buildSeo(
+      new Request('https://battlebrothers.academy/', { method: 'POST' }),
+      {
+        next: async () =>
+          new Response('passed through', {
+            status: 202,
+          }),
+      } as never,
+    )
 
     expect(response.status).toBe(202)
     await expect(response.text()).resolves.toBe('passed through')

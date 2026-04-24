@@ -1,6 +1,4 @@
-export function createRootSocialImageSvg(options?: {
-  bookIconDataUrl?: string
-}): Promise<string>
+export function createRootSocialImageSvg(options?: { bookIconDataUrl?: string }): Promise<string>
 
 export function renderRootSocialImagePng(): Promise<Uint8Array>
 

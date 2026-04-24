@@ -1,4 +1,4 @@
-export type LegendsSourceFile = {
+type LegendsSourceFile = {
   path: string
   role: string
 }
@@ -86,7 +86,7 @@ export type LegendsBackgroundFitClassWeaponDependency = {
   weaponTreeId: string
 }
 
-export type LegendsBackgroundFitRules = {
+type LegendsBackgroundFitRules = {
   classWeaponDependencies: LegendsBackgroundFitClassWeaponDependency[]
 }
 

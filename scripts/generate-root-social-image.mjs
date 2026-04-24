@@ -33,9 +33,7 @@ function escapeXml(value) {
     .replaceAll("'", '&apos;')
 }
 
-export async function createRootSocialImageSvg({
-  bookIconDataUrl = '',
-} = {}) {
+export async function createRootSocialImageSvg({ bookIconDataUrl = '' } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${socialImageWidth}" height="${socialImageHeight}" viewBox="0 0 ${socialImageWidth} ${socialImageHeight}" role="img" aria-label="${escapeXml(
     'Battle Brothers Legends perks browser social preview.',
   )}">
@@ -123,5 +121,7 @@ export async function generateRootSocialImage() {
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   const result = await generateRootSocialImage()
-  console.log(`Generated ${path.relative(projectRootDirectoryPath, result.path)} (${result.byteLength} bytes).`)
+  console.log(
+    `Generated ${path.relative(projectRootDirectoryPath, result.path)} (${result.byteLength} bytes).`,
+  )
 }

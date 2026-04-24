@@ -1,31 +1,31 @@
 name: deploy smoke
 
 on:
-    workflow_dispatch:
-        inputs:
-            base_url:
-                description: Netlify deploy URL to verify
-                required: true
-                type: string
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: Netlify deploy URL to verify
+        required: true
+        type: string
 
 concurrency:
-    group: deploy-smoke-${{ github.workflow }}-${{ inputs.base_url }}
-    cancel-in-progress: true
+  group: deploy-smoke-${{ github.workflow }}-${{ inputs.base_url }}
+  cancel-in-progress: true
 
 permissions:
-    contents: read
+  contents: read
 
 jobs:
-    smoke:
-        runs-on: ubuntu-latest
-        timeout-minutes: 10
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
 
-        steps:
-            - uses: actions/checkout@v6
+    steps:
+      - uses: actions/checkout@v6
 
-            - uses: actions/setup-node@v6
-              with:
-                  node-version: 22
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
 
-            - name: run deployed SEO smoke checks
-              run: node ./scripts/smoke-deployed-seo.mjs "${{ inputs.base_url }}"
+      - name: run deployed SEO smoke checks
+        run: node ./scripts/smoke-deployed-seo.mjs "${{ inputs.base_url }}"

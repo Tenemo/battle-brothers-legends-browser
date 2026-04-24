@@ -1,6 +1,6 @@
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 
-export type BuildPlannerPerkGroupRequirement = {
+type BuildPlannerPerkGroupRequirement = {
   categoryName: string
   treeIconPath: string | null
   treeId: string
@@ -17,7 +17,7 @@ export type BuildPlannerGroupedPerkGroup = {
   perkNames: string[]
 }
 
-export type BuildPlannerGroups = {
+type BuildPlannerGroups = {
   individualPerkGroups: BuildPlannerGroupedPerkGroup[]
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }
@@ -77,7 +77,7 @@ function getRequirementOptionsWithLabels(
   }))
 }
 
-export function getPerkGroupRequirementOptions(
+function getPerkGroupRequirementOptions(
   perk: LegendsPerkRecord,
 ): BuildPlannerPerkGroupRequirementOption[] {
   return getRequirementOptionsWithLabels(getPerkGroupRequirements(perk))
@@ -90,7 +90,9 @@ export function getPerkGroupRequirementLabel(perk: LegendsPerkRecord): string {
     return 'No perk group placement'
   }
 
-  return perkGroupRequirements.map((perkGroupRequirement) => perkGroupRequirement.treeLabel).join(' / ')
+  return perkGroupRequirements
+    .map((perkGroupRequirement) => perkGroupRequirement.treeLabel)
+    .join(' / ')
 }
 
 function getNoPerkGroupPlacementOption(perkId: string): BuildPlannerPerkGroupRequirementOption {
@@ -155,14 +157,18 @@ function getGroupedPerkGroups(
       }),
     }))
     .toSorted((leftGroup, rightGroup) => {
-      const leftFirstPerkOrder =
-        leftGroup.perkIds
-          .map((perkId) => pickedPerkOrderById.get(perkId) ?? Number.POSITIVE_INFINITY)
-          .reduce((lowestOrder, perkOrder) => Math.min(lowestOrder, perkOrder), Number.POSITIVE_INFINITY)
-      const rightFirstPerkOrder =
-        rightGroup.perkIds
-          .map((perkId) => pickedPerkOrderById.get(perkId) ?? Number.POSITIVE_INFINITY)
-          .reduce((lowestOrder, perkOrder) => Math.min(lowestOrder, perkOrder), Number.POSITIVE_INFINITY)
+      const leftFirstPerkOrder = leftGroup.perkIds
+        .map((perkId) => pickedPerkOrderById.get(perkId) ?? Number.POSITIVE_INFINITY)
+        .reduce(
+          (lowestOrder, perkOrder) => Math.min(lowestOrder, perkOrder),
+          Number.POSITIVE_INFINITY,
+        )
+      const rightFirstPerkOrder = rightGroup.perkIds
+        .map((perkId) => pickedPerkOrderById.get(perkId) ?? Number.POSITIVE_INFINITY)
+        .reduce(
+          (lowestOrder, perkOrder) => Math.min(lowestOrder, perkOrder),
+          Number.POSITIVE_INFINITY,
+        )
 
       return (
         rightGroup.perkIds.length - leftGroup.perkIds.length ||
@@ -179,7 +185,9 @@ export function getBuildPlannerGroups(pickedPerks: LegendsPerkRecord[]): BuildPl
   for (const pickedPerk of pickedPerks) {
     const perkGroupOptions = getPerkGroupRequirementOptions(pickedPerk)
     const normalizedPerkGroupOptions =
-      perkGroupOptions.length > 0 ? perkGroupOptions : [getNoPerkGroupPlacementOption(pickedPerk.id)]
+      perkGroupOptions.length > 0
+        ? perkGroupOptions
+        : [getNoPerkGroupPlacementOption(pickedPerk.id)]
 
     for (const perkGroupOption of normalizedPerkGroupOptions) {
       if (!groupsById.has(perkGroupOption.treeId)) {
@@ -198,7 +206,11 @@ export function getBuildPlannerGroups(pickedPerks: LegendsPerkRecord[]): BuildPl
   const groupedPerkGroups = getGroupedPerkGroups(pickedPerks, groupsById)
 
   return {
-    individualPerkGroups: groupedPerkGroups.filter((groupedPerkGroup) => groupedPerkGroup.perkIds.length === 1),
-    sharedPerkGroups: groupedPerkGroups.filter((groupedPerkGroup) => groupedPerkGroup.perkIds.length >= 2),
+    individualPerkGroups: groupedPerkGroups.filter(
+      (groupedPerkGroup) => groupedPerkGroup.perkIds.length === 1,
+    ),
+    sharedPerkGroups: groupedPerkGroups.filter(
+      (groupedPerkGroup) => groupedPerkGroup.perkIds.length >= 2,
+    ),
   }
 }

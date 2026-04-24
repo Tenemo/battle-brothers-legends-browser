@@ -1,7 +1,4 @@
-import type {
-  LegendsPerksDataset,
-  LegendsTechnicalNameMappings,
-} from '../src/types/legends-perks'
+import type { LegendsPerksDataset, LegendsTechnicalNameMappings } from '../src/types/legends-perks'
 
 export const defaultReferenceRootDirectoryPath: string
 

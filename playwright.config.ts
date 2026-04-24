@@ -1,9 +1,7 @@
 import { defineConfig } from '@playwright/test'
 
 const developmentServerCommand =
-  process.platform === 'win32'
-    ? 'pnpm.cmd run dev:test'
-    : 'pnpm run dev:test'
+  process.platform === 'win32' ? 'pnpm.cmd run dev:test' : 'pnpm run dev:test'
 
 export default defineConfig({
   testDir: './tests/e2e',

@@ -83,7 +83,10 @@ const fallbackPerkNamesByIdentifier = {
 }
 
 function normalizeWhitespace(value) {
-  return value.replace(/\u00a0/g, ' ').replace(/[ \t]+/g, ' ').trim()
+  return value
+    .replace(/\u00a0/g, ' ')
+    .replace(/[ \t]+/g, ' ')
+    .trim()
 }
 
 function toPosixRelativePath(absolutePath) {
@@ -350,7 +353,9 @@ function tableEntriesToMap(tableValue, localValues = new Map()) {
 
 function arrayValues(value, localValues = new Map()) {
   const arrayValue = unwrapArray(asPrimitiveValue(value, localValues))
-  return arrayValue === null ? [] : arrayValue.values.map((item) => asPrimitiveValue(item, localValues))
+  return arrayValue === null
+    ? []
+    : arrayValue.values.map((item) => asPrimitiveValue(item, localValues))
 }
 
 function stringValue(value, localValues = new Map()) {
@@ -643,7 +648,9 @@ function parsePerkDefinitionsFile(fileSource, sourceFilePath) {
 
     perkDefinitions.set(constName, {
       constName,
-      descriptionConstName: descriptionConstReference ? getLastPathSegment(descriptionConstReference) : null,
+      descriptionConstName: descriptionConstReference
+        ? getLastPathSegment(descriptionConstReference)
+        : null,
       disabledIconPath,
       iconPath,
       identifier,
@@ -696,7 +703,9 @@ function parseTreeConfigFile(fileSource, sourceFilePath) {
       attributeLines: flattenTreeAttributes(tableEntries.get('Attributes')),
       categoryName: stringValue(tableEntries.get('Category'), localValues),
       constName,
-      descriptionLines: stringArrayValue(tableEntries.get('Descriptions'), localValues).map(cleanRichText),
+      descriptionLines: stringArrayValue(tableEntries.get('Descriptions'), localValues).map(
+        cleanRichText,
+      ),
       iconPath: stringValue(tableEntries.get('Icon'), localValues),
       id: stringValue(tableEntries.get('ID'), localValues) ?? constName,
       name: stringValue(tableEntries.get('Name'), localValues) ?? prettifyIdentifier(constName),
@@ -741,7 +750,10 @@ function parseFavoriteEnemyConfigFile(fileSource) {
   const killsPerPercentBonusByEntityConstName = new Map()
 
   for (const statement of collectTopLevelStatements(fileSource)) {
-    if (statement.type === 'assignment' && statement.target.startsWith('::Const.LegendMod.Favorite')) {
+    if (
+      statement.type === 'assignment' &&
+      statement.target.startsWith('::Const.LegendMod.Favorite')
+    ) {
       const arrayName = getLastPathSegment(statement.target)
       const perkConstName = favoriteEnemyPerkConstByArrayName[arrayName]
 
@@ -756,13 +768,20 @@ function parseFavoriteEnemyConfigFile(fileSource) {
       continue
     }
 
-    if (statement.type !== 'assignment' || statement.target !== '::Const.LegendMod.GetFavoriteEnemyValue') {
+    if (
+      statement.type !== 'assignment' ||
+      statement.target !== '::Const.LegendMod.GetFavoriteEnemyValue'
+    ) {
       continue
     }
 
     const functionLiteral = statement.value
 
-    if (typeof functionLiteral !== 'object' || functionLiteral === null || functionLiteral.type !== 'function') {
+    if (
+      typeof functionLiteral !== 'object' ||
+      functionLiteral === null ||
+      functionLiteral.type !== 'function'
+    ) {
       continue
     }
 
@@ -807,12 +826,12 @@ function extractHookWrapperFunction(fileSource) {
 
 function resolveMinimumValue(backgroundMinimums, categoryName) {
   const key = categoryMinimumKeyMap[categoryName]
-  return key ? backgroundMinimums[key] ?? null : null
+  return key ? (backgroundMinimums[key] ?? null) : null
 }
 
 function resolveChanceValue(backgroundMinimums, categoryName) {
   const key = categoryChanceKeyMap[categoryName]
-  return key ? backgroundMinimums[key] ?? null : null
+  return key ? (backgroundMinimums[key] ?? null) : null
 }
 
 function cloneMinimums(minimums) {
@@ -927,7 +946,10 @@ function parseBackgroundHookFile(fileSource, sourceFilePath, baseDynamicTreeValu
     sourceFilePath,
   })
 
-  if (backgroundDefinition.backgroundIdentifier === null || backgroundDefinition.backgroundName === null) {
+  if (
+    backgroundDefinition.backgroundIdentifier === null ||
+    backgroundDefinition.backgroundName === null
+  ) {
     return null
   }
 
@@ -950,7 +972,9 @@ function parseBackgroundScriptFileDefinition(fileSource, sourceFilePath) {
 
   const inheritCall = unwrapCall(rootAssignment.value)
   const inheritedBackgroundScriptPath = stringValue(inheritCall?.arguments[0] ?? null)
-  const backgroundDefinitionTable = inheritCall ? unwrapTable(inheritCall.arguments[1] ?? null) : null
+  const backgroundDefinitionTable = inheritCall
+    ? unwrapTable(inheritCall.arguments[1] ?? null)
+    : null
 
   if (
     !inheritedBackgroundScriptPath?.startsWith('scripts/skills/backgrounds/') ||
@@ -1067,7 +1091,9 @@ function parseBackgroundFitRulesFile(fileSource, treeDefinitions) {
 
   return {
     classWeaponDependencies: arrayValues(weaponClassMapValue)
-      .map((dependencyPairValue) => referenceArrayValue(dependencyPairValue).map(getLastPathSegment))
+      .map((dependencyPairValue) =>
+        referenceArrayValue(dependencyPairValue).map(getLastPathSegment),
+      )
       .flatMap((dependencyPair) => {
         const [classTreeConstName, weaponTreeConstName] = dependencyPair
         const classTreeDefinition =
@@ -1175,8 +1201,8 @@ function parseCharacterBackgroundReferenceFile(fileSource, knownBackgroundScript
       continue
     }
 
-    const referencedBackgroundScriptIds = stringArrayValue(statement.value).filter((backgroundScriptId) =>
-      knownBackgroundScriptIds.has(backgroundScriptId),
+    const referencedBackgroundScriptIds = stringArrayValue(statement.value).filter(
+      (backgroundScriptId) => knownBackgroundScriptIds.has(backgroundScriptId),
     )
 
     if (referencedBackgroundScriptIds.length === 0) {
@@ -1204,11 +1230,7 @@ function parseCharacterBackgroundReferenceFile(fileSource, knownBackgroundScript
 
 function resolveBackgroundScriptIdsFromValue(
   value,
-  {
-    backgroundScriptIdsByReference,
-    knownBackgroundScriptIds,
-    localValues,
-  },
+  { backgroundScriptIdsByReference, knownBackgroundScriptIds, localValues },
   visitedReferences = new Set(),
 ) {
   const directString = stringValue(value)
@@ -1426,7 +1448,9 @@ function parseScenarioHookFile(fileSource, sourceFilePath) {
         continue
       }
 
-      const candidatePerkConstNames = referenceArrayValue(candidatePoolValue).map(resolveReferenceConstName).filter(Boolean)
+      const candidatePerkConstNames = referenceArrayValue(candidatePoolValue)
+        .map(resolveReferenceConstName)
+        .filter(Boolean)
 
       if (candidatePerkConstNames.length === 0) {
         continue
@@ -1489,12 +1513,7 @@ function buildSearchText(perkRecord) {
     .join(' ')
 
   const scenarioText = perkRecord.scenarioSources
-    .map((scenarioSource) =>
-      [
-        scenarioSource.scenarioName,
-        scenarioSource.grantType,
-      ].join(' '),
-    )
+    .map((scenarioSource) => [scenarioSource.scenarioName, scenarioSource.grantType].join(' '))
     .join(' ')
 
   const favoredEnemyText = (perkRecord.favoredEnemyTargets ?? [])
@@ -1520,7 +1539,8 @@ function comparePlacements(leftPlacement, rightPlacement, categoryOrder) {
     getCategoryPriority(categoryOrder, leftPlacement.categoryName) -
       getCategoryPriority(categoryOrder, rightPlacement.categoryName) ||
     leftPlacement.treeName.localeCompare(rightPlacement.treeName) ||
-    (leftPlacement.tier ?? Number.POSITIVE_INFINITY) - (rightPlacement.tier ?? Number.POSITIVE_INFINITY)
+    (leftPlacement.tier ?? Number.POSITIVE_INFINITY) -
+      (rightPlacement.tier ?? Number.POSITIVE_INFINITY)
   )
 }
 
@@ -1575,7 +1595,11 @@ export function createTechnicalNameMappings(dataset) {
     }
 
     for (const scenarioSource of perk.scenarioSources) {
-      setTechnicalNameLabel(labelsByTechnicalName, scenarioSource.scenarioId, scenarioSource.scenarioName)
+      setTechnicalNameLabel(
+        labelsByTechnicalName,
+        scenarioSource.scenarioId,
+        scenarioSource.scenarioName,
+      )
     }
 
     for (const favoredEnemyTarget of perk.favoredEnemyTargets ?? []) {
@@ -1601,7 +1625,11 @@ export async function createDataset(
   options = {},
 ) {
   const scriptsRootDirectoryPath = getScriptsRootDirectoryPath(referenceRootDirectoryPath)
-  const perkDefinitionsFilePath = path.join(referenceRootDirectoryPath, '!!config', 'perks_defs.nut')
+  const perkDefinitionsFilePath = path.join(
+    referenceRootDirectoryPath,
+    '!!config',
+    'perks_defs.nut',
+  )
   const characterBackgroundReferencesFilePath = path.join(
     referenceRootDirectoryPath,
     '!!config',
@@ -1714,8 +1742,12 @@ export async function createDataset(
     }),
   )
 
-  const scriptBackgroundFileEntries = (await collectNutFileEntriesRecursively(scriptBackgroundDirectoryPath))
-    .filter((backgroundFileEntry) => !backgroundFileEntry.sourceFilePath.endsWith('/character_background.nut'))
+  const scriptBackgroundFileEntries = (
+    await collectNutFileEntriesRecursively(scriptBackgroundDirectoryPath)
+  ).filter(
+    (backgroundFileEntry) =>
+      !backgroundFileEntry.sourceFilePath.endsWith('/character_background.nut'),
+  )
 
   const scenarioFileNames = (await readdir(scenarioDirectoryPath))
     .filter((fileName) => fileName.endsWith('.nut'))
@@ -1741,14 +1773,19 @@ export async function createDataset(
     .flat()
     .filter(
       (fileEntry, index, fileEntries) =>
-        fileEntries.findIndex((candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath) ===
-        index,
+        fileEntries.findIndex(
+          (candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath,
+        ) === index,
     )
-    .toSorted((leftEntry, rightEntry) => leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath))
+    .toSorted((leftEntry, rightEntry) =>
+      leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+    )
 
   const categoryOrder = parseCategoryOrderFile(categoryOrderFileSource)
   const perkStringData = mergePerkStringData(
-    perkStringFileEntries.map((perkStringFileEntry) => parsePerkStringsFile(perkStringFileEntry.fileSource)),
+    perkStringFileEntries.map((perkStringFileEntry) =>
+      parsePerkStringsFile(perkStringFileEntry.fileSource),
+    ),
   )
   const perkDefinitions = parsePerkDefinitionsFile(
     perkDefinitionsFileSource,
@@ -1797,15 +1834,21 @@ export async function createDataset(
       defaultCategoryNamesBySourceFilePath.get(treeDefinition.sourceFilePath) ?? 'Other'
   }
 
-  const characterBackgroundWrapperCall = collectTopLevelStatements(characterBackgroundFileSource).find(
+  const characterBackgroundWrapperCall = collectTopLevelStatements(
+    characterBackgroundFileSource,
+  ).find(
     (statement) =>
       statement.type === 'expression' &&
       unwrapCall(statement.expression)?.callee?.startsWith('::mods_hook') &&
       unwrapCall(statement.expression)?.arguments?.[1]?.type === 'function',
   )
-  const characterBackgroundWrapperFunction = unwrapCall(characterBackgroundWrapperCall?.expression)?.arguments?.[1]
+  const characterBackgroundWrapperFunction = unwrapCall(characterBackgroundWrapperCall?.expression)
+    ?.arguments?.[1]
 
-  if (!characterBackgroundWrapperFunction || characterBackgroundWrapperFunction.type !== 'function') {
+  if (
+    !characterBackgroundWrapperFunction ||
+    characterBackgroundWrapperFunction.type !== 'function'
+  ) {
     throw new Error('Unable to read character background defaults from the reference directory.')
   }
 
@@ -1860,18 +1903,16 @@ export async function createDataset(
       getBackgroundScriptIdFromSourceFilePath(backgroundFileEntry.sourceFilePath),
     ),
   ])
-  const {
-    backgroundScriptIdsByReference,
-    directlyPlayableBackgroundScriptIds,
-  } = characterBackgroundReferencesFileSource
-    ? parseCharacterBackgroundReferenceFile(
-        characterBackgroundReferencesFileSource,
-        knownBackgroundScriptIds,
-      )
-    : {
-        backgroundScriptIdsByReference: new Map(),
-        directlyPlayableBackgroundScriptIds: new Set(),
-      }
+  const { backgroundScriptIdsByReference, directlyPlayableBackgroundScriptIds } =
+    characterBackgroundReferencesFileSource
+      ? parseCharacterBackgroundReferenceFile(
+          characterBackgroundReferencesFileSource,
+          knownBackgroundScriptIds,
+        )
+      : {
+          backgroundScriptIdsByReference: new Map(),
+          directlyPlayableBackgroundScriptIds: new Set(),
+        }
   const playableBackgroundScriptIds = new Set(directlyPlayableBackgroundScriptIds)
 
   for (const backgroundScriptId of collectPlayableBackgroundScriptIdsFromFileEntries(
@@ -1896,13 +1937,12 @@ export async function createDataset(
     })
   const backgrounds = [...hookBackgrounds, ...scriptBackgrounds]
   const backgroundFitRules = parseBackgroundFitRulesFile(perksTreeRulesFileSource, treeDefinitions)
-  const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(
-    backgrounds,
-    treeDefinitions,
-  )
+  const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(backgrounds, treeDefinitions)
 
   const scenarios = scenarioFileEntries
-    .map((scenarioFileEntry) => parseScenarioHookFile(scenarioFileEntry.fileSource, scenarioFileEntry.sourceFilePath))
+    .map((scenarioFileEntry) =>
+      parseScenarioHookFile(scenarioFileEntry.fileSource, scenarioFileEntry.sourceFilePath),
+    )
     .filter((scenario) => scenario !== null)
 
   const placementsByPerkConstName = new Map()
@@ -2010,13 +2050,18 @@ export async function createDataset(
   for (const perkDefinition of perkDefinitions.values()) {
     const perkName = resolvePerkName(perkDefinition, perkStringData)
     const descriptionSourceText = perkDefinition.descriptionConstName
-      ? perkStringData.descriptionsByConstName.get(perkDefinition.descriptionConstName) ?? ''
+      ? (perkStringData.descriptionsByConstName.get(perkDefinition.descriptionConstName) ?? '')
       : ''
     const descriptionParagraphs = splitDescriptionParagraphs(descriptionSourceText)
     const placements = (placementsByPerkConstName.get(perkDefinition.constName) ?? [])
       .filter((placement, index, placementsList) => {
         const key = `${placement.categoryName}::${placement.treeId}::${placement.tier}`
-        return placementsList.findIndex((candidate) => `${candidate.categoryName}::${candidate.treeId}::${candidate.tier}` === key) === index
+        return (
+          placementsList.findIndex(
+            (candidate) =>
+              `${candidate.categoryName}::${candidate.treeId}::${candidate.tier}` === key,
+          ) === index
+        )
       })
       .toSorted((leftPlacement, rightPlacement) =>
         comparePlacements(leftPlacement, rightPlacement, categoryOrder),
@@ -2056,7 +2101,8 @@ export async function createDataset(
         return (
           scenarioSourcesList.findIndex(
             (candidate) =>
-              `${candidate.scenarioId}::${candidate.grantType}::${candidate.sourceMethodName}::${candidate.candidatePerkConstNames.join(',')}` === key,
+              `${candidate.scenarioId}::${candidate.grantType}::${candidate.sourceMethodName}::${candidate.candidatePerkConstNames.join(',')}` ===
+              key,
           ) === index
         )
       })
@@ -2084,7 +2130,10 @@ export async function createDataset(
       ...backgroundSources.map((backgroundSource) => backgroundSource.sourceFilePath),
       ...scenarioSources.map((scenarioSource) => scenarioSource.sourceFilePath),
       ...(favoredEnemyTargets.length > 0
-        ? [toPosixRelativePath(favoriteEnemyConfigFilePath), toPosixRelativePath(entityNamesFilePath)]
+        ? [
+            toPosixRelativePath(favoriteEnemyConfigFilePath),
+            toPosixRelativePath(entityNamesFilePath),
+          ]
         : []),
     ])
 
@@ -2136,10 +2185,12 @@ export async function createDataset(
       path: treeFileEntry.sourceFilePath,
       role: 'perk trees',
     })),
-    ...[...hookBackgroundFileEntries, ...scriptBackgroundFileEntries].map((backgroundFileEntry) => ({
-      path: backgroundFileEntry.sourceFilePath,
-      role: 'background dynamic pools',
-    })),
+    ...[...hookBackgroundFileEntries, ...scriptBackgroundFileEntries].map(
+      (backgroundFileEntry) => ({
+        path: backgroundFileEntry.sourceFilePath,
+        role: 'background dynamic pools',
+      }),
+    ),
     ...scenarioFileEntries.map((scenarioFileEntry) => ({
       path: scenarioFileEntry.sourceFilePath,
       role: 'scenario perk sources',
@@ -2149,14 +2200,18 @@ export async function createDataset(
       (sourceFile, index, sourceFilesList) =>
         sourceFilesList.findIndex((candidate) => candidate.path === sourceFile.path) === index,
     )
-    .toSorted((leftSourceFile, rightSourceFile) => leftSourceFile.path.localeCompare(rightSourceFile.path))
+    .toSorted((leftSourceFile, rightSourceFile) =>
+      leftSourceFile.path.localeCompare(rightSourceFile.path),
+    )
 
   return {
     backgroundFitBackgrounds,
     backgroundFitRules,
     generatedAt: new Date().toISOString(),
     perkCount: perkRecords.length,
-    perks: perkRecords.toSorted((leftPerk, rightPerk) => leftPerk.perkName.localeCompare(rightPerk.perkName)),
+    perks: perkRecords.toSorted((leftPerk, rightPerk) =>
+      leftPerk.perkName.localeCompare(rightPerk.perkName),
+    ),
     referenceRoot: toPosixRelativePath(referenceRootDirectoryPath),
     referenceVersion:
       options.referenceVersion ??

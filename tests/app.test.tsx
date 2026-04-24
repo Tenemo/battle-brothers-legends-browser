@@ -34,7 +34,9 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
 }))
 
 vi.mock('../src/data/legends-perks.json', async () => {
-  const actualDataset = (await vi.importActual('../src/data/legends-perks.json')) as LegendsPerksDataset
+  const actualDataset = (await vi.importActual(
+    '../src/data/legends-perks.json',
+  )) as LegendsPerksDataset
   const perks = actualDataset.perks.filter((perk) => perkNamesForAppTests.has(perk.perkName))
   const treeCount = new Set(
     perks.flatMap((perk) =>
@@ -126,13 +128,18 @@ describe('app', () => {
 
     expect(detailHeading).toBeInTheDocument()
     expect(detailHeader).not.toBeNull()
-    expect(within(detailHeader as HTMLElement).getByRole('img', { name: 'Clarity icon' })).toHaveAttribute(
-      'src',
-      '/game-icons/ui/perks/clarity_circle.png',
-    )
-    expect(screen.getByRole('heading', { level: 3, name: 'Perk group placement' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { level: 3, name: 'Background sources' })).toBeInTheDocument()
-    expect(screen.queryByRole('heading', { level: 3, name: 'Source files' })).not.toBeInTheDocument()
+    expect(
+      within(detailHeader as HTMLElement).getByRole('img', { name: 'Clarity icon' }),
+    ).toHaveAttribute('src', '/game-icons/ui/perks/clarity_circle.png')
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Perk group placement' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Background sources' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { level: 3, name: 'Source files' }),
+    ).not.toBeInTheDocument()
   })
 
   test('renders favored enemy targets and scenario overlay details in the detail panel', async () => {
@@ -147,11 +154,15 @@ describe('app', () => {
       }),
     )
 
-    expect(screen.getByRole('heading', { level: 3, name: 'Favored enemy targets' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { level: 3, name: 'Favored enemy targets' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('Bear')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'Scenario overlays' })).toBeInTheDocument()
     expect(screen.getByText(/Beast Slayers/i)).toBeInTheDocument()
-    expect(screen.getByText(/Random pool: Favoured Enemy - Occult, Favoured Enemy - Beasts/i)).toBeInTheDocument()
+    expect(
+      screen.getByText(/Random pool: Favoured Enemy - Occult, Favoured Enemy - Beasts/i),
+    ).toBeInTheDocument()
     expect(screen.queryByText('onBuildPerkTree')).not.toBeInTheDocument()
     expect(screen.queryByText('LegendBear')).not.toBeInTheDocument()
   })
@@ -187,11 +198,7 @@ describe('app', () => {
     expect(
       within(resultsList).getByText(/Active: • Enables the character to move swiftly and safely/i),
     ).toBeInTheDocument()
-    expect(
-      within(resultsList).getByText(
-        /• Costs 4 AP and 20 Fatigue/i,
-      ),
-    ).toBeInTheDocument()
+    expect(within(resultsList).getByText(/• Costs 4 AP and 20 Fatigue/i)).toBeInTheDocument()
     expect(within(resultsList).queryByText("'Excuse me'")).not.toBeInTheDocument()
   })
 
@@ -289,7 +296,9 @@ describe('app', () => {
 
     setPerkSearchQuery('Axe')
 
-    expect(container.querySelectorAll('.results-list .search-highlight').length).toBeGreaterThanOrEqual(1)
+    expect(
+      container.querySelectorAll('.results-list .search-highlight').length,
+    ).toBeGreaterThanOrEqual(1)
     expect(
       [...container.querySelectorAll('.results-list .search-highlight')].some(
         (searchHighlight) => searchHighlight.textContent === 'Axe',
@@ -369,7 +378,9 @@ describe('app', () => {
     expect(
       within(buildIndividualGroupsList).getByRole('img', { name: 'Calm perk group icon' }),
     ).toHaveAttribute('src', '/game-icons/ui/perks/clarity_circle.png')
-    expect(within(buildIndividualGroupsList).getByText('Clarity', { exact: true })).toBeInTheDocument()
+    expect(
+      within(buildIndividualGroupsList).getByText('Clarity', { exact: true }),
+    ).toBeInTheDocument()
     expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 
     setPerkSearchQuery('Perfect Focus')
@@ -381,52 +392,58 @@ describe('app', () => {
     await user.click(screen.getByRole('button', { name: 'Add Perfect Focus to build' }))
 
     expect(within(buildPerksBar).getByText('Perfect Focus')).toBeInTheDocument()
-      expect(within(buildSharedGroupsList).getAllByText('Calm')).toHaveLength(1)
-      expect(within(buildSharedGroupsList).getByText('Clarity', { exact: true })).toBeInTheDocument()
-      expect(within(buildSharedGroupsList).getByText('Perfect Focus', { exact: true })).toBeInTheDocument()
-      expect(within(buildIndividualGroupsList).getByText('Deadeye', { exact: true })).toBeInTheDocument()
-      expect(within(buildIndividualGroupsList).getByText('Perfect Focus', { exact: true })).toBeInTheDocument()
-      expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
-    })
+    expect(within(buildSharedGroupsList).getAllByText('Calm')).toHaveLength(1)
+    expect(within(buildSharedGroupsList).getByText('Clarity', { exact: true })).toBeInTheDocument()
+    expect(
+      within(buildSharedGroupsList).getByText('Perfect Focus', { exact: true }),
+    ).toBeInTheDocument()
+    expect(
+      within(buildIndividualGroupsList).getByText('Deadeye', { exact: true }),
+    ).toBeInTheDocument()
+    expect(
+      within(buildIndividualGroupsList).getByText('Perfect Focus', { exact: true }),
+    ).toBeInTheDocument()
+    expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
+  })
 
   test('highlights the same covered perk across all planner groups while hovering it', async () => {
     const user = userEvent.setup()
     render(<App />)
 
-      setPerkSearchQuery('Clarity')
-      await user.click(
-        within(screen.getByTestId('results-list')).getByRole('button', {
-          name: 'Add Clarity to build from results',
-        }),
-      )
+    setPerkSearchQuery('Clarity')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Clarity to build from results',
+      }),
+    )
 
-      setPerkSearchQuery('Perfect Focus')
-      await user.click(
-        within(screen.getByTestId('results-list')).getByRole('button', {
-          name: 'Add Perfect Focus to build from results',
-        }),
-      )
+    setPerkSearchQuery('Perfect Focus')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Perfect Focus to build from results',
+      }),
+    )
 
-      const buildSharedGroupsList = screen.getByTestId('build-shared-groups-list')
-      const buildIndividualGroupsList = screen.getByTestId('build-individual-groups-list')
-      const buildPerksBar = screen.getByTestId('build-perks-bar')
-      const sharedPerfectFocusButton = within(buildSharedGroupsList).getByRole('button', {
-        name: 'Perfect Focus',
-      })
-      const individualPerfectFocusButton = within(buildIndividualGroupsList).getByRole('button', {
-        name: 'Perfect Focus',
-      })
-      const pickedPerfectFocusButton = within(buildPerksBar).getByRole('button', {
-        name: 'Remove Perfect Focus from build',
-      })
-      const sharedClarityButton = within(buildSharedGroupsList).getByRole('button', {
-        name: 'Clarity',
-      })
+    const buildSharedGroupsList = screen.getByTestId('build-shared-groups-list')
+    const buildIndividualGroupsList = screen.getByTestId('build-individual-groups-list')
+    const buildPerksBar = screen.getByTestId('build-perks-bar')
+    const sharedPerfectFocusButton = within(buildSharedGroupsList).getByRole('button', {
+      name: 'Perfect Focus',
+    })
+    const individualPerfectFocusButton = within(buildIndividualGroupsList).getByRole('button', {
+      name: 'Perfect Focus',
+    })
+    const pickedPerfectFocusButton = within(buildPerksBar).getByRole('button', {
+      name: 'Remove Perfect Focus from build',
+    })
+    const sharedClarityButton = within(buildSharedGroupsList).getByRole('button', {
+      name: 'Clarity',
+    })
 
-      fireEvent.mouseEnter(sharedPerfectFocusButton)
+    fireEvent.mouseEnter(sharedPerfectFocusButton)
 
-      expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
-      expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
     expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
     expect(sharedClarityButton).not.toHaveClass('is-highlighted')
   })
@@ -487,7 +504,7 @@ describe('app', () => {
 
   test('shows picked-perk stars next to category and subgroup counts based on the current build', async () => {
     const user = userEvent.setup()
-      render(<App />)
+    render(<App />)
 
     setPerkSearchQuery('Clarity')
     await user.click(
@@ -505,10 +522,12 @@ describe('app', () => {
 
     const traitsCategoryButton = screen.getByRole('button', { name: 'Enable category Traits' })
     const magicCategoryButton = screen.getByRole('button', { name: 'Enable category Magic' })
-    const traitsCategoryStarCount =
-      traitsCategoryButton.querySelectorAll('.group-chip-picked-stars .build-star').length
-    const magicCategoryStarCount =
-      magicCategoryButton.querySelectorAll('.group-chip-picked-stars .build-star').length
+    const traitsCategoryStarCount = traitsCategoryButton.querySelectorAll(
+      '.group-chip-picked-stars .build-star',
+    ).length
+    const magicCategoryStarCount = magicCategoryButton.querySelectorAll(
+      '.group-chip-picked-stars .build-star',
+    ).length
 
     expect(traitsCategoryStarCount).toBe(2)
     expect(magicCategoryStarCount).toBe(1)
@@ -518,10 +537,12 @@ describe('app', () => {
 
     const calmSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Calm' })
     const deadeyeSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Deadeye' })
-    const calmSubgroupStarCount =
-      calmSubgroupButton.querySelectorAll('.group-chip-picked-stars .build-star').length
-    const deadeyeSubgroupStarCount =
-      deadeyeSubgroupButton.querySelectorAll('.group-chip-picked-stars .build-star').length
+    const calmSubgroupStarCount = calmSubgroupButton.querySelectorAll(
+      '.group-chip-picked-stars .build-star',
+    ).length
+    const deadeyeSubgroupStarCount = deadeyeSubgroupButton.querySelectorAll(
+      '.group-chip-picked-stars .build-star',
+    ).length
 
     expect(calmSubgroupStarCount).toBe(2)
     expect(deadeyeSubgroupStarCount).toBe(1)
@@ -536,7 +557,9 @@ describe('app', () => {
     expect(
       within(buildIndividualGroupsList).getByText('Heavy Armor / Sturdy / Swordmasters'),
     ).toBeInTheDocument()
-    expect(within(buildIndividualGroupsList).getByText('Steadfast', { exact: true })).toBeInTheDocument()
+    expect(
+      within(buildIndividualGroupsList).getByText('Steadfast', { exact: true }),
+    ).toBeInTheDocument()
   })
 
   test('shows an immediate tooltip with the perk effect when a picked perk tile is focused', async () => {
@@ -581,15 +604,20 @@ describe('app', () => {
       }),
     )
 
-    const coveredPerkButton = within(screen.getByTestId('build-shared-groups-list')).getByRole('button', {
-      name: 'Perfect Focus',
-    })
+    const coveredPerkButton = within(screen.getByTestId('build-shared-groups-list')).getByRole(
+      'button',
+      {
+        name: 'Perfect Focus',
+      },
+    )
 
     fireEvent.focus(coveredPerkButton)
     const buildPerkTooltip = screen.getByRole('tooltip')
 
     expect(buildPerkTooltip).toBeInTheDocument()
-    expect(within(buildPerkTooltip).getByText(/Unlocks the Perfect Focus skill/i)).toBeInTheDocument()
+    expect(
+      within(buildPerkTooltip).getByText(/Unlocks the Perfect Focus skill/i),
+    ).toBeInTheDocument()
   })
 
   test('can remove perks from the build and clear the planner', async () => {
@@ -611,7 +639,9 @@ describe('app', () => {
     )
 
     expect(screen.getByText('No perks picked yet.')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-perks-bar')).getByText('Pick a perk to start')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('build-perks-bar')).getByText('Pick a perk to start'),
+    ).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Add Clarity to build' }))
     await user.click(screen.getByRole('button', { name: 'Clear build' }))
@@ -656,18 +686,25 @@ describe('app', () => {
     expect(screen.getByRole('button', { name: 'Inspect Perfect Focus' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Inspect Clarity' })).not.toBeInTheDocument()
     expect(within(screen.getByTestId('build-perks-bar')).getByText('Clarity')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-perks-bar')).getByText('Perfect Focus')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-shared-groups-list')).getByText('Calm')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-shared-groups-list')).getByText('Clarity')).toBeInTheDocument()
-    expect(within(screen.getByTestId('build-shared-groups-list')).getByText('Perfect Focus')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('build-perks-bar')).getByText('Perfect Focus'),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('build-shared-groups-list')).getByText('Calm'),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('build-shared-groups-list')).getByText('Clarity'),
+    ).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('build-shared-groups-list')).getByText('Perfect Focus'),
+    ).toBeInTheDocument()
     expect(
       within(screen.getByTestId('build-individual-groups-list')).getByText('Deadeye'),
     ).toBeInTheDocument()
     expect(
-      within(screen.getByTestId('build-individual-groups-list')).getByText(
-        'Perfect Focus',
-        { exact: true },
-      ),
+      within(screen.getByTestId('build-individual-groups-list')).getByText('Perfect Focus', {
+        exact: true,
+      }),
     ).toBeInTheDocument()
   })
 
@@ -704,7 +741,9 @@ describe('app', () => {
     expect(apprenticeCard).not.toBeNull()
     expect(apprenticePanel).not.toBeNull()
     expect(within(apprenticeCard as HTMLElement).getByText('Apprentice')).toBeInTheDocument()
-    expect(within(apprenticeCard as HTMLElement).getByText('Up to 1/1 perks pickable')).toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).getByText('Up to 1/1 perks pickable'),
+    ).toBeInTheDocument()
     expect(
       within(apprenticeCard as HTMLElement).getByText('Guaranteed 1/1 perks pickable'),
     ).toBeInTheDocument()
@@ -739,9 +778,15 @@ describe('app', () => {
       }),
     ).toBeInTheDocument()
     expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'false')
-    expect(within(apprenticeCard as HTMLElement).getByText('Guaranteed groups 1')).toBeInTheDocument()
-    expect(within(apprenticeCard as HTMLElement).queryByText(/^Guaranteed weight /)).not.toBeInTheDocument()
-    expect(within(apprenticeCard as HTMLElement).queryByText(/^Expected \+/)).not.toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).getByText('Guaranteed groups 1'),
+    ).toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).queryByText(/^Guaranteed weight /),
+    ).not.toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).queryByText(/^Expected \+/),
+    ).not.toBeInTheDocument()
 
     const categoriesPanel = screen.getByRole('complementary', { name: 'Perk categories' })
     const axeMatchButton = within(apprenticeCard as HTMLElement).getByRole('button', {
@@ -796,21 +841,21 @@ describe('app', () => {
       within(backgroundFitPanel).getByRole('button', {
         name: 'Expand background fit',
       }),
-      )
+    )
 
-      expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
-    })
+    expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
+  })
 
   test('filters background fit cards by background name', async () => {
     const user = userEvent.setup()
     render(<App />)
 
-      setPerkSearchQuery('Axe Mastery')
-      await user.click(
-        within(screen.getByTestId('results-list')).getByRole('button', {
-          name: 'Add Axe Mastery to build from results',
-        }),
-      )
+    setPerkSearchQuery('Axe Mastery')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Axe Mastery to build from results',
+      }),
+    )
 
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
@@ -819,7 +864,8 @@ describe('app', () => {
       level: 3,
       name: 'Oathtaker',
     })
-    const oathtakerCardBeforeFiltering = oathtakerHeadingBeforeFiltering.closest('.background-fit-card')
+    const oathtakerCardBeforeFiltering =
+      oathtakerHeadingBeforeFiltering.closest('.background-fit-card')
     const oathtakerRankBeforeFiltering =
       oathtakerCardBeforeFiltering?.querySelector('.background-fit-rank')?.textContent ?? null
 
@@ -864,7 +910,9 @@ describe('app', () => {
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
 
     expect(backgroundSearchInput).toBeEnabled()
-    expect(within(backgroundFitPanel).queryByText(/Showing all backgrounds/i)).not.toBeInTheDocument()
+    expect(
+      within(backgroundFitPanel).queryByText(/Showing all backgrounds/i),
+    ).not.toBeInTheDocument()
     expect(within(backgroundFitPanel).queryByText(/Exact probabilities/i)).not.toBeInTheDocument()
 
     await user.type(backgroundSearchInput, 'Oath')
@@ -876,7 +924,9 @@ describe('app', () => {
       }),
     ).toBeInTheDocument()
     expect(container.querySelectorAll('.background-fit-panel .search-highlight')).toHaveLength(1)
-    expect(container.querySelector('.background-fit-panel .search-highlight')?.textContent).toBe('Oath')
+    expect(container.querySelector('.background-fit-panel .search-highlight')?.textContent).toBe(
+      'Oath',
+    )
     expect(
       within(backgroundFitPanel).queryByText(
         /Ranked by guaranteed perks pickable first, then total perks pickable/i,
@@ -896,9 +946,9 @@ describe('app', () => {
     )
 
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
-    const orderedBackgroundNames = [...backgroundFitPanel.querySelectorAll('.background-fit-card h3')].map(
-      (heading) => heading.textContent?.trim(),
-    )
+    const orderedBackgroundNames = [
+      ...backgroundFitPanel.querySelectorAll('.background-fit-card h3'),
+    ].map((heading) => heading.textContent?.trim())
 
     expect(orderedBackgroundNames).toContain('Apprentice')
     expect(orderedBackgroundNames).toContain('Oathtaker')

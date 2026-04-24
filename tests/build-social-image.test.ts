@@ -153,7 +153,9 @@ describe('build social image', () => {
     })
 
     try {
-      const response = await handler(new Request('https://battlebrothers.academy/social/build.png?build=Clarity'))
+      const response = await handler(
+        new Request('https://battlebrothers.academy/social/build.png?build=Clarity'),
+      )
 
       expect(response.status).toBe(500)
       expect(response.headers.get('cache-control')).toBe('no-store, max-age=0')

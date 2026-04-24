@@ -92,27 +92,12 @@ describe('legends icon sync', () => {
 
   test('prefers the first archive that contains a matching icon entry and reports misses', () => {
     const archiveEntriesByArchivePath = new Map<string, Set<string>>([
-      [
-        'mod_legends-assets.zip',
-        new Set([
-          'gfx/ui/perks/clarity_circle.png',
-        ]),
-      ],
-      [
-        'data_001.dat',
-        new Set([
-          'gfx/ui/perks/clarity_circle.png',
-          'gfx/skills/passive_03.png',
-        ]),
-      ],
+      ['mod_legends-assets.zip', new Set(['gfx/ui/perks/clarity_circle.png'])],
+      ['data_001.dat', new Set(['gfx/ui/perks/clarity_circle.png', 'gfx/skills/passive_03.png'])],
     ])
 
     const extractionPlan = buildIconExtractionPlan(
-      [
-        'ui/perks/clarity_circle.png',
-        'skills/passive_03.png',
-        'ui/perks/missing_icon.png',
-      ],
+      ['ui/perks/clarity_circle.png', 'skills/passive_03.png', 'ui/perks/missing_icon.png'],
       archiveEntriesByArchivePath,
     )
 

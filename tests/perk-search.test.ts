@@ -80,7 +80,8 @@ const samplePerks: LegendsPerkRecord[] = [
         categoryName: 'Enemy',
         chance: 0.05,
         minimumTrees: 2,
-        sourceFilePath: 'reference/mod_legends/hooks/skills/backgrounds/beast_hunter_background.nut',
+        sourceFilePath:
+          'reference/mod_legends/hooks/skills/backgrounds/beast_hunter_background.nut',
         treeId: 'BeastTree',
         treeName: 'Beasts',
       },
@@ -192,9 +193,7 @@ describe('perk search', () => {
     })
 
     expect(treeResults.map((perk) => perk.perkName)).toEqual(['Heightened Senses'])
-    expect(backgroundResults.map((perk) => perk.perkName)).toEqual([
-      'Favoured Enemy - Beasts',
-    ])
+    expect(backgroundResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
   })
 
   test('matches scenario names and favored enemy targets', () => {
@@ -245,10 +244,7 @@ describe('perk search', () => {
       tierValue: allTiersFilterValue,
     })
 
-    expect(results.map((perk) => perk.perkName)).toEqual([
-      'Favoured Enemy - Beasts',
-      'Clarity',
-    ])
+    expect(results.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts', 'Clarity'])
   })
 
   test('returns the full effect block after skipping a flavor quote in the perk preview', () => {
@@ -261,10 +257,7 @@ describe('perk search', () => {
       ],
     })
 
-    expect(previewParagraphs).toEqual([
-      'Repairs armor after combat.',
-      'Costs no AP.',
-    ])
+    expect(previewParagraphs).toEqual(['Repairs armor after combat.', 'Costs no AP.'])
   })
 
   test('returns the full effect block after skipping unquoted flavor text in the perk preview', () => {

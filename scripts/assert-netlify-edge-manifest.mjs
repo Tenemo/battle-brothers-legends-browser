@@ -86,7 +86,9 @@ async function readManifest() {
     try {
       return JSON.parse(await readFile(manifestFilePath, 'utf8'))
     } catch (error) {
-      readErrors.push(`${manifestFilePath}: ${error instanceof Error ? error.message : String(error)}`)
+      readErrors.push(
+        `${manifestFilePath}: ${error instanceof Error ? error.message : String(error)}`,
+      )
     }
   }
 

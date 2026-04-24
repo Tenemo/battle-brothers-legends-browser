@@ -1,14 +1,5 @@
 import { spawn } from 'node:child_process'
-import {
-  access,
-  copyFile,
-  cp,
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  rm,
-} from 'node:fs/promises'
+import { access, copyFile, cp, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,7 +7,12 @@ import { fileURLToPath } from 'node:url'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRootDirectoryPath = path.resolve(__dirname, '..')
-const defaultDatasetFilePath = path.join(projectRootDirectoryPath, 'src', 'data', 'legends-perks.json')
+const defaultDatasetFilePath = path.join(
+  projectRootDirectoryPath,
+  'src',
+  'data',
+  'legends-perks.json',
+)
 const defaultIconOutputDirectoryPath = path.join(projectRootDirectoryPath, 'public', 'game-icons')
 const defaultStagingIconOutputDirectoryPath = path.join(
   projectRootDirectoryPath,
@@ -25,9 +21,7 @@ const defaultStagingIconOutputDirectoryPath = path.join(
 )
 const defaultSteamRootDirectoryPaths = [
   process.env.BATTLE_BROTHERS_STEAM_ROOT,
-  process.env['PROGRAMFILES(X86)']
-    ? path.join(process.env['PROGRAMFILES(X86)'], 'Steam')
-    : null,
+  process.env['PROGRAMFILES(X86)'] ? path.join(process.env['PROGRAMFILES(X86)'], 'Steam') : null,
   process.env.PROGRAMFILES ? path.join(process.env.PROGRAMFILES, 'Steam') : null,
 ]
 
@@ -140,10 +134,7 @@ export function buildIconExtractionPlan(iconPaths, archiveEntriesByArchivePath) 
   }
 
   for (const [archivePath, archiveEntryPaths] of entriesByArchivePath.entries()) {
-    entriesByArchivePath.set(
-      archivePath,
-      sortUniqueStrings(archiveEntryPaths),
-    )
+    entriesByArchivePath.set(archivePath, sortUniqueStrings(archiveEntryPaths))
   }
 
   return {
@@ -168,7 +159,11 @@ async function findSteamLibraryDirectoryPaths() {
 
     steamLibraryDirectoryPaths.add(steamRootDirectoryPath)
 
-    const libraryFoldersFilePath = path.join(steamRootDirectoryPath, 'steamapps', 'libraryfolders.vdf')
+    const libraryFoldersFilePath = path.join(
+      steamRootDirectoryPath,
+      'steamapps',
+      'libraryfolders.vdf',
+    )
 
     if (!(await pathExists(libraryFoldersFilePath))) {
       continue
@@ -191,9 +186,7 @@ export async function findBattleBrothersGameDirectoryPath(
   if (requestedGameDirectoryPath) {
     const normalizedRequestedGameDirectoryPath = path.resolve(requestedGameDirectoryPath)
 
-    if (
-      await pathExists(path.join(normalizedRequestedGameDirectoryPath, 'data'))
-    ) {
+    if (await pathExists(path.join(normalizedRequestedGameDirectoryPath, 'data'))) {
       return normalizedRequestedGameDirectoryPath
     }
   }
@@ -245,7 +238,13 @@ async function listArchiveEntries(archivePath) {
 
 async function extractArchiveEntries(archivePath, archiveEntryPaths, extractionDirectoryPath) {
   for (const archiveEntryPathChunk of chunkValues(archiveEntryPaths, 48)) {
-    await runCommand('tar', ['-xf', archivePath, '-C', extractionDirectoryPath, ...archiveEntryPathChunk])
+    await runCommand('tar', [
+      '-xf',
+      archivePath,
+      '-C',
+      extractionDirectoryPath,
+      ...archiveEntryPathChunk,
+    ])
   }
 }
 
@@ -264,7 +263,10 @@ async function copyExtractedIconsToOutputDirectory({
       continue
     }
 
-    const targetFilePath = path.join(outputDirectoryPath, ...normalizeRelativeIconPath(iconPath).split('/'))
+    const targetFilePath = path.join(
+      outputDirectoryPath,
+      ...normalizeRelativeIconPath(iconPath).split('/'),
+    )
     await mkdir(path.dirname(targetFilePath), { recursive: true })
     await copyFile(sourceFilePath, targetFilePath)
     copiedIconCount += 1
@@ -292,7 +294,9 @@ export async function syncLegendsIcons({
   const archivePaths = await getRelevantArchivePaths(resolvedGameDirectoryPath)
 
   if (archivePaths.length === 0) {
-    throw new Error(`No readable Battle Brothers archives were found under ${resolvedGameDirectoryPath}.`)
+    throw new Error(
+      `No readable Battle Brothers archives were found under ${resolvedGameDirectoryPath}.`,
+    )
   }
 
   const archiveEntriesByArchivePath = new Map()

@@ -25,28 +25,32 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .first()
 
   await expect(backgroundFitPanel).toBeVisible()
-  await expect(backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' })).toHaveAttribute(
-    'aria-expanded',
-    'true',
-  )
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
+  ).toHaveAttribute('aria-expanded', 'true')
   await expect(
     backgroundFitPanel.getByText(
       /Ranked by guaranteed perks pickable first, then total perks pickable/i,
     ),
   ).toBeVisible()
-  await expect(backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' })).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
+  ).toBeVisible()
   await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
-    await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
-    await expect(apprenticeCard.getByText('1/1 matched group')).toBeVisible()
-    await expect(apprenticeCard.getByText(/Maximum \d+ total groups/)).toBeVisible()
-    await expect(apprenticeCard.locator('.background-fit-accordion-summary-row')).toHaveCount(2)
-    await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
-    await expect(
-      apprenticeCard
-        .locator('.background-fit-summary-badge')
-        .filter({ hasText: /Maximum \d+ total groups/ }),
-    ).not.toHaveAttribute('title', /.+/)
-  await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute('aria-hidden', 'true')
+  await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
+  await expect(apprenticeCard.getByText('1/1 matched group')).toBeVisible()
+  await expect(apprenticeCard.getByText(/Maximum \d+ total groups/)).toBeVisible()
+  await expect(apprenticeCard.locator('.background-fit-accordion-summary-row')).toHaveCount(2)
+  await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
+  await expect(
+    apprenticeCard
+      .locator('.background-fit-summary-badge')
+      .filter({ hasText: /Maximum \d+ total groups/ }),
+  ).not.toHaveAttribute('title', /.+/)
+  await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute(
+    'aria-hidden',
+    'true',
+  )
   await expect
     .poll(async () =>
       page.evaluate(() => {
@@ -62,7 +66,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .toBeLessThanOrEqual(1)
 
   await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
-  await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute('aria-hidden', 'false')
+  await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute(
+    'aria-hidden',
+    'false',
+  )
   await expect(apprenticeCard.getByText('Guaranteed groups 1')).toBeVisible()
   await expect
     .poll(async () =>
@@ -120,16 +127,12 @@ test('filters the background fit list with the background search field', async (
     element.scrollTop = element.scrollHeight
   })
   await expect
-    .poll(async () =>
-      backgroundFitPanelBody.evaluate((element) => element.scrollTop),
-    )
+    .poll(async () => backgroundFitPanelBody.evaluate((element) => element.scrollTop))
     .toBeGreaterThan(0)
 
   await backgroundSearchInput.fill('Oath')
   await expect
-    .poll(async () =>
-      backgroundFitPanelBody.evaluate((element) => element.scrollTop),
-    )
+    .poll(async () => backgroundFitPanelBody.evaluate((element) => element.scrollTop))
     .toBeLessThanOrEqual(1)
   const oathtakerHeading = backgroundFitPanel.getByRole('heading', {
     level: 3,
@@ -164,7 +167,10 @@ test('filters the background fit list with the background search field', async (
           (heading) => heading.textContent?.trim() === 'Oathtaker',
         )
 
-        if (!(backgroundFitPanelBody instanceof HTMLElement) || !(oathtakerHeading instanceof HTMLElement)) {
+        if (
+          !(backgroundFitPanelBody instanceof HTMLElement) ||
+          !(oathtakerHeading instanceof HTMLElement)
+        ) {
           return false
         }
 
@@ -190,7 +196,9 @@ test('filters the background fit list with the background search field', async (
   ).toHaveCount(0)
 
   await backgroundSearchInput.fill('zzzz impossible background')
-  await expect(backgroundFitPanel.getByText('No backgrounds match "zzzz impossible background".')).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByText('No backgrounds match "zzzz impossible background".'),
+  ).toBeVisible()
 })
 
 test('keeps the background search enabled without any picked perks', async ({ page }) => {
@@ -236,7 +244,9 @@ test('hides redundant background disambiguator pills when they only repeat the n
           .map((backgroundFitCard) => {
             const heading = backgroundFitCard.querySelector('h3')?.textContent?.trim() ?? ''
             const disambiguator =
-              backgroundFitCard.querySelector('.background-fit-disambiguator')?.textContent?.trim() ?? null
+              backgroundFitCard
+                .querySelector('.background-fit-disambiguator')
+                ?.textContent?.trim() ?? null
 
             return { disambiguator, heading }
           })
@@ -249,18 +259,24 @@ test('hides redundant background disambiguator pills when they only repeat the n
     })
 })
 
-test('keeps zero-match backgrounds after matching backgrounds in the full ranked list', async ({ page }) => {
+test('keeps zero-match backgrounds after matching backgrounds in the full ranked list', async ({
+  page,
+}) => {
   await gotoPerksBrowser(page, mediumPerksBrowserViewport)
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundNameOrder = await page.evaluate(() =>
-    [...document.querySelectorAll('.background-fit-card h3')].map((heading) => heading.textContent?.trim()),
+    [...document.querySelectorAll('.background-fit-card h3')].map((heading) =>
+      heading.textContent?.trim(),
+    ),
   )
 
   expect(backgroundNameOrder).toContain('Apprentice')
   expect(backgroundNameOrder).toContain('Oathtaker')
-  expect(backgroundNameOrder.indexOf('Apprentice')).toBeLessThan(backgroundNameOrder.indexOf('Oathtaker'))
+  expect(backgroundNameOrder.indexOf('Apprentice')).toBeLessThan(
+    backgroundNameOrder.indexOf('Oathtaker'),
+  )
 })
 
 test('keeps dense background names readable from a shared build url and starts collapsed', async ({
@@ -271,10 +287,9 @@ test('keeps dense background names readable from a shared build url and starts c
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
-  await expect(backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' })).toHaveAttribute(
-    'aria-expanded',
-    'true',
-  )
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
+  ).toHaveAttribute('aria-expanded', 'true')
   await expect(
     backgroundFitPanel.getByText(
       /Ranked by guaranteed perks pickable first, then total perks pickable/i,
@@ -355,9 +370,7 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
     )
     .toBeGreaterThan(200)
   await expect
-    .poll(async () =>
-      backgroundFitPanelBody.evaluate((element) => element.clientHeight),
-    )
+    .poll(async () => backgroundFitPanelBody.evaluate((element) => element.clientHeight))
     .toBeGreaterThanOrEqual(280)
   await expect
     .poll(async () =>
@@ -374,7 +387,10 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
           (heading) => heading.textContent?.trim() === 'Hedge Knight',
         )
 
-        if (!(backgroundFitPanelBody instanceof HTMLElement) || !(hedgeKnightHeading instanceof HTMLElement)) {
+        if (
+          !(backgroundFitPanelBody instanceof HTMLElement) ||
+          !(hedgeKnightHeading instanceof HTMLElement)
+        ) {
           return false
         }
 
@@ -399,7 +415,9 @@ test('does not stretch the background search field on tall desktop screens', asy
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
   await backgroundSearchInput.fill('hedge')
-  await expect(backgroundFitPanel.getByRole('heading', { level: 3, name: 'Hedge Knight' })).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByRole('heading', { level: 3, name: 'Hedge Knight' }),
+  ).toBeVisible()
   await expect
     .poll(async () =>
       backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
@@ -408,7 +426,9 @@ test('does not stretch the background search field on tall desktop screens', asy
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const searchField = document.querySelector('.background-fit-search-field') as HTMLElement | null
+        const searchField = document.querySelector(
+          '.background-fit-search-field',
+        ) as HTMLElement | null
 
         return searchField?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY
       }),
@@ -417,21 +437,29 @@ test('does not stretch the background search field on tall desktop screens', asy
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const searchField = document.querySelector('.background-fit-search-field') as HTMLElement | null
-        const rankingSummary = document.querySelector('.background-fit-ranking-summary') as HTMLElement | null
+        const searchField = document.querySelector(
+          '.background-fit-search-field',
+        ) as HTMLElement | null
+        const rankingSummary = document.querySelector(
+          '.background-fit-ranking-summary',
+        ) as HTMLElement | null
 
         if (searchField === null || rankingSummary === null) {
           return Number.POSITIVE_INFINITY
         }
 
-        return rankingSummary.getBoundingClientRect().top - searchField.getBoundingClientRect().bottom
+        return (
+          rankingSummary.getBoundingClientRect().top - searchField.getBoundingClientRect().bottom
+        )
       }),
     )
     .toBeLessThanOrEqual(24)
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const rankingSummary = document.querySelector('.background-fit-ranking-summary') as HTMLElement | null
+        const rankingSummary = document.querySelector(
+          '.background-fit-ranking-summary',
+        ) as HTMLElement | null
         const firstCard = document.querySelector('.background-fit-card') as HTMLElement | null
 
         if (rankingSummary === null || firstCard === null) {

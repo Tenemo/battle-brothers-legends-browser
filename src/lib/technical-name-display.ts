@@ -5,7 +5,7 @@ const technicalNameMappings = technicalNameMappingsJson as {
 }
 
 function normalizeComparisonValue(value: string): string {
-  return value.replace(/[^a-z0-9]+/gi, '').toLocaleLowerCase()
+  return value.replace(/[^a-z0-9]+/gi, '').toLowerCase()
 }
 
 export function getTechnicalNameLabel(value: string): string | null {

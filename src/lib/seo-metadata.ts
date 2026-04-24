@@ -162,10 +162,13 @@ const renderMetaTag = (
 const renderLinkTag = (rel: string, href: string): string =>
   `<link rel="${escapeHtml(rel)}" href="${escapeHtml(href)}" />`
 
-export const serializeStructuredData = (value: unknown): string =>
-  JSON.stringify(value).replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026')
+const serializeStructuredData = (value: unknown): string =>
+  JSON.stringify(value)
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026')
 
-export const renderRootSeoHead = (metadata: SeoMetadata = rootSeoMetadata): string =>
+const renderRootSeoHead = (metadata: SeoMetadata = rootSeoMetadata): string =>
   [
     renderMetaTag('application-name', metadata.applicationName),
     renderMetaTag('apple-mobile-web-app-title', metadata.shortName),
@@ -225,6 +228,9 @@ export function injectSeoIntoHtml(html: string, metadata: SeoMetadata = rootSeoM
   )}`
 }
 
-export function injectRootSeoIntoHtml(html: string, metadata: SeoMetadata = rootSeoMetadata): string {
+export function injectRootSeoIntoHtml(
+  html: string,
+  metadata: SeoMetadata = rootSeoMetadata,
+): string {
   return injectSeoIntoHtml(html, metadata)
 }

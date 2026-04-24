@@ -1,8 +1,11 @@
-const crawlerUserAgent = 'facebookexternalhit/1.1 (+https://www.facebook.com/externalhit_uatext.php)'
+const crawlerUserAgent =
+  'facebookexternalhit/1.1 (+https://www.facebook.com/externalhit_uatext.php)'
 const buildPerks = ['Clarity', 'Perfect Focus']
 
 function printUsage() {
-  console.log('Usage: node ./scripts/smoke-deployed-seo.mjs https://deploy-preview.example.netlify.app/')
+  console.log(
+    'Usage: node ./scripts/smoke-deployed-seo.mjs https://deploy-preview.example.netlify.app/',
+  )
 }
 
 function fail(message) {
@@ -158,8 +161,13 @@ if (openGraphImageUrl.toString() !== twitterImageUrl.toString()) {
   fail('Open Graph and Twitter image URLs do not match.')
 }
 
-if (openGraphImageUrl.origin !== baseUrl.origin || openGraphImageUrl.pathname !== '/social/build.png') {
-  fail(`shared build image URL was ${openGraphImageUrl.toString()} instead of a deployed social image URL.`)
+if (
+  openGraphImageUrl.origin !== baseUrl.origin ||
+  openGraphImageUrl.pathname !== '/social/build.png'
+) {
+  fail(
+    `shared build image URL was ${openGraphImageUrl.toString()} instead of a deployed social image URL.`,
+  )
 }
 
 for (const perkName of buildPerks) {
@@ -169,7 +177,8 @@ for (const perkName of buildPerks) {
 }
 
 const sharedBuildImageResponse = await fetchImageHead(openGraphImageUrl)
-const sharedBuildNetlifyCache = sharedBuildImageResponse.headers.get('netlify-cdn-cache-control') ?? ''
+const sharedBuildNetlifyCache =
+  sharedBuildImageResponse.headers.get('netlify-cdn-cache-control') ?? ''
 
 if (!sharedBuildNetlifyCache.includes('durable')) {
   fail('shared build image is missing durable Netlify CDN caching.')

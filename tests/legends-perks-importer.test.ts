@@ -1,9 +1,6 @@
 import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
-import {
-  createDataset,
-  createTechnicalNameMappings,
-} from '../scripts/legends-perks-importer.mjs'
+import { createDataset, createTechnicalNameMappings } from '../scripts/legends-perks-importer.mjs'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const fixtureReferenceRootDirectoryPath = path.resolve(
@@ -302,7 +299,9 @@ describe('legends perks importer', () => {
     ).toBeUndefined()
     expect(
       dataset.perks.some((perk) =>
-        perk.backgroundSources.some((backgroundSource) => backgroundSource.backgroundName === 'Dormant'),
+        perk.backgroundSources.some(
+          (backgroundSource) => backgroundSource.backgroundName === 'Dormant',
+        ),
       ),
     ).toBe(false)
   })

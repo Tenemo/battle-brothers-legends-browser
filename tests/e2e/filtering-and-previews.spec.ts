@@ -96,7 +96,9 @@ test('reorders categories and perk groups around the active perk search query an
 
   await enableCategory(page, 'Other')
 
-  const subgroupButtons = page.locator('.sidebar .subgroup-panel button[aria-label^="Toggle perk group "]')
+  const subgroupButtons = page.locator(
+    '.sidebar .subgroup-panel button[aria-label^="Toggle perk group "]',
+  )
 
   await expect(subgroupButtons.first()).toHaveAttribute('aria-label', 'Toggle perk group Shady')
   await expect(page.locator('.sidebar .search-highlight')).toContainText(['Shady'])
@@ -113,7 +115,9 @@ test('highlights the searched perk phrase in the visible perk results', async ({
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {
   await gotoPerksBrowser(page)
   await page.locator('.hero').evaluate(async (element) => {
-    await Promise.all(element.getAnimations().map((animation) => animation.finished.catch(() => undefined)))
+    await Promise.all(
+      element.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
+    )
   })
 
   await searchPerks(page, 'Perfect')
@@ -188,9 +192,15 @@ test('keeps search result and repository hover states fixed in place', async ({ 
     }
   })
 
-  expect(Math.abs(repositoryLinkAfterHover.top - repositoryLinkBeforeHover.top)).toBeLessThanOrEqual(1)
-  expect(Math.abs(repositoryLinkAfterHover.height - repositoryLinkBeforeHover.height)).toBeLessThanOrEqual(1)
-  expect(Math.abs(repositoryLinkAfterHover.width - repositoryLinkBeforeHover.width)).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(repositoryLinkAfterHover.top - repositoryLinkBeforeHover.top),
+  ).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(repositoryLinkAfterHover.height - repositoryLinkBeforeHover.height),
+  ).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(repositoryLinkAfterHover.width - repositoryLinkBeforeHover.width),
+  ).toBeLessThanOrEqual(1)
 })
 
 test('keeps middle-of-word search highlights from adding visual gaps', async ({ page }) => {
@@ -204,9 +214,9 @@ test('keeps middle-of-word search highlights from adding visual gaps', async ({ 
     .first()
 
   await expect(intelligentHighlight).toBeVisible()
-  await expect(intelligentHighlight.locator('xpath=ancestor::*[contains(@class, "perk-context")][1]')).toContainText(
-    /Intelligent/,
-  )
+  await expect(
+    intelligentHighlight.locator('xpath=ancestor::*[contains(@class, "perk-context")][1]'),
+  ).toContainText(/Intelligent/)
 
   const horizontalPadding = await intelligentHighlight.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
@@ -242,20 +252,28 @@ test('shows picked categories and subgroups with stars and keeps picked result r
   await searchPerks(page, '')
 
   await expect(
-    page.getByRole('button', { name: 'Enable category Traits' }).locator('.group-chip-picked-stars .build-star'),
+    page
+      .getByRole('button', { name: 'Enable category Traits' })
+      .locator('.group-chip-picked-stars .build-star'),
   ).toHaveCount(2)
   await expect(
-    page.getByRole('button', { name: 'Enable category Magic' }).locator('.group-chip-picked-stars .build-star'),
+    page
+      .getByRole('button', { name: 'Enable category Magic' })
+      .locator('.group-chip-picked-stars .build-star'),
   ).toHaveCount(1)
 
   await enableCategory(page, 'Traits')
   await enableCategory(page, 'Magic')
 
   await expect(
-    page.getByRole('button', { name: 'Toggle perk group Calm' }).locator('.group-chip-picked-stars .build-star'),
+    page
+      .getByRole('button', { name: 'Toggle perk group Calm' })
+      .locator('.group-chip-picked-stars .build-star'),
   ).toHaveCount(2)
   await expect(
-    page.getByRole('button', { name: 'Toggle perk group Deadeye' }).locator('.group-chip-picked-stars .build-star'),
+    page
+      .getByRole('button', { name: 'Toggle perk group Deadeye' })
+      .locator('.group-chip-picked-stars .build-star'),
   ).toHaveCount(1)
 
   await disableCategory(page, 'Traits')

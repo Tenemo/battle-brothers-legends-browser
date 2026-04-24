@@ -1,10 +1,9 @@
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 
-export const allGroupsFilterValue = 'all-groups'
 export const allTiersFilterValue = 'all-tiers'
-export const noTierFilterValue = 'no-tier'
+const noTierFilterValue = 'no-tier'
 
-export type PerkBrowserFilters = {
+type PerkBrowserFilters = {
   query: string
   selectedGroupNames: string[]
   selectedTreeIdsByGroup: Record<string, string[]>
@@ -23,7 +22,7 @@ type NormalizedPerkSearchIndex = {
 const normalizedPerkSearchIndexByPerkId = new Map<string, NormalizedPerkSearchIndex>()
 
 function normalizeSearchValue(value: string): string {
-  return value.trim().toLocaleLowerCase()
+  return value.trim().toLowerCase()
 }
 
 function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSearchIndex {
@@ -35,15 +34,15 @@ function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSe
 
   const normalizedSearchIndex = {
     backgroundNames: perk.backgroundSources.map((backgroundSource) =>
-      backgroundSource.backgroundName.toLocaleLowerCase(),
+      backgroundSource.backgroundName.toLowerCase(),
     ),
-    groupNames: perk.groupNames.map((groupName) => groupName.toLocaleLowerCase()),
-    perkName: perk.perkName.toLocaleLowerCase(),
+    groupNames: perk.groupNames.map((groupName) => groupName.toLowerCase()),
+    perkName: perk.perkName.toLowerCase(),
     scenarioNames: perk.scenarioSources.map((scenarioSource) =>
-      scenarioSource.scenarioName.toLocaleLowerCase(),
+      scenarioSource.scenarioName.toLowerCase(),
     ),
-    searchText: perk.searchText.toLocaleLowerCase(),
-    treeNames: perk.placements.map((placement) => placement.treeName.toLocaleLowerCase()),
+    searchText: perk.searchText.toLowerCase(),
+    treeNames: perk.placements.map((placement) => placement.treeName.toLowerCase()),
   }
 
   normalizedPerkSearchIndexByPerkId.set(perk.id, normalizedSearchIndex)
@@ -67,7 +66,7 @@ export function getTierLabel(tier: number | null): string {
   return tier === null ? 'No tier' : `Tier ${tier}`
 }
 
-export function getTierFilterValue(tier: number | null): string {
+function getTierFilterValue(tier: number | null): string {
   return tier === null ? noTierFilterValue : String(tier)
 }
 
@@ -180,7 +179,10 @@ export function buildTierOptions(perks: LegendsPerkRecord[]): string[] {
   })
 }
 
-function comparePerksAlphabetically(leftPerk: LegendsPerkRecord, rightPerk: LegendsPerkRecord): number {
+function comparePerksAlphabetically(
+  leftPerk: LegendsPerkRecord,
+  rightPerk: LegendsPerkRecord,
+): number {
   const leftPrimaryPlacement = getPrimaryPlacement(leftPerk)
   const rightPrimaryPlacement = getPrimaryPlacement(rightPerk)
   const leftTier = getLowestPlacementTier(leftPerk) ?? Number.POSITIVE_INFINITY

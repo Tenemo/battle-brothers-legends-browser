@@ -5,7 +5,7 @@ type PerksBrowserViewport = {
   width: number
 }
 
-export const defaultPerksBrowserViewport = {
+const defaultPerksBrowserViewport = {
   height: 720,
   width: 900,
 } as const

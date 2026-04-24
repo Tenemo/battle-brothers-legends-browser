@@ -92,7 +92,10 @@ function wrapTextByVisualWidth(value: string, maxLineWidth: number, maxLines: nu
 
     if (currentLine) {
       lines.push(currentLine)
-      currentLine = estimateVisualWidth(word) > maxLineWidth ? truncateLineByVisualWidth(word, maxLineWidth) : word
+      currentLine =
+        estimateVisualWidth(word) > maxLineWidth
+          ? truncateLineByVisualWidth(word, maxLineWidth)
+          : word
     } else {
       lines.push(truncateLineByVisualWidth(word, maxLineWidth))
       currentLine = ''
@@ -114,7 +117,10 @@ function wrapTextByVisualWidth(value: string, maxLineWidth: number, maxLines: nu
   }
 
   if (didTruncate && lines.length > 0 && !lines[lines.length - 1].endsWith(ellipsis)) {
-    lines[lines.length - 1] = truncateLineByVisualWidth(`${lines[lines.length - 1]} ${ellipsis}`, maxLineWidth)
+    lines[lines.length - 1] = truncateLineByVisualWidth(
+      `${lines[lines.length - 1]} ${ellipsis}`,
+      maxLineWidth,
+    )
   }
 
   return lines
@@ -166,9 +172,11 @@ function renderPerkNameRows(payload: BuildSharePreviewPayload): string {
   const hiddenCount = payload.pickedPerks.length - maxVisiblePerkNames
 
   if (hiddenCount > 0) {
-    perkRows.push(`<text x="120" y="${
-      264 + maxVisiblePerkNames * 32
-    }" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600">+${hiddenCount} more perks</text>`)
+    perkRows.push(
+      `<text x="120" y="${
+        264 + maxVisiblePerkNames * 32
+      }" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600">+${hiddenCount} more perks</text>`,
+    )
   }
 
   return perkRows.join('')
@@ -227,7 +235,7 @@ function renderIconGrid(
 
       return renderIconCell({
         hiddenCount: iconIndex === undefined ? hiddenCount + 1 : undefined,
-        iconDataUrl: iconIndex === undefined ? null : resolveIconDataUrl?.(perk) ?? null,
+        iconDataUrl: iconIndex === undefined ? null : (resolveIconDataUrl?.(perk) ?? null),
         index: perkIndex,
         perkName: perk.perkName,
         x,

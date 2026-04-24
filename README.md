@@ -23,10 +23,10 @@ The current committed dataset in this repository contains:
 
 - `367` perks
 - `116` perk trees
-- `133` parsed source files
-- `1087` exact technical-name label mappings
+- `225` parsed source files
+- `1170` exact technical-name label mappings
 - Legends reference version `19.3.17`
-- dataset generation timestamp `2026-04-22T08:46:28.329Z`
+- dataset generation timestamp `2026-04-23T17:28:49.286Z`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 
@@ -44,7 +44,7 @@ Search and filtering are fully client-side. The ranking logic in `src/lib/perk-s
 
 The app also keeps the current search, tier, selected categories, selected perk groups, and picked build in the URL query string. The canonical format groups repeated values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`. Older repeated-param links are still accepted and are normalized to the canonical grouped format after load.
 
-The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique tree targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build trees such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed matched build weight first, then expected extra matched build weight, then guaranteed and expected matched tree counts.
+The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique tree targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build trees such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed picked-perk coverage first, then total picked-perk coverage, then stable background name and source ordering.
 
 The probability model is exact and deterministic. Explicit trees on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy`, `Magic`, and `Profession` use the same chance-attempt loops as the Legends source. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-tree probabilities change when a background can or cannot produce the required weapon trees.
 
@@ -127,7 +127,7 @@ The generated artifacts that the runtime actually uses are:
 - `public/favicon/**`
   These are the committed student-icon favicon assets and manifest served across desktop browsers, iOS home-screen shortcuts, and installed web apps.
 - `public/seo/og-image-v2.png`
-  This is the generated social preview image used by the Open Graph and Twitter card metadata. It is written by `pnpm run prepare:assets`.
+  This is the generated social preview image used by the Open Graph and Twitter card metadata. It is ignored by Git and written deterministically by `pnpm run generate:social-image`, which runs before local dev servers and production builds.
 - `src/lib/seo-metadata.ts`
   This is the shared root SEO contract used by Vite to render the served and built HTML metadata.
 - `public/robots.txt`
@@ -145,7 +145,7 @@ To work on the project comfortably you need:
 - network access to GitHub if you need to populate or refresh the cached Legends reference
 - a local Battle Brothers install if you want to resync icons
 
-The built application itself does not need network access. The development workflow still runs `pnpm ensure:legends-reference` before `pnpm dev` and `pnpm build`, so a clean checkout needs to populate `.cache/legends-public/current` at least once.
+The built application itself does not need network access. Normal dev and build commands use the committed dataset and icons, and only regenerate the deterministic social preview image. Refreshing the Legends source cache and generated dataset is explicit through `pnpm sync:perks`.
 
 ## Quick start
 
@@ -162,11 +162,12 @@ Useful follow-up commands:
 
 - `pnpm build` builds the production bundle.
 - `pnpm build:netlify` builds the production bundle without refreshing the cached Legends reference first. This is the command used by Netlify because deployment only needs the committed dataset and icons.
+- `pnpm generate:social-image` regenerates `public/seo/og-image-v2.png`.
 - `pnpm preview` serves the built bundle locally.
 - `pnpm test` runs the Vitest suite.
 - `pnpm test:e2e` runs the Playwright browser suite.
 
-If the Legends cache does not exist yet, the first `pnpm dev` or `pnpm build` will fetch and extract it automatically.
+If the Legends cache does not exist yet, run `pnpm sync:perks` when you intentionally want to refresh the committed dataset from the latest or pinned Legends reference.
 
 ## Environment variables
 
@@ -199,19 +200,30 @@ The repository now includes a root `netlify.toml` tailored for this app.
 - The published directory is `dist`.
 - The config pins Netlify to Node.js `22`.
 - `netlify dev` proxies to the local Vite server on port `5173`.
-- Security headers are based on the stricter style used in `Tenemo/piech.dev`, but simplified for this app’s static Vite output.
+- Security headers are based on the stricter style used in `Tenemo/piech.dev`, but simplified for this app's static Vite output.
 - Cache headers keep `index.html` fresh while allowing long-lived caching for hashed Vite assets and shorter caching for synced game icons.
 
 `build:netlify` intentionally skips `prebuild`. The deployed app only reads committed JSON and committed icon assets, so refreshing the Legends cache during every Netlify build would add a network dependency without changing the generated site.
+It still regenerates the deterministic social preview image before building so a clean deploy has the expected SEO asset.
 
 ## Available scripts
 
 - `pnpm dev`
-  Starts the Vite development server. Because of `predev`, it first runs `pnpm ensure:legends-reference`.
+  Starts the Vite development server. Because of `predev`, it first regenerates the deterministic social preview image.
 - `pnpm build`
-  Runs `pnpm tsc` and creates the production bundle. Because of `prebuild`, it also ensures the cached Legends reference exists first.
+  Runs `pnpm tsc` and creates the production bundle. Because of `prebuild`, it first regenerates the deterministic social preview image.
 - `pnpm build:netlify`
-  Runs the same production build as `pnpm build`, but without the `prebuild` cache refresh step. Use this for Netlify deployments.
+  Runs the same production build as `pnpm build`, then builds the Netlify edge function manifest. Use this for Netlify deployments.
+- `pnpm generate:social-image`
+  Regenerates the ignored Open Graph and Twitter card preview image from local assets.
+- `pnpm format`
+  Formats supported project files with Prettier.
+- `pnpm format:check`
+  Checks supported project files with Prettier without rewriting them.
+- `pnpm knip`
+  Runs the tuned Knip report for unused files, exports, and dependencies.
+- `pnpm knip:production`
+  Runs Knip in production mode to focus on production entry points and dependencies.
 - `pnpm preview`
   Serves the built application locally.
 - `pnpm prepare`
@@ -240,7 +252,9 @@ The repository now includes a root `netlify.toml` tailored for this app.
 ## Repository layout
 
 - `src/App.tsx`
-  The browser UI shell, filters, result list, and detail panel.
+  The browser UI shell, dataset state, URL synchronization, filters, and shared hover coordination.
+- `src/components/`
+  Feature components for the build planner, background-fit panel, perk results, detail panel, and shared controls.
 - `src/lib/perk-search.ts`
   Client-side search ranking, filtering, tier handling, and perk preview selection.
 - `src/lib/perk-browser-url-state.ts`
@@ -303,4 +317,4 @@ pnpm test:e2e
 - Missing icon warnings during sync
   The dataset references icon paths that were not found in the detected archives. The app will still run, but those entries will render placeholders until the referenced assets exist locally.
 - Offline work on a clean checkout
-  The runtime data is committed, but `predev` and `prebuild` still ensure the Legends cache first. Populate `.cache/legends-public/current` once before working fully offline.
+  The runtime data is committed, and normal dev/build commands do not need the Legends cache. Populate `.cache/legends-public/current` only before running sync scripts that refresh the dataset.

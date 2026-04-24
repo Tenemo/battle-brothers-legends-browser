@@ -6,7 +6,7 @@ export type PerkBrowserUrlTreeOption = {
   treeName: string
 }
 
-export type PerkBrowserUrlState = {
+type PerkBrowserUrlState = {
   pickedPerkIds: string[]
   query: string
   selectedGroupNames: string[]
@@ -42,7 +42,7 @@ function normalizeLookupValue(value: string): string {
     value
       .normalize('NFKD')
       .replace(/[\u0300-\u036f]/gu, '')
-      .toLocaleLowerCase()
+      .toLowerCase()
       .replace(/[^a-z0-9]+/gu, ' '),
   )
 }
@@ -51,7 +51,7 @@ function createUrlToken(value: string): string {
   return value
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/gu, '')
-    .toLocaleLowerCase()
+    .toLowerCase()
     .replace(/[^a-z0-9]+/gu, '-')
     .replace(/^-+/u, '')
     .replace(/-+$/u, '')
@@ -85,7 +85,9 @@ function appendGroupedQueryEntry(entries: string[], key: string, values: string[
     return
   }
 
-  entries.push(`${encodeQueryValue(key)}=${values.map((value) => encodeQueryValue(value)).join(',')}`)
+  entries.push(
+    `${encodeQueryValue(key)}=${values.map((value) => encodeQueryValue(value)).join(',')}`,
+  )
 }
 
 function createDefaultUrlState(): PerkBrowserUrlState {
@@ -116,7 +118,12 @@ export function readPerkBrowserUrlState(
   const treeIdByLookupValueByGroup = new Map(
     [...options.treeOptionsByGroup.entries()].map(([groupName, treeOptions]) => [
       groupName,
-      new Map(treeOptions.map((treeOption) => [normalizeLookupValue(treeOption.treeName), treeOption.treeId])),
+      new Map(
+        treeOptions.map((treeOption) => [
+          normalizeLookupValue(treeOption.treeName),
+          treeOption.treeId,
+        ]),
+      ),
     ]),
   )
   const selectedGroupNameSet = new Set<string>()
@@ -148,7 +155,9 @@ export function readPerkBrowserUrlState(
     }
 
     for (const groupValue of splitGroupedParamValue(paramValue)) {
-      const treeId = treeIdByLookupValueByGroup.get(groupName)?.get(normalizeLookupValue(groupValue))
+      const treeId = treeIdByLookupValueByGroup
+        .get(groupName)
+        ?.get(normalizeLookupValue(groupValue))
 
       if (!treeId) {
         continue
