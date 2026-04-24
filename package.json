@@ -28,11 +28,14 @@
   "dependencies": {
     "@fontsource/cinzel": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",
+    "@resvg/resvg-js": "^2.6.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@netlify/edge-functions": "^3.0.6",
+    "@netlify/functions": "^5.2.0",
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",

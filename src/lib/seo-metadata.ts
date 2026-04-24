@@ -33,7 +33,8 @@ const socialImagePath = '/seo/og-image.png'
 const siteLanguage = 'en'
 const applicationCategory = 'ReferenceApplication'
 
-const createAbsoluteUrl = (pathname: string): string => new URL(pathname, siteOrigin).toString()
+const createAbsoluteUrl = (pathname: string, origin: string = siteOrigin): string =>
+  new URL(pathname, origin).toString()
 
 const createImageObject = (image: SeoImageMetadata, pageUrl: string): StructuredData => ({
   '@type': 'ImageObject',
@@ -197,10 +198,7 @@ export const renderRootSeoHead = (metadata: SeoMetadata = rootSeoMetadata): stri
     `<title>${escapeHtml(metadata.title)}</title>`,
   ].join('\n    ')
 
-export const injectRootSeoIntoHtml = (
-  html: string,
-  metadata: SeoMetadata = rootSeoMetadata,
-): string => {
+export function injectSeoIntoHtml(html: string, metadata: SeoMetadata = rootSeoMetadata): string {
   const startMarkerPattern = /<meta\s+name=["']battle-brothers-seo-start["'][^>]*>/i
   const endMarkerPattern = /<meta\s+name=["']battle-brothers-seo-end["'][^>]*>/i
   const startMarkerMatch = startMarkerPattern.exec(html)
@@ -223,4 +221,8 @@ export const injectRootSeoIntoHtml = (
   return `${html.slice(0, startMarkerMatch.index)}${renderRootSeoHead(metadata)}${html.slice(
     endMarkerEndIndex,
   )}`
+}
+
+export function injectRootSeoIntoHtml(html: string, metadata: SeoMetadata = rootSeoMetadata): string {
+  return injectSeoIntoHtml(html, metadata)
 }

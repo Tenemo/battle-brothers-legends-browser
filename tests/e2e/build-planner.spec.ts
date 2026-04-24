@@ -405,7 +405,9 @@ test('keeps the picked count and clear action aligned for dense builds', async (
 
   const actionMetrics = await page.evaluate(() => {
     const count = document.querySelector('.build-planner-count') as HTMLElement | null
-    const clearButton = document.querySelector('.planner-action-button') as HTMLElement | null
+    const clearButton = document.querySelector(
+      '.planner-action-button[aria-label="Clear build"]',
+    ) as HTMLElement | null
 
     if (!count || !clearButton) {
       return null

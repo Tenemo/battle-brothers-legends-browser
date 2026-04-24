@@ -239,6 +239,26 @@ export function buildPerkBrowserUrlSearch(
   return searchString ? `?${searchString}` : ''
 }
 
+export function buildPerkBrowserBuildUrlSearch(
+  pickedPerkIds: string[],
+  perksById: Map<string, LegendsPerkRecord>,
+): string {
+  return buildPerkBrowserUrlSearch(
+    {
+      pickedPerkIds,
+      query: '',
+      selectedGroupNames: [],
+      selectedTreeIdsByGroup: {},
+      tierValue: allTiersFilterValue,
+    },
+    {
+      availableGroupNames: [],
+      perksById,
+      treeOptionsByGroup: new Map(),
+    },
+  )
+}
+
 export function readPerkBrowserUrlStateFromLocation(
   options: PerkBrowserUrlStateReadOptions,
 ): PerkBrowserUrlState {

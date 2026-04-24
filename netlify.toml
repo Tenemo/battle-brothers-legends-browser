@@ -11,6 +11,9 @@ port = 8888
 targetPort = 5173
 framework = "#custom"
 
+[functions]
+included_files = ["public/game-icons/**/*"]
+
 [[headers]]
 for = "/*"
 [headers.values]

@@ -27,6 +27,7 @@ import {
   type BuildPlannerPerkGroupRequirementOption,
 } from './lib/build-planner'
 import {
+  buildPerkBrowserBuildUrlSearch,
   buildPerkBrowserUrlSearch,
   readPerkBrowserUrlStateFromLocation,
   type PerkBrowserUrlTreeOption,
@@ -1434,6 +1435,7 @@ export default function App() {
   const [hoveredPerkId, setHoveredPerkId] = useState<string | null>(null)
   const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
     useState<HoveredBuildPerkTooltip | null>(null)
+  const [shareBuildStatus, setShareBuildStatus] = useState<'copied' | 'error' | 'idle'>('idle')
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const [tierValue, setTierValue] = useState(initialUrlState.tierValue)
@@ -1454,6 +1456,10 @@ export default function App() {
 
         return pickedPerk ? [pickedPerk] : []
       }),
+    [pickedPerkIds],
+  )
+  const buildShareSearch = useMemo(
+    () => buildPerkBrowserBuildUrlSearch(pickedPerkIds, allPerksById),
     [pickedPerkIds],
   )
   const buildPlannerGroups = useMemo(() => getBuildPlannerGroups(pickedPerks), [pickedPerks])
@@ -1554,9 +1560,6 @@ export default function App() {
           ? currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId)
           : [...currentPickedPerkIds, perkId],
       )
-      setHoveredPerkId((currentHoveredPerkId) =>
-        currentHoveredPerkId === perkId ? null : currentHoveredPerkId,
-      )
       setHoveredBuildPerkTooltip((currentTooltip) =>
         currentTooltip?.perkId === perkId ? null : currentTooltip,
       )
@@ -1582,7 +1585,58 @@ export default function App() {
       setPickedPerkIds([])
       setHoveredPerkId(null)
       setHoveredBuildPerkTooltip(null)
+      setShareBuildStatus('idle')
     })
+  }
+
+  function getBuildShareUrl(): string {
+    const buildSharePath = buildShareSearch ? `/${buildShareSearch}` : '/'
+
+    if (typeof window === 'undefined') {
+      return buildSharePath
+    }
+
+    return new URL(buildSharePath, window.location.origin).toString()
+  }
+
+  async function copyTextToClipboard(text: string): Promise<void> {
+    if (navigator.clipboard) {
+      try {
+        await navigator.clipboard.writeText(text)
+        return
+      } catch {
+        // Fall back to the selection-based copy path below.
+      }
+    }
+
+    const textArea = document.createElement('textarea')
+    textArea.value = text
+    textArea.setAttribute('readonly', '')
+    textArea.style.position = 'fixed'
+    textArea.style.top = '0'
+    textArea.style.left = '-9999px'
+    document.body.append(textArea)
+    textArea.select()
+
+    const didCopy = document.execCommand('copy')
+    textArea.remove()
+
+    if (!didCopy) {
+      throw new Error('Clipboard copy failed.')
+    }
+  }
+
+  async function handleShareBuild() {
+    if (!hasPickedPerks) {
+      return
+    }
+
+    try {
+      await copyTextToClipboard(getBuildShareUrl())
+      setShareBuildStatus('copied')
+    } catch {
+      setShareBuildStatus('error')
+    }
   }
 
   function handleInspectPlannerPerk(perkId: string) {
@@ -1736,6 +1790,20 @@ export default function App() {
     }
   }, [hoveredBuildPerkTooltip])
 
+  useEffect(() => {
+    if (shareBuildStatus === 'idle') {
+      return
+    }
+
+    const resetShareBuildStatusTimeout = window.setTimeout(() => {
+      setShareBuildStatus('idle')
+    }, 1600)
+
+    return () => {
+      window.clearTimeout(resetShareBuildStatusTimeout)
+    }
+  }, [shareBuildStatus])
+
   return (
     <div className="app-shell">
       <div className="background-runes" aria-hidden="true" />
@@ -1806,6 +1874,27 @@ export default function App() {
                 ? 'No perks picked yet.'
                 : `${pickedPerks.length} perk${pickedPerks.length === 1 ? '' : 's'} picked.`}
             </p>
+            <button
+              aria-label="Copy shared build link"
+              className={
+                shareBuildStatus === 'copied'
+                  ? 'planner-action-button share-build-button is-confirmed'
+                  : shareBuildStatus === 'error'
+                    ? 'planner-action-button share-build-button is-error'
+                    : 'planner-action-button share-build-button'
+              }
+              disabled={pickedPerks.length === 0}
+              onClick={() => {
+                void handleShareBuild()
+              }}
+              type="button"
+            >
+              {shareBuildStatus === 'copied'
+                ? 'Copied'
+                : shareBuildStatus === 'error'
+                  ? 'Copy failed'
+                  : 'Share build'}
+            </button>
             <button
               aria-label="Clear build"
               className="planner-action-button"

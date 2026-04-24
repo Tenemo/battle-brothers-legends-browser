@@ -646,7 +646,7 @@
   justify-content: space-between;
   gap: 0.85rem;
   align-items: center;
-  min-height: 3.15rem;
+  min-height: 4.2rem;
 }
 
 .build-planner-title-row {
@@ -734,6 +734,7 @@
 .build-planner-info-tooltip {
   position: absolute;
   z-index: 12;
+  display: none;
   top: calc(100% + 0.42rem);
   left: 0;
   width: min(24rem, calc(100vw - 2rem));
@@ -759,12 +760,16 @@
 
 .build-planner-info:hover .build-planner-info-tooltip,
 .build-planner-info-button:focus-visible + .build-planner-info-tooltip {
+  display: block;
   opacity: 1;
   transform: translateY(0);
   visibility: visible;
 }
 
 .planner-action-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   min-height: 2rem;
   border: 1px solid rgb(204 155 84 / 0.16);
   border-radius: 0.62rem;
@@ -792,6 +797,22 @@
 .planner-action-button:disabled {
   opacity: 0.48;
   cursor: default;
+}
+
+.share-build-button {
+  min-width: 6.7rem;
+}
+
+.share-build-button.is-confirmed {
+  border-color: rgb(116 168 105 / 0.54);
+  background: rgb(33 55 31 / 0.72);
+  color: rgb(211 237 199);
+}
+
+.share-build-button.is-error {
+  border-color: rgb(190 80 64 / 0.54);
+  background: rgb(74 31 25 / 0.72);
+  color: rgb(244 205 197);
 }
 
 .planner-board {
@@ -1755,6 +1776,10 @@
     white-space: normal;
     overflow: visible;
     text-overflow: clip;
+  }
+
+  .build-planner-summary.is-layout-spacer {
+    display: none;
   }
 
   .planner-row {
