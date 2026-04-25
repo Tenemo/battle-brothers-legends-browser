@@ -352,6 +352,61 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
   await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
 })
 
+test('truncates long planner group categories without growing the card', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await page.goto('/?build=Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const plannerGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card', {
+    hasText: 'Heavy Armor / Sturdy / Swordmasters',
+  })
+
+  await expect(plannerGroupCard).toBeVisible()
+  await expect(plannerGroupCard.getByText('Steadfast', { exact: true })).toBeVisible()
+
+  const plannerGroupCardMetrics = await plannerGroupCard.evaluate((card) => {
+    const category = card.querySelector('.planner-slot-category')
+
+    if (!(category instanceof HTMLElement)) {
+      return null
+    }
+
+    const cardRectangle = card.getBoundingClientRect()
+    const categoryRectangle = category.getBoundingClientRect()
+    const categoryStyle = window.getComputedStyle(category)
+    const categoryLineHeight = Number.parseFloat(categoryStyle.lineHeight)
+    const fallbackCategoryLineHeight = Number.parseFloat(categoryStyle.fontSize) * 1.2
+    const cardMinimumHeight = Number.parseFloat(window.getComputedStyle(card).minHeight)
+
+    return {
+      cardHeight: cardRectangle.height,
+      cardMinimumHeight,
+      categoryClientWidth: category.clientWidth,
+      categoryHeight: categoryRectangle.height,
+      categoryLineHeight: Number.isFinite(categoryLineHeight)
+        ? categoryLineHeight
+        : fallbackCategoryLineHeight,
+      categoryOverflow: category.scrollWidth - category.clientWidth,
+      categoryText: category.textContent,
+      categoryTextOverflow: categoryStyle.textOverflow,
+      categoryWhiteSpace: categoryStyle.whiteSpace,
+    }
+  })
+
+  expect(plannerGroupCardMetrics).not.toBeNull()
+  expect(plannerGroupCardMetrics!.categoryText).toBe('Defense / Traits / Enemy')
+  expect(plannerGroupCardMetrics!.categoryWhiteSpace).toBe('nowrap')
+  expect(plannerGroupCardMetrics!.categoryTextOverflow).toBe('ellipsis')
+  expect(plannerGroupCardMetrics!.categoryOverflow).toBeGreaterThan(0)
+  expect(plannerGroupCardMetrics!.categoryHeight).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.categoryLineHeight + 1,
+  )
+  expect(plannerGroupCardMetrics!.cardHeight).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.cardMinimumHeight + 1,
+  )
+})
+
 test('links search result hover highlighting with matching build planner perks', async ({
   page,
 }) => {
