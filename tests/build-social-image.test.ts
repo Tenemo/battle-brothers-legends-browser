@@ -41,7 +41,7 @@ describe('build social image', () => {
     expect(fontFiles.every((fontFile) => existsSync(fontFile))).toBe(true)
   })
 
-  test('renders picked perks, shared groups, and background fits into the SVG', () => {
+  test('renders picked perks and background fits into the SVG without duplicated sections', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       '?build=Perfect+Focus,Peaceable,Clarity',
     )
@@ -49,20 +49,52 @@ describe('build social image', () => {
 
     expect(svg).toContain('3 picked perks')
     expect(svg).toContain('Perfect Focus')
-    expect(svg).toContain('Shared perk groups')
     expect(svg).toContain('Best background fits')
+    expect(svg).toContain('BATTLE BROTHERS')
+    expect(svg).toContain('LEGENDS')
+    expect(svg).not.toContain('Shared perk groups')
+    expect(svg).not.toContain('>Perfect Focus, Peaceable, Clarity<')
     expect(svg).not.toContain('<script')
   })
 
-  test('renders ASCII footer separators for unsupported groups', () => {
+  test('omits unsupported group counts from the footer', () => {
     const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity')
     const svg = createBuildSocialImageSvg({
       ...payload,
       unsupportedTargetCount: 2,
     })
 
-    expect(svg).toContain(' - 2 unsupported groups')
+    expect(svg).not.toContain('unsupported groups')
     expect([...svg].every((character) => character.charCodeAt(0) <= 0x7f)).toBe(true)
+  })
+
+  test('renders background icons when they are available', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      '?build=Perfect+Focus,Peaceable,Clarity',
+    )
+    const [firstBackgroundFit, ...remainingBackgroundFits] = payload.topBackgroundFits
+    if (!firstBackgroundFit) {
+      throw new Error('Expected at least one background fit.')
+    }
+    const svg = createBuildSocialImageSvg(
+      {
+        ...payload,
+        topBackgroundFits: [
+          {
+            ...firstBackgroundFit,
+            iconPath: 'ui/backgrounds/background_06.png',
+          },
+          ...remainingBackgroundFits,
+        ],
+      },
+      {
+        resolveBackgroundIconDataUrl: (backgroundFit) =>
+          backgroundFit.iconPath ? 'data:image/png;base64,background' : null,
+      },
+    )
+
+    expect(svg).toContain('background-fit-icon-clip-0')
+    expect(svg).toContain('data:image/png;base64,background')
   })
 
   test('escapes XML and truncates long labels before rendering them', () => {

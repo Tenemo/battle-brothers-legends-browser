@@ -16,9 +16,10 @@ type BuildSharePreviewSharedGroup = {
   perkCount: number
 }
 
-type BuildSharePreviewBackgroundFit = {
+export type BuildSharePreviewBackgroundFit = {
   backgroundName: string
   expectedMatchedTreeCount: number
+  iconPath: string | null
   matchedGroupCount: number
   matchLabels: string[]
   maximumTotalGroupCount: number
@@ -73,27 +74,6 @@ function buildShareSearchFromPickedPerkIds(pickedPerkIds: string[]): string {
   return buildPerkBrowserBuildUrlSearch(pickedPerkIds, allPerksById)
 }
 
-function formatBackgroundDisambiguatorLabel(disambiguator: string | null): string | null {
-  return disambiguator === null
-    ? null
-    : disambiguator.replace(/^background\./u, '').replaceAll('_', ' ')
-}
-
-function getVisibleBackgroundName(
-  backgroundFit: Pick<RankedBackgroundFit, 'backgroundName' | 'disambiguator'>,
-): string {
-  const disambiguatorLabel = formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)
-
-  if (
-    !disambiguatorLabel ||
-    disambiguatorLabel.trim().toLowerCase() === backgroundFit.backgroundName.trim().toLowerCase()
-  ) {
-    return backgroundFit.backgroundName
-  }
-
-  return `${backgroundFit.backgroundName} (${disambiguatorLabel})`
-}
-
 function formatPerkListForSentence(perkNames: string[], maxVisiblePerks: number): string {
   const visiblePerkNames = perkNames.slice(0, maxVisiblePerks)
   const hiddenPerkCount = perkNames.length - visiblePerkNames.length
@@ -124,8 +104,9 @@ function createBackgroundFitPreview(
   backgroundFit: RankedBackgroundFit,
 ): BuildSharePreviewBackgroundFit {
   return {
-    backgroundName: getVisibleBackgroundName(backgroundFit),
+    backgroundName: backgroundFit.backgroundName,
     expectedMatchedTreeCount: backgroundFit.expectedMatchedTreeCount,
+    iconPath: backgroundFit.iconPath,
     matchedGroupCount: backgroundFit.matches.length,
     matchLabels: backgroundFit.matches
       .slice(0, maxBackgroundMatchLabels)

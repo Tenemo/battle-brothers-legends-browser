@@ -10,9 +10,12 @@ describe('root social image generation', () => {
       bookIconDataUrl: 'data:image/png;base64,test',
     })
 
-    expect(svg).toContain('<tspan>Battle Brothers </tspan><tspan font-weight="700">Legends</tspan>')
-    expect(svg).toContain('font-family="Source Sans 3, Arial, sans-serif"')
-    expect(svg).toContain('PERKS BROWSER')
+    expect(svg).toContain('<tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>')
+    expect(svg).toContain('letter-spacing="0.16em"')
+    expect(svg).toContain('font-family="Cinzel, Georgia, serif"')
+    expect(svg).toContain('letter-spacing="0.02em"')
+    expect(svg).toContain('Perks browser')
+    expect(svg).not.toContain('PERKS BROWSER')
   })
 
   test('produces a non-empty PNG with the expected file signature', async () => {

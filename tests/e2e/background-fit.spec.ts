@@ -58,11 +58,15 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(apprenticeCard.getByText(/Maximum \d+ total groups/)).toBeVisible()
   await expect(apprenticeCard.locator('.background-fit-accordion-summary-row')).toHaveCount(2)
   await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
-  await expect(
-    apprenticeCard
-      .locator('.background-fit-summary-badge')
-      .filter({ hasText: /Maximum \d+ total groups/ }),
-  ).not.toHaveAttribute('title', /.+/)
+  const maximumTotalGroupsBadge = apprenticeCard
+    .locator('.background-fit-summary-badge')
+    .filter({ hasText: /Maximum \d+ total groups/ })
+
+  await expect(maximumTotalGroupsBadge).not.toHaveAttribute('title', /.+/)
+  await expect(maximumTotalGroupsBadge).toHaveAttribute(
+    'aria-label',
+    /Overall hard cap for this background/i,
+  )
   await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute(
     'aria-hidden',
     'true',
@@ -215,6 +219,36 @@ test('filters the background fit list with the background search field', async (
   await expect(
     backgroundFitPanel.getByText('No backgrounds match "zzzz impossible background".'),
   ).toBeVisible()
+})
+
+test('shows probabilistic background fit matches with percentage badges', async ({ page }) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await searchPerks(page, 'Danger Pay')
+  await addPerkToBuildFromResults(page, 'Danger Pay')
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const apprenticeCard = backgroundFitPanel
+    .locator('.background-fit-card')
+    .filter({ hasText: 'Apprentice' })
+    .first()
+
+  await apprenticeCard.scrollIntoViewIfNeeded()
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
+
+  const barterMatchButton = apprenticeCard.getByRole('button', {
+    name: 'Select perk group Barter',
+  })
+
+  await expect(apprenticeCard.getByText('Possible', { exact: true })).toBeVisible()
+  await expect(apprenticeCard.getByText(/Expected groups \d+(\.\d)?/)).toBeVisible()
+  await expect(barterMatchButton).toBeVisible()
+  await expect(barterMatchButton.locator('.detail-badge')).toHaveText(/\d+(\.\d)?%/)
+  await barterMatchButton.click()
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Profession' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Toggle perk group Barter' })).toHaveClass(
+    /is-active/,
+  )
 })
 
 test('keeps the background search enabled without any picked perks', async ({ page }) => {

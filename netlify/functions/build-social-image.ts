@@ -8,6 +8,7 @@ import type { Config, Context } from '@netlify/functions'
 import { createBuildSharePreviewPayloadFromSearch } from '../../src/lib/build-share-preview'
 import { buildSocialImageWidth, createBuildSocialImageSvg } from '../../src/lib/build-social-image'
 import type {
+  BuildSharePreviewBackgroundFit,
   BuildSharePreviewPayload,
   BuildSharePreviewPerk,
 } from '../../src/lib/build-share-preview'
@@ -117,8 +118,8 @@ function resolveIconFilePath(iconPath: string | null): string | null {
   return iconFilePath
 }
 
-function getIconDataUrl(perk: BuildSharePreviewPerk): string | null {
-  const iconFilePath = resolveIconFilePath(perk.iconPath)
+function getIconDataUrlFromPath(iconPath: string | null): string | null {
+  const iconFilePath = resolveIconFilePath(iconPath)
 
   if (!iconFilePath || !existsSync(iconFilePath)) {
     return null
@@ -127,12 +128,21 @@ function getIconDataUrl(perk: BuildSharePreviewPerk): string | null {
   return `data:image/png;base64,${readFileSync(iconFilePath).toString('base64')}`
 }
 
+function getPerkIconDataUrl(perk: BuildSharePreviewPerk): string | null {
+  return getIconDataUrlFromPath(perk.iconPath)
+}
+
+function getBackgroundIconDataUrl(backgroundFit: BuildSharePreviewBackgroundFit): string | null {
+  return getIconDataUrlFromPath(backgroundFit.iconPath)
+}
+
 export async function renderBuildSocialImagePng(
   payload: BuildSharePreviewPayload,
 ): Promise<Uint8Array> {
   const { Resvg } = await import('@resvg/resvg-js')
   const svg = createBuildSocialImageSvg(payload, {
-    resolveIconDataUrl: getIconDataUrl,
+    resolveBackgroundIconDataUrl: getBackgroundIconDataUrl,
+    resolvePerkIconDataUrl: getPerkIconDataUrl,
   })
   const fontFiles = resolveBuildSocialImageFontFiles()
   const resvg = new Resvg(svg, {
@@ -274,7 +284,8 @@ export async function createBuildSocialImageResponse(
 ): Promise<BuildSocialImageResponse> {
   const searchParams =
     createBuildSocialImageSearchParamsFromRouteParams(routeParams) ??
-    createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ?? new URLSearchParams()
+    createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ??
+    new URLSearchParams()
   const payload = createBuildSharePreviewPayloadFromSearch(searchParams)
   const renderedImage = await renderBuildSocialImagePngWithFallback(payload, renderPng)
   const cachePolicy =

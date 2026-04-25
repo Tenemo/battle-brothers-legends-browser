@@ -1,15 +1,19 @@
-import type { BuildSharePreviewPayload, BuildSharePreviewPerk } from './build-share-preview'
+import type {
+  BuildSharePreviewBackgroundFit,
+  BuildSharePreviewPayload,
+  BuildSharePreviewPerk,
+} from './build-share-preview'
 
 export const buildSocialImageWidth = 1200
 export const buildSocialImageHeight = 630
 
 type BuildSocialImageOptions = {
-  resolveIconDataUrl?: (perk: BuildSharePreviewPerk) => string | null
+  resolveBackgroundIconDataUrl?: (backgroundFit: BuildSharePreviewBackgroundFit) => string | null
+  resolvePerkIconDataUrl?: (perk: BuildSharePreviewPerk) => string | null
 }
 
-const maxVisibleIcons = 12
-const maxVisiblePerkNames = 6
-const maxVisibleSharedGroups = 1
+const maxVisibleIcons = 20
+const maxVisiblePerkNames = 10
 const ellipsis = '...'
 
 function escapeXml(value: string): string {
@@ -129,8 +133,10 @@ function wrapTextByVisualWidth(value: string, maxLineWidth: number, maxLines: nu
 function renderTextLines({
   className,
   fill,
+  fontFamily = 'Source Sans 3, Arial, sans-serif',
   fontSize,
   fontWeight,
+  letterSpacing,
   lines,
   lineStep,
   x,
@@ -138,8 +144,10 @@ function renderTextLines({
 }: {
   className?: string
   fill: string
+  fontFamily?: string
   fontSize: number
   fontWeight: number
+  letterSpacing?: string
   lines: string[]
   lineStep: number
   x: number
@@ -150,21 +158,21 @@ function renderTextLines({
       (line, lineIndex) =>
         `<text${className ? ` class="${className}"` : ''} x="${x}" y="${
           y + lineIndex * lineStep
-        }" fill="${fill}" font-family="Inter, Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}">${escapeXml(
-          line,
-        )}</text>`,
+        }" fill="${fill}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${fontWeight}"${
+          letterSpacing ? ` letter-spacing="${letterSpacing}"` : ''
+        }>${escapeXml(line)}</text>`,
     )
     .join('')
 }
 
 function renderPerkNameRows(payload: BuildSharePreviewPayload): string {
   const perkRows = payload.pickedPerks.slice(0, maxVisiblePerkNames).map((perk, perkIndex) => {
-    const rowY = 256 + perkIndex * 32
+    const rowY = 244 + perkIndex * 29
     const name = truncateLineByVisualWidth(perk.perkName, 30)
 
     return `<g transform="translate(96 ${rowY})">
       <circle cx="7" cy="7" r="4" fill="#c89d66" />
-      <text x="24" y="14" fill="#f2e9df" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="600">${escapeXml(
+      <text x="24" y="14" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="23" font-weight="600">${escapeXml(
         name,
       )}</text>
     </g>`
@@ -174,8 +182,8 @@ function renderPerkNameRows(payload: BuildSharePreviewPayload): string {
   if (hiddenCount > 0) {
     perkRows.push(
       `<text x="120" y="${
-        264 + maxVisiblePerkNames * 32
-      }" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="600">+${hiddenCount} more perks</text>`,
+        252 + maxVisiblePerkNames * 29
+      }" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="600">+${hiddenCount} more perks</text>`,
     )
   }
 
@@ -202,7 +210,7 @@ function renderIconCell({
   if (hiddenCount !== undefined && hiddenCount > 0) {
     return `<g transform="translate(${x} ${y})">
       <rect width="56" height="56" rx="13" fill="#211a15" stroke="#76563b" stroke-width="2" />
-      <text x="28" y="36" fill="#f2d6ad" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle">+${hiddenCount}</text>
+      <text x="28" y="36" fill="#f2d6ad" font-family="Source Sans 3, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle">+${hiddenCount}</text>
     </g>`
   }
 
@@ -220,7 +228,7 @@ function renderIconCell({
 
 function renderIconGrid(
   payload: BuildSharePreviewPayload,
-  resolveIconDataUrl: BuildSocialImageOptions['resolveIconDataUrl'],
+  resolvePerkIconDataUrl: BuildSocialImageOptions['resolvePerkIconDataUrl'],
 ): string {
   const visiblePerks = payload.pickedPerks.slice(0, maxVisibleIcons)
   const hiddenCount = payload.pickedPerks.length - maxVisibleIcons
@@ -228,14 +236,14 @@ function renderIconGrid(
   return visiblePerks
     .map((perk, perkIndex) => {
       const iconIndex = hiddenCount > 0 && perkIndex === maxVisibleIcons - 1 ? undefined : perkIndex
-      const columnIndex = perkIndex % 4
-      const rowIndex = Math.floor(perkIndex / 4)
-      const x = 672 + columnIndex * 86
-      const y = 122 + rowIndex * 64
+      const columnIndex = perkIndex % 5
+      const rowIndex = Math.floor(perkIndex / 5)
+      const x = 664 + columnIndex * 88
+      const y = 124 + rowIndex * 64
 
       return renderIconCell({
         hiddenCount: iconIndex === undefined ? hiddenCount + 1 : undefined,
-        iconDataUrl: iconIndex === undefined ? null : (resolveIconDataUrl?.(perk) ?? null),
+        iconDataUrl: iconIndex === undefined ? null : (resolvePerkIconDataUrl?.(perk) ?? null),
         index: perkIndex,
         perkName: perk.perkName,
         x,
@@ -245,40 +253,70 @@ function renderIconGrid(
     .join('')
 }
 
-function renderBackgroundFits(payload: BuildSharePreviewPayload): string {
+function renderBackgroundIcon({
+  backgroundFit,
+  iconDataUrl,
+  index,
+  x,
+  y,
+}: {
+  backgroundFit: BuildSharePreviewBackgroundFit
+  iconDataUrl: string | null
+  index: number
+  x: number
+  y: number
+}): string {
+  const clipPathId = `background-fit-icon-clip-${index}`
+
+  const iconMarkup = iconDataUrl
+    ? `<defs><clipPath id="${clipPathId}"><rect x="${x}" y="${y}" width="38" height="38" rx="8" /></clipPath></defs>
+      <image href="${iconDataUrl}" x="${x}" y="${y}" width="38" height="38" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipPathId})" />`
+    : `<rect x="${x}" y="${y}" width="38" height="38" rx="8" fill="#221b16" />`
+
+  return `<g>
+    <rect x="${x - 2}" y="${y - 2}" width="42" height="42" rx="10" fill="#18130f" stroke="#76563b" stroke-width="1.5" />
+    ${iconMarkup}
+    <title>${escapeXml(backgroundFit.backgroundName)}</title>
+  </g>`
+}
+
+function renderBackgroundFits(
+  payload: BuildSharePreviewPayload,
+  resolveBackgroundIconDataUrl: BuildSocialImageOptions['resolveBackgroundIconDataUrl'],
+): string {
   if (payload.topBackgroundFits.length === 0) {
-    return `<text x="682" y="424" fill="#f2e9df" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">Background fit</text>
-      <text x="682" y="464" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="500">Pick perks to compare backgrounds.</text>`
+    return `<text x="664" y="474" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="25" font-weight="700">Background fit</text>
+      <text x="664" y="512" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="500">Pick perks to compare backgrounds.</text>`
   }
 
   return payload.topBackgroundFits
     .map((backgroundFit, backgroundFitIndex) => {
-      const rowY = 418 + backgroundFitIndex * 48
+      const rowY = 474 + backgroundFitIndex * 42
       const scoreWidth = Math.max(
         28,
         Math.min(
-          178,
+          160,
           backgroundFit.maximumTotalGroupCount === 0
             ? 28
-            : (backgroundFit.expectedMatchedTreeCount / backgroundFit.maximumTotalGroupCount) * 178,
+            : (backgroundFit.expectedMatchedTreeCount / backgroundFit.maximumTotalGroupCount) * 160,
         ),
       )
-      const name = truncateLineByVisualWidth(backgroundFit.backgroundName, 13.4)
-      const matchSummary =
-        backgroundFit.matchLabels.length === 0
-          ? `${backgroundFit.matchedGroupCount} matched groups`
-          : truncateLineByVisualWidth(backgroundFit.matchLabels.join(', '), 18)
+      const name = truncateLineByVisualWidth(backgroundFit.backgroundName, 16)
 
-      return `<g transform="translate(682 ${rowY})">
-        <text x="0" y="0" fill="#f2e9df" font-family="Inter, Arial, sans-serif" font-size="22" font-weight="700">${escapeXml(
+      return `<g transform="translate(664 ${rowY})">
+        ${renderBackgroundIcon({
+          backgroundFit,
+          iconDataUrl: resolveBackgroundIconDataUrl?.(backgroundFit) ?? null,
+          index: backgroundFitIndex,
+          x: 0,
+          y: -28,
+        })}
+        <text x="54" y="-8" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="22" font-weight="700">${escapeXml(
           name,
         )}</text>
-        <text x="0" y="23" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="500">${escapeXml(
-          matchSummary,
-        )}</text>
-        <rect x="250" y="-17" width="178" height="12" rx="6" fill="#2a211b" />
-        <rect x="250" y="-17" width="${scoreWidth.toFixed(1)}" height="12" rx="6" fill="#c89d66" />
-        <text x="250" y="23" fill="#d9c6aa" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.expectedMatchedTreeCount.toFixed(
+        <rect x="270" y="-24" width="160" height="11" rx="5.5" fill="#2a211b" />
+        <rect x="270" y="-24" width="${scoreWidth.toFixed(1)}" height="11" rx="5.5" fill="#c89d66" />
+        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.expectedMatchedTreeCount.toFixed(
           1,
         )}/${backgroundFit.maximumTotalGroupCount} expected groups</text>
       </g>`
@@ -286,42 +324,15 @@ function renderBackgroundFits(payload: BuildSharePreviewPayload): string {
     .join('')
 }
 
-function renderSharedGroups(payload: BuildSharePreviewPayload): string {
-  const visibleSharedGroups = payload.sharedGroups.slice(0, maxVisibleSharedGroups)
-
-  if (visibleSharedGroups.length === 0) {
-    return `<text x="96" y="554" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="21" font-weight="500">No shared perk groups yet.</text>`
-  }
-
-  return visibleSharedGroups
-    .map((sharedGroup, sharedGroupIndex) => {
-      const rowY = 526 + sharedGroupIndex * 34
-
-      return `<g transform="translate(96 ${rowY})">
-        <text x="0" y="0" fill="#f2e9df" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">${escapeXml(
-          truncateLineByVisualWidth(sharedGroup.groupLabel, 30),
-        )}</text>
-        <text x="0" y="24" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="17" font-weight="500">${sharedGroup.perkCount} covered perks</text>
-      </g>`
-    })
-    .join('')
-}
-
 export function createBuildSocialImageSvg(
   payload: BuildSharePreviewPayload,
-  { resolveIconDataUrl }: BuildSocialImageOptions = {},
+  { resolveBackgroundIconDataUrl, resolvePerkIconDataUrl }: BuildSocialImageOptions = {},
 ): string {
   const isEmpty = payload.status === 'empty'
   const titleLines = isEmpty
     ? wrapTextByVisualWidth('Plan a Legends build', 13.5, 2)
     : wrapTextByVisualWidth(`${payload.pickedPerkCount} picked perks`, 17, 2)
-  const rawSubtitle = isEmpty
-    ? 'Browse perks, choose a build, and share the link.'
-    : payload.pickedPerks
-        .slice(0, 4)
-        .map((perk) => perk.perkName)
-        .join(', ')
-  const subtitle = truncateLineByVisualWidth(rawSubtitle, isEmpty ? 30 : 34)
+  const emptySubtitle = 'Browse perks, choose a build, and share the link.'
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${buildSocialImageWidth}" height="${buildSocialImageHeight}" viewBox="0 0 ${buildSocialImageWidth} ${buildSocialImageHeight}" role="img" aria-label="${escapeXml(
     payload.imageAlt,
@@ -344,9 +355,11 @@ export function createBuildSocialImageSvg(
     <rect width="1200" height="630" fill="url(#warm-accent)" />
     <rect width="1200" height="630" fill="url(#line-pattern)" opacity="0.32" />
     <rect x="64" y="64" width="512" height="502" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="64" width="512" height="250" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="344" width="512" height="222" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <text x="96" y="116" fill="#c89d66" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700">Battle Brothers Legends build</text>
+    <rect x="624" y="64" width="512" height="326" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
+    <rect x="624" y="408" width="512" height="170" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
+    <text x="96" y="116" fill="#ddb07b" font-family="Source Sans 3, Arial, sans-serif" font-size="22" font-weight="400" letter-spacing="0.16em">
+      <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan><tspan> BUILD</tspan>
+    </text>
     ${renderTextLines({
       fill: '#f6eee5',
       fontSize: 56,
@@ -356,18 +369,20 @@ export function createBuildSocialImageSvg(
       x: 96,
       y: 182,
     })}
-    <text x="96" y="${titleLines.length > 1 ? 272 : 238}" fill="#bda98f" font-family="Inter, Arial, sans-serif" font-size="24" font-weight="500">${escapeXml(
-      subtitle,
-    )}</text>
+    ${
+      isEmpty
+        ? `<text x="96" y="${titleLines.length > 1 ? 272 : 238}" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="500">${escapeXml(
+            truncateLineByVisualWidth(emptySubtitle, 30),
+          )}</text>`
+        : ''
+    }
     ${isEmpty ? '' : renderPerkNameRows(payload)}
-    <text x="96" y="496" fill="#c89d66" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">Shared perk groups</text>
-    ${renderSharedGroups(payload)}
-    <text x="664" y="106" fill="#c89d66" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">Picked perks</text>
-    ${renderIconGrid(payload, resolveIconDataUrl)}
-    <text x="682" y="386" fill="#c89d66" font-family="Inter, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
-    ${renderBackgroundFits(payload)}
-    <text x="682" y="554" fill="#80644a" font-family="Inter, Arial, sans-serif" font-size="16" font-weight="600">Legends ${escapeXml(
+    <text x="664" y="106" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Picked perks</text>
+    ${renderIconGrid(payload, resolvePerkIconDataUrl)}
+    <text x="664" y="442" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
+    ${renderBackgroundFits(payload, resolveBackgroundIconDataUrl)}
+    <text x="1136" y="596" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
       payload.referenceVersion.replace(/^reference-mod_/u, ''),
-    )}${payload.unsupportedTargetCount > 0 ? ` - ${payload.unsupportedTargetCount} unsupported groups` : ''}</text>
+    )}</text>
   </svg>`
 }

@@ -61,11 +61,10 @@ export async function createRootSocialImageSvg({ bookIconDataUrl = '' } = {}) {
     }
   </g>
   <rect x="184" y="422" width="172" height="8" fill="#d8a45a" />
-  <text x="430" y="216" fill="#e0a846" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="400">
-    <tspan>Battle Brothers </tspan><tspan font-weight="700">Legends</tspan>
+  <text x="430" y="216" fill="#ddb07b" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="400" letter-spacing="0.16em">
+    <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
   </text>
-  <text x="432" y="266" fill="#8b5838" font-family="Cinzel, Georgia, serif" font-size="42" font-weight="700">PERKS BROWSER</text>
-  <text x="430" y="264" fill="#f4eee6" font-family="Cinzel, Georgia, serif" font-size="42" font-weight="700">PERKS BROWSER</text>
+  <text x="430" y="270" fill="#f4eee6" font-family="Cinzel, Georgia, serif" font-size="52" font-weight="700" letter-spacing="0.02em">Perks browser</text>
   <text x="430" y="336" fill="#fffaf0" font-family="Source Sans 3, Arial, sans-serif" font-size="27" font-weight="600">
     <tspan x="430" dy="0">Search perks, inspect tree placement, and plan builds</tspan>
     <tspan x="430" dy="32">with exact in-mod labels and real game icons.</tspan>
