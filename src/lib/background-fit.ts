@@ -55,6 +55,7 @@ export type RankedBackgroundFit = {
   disambiguator: string | null
   expectedMatchedTreeCount: number
   guaranteedMatchedTreeCount: number
+  iconPath: string | null
   maximumTotalGroupCount: number
   matches: BackgroundFitMatch[]
   sourceFilePath: string
@@ -783,6 +784,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                 0,
               ),
               guaranteedMatchedTreeCount: matches.filter((match) => match.isGuaranteed).length,
+              iconPath: backgroundDefinition.iconPath ?? null,
               maximumTotalGroupCount,
               matches,
               sourceFilePath: backgroundDefinition.sourceFilePath,

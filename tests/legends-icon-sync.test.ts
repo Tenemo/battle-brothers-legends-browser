@@ -7,7 +7,15 @@ import {
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const sampleDataset: LegendsPerksDataset = {
-  backgroundFitBackgrounds: [],
+  backgroundFitBackgrounds: [
+    {
+      backgroundId: 'background.farmhand',
+      backgroundName: 'Farmhand',
+      categories: {},
+      iconPath: 'ui/backgrounds/background_09.png',
+      sourceFilePath: 'scripts/skills/backgrounds/farmhand_background.nut',
+    },
+  ],
   backgroundFitRules: {
     classWeaponDependencies: [],
   },
@@ -77,11 +85,15 @@ describe('legends icon sync', () => {
   test('collects and deduplicates referenced perk icon paths', () => {
     expect(collectRequiredGameIconPaths(sampleDataset)).toEqual([
       'skills/passive_03.png',
+      'ui/backgrounds/background_09.png',
       'ui/perks/clarity_circle.png',
     ])
   })
 
   test('maps dataset icon paths to archive entry paths', () => {
+    expect(getArchiveEntryPathFromIconPath('ui/backgrounds/background_09.png')).toBe(
+      'gfx/ui/backgrounds/background_09.png',
+    )
     expect(getArchiveEntryPathFromIconPath('ui/perks/clarity_circle.png')).toBe(
       'gfx/ui/perks/clarity_circle.png',
     )

@@ -304,8 +304,11 @@ function createBuildSocialImageErrorResponse(requestMethod: string): Response {
 
 export function createBuildSocialImageHandler({
   createResponse = createBuildSocialImageResponse,
-}: BuildSocialImageHandlerOptions = {}): (request: Request, context: Context) => Promise<Response> {
-  return async function buildSocialImage(request: Request, context: Context): Promise<Response> {
+}: BuildSocialImageHandlerOptions = {}): (
+  request: Request,
+  context?: Context,
+) => Promise<Response> {
+  return async function buildSocialImage(request: Request, context?: Context): Promise<Response> {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response(null, {
         headers: {
@@ -317,7 +320,7 @@ export function createBuildSocialImageHandler({
 
     try {
       const imageResponse = await createResponse(new URL(request.url), {
-        routeParams: context.params,
+        routeParams: context?.params,
       })
 
       return new Response(request.method === 'HEAD' ? null : Buffer.from(imageResponse.body), {

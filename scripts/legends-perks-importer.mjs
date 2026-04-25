@@ -864,6 +864,7 @@ function createDefaultBackgroundDefinition(
     backgroundName: null,
     backgroundScriptId,
     dynamicTreeValue: baseDynamicTreeValue,
+    iconPath: null,
     minimums: cloneMinimums(baseMinimums),
     sourceFilePath,
   }
@@ -880,6 +881,8 @@ function applyBackgroundCreateBody({
   const backgroundName =
     stringValue(extractAssignedValue(createBody, 'this.m.Name')) ??
     baseBackgroundDefinition.backgroundName
+  const iconPath =
+    stringValue(extractAssignedValue(createBody, 'this.m.Icon')) ?? baseBackgroundDefinition.iconPath
   const dynamicTreeValue =
     extractAssignedValue(createBody, 'this.m.PerkTreeDynamic') ??
     baseBackgroundDefinition.dynamicTreeValue
@@ -914,6 +917,7 @@ function applyBackgroundCreateBody({
     backgroundName,
     backgroundScriptId,
     dynamicTreeValue,
+    iconPath,
     minimums,
     sourceFilePath,
   }
@@ -1159,6 +1163,7 @@ function buildBackgroundFitBackgrounds(backgrounds, treeDefinitions) {
             ]
           }),
         ),
+        iconPath: background.iconPath,
         sourceFilePath: background.sourceFilePath,
       }
     })

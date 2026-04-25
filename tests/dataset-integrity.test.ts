@@ -103,10 +103,16 @@ function getDuplicatePerkNames(perks: LegendsPerkRecord[]): Map<string, string[]
   return new Map([...perkIdsByName.entries()].filter(([, perkIds]) => perkIds.length > 1))
 }
 
-function getReferencedGameIconPaths(perks: LegendsPerkRecord[]): string[] {
+function getReferencedGameIconPaths(dataset: LegendsPerksDataset): string[] {
   const iconPaths = new Set<string>()
 
-  for (const perk of perks) {
+  for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
+    if (backgroundFitBackground.iconPath) {
+      iconPaths.add(backgroundFitBackground.iconPath)
+    }
+  }
+
+  for (const perk of dataset.perks) {
     if (perk.iconPath) {
       iconPaths.add(perk.iconPath)
     }
@@ -187,7 +193,7 @@ describe('generated dataset integrity', () => {
   })
 
   test('only references game icons that exist in the served asset directory', () => {
-    const missingIconPaths = getReferencedGameIconPaths(legendsPerksDataset.perks).filter(
+    const missingIconPaths = getReferencedGameIconPaths(legendsPerksDataset).filter(
       (iconPath) => !existsSync(path.join(process.cwd(), 'public', 'game-icons', iconPath)),
     )
 

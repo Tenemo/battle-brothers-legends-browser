@@ -101,6 +101,7 @@ function createBackgroundDefinition({
     backgroundId,
     backgroundName,
     categories,
+    iconPath: null,
     sourceFilePath: `backgrounds/${backgroundId}.nut`,
   }
 }

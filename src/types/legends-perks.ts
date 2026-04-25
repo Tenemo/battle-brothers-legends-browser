@@ -78,6 +78,7 @@ export type LegendsBackgroundFitBackgroundDefinition = {
   categories: Partial<
     Record<LegendsDynamicBackgroundCategoryName, LegendsBackgroundFitCategoryDefinition>
   >
+  iconPath: string | null
   sourceFilePath: string
 }
 

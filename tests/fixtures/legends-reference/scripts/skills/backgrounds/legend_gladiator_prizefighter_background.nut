@@ -4,6 +4,7 @@ this.legend_gladiator_prizefighter_background <- this.inherit("scripts/skills/ba
   {
     this.character_background.create();
     this.m.Name = "Gladiator Prizefighter";
+    this.m.Icon = "ui/backgrounds/background_gladiator_prizefighter.png";
     this.m.PerkTreeDynamic = {
       Weapon = [
         ::Const.Perks.AxeTree

@@ -5,6 +5,7 @@
     this.character_background.create();
     this.m.ID = "background.beast_slayer";
     this.m.Name = "Beast Slayer";
+    this.m.Icon = "ui/backgrounds/background_57.png";
     this.m.PerkTreeDynamicMins.Enemy = 2;
     this.m.PerkTreeDynamicMins.EnemyChance += 0.04;
     this.m.PerkTreeDynamic = {

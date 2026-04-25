@@ -742,6 +742,11 @@ describe('app', () => {
     expect(apprenticePanel).not.toBeNull()
     expect(within(apprenticeCard as HTMLElement).getByText('Apprentice')).toBeInTheDocument()
     expect(
+      within(apprenticeCard as HTMLElement).getByRole('img', {
+        name: 'Apprentice background icon',
+      }),
+    ).toHaveAttribute('src', '/game-icons/ui/backgrounds/background_40.png')
+    expect(
       within(apprenticeCard as HTMLElement).getByText('Up to 1/1 perks pickable'),
     ).toBeInTheDocument()
     expect(

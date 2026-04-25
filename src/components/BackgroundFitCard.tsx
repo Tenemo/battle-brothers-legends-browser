@@ -15,6 +15,7 @@ import {
   getCoveredPickedPerkNames,
   getPerkGroupHoverKey,
   getVisibleBackgroundDisambiguatorLabel,
+  renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
 import { BackgroundFitAccordionChevron } from './SharedControls'
@@ -222,6 +223,11 @@ export function BackgroundFitCard({
           <div className="background-fit-card-header-main">
             <div className="background-fit-card-heading">
               <span className="background-fit-rank">{rank + 1}</span>
+              {renderGameIcon({
+                className: 'perk-icon background-fit-icon',
+                iconPath: backgroundFit.iconPath,
+                label: `${backgroundFit.backgroundName} background icon`,
+              })}
               <div className="background-fit-card-title-row">
                 <h3>
                   {renderHighlightedText(

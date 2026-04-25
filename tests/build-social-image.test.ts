@@ -115,6 +115,27 @@ describe('build social image', () => {
     expect(searchParams?.get('build')).toBe("Browbeater's Bludgeon,Blacksmiths Technique")
   })
 
+  test('uses Netlify route params before falling back to the request path', async () => {
+    const renderedBuilds: string[] = []
+    const response = await createBuildSocialImageResponse(
+      new URL('https://battlebrothers.academy/social/builds/%E0%A4%A/Student.png'),
+      {
+        renderPng: (payload) => {
+          renderedBuilds.push(payload.pickedPerks.map((perk) => perk.perkName).join(','))
+
+          return pngSignature
+        },
+        routeParams: {
+          buildSlug: 'Clarity%2CPerfect%20Focus',
+          reference: 'reference-mod_19.3.17',
+        },
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(renderedBuilds).toEqual(['Clarity,Perfect Focus'])
+  })
+
   test('falls back to the generic payload for malformed path routes', async () => {
     const renderedStatuses: string[] = []
     const response = await createBuildSocialImageResponse(
@@ -248,5 +269,30 @@ describe('build social image', () => {
     } finally {
       consoleErrorSpy.mockRestore()
     }
+  })
+
+  test('falls back to path parsing when Netlify context params are missing', async () => {
+    const renderedBuilds: string[] = []
+    const handler = createBuildSocialImageHandler({
+      createResponse: async (requestUrl, options) =>
+        createBuildSocialImageResponse(requestUrl, {
+          ...options,
+          renderPng: (payload) => {
+            renderedBuilds.push(payload.pickedPerks.map((perk) => perk.perkName).join(','))
+
+            return pngSignature
+          },
+        }),
+    })
+
+    const response = await handler(
+      new Request(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity%2CPerfect%20Focus.png',
+      ),
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toBe('image/png')
+    expect(renderedBuilds).toEqual(['Clarity,Perfect Focus'])
   })
 })

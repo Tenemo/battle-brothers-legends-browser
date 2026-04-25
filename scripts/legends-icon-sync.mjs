@@ -92,6 +92,12 @@ function runCommand(commandName, commandArguments) {
 export function collectRequiredGameIconPaths(dataset) {
   const iconPaths = new Set()
 
+  for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
+    if (backgroundFitBackground.iconPath) {
+      iconPaths.add(normalizeRelativeIconPath(backgroundFitBackground.iconPath))
+    }
+  }
+
   for (const perk of dataset.perks) {
     if (perk.iconPath) {
       iconPaths.add(normalizeRelativeIconPath(perk.iconPath))

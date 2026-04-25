@@ -71,6 +71,7 @@ describe('legends perks importer', () => {
             treeIds: [],
           }),
         }),
+        iconPath: 'ui/backgrounds/background_57.png',
       }),
     )
   })
@@ -237,6 +238,7 @@ describe('legends perks importer', () => {
             treeIds: ['AxeTree'],
           }),
         }),
+        iconPath: 'ui/backgrounds/background_gladiator_prizefighter.png',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_gladiator_prizefighter_background.nut',
       }),
@@ -245,6 +247,7 @@ describe('legends perks importer', () => {
       expect.objectContaining({
         backgroundId: 'background.legend_legionary',
         backgroundName: 'Legionary',
+        iconPath: 'ui/backgrounds/background_puppet.png',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_legionary_background.nut',
       }),

@@ -281,6 +281,41 @@ test('shows picked categories and subgroups with stars and keeps picked result r
 
   await searchPerks(page, 'Perfect')
   await inspectPerkFromResults(page, 'Perfect Fit')
+  await page.getByLabel('Search perks').focus()
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        function getPerkRowStyles(perkName: string) {
+          const inspectButton = document.querySelector(
+            `button[aria-label="Inspect ${perkName}"]`,
+          ) as HTMLButtonElement | null
+          const perkRow = inspectButton?.closest('.perk-row') as HTMLElement | null | undefined
+
+          if (perkRow == null) {
+            return null
+          }
+
+          const computedStyle = window.getComputedStyle(perkRow)
+
+          return {
+            backgroundColor: computedStyle.backgroundColor,
+            borderColor: computedStyle.borderTopColor,
+          }
+        }
+
+        return {
+          picked: getPerkRowStyles('Perfect Focus'),
+          selected: getPerkRowStyles('Perfect Fit'),
+        }
+      }),
+    )
+    .toMatchObject({
+      picked: expect.any(Object),
+      selected: expect.objectContaining({
+        borderColor: 'rgba(0, 0, 0, 0)',
+      }),
+    })
 
   const rowStyles = await page.evaluate(() => {
     function getPerkRowStyles(perkName: string) {

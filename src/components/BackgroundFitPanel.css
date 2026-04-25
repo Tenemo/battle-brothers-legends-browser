@@ -287,6 +287,13 @@
   flex-shrink: 0;
 }
 
+.background-fit-icon {
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 0.42rem;
+  flex-shrink: 0;
+}
+
 .background-fit-disambiguator {
   display: inline-flex;
   flex: 0 0 auto;

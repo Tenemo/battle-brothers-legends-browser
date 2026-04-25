@@ -36,6 +36,22 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
   ).toBeVisible()
+  const apprenticeBackgroundIcon = apprenticeCard.getByRole('img', {
+    name: 'Apprentice background icon',
+  })
+
+  await expect(apprenticeBackgroundIcon).toBeVisible()
+  await expect(apprenticeBackgroundIcon).toHaveAttribute(
+    'src',
+    '/game-icons/ui/backgrounds/background_40.png',
+  )
+  await expect
+    .poll(async () =>
+      apprenticeBackgroundIcon.evaluate((element) =>
+        element instanceof HTMLImageElement ? element.naturalWidth : 0,
+      ),
+    )
+    .toBeGreaterThan(0)
   await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
   await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
   await expect(apprenticeCard.getByText('1/1 matched group')).toBeVisible()
