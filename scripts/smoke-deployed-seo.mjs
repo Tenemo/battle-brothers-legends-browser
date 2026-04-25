@@ -256,13 +256,7 @@ const comparisonImageUrl = new URL(
 const comparisonBuildImage = await fetchImage(comparisonImageUrl)
 
 if (comparisonBuildImage.sha256 === sharedBuildImage.sha256) {
-  fail('different shared build image query strings returned the same cached image.')
-}
-
-const fallbackBuildImage = await fetchImage(new URL('/social/build.png', baseUrl))
-
-if (fallbackBuildImage.sha256 === sharedBuildImage.sha256) {
-  fail('the generic social image route returned the shared build cached image.')
+  fail('different shared build image URLs returned the same cached image.')
 }
 
 console.log(`Deployed SEO smoke checks passed for ${baseUrl.origin}.`)

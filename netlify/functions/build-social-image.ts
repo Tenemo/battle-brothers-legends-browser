@@ -38,15 +38,9 @@ type BuildSocialImageHandlerOptions = {
   createResponse?: (requestUrl: URL) => BuildSocialImageResponse
 }
 
-type BuildSocialImageSearchSource = {
-  isLegacyRoute: boolean
-  searchParams: URLSearchParams
-}
-
 const dayInSeconds = 60 * 60 * 24
 const hourInSeconds = 60 * 60
 const buildSocialImagePathPrefix = '/social/builds/'
-const legacyBuildSocialImagePath = '/social/build.png'
 const socialImageFontFamily = 'Source Sans 3'
 const socialImageFontFileNames = [
   'source-sans-3-latin-400-normal.woff',
@@ -63,12 +57,6 @@ const fallbackImageCachePolicy: BuildSocialImageCachePolicy = {
   cdn: `public, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
   netlifyCdn: `public, durable, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
 }
-const legacyImageCachePolicy: BuildSocialImageCachePolicy = {
-  browser: 'no-store, max-age=0',
-  cdn: 'no-store',
-  netlifyCdn: 'no-store',
-}
-
 function getGameIconsDirectory(): string {
   return path.resolve(process.cwd(), 'public', 'game-icons')
 }
@@ -240,32 +228,16 @@ export function createBuildSocialImageSearchParamsFromPathname(
   }
 }
 
-function getBuildSocialImageSearchSource(requestUrl: URL): BuildSocialImageSearchSource {
-  const pathSearchParams = createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname)
-
-  if (pathSearchParams) {
-    return {
-      isLegacyRoute: false,
-      searchParams: pathSearchParams,
-    }
-  }
-
-  return {
-    isLegacyRoute: requestUrl.pathname === legacyBuildSocialImagePath,
-    searchParams: new URLSearchParams(requestUrl.searchParams),
-  }
-}
-
 export function createBuildSocialImageResponse(
   requestUrl: URL,
   { renderPng }: BuildSocialImageResponseOptions = {},
 ): BuildSocialImageResponse {
-  const searchSource = getBuildSocialImageSearchSource(requestUrl)
-  const payload = createBuildSharePreviewPayloadFromSearch(searchSource.searchParams)
+  const searchParams =
+    createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ?? new URLSearchParams()
+  const payload = createBuildSharePreviewPayloadFromSearch(searchParams)
   const renderedImage = renderBuildSocialImagePngWithFallback(payload, renderPng)
-  const cachePolicy = searchSource.isLegacyRoute
-    ? legacyImageCachePolicy
-    : payload.status === 'found' && !renderedImage.usedFallback
+  const cachePolicy =
+    payload.status === 'found' && !renderedImage.usedFallback
       ? successfulImageCachePolicy
       : fallbackImageCachePolicy
 
@@ -322,5 +294,5 @@ const buildSocialImage = createBuildSocialImageHandler()
 export default buildSocialImage
 
 export const config: Config = {
-  path: ['/social/builds/:reference/:build.png', '/social/build.png'],
+  path: '/social/builds/:reference/:build.png',
 }

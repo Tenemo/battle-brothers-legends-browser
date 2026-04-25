@@ -16,7 +16,7 @@ const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
 
 describe('build social image', () => {
   test('declares the public social image route', () => {
-    expect(config.path).toEqual(['/social/builds/:reference/:build.png', '/social/build.png'])
+    expect(config.path).toBe('/social/builds/:reference/:build.png')
   })
 
   test('resolves bundled social image fonts', () => {
@@ -35,7 +35,7 @@ describe('build social image', () => {
 
   test('renders picked perks, shared groups, and background fits into the SVG', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
-      '?build=Perfect+Focus&build=Peaceable&build=Clarity',
+      '?build=Perfect+Focus,Peaceable,Clarity',
     )
     const svg = createBuildSocialImageSvg(payload)
 
@@ -155,27 +155,6 @@ describe('build social image', () => {
     expect(Buffer.from(response.body).subarray(0, 8)).toEqual(pngSignature)
   })
 
-  test('keeps legacy query responses uncached while preserving compatibility', () => {
-    const renderedBuilds: string[] = []
-    const response = createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/build.png?build=Clarity'),
-      {
-        renderPng: (payload) => {
-          renderedBuilds.push(payload.pickedPerks.map((perk) => perk.perkName).join(','))
-
-          return pngSignature
-        },
-      },
-    )
-
-    expect(response.status).toBe(200)
-    expect(renderedBuilds).toEqual(['Clarity'])
-    expect(response.headers['cache-control']).toBe('no-store, max-age=0')
-    expect(response.headers['cdn-cache-control']).toBe('no-store')
-    expect(response.headers['netlify-cdn-cache-control']).toBe('no-store')
-    expect(response.headers['netlify-vary']).toBeUndefined()
-  })
-
   test('uses shorter cache headers when the renderer falls back to the generic image', () => {
     let renderAttemptCount = 0
     const response = createBuildSocialImageResponse(
@@ -210,9 +189,12 @@ describe('build social image', () => {
       ),
     )
     const postResponse = await buildSocialImage(
-      new Request('https://battlebrothers.academy/social/build.png', {
-        method: 'POST',
-      }),
+      new Request(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png',
+        {
+          method: 'POST',
+        },
+      ),
     )
 
     expect(headResponse.status).toBe(200)
@@ -232,7 +214,9 @@ describe('build social image', () => {
 
     try {
       const response = await handler(
-        new Request('https://battlebrothers.academy/social/build.png?build=Clarity'),
+        new Request(
+          'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png',
+        ),
       )
 
       expect(response.status).toBe(500)

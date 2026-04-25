@@ -14,7 +14,7 @@ describe('build share preview', () => {
 
   test('normalizes duplicated and noisy shared build urls into build-only metadata', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
-      '?search=clarity&category=Traits&build=Clarity&build=Perfect+Focus&build=Clarity',
+      '?search=clarity&category=Traits&build=Clarity,Perfect+Focus,Clarity',
     )
 
     expect(payload.status).toBe('found')
@@ -31,7 +31,7 @@ describe('build share preview', () => {
 
   test('canonicalizes duplicate-name shared build urls without dropping either perk id', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
-      '?build=Chain+Lightning--perk.legend_chain_lightning&build=Chain+Lightning--perk.legend_magic_chain_lightning',
+      '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
 
     expect(payload.status).toBe('found')
@@ -64,7 +64,7 @@ describe('build share preview', () => {
 
   test('summarizes shared perk groups and background fits for picked builds', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
-      '?build=Perfect+Focus&build=Peaceable&build=Clarity',
+      '?build=Perfect+Focus,Peaceable,Clarity',
     )
 
     expect(payload.status).toBe('found')

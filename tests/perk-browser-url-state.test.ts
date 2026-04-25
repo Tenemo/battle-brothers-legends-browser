@@ -157,10 +157,10 @@ describe('perk browser url state', () => {
     )
   })
 
-  test('parses the grouped readable query params and ignores legacy tier values', () => {
+  test('parses the grouped readable query params', () => {
     expect(
       readPerkBrowserUrlState(
-        '?search=Perfect+Focus&tier=7&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
+        '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
         {
           availableGroupNames,
           perks: samplePerks,
@@ -178,31 +178,10 @@ describe('perk browser url state', () => {
     })
   })
 
-  test('parses legacy repeated params and ignores legacy tier values', () => {
+  test('ignores unknown values, normalizes values, and infers categories from groups', () => {
     expect(
       readPerkBrowserUrlState(
-        '?search=Perfect+Focus&tier=7&category=Traits&category=Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity&build=Perfect+Focus',
-        {
-          availableGroupNames,
-          perks: samplePerks,
-          treeOptionsByGroup,
-        },
-      ),
-    ).toEqual({
-      pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
-      query: 'Perfect Focus',
-      selectedGroupNames: ['Traits', 'Magic'],
-      selectedTreeIdsByGroup: {
-        Magic: ['DeadeyeTree'],
-        Traits: ['CalmTree'],
-      },
-    })
-  })
-
-  test('accepts mixed grouped and repeated params, ignores unknown values, and infers categories from groups', () => {
-    expect(
-      readPerkBrowserUrlState(
-        '?category=traits,missing&group-traits=calm,calm,unknown&group-magic=deadeye&build=perfect-focus,perfect-focus,unknown&build=peaceable&build=Clarity&tier=bad-value&search=++Perfect+++Focus++',
+        '?category=traits,missing&group-traits=calm,calm,unknown&group-magic=deadeye&build=perfect-focus,perfect-focus,unknown,peaceable,Clarity&search=++Perfect+++Focus++',
         {
           availableGroupNames,
           perks: samplePerks,
@@ -245,16 +224,6 @@ describe('perk browser url state', () => {
         treeOptionsByGroup,
       }).pickedPerkIds,
     ).toEqual(['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'])
-  })
-
-  test('keeps legacy duplicate-name build params accepted', () => {
-    expect(
-      readPerkBrowserUrlState('?build=Chain+Lightning', {
-        availableGroupNames,
-        perks: duplicateNamePerks,
-        treeOptionsByGroup,
-      }).pickedPerkIds,
-    ).toEqual(['perk.legend_magic_chain_lightning'])
   })
 
   test('omits the query string entirely when nothing needs to be shared', () => {

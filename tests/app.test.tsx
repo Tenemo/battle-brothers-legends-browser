@@ -672,7 +672,7 @@ describe('app', () => {
     window.history.replaceState(
       {},
       '',
-      '/?search=Perfect+Focus&tier=7&category=Traits&category=Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity&build=Perfect+Focus',
+      '/?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
     )
 
     render(<App />)

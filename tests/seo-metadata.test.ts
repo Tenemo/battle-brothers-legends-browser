@@ -53,7 +53,7 @@ describe('SEO metadata', () => {
 
   test('creates noindex metadata for valid shared build urls', () => {
     const metadata = resolveSeoMetadataForUrl(
-      new URL('https://battlebrothers.academy/?build=Clarity&build=Perfect+Focus'),
+      new URL('https://battlebrothers.academy/?build=Clarity,Perfect+Focus'),
     )
 
     expect(metadata.title).toBe('Battle Brothers Legends build: 2 perks')
@@ -69,7 +69,7 @@ describe('SEO metadata', () => {
   test('keeps duplicate-name build ids in shared SEO metadata', () => {
     const metadata = resolveSeoMetadataForUrl(
       new URL(
-        'https://battlebrothers.academy/?build=Chain+Lightning--perk.legend_chain_lightning&build=Chain+Lightning--perk.legend_magic_chain_lightning',
+        'https://battlebrothers.academy/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
       ),
     )
 
@@ -109,7 +109,7 @@ describe('SEO metadata', () => {
   test('injects shared build metadata into the document head', () => {
     const html = renderDocumentHtml({
       baseHtml,
-      requestUrl: new URL('https://battlebrothers.academy/?build=Clarity&build=Perfect+Focus'),
+      requestUrl: new URL('https://battlebrothers.academy/?build=Clarity,Perfect+Focus'),
     })
 
     expect(html).toContain('<title>Battle Brothers Legends build: 2 perks</title>')

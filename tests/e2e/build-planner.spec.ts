@@ -273,7 +273,7 @@ test('build planner splits shared and individual perk groups without internal sc
   expect(Math.max(...plannerGroupCardWidths)).toBeLessThanOrEqual(230)
 
   await page.goto(
-    '/?build=Clarity&build=Peaceable&build=Perfect+Focus&build=Berserk&build=Killing+Frenzy&build=Fearsome&build=Colossus',
+    '/?build=Clarity,Peaceable,Perfect+Focus,Berserk,Killing+Frenzy,Fearsome,Colossus',
   )
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(7)
@@ -329,7 +329,7 @@ test('build planner splits shared and individual perk groups without internal sc
 test('groups perk groups by shared and individual perk coverage', async ({ page }) => {
   await gotoPerksBrowser(page)
 
-  await page.goto('/?build=Battle+Forged&build=Immovable+Object&build=Steadfast')
+  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
 
   const buildSharedGroupsList = getBuildSharedGroupsList(page)

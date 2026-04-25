@@ -15,7 +15,7 @@ const baseHtml = `<!doctype html>
 describe('build SEO edge function', () => {
   test('injects build metadata into HTML responses', async () => {
     const response = await buildSeo(
-      new Request('https://battlebrothers.academy/?build=Clarity&build=Perfect+Focus'),
+      new Request('https://battlebrothers.academy/?build=Clarity,Perfect+Focus'),
       {
         next: async () =>
           new Response(baseHtml, {

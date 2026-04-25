@@ -85,18 +85,11 @@ function createPerkUrlLabel(
     : perk.perkName
 }
 
-function createPerkIdLookupMaps(perks: LegendsPerkRecord[]): {
-  legacyPerkIdByNameLookupValue: Map<string, string>
-  perkIdByLookupValue: Map<string, string>
-} {
+function createPerkIdByLookupValue(perks: LegendsPerkRecord[]): Map<string, string> {
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(perks)
-  const legacyPerkIdByNameLookupValue = new Map<string, string>()
   const perkIdByLookupValue = new Map<string, string>()
 
   for (const perk of perks) {
-    const nameLookupValue = normalizeLookupValue(perk.perkName)
-
-    legacyPerkIdByNameLookupValue.set(nameLookupValue, perk.id)
     perkIdByLookupValue.set(normalizeLookupValue(perk.id), perk.id)
     perkIdByLookupValue.set(
       normalizeLookupValue(createPerkUrlLabel(perk, perkNameCountByLookupValue)),
@@ -104,10 +97,7 @@ function createPerkIdLookupMaps(perks: LegendsPerkRecord[]): {
     )
   }
 
-  return {
-    legacyPerkIdByNameLookupValue,
-    perkIdByLookupValue,
-  }
+  return perkIdByLookupValue
 }
 
 function encodeQueryValue(value: string): string {
@@ -122,7 +112,9 @@ function splitGroupedParamValue(value: string): string[] {
 }
 
 function getGroupedParamValues(params: URLSearchParams, key: string): string[] {
-  return params.getAll(key).flatMap((value) => splitGroupedParamValue(value))
+  const value = params.get(key)
+
+  return value ? splitGroupedParamValue(value) : []
 }
 
 function appendScalarQueryEntry(entries: string[], key: string, value: string): void {
@@ -159,9 +151,7 @@ export function readPerkBrowserUrlState(
   const groupNameByParamKey = new Map(
     options.availableGroupNames.map((groupName) => [createGroupParamKey(groupName), groupName]),
   )
-  const { legacyPerkIdByNameLookupValue, perkIdByLookupValue } = createPerkIdLookupMaps(
-    options.perks,
-  )
+  const perkIdByLookupValue = createPerkIdByLookupValue(options.perks)
   const treeIdByLookupValueByGroup = new Map(
     [...options.treeOptionsByGroup.entries()].map(([groupName, treeOptions]) => [
       groupName,
@@ -187,18 +177,8 @@ export function readPerkBrowserUrlState(
     }
   }
 
-  for (const [paramKey, paramValue] of params.entries()) {
-    if (!paramKey.startsWith(groupParamKeyPrefix)) {
-      continue
-    }
-
-    const groupName = groupNameByParamKey.get(paramKey)
-
-    if (!groupName) {
-      continue
-    }
-
-    for (const groupValue of splitGroupedParamValue(paramValue)) {
+  for (const [groupParamKey, groupName] of groupNameByParamKey) {
+    for (const groupValue of getGroupedParamValues(params, groupParamKey)) {
       const treeId = treeIdByLookupValueByGroup
         .get(groupName)
         ?.get(normalizeLookupValue(groupValue))
@@ -221,8 +201,7 @@ export function readPerkBrowserUrlState(
 
   for (const buildValue of getGroupedParamValues(params, buildParamName)) {
     const lookupValue = normalizeLookupValue(buildValue)
-    const perkId =
-      perkIdByLookupValue.get(lookupValue) ?? legacyPerkIdByNameLookupValue.get(lookupValue)
+    const perkId = perkIdByLookupValue.get(lookupValue)
 
     if (!perkId || pickedPerkIdSet.has(perkId)) {
       continue
