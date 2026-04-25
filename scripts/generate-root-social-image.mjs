@@ -18,11 +18,18 @@ const bookIconPath = path.join(
   'perks',
   'perk_21.png',
 )
+const legendsPerksDataPath = path.join(
+  projectRootDirectoryPath,
+  'src',
+  'data',
+  'legends-perks.json',
+)
 const fontDirectoryPath = path.join(projectRootDirectoryPath, 'scripts', 'assets', 'fonts')
 const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel.ttf')
 const sourceSansRegularFontPath = path.join(fontDirectoryPath, 'SourceSans3-Regular.ttf')
 const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Semibold.ttf')
 const sourceSansBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Bold.ttf')
+const fallbackLegendsReferenceVersion = '19.3.17'
 
 function escapeXml(value) {
   return value
@@ -33,7 +40,12 @@ function escapeXml(value) {
     .replaceAll("'", '&apos;')
 }
 
-export async function createRootSocialImageSvg({ bookIconDataUrl = '' } = {}) {
+export async function createRootSocialImageSvg({
+  bookIconDataUrl = '',
+  referenceVersion = fallbackLegendsReferenceVersion,
+} = {}) {
+  const displayReferenceVersion = referenceVersion.replace(/^reference-mod_/u, '')
+
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${socialImageWidth}" height="${socialImageHeight}" viewBox="0 0 ${socialImageWidth} ${socialImageHeight}" role="img" aria-label="${escapeXml(
     'Battle Brothers Legends perks browser social preview.',
   )}">
@@ -70,7 +82,7 @@ export async function createRootSocialImageSvg({ bookIconDataUrl = '' } = {}) {
         : ''
     }
   </g>
-  <text x="430" y="192" fill="#ddb07b" font-family="Source Sans 3, Arial, sans-serif" font-size="36" font-weight="400" letter-spacing="0.16em">
+  <text x="80" y="98" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">
     <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
   </text>
   <text x="430" y="282" fill="#f4eee6" font-family="Cinzel, Georgia, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>
@@ -80,7 +92,10 @@ export async function createRootSocialImageSvg({ bookIconDataUrl = '' } = {}) {
     <tspan x="430" dy="48">with exact in-mod labels</tspan>
     <tspan x="430" dy="48">and real game icons.</tspan>
   </text>
-  <text x="8" y="614" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
+  <text x="12" y="614" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
+  <text x="1196" y="624" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
+    displayReferenceVersion,
+  )}</text>
 </svg>`
 }
 
@@ -89,9 +104,22 @@ async function createBookIconDataUrl() {
   return `data:image/png;base64,${bookIcon.toString('base64')}`
 }
 
+async function readLegendsReferenceVersion() {
+  try {
+    const legendsPerksData = JSON.parse(await readFile(legendsPerksDataPath, 'utf8'))
+
+    return typeof legendsPerksData.referenceVersion === 'string'
+      ? legendsPerksData.referenceVersion
+      : fallbackLegendsReferenceVersion
+  } catch {
+    return fallbackLegendsReferenceVersion
+  }
+}
+
 export async function renderRootSocialImagePng() {
   const svg = await createRootSocialImageSvg({
     bookIconDataUrl: await createBookIconDataUrl(),
+    referenceVersion: await readLegendsReferenceVersion(),
   })
   const renderer = new Resvg(svg, {
     fitTo: {

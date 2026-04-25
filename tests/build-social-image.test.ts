@@ -53,10 +53,14 @@ describe('build social image', () => {
     expect(svg).toContain('BATTLE BROTHERS')
     expect(svg).toContain('LEGENDS')
     expect(svg).not.toContain('LEGENDS</tspan><tspan> BUILD')
-    expect(svg).toContain('<rect x="48" y="64" width="528"')
-    expect(svg).toContain('<rect x="624" y="408" width="528" height="194"')
-    expect(svg).toContain('<text x="664" y="96"')
-    expect(svg).toContain('<text x="8" y="620"')
+    expect(svg).toContain(
+      '<text x="80" y="98" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">',
+    )
+    expect(svg).toContain('<rect x="48" y="32" width="528" height="538"')
+    expect(svg).toContain('<rect x="624" y="32" width="528" height="326"')
+    expect(svg).toContain('<rect x="624" y="376" width="528" height="194"')
+    expect(svg).toContain('<text x="664" y="64"')
+    expect(svg).toContain('<text x="12" y="620"')
     expect(svg).toContain('battlebrothers.academy')
     expect(svg).toContain('text-decoration="underline"')
     expect(svg).not.toContain('<line x1="4" y1="628"')
@@ -64,6 +68,36 @@ describe('build social image', () => {
     expect(svg).not.toContain('Shared perk groups')
     expect(svg).not.toContain('>Perfect Focus, Peaceable, Clarity<')
     expect(svg).not.toContain('<script')
+  })
+
+  test('tightens dense build list spacing and spaces preview rows consistently', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity')
+    const svg = createBuildSocialImageSvg({
+      ...payload,
+      pickedPerkCount: 19,
+      pickedPerks: Array.from({ length: 19 }, (_, perkIndex) => ({
+        iconPath: null,
+        perkName: `Perk ${perkIndex + 1}`,
+      })),
+      topBackgroundFits: [1, 2, 3].map((backgroundIndex) => ({
+        backgroundName: `Background ${backgroundIndex}`,
+        expectedMatchedTreeCount: 6,
+        iconPath: null,
+        matchedGroupCount: 6,
+        matchLabels: [],
+        maximumTotalGroupCount: 28,
+      })),
+    })
+
+    expect(svg).toContain('19 picked perks')
+    expect(svg).toContain('<g transform="translate(80 190)">')
+    expect(svg).toContain('<text x="80" y="488"')
+    expect(svg).toContain('+9 more perks')
+    expect(svg).toContain('x="664" y="80" width="56"')
+    expect(svg).toContain('x="664" y="150" width="56"')
+    expect(svg).toContain('translate(664 446)')
+    expect(svg).toContain('translate(664 498)')
+    expect(svg).toContain('translate(664 550)')
   })
 
   test('omits unsupported group counts from the footer', () => {

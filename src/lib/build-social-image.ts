@@ -165,9 +165,9 @@ function renderTextLines({
     .join('')
 }
 
-function renderPerkNameRows(payload: BuildSharePreviewPayload): string {
+function renderPerkNameRows(payload: BuildSharePreviewPayload, startY: number): string {
   const perkRows = payload.pickedPerks.slice(0, maxVisiblePerkNames).map((perk, perkIndex) => {
-    const rowY = 244 + perkIndex * 29
+    const rowY = startY + perkIndex * 29
     const name = truncateLineByVisualWidth(perk.perkName, 30)
 
     return `<g transform="translate(80 ${rowY})">
@@ -181,8 +181,8 @@ function renderPerkNameRows(payload: BuildSharePreviewPayload): string {
 
   if (hiddenCount > 0) {
     perkRows.push(
-      `<text x="104" y="${
-        252 + maxVisiblePerkNames * 29
+      `<text x="80" y="${
+        startY + maxVisiblePerkNames * 29 + 8
       }" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="600">+${hiddenCount} more perks</text>`,
     )
   }
@@ -239,7 +239,7 @@ function renderIconGrid(
       const columnIndex = perkIndex % 5
       const rowIndex = Math.floor(perkIndex / 5)
       const x = 664 + columnIndex * 88
-      const y = 112 + rowIndex * 68
+      const y = 80 + rowIndex * 70
 
       return renderIconCell({
         hiddenCount: iconIndex === undefined ? hiddenCount + 1 : undefined,
@@ -285,13 +285,13 @@ function renderBackgroundFits(
   resolveBackgroundIconDataUrl: BuildSocialImageOptions['resolveBackgroundIconDataUrl'],
 ): string {
   if (payload.topBackgroundFits.length === 0) {
-    return `<text x="664" y="474" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="25" font-weight="700">Background fit</text>
-      <text x="664" y="512" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="500">Pick perks to compare backgrounds.</text>`
+    return `<text x="664" y="442" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="25" font-weight="700">Background fit</text>
+      <text x="664" y="480" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="500">Pick perks to compare backgrounds.</text>`
   }
 
   return payload.topBackgroundFits
     .map((backgroundFit, backgroundFitIndex) => {
-      const rowY = 478 + backgroundFitIndex * 50
+      const rowY = 446 + backgroundFitIndex * 52
       const scoreWidth = Math.max(
         28,
         Math.min(
@@ -333,6 +333,7 @@ export function createBuildSocialImageSvg(
     ? wrapTextByVisualWidth('Plan a Legends build', 13.5, 2)
     : wrapTextByVisualWidth(`${payload.pickedPerkCount} picked perks`, 17, 2)
   const emptySubtitle = 'Browse perks, choose a build, and share the link.'
+  const perkListStartY = 190 + (titleLines.length - 1) * 62
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${buildSocialImageWidth}" height="${buildSocialImageHeight}" viewBox="0 0 ${buildSocialImageWidth} ${buildSocialImageHeight}" role="img" aria-label="${escapeXml(
     payload.imageAlt,
@@ -354,10 +355,10 @@ export function createBuildSocialImageSvg(
     <rect width="1200" height="630" fill="url(#background)" />
     <rect width="1200" height="630" fill="url(#warm-accent)" />
     <rect width="1200" height="630" fill="url(#line-pattern)" opacity="0.32" />
-    <rect x="48" y="64" width="528" height="502" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="64" width="528" height="326" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="408" width="528" height="194" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <text x="80" y="110" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">
+    <rect x="48" y="32" width="528" height="538" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
+    <rect x="624" y="32" width="528" height="326" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
+    <rect x="624" y="376" width="528" height="194" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
+    <text x="80" y="98" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">
       <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
     </text>
     ${renderTextLines({
@@ -367,21 +368,21 @@ export function createBuildSocialImageSvg(
       lineStep: 62,
       lines: titleLines,
       x: 80,
-      y: 182,
+      y: 150,
     })}
     ${
       isEmpty
-        ? `<text x="80" y="${titleLines.length > 1 ? 272 : 238}" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="500">${escapeXml(
+        ? `<text x="80" y="${titleLines.length > 1 ? 240 : 206}" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="500">${escapeXml(
             truncateLineByVisualWidth(emptySubtitle, 30),
           )}</text>`
         : ''
     }
-    ${isEmpty ? '' : renderPerkNameRows(payload)}
-    <text x="664" y="96" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Picked perks</text>
+    ${isEmpty ? '' : renderPerkNameRows(payload, perkListStartY)}
+    <text x="664" y="64" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Picked perks</text>
     ${renderIconGrid(payload, resolvePerkIconDataUrl)}
-    <text x="664" y="442" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
+    <text x="664" y="410" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
     ${renderBackgroundFits(payload, resolveBackgroundIconDataUrl)}
-    <text x="8" y="620" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
+    <text x="12" y="620" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
     <text x="1196" y="624" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
       payload.referenceVersion.replace(/^reference-mod_/u, ''),
     )}</text>
