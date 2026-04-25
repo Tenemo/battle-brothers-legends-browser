@@ -70,16 +70,17 @@ export async function createRootSocialImageSvg({ bookIconDataUrl = '' } = {}) {
         : ''
     }
   </g>
-  <text x="430" y="216" fill="#ddb07b" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="400" letter-spacing="0.16em">
+  <text x="430" y="192" fill="#ddb07b" font-family="Source Sans 3, Arial, sans-serif" font-size="36" font-weight="400" letter-spacing="0.16em">
     <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
   </text>
-  <text x="430" y="270" fill="#f4eee6" font-family="Cinzel, Georgia, serif" font-size="52" font-weight="700" letter-spacing="0.02em">Perks browser</text>
-  <text x="430" y="336" fill="#fffaf0" font-family="Source Sans 3, Arial, sans-serif" font-size="27" font-weight="600">
-    <tspan x="430" dy="0">Search perks, inspect tree placement, and plan builds</tspan>
-    <tspan x="430" dy="32">with exact in-mod labels and real game icons.</tspan>
+  <text x="430" y="282" fill="#f4eee6" font-family="Cinzel, Georgia, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>
+  <text x="430" y="344" fill="#fffaf0" font-family="Source Sans 3, Arial, sans-serif" font-size="41" font-weight="600">
+    <tspan x="430" dy="0">Search perks, inspect tree</tspan>
+    <tspan x="430" dy="48">placement, and plan builds</tspan>
+    <tspan x="430" dy="48">with exact in-mod labels</tspan>
+    <tspan x="430" dy="48">and real game icons.</tspan>
   </text>
-  <text x="4" y="618" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="700">battlebrothers.academy</text>
-  <line x1="4" y1="626" x2="310" y2="626" stroke="#ded4c1" stroke-width="2" stroke-linecap="round" />
+  <text x="8" y="614" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
 </svg>`
 }
 

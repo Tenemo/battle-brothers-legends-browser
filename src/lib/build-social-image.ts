@@ -381,8 +381,7 @@ export function createBuildSocialImageSvg(
     ${renderIconGrid(payload, resolvePerkIconDataUrl)}
     <text x="664" y="442" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
     ${renderBackgroundFits(payload, resolveBackgroundIconDataUrl)}
-    <text x="4" y="624" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700">battlebrothers.academy</text>
-    <line x1="4" y1="628" x2="250" y2="628" stroke="#ded4c1" stroke-width="1.5" stroke-linecap="round" />
+    <text x="8" y="620" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
     <text x="1196" y="624" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
       payload.referenceVersion.replace(/^reference-mod_/u, ''),
     )}</text>
