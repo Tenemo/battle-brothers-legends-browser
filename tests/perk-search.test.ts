@@ -1,6 +1,5 @@
 import { describe, expect, test } from 'vitest'
 import {
-  allTiersFilterValue,
   filterAndSortPerks,
   getPerkPreview,
   getPerkPreviewParagraphs,
@@ -161,7 +160,6 @@ describe('perk search', () => {
       query: 'Clarity',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(results.map((perk) => perk.perkName)[0]).toBe('Clarity')
@@ -172,7 +170,6 @@ describe('perk search', () => {
       query: 'scouting',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(results.map((perk) => perk.perkName)).toEqual(['Lookout'])
@@ -183,13 +180,11 @@ describe('perk search', () => {
       query: 'vala chant',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
     const backgroundResults = filterAndSortPerks(samplePerks, {
       query: 'Beast Slayer',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(treeResults.map((perk) => perk.perkName)).toEqual(['Heightened Senses'])
@@ -201,39 +196,15 @@ describe('perk search', () => {
       query: 'Beast Slayers',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
     const targetResults = filterAndSortPerks(samplePerks, {
       query: 'Bear',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(scenarioResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
     expect(targetResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
-  })
-
-  test('combines category and tier filters', () => {
-    const results = filterAndSortPerks(samplePerks, {
-      query: '',
-      selectedGroupNames: ['Traits'],
-      selectedTreeIdsByGroup: {},
-      tierValue: '5',
-    })
-
-    expect(results.map((perk) => perk.perkName)).toEqual(['Clarity'])
-  })
-
-  test('combines category, perk group, and tier filters', () => {
-    const results = filterAndSortPerks(samplePerks, {
-      query: '',
-      selectedGroupNames: ['Enemy'],
-      selectedTreeIdsByGroup: { Enemy: ['BeastTree'] },
-      tierValue: '3',
-    })
-
-    expect(results.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
   })
 
   test('treats multiple selected categories as a union while keeping subgroup filters scoped per category', () => {
@@ -241,7 +212,6 @@ describe('perk search', () => {
       query: '',
       selectedGroupNames: ['Traits', 'Enemy'],
       selectedTreeIdsByGroup: { Traits: ['CalmTree'] },
-      tierValue: allTiersFilterValue,
     })
 
     expect(results.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts', 'Clarity'])

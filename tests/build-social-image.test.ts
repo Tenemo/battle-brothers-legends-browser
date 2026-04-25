@@ -64,7 +64,6 @@ describe('build social image', () => {
       pickedPerks: [
         {
           iconPath: null,
-          id: 'test',
           perkName: 'A very long perk name with <xml> & enough extra words to require trimming',
         },
       ],

@@ -8,21 +8,17 @@ import type { LegendsPerkRecord, LegendsPerksDataset } from '../types/legends-pe
 
 export type BuildSharePreviewPerk = {
   iconPath: string | null
-  id: string
   perkName: string
 }
 
 type BuildSharePreviewSharedGroup = {
   groupLabel: string
   perkCount: number
-  perkNames: string[]
 }
 
 type BuildSharePreviewBackgroundFit = {
   backgroundName: string
-  disambiguator: string | null
   expectedMatchedTreeCount: number
-  guaranteedMatchedTreeCount: number
   matchedGroupCount: number
   matchLabels: string[]
   maximumTotalGroupCount: number
@@ -67,14 +63,13 @@ function getPickedPerkIdsFromSearch(search: string | URLSearchParams): string[] 
   const urlState = readPerkBrowserUrlState(search.toString(), {
     availableGroupNames: [],
     perks: allPerks,
-    tierOptions: [],
     treeOptionsByGroup: emptyTreeOptionsByGroup,
   })
 
   return urlState.pickedPerkIds
 }
 
-export function buildShareSearchFromPickedPerkIds(pickedPerkIds: string[]): string {
+function buildShareSearchFromPickedPerkIds(pickedPerkIds: string[]): string {
   return buildPerkBrowserBuildUrlSearch(pickedPerkIds, allPerksById)
 }
 
@@ -122,7 +117,6 @@ function createSharedGroupPreview(
       .map((perkGroupOption) => perkGroupOption.treeLabel)
       .join(' / '),
     perkCount: groupedPerkGroup.perkNames.length,
-    perkNames: groupedPerkGroup.perkNames,
   }
 }
 
@@ -131,9 +125,7 @@ function createBackgroundFitPreview(
 ): BuildSharePreviewBackgroundFit {
   return {
     backgroundName: getVisibleBackgroundName(backgroundFit),
-    disambiguator: formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator),
     expectedMatchedTreeCount: backgroundFit.expectedMatchedTreeCount,
-    guaranteedMatchedTreeCount: backgroundFit.guaranteedMatchedTreeCount,
     matchedGroupCount: backgroundFit.matches.length,
     matchLabels: backgroundFit.matches
       .slice(0, maxBackgroundMatchLabels)
@@ -221,7 +213,6 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
   )
   const previewPerks = pickedPerks.map((pickedPerk) => ({
     iconPath: pickedPerk.iconPath,
-    id: pickedPerk.id,
     perkName: pickedPerk.perkName,
   }))
   const title = `Battle Brothers Legends build: ${pickedPerks.length} perk${

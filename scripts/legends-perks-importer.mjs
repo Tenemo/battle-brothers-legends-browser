@@ -1561,65 +1561,6 @@ function compareScenarioSources(leftSource, rightSource) {
   )
 }
 
-function setTechnicalNameLabel(labelsByTechnicalName, technicalName, displayName) {
-  if (!technicalName || !displayName) {
-    return
-  }
-
-  const normalizedDisplayName = normalizeWhitespace(displayName)
-
-  if (!normalizedDisplayName) {
-    return
-  }
-
-  labelsByTechnicalName[technicalName] = normalizedDisplayName
-}
-
-export function createTechnicalNameMappings(dataset) {
-  const labelsByTechnicalName = {}
-
-  for (const perk of dataset.perks) {
-    setTechnicalNameLabel(labelsByTechnicalName, perk.id, perk.perkName)
-    setTechnicalNameLabel(labelsByTechnicalName, perk.perkConstName, perk.perkName)
-
-    for (const placement of perk.placements) {
-      setTechnicalNameLabel(labelsByTechnicalName, placement.treeId, placement.treeName)
-    }
-
-    for (const backgroundSource of perk.backgroundSources) {
-      setTechnicalNameLabel(
-        labelsByTechnicalName,
-        backgroundSource.backgroundId,
-        backgroundSource.backgroundName,
-      )
-    }
-
-    for (const scenarioSource of perk.scenarioSources) {
-      setTechnicalNameLabel(
-        labelsByTechnicalName,
-        scenarioSource.scenarioId,
-        scenarioSource.scenarioName,
-      )
-    }
-
-    for (const favoredEnemyTarget of perk.favoredEnemyTargets ?? []) {
-      setTechnicalNameLabel(
-        labelsByTechnicalName,
-        favoredEnemyTarget.entityConstName,
-        favoredEnemyTarget.entityName,
-      )
-    }
-  }
-
-  return {
-    labelsByTechnicalName: Object.fromEntries(
-      Object.entries(labelsByTechnicalName).toSorted(([leftTechnicalName], [rightTechnicalName]) =>
-        leftTechnicalName.localeCompare(rightTechnicalName),
-      ),
-    ),
-  }
-}
-
 export async function createDataset(
   referenceRootDirectoryPath = defaultReferenceRootDirectoryPath,
   options = {},
@@ -2228,17 +2169,4 @@ export async function writeDatasetFile(
 ) {
   await mkdir(path.dirname(outputFilePath), { recursive: true })
   await writeFile(outputFilePath, `${JSON.stringify(dataset, null, 2)}\n`, 'utf8')
-}
-
-export async function writeTechnicalNameMappingsFile(
-  technicalNameMappings,
-  outputFilePath = path.join(
-    projectRootDirectoryPath,
-    'src',
-    'data',
-    'technical-name-mappings.json',
-  ),
-) {
-  await mkdir(path.dirname(outputFilePath), { recursive: true })
-  await writeFile(outputFilePath, `${JSON.stringify(technicalNameMappings, null, 2)}\n`, 'utf8')
 }

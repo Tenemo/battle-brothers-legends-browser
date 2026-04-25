@@ -1,6 +1,5 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { BackgroundFitMatch, RankedBackgroundFit } from './background-fit'
-import { getGameIconUrl } from './game-icon-url'
 import { getTierLabel } from './perk-search'
 import type {
   LegendsPerkBackgroundSource,
@@ -315,6 +314,10 @@ export function getPerkRowClassName({
 
 export function getPerkGroupHoverKey({ categoryName, treeId }: PerkGroupHoverTarget): string {
   return `${categoryName}::${treeId}`
+}
+
+function getGameIconUrl(iconPath: string | null): string | null {
+  return iconPath ? `/game-icons/${iconPath}` : null
 }
 
 export function renderGameIcon({

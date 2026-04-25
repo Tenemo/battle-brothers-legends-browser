@@ -1,6 +1,6 @@
 import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { createDataset, createTechnicalNameMappings } from '../scripts/legends-perks-importer.mjs'
+import { createDataset } from '../scripts/legends-perks-importer.mjs'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const fixtureReferenceRootDirectoryPath = path.resolve(
@@ -201,20 +201,6 @@ describe('legends perks importer', () => {
         }),
       ]),
     )
-  })
-
-  test('builds exact technical name mappings from the locally parsed data', () => {
-    const technicalNameMappings = createTechnicalNameMappings(dataset)
-
-    expect(technicalNameMappings.labelsByTechnicalName).toMatchObject({
-      CalmTree: 'Calm',
-      LegendBear: 'Bear',
-      LegendClarity: 'Clarity',
-      'perk.mastery.axe': 'Axe Mastery',
-      SpecAxe: 'Axe Mastery',
-      'scenario.beast_hunters': 'Beast Slayers',
-    })
-    expect(technicalNameMappings.labelsByTechnicalName).not.toHaveProperty('onBuildPerkTree')
   })
 
   test('extracts class-to-weapon dependency rules from the dynamic perk tree builder', () => {

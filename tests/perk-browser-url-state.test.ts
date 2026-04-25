@@ -97,7 +97,6 @@ const samplePerks: LegendsPerkRecord[] = [
 ]
 
 const availableGroupNames = ['Traits', 'Magic', 'Enemy']
-const tierOptions = ['5', '6', '7', 'no-tier']
 const treeOptionsByGroup = new Map([
   [
     'Traits',
@@ -122,7 +121,6 @@ describe('perk browser url state', () => {
           Magic: ['DeadeyeTree'],
           Traits: ['CalmTree'],
         },
-        tierValue: '7',
       },
       {
         availableGroupNames,
@@ -132,18 +130,17 @@ describe('perk browser url state', () => {
     )
 
     expect(search).toBe(
-      '?search=Perfect+Focus&tier=7&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
+      '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
     )
   })
 
-  test('parses the grouped readable query params back into filter and build state', () => {
+  test('parses the grouped readable query params and ignores legacy tier values', () => {
     expect(
       readPerkBrowserUrlState(
         '?search=Perfect+Focus&tier=7&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
         {
           availableGroupNames,
           perks: samplePerks,
-          tierOptions,
           treeOptionsByGroup,
         },
       ),
@@ -155,18 +152,16 @@ describe('perk browser url state', () => {
         Magic: ['DeadeyeTree'],
         Traits: ['CalmTree'],
       },
-      tierValue: '7',
     })
   })
 
-  test('parses legacy repeated params back into the same filter and build state', () => {
+  test('parses legacy repeated params and ignores legacy tier values', () => {
     expect(
       readPerkBrowserUrlState(
         '?search=Perfect+Focus&tier=7&category=Traits&category=Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity&build=Perfect+Focus',
         {
           availableGroupNames,
           perks: samplePerks,
-          tierOptions,
           treeOptionsByGroup,
         },
       ),
@@ -178,7 +173,6 @@ describe('perk browser url state', () => {
         Magic: ['DeadeyeTree'],
         Traits: ['CalmTree'],
       },
-      tierValue: '7',
     })
   })
 
@@ -189,7 +183,6 @@ describe('perk browser url state', () => {
         {
           availableGroupNames,
           perks: samplePerks,
-          tierOptions,
           treeOptionsByGroup,
         },
       ),
@@ -201,7 +194,6 @@ describe('perk browser url state', () => {
         Traits: ['CalmTree'],
         Magic: ['DeadeyeTree'],
       },
-      tierValue: 'all-tiers',
     })
   })
 
@@ -213,7 +205,6 @@ describe('perk browser url state', () => {
           query: '',
           selectedGroupNames: [],
           selectedTreeIdsByGroup: {},
-          tierValue: 'all-tiers',
         },
         {
           availableGroupNames,

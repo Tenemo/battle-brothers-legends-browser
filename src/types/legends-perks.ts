@@ -101,7 +101,3 @@ export type LegendsPerksDataset = {
   sourceFiles: LegendsSourceFile[]
   treeCount: number
 }
-
-export type LegendsTechnicalNameMappings = {
-  labelsByTechnicalName: Record<string, string>
-}

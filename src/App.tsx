@@ -26,7 +26,7 @@ import {
   normalizeSearchPhrase,
   renderHighlightedText,
 } from './lib/perk-display'
-import { allTiersFilterValue, buildTierOptions, filterAndSortPerks } from './lib/perk-search'
+import { filterAndSortPerks } from './lib/perk-search'
 import type { LegendsPerkRecord, LegendsPerksDataset } from './types/legends-perks'
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
@@ -232,14 +232,12 @@ function compareDisplayedTreeOptions({
 const groupCounts = getGroupCounts(allPerks)
 const categoryTreeOptionsByGroup = getCategoryTreeOptions(allPerks)
 const availableGroups = [...groupCounts.keys()].toSorted(compareCategoryNames)
-const tierOptions = buildTierOptions(allPerks)
 
 export default function App() {
   const [initialUrlState] = useState(() =>
     readPerkBrowserUrlStateFromLocation({
       availableGroupNames: availableGroups,
       perks: allPerks,
-      tierOptions,
       treeOptionsByGroup: categoryTreeOptionsByGroup,
     }),
   )
@@ -266,7 +264,6 @@ export default function App() {
     query,
     selectedGroupNames,
     selectedTreeIdsByGroup,
-    tierValue: allTiersFilterValue,
   })
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(
     () => visiblePerks[0]?.id ?? null,
@@ -614,7 +611,6 @@ export default function App() {
         query,
         selectedGroupNames,
         selectedTreeIdsByGroup,
-        tierValue: allTiersFilterValue,
       },
       {
         availableGroupNames: availableGroups,

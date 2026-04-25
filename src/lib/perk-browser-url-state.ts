@@ -1,5 +1,4 @@
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import { allTiersFilterValue } from './perk-search'
 
 export type PerkBrowserUrlTreeOption = {
   treeId: string
@@ -11,13 +10,11 @@ type PerkBrowserUrlState = {
   query: string
   selectedGroupNames: string[]
   selectedTreeIdsByGroup: Record<string, string[]>
-  tierValue: string
 }
 
 type PerkBrowserUrlStateReadOptions = {
   availableGroupNames: string[]
   perks: LegendsPerkRecord[]
-  tierOptions: string[]
   treeOptionsByGroup: Map<string, PerkBrowserUrlTreeOption[]>
 }
 
@@ -31,7 +28,6 @@ const buildParamName = 'build'
 const categoryParamName = 'category'
 const groupParamKeyPrefix = 'group-'
 const searchParamName = 'search'
-const tierParamName = 'tier'
 
 function collapseWhitespace(value: string): string {
   return value.trim().replace(/\s+/gu, ' ')
@@ -96,7 +92,6 @@ function createDefaultUrlState(): PerkBrowserUrlState {
     query: '',
     selectedGroupNames: [],
     selectedTreeIdsByGroup: {},
-    tierValue: allTiersFilterValue,
   }
 }
 
@@ -105,7 +100,6 @@ export function readPerkBrowserUrlState(
   options: PerkBrowserUrlStateReadOptions,
 ): PerkBrowserUrlState {
   const params = new URLSearchParams(search)
-  const availableTierValues = new Set(options.tierOptions)
   const groupNameByLookupValue = new Map(
     options.availableGroupNames.map((groupName) => [normalizeLookupValue(groupName), groupName]),
   )
@@ -131,9 +125,6 @@ export function readPerkBrowserUrlState(
   const pickedPerkIds: string[] = []
   const selectedTreeIdsByGroup: Record<string, string[]> = {}
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
-  const tierValue = availableTierValues.has(params.get(tierParamName) ?? '')
-    ? (params.get(tierParamName) as string)
-    : allTiersFilterValue
 
   for (const categoryValue of getGroupedParamValues(params, categoryParamName)) {
     const groupName = groupNameByLookupValue.get(normalizeLookupValue(categoryValue))
@@ -193,7 +184,6 @@ export function readPerkBrowserUrlState(
       selectedGroupNameSet.has(groupName),
     ),
     selectedTreeIdsByGroup,
-    tierValue,
   }
 }
 
@@ -210,10 +200,6 @@ export function buildPerkBrowserUrlSearch(
 
   if (normalizedQuery) {
     appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
-  }
-
-  if (urlState.tierValue !== allTiersFilterValue) {
-    appendScalarQueryEntry(entries, tierParamName, urlState.tierValue)
   }
 
   appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedGroupNames)
@@ -258,7 +244,6 @@ export function buildPerkBrowserBuildUrlSearch(
       query: '',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     },
     {
       availableGroupNames: [],

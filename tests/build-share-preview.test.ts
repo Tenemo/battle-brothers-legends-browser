@@ -1,8 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  buildShareSearchFromPickedPerkIds,
-  createBuildSharePreviewPayloadFromSearch,
-} from '../src/lib/build-share-preview'
+import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share-preview'
 
 describe('build share preview', () => {
   test('returns the empty preview for missing or invalid build params', () => {
@@ -44,13 +41,5 @@ describe('build share preview', () => {
     expect(payload.topBackgroundFits.length).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].backgroundName).toBeTruthy()
     expect(payload.topBackgroundFits[0].maximumTotalGroupCount).toBeGreaterThan(0)
-  })
-
-  test('builds the same share search from picked perk ids', () => {
-    const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity&build=Perfect+Focus')
-
-    expect(buildShareSearchFromPickedPerkIds(payload.pickedPerks.map((perk) => perk.id))).toBe(
-      payload.canonicalSearch,
-    )
   })
 })
