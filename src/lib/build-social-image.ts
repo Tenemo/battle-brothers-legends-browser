@@ -170,7 +170,7 @@ function renderPerkNameRows(payload: BuildSharePreviewPayload): string {
     const rowY = 244 + perkIndex * 29
     const name = truncateLineByVisualWidth(perk.perkName, 30)
 
-    return `<g transform="translate(96 ${rowY})">
+    return `<g transform="translate(80 ${rowY})">
       <circle cx="7" cy="7" r="4" fill="#c89d66" />
       <text x="24" y="14" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="23" font-weight="600">${escapeXml(
         name,
@@ -181,7 +181,7 @@ function renderPerkNameRows(payload: BuildSharePreviewPayload): string {
 
   if (hiddenCount > 0) {
     perkRows.push(
-      `<text x="120" y="${
+      `<text x="104" y="${
         252 + maxVisiblePerkNames * 29
       }" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="600">+${hiddenCount} more perks</text>`,
     )
@@ -239,7 +239,7 @@ function renderIconGrid(
       const columnIndex = perkIndex % 5
       const rowIndex = Math.floor(perkIndex / 5)
       const x = 664 + columnIndex * 88
-      const y = 112 + rowIndex * 60
+      const y = 112 + rowIndex * 68
 
       return renderIconCell({
         hiddenCount: iconIndex === undefined ? hiddenCount + 1 : undefined,
@@ -291,7 +291,7 @@ function renderBackgroundFits(
 
   return payload.topBackgroundFits
     .map((backgroundFit, backgroundFitIndex) => {
-      const rowY = 474 + backgroundFitIndex * 42
+      const rowY = 478 + backgroundFitIndex * 50
       const scoreWidth = Math.max(
         28,
         Math.min(
@@ -354,11 +354,11 @@ export function createBuildSocialImageSvg(
     <rect width="1200" height="630" fill="url(#background)" />
     <rect width="1200" height="630" fill="url(#warm-accent)" />
     <rect width="1200" height="630" fill="url(#line-pattern)" opacity="0.32" />
-    <rect x="64" y="64" width="512" height="502" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="64" width="512" height="326" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="408" width="512" height="170" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <text x="96" y="116" fill="#ddb07b" font-family="Source Sans 3, Arial, sans-serif" font-size="22" font-weight="400" letter-spacing="0.16em">
-      <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan><tspan> BUILD</tspan>
+    <rect x="48" y="64" width="528" height="502" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
+    <rect x="624" y="64" width="528" height="326" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
+    <rect x="624" y="408" width="528" height="194" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
+    <text x="80" y="110" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">
+      <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
     </text>
     ${renderTextLines({
       fill: '#f6eee5',
@@ -366,12 +366,12 @@ export function createBuildSocialImageSvg(
       fontWeight: 700,
       lineStep: 62,
       lines: titleLines,
-      x: 96,
+      x: 80,
       y: 182,
     })}
     ${
       isEmpty
-        ? `<text x="96" y="${titleLines.length > 1 ? 272 : 238}" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="500">${escapeXml(
+        ? `<text x="80" y="${titleLines.length > 1 ? 272 : 238}" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="500">${escapeXml(
             truncateLineByVisualWidth(emptySubtitle, 30),
           )}</text>`
         : ''
@@ -381,9 +381,9 @@ export function createBuildSocialImageSvg(
     ${renderIconGrid(payload, resolvePerkIconDataUrl)}
     <text x="664" y="442" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
     ${renderBackgroundFits(payload, resolveBackgroundIconDataUrl)}
-    <text x="64" y="596" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700">battlebrothers.academy</text>
-    <line x1="64" y1="603" x2="238" y2="603" stroke="#ded4c1" stroke-width="1.5" stroke-linecap="round" />
-    <text x="1136" y="596" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
+    <text x="4" y="624" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700">battlebrothers.academy</text>
+    <line x1="4" y1="628" x2="250" y2="628" stroke="#ded4c1" stroke-width="1.5" stroke-linecap="round" />
+    <text x="1196" y="624" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
       payload.referenceVersion.replace(/^reference-mod_/u, ''),
     )}</text>
   </svg>`

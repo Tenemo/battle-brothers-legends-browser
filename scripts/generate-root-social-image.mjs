@@ -78,8 +78,8 @@ export async function createRootSocialImageSvg({ bookIconDataUrl = '' } = {}) {
     <tspan x="430" dy="0">Search perks, inspect tree placement, and plan builds</tspan>
     <tspan x="430" dy="32">with exact in-mod labels and real game icons.</tspan>
   </text>
-  <text x="96" y="536" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="700">battlebrothers.academy</text>
-  <line x1="96" y1="546" x2="328" y2="546" stroke="#ded4c1" stroke-width="2" stroke-linecap="round" />
+  <text x="4" y="618" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="700">battlebrothers.academy</text>
+  <line x1="4" y1="626" x2="310" y2="626" stroke="#ded4c1" stroke-width="2" stroke-linecap="round" />
 </svg>`
 }
 
