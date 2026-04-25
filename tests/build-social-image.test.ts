@@ -98,6 +98,7 @@ describe('build social image', () => {
     expect(response.headers['content-type']).toBe('image/png')
     expect(response.headers['cache-control']).toBe('public, max-age=0, must-revalidate')
     expect(response.headers['netlify-cdn-cache-control']).toContain('durable')
+    expect(response.headers['netlify-vary']).toBe('query=build|reference')
     expect(Buffer.from(response.body).subarray(0, 8)).toEqual(pngSignature)
   })
 
@@ -122,6 +123,7 @@ describe('build social image', () => {
     expect(response.body).toEqual(pngSignature)
     expect(response.headers['netlify-cdn-cache-control']).toContain('max-age=3600')
     expect(response.headers['netlify-cdn-cache-control']).not.toContain('max-age=2592000')
+    expect(response.headers['netlify-vary']).toBe('query=build|reference')
   })
 
   test('serves HEAD without a response body and rejects unsupported methods', async () => {
@@ -159,6 +161,7 @@ describe('build social image', () => {
       expect(response.status).toBe(500)
       expect(response.headers.get('cache-control')).toBe('no-store, max-age=0')
       expect(response.headers.get('content-type')).toBe('text/plain; charset=utf-8')
+      expect(response.headers.get('netlify-vary')).toBe('query=build|reference')
       expect(consoleErrorSpy).toHaveBeenCalledWith('Renderer unavailable.')
       await expect(response.text()).resolves.toBe('Failed to render image.')
     } finally {

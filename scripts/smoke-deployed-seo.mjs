@@ -1,6 +1,10 @@
+import { createHash } from 'node:crypto'
+
 const crawlerUserAgent =
   'facebookexternalhit/1.1 (+https://www.facebook.com/externalhit_uatext.php)'
 const buildPerks = ['Clarity', 'Perfect Focus']
+const comparisonBuildPerks = ['Student']
+const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10]
 
 function printUsage() {
   console.log(
@@ -88,12 +92,11 @@ async function fetchHtml(url) {
   return response.text()
 }
 
-async function fetchImageHead(url) {
+async function fetchImage(url) {
   const response = await fetch(url, {
     headers: {
       'user-agent': crawlerUserAgent,
     },
-    method: 'HEAD',
     redirect: 'follow',
   })
 
@@ -107,13 +110,22 @@ async function fetchImageHead(url) {
     fail(`${url.toString()} returned ${contentType || 'no content type'} instead of image/png.`)
   }
 
-  const contentLength = Number(response.headers.get('content-length') ?? '0')
+  const body = new Uint8Array(await response.arrayBuffer())
 
-  if (!Number.isFinite(contentLength) || contentLength <= 1000) {
+  if (body.byteLength <= 1000) {
     fail(`${url.toString()} returned an unexpectedly small image.`)
   }
 
-  return response
+  for (const [byteIndex, byteValue] of pngSignature.entries()) {
+    if (body[byteIndex] !== byteValue) {
+      fail(`${url.toString()} did not return a valid PNG signature.`)
+    }
+  }
+
+  return {
+    response,
+    sha256: createHash('sha256').update(body).digest('hex'),
+  }
 }
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
@@ -170,20 +182,47 @@ if (
   )
 }
 
+const openGraphImageBuildPerks = openGraphImageUrl.searchParams
+  .getAll('build')
+  .flatMap((buildValue) => buildValue.split(','))
+
 for (const perkName of buildPerks) {
-  if (!openGraphImageUrl.searchParams.getAll('build').includes(perkName)) {
+  if (!openGraphImageBuildPerks.includes(perkName)) {
     fail(`shared build image URL is missing ${perkName}.`)
   }
 }
 
-const sharedBuildImageResponse = await fetchImageHead(openGraphImageUrl)
+const sharedBuildImage = await fetchImage(openGraphImageUrl)
 const sharedBuildNetlifyCache =
-  sharedBuildImageResponse.headers.get('netlify-cdn-cache-control') ?? ''
+  sharedBuildImage.response.headers.get('netlify-cdn-cache-control') ??
+  sharedBuildImage.response.headers.get('cdn-cache-control') ??
+  ''
 
-if (!sharedBuildNetlifyCache.includes('durable')) {
-  fail('shared build image is missing durable Netlify CDN caching.')
+if (!sharedBuildNetlifyCache.includes('max-age=2592000')) {
+  fail('shared build image is missing long-lived CDN caching.')
 }
 
-await fetchImageHead(new URL('/social/build.png', baseUrl))
+const comparisonImageUrl = new URL('/social/build.png', baseUrl)
+
+for (const perkName of comparisonBuildPerks) {
+  comparisonImageUrl.searchParams.append('build', perkName)
+}
+
+comparisonImageUrl.searchParams.set(
+  'reference',
+  openGraphImageUrl.searchParams.get('reference') ?? 'smoke-probe',
+)
+
+const comparisonBuildImage = await fetchImage(comparisonImageUrl)
+
+if (comparisonBuildImage.sha256 === sharedBuildImage.sha256) {
+  fail('different shared build image query strings returned the same cached image.')
+}
+
+const fallbackBuildImage = await fetchImage(new URL('/social/build.png', baseUrl))
+
+if (fallbackBuildImage.sha256 === sharedBuildImage.sha256) {
+  fail('the generic social image route returned the shared build cached image.')
+}
 
 console.log(`Deployed SEO smoke checks passed for ${baseUrl.origin}.`)

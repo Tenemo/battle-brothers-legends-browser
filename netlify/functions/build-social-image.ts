@@ -40,6 +40,7 @@ type BuildSocialImageHandlerOptions = {
 
 const dayInSeconds = 60 * 60 * 24
 const hourInSeconds = 60 * 60
+const buildSocialImageNetlifyVary = 'query=build|reference'
 const socialImageFontFamily = 'Source Sans 3'
 const socialImageFontFileNames = [
   'source-sans-3-latin-400-normal.woff',
@@ -187,6 +188,7 @@ function buildHeaders({
     'content-length': byteLength.toString(),
     'content-type': 'image/png',
     'netlify-cdn-cache-control': cachePolicy.netlifyCdn,
+    'netlify-vary': buildSocialImageNetlifyVary,
   }
 }
 
@@ -216,6 +218,7 @@ function createBuildSocialImageErrorResponse(requestMethod: string): Response {
     headers: {
       'cache-control': 'no-store, max-age=0',
       'content-type': 'text/plain; charset=utf-8',
+      'netlify-vary': buildSocialImageNetlifyVary,
     },
     status: 500,
   })
