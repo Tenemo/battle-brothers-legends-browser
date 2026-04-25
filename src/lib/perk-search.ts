@@ -137,10 +137,6 @@ export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
   return ['No description available.']
 }
 
-export function getPerkPreview(perk: LegendsPerkRecord): string {
-  return getPerkPreviewParagraphs(perk).join(' ')
-}
-
 function comparePerksAlphabetically(
   leftPerk: LegendsPerkRecord,
   rightPerk: LegendsPerkRecord,

@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  filterAndSortPerks,
-  getPerkPreview,
-  getPerkPreviewParagraphs,
-} from '../src/lib/perk-search'
+import { filterAndSortPerks, getPerkPreviewParagraphs } from '../src/lib/perk-search'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
 const samplePerks: LegendsPerkRecord[] = [
@@ -244,21 +240,5 @@ describe('perk search', () => {
       'Currently equipped throwing items regain 1 ammo each turn.',
       'Costs no AP.',
     ])
-  })
-
-  test('keeps the string preview readable by joining the full effect block', () => {
-    const preview = getPerkPreview({
-      ...samplePerks[0],
-      descriptionParagraphs: [
-        'Master the bow.',
-        'Passive: Attacks build up less fatigue.',
-        'Active: Gain a burst of focus for the next attack.',
-        'Costs 15 fatigue.',
-      ],
-    })
-
-    expect(preview).toBe(
-      'Attacks build up less fatigue. Active: Gain a burst of focus for the next attack. Costs 15 fatigue.',
-    )
   })
 })

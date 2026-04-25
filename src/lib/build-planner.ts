@@ -50,9 +50,7 @@ function getUniquePerkGroupRequirements(
   return perkGroupRequirements
 }
 
-export function getPerkGroupRequirements(
-  perk: LegendsPerkRecord,
-): BuildPlannerPerkGroupRequirement[] {
+function getPerkGroupRequirements(perk: LegendsPerkRecord): BuildPlannerPerkGroupRequirement[] {
   return getUniquePerkGroupRequirements(perk.placements)
 }
 
@@ -81,18 +79,6 @@ function getPerkGroupRequirementOptions(
   perk: LegendsPerkRecord,
 ): BuildPlannerPerkGroupRequirementOption[] {
   return getRequirementOptionsWithLabels(getPerkGroupRequirements(perk))
-}
-
-export function getPerkGroupRequirementLabel(perk: LegendsPerkRecord): string {
-  const perkGroupRequirements = getPerkGroupRequirementOptions(perk)
-
-  if (perkGroupRequirements.length === 0) {
-    return 'No perk group placement'
-  }
-
-  return perkGroupRequirements
-    .map((perkGroupRequirement) => perkGroupRequirement.treeLabel)
-    .join(' / ')
 }
 
 function getNoPerkGroupPlacementOption(perkId: string): BuildPlannerPerkGroupRequirementOption {

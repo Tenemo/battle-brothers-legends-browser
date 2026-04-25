@@ -39,40 +39,45 @@ type CategoryTreeOption = PerkBrowserUrlTreeOption & {
   perkCount: number
 }
 
-function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
+type PerkValueCountOptions = {
+  dedupeValuesPerPerk?: boolean
+}
+
+function getPerkCountsByValues(
+  perks: LegendsPerkRecord[],
+  getValues: (perk: LegendsPerkRecord) => Iterable<string>,
+  { dedupeValuesPerPerk = false }: PerkValueCountOptions = {},
+): Map<string, number> {
   const counts = new Map<string, number>()
 
   for (const perk of perks) {
-    for (const groupName of perk.groupNames) {
-      counts.set(groupName, (counts.get(groupName) ?? 0) + 1)
+    const values = getValues(perk)
+    const countedValues = dedupeValuesPerPerk ? new Set(values) : values
+
+    for (const value of countedValues) {
+      counts.set(value, (counts.get(value) ?? 0) + 1)
     }
   }
 
   return counts
 }
 
+function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
+  return getPerkCountsByValues(perks, (perk) => perk.groupNames)
+}
+
 function getPickedPerkCountsByGroup(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
-  const countsByGroup = new Map<string, number>()
-
-  for (const pickedPerk of pickedPerks) {
-    for (const groupName of new Set(pickedPerk.groupNames)) {
-      countsByGroup.set(groupName, (countsByGroup.get(groupName) ?? 0) + 1)
-    }
-  }
-
-  return countsByGroup
+  return getPerkCountsByValues(pickedPerks, (pickedPerk) => pickedPerk.groupNames, {
+    dedupeValuesPerPerk: true,
+  })
 }
 
 function getPickedPerkCountsByTree(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
-  const countsByTree = new Map<string, number>()
-
-  for (const pickedPerk of pickedPerks) {
-    for (const treeId of new Set(pickedPerk.placements.map((placement) => placement.treeId))) {
-      countsByTree.set(treeId, (countsByTree.get(treeId) ?? 0) + 1)
-    }
-  }
-
-  return countsByTree
+  return getPerkCountsByValues(
+    pickedPerks,
+    (pickedPerk) => pickedPerk.placements.map((placement) => placement.treeId),
+    { dedupeValuesPerPerk: true },
+  )
 }
 
 function getCategoryTreeOptions(perks: LegendsPerkRecord[]): Map<string, CategoryTreeOption[]> {
@@ -118,15 +123,9 @@ function getCategoryTreeOptions(perks: LegendsPerkRecord[]): Map<string, Categor
 }
 
 function getVisiblePerkCountsByGroup(perks: LegendsPerkRecord[]): Map<string, number> {
-  const countsByGroup = new Map<string, number>()
-
-  for (const perk of perks) {
-    for (const groupName of new Set(perk.groupNames)) {
-      countsByGroup.set(groupName, (countsByGroup.get(groupName) ?? 0) + 1)
-    }
-  }
-
-  return countsByGroup
+  return getPerkCountsByValues(perks, (perk) => perk.groupNames, {
+    dedupeValuesPerPerk: true,
+  })
 }
 
 function getVisiblePerkCountsByCategoryTree(perks: LegendsPerkRecord[]): Map<string, number> {

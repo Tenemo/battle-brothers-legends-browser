@@ -1,9 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  getBuildPlannerGroups,
-  getPerkGroupRequirementLabel,
-  getPerkGroupRequirements,
-} from '../src/lib/build-planner'
+import { getBuildPlannerGroups } from '../src/lib/build-planner'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
 const samplePerk: LegendsPerkRecord = {
@@ -139,42 +135,6 @@ const repeatedTreeNamePerk: LegendsPerkRecord = {
 }
 
 describe('build planner', () => {
-  test('dedupes repeated tree placements when deriving perk group requirements', () => {
-    expect(getPerkGroupRequirements(samplePerk)).toEqual([
-      {
-        categoryName: 'Defense',
-        treeIconPath: 'ui/perks/cloth_armor_tree.png',
-        treeId: 'ClothArmorTree',
-        treeName: 'Cloth Armor',
-      },
-      {
-        categoryName: 'Traits',
-        treeIconPath: 'ui/perks/tenacious_tree.png',
-        treeId: 'TenaciousTree',
-        treeName: 'Tenacious',
-      },
-    ])
-  })
-
-  test('joins multiple perk group options into one label', () => {
-    expect(getPerkGroupRequirementLabel(samplePerk)).toBe('Cloth Armor / Tenacious')
-  })
-
-  test('disambiguates repeated tree names from different categories', () => {
-    expect(getPerkGroupRequirementLabel(repeatedTreeNamePerk)).toBe(
-      'Class: Blacksmith / Profession: Blacksmith',
-    )
-  })
-
-  test('falls back cleanly when the perk has no tree placement', () => {
-    expect(
-      getPerkGroupRequirementLabel({
-        ...samplePerk,
-        placements: [],
-      }),
-    ).toBe('No perk group placement')
-  })
-
   test('groups all single-perk matches into the individual row', () => {
     expect(getBuildPlannerGroups([samplePerk])).toEqual({
       individualPerkGroups: [

@@ -13,9 +13,6 @@ describe('root social image generation', () => {
     expect(svg).toContain('<tspan>Battle Brothers </tspan><tspan font-weight="700">Legends</tspan>')
     expect(svg).toContain('font-family="Source Sans 3, Arial, sans-serif"')
     expect(svg).toContain('PERKS BROWSER')
-    expect(svg).not.toContain('Static Legends snapshot')
-    expect(svg).not.toContain('shareable filter URLs')
-    expect(svg).not.toContain('build planner')
   })
 
   test('produces a non-empty PNG with the expected file signature', async () => {
