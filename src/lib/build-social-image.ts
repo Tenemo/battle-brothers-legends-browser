@@ -3,9 +3,18 @@ import type {
   BuildSharePreviewPayload,
   BuildSharePreviewPerk,
 } from './build-share-preview'
+import {
+  escapeXml,
+  renderSocialImageBackground,
+  renderSocialImageBrand,
+  renderSocialImageDefinitions,
+  renderSocialImageFooter,
+  socialImageHeight,
+  socialImageWidth,
+} from './social-image-markup'
 
-export const buildSocialImageWidth = 1200
-export const buildSocialImageHeight = 630
+export const buildSocialImageWidth = socialImageWidth
+export const buildSocialImageHeight = socialImageHeight
 
 type BuildSocialImageOptions = {
   resolveBackgroundIconDataUrl?: (backgroundFit: BuildSharePreviewBackgroundFit) => string | null
@@ -15,15 +24,6 @@ type BuildSocialImageOptions = {
 const maxVisibleIcons = 20
 const maxVisiblePerkNames = 10
 const ellipsis = '...'
-
-function escapeXml(value: string): string {
-  return value
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&apos;')
-}
 
 function estimateCharacterWidth(character: string): number {
   if (character === ' ') {
@@ -338,29 +338,12 @@ export function createBuildSocialImageSvg(
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${buildSocialImageWidth}" height="${buildSocialImageHeight}" viewBox="0 0 ${buildSocialImageWidth} ${buildSocialImageHeight}" role="img" aria-label="${escapeXml(
     payload.imageAlt,
   )}">
-    <defs>
-      <linearGradient id="background" x1="0%" x2="100%" y1="0%" y2="100%">
-        <stop offset="0%" stop-color="#0d0a08" />
-        <stop offset="58%" stop-color="#17110d" />
-        <stop offset="100%" stop-color="#21170f" />
-      </linearGradient>
-      <radialGradient id="warm-accent" cx="84%" cy="16%" r="62%">
-        <stop offset="0%" stop-color="#7a4c28" stop-opacity="0.46" />
-        <stop offset="100%" stop-color="#7a4c28" stop-opacity="0" />
-      </radialGradient>
-      <pattern id="line-pattern" width="44" height="44" patternUnits="userSpaceOnUse" patternTransform="rotate(28)">
-        <path d="M0 0H44" stroke="#3d2a1c" stroke-opacity="0.36" stroke-width="1" />
-      </pattern>
-    </defs>
-    <rect width="1200" height="630" fill="url(#background)" />
-    <rect width="1200" height="630" fill="url(#warm-accent)" />
-    <rect width="1200" height="630" fill="url(#line-pattern)" opacity="0.32" />
+    ${renderSocialImageDefinitions()}
+    ${renderSocialImageBackground()}
     <rect x="48" y="32" width="528" height="538" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
     <rect x="624" y="32" width="528" height="326" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
     <rect x="624" y="376" width="528" height="194" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <text x="80" y="98" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">
-      <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
-    </text>
+    ${renderSocialImageBrand()}
     ${renderTextLines({
       fill: '#f6eee5',
       fontSize: 56,
@@ -382,9 +365,10 @@ export function createBuildSocialImageSvg(
     ${renderIconGrid(payload, resolvePerkIconDataUrl)}
     <text x="664" y="410" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
     ${renderBackgroundFits(payload, resolveBackgroundIconDataUrl)}
-    <text x="12" y="620" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
-    <text x="1196" y="624" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
-      payload.referenceVersion.replace(/^reference-mod_/u, ''),
-    )}</text>
+    ${renderSocialImageFooter({
+      referenceVersion: payload.referenceVersion,
+      siteUrlFontSize: 18,
+      siteUrlY: 620,
+    })}
   </svg>`
 }
