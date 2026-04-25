@@ -44,7 +44,7 @@ const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
 const emptyTreeOptionsByGroup = new Map<string, []>()
-const buildSocialImagePath = '/social/build.png'
+const buildSocialImagePathPrefix = '/social/builds'
 const maxDescriptionPerks = 4
 const maxDescriptionBackgrounds = 2
 const maxPreviewBackgroundFits = 3
@@ -177,10 +177,11 @@ function createBuildDescription(
 
 function createBuildImagePath(canonicalSearch: string): string {
   const searchParams = new URLSearchParams(canonicalSearch)
+  const canonicalBuild = searchParams.get('build') ?? ''
+  const encodedReference = encodeURIComponent(legendsPerksDataset.referenceVersion)
+  const encodedBuild = encodeURIComponent(canonicalBuild)
 
-  searchParams.set('reference', legendsPerksDataset.referenceVersion)
-
-  return `${buildSocialImagePath}?${searchParams.toString()}`
+  return `${buildSocialImagePathPrefix}/${encodedReference}/${encodedBuild}.png`
 }
 
 function createBuildSharePreviewPayloadFromPickedPerkIds(

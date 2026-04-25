@@ -22,6 +22,27 @@ describe('SEO metadata', () => {
     expect(metadata.image.url).toBe('https://battlebrothers.academy/seo/og-image-v2.png')
   })
 
+  test('creates request-origin root metadata for preview urls', () => {
+    const metadata = resolveSeoMetadataForUrl(
+      new URL('https://deploy-preview-1--battle-brothers-browser.netlify.app/?search=scholar'),
+    )
+    const structuredData = JSON.stringify(metadata.structuredData)
+
+    expect(metadata.title).toBe(rootSeoMetadata.title)
+    expect(metadata.robots).toBe('index, follow, max-image-preview:large')
+    expect(metadata.canonicalUrl).toBe(
+      'https://deploy-preview-1--battle-brothers-browser.netlify.app/',
+    )
+    expect(metadata.url).toBe('https://deploy-preview-1--battle-brothers-browser.netlify.app/')
+    expect(metadata.image.url).toBe(
+      'https://deploy-preview-1--battle-brothers-browser.netlify.app/seo/og-image-v2.png',
+    )
+    expect(structuredData).toContain(
+      'https://deploy-preview-1--battle-brothers-browser.netlify.app/#social-image',
+    )
+    expect(structuredData).not.toContain('battlebrothers.academy')
+  })
+
   test('keeps SEO replacement markers around injected metadata', () => {
     const html = injectSeoIntoHtml(baseHtml)
 
@@ -40,8 +61,9 @@ describe('SEO metadata', () => {
     expect(metadata.robots).toBe('noindex, follow, noarchive, max-image-preview:large')
     expect(metadata.canonicalUrl).toBe('https://battlebrothers.academy/')
     expect(metadata.url).toBe('https://battlebrothers.academy/?build=Clarity,Perfect+Focus')
-    expect(metadata.image.url).toContain('https://battlebrothers.academy/social/build.png?')
-    expect(metadata.image.url).toContain('build=Clarity%2CPerfect+Focus')
+    expect(metadata.image.url).toBe(
+      'https://battlebrothers.academy/social/builds/19.3.17/Clarity%2CPerfect%20Focus.png',
+    )
   })
 
   test('keeps duplicate-name build ids in shared SEO metadata', () => {
@@ -55,9 +77,33 @@ describe('SEO metadata', () => {
     expect(metadata.url).toBe(
       'https://battlebrothers.academy/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
-    expect(metadata.image.url).toContain(
-      'build=Chain+Lightning--perk.legend_chain_lightning%2CChain+Lightning--perk.legend_magic_chain_lightning',
+    expect(metadata.image.url).toBe(
+      'https://battlebrothers.academy/social/builds/19.3.17/Chain%20Lightning--perk.legend_chain_lightning%2CChain%20Lightning--perk.legend_magic_chain_lightning.png',
     )
+  })
+
+  test('injects request-origin root metadata into preview documents', () => {
+    const html = renderDocumentHtml({
+      baseHtml,
+      requestUrl: new URL('https://deploy-preview-1--battle-brothers-browser.netlify.app/'),
+    })
+
+    expect(html).toContain(
+      '<link rel="canonical" href="https://deploy-preview-1--battle-brothers-browser.netlify.app/" />',
+    )
+    expect(html).toContain(
+      'property="og:url" content="https://deploy-preview-1--battle-brothers-browser.netlify.app/"',
+    )
+    expect(html).toContain(
+      'property="og:image" content="https://deploy-preview-1--battle-brothers-browser.netlify.app/seo/og-image-v2.png"',
+    )
+    expect(html).toContain(
+      'name="twitter:url" content="https://deploy-preview-1--battle-brothers-browser.netlify.app/"',
+    )
+    expect(html).toContain(
+      'name="twitter:image" content="https://deploy-preview-1--battle-brothers-browser.netlify.app/seo/og-image-v2.png"',
+    )
+    expect(html).not.toContain('battlebrothers.academy')
   })
 
   test('injects shared build metadata into the document head', () => {
@@ -69,7 +115,7 @@ describe('SEO metadata', () => {
     expect(html).toContain('<title>Battle Brothers Legends build: 2 perks</title>')
     expect(html).toContain('content="noindex, follow, noarchive, max-image-preview:large"')
     expect(html).toContain('property="og:image"')
-    expect(html).toContain('/social/build.png?')
+    expect(html).toContain('/social/builds/')
   })
 
   test('throws a clear error when SEO markers are missing', () => {

@@ -5,6 +5,7 @@ const crawlerUserAgent =
 const buildPerks = ['Clarity', 'Perfect Focus']
 const comparisonBuildPerks = ['Student']
 const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10]
+const productionOrigin = 'https://battlebrothers.academy'
 
 function printUsage() {
   console.log(
@@ -69,6 +70,16 @@ function readMetaContent(html, attributeName, attributeValue) {
   }
 
   return decodeHtmlAttribute(match[1])
+}
+
+function assertNoPreviewProductionOrigin(html, label, baseUrl) {
+  if (baseUrl.origin === productionOrigin) {
+    return
+  }
+
+  if (html.includes(`${productionOrigin}/`)) {
+    fail(`${label} advertises production-domain URLs instead of ${baseUrl.origin}.`)
+  }
 }
 
 async function fetchHtml(url) {
@@ -136,6 +147,8 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 const baseUrl = normalizeBaseUrl(process.argv[2] ?? process.env.DEPLOY_SMOKE_BASE_URL)
 const rootHtml = await fetchHtml(baseUrl)
 
+assertNoPreviewProductionOrigin(rootHtml, 'root HTML', baseUrl)
+
 expectIncludes({
   label: 'root HTML',
   text: rootHtml,
@@ -147,6 +160,24 @@ expectIncludes({
   value: 'content="index, follow, max-image-preview:large"',
 })
 
+const rootOpenGraphImageUrl = new URL(readMetaContent(rootHtml, 'property', 'og:image'))
+const rootTwitterImageUrl = new URL(readMetaContent(rootHtml, 'name', 'twitter:image'))
+
+if (rootOpenGraphImageUrl.toString() !== rootTwitterImageUrl.toString()) {
+  fail('Root Open Graph and Twitter image URLs do not match.')
+}
+
+if (
+  rootOpenGraphImageUrl.origin !== baseUrl.origin ||
+  rootOpenGraphImageUrl.pathname !== '/seo/og-image-v2.png'
+) {
+  fail(
+    `root image URL was ${rootOpenGraphImageUrl.toString()} instead of a deployed root social image URL.`,
+  )
+}
+
+await fetchImage(rootOpenGraphImageUrl)
+
 const sharedBuildUrl = new URL(baseUrl)
 
 for (const perkName of buildPerks) {
@@ -154,6 +185,8 @@ for (const perkName of buildPerks) {
 }
 
 const sharedBuildHtml = await fetchHtml(sharedBuildUrl)
+
+assertNoPreviewProductionOrigin(sharedBuildHtml, 'shared build HTML', baseUrl)
 
 expectIncludes({
   label: 'shared build HTML',
@@ -175,16 +208,27 @@ if (openGraphImageUrl.toString() !== twitterImageUrl.toString()) {
 
 if (
   openGraphImageUrl.origin !== baseUrl.origin ||
-  openGraphImageUrl.pathname !== '/social/build.png'
+  !openGraphImageUrl.pathname.startsWith('/social/builds/')
 ) {
   fail(
     `shared build image URL was ${openGraphImageUrl.toString()} instead of a deployed social image URL.`,
   )
 }
 
-const openGraphImageBuildPerks = openGraphImageUrl.searchParams
-  .getAll('build')
-  .flatMap((buildValue) => buildValue.split(','))
+if (openGraphImageUrl.search) {
+  fail(`shared build image URL unexpectedly used query params: ${openGraphImageUrl.toString()}.`)
+}
+
+const buildImagePathMatch = /^\/social\/builds\/([^/]+)\/([^/]+)\.png$/u.exec(
+  openGraphImageUrl.pathname,
+)
+
+if (!buildImagePathMatch) {
+  fail(`shared build image URL did not use the path-keyed build image route.`)
+}
+
+const [, sharedBuildReferencePathSegment, sharedBuildPathSegment] = buildImagePathMatch
+const openGraphImageBuildPerks = decodeURIComponent(sharedBuildPathSegment).split(',')
 
 for (const perkName of buildPerks) {
   if (!openGraphImageBuildPerks.includes(perkName)) {
@@ -202,15 +246,11 @@ if (!sharedBuildNetlifyCache.includes('max-age=2592000')) {
   fail('shared build image is missing long-lived CDN caching.')
 }
 
-const comparisonImageUrl = new URL('/social/build.png', baseUrl)
-
-for (const perkName of comparisonBuildPerks) {
-  comparisonImageUrl.searchParams.append('build', perkName)
-}
-
-comparisonImageUrl.searchParams.set(
-  'reference',
-  openGraphImageUrl.searchParams.get('reference') ?? 'smoke-probe',
+const comparisonImageUrl = new URL(
+  `/social/builds/${sharedBuildReferencePathSegment}/${encodeURIComponent(
+    comparisonBuildPerks.join(','),
+  )}.png`,
+  baseUrl,
 )
 
 const comparisonBuildImage = await fetchImage(comparisonImageUrl)

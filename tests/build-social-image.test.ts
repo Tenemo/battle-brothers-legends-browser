@@ -5,6 +5,7 @@ import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share
 import { createBuildSocialImageSvg } from '../src/lib/build-social-image'
 import buildSocialImage, {
   config,
+  createBuildSocialImageSearchParamsFromPathname,
   createBuildSocialImageHandler,
   createBuildSocialImageResponse,
   renderBuildSocialImagePng,
@@ -15,7 +16,7 @@ const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
 
 describe('build social image', () => {
   test('declares the public social image route', () => {
-    expect(config.path).toBe('/social/build.png')
+    expect(config.path).toEqual(['/social/builds/:reference/:build.png', '/social/build.png'])
   })
 
   test('resolves bundled social image fonts', () => {
@@ -89,23 +90,96 @@ describe('build social image', () => {
     expect(Buffer.from(body).subarray(0, 8)).toEqual(pngSignature)
   })
 
+  test('extracts canonical build search params from the path route', () => {
+    const searchParams = createBuildSocialImageSearchParamsFromPathname(
+      '/social/builds/reference-mod_19.3.17/Clarity%2CPerfect%20Focus.png',
+    )
+
+    expect(searchParams?.get('build')).toBe('Clarity,Perfect Focus')
+  })
+
+  test('falls back to the generic payload for malformed path routes', () => {
+    const renderedStatuses: string[] = []
+    const response = createBuildSocialImageResponse(
+      new URL('https://battlebrothers.academy/social/builds/%E0%A4%A/Clarity.png'),
+      {
+        renderPng: (payload) => {
+          renderedStatuses.push(payload.status)
+
+          return pngSignature
+        },
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(renderedStatuses).toEqual(['empty'])
+    expect(response.headers['content-type']).toBe('image/png')
+  })
+
+  test('passes different path builds as distinct render payloads', () => {
+    const renderedBuilds: string[] = []
+    const renderPng = (payload: ReturnType<typeof createBuildSharePreviewPayloadFromSearch>) => {
+      renderedBuilds.push(payload.pickedPerks.map((perk) => perk.perkName).join(','))
+
+      return pngSignature
+    }
+
+    createBuildSocialImageResponse(
+      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Student.png'),
+      {
+        renderPng,
+      },
+    )
+    createBuildSocialImageResponse(
+      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Colossus.png'),
+      {
+        renderPng,
+      },
+    )
+
+    expect(renderedBuilds).toEqual(['Student', 'Colossus'])
+  })
+
   test('returns a PNG with durable cache headers for a valid build', () => {
     const response = createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/build.png?build=Clarity&build=Perfect+Focus'),
+      new URL(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity%2CPerfect%20Focus.png',
+      ),
     )
 
     expect(response.status).toBe(200)
     expect(response.headers['content-type']).toBe('image/png')
     expect(response.headers['cache-control']).toBe('public, max-age=0, must-revalidate')
     expect(response.headers['netlify-cdn-cache-control']).toContain('durable')
-    expect(response.headers['netlify-vary']).toBe('query=build|reference')
+    expect(response.headers['netlify-vary']).toBeUndefined()
     expect(Buffer.from(response.body).subarray(0, 8)).toEqual(pngSignature)
+  })
+
+  test('keeps legacy query responses uncached while preserving compatibility', () => {
+    const renderedBuilds: string[] = []
+    const response = createBuildSocialImageResponse(
+      new URL('https://battlebrothers.academy/social/build.png?build=Clarity'),
+      {
+        renderPng: (payload) => {
+          renderedBuilds.push(payload.pickedPerks.map((perk) => perk.perkName).join(','))
+
+          return pngSignature
+        },
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(renderedBuilds).toEqual(['Clarity'])
+    expect(response.headers['cache-control']).toBe('no-store, max-age=0')
+    expect(response.headers['cdn-cache-control']).toBe('no-store')
+    expect(response.headers['netlify-cdn-cache-control']).toBe('no-store')
+    expect(response.headers['netlify-vary']).toBeUndefined()
   })
 
   test('uses shorter cache headers when the renderer falls back to the generic image', () => {
     let renderAttemptCount = 0
     const response = createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/build.png?build=Clarity'),
+      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png'),
       {
         renderPng: () => {
           renderAttemptCount += 1
@@ -123,14 +197,17 @@ describe('build social image', () => {
     expect(response.body).toEqual(pngSignature)
     expect(response.headers['netlify-cdn-cache-control']).toContain('max-age=3600')
     expect(response.headers['netlify-cdn-cache-control']).not.toContain('max-age=2592000')
-    expect(response.headers['netlify-vary']).toBe('query=build|reference')
+    expect(response.headers['netlify-vary']).toBeUndefined()
   })
 
   test('serves HEAD without a response body and rejects unsupported methods', async () => {
     const headResponse = await buildSocialImage(
-      new Request('https://battlebrothers.academy/social/build.png?build=Clarity', {
-        method: 'HEAD',
-      }),
+      new Request(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png',
+        {
+          method: 'HEAD',
+        },
+      ),
     )
     const postResponse = await buildSocialImage(
       new Request('https://battlebrothers.academy/social/build.png', {
@@ -161,7 +238,7 @@ describe('build social image', () => {
       expect(response.status).toBe(500)
       expect(response.headers.get('cache-control')).toBe('no-store, max-age=0')
       expect(response.headers.get('content-type')).toBe('text/plain; charset=utf-8')
-      expect(response.headers.get('netlify-vary')).toBe('query=build|reference')
+      expect(response.headers.get('netlify-vary')).toBeNull()
       expect(consoleErrorSpy).toHaveBeenCalledWith('Renderer unavailable.')
       await expect(response.text()).resolves.toBe('Failed to render image.')
     } finally {

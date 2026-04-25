@@ -38,9 +38,15 @@ type BuildSocialImageHandlerOptions = {
   createResponse?: (requestUrl: URL) => BuildSocialImageResponse
 }
 
+type BuildSocialImageSearchSource = {
+  isLegacyRoute: boolean
+  searchParams: URLSearchParams
+}
+
 const dayInSeconds = 60 * 60 * 24
 const hourInSeconds = 60 * 60
-const buildSocialImageNetlifyVary = 'query=build|reference'
+const buildSocialImagePathPrefix = '/social/builds/'
+const legacyBuildSocialImagePath = '/social/build.png'
 const socialImageFontFamily = 'Source Sans 3'
 const socialImageFontFileNames = [
   'source-sans-3-latin-400-normal.woff',
@@ -56,6 +62,11 @@ const fallbackImageCachePolicy: BuildSocialImageCachePolicy = {
   browser: `public, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
   cdn: `public, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
   netlifyCdn: `public, durable, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
+}
+const legacyImageCachePolicy: BuildSocialImageCachePolicy = {
+  browser: 'no-store, max-age=0',
+  cdn: 'no-store',
+  netlifyCdn: 'no-store',
 }
 
 function getGameIconsDirectory(): string {
@@ -188,7 +199,60 @@ function buildHeaders({
     'content-length': byteLength.toString(),
     'content-type': 'image/png',
     'netlify-cdn-cache-control': cachePolicy.netlifyCdn,
-    'netlify-vary': buildSocialImageNetlifyVary,
+  }
+}
+
+export function createBuildSocialImageSearchParamsFromPathname(
+  pathname: string,
+): URLSearchParams | null {
+  if (!pathname.startsWith(buildSocialImagePathPrefix)) {
+    return null
+  }
+
+  const pathTail = pathname.slice(buildSocialImagePathPrefix.length)
+  const pathSegments = pathTail.split('/')
+
+  if (pathSegments.length !== 2) {
+    return new URLSearchParams()
+  }
+
+  const [encodedReference, encodedBuildFileName] = pathSegments
+
+  if (!encodedReference || !encodedBuildFileName.toLowerCase().endsWith('.png')) {
+    return new URLSearchParams()
+  }
+
+  try {
+    decodeURIComponent(encodedReference)
+
+    const encodedBuild = encodedBuildFileName.slice(0, -'.png'.length)
+    const build = decodeURIComponent(encodedBuild)
+
+    if (!build.trim()) {
+      return new URLSearchParams()
+    }
+
+    return new URLSearchParams({
+      build,
+    })
+  } catch {
+    return new URLSearchParams()
+  }
+}
+
+function getBuildSocialImageSearchSource(requestUrl: URL): BuildSocialImageSearchSource {
+  const pathSearchParams = createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname)
+
+  if (pathSearchParams) {
+    return {
+      isLegacyRoute: false,
+      searchParams: pathSearchParams,
+    }
+  }
+
+  return {
+    isLegacyRoute: requestUrl.pathname === legacyBuildSocialImagePath,
+    searchParams: new URLSearchParams(requestUrl.searchParams),
   }
 }
 
@@ -196,10 +260,12 @@ export function createBuildSocialImageResponse(
   requestUrl: URL,
   { renderPng }: BuildSocialImageResponseOptions = {},
 ): BuildSocialImageResponse {
-  const payload = createBuildSharePreviewPayloadFromSearch(requestUrl.searchParams)
+  const searchSource = getBuildSocialImageSearchSource(requestUrl)
+  const payload = createBuildSharePreviewPayloadFromSearch(searchSource.searchParams)
   const renderedImage = renderBuildSocialImagePngWithFallback(payload, renderPng)
-  const cachePolicy =
-    payload.status === 'found' && !renderedImage.usedFallback
+  const cachePolicy = searchSource.isLegacyRoute
+    ? legacyImageCachePolicy
+    : payload.status === 'found' && !renderedImage.usedFallback
       ? successfulImageCachePolicy
       : fallbackImageCachePolicy
 
@@ -218,7 +284,6 @@ function createBuildSocialImageErrorResponse(requestMethod: string): Response {
     headers: {
       'cache-control': 'no-store, max-age=0',
       'content-type': 'text/plain; charset=utf-8',
-      'netlify-vary': buildSocialImageNetlifyVary,
     },
     status: 500,
   })
@@ -257,5 +322,5 @@ const buildSocialImage = createBuildSocialImageHandler()
 export default buildSocialImage
 
 export const config: Config = {
-  path: '/social/build.png',
+  path: ['/social/builds/:reference/:build.png', '/social/build.png'],
 }

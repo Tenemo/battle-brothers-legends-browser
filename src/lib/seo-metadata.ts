@@ -25,46 +25,59 @@ export type SeoMetadata = {
 const siteOrigin = 'https://battlebrothers.academy'
 const sitePath = '/'
 const socialImagePath = '/seo/og-image-v2.png'
+const rootTitle = 'Battle Brothers Legends perks browser'
+const rootDescription =
+  'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.'
+const rootKeywords =
+  'Battle Brothers, Legends mod, perks browser, perk trees, build planner, Battle Brothers Legends'
+const rootShortName = 'Legends perks'
+const rootThemeColor = '#0c0908'
+const rootColorScheme = 'dark'
+const rootLocale = 'en_US'
+const rootRobots = 'index, follow, max-image-preview:large'
+const rootSocialImageAlt =
+  'Student icon and build planner preview for the Battle Brothers Legends perks browser.'
 
 const createAbsoluteUrl = (pathname: string, origin: string = siteOrigin): string =>
   new URL(pathname, origin).toString()
 
-const rootUrl = createAbsoluteUrl(sitePath)
-const socialImage: SeoImageMetadata = {
-  alt: 'Student icon and build planner preview for the Battle Brothers Legends perks browser.',
-  height: 630,
-  type: 'image/png',
-  url: createAbsoluteUrl(socialImagePath),
-  width: 1200,
+export function createRootSeoMetadata(origin: string = siteOrigin): SeoMetadata {
+  const rootUrl = createAbsoluteUrl(sitePath, origin)
+  const socialImage: SeoImageMetadata = {
+    alt: rootSocialImageAlt,
+    height: 630,
+    type: 'image/png',
+    url: createAbsoluteUrl(socialImagePath, origin),
+    width: 1200,
+  }
+
+  return {
+    applicationName: rootTitle,
+    canonicalUrl: rootUrl,
+    colorScheme: rootColorScheme,
+    description: rootDescription,
+    image: socialImage,
+    keywords: rootKeywords,
+    locale: rootLocale,
+    robots: rootRobots,
+    shortName: rootShortName,
+    structuredData: createSeoStructuredData({
+      applicationTitle: rootTitle,
+      applicationUrl: rootUrl,
+      description: rootDescription,
+      image: socialImage,
+      pageTitle: rootTitle,
+      pageUrl: rootUrl,
+      websiteTitle: rootTitle,
+      websiteUrl: rootUrl,
+    }),
+    themeColor: rootThemeColor,
+    title: rootTitle,
+    url: rootUrl,
+  }
 }
 
-export const rootSeoMetadata: SeoMetadata = {
-  applicationName: 'Battle Brothers Legends perks browser',
-  canonicalUrl: rootUrl,
-  colorScheme: 'dark',
-  description:
-    'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.',
-  image: socialImage,
-  keywords:
-    'Battle Brothers, Legends mod, perks browser, perk trees, build planner, Battle Brothers Legends',
-  locale: 'en_US',
-  robots: 'index, follow, max-image-preview:large',
-  shortName: 'Legends perks',
-  structuredData: createSeoStructuredData({
-    applicationTitle: 'Battle Brothers Legends perks browser',
-    applicationUrl: rootUrl,
-    description:
-      'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.',
-    image: socialImage,
-    pageTitle: 'Battle Brothers Legends perks browser',
-    pageUrl: rootUrl,
-    websiteTitle: 'Battle Brothers Legends perks browser',
-    websiteUrl: rootUrl,
-  }),
-  themeColor: '#0c0908',
-  title: 'Battle Brothers Legends perks browser',
-  url: rootUrl,
-}
+export const rootSeoMetadata: SeoMetadata = createRootSeoMetadata()
 
 const escapeHtml = (value: string): string =>
   value

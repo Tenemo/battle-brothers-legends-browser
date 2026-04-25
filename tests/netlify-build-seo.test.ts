@@ -63,10 +63,37 @@ describe('build SEO edge function', () => {
 
     expect(html).toContain('<title>Battle Brothers Legends build: 5 perks</title>')
     expect(html).toContain('content="noindex, follow, noarchive, max-image-preview:large"')
-    expect(html).toContain('/social/build.png?')
+    expect(html).toContain('/social/builds/')
     expect(html).toContain('Muscularity')
     expect(html).toContain('Steel+Brow')
     expect(html).not.toContain('content="https://battlebrothers.academy/seo/og-image-v2.png"')
+  })
+
+  test('rebases root metadata to the request origin for preview domains', async () => {
+    const rootHtml = injectSeoIntoHtml(baseHtml)
+    const response = await buildSeo(
+      new Request('https://deploy-preview-1--battle-brothers-browser.netlify.app/?search=scholar'),
+      {
+        next: async () =>
+          new Response(rootHtml, {
+            headers: {
+              'content-type': 'text/html; charset=utf-8',
+            },
+          }),
+      } as never,
+    )
+    const html = await response.text()
+
+    expect(html).toContain(
+      '<link rel="canonical" href="https://deploy-preview-1--battle-brothers-browser.netlify.app/"',
+    )
+    expect(html).toContain(
+      'property="og:image" content="https://deploy-preview-1--battle-brothers-browser.netlify.app/seo/og-image-v2.png"',
+    )
+    expect(html).toContain(
+      'name="twitter:image" content="https://deploy-preview-1--battle-brothers-browser.netlify.app/seo/og-image-v2.png"',
+    )
+    expect(html).not.toContain('battlebrothers.academy')
   })
 
   test('passes through non-GET requests', async () => {

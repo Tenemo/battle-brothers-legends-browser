@@ -21,9 +21,9 @@ describe('build share preview', () => {
     expect(payload.pickedPerkCount).toBe(2)
     expect(payload.pickedPerks.map((perk) => perk.perkName)).toEqual(['Clarity', 'Perfect Focus'])
     expect(payload.canonicalSearch).toBe('?build=Clarity,Perfect+Focus')
-    expect(payload.imagePath).toContain('/social/build.png?')
-    expect(payload.imagePath).toContain('build=Clarity%2CPerfect+Focus')
-    expect(payload.imagePath).toContain('reference=')
+    expect(payload.imagePath).toBe(
+      `/social/builds/${encodeURIComponent(payload.referenceVersion)}/Clarity%2CPerfect%20Focus.png`,
+    )
     expect(payload.title).toBe('Battle Brothers Legends build: 2 perks')
     expect(payload.description).toContain('Clarity')
     expect(payload.description).toContain('Perfect Focus')
@@ -43,9 +43,23 @@ describe('build share preview', () => {
     expect(payload.canonicalSearch).toBe(
       '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
-    expect(payload.imagePath).toContain(
-      'build=Chain+Lightning--perk.legend_chain_lightning%2CChain+Lightning--perk.legend_magic_chain_lightning',
+    expect(payload.imagePath).toBe(
+      `/social/builds/${encodeURIComponent(
+        payload.referenceVersion,
+      )}/Chain%20Lightning--perk.legend_chain_lightning%2CChain%20Lightning--perk.legend_magic_chain_lightning.png`,
     )
+  })
+
+  test('uses a path-keyed social image url for dense shared builds', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      '?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Hold+Out,Underdog,Assured+Conquest,Colossus,Tactical+Maneuvers,Nine+Lives,Crippling+Strikes,Perfect+Focus',
+    )
+
+    expect(payload.status).toBe('found')
+    expect(payload.pickedPerkCount).toBe(26)
+    expect(payload.imagePath).toMatch(/^\/social\/builds\/[^/]+\/[^/]+\.png$/u)
+    expect(payload.imagePath).toContain('%2C')
+    expect(payload.imagePath).not.toContain('?')
   })
 
   test('summarizes shared perk groups and background fits for picked builds', () => {

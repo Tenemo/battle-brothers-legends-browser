@@ -1,4 +1,9 @@
-import { injectSeoIntoHtml, rootSeoMetadata, type SeoMetadata } from './seo-metadata'
+import {
+  createRootSeoMetadata,
+  injectSeoIntoHtml,
+  rootSeoMetadata,
+  type SeoMetadata,
+} from './seo-metadata'
 import { createBuildSharePreviewPayloadFromSearch } from './build-share-preview'
 import { buildSocialImageHeight, buildSocialImageWidth } from './build-social-image'
 import { createSeoStructuredData } from './seo-structured-data'
@@ -20,7 +25,7 @@ function createBuildSeoMetadata({
   const buildSharePreviewPayload = createBuildSharePreviewPayloadFromSearch(search)
 
   if (buildSharePreviewPayload.status === 'empty') {
-    return rootSeoMetadata
+    return createRootSeoMetadata(origin)
   }
 
   const rootUrlForOrigin = createAbsoluteUrl(sitePath, origin)
