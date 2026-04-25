@@ -239,7 +239,7 @@ function renderIconGrid(
       const columnIndex = perkIndex % 5
       const rowIndex = Math.floor(perkIndex / 5)
       const x = 664 + columnIndex * 88
-      const y = 124 + rowIndex * 64
+      const y = 112 + rowIndex * 60
 
       return renderIconCell({
         hiddenCount: iconIndex === undefined ? hiddenCount + 1 : undefined,
@@ -377,10 +377,12 @@ export function createBuildSocialImageSvg(
         : ''
     }
     ${isEmpty ? '' : renderPerkNameRows(payload)}
-    <text x="664" y="106" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Picked perks</text>
+    <text x="664" y="96" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Picked perks</text>
     ${renderIconGrid(payload, resolvePerkIconDataUrl)}
     <text x="664" y="442" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
     ${renderBackgroundFits(payload, resolveBackgroundIconDataUrl)}
+    <text x="64" y="596" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="700">battlebrothers.academy</text>
+    <line x1="64" y1="603" x2="238" y2="603" stroke="#ded4c1" stroke-width="1.5" stroke-linecap="round" />
     <text x="1136" y="596" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
       payload.referenceVersion.replace(/^reference-mod_/u, ''),
     )}</text>

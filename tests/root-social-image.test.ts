@@ -15,7 +15,14 @@ describe('root social image generation', () => {
     expect(svg).toContain('font-family="Cinzel, Georgia, serif"')
     expect(svg).toContain('letter-spacing="0.02em"')
     expect(svg).toContain('Perks browser')
+    expect(svg).toContain('fill="url(#background)"')
+    expect(svg).toContain('fill="url(#warm-accent)"')
+    expect(svg).toContain('fill="url(#line-pattern)"')
+    expect(svg).toContain('width="258" height="258"')
+    expect(svg).toContain('<text x="96" y="536"')
+    expect(svg).toContain('<line x1="96" y1="546"')
     expect(svg).not.toContain('PERKS BROWSER')
+    expect(svg).not.toContain('width="172" height="8"')
   })
 
   test('produces a non-empty PNG with the expected file signature', async () => {
