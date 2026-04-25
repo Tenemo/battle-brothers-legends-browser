@@ -4,7 +4,7 @@ edge_functions = "netlify/generated-edge-functions"
 publish = "dist"
 
 [build.environment]
-NODE_VERSION = "22"
+NODE_VERSION = "24.14.1"
 PNPM_VERSION = "10.33.0"
 
 [dev]
@@ -14,10 +14,12 @@ targetPort = 5173
 framework = "#custom"
 
 [functions]
+node_bundler = "esbuild"
+external_node_modules = ["@resvg/resvg-js"]
 included_files = [
-  "node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-400-normal.woff",
-  "node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-600-normal.woff",
-  "node_modules/@fontsource/source-sans-3/files/source-sans-3-latin-700-normal.woff",
+  "scripts/assets/fonts/SourceSans3-Regular.ttf",
+  "scripts/assets/fonts/SourceSans3-Semibold.ttf",
+  "scripts/assets/fonts/SourceSans3-Bold.ttf",
   "public/game-icons/**/*",
 ]
 

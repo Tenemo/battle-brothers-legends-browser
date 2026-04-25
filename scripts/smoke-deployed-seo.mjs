@@ -180,9 +180,7 @@ await fetchImage(rootOpenGraphImageUrl)
 
 const sharedBuildUrl = new URL(baseUrl)
 
-for (const perkName of buildPerks) {
-  sharedBuildUrl.searchParams.append('build', perkName)
-}
+sharedBuildUrl.searchParams.set('build', buildPerks.join(','))
 
 const sharedBuildHtml = await fetchHtml(sharedBuildUrl)
 

@@ -25,7 +25,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: 22
+          node-version: 24.14.1
 
       - name: run deployed SEO smoke checks
         run: node ./scripts/smoke-deployed-seo.mjs "${{ inputs.base_url }}"

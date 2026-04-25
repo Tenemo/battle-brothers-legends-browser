@@ -134,7 +134,7 @@ The generated artifacts that the runtime actually uses are:
 
 To work on the project comfortably you need:
 
-- a recent Node.js release with built-in `fetch`
+- Node.js 24.14.1 or newer
 - `pnpm`
 - `tar` available on `PATH`
 - network access to GitHub if you need to populate or refresh the cached Legends reference
@@ -193,13 +193,13 @@ The repository now includes a root `netlify.toml` tailored for this app.
 
 - Netlify builds use `pnpm build:netlify`.
 - The published directory is `dist`.
-- The config pins Netlify to Node.js `22`.
+- The config pins Netlify to Node.js `24.14.1`.
 - `netlify dev` proxies to the local Vite server on port `5173`.
 - Security headers are based on the stricter style used in `Tenemo/piech.dev`, but simplified for this app's static Vite output.
 - Cache headers keep `index.html` fresh while allowing long-lived caching for hashed Vite assets and shorter caching for synced game icons.
 
 `build:netlify` intentionally skips `prebuild`. The deployed app only reads committed JSON and committed icon assets, so refreshing the Legends cache during every Netlify build would add a network dependency without changing the generated site.
-It still regenerates the deterministic social preview image before building so a clean deploy has the expected SEO asset.
+It still regenerates the deterministic root social preview image before building so a clean deploy has the expected SEO asset. Shared build URLs use a Netlify function to render their path-keyed PNG preview images from the committed dataset and icon assets.
 
 ## Available scripts
 
@@ -208,7 +208,7 @@ It still regenerates the deterministic social preview image before building so a
 - `pnpm build`
   Runs `pnpm tsc` and creates the production bundle. Because of `prebuild`, it first regenerates the deterministic social preview image.
 - `pnpm build:netlify`
-  Runs the same production build as `pnpm build`, then builds the Netlify edge function manifest. Use this for Netlify deployments.
+  Runs the same production build as `pnpm build`, then builds the Netlify edge function manifest and packages the shared build social image function. Use this for Netlify deployments.
 - `pnpm generate:social-image`
   Regenerates the ignored Open Graph and Twitter card preview image from local assets.
 - `pnpm format`

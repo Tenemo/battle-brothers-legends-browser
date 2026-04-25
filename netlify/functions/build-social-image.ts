@@ -3,8 +3,7 @@ import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import type { Config } from '@netlify/functions'
-import { Resvg } from '@resvg/resvg-js'
+import type { Config, Context } from '@netlify/functions'
 
 import { createBuildSharePreviewPayloadFromSearch } from '../../src/lib/build-share-preview'
 import { buildSocialImageWidth, createBuildSocialImageSvg } from '../../src/lib/build-social-image'
@@ -30,12 +29,20 @@ type BuildSocialImageRenderResult = {
   usedFallback: boolean
 }
 
+type BuildSocialImageRenderPng = (
+  payload: BuildSharePreviewPayload,
+) => Promise<Uint8Array> | Uint8Array
+
 type BuildSocialImageResponseOptions = {
-  renderPng?: (payload: BuildSharePreviewPayload) => Uint8Array
+  renderPng?: BuildSocialImageRenderPng
+  routeParams?: Record<string, string | undefined>
 }
 
 type BuildSocialImageHandlerOptions = {
-  createResponse?: (requestUrl: URL) => BuildSocialImageResponse
+  createResponse?: (
+    requestUrl: URL,
+    options?: BuildSocialImageResponseOptions,
+  ) => Promise<BuildSocialImageResponse>
 }
 
 const dayInSeconds = 60 * 60 * 24
@@ -43,9 +50,9 @@ const hourInSeconds = 60 * 60
 const buildSocialImagePathPrefix = '/social/builds/'
 const socialImageFontFamily = 'Source Sans 3'
 const socialImageFontFileNames = [
-  'source-sans-3-latin-400-normal.woff',
-  'source-sans-3-latin-600-normal.woff',
-  'source-sans-3-latin-700-normal.woff',
+  'SourceSans3-Regular.ttf',
+  'SourceSans3-Semibold.ttf',
+  'SourceSans3-Bold.ttf',
 ]
 const successfulImageCachePolicy: BuildSocialImageCachePolicy = {
   browser: 'public, max-age=0, must-revalidate',
@@ -67,14 +74,12 @@ function getCurrentModuleDirectory(): string {
 
 function getSocialImageFontFileCandidates(fileName: string): string[] {
   const moduleDirectory = getCurrentModuleDirectory()
-  const fontPath = path.join('@fontsource', 'source-sans-3', 'files', fileName)
+  const fontPath = path.join('scripts', 'assets', 'fonts', fileName)
 
   return [
-    path.resolve(process.cwd(), 'node_modules', fontPath),
-    path.resolve(moduleDirectory, 'node_modules', fontPath),
-    path.resolve(moduleDirectory, '..', 'node_modules', fontPath),
-    path.resolve(moduleDirectory, '..', '..', 'node_modules', fontPath),
-    path.resolve(moduleDirectory, '..', '..', '..', 'node_modules', fontPath),
+    path.resolve(process.cwd(), fontPath),
+    path.resolve(moduleDirectory, '..', '..', fontPath),
+    path.resolve(moduleDirectory, '..', '..', '..', fontPath),
   ]
 }
 
@@ -122,7 +127,10 @@ function getIconDataUrl(perk: BuildSharePreviewPerk): string | null {
   return `data:image/png;base64,${readFileSync(iconFilePath).toString('base64')}`
 }
 
-export function renderBuildSocialImagePng(payload: BuildSharePreviewPayload): Uint8Array {
+export async function renderBuildSocialImagePng(
+  payload: BuildSharePreviewPayload,
+): Promise<Uint8Array> {
+  const { Resvg } = await import('@resvg/resvg-js')
   const svg = createBuildSocialImageSvg(payload, {
     resolveIconDataUrl: getIconDataUrl,
   })
@@ -147,19 +155,23 @@ function createFallbackPayload(): BuildSharePreviewPayload {
   return createBuildSharePreviewPayloadFromSearch('')
 }
 
-function renderBuildSocialImagePngWithFallback(
+async function renderBuildSocialImagePngWithFallback(
   payload: BuildSharePreviewPayload,
-  renderPng: (payload: BuildSharePreviewPayload) => Uint8Array = renderBuildSocialImagePng,
-): BuildSocialImageRenderResult {
+  renderPng: BuildSocialImageRenderPng = renderBuildSocialImagePng,
+): Promise<BuildSocialImageRenderResult> {
   try {
+    const body = await renderPng(payload)
+
     return {
-      body: renderPng(payload),
+      body,
       usedFallback: false,
     }
   } catch (renderError) {
     try {
+      const body = await renderPng(createFallbackPayload())
+
       return {
-        body: renderPng(createFallbackPayload()),
+        body,
         usedFallback: true,
       }
     } catch (fallbackRenderError) {
@@ -228,14 +240,43 @@ export function createBuildSocialImageSearchParamsFromPathname(
   }
 }
 
-export function createBuildSocialImageResponse(
+function decodeRouteParam(value: string): string | null {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return null
+  }
+}
+
+export function createBuildSocialImageSearchParamsFromRouteParams(
+  routeParams: Record<string, string | undefined> | undefined,
+): URLSearchParams | null {
+  const rawBuild = routeParams?.buildSlug ?? routeParams?.build
+
+  if (!rawBuild) {
+    return null
+  }
+
+  const build = decodeRouteParam(rawBuild)
+
+  if (!build?.trim()) {
+    return null
+  }
+
+  return new URLSearchParams({
+    build,
+  })
+}
+
+export async function createBuildSocialImageResponse(
   requestUrl: URL,
-  { renderPng }: BuildSocialImageResponseOptions = {},
-): BuildSocialImageResponse {
+  { renderPng, routeParams }: BuildSocialImageResponseOptions = {},
+): Promise<BuildSocialImageResponse> {
   const searchParams =
+    createBuildSocialImageSearchParamsFromRouteParams(routeParams) ??
     createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ?? new URLSearchParams()
   const payload = createBuildSharePreviewPayloadFromSearch(searchParams)
-  const renderedImage = renderBuildSocialImagePngWithFallback(payload, renderPng)
+  const renderedImage = await renderBuildSocialImagePngWithFallback(payload, renderPng)
   const cachePolicy =
     payload.status === 'found' && !renderedImage.usedFallback
       ? successfulImageCachePolicy
@@ -263,8 +304,8 @@ function createBuildSocialImageErrorResponse(requestMethod: string): Response {
 
 export function createBuildSocialImageHandler({
   createResponse = createBuildSocialImageResponse,
-}: BuildSocialImageHandlerOptions = {}): (request: Request) => Promise<Response> {
-  return async function buildSocialImage(request: Request): Promise<Response> {
+}: BuildSocialImageHandlerOptions = {}): (request: Request, context: Context) => Promise<Response> {
+  return async function buildSocialImage(request: Request, context: Context): Promise<Response> {
     if (request.method !== 'GET' && request.method !== 'HEAD') {
       return new Response(null, {
         headers: {
@@ -275,7 +316,9 @@ export function createBuildSocialImageHandler({
     }
 
     try {
-      const imageResponse = createResponse(new URL(request.url))
+      const imageResponse = await createResponse(new URL(request.url), {
+        routeParams: context.params,
+      })
 
       return new Response(request.method === 'HEAD' ? null : Buffer.from(imageResponse.body), {
         headers: imageResponse.headers,
@@ -294,5 +337,5 @@ const buildSocialImage = createBuildSocialImageHandler()
 export default buildSocialImage
 
 export const config: Config = {
-  path: '/social/builds/:reference/:build.png',
+  path: '/social/builds/:reference/:buildSlug.png',
 }

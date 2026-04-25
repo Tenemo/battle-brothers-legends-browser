@@ -1,11 +1,13 @@
 import { Buffer } from 'node:buffer'
 import { existsSync } from 'node:fs'
+import type { Context } from '@netlify/functions'
 import { describe, expect, test, vi } from 'vitest'
 import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share-preview'
 import { createBuildSocialImageSvg } from '../src/lib/build-social-image'
 import buildSocialImage, {
   config,
   createBuildSocialImageSearchParamsFromPathname,
+  createBuildSocialImageSearchParamsFromRouteParams,
   createBuildSocialImageHandler,
   createBuildSocialImageResponse,
   renderBuildSocialImagePng,
@@ -13,10 +15,16 @@ import buildSocialImage, {
 } from '../netlify/functions/build-social-image'
 
 const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
+const buildSocialImageContext = {
+  params: {
+    buildSlug: 'Clarity',
+    reference: 'reference-mod_19.3.17',
+  },
+} as unknown as Context
 
 describe('build social image', () => {
   test('declares the public social image route', () => {
-    expect(config.path).toBe('/social/builds/:reference/:build.png')
+    expect(config.path).toBe('/social/builds/:reference/:buildSlug.png')
   })
 
   test('resolves bundled social image fonts', () => {
@@ -25,9 +33,9 @@ describe('build social image', () => {
     expect(fontFiles).toHaveLength(3)
     expect(fontFiles).toEqual(
       expect.arrayContaining([
-        expect.stringContaining('source-sans-3-latin-400-normal.woff'),
-        expect.stringContaining('source-sans-3-latin-600-normal.woff'),
-        expect.stringContaining('source-sans-3-latin-700-normal.woff'),
+        expect.stringContaining('SourceSans3-Regular.ttf'),
+        expect.stringContaining('SourceSans3-Semibold.ttf'),
+        expect.stringContaining('SourceSans3-Bold.ttf'),
       ]),
     )
     expect(fontFiles.every((fontFile) => existsSync(fontFile))).toBe(true)
@@ -77,9 +85,9 @@ describe('build social image', () => {
     expect(svg).toContain('...')
   })
 
-  test('renders a PNG when icon files are missing', () => {
+  test('renders a PNG when icon files are missing', async () => {
     const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity')
-    const body = renderBuildSocialImagePng({
+    const body = await renderBuildSocialImagePng({
       ...payload,
       pickedPerks: payload.pickedPerks.map((perk) => ({
         ...perk,
@@ -98,9 +106,18 @@ describe('build social image', () => {
     expect(searchParams?.get('build')).toBe('Clarity,Perfect Focus')
   })
 
-  test('falls back to the generic payload for malformed path routes', () => {
+  test('extracts canonical build search params from Netlify route params', () => {
+    const searchParams = createBuildSocialImageSearchParamsFromRouteParams({
+      buildSlug: 'Browbeater%27s%20Bludgeon%2CBlacksmiths%20Technique',
+      reference: '19.3.17',
+    })
+
+    expect(searchParams?.get('build')).toBe("Browbeater's Bludgeon,Blacksmiths Technique")
+  })
+
+  test('falls back to the generic payload for malformed path routes', async () => {
     const renderedStatuses: string[] = []
-    const response = createBuildSocialImageResponse(
+    const response = await createBuildSocialImageResponse(
       new URL('https://battlebrothers.academy/social/builds/%E0%A4%A/Clarity.png'),
       {
         renderPng: (payload) => {
@@ -116,7 +133,7 @@ describe('build social image', () => {
     expect(response.headers['content-type']).toBe('image/png')
   })
 
-  test('passes different path builds as distinct render payloads', () => {
+  test('passes different path builds as distinct render payloads', async () => {
     const renderedBuilds: string[] = []
     const renderPng = (payload: ReturnType<typeof createBuildSharePreviewPayloadFromSearch>) => {
       renderedBuilds.push(payload.pickedPerks.map((perk) => perk.perkName).join(','))
@@ -124,13 +141,13 @@ describe('build social image', () => {
       return pngSignature
     }
 
-    createBuildSocialImageResponse(
+    await createBuildSocialImageResponse(
       new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Student.png'),
       {
         renderPng,
       },
     )
-    createBuildSocialImageResponse(
+    await createBuildSocialImageResponse(
       new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Colossus.png'),
       {
         renderPng,
@@ -140,8 +157,8 @@ describe('build social image', () => {
     expect(renderedBuilds).toEqual(['Student', 'Colossus'])
   })
 
-  test('returns a PNG with durable cache headers for a valid build', () => {
-    const response = createBuildSocialImageResponse(
+  test('returns a PNG with durable cache headers for a valid build', async () => {
+    const response = await createBuildSocialImageResponse(
       new URL(
         'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity%2CPerfect%20Focus.png',
       ),
@@ -155,9 +172,9 @@ describe('build social image', () => {
     expect(Buffer.from(response.body).subarray(0, 8)).toEqual(pngSignature)
   })
 
-  test('uses shorter cache headers when the renderer falls back to the generic image', () => {
+  test('uses shorter cache headers when the renderer falls back to the generic image', async () => {
     let renderAttemptCount = 0
-    const response = createBuildSocialImageResponse(
+    const response = await createBuildSocialImageResponse(
       new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png'),
       {
         renderPng: () => {
@@ -187,6 +204,7 @@ describe('build social image', () => {
           method: 'HEAD',
         },
       ),
+      buildSocialImageContext,
     )
     const postResponse = await buildSocialImage(
       new Request(
@@ -195,6 +213,7 @@ describe('build social image', () => {
           method: 'POST',
         },
       ),
+      buildSocialImageContext,
     )
 
     expect(headResponse.status).toBe(200)
@@ -217,6 +236,7 @@ describe('build social image', () => {
         new Request(
           'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png',
         ),
+        buildSocialImageContext,
       )
 
       expect(response.status).toBe(500)
