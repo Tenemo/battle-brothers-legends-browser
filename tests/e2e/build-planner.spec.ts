@@ -42,7 +42,11 @@ const manyPickedPerkNames = [
 ]
 
 function createBuildUrl(perkNames: string[]): string {
-  return `/?${perkNames.map((perkName) => `build=${encodeURIComponent(perkName)}`).join('&')}`
+  const buildValue = perkNames
+    .map((perkName) => encodeURIComponent(perkName).replace(/%20/gu, '+'))
+    .join(',')
+
+  return `/?build=${buildValue}`
 }
 
 test('build planner splits shared and individual perk groups without internal scrolling', async ({
