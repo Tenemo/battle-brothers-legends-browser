@@ -27,6 +27,7 @@ type PerkBrowserUrlStateWriteOptions = {
 const buildParamName = 'build'
 const categoryParamName = 'category'
 const groupParamKeyPrefix = 'group-'
+const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
 
 function collapseWhitespace(value: string): string {
@@ -55,6 +56,58 @@ function createUrlToken(value: string): string {
 
 function createGroupParamKey(groupName: string): string {
   return `${groupParamKeyPrefix}${createUrlToken(groupName)}`
+}
+
+function createPerkNameCountByLookupValue(perks: Iterable<LegendsPerkRecord>): Map<string, number> {
+  const perkNameCountByLookupValue = new Map<string, number>()
+
+  for (const perk of perks) {
+    const lookupValue = normalizeLookupValue(perk.perkName)
+    perkNameCountByLookupValue.set(
+      lookupValue,
+      (perkNameCountByLookupValue.get(lookupValue) ?? 0) + 1,
+    )
+  }
+
+  return perkNameCountByLookupValue
+}
+
+function createDisambiguatedPerkUrlLabel(perk: LegendsPerkRecord): string {
+  return `${perk.perkName}${disambiguatedPerkTokenSeparator}${perk.id}`
+}
+
+function createPerkUrlLabel(
+  perk: LegendsPerkRecord,
+  perkNameCountByLookupValue: Map<string, number>,
+): string {
+  return (perkNameCountByLookupValue.get(normalizeLookupValue(perk.perkName)) ?? 0) > 1
+    ? createDisambiguatedPerkUrlLabel(perk)
+    : perk.perkName
+}
+
+function createPerkIdLookupMaps(perks: LegendsPerkRecord[]): {
+  legacyPerkIdByNameLookupValue: Map<string, string>
+  perkIdByLookupValue: Map<string, string>
+} {
+  const perkNameCountByLookupValue = createPerkNameCountByLookupValue(perks)
+  const legacyPerkIdByNameLookupValue = new Map<string, string>()
+  const perkIdByLookupValue = new Map<string, string>()
+
+  for (const perk of perks) {
+    const nameLookupValue = normalizeLookupValue(perk.perkName)
+
+    legacyPerkIdByNameLookupValue.set(nameLookupValue, perk.id)
+    perkIdByLookupValue.set(normalizeLookupValue(perk.id), perk.id)
+    perkIdByLookupValue.set(
+      normalizeLookupValue(createPerkUrlLabel(perk, perkNameCountByLookupValue)),
+      perk.id,
+    )
+  }
+
+  return {
+    legacyPerkIdByNameLookupValue,
+    perkIdByLookupValue,
+  }
 }
 
 function encodeQueryValue(value: string): string {
@@ -106,8 +159,8 @@ export function readPerkBrowserUrlState(
   const groupNameByParamKey = new Map(
     options.availableGroupNames.map((groupName) => [createGroupParamKey(groupName), groupName]),
   )
-  const perkIdByLookupValue = new Map(
-    options.perks.map((perk) => [normalizeLookupValue(perk.perkName), perk.id]),
+  const { legacyPerkIdByNameLookupValue, perkIdByLookupValue } = createPerkIdLookupMaps(
+    options.perks,
   )
   const treeIdByLookupValueByGroup = new Map(
     [...options.treeOptionsByGroup.entries()].map(([groupName, treeOptions]) => [
@@ -167,7 +220,9 @@ export function readPerkBrowserUrlState(
   }
 
   for (const buildValue of getGroupedParamValues(params, buildParamName)) {
-    const perkId = perkIdByLookupValue.get(normalizeLookupValue(buildValue))
+    const lookupValue = normalizeLookupValue(buildValue)
+    const perkId =
+      perkIdByLookupValue.get(lookupValue) ?? legacyPerkIdByNameLookupValue.get(lookupValue)
 
     if (!perkId || pickedPerkIdSet.has(perkId)) {
       continue
@@ -218,17 +273,18 @@ export function buildPerkBrowserUrlSearch(
     appendGroupedQueryEntry(entries, createGroupParamKey(groupName), selectedTreeNames)
   }
 
-  const pickedPerkNames: string[] = []
+  const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
+  const pickedPerkLabels: string[] = []
 
   for (const pickedPerkId of urlState.pickedPerkIds) {
     const perk = options.perksById.get(pickedPerkId)
 
     if (perk) {
-      pickedPerkNames.push(perk.perkName)
+      pickedPerkLabels.push(createPerkUrlLabel(perk, perkNameCountByLookupValue))
     }
   }
 
-  appendGroupedQueryEntry(entries, buildParamName, pickedPerkNames)
+  appendGroupedQueryEntry(entries, buildParamName, pickedPerkLabels)
 
   const searchString = entries.join('&')
   return searchString ? `?${searchString}` : ''

@@ -1145,12 +1145,16 @@ function buildBackgroundFitBackgrounds(backgrounds, treeDefinitions) {
               {
                 chance: resolveChanceValue(background.minimums, categoryName),
                 minimumTrees: resolveMinimumValue(background.minimums, categoryName),
-                treeIds: referenceArrayValue(treeValue)
-                  .map(getLastPathSegment)
-                  .flatMap((treeConstName) => {
-                    const treeDefinition = treeDefinitions.get(treeConstName)
-                    return treeDefinition ? [treeDefinition.id] : []
-                  }),
+                treeIds: [
+                  ...new Set(
+                    referenceArrayValue(treeValue)
+                      .map(getLastPathSegment)
+                      .flatMap((treeConstName) => {
+                        const treeDefinition = treeDefinitions.get(treeConstName)
+                        return treeDefinition ? [treeDefinition.id] : []
+                      }),
+                  ),
+                ],
               },
             ]
           }),

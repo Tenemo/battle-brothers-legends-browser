@@ -44,6 +44,22 @@ describe('SEO metadata', () => {
     expect(metadata.image.url).toContain('build=Clarity%2CPerfect+Focus')
   })
 
+  test('keeps duplicate-name build ids in shared SEO metadata', () => {
+    const metadata = resolveSeoMetadataForUrl(
+      new URL(
+        'https://battlebrothers.academy/?build=Chain+Lightning--perk.legend_chain_lightning&build=Chain+Lightning--perk.legend_magic_chain_lightning',
+      ),
+    )
+
+    expect(metadata.title).toBe('Battle Brothers Legends build: 2 perks')
+    expect(metadata.url).toBe(
+      'https://battlebrothers.academy/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+    )
+    expect(metadata.image.url).toContain(
+      'build=Chain+Lightning--perk.legend_chain_lightning%2CChain+Lightning--perk.legend_magic_chain_lightning',
+    )
+  })
+
   test('injects shared build metadata into the document head', () => {
     const html = renderDocumentHtml({
       baseHtml,

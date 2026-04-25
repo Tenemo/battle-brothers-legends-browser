@@ -8,7 +8,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 
 - Browses the Legends perk catalog in a fast client-side UI.
 - Searches across perk names, descriptions, perk groups, tree names, background sources, scenario overlays, and favored enemy targets.
-- Filters by category, perk group, and tier.
+- Filters by category and perk group.
 - Lets you pick perks into a build planner, splits matching perk groups into shared 2-plus-perk coverage and individual-perk coverage, merges identical match sets, and previews picked-perk effects on hover.
 - Ranks parsed Legends backgrounds against the current build by exact perk-tree fit, separating guaranteed matches from probabilistic matches and showing exact marginal probabilities for non-guaranteed trees.
 - Persists the current filters and picked build in grouped readable query params so the current setup can be shared or reloaded directly from the URL.
@@ -41,7 +41,7 @@ The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` di
 
 Search and filtering are fully client-side. The ranking logic in `src/lib/perk-search.ts` prefers exact perk-name matches first, then prefix and substring matches, then tree names and category names, and finally broader text matches from descriptions and related metadata. When there is no search query, results are sorted by category, tree, tier, and perk name.
 
-The app also keeps the current search, tier, selected categories, selected perk groups, and picked build in the URL query string. The canonical format groups repeated values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`. Older repeated-param links are still accepted and are normalized to the canonical grouped format after load.
+The app also keeps the current search, selected categories, selected perk groups, and picked build in the URL query string. The canonical format groups repeated values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`. Older repeated-param links are still accepted and are normalized to the canonical grouped format after load.
 
 The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique tree targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build trees such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed picked-perk coverage first, then total picked-perk coverage, then stable background name and source ordering.
 

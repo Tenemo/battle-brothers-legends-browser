@@ -29,6 +29,25 @@ describe('build share preview', () => {
     expect(payload.description).toContain('Perfect Focus')
   })
 
+  test('canonicalizes duplicate-name shared build urls without dropping either perk id', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      '?build=Chain+Lightning--perk.legend_chain_lightning&build=Chain+Lightning--perk.legend_magic_chain_lightning',
+    )
+
+    expect(payload.status).toBe('found')
+    expect(payload.pickedPerkCount).toBe(2)
+    expect(payload.pickedPerks.map((perk) => perk.perkName)).toEqual([
+      'Chain Lightning',
+      'Chain Lightning',
+    ])
+    expect(payload.canonicalSearch).toBe(
+      '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+    )
+    expect(payload.imagePath).toContain(
+      'build=Chain+Lightning--perk.legend_chain_lightning%2CChain+Lightning--perk.legend_magic_chain_lightning',
+    )
+  })
+
   test('summarizes shared perk groups and background fits for picked builds', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       '?build=Perfect+Focus&build=Peaceable&build=Clarity',

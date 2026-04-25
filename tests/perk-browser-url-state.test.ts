@@ -109,6 +109,29 @@ const treeOptionsByGroup = new Map([
   ['Enemy', [{ treeId: 'BeastTree', treeName: 'Beasts' }]],
 ])
 const perksById = new Map(samplePerks.map((perk) => [perk.id, perk]))
+const duplicateNamePerks: LegendsPerkRecord[] = [
+  ...samplePerks,
+  {
+    ...samplePerks[0],
+    groupNames: ['Magic'],
+    id: 'perk.legend_chain_lightning',
+    perkConstName: 'LegendChainLightning',
+    perkName: 'Chain Lightning',
+    primaryGroupName: 'Magic',
+    searchText: 'Chain Lightning magic evocation',
+  },
+  {
+    ...samplePerks[0],
+    groupNames: ['Other'],
+    id: 'perk.legend_magic_chain_lightning',
+    perkConstName: 'LegendMagicChainLightning',
+    perkName: 'Chain Lightning',
+    placements: [],
+    primaryGroupName: 'Other',
+    searchText: 'Chain Lightning other spell',
+  },
+]
+const duplicateNamePerksById = new Map(duplicateNamePerks.map((perk) => [perk.id, perk]))
 
 describe('perk browser url state', () => {
   test('serializes filters and build into grouped readable query params', () => {
@@ -195,6 +218,43 @@ describe('perk browser url state', () => {
         Magic: ['DeadeyeTree'],
       },
     })
+  })
+
+  test('serializes duplicate-name build perks with readable stable ids and restores both ids', () => {
+    const search = buildPerkBrowserUrlSearch(
+      {
+        pickedPerkIds: ['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'],
+        query: '',
+        selectedGroupNames: [],
+        selectedTreeIdsByGroup: {},
+      },
+      {
+        availableGroupNames,
+        perksById: duplicateNamePerksById,
+        treeOptionsByGroup,
+      },
+    )
+
+    expect(search).toBe(
+      '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+    )
+    expect(
+      readPerkBrowserUrlState(search, {
+        availableGroupNames,
+        perks: duplicateNamePerks,
+        treeOptionsByGroup,
+      }).pickedPerkIds,
+    ).toEqual(['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'])
+  })
+
+  test('keeps legacy duplicate-name build params accepted', () => {
+    expect(
+      readPerkBrowserUrlState('?build=Chain+Lightning', {
+        availableGroupNames,
+        perks: duplicateNamePerks,
+        treeOptionsByGroup,
+      }).pickedPerkIds,
+    ).toEqual(['perk.legend_magic_chain_lightning'])
   })
 
   test('omits the query string entirely when nothing needs to be shared', () => {

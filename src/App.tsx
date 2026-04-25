@@ -6,227 +6,42 @@ import '@fontsource/source-sans-3/700.css'
 import './App.css'
 import { BackgroundFitPanel } from './components/BackgroundFitPanel'
 import { BuildPlanner, type HoveredBuildPerkTooltip } from './components/BuildPlanner'
+import { CategorySidebar } from './components/CategorySidebar'
 import { PerkDetail } from './components/PerkDetail'
 import { PerkResults } from './components/PerkResults'
-import { BuildStar, GitHubIcon, TreeChevron } from './components/SharedControls'
+import { GitHubIcon } from './components/SharedControls'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import { createBackgroundFitEngine } from './lib/background-fit'
 import { getBuildPlannerGroups } from './lib/build-planner'
+import {
+  compareDisplayedGroups,
+  compareDisplayedTreeOptions,
+  getCategoryTreeOptions,
+  getGroupCounts,
+  getPickedPerkCountsByGroup,
+  getPickedPerkCountsByTree,
+  getVisiblePerkCountsByCategoryTree,
+  getVisiblePerkCountsByGroup,
+} from './lib/category-filter-model'
 import { compareCategoryNames } from './lib/perk-categories'
 import {
   buildPerkBrowserBuildUrlSearch,
   buildPerkBrowserUrlSearch,
   readPerkBrowserUrlStateFromLocation,
-  type PerkBrowserUrlTreeOption,
 } from './lib/perk-browser-url-state'
 import {
   getPerkGroupHoverKey,
-  getSearchMatchPriority,
   groupBackgroundSources,
   normalizeSearchPhrase,
-  renderHighlightedText,
 } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
-import type { LegendsPerkRecord, LegendsPerksDataset } from './types/legends-perks'
+import type { LegendsPerksDataset } from './types/legends-perks'
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
-
-type CategoryTreeOption = PerkBrowserUrlTreeOption & {
-  perkCount: number
-}
-
-type PerkValueCountOptions = {
-  dedupeValuesPerPerk?: boolean
-}
-
-function getPerkCountsByValues(
-  perks: LegendsPerkRecord[],
-  getValues: (perk: LegendsPerkRecord) => Iterable<string>,
-  { dedupeValuesPerPerk = false }: PerkValueCountOptions = {},
-): Map<string, number> {
-  const counts = new Map<string, number>()
-
-  for (const perk of perks) {
-    const values = getValues(perk)
-    const countedValues = dedupeValuesPerPerk ? new Set(values) : values
-
-    for (const value of countedValues) {
-      counts.set(value, (counts.get(value) ?? 0) + 1)
-    }
-  }
-
-  return counts
-}
-
-function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
-  return getPerkCountsByValues(perks, (perk) => perk.groupNames)
-}
-
-function getPickedPerkCountsByGroup(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
-  return getPerkCountsByValues(pickedPerks, (pickedPerk) => pickedPerk.groupNames, {
-    dedupeValuesPerPerk: true,
-  })
-}
-
-function getPickedPerkCountsByTree(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
-  return getPerkCountsByValues(
-    pickedPerks,
-    (pickedPerk) => pickedPerk.placements.map((placement) => placement.treeId),
-    { dedupeValuesPerPerk: true },
-  )
-}
-
-function getCategoryTreeOptions(perks: LegendsPerkRecord[]): Map<string, CategoryTreeOption[]> {
-  const optionsByCategory = new Map<
-    string,
-    Map<string, { perkIds: Set<string>; treeId: string; treeName: string }>
-  >()
-
-  for (const perk of perks) {
-    for (const placement of perk.placements) {
-      if (!optionsByCategory.has(placement.categoryName)) {
-        optionsByCategory.set(placement.categoryName, new Map())
-      }
-
-      const categoryOptions = optionsByCategory.get(placement.categoryName)
-
-      if (!categoryOptions?.has(placement.treeId)) {
-        categoryOptions?.set(placement.treeId, {
-          perkIds: new Set(),
-          treeId: placement.treeId,
-          treeName: placement.treeName,
-        })
-      }
-
-      categoryOptions?.get(placement.treeId)?.perkIds.add(perk.id)
-    }
-  }
-
-  return new Map(
-    [...optionsByCategory.entries()].map(([categoryName, treeOptions]) => [
-      categoryName,
-      [...treeOptions.values()]
-        .map((treeOption) => ({
-          perkCount: treeOption.perkIds.size,
-          treeId: treeOption.treeId,
-          treeName: treeOption.treeName,
-        }))
-        .toSorted((leftTreeOption, rightTreeOption) =>
-          leftTreeOption.treeName.localeCompare(rightTreeOption.treeName),
-        ),
-    ]),
-  )
-}
-
-function getVisiblePerkCountsByGroup(perks: LegendsPerkRecord[]): Map<string, number> {
-  return getPerkCountsByValues(perks, (perk) => perk.groupNames, {
-    dedupeValuesPerPerk: true,
-  })
-}
-
-function getVisiblePerkCountsByCategoryTree(perks: LegendsPerkRecord[]): Map<string, number> {
-  const countsByCategoryTree = new Map<string, number>()
-
-  for (const perk of perks) {
-    for (const placement of perk.placements) {
-      const categoryTreeKey = `${placement.categoryName}::${placement.treeId}`
-      countsByCategoryTree.set(
-        categoryTreeKey,
-        (countsByCategoryTree.get(categoryTreeKey) ?? 0) + 1,
-      )
-    }
-  }
-
-  return countsByCategoryTree
-}
-
-function compareDisplayedGroups({
-  leftGroupName,
-  normalizedSearchPhrase,
-  rightGroupName,
-  treeOptionsByGroup,
-  visiblePerkCountsByGroup,
-}: {
-  leftGroupName: string
-  normalizedSearchPhrase: string
-  rightGroupName: string
-  treeOptionsByGroup: Map<string, CategoryTreeOption[]>
-  visiblePerkCountsByGroup: Map<string, number>
-}): number {
-  if (normalizedSearchPhrase.length === 0) {
-    return compareCategoryNames(leftGroupName, rightGroupName)
-  }
-
-  const leftTreeOptions = treeOptionsByGroup.get(leftGroupName) ?? []
-  const rightTreeOptions = treeOptionsByGroup.get(rightGroupName) ?? []
-  const leftGroupMatchPriority = getSearchMatchPriority(leftGroupName, normalizedSearchPhrase)
-  const rightGroupMatchPriority = getSearchMatchPriority(rightGroupName, normalizedSearchPhrase)
-  const leftTreeMatchPriority = Math.min(
-    ...leftTreeOptions.map((treeOption) =>
-      getSearchMatchPriority(treeOption.treeName, normalizedSearchPhrase),
-    ),
-    2,
-  )
-  const rightTreeMatchPriority = Math.min(
-    ...rightTreeOptions.map((treeOption) =>
-      getSearchMatchPriority(treeOption.treeName, normalizedSearchPhrase),
-    ),
-    2,
-  )
-  const leftVisiblePerkCount = visiblePerkCountsByGroup.get(leftGroupName) ?? 0
-  const rightVisiblePerkCount = visiblePerkCountsByGroup.get(rightGroupName) ?? 0
-  const leftHasVisiblePerksPriority = leftVisiblePerkCount > 0 ? 0 : 1
-  const rightHasVisiblePerksPriority = rightVisiblePerkCount > 0 ? 0 : 1
-
-  return (
-    leftGroupMatchPriority - rightGroupMatchPriority ||
-    leftTreeMatchPriority - rightTreeMatchPriority ||
-    leftHasVisiblePerksPriority - rightHasVisiblePerksPriority ||
-    rightVisiblePerkCount - leftVisiblePerkCount ||
-    compareCategoryNames(leftGroupName, rightGroupName)
-  )
-}
-
-function compareDisplayedTreeOptions({
-  categoryName,
-  leftTreeOption,
-  normalizedSearchPhrase,
-  rightTreeOption,
-  visiblePerkCountsByCategoryTree,
-}: {
-  categoryName: string
-  leftTreeOption: CategoryTreeOption
-  normalizedSearchPhrase: string
-  rightTreeOption: CategoryTreeOption
-  visiblePerkCountsByCategoryTree: Map<string, number>
-}): number {
-  if (normalizedSearchPhrase.length === 0) {
-    return leftTreeOption.treeName.localeCompare(rightTreeOption.treeName)
-  }
-
-  const leftMatchPriority = getSearchMatchPriority(leftTreeOption.treeName, normalizedSearchPhrase)
-  const rightMatchPriority = getSearchMatchPriority(
-    rightTreeOption.treeName,
-    normalizedSearchPhrase,
-  )
-  const leftVisiblePerkCount =
-    visiblePerkCountsByCategoryTree.get(`${categoryName}::${leftTreeOption.treeId}`) ?? 0
-  const rightVisiblePerkCount =
-    visiblePerkCountsByCategoryTree.get(`${categoryName}::${rightTreeOption.treeId}`) ?? 0
-  const leftHasVisiblePerksPriority = leftVisiblePerkCount > 0 ? 0 : 1
-  const rightHasVisiblePerksPriority = rightVisiblePerkCount > 0 ? 0 : 1
-
-  return (
-    leftMatchPriority - rightMatchPriority ||
-    leftHasVisiblePerksPriority - rightHasVisiblePerksPriority ||
-    rightVisiblePerkCount - leftVisiblePerkCount ||
-    leftTreeOption.treeName.localeCompare(rightTreeOption.treeName)
-  )
-}
 
 const groupCounts = getGroupCounts(allPerks)
 const categoryTreeOptionsByGroup = getCategoryTreeOptions(allPerks)
@@ -741,160 +556,23 @@ export default function App() {
           pickedPerkCount={pickedPerks.length}
         />
 
-        <aside className="sidebar" aria-label="Perk categories">
-          <div className="panel-heading">
-            <h2>Categories</h2>
-            <p>Enable one or more categories, then narrow each one to the perk groups you want.</p>
-          </div>
-          <button
-            aria-label="Reset all category filters"
-            className={selectedGroupNames.length === 0 ? 'group-chip is-active' : 'group-chip'}
-            onClick={handleResetGroups}
-            type="button"
-          >
-            <span className="group-chip-start">
-              <span className="group-label">All categories</span>
-            </span>
-            <span>{allPerks.length}</span>
-          </button>
-          {displayedGroupNames.map((availableGroupName) => {
-            const activeTreeOptions = displayedTreeOptionsByGroup.get(availableGroupName) ?? []
-            const isExpanded = expandedGroupNames.includes(availableGroupName)
-            const isActive = selectedGroupNames.includes(availableGroupName)
-            const pickedPerkCountInGroup = pickedPerkCountsByGroup.get(availableGroupName) ?? 0
-            const selectedTreeIds = selectedTreeIdsByGroup[availableGroupName] ?? []
-            const isHoveredCategory =
-              hoveredPerkGroupKey?.startsWith(`${availableGroupName}::`) ?? false
-            const hasVisibleHoveredTree =
-              isHoveredCategory &&
-              activeTreeOptions.some(
-                (treeOption) =>
-                  hoveredPerkGroupKey ===
-                  getPerkGroupHoverKey({
-                    categoryName: availableGroupName,
-                    treeId: treeOption.treeId,
-                  }),
-              )
-            const shouldHighlightCategory =
-              isHoveredCategory && (!isExpanded || !hasVisibleHoveredTree)
-            const categoryChipClassName = [
-              'group-chip',
-              isActive ? 'is-active' : '',
-              shouldHighlightCategory ? 'is-highlighted' : '',
-            ]
-              .filter(Boolean)
-              .join(' ')
-
-            return (
-              <div
-                className={isExpanded ? 'category-card is-active' : 'category-card'}
-                key={availableGroupName}
-              >
-                <button
-                  aria-expanded={isExpanded}
-                  aria-label={`${isActive ? 'Disable' : 'Enable'} category ${availableGroupName}`}
-                  className={categoryChipClassName}
-                  onClick={() => handleGroupToggle(availableGroupName)}
-                  type="button"
-                >
-                  <span className="group-chip-start">
-                    <TreeChevron isExpanded={isExpanded} />
-                    <span className="group-label">
-                      {renderHighlightedText(
-                        availableGroupName,
-                        query,
-                        `${availableGroupName}-group`,
-                      )}
-                    </span>
-                  </span>
-                  <span className="group-chip-end">
-                    {pickedPerkCountInGroup > 0 ? (
-                      <span aria-hidden="true" className="group-chip-picked-stars">
-                        {Array.from({ length: pickedPerkCountInGroup }, (_, pickedPerkIndex) => (
-                          <BuildStar
-                            isPicked
-                            key={`${availableGroupName}-picked-${pickedPerkIndex}`}
-                          />
-                        ))}
-                      </span>
-                    ) : null}
-                    <span>{groupCounts.get(availableGroupName)}</span>
-                  </span>
-                </button>
-
-                {isExpanded ? (
-                  <div className="subgroup-panel">
-                    <p className="subgroup-heading">Perk groups</p>
-                    <button
-                      aria-label="Show all perk groups"
-                      className={
-                        selectedTreeIds.length === 0 ? 'subgroup-chip is-active' : 'subgroup-chip'
-                      }
-                      onClick={() => handleResetGroupTrees(availableGroupName)}
-                      type="button"
-                    >
-                      <span className="subgroup-chip-start">All perk groups</span>
-                      <span className="subgroup-chip-end">
-                        {groupCounts.get(availableGroupName)}
-                      </span>
-                    </button>
-                    {activeTreeOptions.map((treeOption) => {
-                      const pickedPerkCountInTree =
-                        pickedPerkCountsByTree.get(treeOption.treeId) ?? 0
-                      const isTreeHighlighted =
-                        hoveredPerkGroupKey ===
-                        getPerkGroupHoverKey({
-                          categoryName: availableGroupName,
-                          treeId: treeOption.treeId,
-                        })
-                      const treeChipClassName = [
-                        'subgroup-chip',
-                        selectedTreeIds.includes(treeOption.treeId) ? 'is-active' : '',
-                        isTreeHighlighted ? 'is-highlighted' : '',
-                      ]
-                        .filter(Boolean)
-                        .join(' ')
-
-                      return (
-                        <button
-                          aria-label={`Toggle perk group ${treeOption.treeName}`}
-                          className={treeChipClassName}
-                          key={treeOption.treeId}
-                          onClick={() => handleTreeToggle(availableGroupName, treeOption.treeId)}
-                          type="button"
-                        >
-                          <span className="subgroup-chip-start">
-                            {renderHighlightedText(
-                              treeOption.treeName,
-                              query,
-                              `${availableGroupName}-${treeOption.treeId}-tree`,
-                            )}
-                          </span>
-                          <span className="subgroup-chip-end">
-                            {pickedPerkCountInTree > 0 ? (
-                              <span aria-hidden="true" className="group-chip-picked-stars">
-                                {Array.from(
-                                  { length: pickedPerkCountInTree },
-                                  (_, pickedPerkIndex) => (
-                                    <BuildStar
-                                      isPicked
-                                      key={`${treeOption.treeId}-picked-${pickedPerkIndex}`}
-                                    />
-                                  ),
-                                )}
-                              </span>
-                            ) : null}
-                            <span>{treeOption.perkCount}</span>
-                          </span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                ) : null}
-              </div>
-            )
-          })}
-        </aside>
+        <CategorySidebar
+          allPerkCount={allPerks.length}
+          displayedGroupNames={displayedGroupNames}
+          displayedTreeOptionsByGroup={displayedTreeOptionsByGroup}
+          expandedGroupNames={expandedGroupNames}
+          groupCounts={groupCounts}
+          hoveredPerkGroupKey={hoveredPerkGroupKey}
+          onGroupToggle={handleGroupToggle}
+          onResetGroupTrees={handleResetGroupTrees}
+          onResetGroups={handleResetGroups}
+          onTreeToggle={handleTreeToggle}
+          pickedPerkCountsByGroup={pickedPerkCountsByGroup}
+          pickedPerkCountsByTree={pickedPerkCountsByTree}
+          query={query}
+          selectedGroupNames={selectedGroupNames}
+          selectedTreeIdsByGroup={selectedTreeIdsByGroup}
+        />
 
         <PerkResults
           hoveredPerkId={hoveredPerkId}

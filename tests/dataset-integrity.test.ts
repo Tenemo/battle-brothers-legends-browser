@@ -123,6 +123,30 @@ function getReferencedGameIconPaths(perks: LegendsPerkRecord[]): string[] {
   )
 }
 
+function getDuplicateBackgroundFitTreeEntries(dataset: LegendsPerksDataset): string[] {
+  const duplicateEntries: string[] = []
+
+  for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
+    for (const [categoryName, categoryDefinition] of Object.entries(
+      backgroundFitBackground.categories,
+    )) {
+      const seenTreeIds = new Set<string>()
+
+      for (const treeId of categoryDefinition?.treeIds ?? []) {
+        if (seenTreeIds.has(treeId)) {
+          duplicateEntries.push(
+            `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${categoryName}::${treeId}`,
+          )
+        }
+
+        seenTreeIds.add(treeId)
+      }
+    }
+  }
+
+  return duplicateEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
+}
+
 describe('generated dataset integrity', () => {
   test('keeps top-level counts and source provenance internally consistent', () => {
     const treeIds = new Set(
@@ -136,7 +160,7 @@ describe('generated dataset integrity', () => {
     expect(new Set(legendsPerksDataset.perks.map((perk) => perk.id)).size).toBe(
       legendsPerksDataset.perks.length,
     )
-    expect(new Set(legendsPerksDataset.sourceFiles).size).toBe(
+    expect(new Set(legendsPerksDataset.sourceFiles.map((sourceFile) => sourceFile.path)).size).toBe(
       legendsPerksDataset.sourceFiles.length,
     )
     expect(legendsPerksDataset.sourceFiles.length).toBeGreaterThan(0)
@@ -168,5 +192,9 @@ describe('generated dataset integrity', () => {
     )
 
     expect(missingIconPaths).toEqual([])
+  })
+
+  test('keeps background fit explicit tree ids unique per background category', () => {
+    expect(getDuplicateBackgroundFitTreeEntries(legendsPerksDataset)).toEqual([])
   })
 })

@@ -353,6 +353,47 @@ describe('background fit', () => {
     expect(probabilitiesByTreeId.get('HeavyDefenseTree')).toBe(1)
   })
 
+  test('treats duplicate explicit background trees as one unique perk group', () => {
+    const duplicateExplicitBackground = createBackgroundDefinition({
+      backgroundId: 'background.duplicate_explicit',
+      backgroundName: 'Duplicate explicit',
+      overrides: {
+        Weapon: { minimumTrees: 2, treeIds: ['AxeTree', 'AxeTree'] },
+      },
+    })
+    const probabilitiesByTreeId = calculateBackgroundTreeProbabilities(
+      duplicateExplicitBackground,
+      {
+        classWeaponDependencyByClassTreeId: new Map(),
+        treeIdsByCategory: new Map([
+          ['Class', []],
+          ['Defense', []],
+          ['Enemy', []],
+          ['Magic', []],
+          ['Profession', []],
+          ['Traits', []],
+          ['Weapon', ['AxeTree', 'BowTree']],
+        ]),
+      },
+    )
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [duplicateExplicitBackground],
+    })
+    const duplicateExplicitFit = engine.getBackgroundFitView([samplePerks[0], samplePerks[2]])
+      .rankedBackgroundFits[0]
+
+    expect(probabilitiesByTreeId.get('AxeTree')).toBe(1)
+    expect(probabilitiesByTreeId.get('BowTree')).toBe(1)
+    expect(duplicateExplicitFit.maximumTotalGroupCount).toBe(2)
+    expect(duplicateExplicitFit.matches).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ treeId: 'AxeTree' }),
+        expect.objectContaining({ treeId: 'BowTree' }),
+      ]),
+    )
+  })
+
   test('uses exact fill-to-minimum probabilities for deterministic categories', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([

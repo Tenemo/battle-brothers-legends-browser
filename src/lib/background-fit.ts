@@ -139,14 +139,18 @@ function getAdditionalRandomTreeCount(
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   availableTreeCount: number,
 ): number {
+  const explicitTreeCount = new Set(categoryDefinition.treeIds).size
+
   return Math.min(
-    Math.max(0, (categoryDefinition.minimumTrees ?? 0) - categoryDefinition.treeIds.length),
+    Math.max(0, (categoryDefinition.minimumTrees ?? 0) - explicitTreeCount),
     availableTreeCount,
   )
 }
 
 function getChanceAttemptCount(categoryDefinition: LegendsBackgroundFitCategoryDefinition): number {
-  return Math.max(0, (categoryDefinition.minimumTrees ?? 0) - categoryDefinition.treeIds.length + 1)
+  const explicitTreeCount = new Set(categoryDefinition.treeIds).size
+
+  return Math.max(0, (categoryDefinition.minimumTrees ?? 0) - explicitTreeCount + 1)
 }
 
 function buildTreeIdsByCategory(
@@ -488,33 +492,33 @@ function getMaximumCategoryTreeCount(
 
   const poolTreeIds = context.treeIdsByCategory.get(categoryName) ?? []
   const explicitTreeIdSet = new Set<string>(categoryDefinition.treeIds)
+  const explicitTreeCount = explicitTreeIdSet.size
   const remainingTreeIds = getRemainingTreeIds(poolTreeIds, explicitTreeIdSet)
 
   if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
     return (
-      categoryDefinition.treeIds.length +
-      getAdditionalRandomTreeCount(categoryDefinition, remainingTreeIds.length)
+      explicitTreeCount + getAdditionalRandomTreeCount(categoryDefinition, remainingTreeIds.length)
     )
   }
 
   if (categoryName === 'Enemy' || categoryName === 'Profession') {
     if (clampProbability(categoryDefinition.chance ?? 0) <= 0) {
-      return categoryDefinition.treeIds.length
+      return explicitTreeCount
     }
 
     return (
-      categoryDefinition.treeIds.length +
+      explicitTreeCount +
       Math.min(getChanceAttemptCount(categoryDefinition), remainingTreeIds.length)
     )
   }
 
   if (categoryName === 'Class') {
     if (clampProbability(categoryDefinition.chance ?? 0) <= 0) {
-      return categoryDefinition.treeIds.length
+      return explicitTreeCount
     }
 
     return (
-      categoryDefinition.treeIds.length +
+      explicitTreeCount +
       Math.min(
         getChanceAttemptCount(categoryDefinition),
         getMaximumEligibleRemainingClassTreeCount(
@@ -533,7 +537,7 @@ function getMaximumCategoryTreeCount(
   }
 
   // In Legends 19.3.17, GetDynamicPerkTree's magic loop never appends random trees.
-  return categoryDefinition.treeIds.length
+  return explicitTreeCount
 }
 
 function getMaximumTotalGroupCount(
