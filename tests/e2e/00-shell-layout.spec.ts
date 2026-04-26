@@ -15,6 +15,14 @@ import {
 const denseSmallDesktopBuildUrl =
   '/?build=Axe+Mastery,Mace+Mastery,Sword+Mastery,Recover,Berserk,Nimble,Dodge,Underdog,Battle+Flow,Killing+Frenzy,Rotation,Colossus'
 
+const desktopScrollbarTargets = [
+  '.background-fit-results-scroll',
+  '.sidebar',
+  '.results-list',
+  '.detail-panel-body',
+  '.planner-board',
+]
+
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
   page,
 }) => {
@@ -103,6 +111,60 @@ test('keeps dense picked builds usable on small desktop viewports', async ({ pag
   expect(smallDesktopMetrics.plannerBoardOverflow).toBeGreaterThan(20)
   expect(smallDesktopMetrics.resultsListHeight).toBeGreaterThanOrEqual(160)
   expect(smallDesktopMetrics.workspaceHeight).toBeGreaterThanOrEqual(340)
+})
+
+test('uses one app scrollbar style across desktop viewport sizes', async ({ page }) => {
+  const scrollbarMeasurements = []
+
+  for (const viewportSize of [
+    { height: 1080, width: 1920 },
+    { height: 1440, width: 2560 },
+  ]) {
+    await page.setViewportSize(viewportSize)
+    await page.goto('/?origin-backgrounds=true')
+    await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+    scrollbarMeasurements.push(
+      await page.evaluate((selectors) => {
+        const supportsWebKitScrollbars = CSS.supports('selector(::-webkit-scrollbar)')
+
+        return selectors.map((selector) => {
+          const element = document.querySelector(selector)
+
+          if (!(element instanceof HTMLElement)) {
+            return null
+          }
+
+          const computedStyle = window.getComputedStyle(element)
+          const scrollbarStyle = window.getComputedStyle(element, '::-webkit-scrollbar')
+          const thumbStyle = window.getComputedStyle(element, '::-webkit-scrollbar-thumb')
+
+          return {
+            hasAppScrollbarClass: element.classList.contains('app-scrollbar'),
+            scrollbarGutter: computedStyle.scrollbarGutter,
+            scrollbarWidth: supportsWebKitScrollbars
+              ? scrollbarStyle.width
+              : computedStyle.scrollbarWidth,
+            selector,
+            thumbBackground: supportsWebKitScrollbars
+              ? thumbStyle.backgroundColor
+              : computedStyle.scrollbarColor,
+          }
+        })
+      }, desktopScrollbarTargets),
+    )
+  }
+
+  const [standardDesktopMeasurements, largeDesktopMeasurements] = scrollbarMeasurements
+
+  expect(standardDesktopMeasurements).toEqual(largeDesktopMeasurements)
+  for (const scrollbarMeasurement of standardDesktopMeasurements) {
+    expect(scrollbarMeasurement).not.toBeNull()
+    expect(scrollbarMeasurement!.hasAppScrollbarClass).toBe(true)
+    expect(scrollbarMeasurement!.scrollbarGutter).toBe('auto')
+    expect(scrollbarMeasurement!.scrollbarWidth).not.toBe('auto')
+    expect(scrollbarMeasurement!.thumbBackground).not.toBe('rgba(0, 0, 0, 0)')
+  }
 })
 
 test('uses normal page scrolling on mobile while keeping core controls usable', async ({

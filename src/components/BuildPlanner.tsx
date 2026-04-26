@@ -498,7 +498,7 @@ function SavedBuildsDialog({
           </p>
         ) : null}
 
-        <div className="saved-builds-list" data-testid="saved-builds-list">
+        <div className="saved-builds-list app-scrollbar" data-testid="saved-builds-list">
           {isSavedBuildsLoading ? (
             <p className="saved-builds-empty">Loading saved builds.</p>
           ) : savedBuilds.length === 0 ? (
@@ -904,7 +904,7 @@ export function BuildPlanner({
         </div>
 
         <div
-          className="planner-board"
+          className="planner-board app-scrollbar"
           onScrollCapture={onCloseBuildPerkTooltip}
           ref={plannerBoardRef}
         >

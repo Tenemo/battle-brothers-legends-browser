@@ -99,7 +99,7 @@ export function PerkDetail({
       <div
         aria-hidden={!isExpanded}
         aria-live="polite"
-        className="detail-panel-body"
+        className="detail-panel-body app-scrollbar"
         data-testid="perk-detail-panel-body"
         hidden={!isExpanded}
       >

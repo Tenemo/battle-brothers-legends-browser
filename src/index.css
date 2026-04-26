@@ -28,15 +28,75 @@
   --panel-shadow: 0 24px 80px rgb(0 0 0 / 0.32);
   --target-size: 2.3rem;
   --target-size-compact: 1.2rem;
+  --app-scrollbar-size: 0.88rem;
+  --app-scrollbar-track: rgb(14 11 10 / 0.88);
+  --app-scrollbar-thumb: rgb(198 138 73 / 0.8);
+  --app-scrollbar-thumb-hover: rgb(221 176 123 / 0.94);
+  --app-scrollbar-thumb-border: rgb(14 11 10 / 0.88);
 }
 
 * {
   box-sizing: border-box;
 }
 
+@supports (scrollbar-color: auto) and (not selector(::-webkit-scrollbar)) {
+  html,
+  body,
+  .app-scrollbar {
+    scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+    scrollbar-width: auto;
+  }
+}
+
+@supports selector(::-webkit-scrollbar) {
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  .app-scrollbar::-webkit-scrollbar {
+    width: var(--app-scrollbar-size);
+    height: var(--app-scrollbar-size);
+  }
+
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track,
+  .app-scrollbar::-webkit-scrollbar-track {
+    border-radius: 999px;
+    background: var(--app-scrollbar-track);
+  }
+
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb,
+  .app-scrollbar::-webkit-scrollbar-thumb {
+    min-height: 2.4rem;
+    border: 0.18rem solid var(--app-scrollbar-thumb-border);
+    border-radius: 999px;
+    background: var(--app-scrollbar-thumb);
+    background-clip: padding-box;
+  }
+
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover,
+  .app-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: var(--app-scrollbar-thumb-hover);
+    background-clip: padding-box;
+  }
+
+  html::-webkit-scrollbar-button,
+  body::-webkit-scrollbar-button,
+  .app-scrollbar::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+
+  html::-webkit-scrollbar-corner,
+  body::-webkit-scrollbar-corner,
+  .app-scrollbar::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
 html {
   height: 100%;
-  scrollbar-gutter: stable;
   overflow: hidden;
 }
 

@@ -246,7 +246,7 @@ export function BackgroundFitPanel({
           )}
           <div
             aria-hidden={!isExpanded}
-            className="background-fit-results-scroll"
+            className="background-fit-results-scroll app-scrollbar"
             data-testid="background-fit-panel-body"
             onScrollCapture={() => {
               onClearPerkGroupHover()

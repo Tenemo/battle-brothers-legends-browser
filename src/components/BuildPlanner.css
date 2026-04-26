@@ -866,7 +866,6 @@
     flex: 1 1 auto;
     overflow: auto;
     padding-right: 0.18rem;
-    scrollbar-gutter: stable;
   }
 }
 

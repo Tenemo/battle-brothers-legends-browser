@@ -201,9 +201,8 @@
   min-height: 0;
   min-width: 0;
   overflow-x: hidden;
-  overflow-y: scroll;
+  overflow-y: auto;
   padding-right: 0.18rem;
-  scrollbar-gutter: stable;
 }
 
 .background-fit-target > div,

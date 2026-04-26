@@ -157,7 +157,7 @@ export function PerkResults({
         </p>
       </div>
 
-      <ul className="results-list" data-testid="results-list">
+      <ul className="results-list app-scrollbar" data-testid="results-list">
         {visiblePerks.length === 0 ? (
           <li className="empty-state">
             <h2>No perks found</h2>

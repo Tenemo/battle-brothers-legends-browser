@@ -290,6 +290,22 @@ test('build planner splits shared and individual perk groups without layout drif
     }),
   ).toBeLessThanOrEqual(1)
 
+  await page.setViewportSize({ height: 768, width: 1280 })
+  await expect(page.getByRole('region', { name: 'Build planner' })).not.toHaveClass(
+    /is-scroll-constrained/,
+  )
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+
+        return plannerBoard === null
+          ? Number.NEGATIVE_INFINITY
+          : plannerBoard.scrollHeight - plannerBoard.clientHeight
+      }),
+    )
+    .toBeLessThanOrEqual(1)
+
   const perksBarHorizontalOverflow = await page.evaluate(() => {
     const buildPerksBar = document.querySelector(
       '[data-testid="build-perks-bar"]',

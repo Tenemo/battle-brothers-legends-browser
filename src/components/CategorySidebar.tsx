@@ -52,7 +52,7 @@ export function CategorySidebar({
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
   return (
-    <aside className="sidebar" aria-label="Perk categories">
+    <aside className="sidebar app-scrollbar" aria-label="Perk categories">
       <div className="panel-heading">
         <h2>Categories</h2>
         <p>Enable one or more categories, then narrow each one to the perk groups you want.</p>
