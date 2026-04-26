@@ -52,14 +52,16 @@
   position: relative;
   border-radius: 0.74rem;
   background: rgb(16 13 11 / 0.85);
+  padding: 0.68rem 3.7rem 2.35rem 0.72rem;
 }
 
 .perk-row-select {
   display: block;
+  grid-column: 2;
   width: 100%;
   border: 0;
-  border-radius: inherit;
-  padding: 0.68rem 3.7rem 2.35rem 0.72rem;
+  border-radius: 0.5rem;
+  padding: 0;
   background: transparent;
   color: inherit;
   text-align: left;
@@ -69,11 +71,22 @@
 .perk-row-layout {
   display: grid;
   grid-template-columns: 2.7rem minmax(0, 1fr);
-  gap: 0.68rem;
+  column-gap: 0.68rem;
+  row-gap: 0.18rem;
   align-items: start;
 }
 
+.perk-row-icon {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+}
+
 .perk-row-copy {
+  min-width: 0;
+}
+
+.perk-row-context-slot {
+  grid-column: 2;
   min-width: 0;
 }
 
@@ -103,6 +116,66 @@
   color: var(--accent-soft);
 }
 
+.perk-placement-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem 0.36rem;
+  align-items: center;
+  margin-top: 0;
+}
+
+.perk-placement-chip {
+  display: inline-flex;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.34rem;
+  border: 1px solid rgb(204 155 84 / 0.14);
+  border-radius: 999px;
+  padding: 0.16rem 0.48rem 0.16rem 0.2rem;
+  background: rgb(20 17 14 / 0.58);
+  color: var(--text-muted);
+  font: inherit;
+  vertical-align: middle;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.perk-placement-chip:hover,
+.perk-placement-chip:focus-visible,
+.perk-placement-chip.is-highlighted {
+  border-color: var(--accent-color);
+  background: var(--button-background-active);
+  color: var(--text-primary);
+}
+
+.perk-placement-chip:hover .perk-placement-label,
+.perk-placement-chip:focus-visible .perk-placement-label,
+.perk-placement-chip.is-highlighted .perk-placement-label {
+  color: var(--text-primary);
+}
+
+.perk-placement-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 0.34rem;
+}
+
+.perk-placement-label {
+  display: inline-flex;
+  min-width: 0;
+  align-items: baseline;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.perk-placement-empty {
+  color: var(--text-muted);
+}
+
 @media (max-width: 1279px) {
   .results-panel {
     overflow: visible;
@@ -114,5 +187,20 @@
     min-height: 18rem;
     overflow: auto;
     content-visibility: visible;
+  }
+}
+
+@media (max-width: 760px) {
+  .perk-row {
+    padding-right: 0.72rem;
+  }
+
+  .perk-row-layout {
+    grid-template-columns: 2.7rem minmax(0, 1fr);
+  }
+
+  .perk-row-select,
+  .perk-row-context-slot {
+    grid-column: 2;
   }
 }

@@ -1,11 +1,15 @@
 import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
+  enableCategory,
   expectViewportLocked,
   getBackgroundFitPanel,
+  getBuildIndividualGroupsList,
+  getResultsList,
   gotoPerksBrowser,
   mediumPerksBrowserViewport,
   searchPerks,
+  togglePerkGroup,
 } from './support/perks-browser'
 
 const denseSharedBuildUrl =
@@ -99,10 +103,37 @@ test('shows the background fit panel for a picked build and keeps the shell view
     )
     .toBe('0s')
 
-  await apprenticeCard.getByRole('button', { name: 'Select perk group Axe' }).click()
+  const axeMatchButton = apprenticeCard.getByRole('button', { name: 'Select perk group Axe' })
+  const axeResultRow = getResultsList(page)
+    .getByRole('button', { name: 'Inspect Axe Mastery' })
+    .locator(
+      'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
+    )
+  const axeResultGroupButton = axeResultRow.getByRole('button', {
+    name: 'Select perk group Axe',
+  })
+  const plannerAxeGroupCard = getBuildIndividualGroupsList(page)
+    .getByText('Axe', { exact: true })
+    .locator(
+      'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " planner-group-card ")][1]',
+    )
+
+  await expect(axeMatchButton.getByRole('img', { name: 'Axe perk group icon' })).toBeVisible()
+  await expect(axeResultGroupButton).toBeVisible()
+  await axeResultGroupButton.hover()
+  await expect(axeResultGroupButton).toHaveClass(/is-highlighted/)
+  await expect(axeMatchButton).toHaveClass(/is-highlighted/)
+  await expect(plannerAxeGroupCard).toHaveClass(/is-highlighted/)
+
+  await enableCategory(page, 'Traits')
+  await togglePerkGroup(page, 'Calm')
+  await searchPerks(page, 'Berserk')
+
+  await axeMatchButton.click()
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Toggle perk group Axe' })).toHaveClass(/is-active/)
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
 
   await backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }).click()
   await expect(

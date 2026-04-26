@@ -342,28 +342,10 @@ export default function App() {
   function handleInspectPerkGroup(categoryName: string, perkGroupId: string) {
     startTransition(() => {
       setQuery('')
-      setSelectedCategoryNames((currentSelectedCategoryNames) =>
-        currentSelectedCategoryNames.includes(categoryName)
-          ? currentSelectedCategoryNames
-          : [...currentSelectedCategoryNames, categoryName],
-      )
-      setExpandedCategoryNames((currentExpandedCategoryNames) =>
-        currentExpandedCategoryNames.includes(categoryName)
-          ? currentExpandedCategoryNames
-          : [...currentExpandedCategoryNames, categoryName],
-      )
-      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => {
-        const currentSelectedPerkGroupIds =
-          currentSelectedPerkGroupIdsByCategory[categoryName] ?? []
-
-        if (currentSelectedPerkGroupIds.includes(perkGroupId)) {
-          return currentSelectedPerkGroupIdsByCategory
-        }
-
-        return {
-          ...currentSelectedPerkGroupIdsByCategory,
-          [categoryName]: [...currentSelectedPerkGroupIds, perkGroupId],
-        }
+      setSelectedCategoryNames([categoryName])
+      setExpandedCategoryNames([categoryName])
+      setSelectedPerkGroupIdsByCategory({
+        [categoryName]: [perkGroupId],
       })
     })
   }
@@ -554,8 +536,12 @@ export default function App() {
         />
 
         <PerkResults
+          hoveredPerkGroupKey={hoveredPerkGroupKey}
           hoveredPerkId={hoveredPerkId}
+          onClosePerkGroupHover={closePerkGroupHover}
           onCloseResultsPerkHover={closeResultsPerkHover}
+          onInspectPerkGroup={handleInspectPerkGroup}
+          onOpenPerkGroupHover={openPerkGroupHover}
           onOpenResultsPerkHover={openResultsPerkHover}
           onSelectPerk={setSelectedPerkId}
           onTogglePerkPicked={handleTogglePerkPicked}

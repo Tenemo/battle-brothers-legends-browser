@@ -67,11 +67,18 @@ export function BackgroundFitTargetPerkGroup({
 }) {
   return (
     <li className="background-fit-target">
-      <div>
-        <strong>{buildTargetPerkGroup.perkGroupName}</strong>
-        <p className="detail-support">
-          {buildTargetPerkGroup.categoryName} / {buildTargetPerkGroup.pickedPerkNames.join(', ')}
-        </p>
+      <div className="background-fit-perk-group-main">
+        {renderGameIcon({
+          className: 'perk-icon perk-icon-group background-fit-perk-group-icon',
+          iconPath: buildTargetPerkGroup.perkGroupIconPath,
+          label: `${buildTargetPerkGroup.perkGroupName} perk group icon`,
+        })}
+        <div>
+          <strong>{buildTargetPerkGroup.perkGroupName}</strong>
+          <p className="detail-support">
+            {buildTargetPerkGroup.categoryName} / {buildTargetPerkGroup.pickedPerkNames.join(', ')}
+          </p>
+        </div>
       </div>
       <span className="detail-badge">
         {formatPickedPerkCountLabel(buildTargetPerkGroup.pickedPerkCount)}
@@ -111,12 +118,19 @@ function BackgroundFitMatchRow({
         onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
         type="button"
       >
-        <div>
-          <strong>{match.perkGroupName}</strong>
-          <p className="detail-support">
-            {match.categoryName} / {formatPickedPerkCountLabel(match.pickedPerkCount)} /{' '}
-            {match.pickedPerkNames.join(', ')}
-          </p>
+        <div className="background-fit-perk-group-main">
+          {renderGameIcon({
+            className: 'perk-icon perk-icon-group background-fit-perk-group-icon',
+            iconPath: match.perkGroupIconPath,
+            label: `${match.perkGroupName} perk group icon`,
+          })}
+          <div>
+            <strong>{match.perkGroupName}</strong>
+            <p className="detail-support">
+              {match.categoryName} / {formatPickedPerkCountLabel(match.pickedPerkCount)} /{' '}
+              {match.pickedPerkNames.join(', ')}
+            </p>
+          </div>
         </div>
         <span className="detail-badge">
           {match.isGuaranteed

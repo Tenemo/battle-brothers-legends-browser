@@ -112,6 +112,58 @@ test('highlights the searched perk phrase in the visible perk results', async ({
   await expect(getResultsList(page).locator('.search-highlight')).toContainText(['Axe'])
 })
 
+test('shows every matching perk group placement in the result list', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'ranger')
+
+  const poisonMasteryResultRow = getResultsList(page)
+    .getByRole('button', { name: 'Inspect Poison Mastery' })
+    .locator(
+      'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
+    )
+  const placementChips = poisonMasteryResultRow.locator('.perk-placement-chip')
+
+  await expect(placementChips).toContainText(['Poison', 'Ranger'])
+  await expect(poisonMasteryResultRow.locator('.perk-placement-list')).not.toContainText(
+    /Class|Magic/,
+  )
+  await expect(poisonMasteryResultRow.locator('.perk-placement-list')).not.toContainText(/Tier/i)
+  await expect(poisonMasteryResultRow).not.toContainText(/\+\s*\d+\s*more/i)
+  await expect(
+    poisonMasteryResultRow.locator('.perk-placement-label .search-highlight'),
+  ).toContainText(['Ranger'])
+  const [perkNameBox, placementListBox] = await Promise.all([
+    poisonMasteryResultRow.locator('.perk-name').boundingBox(),
+    poisonMasteryResultRow.locator('.perk-placement-list').boundingBox(),
+  ])
+
+  expect(perkNameBox).not.toBeNull()
+  expect(placementListBox).not.toBeNull()
+  expect(placementListBox!.y - (perkNameBox!.y + perkNameBox!.height)).toBeLessThanOrEqual(8)
+  await expect(
+    poisonMasteryResultRow.getByRole('img', { name: 'Poison perk group icon' }),
+  ).toBeVisible()
+  await expect(
+    poisonMasteryResultRow.getByRole('img', { name: 'Ranger perk group icon' }),
+  ).toBeVisible()
+
+  await searchPerks(page, '')
+  await enableCategory(page, 'Class')
+  await togglePerkGroup(page, 'Poison')
+  await searchPerks(page, 'ranger')
+
+  await poisonMasteryResultRow.getByRole('button', { name: 'Select perk group Ranger' }).click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Enable category Class' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Toggle perk group Ranger' })).toHaveClass(
+    /is-active/,
+  )
+  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
+})
+
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {
   await gotoPerksBrowser(page, { height: 768, width: 1366 })
   await page.locator('.hero').evaluate(async (element) => {

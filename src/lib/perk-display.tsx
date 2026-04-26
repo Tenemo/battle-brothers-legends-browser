@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { RankedBackgroundFit } from './background-fit'
 import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
-import { getTierLabel } from './perk-search'
 import type {
   LegendsPerkBackgroundSource,
   LegendsPerkRecord,
@@ -120,21 +119,6 @@ export function groupBackgroundSources(
   }
 
   return [...groupedBackgroundSources.values()]
-}
-
-export function getPerkContextLabel(perk: LegendsPerkRecord): string {
-  const primaryPlacement = perk.placements[0]
-
-  if (!primaryPlacement) {
-    return `${perk.primaryCategoryName} / No perk group placement`
-  }
-
-  const additionalPlacementsCount = Math.max(0, perk.placements.length - 1)
-  const tierLabel = getTierLabel(primaryPlacement.tier)
-  const placementLabel =
-    additionalPlacementsCount > 0 ? `${tierLabel} + ${additionalPlacementsCount} more` : tierLabel
-
-  return `${perk.primaryCategoryName} / ${primaryPlacement.perkGroupName} / ${placementLabel}`
 }
 
 export function getPerkDisplayIconPath(perk: LegendsPerkRecord): string | null {

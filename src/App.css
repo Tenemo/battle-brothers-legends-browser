@@ -243,8 +243,7 @@
   color: var(--text-secondary);
 }
 
-.planner-slot-category,
-.build-slot-badge {
+.planner-slot-category {
   color: var(--accent-soft);
   font-size: 0.7rem;
 }
@@ -254,6 +253,7 @@
 .build-planner-info-button:focus-visible,
 .planner-slot-perk:focus-visible,
 .perk-row-select:focus-visible,
+.perk-placement-chip:focus-visible,
 .planner-pill:focus-visible,
 .background-fit-accordion-trigger:focus-visible,
 .background-fit-match:focus-visible,
@@ -537,8 +537,7 @@
   transform: translateY(-50%);
 }
 
-.tier-badge,
-.build-slot-badge {
+.tier-badge {
   display: inline-flex;
   flex-shrink: 0;
   align-items: center;
@@ -546,10 +545,6 @@
   border-radius: 999px;
   padding: 0.12rem 0.42rem;
   font-size: 0.7rem;
-}
-
-.build-slot-badge {
-  background: rgb(204 155 84 / 0.08);
 }
 
 .perk-context,

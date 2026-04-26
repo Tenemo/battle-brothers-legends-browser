@@ -202,6 +202,22 @@
   flex: 1 1 auto;
 }
 
+.background-fit-perk-group-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.42rem;
+}
+
+.background-fit-perk-group-main > div {
+  min-width: 0;
+}
+
+.background-fit-perk-group-icon {
+  width: 1.42rem;
+  height: 1.42rem;
+  border-radius: 0.36rem;
+}
+
 .background-fit-card {
   display: grid;
   min-width: 0;

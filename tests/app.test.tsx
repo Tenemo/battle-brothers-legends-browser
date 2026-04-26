@@ -30,6 +30,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'Fearsome',
     'Killing Frenzy',
     'Perfect Focus',
+    'Poison Mastery',
     'Steadfast',
   ]),
 }))
@@ -476,7 +477,9 @@ describe('app', () => {
     expect(
       within(buildIndividualGroupsList).getByText('Perfect Focus', { exact: true }),
     ).toBeInTheDocument()
-    expect(within(screen.getByTestId('results-list')).getByText('Build 2')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('results-list')).queryByText(/^Build \d+$/),
+    ).not.toBeInTheDocument()
   })
 
   test('highlights the same covered perk across all planner groups while hovering it', async () => {
@@ -732,13 +735,61 @@ describe('app', () => {
     ).toBeInTheDocument()
   })
 
-  test('renders explicit separators between the category and perk group in result rows', async () => {
+  test('renders every result row perk group placement with icons', async () => {
     render(<App />)
 
     setPerkSearchQuery('Butchers Fillet')
+    const butchersFilletRow = screen
+      .getByRole('button', { name: 'Inspect Butchers Fillet' })
+      .closest('li') as HTMLElement | null
 
-    expect(screen.getByText('Class / Butcher / Tier 1')).toBeInTheDocument()
-    expect(screen.queryByText('ClassButcher / Tier 1')).not.toBeInTheDocument()
+    expect(butchersFilletRow).not.toBeNull()
+    expect(
+      within(butchersFilletRow!).getByRole('img', { name: 'Butcher perk group icon' }),
+    ).toBeInTheDocument()
+    const butchersFilletPlacementList = butchersFilletRow!.querySelector('.perk-placement-list')
+
+    expect(butchersFilletPlacementList).not.toBeNull()
+    expect(butchersFilletPlacementList).toHaveTextContent('Butcher')
+    expect(butchersFilletPlacementList).not.toHaveTextContent('Class')
+    expect(butchersFilletPlacementList).not.toHaveTextContent(/Tier 1/)
+    expect(
+      within(butchersFilletRow!).queryByText('Class / Butcher / Tier 1'),
+    ).not.toBeInTheDocument()
+  })
+
+  test('shows, highlights, and applies matching perk group placements in result rows', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    await user.click(screen.getByRole('button', { name: 'Enable category Class' }))
+    await user.click(screen.getByRole('button', { name: 'Toggle perk group Poison' }))
+    setPerkSearchQuery('ranger')
+    const poisonMasteryRow = screen
+      .getByRole('button', { name: 'Inspect Poison Mastery' })
+      .closest('li') as HTMLElement | null
+
+    expect(poisonMasteryRow).not.toBeNull()
+    const poisonMasteryPlacementList = poisonMasteryRow!.querySelector('.perk-placement-list')
+
+    expect(poisonMasteryPlacementList).not.toBeNull()
+    expect(poisonMasteryPlacementList).toHaveTextContent('Poison')
+    expect(poisonMasteryPlacementList).not.toHaveTextContent('Class')
+    expect(poisonMasteryPlacementList).not.toHaveTextContent('Magic')
+    expect(within(poisonMasteryRow!).getByText('Ranger')).toHaveClass('search-highlight')
+    expect(within(poisonMasteryRow!).queryByText(/\+\s*\d+\s*more/i)).not.toBeInTheDocument()
+
+    await user.click(
+      within(poisonMasteryRow!).getByRole('button', { name: 'Select perk group Ranger' }),
+    )
+
+    expect(screen.getByLabelText('Search perks')).toHaveValue('')
+    expect(screen.getByRole('button', { name: 'Enable category Class' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Disable category Magic' })).toHaveClass('is-active')
+    expect(screen.getByRole('button', { name: 'Toggle perk group Ranger' })).toHaveClass(
+      'is-active',
+    )
+    expect(screen.getByText('Filtered to 1 category and 1 perk group.')).toBeInTheDocument()
   })
 
   test('restores filters and the picked build from a shared url', () => {
@@ -865,6 +916,9 @@ describe('app', () => {
     const axeMatchButton = within(apprenticeCard as HTMLElement).getByRole('button', {
       name: 'Select perk group Axe',
     })
+    expect(
+      within(axeMatchButton).getByRole('img', { name: 'Axe perk group icon' }),
+    ).toBeInTheDocument()
     const plannerAxeGroupCard = within(screen.getByTestId('build-individual-groups-list'))
       .getByText('Axe', { exact: true })
       .closest('.planner-group-card')
@@ -886,6 +940,36 @@ describe('app', () => {
     expect(plannerAxeGroupCard).not.toHaveClass('is-highlighted')
     expect(weaponCategoryButton).not.toHaveClass('is-highlighted')
 
+    const axeMasteryResultRow = screen
+      .getByRole('button', { name: 'Inspect Axe Mastery' })
+      .closest('li') as HTMLElement | null
+
+    expect(axeMasteryResultRow).not.toBeNull()
+
+    const axeResultGroupButton = within(axeMasteryResultRow!).getByRole('button', {
+      name: 'Select perk group Axe',
+    })
+
+    fireEvent.mouseEnter(axeResultGroupButton)
+
+    expect(axeResultGroupButton).toHaveClass('is-highlighted')
+    expect(axeMatchButton).toHaveClass('is-highlighted')
+    expect(plannerAxeGroupCard).toHaveClass('is-highlighted')
+
+    fireEvent.mouseLeave(axeResultGroupButton)
+
+    expect(axeResultGroupButton).not.toHaveClass('is-highlighted')
+    expect(axeMatchButton).not.toHaveClass('is-highlighted')
+    expect(plannerAxeGroupCard).not.toHaveClass('is-highlighted')
+
+    await user.click(
+      within(categoriesPanel).getByRole('button', { name: 'Enable category Traits' }),
+    )
+    await user.click(
+      within(categoriesPanel).getByRole('button', { name: 'Toggle perk group Calm' }),
+    )
+    setPerkSearchQuery('Berserk')
+
     await user.click(axeMatchButton)
 
     const selectedWeaponCategoryButton = within(categoriesPanel).getByRole('button', {
@@ -898,6 +982,9 @@ describe('app', () => {
     expect(selectedWeaponCategoryButton).toHaveClass('is-active')
     expect(selectedAxeGroupButton).toHaveClass('is-active')
     expect(screen.getByLabelText('Search perks')).toHaveValue('')
+    expect(
+      within(categoriesPanel).getByRole('button', { name: 'Enable category Traits' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('Filtered to 1 category and 1 perk group.')).toBeInTheDocument()
 
     fireEvent.mouseEnter(axeMatchButton)

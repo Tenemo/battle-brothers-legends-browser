@@ -1,4 +1,15 @@
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
+import {
+  Check,
+  CircleAlert,
+  Copy,
+  Download,
+  FolderOpen,
+  RotateCcw,
+  Save,
+  Trash2,
+  X,
+} from 'lucide-react'
 import type {
   BuildPlannerGroupedPerkGroup,
   BuildPlannerPerkGroupRequirementOption,
@@ -277,6 +288,7 @@ function SavedBuildsDialog({
             onClick={onClose}
             type="button"
           >
+            <X aria-hidden="true" className="planner-button-icon" />
             Close
           </button>
         </div>
@@ -298,6 +310,7 @@ function SavedBuildsDialog({
               disabled={!hasPickedPerks || isSaving}
               type="submit"
             >
+              <Save aria-hidden="true" className="planner-button-icon" />
               {isSaving ? 'Saving' : 'Save current'}
             </button>
           </div>
@@ -356,6 +369,7 @@ function SavedBuildsDialog({
                       }}
                       type="button"
                     >
+                      <Download aria-hidden="true" className="planner-button-icon" />
                       Load
                     </button>
                     <button
@@ -367,6 +381,7 @@ function SavedBuildsDialog({
                       }}
                       type="button"
                     >
+                      <Copy aria-hidden="true" className="planner-button-icon" />
                       Copy link
                     </button>
                     <button
@@ -378,6 +393,7 @@ function SavedBuildsDialog({
                       }}
                       type="button"
                     >
+                      <Trash2 aria-hidden="true" className="planner-button-icon" />
                       Delete
                     </button>
                   </div>
@@ -583,6 +599,7 @@ export function BuildPlanner({
               onClick={() => setIsSavedBuildsDialogOpen(true)}
               type="button"
             >
+              <Save aria-hidden="true" className="planner-button-icon" />
               Save build
             </button>
             <button
@@ -591,6 +608,7 @@ export function BuildPlanner({
               onClick={() => setIsSavedBuildsDialogOpen(true)}
               type="button"
             >
+              <FolderOpen aria-hidden="true" className="planner-button-icon" />
               Saved builds
             </button>
             <button
@@ -608,6 +626,13 @@ export function BuildPlanner({
               }}
               type="button"
             >
+              {shareBuildStatus === 'copied' ? (
+                <Check aria-hidden="true" className="planner-button-icon" />
+              ) : shareBuildStatus === 'error' ? (
+                <CircleAlert aria-hidden="true" className="planner-button-icon" />
+              ) : (
+                <Copy aria-hidden="true" className="planner-button-icon" />
+              )}
               {shareBuildStatus === 'copied'
                 ? 'Copied'
                 : shareBuildStatus === 'error'
@@ -621,6 +646,7 @@ export function BuildPlanner({
               onClick={onClearBuild}
               type="button"
             >
+              <RotateCcw aria-hidden="true" className="planner-button-icon" />
               Clear build
             </button>
           </div>

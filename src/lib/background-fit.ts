@@ -39,6 +39,7 @@ export type BuildTargetPerkGroup = {
   categoryName: string
   pickedPerkCount: number
   pickedPerkNames: string[]
+  perkGroupIconPath: string | null
   perkGroupId: string
   perkGroupName: string
 }
@@ -665,6 +666,7 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
           pickedPerkCount: 0,
           pickedPerkIdSet: new Set<string>(),
           pickedPerkNames: [],
+          perkGroupIconPath: placement.perkGroupIconPath,
           perkGroupId: placement.perkGroupId,
           perkGroupName: placement.perkGroupName,
         })
