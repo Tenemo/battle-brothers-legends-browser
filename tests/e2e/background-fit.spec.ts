@@ -275,6 +275,21 @@ test('filters origin backgrounds from the background search menu', async ({ page
   const originBackgroundsLabel = backgroundFiltersGroup.getByText('Origin backgrounds')
 
   await expect(originBackgroundsCheckbox).toBeChecked()
+  await expect
+    .poll(async () => {
+      const checkboxBox = await originBackgroundsCheckbox.boundingBox()
+
+      return checkboxBox === null
+        ? null
+        : {
+            height: Math.round(checkboxBox.height),
+            width: Math.round(checkboxBox.width),
+          }
+    })
+    .toEqual({
+      height: 16,
+      width: 16,
+    })
   await backgroundFiltersGroup.click({ position: { x: 2, y: 2 } })
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
   await expect(originBackgroundsCheckbox).toBeChecked()
@@ -288,6 +303,14 @@ test('filters origin backgrounds from the background search menu', async ({ page
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
   await expect(originBackgroundsCheckbox).toBeChecked()
   await expect(backgroundFitPanel.getByText('origin melee').first()).toBeVisible()
+
+  await page.getByLabel('Search perks').click()
+  await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'false')
+  await expect(
+    backgroundFitPanel.getByRole('group', {
+      name: 'Background filters',
+    }),
+  ).toHaveCount(0)
 })
 
 test('shows probabilistic background fit matches with percentage badges', async ({ page }) => {

@@ -1035,6 +1035,15 @@ describe('app', () => {
     expect(originBackgroundsCheckbox).toBeChecked()
     expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
     expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
+
+    await user.click(screen.getByLabelText('Search perks'))
+
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      within(backgroundFitPanel).queryByRole('group', {
+        name: 'Background filters',
+      }),
+    ).not.toBeInTheDocument()
   })
 
   test('keeps background search enabled and usable without any picked perks', async () => {

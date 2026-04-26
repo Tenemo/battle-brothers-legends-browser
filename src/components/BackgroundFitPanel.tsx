@@ -42,6 +42,7 @@ export function BackgroundFitPanel({
     rankedBackgroundFitKeySignature: '',
   })
   const backgroundFitPanelBodyRef = useRef<HTMLDivElement | null>(null)
+  const backgroundFitFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const hasPickedPerks = pickedPerkCount > 0
   const hasSupportedBackgroundFitTargets =
     backgroundFitView.supportedBuildTargetPerkGroups.length > 0
@@ -111,6 +112,29 @@ export function BackgroundFitPanel({
     backgroundFitPanelBody.scrollTop = 0
   }, [isExpanded, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds])
 
+  useEffect(() => {
+    if (!isBackgroundFilterMenuOpen) {
+      return
+    }
+
+    function handleDocumentPointerDown(event: PointerEvent) {
+      if (
+        event.target instanceof Node &&
+        backgroundFitFilterMenuRef.current?.contains(event.target)
+      ) {
+        return
+      }
+
+      setIsBackgroundFilterMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handleDocumentPointerDown)
+    }
+  }, [isBackgroundFilterMenuOpen])
+
   return (
     <>
       <aside
@@ -154,6 +178,7 @@ export function BackgroundFitPanel({
                     .querySelector<HTMLButtonElement>('.background-fit-filter-button')
                     ?.focus()
                 }}
+                ref={backgroundFitFilterMenuRef}
               >
                 <button
                   aria-controls={backgroundFitFilterMenuId}

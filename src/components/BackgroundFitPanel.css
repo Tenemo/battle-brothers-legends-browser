@@ -470,15 +470,94 @@
   min-height: 1.9rem;
   color: var(--text-primary);
   font-size: 0.82rem;
-  line-height: 1.2;
+  line-height: 1;
   cursor: pointer;
 }
 
-.background-fit-filter-option input {
+.background-fit-filter-option span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1rem;
+  transform: translateY(-0.02rem);
+}
+
+.background-fit-filter-option input[type='checkbox'] {
+  appearance: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
   width: 1rem;
+  min-width: 1rem;
+  max-width: 1rem;
+  inline-size: 1rem;
+  min-inline-size: 1rem;
+  max-inline-size: 1rem;
   height: 1rem;
-  accent-color: var(--accent-color);
+  min-height: 1rem;
+  max-height: 1rem;
+  block-size: 1rem;
+  min-block-size: 1rem;
+  max-block-size: 1rem;
+  border: 1px solid rgb(204 155 84 / 0.28);
+  border-radius: 0.26rem;
+  margin: 0;
+  padding: 0;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.04), transparent), rgb(18 15 13 / 0.92);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.04),
+    0 0 0 1px rgb(0 0 0 / 0.16);
+  color: var(--accent-soft);
   flex: 0 0 auto;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease;
+}
+
+.background-fit-filter-option input[type='checkbox']::before {
+  content: '';
+  width: 0.48rem;
+  height: 0.26rem;
+  border-bottom: 2px solid currentColor;
+  border-left: 2px solid currentColor;
+  opacity: 0;
+  transform: translateY(-0.05rem) rotate(-45deg) scale(0.82);
+  transition:
+    opacity 120ms ease,
+    transform 120ms ease;
+}
+
+.background-fit-filter-option:hover input[type='checkbox'],
+.background-fit-filter-option input[type='checkbox']:focus-visible {
+  border-color: var(--accent-color);
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent), rgb(28 23 20 / 0.96);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.05),
+    0 0 0 1px rgb(204 155 84 / 0.12);
+}
+
+.background-fit-filter-option input[type='checkbox']:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.background-fit-filter-option input[type='checkbox']:checked {
+  border-color: var(--accent-color);
+  background:
+    linear-gradient(180deg, rgb(204 155 84 / 0.24), rgb(204 155 84 / 0.08)), rgb(28 23 20 / 0.98);
+}
+
+.background-fit-filter-option input[type='checkbox']:checked::before {
+  opacity: 1;
+  transform: translateY(-0.05rem) rotate(-45deg) scale(1);
+}
+
+.background-fit-search-field.has-trailing-control
+  .background-fit-filter-option
+  input[type='checkbox'] {
+  padding: 0;
 }
 
 .workspace.has-active-background-fit-search .background-fit-ranking-summary {
