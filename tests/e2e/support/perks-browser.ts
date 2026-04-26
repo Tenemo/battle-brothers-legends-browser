@@ -106,8 +106,8 @@ export async function disableCategory(page: Page, categoryName: string): Promise
   await page.getByRole('button', { name: `Disable category ${categoryName}` }).click()
 }
 
-export async function togglePerkGroup(page: Page, treeName: string): Promise<void> {
-  await page.getByRole('button', { name: `Toggle perk group ${treeName}` }).click()
+export async function togglePerkGroup(page: Page, perkGroupName: string): Promise<void> {
+  await page.getByRole('button', { name: `Toggle perk group ${perkGroupName}` }).click()
 }
 
 export async function inspectPerkFromResults(page: Page, perkName: string): Promise<void> {
@@ -122,9 +122,12 @@ export async function inspectPerkFromResults(page: Page, perkName: string): Prom
 }
 
 export async function addPerkToBuildFromResults(page: Page, perkName: string): Promise<void> {
-  await getResultsList(page)
-    .getByRole('button', { name: `Add ${perkName} to build from results` })
-    .click()
+  const resultsList = getResultsList(page)
+
+  await resultsList.getByRole('button', { name: `Add ${perkName} to build from results` }).click()
+  await expect(
+    resultsList.getByRole('button', { name: `Remove ${perkName} from build from results` }),
+  ).toBeVisible()
 }
 
 export async function addSelectedPerkToBuild(page: Page, perkName: string): Promise<void> {

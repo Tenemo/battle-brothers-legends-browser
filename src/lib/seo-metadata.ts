@@ -29,7 +29,7 @@ const rootTitle = 'Battle Brothers Legends perks browser'
 const rootDescription =
   'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.'
 const rootKeywords =
-  'Battle Brothers, Legends mod, perks browser, perk trees, build planner, Battle Brothers Legends'
+  'Battle Brothers, Legends mod, perks browser, perk groups, build planner, Battle Brothers Legends'
 const rootShortName = 'Legends perks'
 const rootThemeColor = '#0c0908'
 const rootColorScheme = 'dark'

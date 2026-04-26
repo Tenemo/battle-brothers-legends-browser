@@ -9,7 +9,7 @@ const samplePerks: LegendsPerkRecord[] = [
   {
     backgroundSources: [],
     descriptionParagraphs: ['Keep a calm mind.'],
-    groupNames: ['Traits'],
+    categoryNames: ['Traits'],
     iconPath: null,
     id: 'perk.legend_clarity',
     perkConstName: 'LegendClarity',
@@ -17,25 +17,22 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Traits',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
         tier: 5,
-        treeAttributes: [],
-        treeDescriptions: ['is calm'],
-        treeIconPath: null,
-        treeId: 'CalmTree',
-        treeName: 'Calm',
+        perkGroupAttributes: [],
+        perkGroupDescriptions: ['is calm'],
+        perkGroupIconPath: null,
+        perkGroupId: 'CalmTree',
+        perkGroupName: 'Calm',
       },
     ],
-    primaryGroupName: 'Traits',
+    primaryCategoryName: 'Traits',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Clarity traits calm',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_traits.nut'],
   },
   {
     backgroundSources: [],
     descriptionParagraphs: ['Maintain peace.'],
-    groupNames: ['Traits'],
+    categoryNames: ['Traits'],
     iconPath: null,
     id: 'perk.legend_peaceable',
     perkConstName: 'LegendPeaceable',
@@ -43,25 +40,22 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Traits',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
         tier: 6,
-        treeAttributes: [],
-        treeDescriptions: ['is calm'],
-        treeIconPath: null,
-        treeId: 'CalmTree',
-        treeName: 'Calm',
+        perkGroupAttributes: [],
+        perkGroupDescriptions: ['is calm'],
+        perkGroupIconPath: null,
+        perkGroupId: 'CalmTree',
+        perkGroupName: 'Calm',
       },
     ],
-    primaryGroupName: 'Traits',
+    primaryCategoryName: 'Traits',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Peaceable traits calm',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_traits.nut'],
   },
   {
     backgroundSources: [],
     descriptionParagraphs: ['Focus through calm or archery training.'],
-    groupNames: ['Traits', 'Magic'],
+    categoryNames: ['Traits', 'Magic'],
     iconPath: null,
     id: 'perk.legend_perfect_focus',
     perkConstName: 'LegendPerfectFocus',
@@ -69,65 +63,61 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Traits',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
         tier: 7,
-        treeAttributes: [],
-        treeDescriptions: ['is calm'],
-        treeIconPath: null,
-        treeId: 'CalmTree',
-        treeName: 'Calm',
+        perkGroupAttributes: [],
+        perkGroupDescriptions: ['is calm'],
+        perkGroupIconPath: null,
+        perkGroupId: 'CalmTree',
+        perkGroupName: 'Calm',
       },
       {
         categoryName: 'Magic',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_magic.nut',
         tier: 7,
-        treeAttributes: [],
-        treeDescriptions: ['archery'],
-        treeIconPath: null,
-        treeId: 'DeadeyeTree',
-        treeName: 'Deadeye',
+        perkGroupAttributes: [],
+        perkGroupDescriptions: ['archery'],
+        perkGroupIconPath: null,
+        perkGroupId: 'DeadeyeTree',
+        perkGroupName: 'Deadeye',
       },
     ],
-    primaryGroupName: 'Traits',
+    primaryCategoryName: 'Traits',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Perfect Focus traits calm magic deadeye',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_traits.nut'],
   },
 ]
 
-const availableGroupNames = ['Traits', 'Magic', 'Enemy']
-const treeOptionsByGroup = new Map([
+const availableCategoryNames = ['Traits', 'Magic', 'Enemy']
+const perkGroupOptionsByCategory = new Map([
   [
     'Traits',
     [
-      { treeId: 'CalmTree', treeName: 'Calm' },
-      { treeId: 'ViciousTree', treeName: 'Vicious' },
+      { perkGroupId: 'CalmTree', perkGroupName: 'Calm' },
+      { perkGroupId: 'ViciousTree', perkGroupName: 'Vicious' },
     ],
   ],
-  ['Magic', [{ treeId: 'DeadeyeTree', treeName: 'Deadeye' }]],
-  ['Enemy', [{ treeId: 'BeastTree', treeName: 'Beasts' }]],
+  ['Magic', [{ perkGroupId: 'DeadeyeTree', perkGroupName: 'Deadeye' }]],
+  ['Enemy', [{ perkGroupId: 'BeastTree', perkGroupName: 'Beasts' }]],
 ])
 const perksById = new Map(samplePerks.map((perk) => [perk.id, perk]))
 const duplicateNamePerks: LegendsPerkRecord[] = [
   ...samplePerks,
   {
     ...samplePerks[0],
-    groupNames: ['Magic'],
+    categoryNames: ['Magic'],
     id: 'perk.legend_chain_lightning',
     perkConstName: 'LegendChainLightning',
     perkName: 'Chain Lightning',
-    primaryGroupName: 'Magic',
+    primaryCategoryName: 'Magic',
     searchText: 'Chain Lightning magic evocation',
   },
   {
     ...samplePerks[0],
-    groupNames: ['Other'],
+    categoryNames: ['Other'],
     id: 'perk.legend_magic_chain_lightning',
     perkConstName: 'LegendMagicChainLightning',
     perkName: 'Chain Lightning',
     placements: [],
-    primaryGroupName: 'Other',
+    primaryCategoryName: 'Other',
     searchText: 'Chain Lightning other spell',
   },
 ]
@@ -139,21 +129,22 @@ describe('perk browser url state', () => {
       {
         pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
         query: 'Perfect Focus',
-        selectedGroupNames: ['Magic', 'Traits'],
-        selectedTreeIdsByGroup: {
+        selectedCategoryNames: ['Magic', 'Traits'],
+        selectedPerkGroupIdsByCategory: {
           Magic: ['DeadeyeTree'],
           Traits: ['CalmTree'],
         },
+        shouldIncludeOriginBackgrounds: true,
       },
       {
-        availableGroupNames,
+        availableCategoryNames,
         perksById,
-        treeOptionsByGroup,
+        perkGroupOptionsByCategory,
       },
     )
 
     expect(search).toBe(
-      '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
+      '?search=Perfect+Focus&origin-backgrounds=true&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
     )
   })
 
@@ -162,19 +153,20 @@ describe('perk browser url state', () => {
       readPerkBrowserUrlState(
         '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
         {
-          availableGroupNames,
+          availableCategoryNames,
           perks: samplePerks,
-          treeOptionsByGroup,
+          perkGroupOptionsByCategory,
         },
       ),
     ).toEqual({
       pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
       query: 'Perfect Focus',
-      selectedGroupNames: ['Traits', 'Magic'],
-      selectedTreeIdsByGroup: {
+      selectedCategoryNames: ['Traits', 'Magic'],
+      selectedPerkGroupIdsByCategory: {
         Magic: ['DeadeyeTree'],
         Traits: ['CalmTree'],
       },
+      shouldIncludeOriginBackgrounds: true,
     })
   })
 
@@ -183,20 +175,47 @@ describe('perk browser url state', () => {
       readPerkBrowserUrlState(
         '?category=traits,missing&group-traits=calm,calm,unknown&group-magic=deadeye&build=perfect-focus,perfect-focus,unknown,peaceable,Clarity&search=++Perfect+++Focus++',
         {
-          availableGroupNames,
+          availableCategoryNames,
           perks: samplePerks,
-          treeOptionsByGroup,
+          perkGroupOptionsByCategory,
         },
       ),
     ).toEqual({
       pickedPerkIds: ['perk.legend_perfect_focus', 'perk.legend_peaceable', 'perk.legend_clarity'],
       query: 'Perfect Focus',
-      selectedGroupNames: ['Traits', 'Magic'],
-      selectedTreeIdsByGroup: {
+      selectedCategoryNames: ['Traits', 'Magic'],
+      selectedPerkGroupIdsByCategory: {
         Traits: ['CalmTree'],
         Magic: ['DeadeyeTree'],
       },
+      shouldIncludeOriginBackgrounds: true,
     })
+  })
+
+  test('serializes and restores the non-default origin background filter', () => {
+    const search = buildPerkBrowserUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        shouldIncludeOriginBackgrounds: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?origin-backgrounds=false')
+    expect(
+      readPerkBrowserUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).shouldIncludeOriginBackgrounds,
+    ).toBe(false)
   })
 
   test('serializes duplicate-name build perks with readable stable ids and restores both ids', () => {
@@ -204,24 +223,25 @@ describe('perk browser url state', () => {
       {
         pickedPerkIds: ['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'],
         query: '',
-        selectedGroupNames: [],
-        selectedTreeIdsByGroup: {},
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        shouldIncludeOriginBackgrounds: true,
       },
       {
-        availableGroupNames,
+        availableCategoryNames,
         perksById: duplicateNamePerksById,
-        treeOptionsByGroup,
+        perkGroupOptionsByCategory,
       },
     )
 
     expect(search).toBe(
-      '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+      '?origin-backgrounds=true&build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
     expect(
       readPerkBrowserUrlState(search, {
-        availableGroupNames,
+        availableCategoryNames,
         perks: duplicateNamePerks,
-        treeOptionsByGroup,
+        perkGroupOptionsByCategory,
       }).pickedPerkIds,
     ).toEqual(['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'])
   })
@@ -232,15 +252,16 @@ describe('perk browser url state', () => {
         {
           pickedPerkIds: [],
           query: '',
-          selectedGroupNames: [],
-          selectedTreeIdsByGroup: {},
+          selectedCategoryNames: [],
+          selectedPerkGroupIdsByCategory: {},
+          shouldIncludeOriginBackgrounds: true,
         },
         {
-          availableGroupNames,
+          availableCategoryNames,
           perksById,
-          treeOptionsByGroup,
+          perkGroupOptionsByCategory,
         },
       ),
-    ).toBe('')
+    ).toBe('?origin-backgrounds=true')
   })
 })

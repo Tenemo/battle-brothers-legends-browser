@@ -1,16 +1,19 @@
 import { expect, test } from '@playwright/test'
 import {
+  addPerkToBuildFromResults,
+  expectNoDocumentHorizontalOverflow,
   expectViewportLocked,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
   gotoPerksBrowser,
+  searchPerks,
 } from './support/perks-browser'
 
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
   await expectViewportLocked(page)
   const buildPlanner = page.getByLabel('Build planner')
 
@@ -22,7 +25,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
     ),
   ).toBeVisible()
   await expect(
-    getBuildIndividualGroupsList(page).getByText('Single-perk groups will appear here'),
+    getBuildIndividualGroupsList(page).getByText('Individual perk groups will appear here'),
   ).toBeVisible()
   await expect(buildPlanner.getByText('Perks', { exact: true })).toBeVisible()
   await expect(buildPlanner.getByText('Perk groups for 2+ perks', { exact: true })).toBeVisible()
@@ -42,10 +45,35 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
     .toBeLessThanOrEqual(1)
 })
 
+test('uses normal page scrolling on tablet widths instead of cramped viewport rows', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page, { height: 720, width: 900 })
+  await expectNoDocumentHorizontalOverflow(page)
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => ({
+        documentOverflow: window.getComputedStyle(document.documentElement).overflowY,
+        documentScrollHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
+      })),
+    )
+    .toMatchObject({
+      documentOverflow: 'auto',
+    })
+
+  const scrollableDocumentHeight = await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight,
+  )
+  expect(scrollableDocumentHeight).toBeGreaterThan(200)
+})
+
 test('uses normal page scrolling on mobile while keeping core controls usable', async ({
   page,
 }) => {
   await gotoPerksBrowser(page, { height: 740, width: 360 })
+  await expectNoDocumentHorizontalOverflow(page)
 
   await expect
     .poll(async () =>
@@ -64,12 +92,54 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
   )
   expect(scrollableDocumentHeight).toBeGreaterThan(600)
 
+  const mobileSearchTop = await page
+    .getByLabel('Search perks')
+    .evaluate((element) => element.getBoundingClientRect().top)
+  const buildPlannerTop = await page
+    .getByLabel('Build planner')
+    .evaluate((element) => element.getBoundingClientRect().top)
+  expect(mobileSearchTop).toBeLessThan(buildPlannerTop)
+  expect(mobileSearchTop).toBeLessThan(300)
+
   await page.evaluate(() => window.scrollTo(0, 640))
   await expect.poll(async () => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
 
   await page.getByLabel('Search perks').fill('student')
   await expect(page.getByRole('button', { name: 'Inspect Student' })).toBeVisible()
   await page.getByRole('button', { name: 'Add Student to build from results' }).click()
-  await expect(getBuildPerksBar(page).getByRole('button', { name: 'Remove Student from build' }))
-    .toBeVisible()
+  await expect(
+    getBuildPerksBar(page).getByRole('button', { name: 'Remove Student from build' }),
+  ).toBeVisible()
+})
+
+test('keeps collapsed background fit content out of the keyboard order', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+  await page.getByRole('button', { name: 'Collapse background fit' }).click()
+
+  const hiddenFocusHits: string[] = []
+
+  for (let tabIndex = 0; tabIndex < 70; tabIndex += 1) {
+    await page.keyboard.press('Tab')
+    const activeElementHiddenAncestor = await page.evaluate(() => {
+      const activeElement = document.activeElement
+
+      if (!(activeElement instanceof HTMLElement)) {
+        return null
+      }
+
+      return (
+        activeElement.closest('[hidden]')?.getAttribute('class') ??
+        activeElement.closest('[aria-hidden="true"]')?.getAttribute('class') ??
+        null
+      )
+    })
+
+    if (activeElementHiddenAncestor !== null) {
+      hiddenFocusHits.push(activeElementHiddenAncestor)
+    }
+  }
+
+  expect(hiddenFocusHits).toEqual([])
 })

@@ -50,6 +50,8 @@ describe('build social image', () => {
     expect(svg).toContain('3 picked perks')
     expect(svg).toContain('Perfect Focus')
     expect(svg).toContain('Best background fits')
+    expect(svg).toContain('guaranteed perks')
+    expect(svg).not.toContain('expected perk groups')
     expect(svg).toContain('BATTLE BROTHERS')
     expect(svg).toContain('LEGENDS')
     expect(svg).not.toContain('LEGENDS</tspan><tspan> BUILD')
@@ -82,11 +84,8 @@ describe('build social image', () => {
       })),
       topBackgroundFits: [1, 2, 3].map((backgroundIndex) => ({
         backgroundName: `Background ${backgroundIndex}`,
-        expectedMatchedTreeCount: 6,
+        guaranteedCoveredPickedPerkCount: backgroundIndex,
         iconPath: null,
-        matchedGroupCount: 6,
-        matchLabels: [],
-        maximumTotalGroupCount: 28,
       })),
     })
 
@@ -99,17 +98,6 @@ describe('build social image', () => {
     expect(svg).toContain('translate(664 446)')
     expect(svg).toContain('translate(664 498)')
     expect(svg).toContain('translate(664 550)')
-  })
-
-  test('omits unsupported group counts from the footer', () => {
-    const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity')
-    const svg = createBuildSocialImageSvg({
-      ...payload,
-      unsupportedTargetCount: 2,
-    })
-
-    expect(svg).not.toContain('unsupported groups')
-    expect([...svg].every((character) => character.charCodeAt(0) <= 0x7f)).toBe(true)
   })
 
   test('renders background icons when they are available', () => {

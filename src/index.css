@@ -10,9 +10,13 @@
   --body-font-family: 'Source Sans 3', serif;
   --heading-font-family: 'Cinzel', serif;
   --background-color: #0c0908;
-  --panel-background: rgb(27 21 18 / 0.82);
-  --button-background: rgb(37 29 25 / 0.82);
-  --button-background-active: rgb(53 39 30 / 0.95);
+  --surface-panel: rgb(27 21 18 / 0.82);
+  --surface-panel-muted: rgb(18 15 13 / 0.95);
+  --surface-control: rgb(37 29 25 / 0.82);
+  --surface-control-active: rgb(53 39 30 / 0.95);
+  --panel-background: var(--surface-panel);
+  --button-background: var(--surface-control);
+  --button-background-active: var(--surface-control-active);
   --input-background: rgb(18 15 13 / 0.95);
   --text-primary: #f5efe1;
   --text-secondary: #d3c7b3;
@@ -20,7 +24,10 @@
   --accent-color: #c68a49;
   --accent-soft: #ddb07b;
   --border-color: rgb(198 138 73 / 0.18);
+  --focus-ring: rgb(221 176 123 / 0.9);
   --panel-shadow: 0 24px 80px rgb(0 0 0 / 0.32);
+  --target-size: 2.3rem;
+  --target-size-compact: 1.2rem;
 }
 
 * {
@@ -66,7 +73,7 @@ select {
   overflow: hidden;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1279px) {
   html {
     height: auto;
     min-height: 100%;

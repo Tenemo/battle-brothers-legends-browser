@@ -131,23 +131,17 @@ function wrapTextByVisualWidth(value: string, maxLineWidth: number, maxLines: nu
 }
 
 function renderTextLines({
-  className,
   fill,
-  fontFamily = 'Source Sans 3, Arial, sans-serif',
   fontSize,
   fontWeight,
-  letterSpacing,
   lines,
   lineStep,
   x,
   y,
 }: {
-  className?: string
   fill: string
-  fontFamily?: string
   fontSize: number
   fontWeight: number
-  letterSpacing?: string
   lines: string[]
   lineStep: number
   x: number
@@ -156,11 +150,11 @@ function renderTextLines({
   return lines
     .map(
       (line, lineIndex) =>
-        `<text${className ? ` class="${className}"` : ''} x="${x}" y="${
+        `<text x="${x}" y="${
           y + lineIndex * lineStep
-        }" fill="${fill}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${fontWeight}"${
-          letterSpacing ? ` letter-spacing="${letterSpacing}"` : ''
-        }>${escapeXml(line)}</text>`,
+        }" fill="${fill}" font-family="Source Sans 3, Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}">${escapeXml(
+          line,
+        )}</text>`,
     )
     .join('')
 }
@@ -292,13 +286,15 @@ function renderBackgroundFits(
   return payload.topBackgroundFits
     .map((backgroundFit, backgroundFitIndex) => {
       const rowY = 446 + backgroundFitIndex * 52
+      const guaranteedCoverageRatio =
+        payload.pickedPerkCount === 0
+          ? 0
+          : backgroundFit.guaranteedCoveredPickedPerkCount / payload.pickedPerkCount
       const scoreWidth = Math.max(
-        28,
+        backgroundFit.guaranteedCoveredPickedPerkCount === 0 ? 0 : 28,
         Math.min(
           160,
-          backgroundFit.maximumTotalGroupCount === 0
-            ? 28
-            : (backgroundFit.expectedMatchedTreeCount / backgroundFit.maximumTotalGroupCount) * 160,
+          backgroundFit.guaranteedCoveredPickedPerkCount === 0 ? 0 : guaranteedCoverageRatio * 160,
         ),
       )
       const name = truncateLineByVisualWidth(backgroundFit.backgroundName, 16)
@@ -316,9 +312,7 @@ function renderBackgroundFits(
         )}</text>
         <rect x="270" y="-24" width="160" height="11" rx="5.5" fill="#2a211b" />
         <rect x="270" y="-24" width="${scoreWidth.toFixed(1)}" height="11" rx="5.5" fill="#c89d66" />
-        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.expectedMatchedTreeCount.toFixed(
-          1,
-        )}/${backgroundFit.maximumTotalGroupCount} expected groups</text>
+        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.guaranteedCoveredPickedPerkCount}/${payload.pickedPerkCount} guaranteed perks</text>
       </g>`
     })
     .join('')

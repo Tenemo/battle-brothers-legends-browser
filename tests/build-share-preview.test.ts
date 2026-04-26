@@ -62,17 +62,32 @@ describe('build share preview', () => {
     expect(payload.imagePath).not.toContain('?')
   })
 
-  test('summarizes shared perk groups and background fits for picked builds', () => {
+  test('summarizes background fits for picked builds', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       '?build=Perfect+Focus,Peaceable,Clarity',
     )
 
     expect(payload.status).toBe('found')
-    expect(payload.sharedGroups.length).toBeGreaterThan(0)
-    expect(payload.sharedGroups[0].perkCount).toBeGreaterThanOrEqual(2)
-    expect(payload.sharedGroups[0].groupLabel).toBeTruthy()
     expect(payload.topBackgroundFits.length).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].backgroundName).toBeTruthy()
-    expect(payload.topBackgroundFits[0].maximumTotalGroupCount).toBeGreaterThan(0)
+    expect(payload.topBackgroundFits[0].guaranteedCoveredPickedPerkCount).toBeGreaterThan(0)
+    expect(
+      payload.topBackgroundFits.every(
+        (backgroundFit, backgroundFitIndex, backgroundFits) =>
+          backgroundFitIndex === 0 ||
+          backgroundFit.guaranteedCoveredPickedPerkCount <=
+            backgroundFits[backgroundFitIndex - 1].guaranteedCoveredPickedPerkCount,
+      ),
+    ).toBe(true)
+  })
+
+  test('excludes origin-specific backgrounds from shared build social image previews', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      '?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Hold+Out,Underdog,Assured+Conquest,Colossus,Tactical+Maneuvers,Nine+Lives,Crippling+Strikes,Perfect+Focus',
+    )
+
+    expect(
+      payload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName),
+    ).not.toEqual(expect.arrayContaining(['Companion', 'Berserker', 'Holy Crusader']))
   })
 })

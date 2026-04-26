@@ -15,6 +15,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'legend_berserker_commander_background.nut',
     'legend_companion_melee_background.nut',
     'legend_companion_ranged_background.nut',
+    'legend_crusader_background.nut',
     'paladin_background.nut',
   ]),
   perkNamesForAppTests: new Set([
@@ -38,9 +39,9 @@ vi.mock('../src/data/legends-perks.json', async () => {
     '../src/data/legends-perks.json',
   )) as LegendsPerksDataset
   const perks = actualDataset.perks.filter((perk) => perkNamesForAppTests.has(perk.perkName))
-  const treeCount = new Set(
+  const perkGroupCount = new Set(
     perks.flatMap((perk) =>
-      perk.placements.map((placement) => `${placement.categoryName}::${placement.treeId}`),
+      perk.placements.map((placement) => `${placement.categoryName}::${placement.perkGroupId}`),
     ),
   ).size
   const backgroundFitBackgrounds = actualDataset.backgroundFitBackgrounds.filter((backgroundFit) =>
@@ -55,7 +56,7 @@ vi.mock('../src/data/legends-perks.json', async () => {
       backgroundFitBackgrounds,
       perkCount: perks.length,
       perks,
-      treeCount,
+      perkGroupCount,
     },
   }
 })
@@ -107,6 +108,78 @@ describe('app', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'No perks found' })).toBeInTheDocument()
   })
 
+  test('shows and applies the perk search clear button only while search has text', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const perkSearchInput = screen.getByLabelText('Search perks')
+
+    expect(screen.queryByRole('button', { name: 'Clear perk search' })).not.toBeInTheDocument()
+
+    await user.type(perkSearchInput, 'Berserk')
+
+    const clearPerkSearchButton = screen.getByRole('button', { name: 'Clear perk search' })
+
+    expect(clearPerkSearchButton).toBeVisible()
+    expect(perkSearchInput).toHaveValue('Berserk')
+
+    await user.click(clearPerkSearchButton)
+
+    expect(perkSearchInput).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'Clear perk search' })).not.toBeInTheDocument()
+    expect(perkSearchInput).toHaveFocus()
+  })
+
+  test('shows and applies the background search clear button only while search has text', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
+    const filterBackgroundsButton = within(backgroundFitPanel).getByRole('button', {
+      name: 'Filter backgrounds',
+    })
+    const searchInputControl = backgroundSearchInput.closest('.search-input-control')
+
+    expect(
+      within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
+    ).not.toBeInTheDocument()
+    expect(filterBackgroundsButton).toBeVisible()
+    expect(searchInputControl).not.toBeNull()
+    expect(
+      within(searchInputControl as HTMLElement)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Filter backgrounds'])
+
+    await user.type(backgroundSearchInput, 'Oath')
+
+    const clearBackgroundSearchButton = within(backgroundFitPanel).getByRole('button', {
+      name: 'Clear background search',
+    })
+
+    expect(clearBackgroundSearchButton).toBeVisible()
+    expect(
+      within(searchInputControl as HTMLElement)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Clear background search', 'Filter backgrounds'])
+    expect(backgroundSearchInput).toHaveValue('Oath')
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
+        name: 'Oathtaker',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(clearBackgroundSearchButton)
+
+    expect(backgroundSearchInput).toHaveValue('')
+    expect(
+      within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
+    ).not.toBeInTheDocument()
+    expect(container.querySelector('.background-fit-panel .search-highlight')).toBeNull()
+    expect(backgroundSearchInput).toHaveFocus()
+  })
+
   test('can expand and collapse a category, then filter by perk group and inspect a trait perk', async () => {
     const user = userEvent.setup()
     render(<App />)
@@ -142,7 +215,7 @@ describe('app', () => {
     ).not.toBeInTheDocument()
   })
 
-  test('renders favored enemy targets and scenario overlay details in the detail panel', async () => {
+  test('renders favoured enemy targets and scenario overlay details in the detail panel', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -155,7 +228,7 @@ describe('app', () => {
     )
 
     expect(
-      screen.getByRole('heading', { level: 3, name: 'Favored enemy targets' }),
+      screen.getByRole('heading', { level: 3, name: 'Favoured enemy targets' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Bear')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'Scenario overlays' })).toBeInTheDocument()
@@ -284,9 +357,9 @@ describe('app', () => {
 
     await user.click(categoryButtons[0])
 
-    const subgroupButtons = screen.getAllByRole('button', { name: /Toggle perk group / })
+    const perkGroupButtons = screen.getAllByRole('button', { name: /Toggle perk group / })
 
-    expect(subgroupButtons[0]).toHaveAccessibleName('Toggle perk group Shady')
+    expect(perkGroupButtons[0]).toHaveAccessibleName('Toggle perk group Shady')
     expect(container.querySelectorAll('.sidebar .search-highlight')).toHaveLength(1)
     expect(container.querySelector('.sidebar .search-highlight')?.textContent).toBe('Shady')
   })
@@ -306,7 +379,7 @@ describe('app', () => {
     ).toBe(true)
   })
 
-  test('can filter by multiple categories at the same time while keeping subgroup filters scoped', async () => {
+  test('can filter by multiple categories at the same time while keeping perk group filters scoped', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -502,7 +575,7 @@ describe('app', () => {
     expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
   })
 
-  test('shows picked-perk stars next to category and subgroup counts based on the current build', async () => {
+  test('shows picked-perk stars next to category and perk group counts based on the current build', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -523,10 +596,10 @@ describe('app', () => {
     const traitsCategoryButton = screen.getByRole('button', { name: 'Enable category Traits' })
     const magicCategoryButton = screen.getByRole('button', { name: 'Enable category Magic' })
     const traitsCategoryStarCount = traitsCategoryButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+      '.category-chip-picked-stars .build-star',
     ).length
     const magicCategoryStarCount = magicCategoryButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+      '.category-chip-picked-stars .build-star',
     ).length
 
     expect(traitsCategoryStarCount).toBe(2)
@@ -535,17 +608,17 @@ describe('app', () => {
     await user.click(traitsCategoryButton)
     await user.click(magicCategoryButton)
 
-    const calmSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Calm' })
-    const deadeyeSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Deadeye' })
-    const calmSubgroupStarCount = calmSubgroupButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+    const calmPerkGroupButton = screen.getByRole('button', { name: 'Toggle perk group Calm' })
+    const deadeyePerkGroupButton = screen.getByRole('button', { name: 'Toggle perk group Deadeye' })
+    const calmPerkGroupStarCount = calmPerkGroupButton.querySelectorAll(
+      '.category-chip-picked-stars .build-star',
     ).length
-    const deadeyeSubgroupStarCount = deadeyeSubgroupButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+    const deadeyePerkGroupStarCount = deadeyePerkGroupButton.querySelectorAll(
+      '.category-chip-picked-stars .build-star',
     ).length
 
-    expect(calmSubgroupStarCount).toBe(2)
-    expect(deadeyeSubgroupStarCount).toBe(1)
+    expect(calmPerkGroupStarCount).toBe(2)
+    expect(deadeyePerkGroupStarCount).toBe(1)
   })
 
   test('merges individual perk groups that unlock the same picked perk into one card', () => {
@@ -654,7 +727,7 @@ describe('app', () => {
     ).toBeInTheDocument()
     expect(
       within(screen.getByTestId('build-individual-groups-list')).getByText(
-        'Single-perk groups will appear here',
+        'Individual perk groups will appear here',
       ),
     ).toBeInTheDocument()
   })
@@ -753,27 +826,22 @@ describe('app', () => {
       within(apprenticeCard as HTMLElement).getByText('Guaranteed 1/1 perks pickable'),
     ).toBeInTheDocument()
     expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'true')
-    expect(within(apprenticeCard as HTMLElement).getByText('1/1 matched group')).toBeInTheDocument()
     expect(
-      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total groups/),
+      within(apprenticeCard as HTMLElement).getByText('1/1 matched perk group'),
+    ).toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total perk groups/),
     ).toBeInTheDocument()
     expect(
       (apprenticeCard as HTMLElement).querySelectorAll('.background-fit-accordion-summary-row'),
     ).toHaveLength(2)
 
-    fireEvent.mouseEnter(
-      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total groups/),
-    )
-
-    const backgroundFitSummaryTooltip = screen.getByRole('tooltip')
-
-    expect(backgroundFitSummaryTooltip).toBeInTheDocument()
     expect(
-      within(backgroundFitSummaryTooltip).getByText(/Overall hard cap for this background/i),
+      within(apprenticeCard as HTMLElement).getByLabelText(
+        /Maximum \d+ total perk groups\. Overall hard cap for this background/i,
+      ),
     ).toBeInTheDocument()
-    expect(
-      within(backgroundFitSummaryTooltip).getByText(/not limited to your build/i),
-    ).toBeInTheDocument()
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
 
     await user.click(apprenticeToggle)
 
@@ -784,7 +852,7 @@ describe('app', () => {
     ).toBeInTheDocument()
     expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'false')
     expect(
-      within(apprenticeCard as HTMLElement).getByText('Guaranteed groups 1'),
+      within(apprenticeCard as HTMLElement).getByText('Guaranteed perk groups 1'),
     ).toBeInTheDocument()
     expect(
       within(apprenticeCard as HTMLElement).queryByText(/^Guaranteed weight /),
@@ -907,6 +975,97 @@ describe('app', () => {
     ).toBeInTheDocument()
   })
 
+  test('filters origin background fit cards from the background filter menu', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    setPerkSearchQuery('Axe Mastery')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Axe Mastery to build from results',
+      }),
+    )
+
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const workspace = screen.getByRole('main')
+    const filterBackgroundsButton = within(backgroundFitPanel).getByRole('button', {
+      name: 'Filter backgrounds',
+    })
+
+    expect(within(backgroundFitPanel).getByText('starting shield')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin crusader')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getAllByText('origin commander').length).toBeGreaterThan(0)
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
+        name: 'Holy Crusader',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(filterBackgroundsButton)
+
+    const backgroundFiltersGroup = within(backgroundFitPanel).getByRole('group', {
+      name: 'Background filters',
+    })
+    const originBackgroundsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Origin backgrounds',
+    })
+    const originBackgroundsLabel = within(backgroundFiltersGroup).getByText('Origin backgrounds')
+
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(originBackgroundsCheckbox).toBeChecked()
+
+    fireEvent.click(backgroundFiltersGroup)
+
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(originBackgroundsCheckbox).toBeChecked()
+
+    await user.click(originBackgroundsLabel)
+
+    expect(originBackgroundsCheckbox).not.toBeChecked()
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(workspace).not.toHaveClass('has-active-background-fit-search')
+    expect(
+      within(backgroundFitPanel).getByText(
+        /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+      ),
+    ).toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('starting shield')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin melee')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin ranged')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin crusader')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin commander')).not.toBeInTheDocument()
+    expect(
+      within(backgroundFitPanel).queryByRole('heading', {
+        level: 3,
+        name: 'Holy Crusader',
+      }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
+        name: 'Apprentice',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(originBackgroundsLabel)
+
+    expect(originBackgroundsCheckbox).toBeChecked()
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
+
+    await user.click(screen.getByLabelText('Search perks'))
+
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'false')
+    expect(
+      within(backgroundFitPanel).queryByRole('group', {
+        name: 'Background filters',
+      }),
+    ).not.toBeInTheDocument()
+  })
+
   test('keeps background search enabled and usable without any picked perks', async () => {
     const user = userEvent.setup()
     const { container } = render(<App />)
@@ -962,7 +1121,7 @@ describe('app', () => {
     )
   })
 
-  test('shows duplicate-name disambiguators only for repeated backgrounds in the background fit list', async () => {
+  test('shows duplicate-name and origin source labels in the background fit list', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -987,6 +1146,7 @@ describe('app', () => {
     expect(within(backgroundFitPanel).getByText('starting ranged')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getByText('origin ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin crusader')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getAllByText('origin commander').length).toBeGreaterThan(0)
     expect(within(backgroundFitPanel).getByText('converted cultist')).toBeInTheDocument()
   })

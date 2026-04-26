@@ -8,7 +8,7 @@ import {
 import './PerkResults.css'
 import { getPerkPreviewParagraphs, getTierLabel } from '../lib/perk-search'
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import { BuildToggleButton } from './SharedControls'
+import { BuildToggleButton, ClearableSearchField } from './SharedControls'
 
 export function PerkResults({
   onCloseResultsPerkHover,
@@ -19,7 +19,7 @@ export function PerkResults({
   query,
   selectedCategoryCount,
   selectedPerk,
-  selectedTreeCount,
+  selectedPerkGroupCount,
   setQuery,
   visiblePerks,
   hoveredPerkId,
@@ -33,23 +33,21 @@ export function PerkResults({
   query: string
   selectedCategoryCount: number
   selectedPerk: LegendsPerkRecord | null
-  selectedTreeCount: number
+  selectedPerkGroupCount: number
   setQuery: (query: string) => void
   visiblePerks: LegendsPerkRecord[]
 }) {
   return (
     <section className="results-panel" aria-label="Perk results">
       <div className="toolbar">
-        <label className="search-field">
-          <span className="visually-hidden">Search perks</span>
-          <input
-            aria-label="Search perks"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search perks, perk groups, backgrounds, scenarios, or enemy targets"
-            type="search"
-            value={query}
-          />
-        </label>
+        <ClearableSearchField
+          clearLabel="Clear perk search"
+          inputId="perk-results-search"
+          label="Search perks"
+          onValueChange={setQuery}
+          placeholder="Search perks, perk groups, backgrounds, scenarios, or enemy targets"
+          value={query}
+        />
       </div>
 
       <div className="results-summary">
@@ -58,20 +56,20 @@ export function PerkResults({
           {visiblePerks.length === 1 ? '' : 's'}
         </p>
         <p className="results-note">
-          {selectedTreeCount > 0
-            ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'} and ${selectedTreeCount} perk group${selectedTreeCount === 1 ? '' : 's'}.`
+          {selectedPerkGroupCount > 0
+            ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'} and ${selectedPerkGroupCount} perk group${selectedPerkGroupCount === 1 ? '' : 's'}.`
             : selectedCategoryCount > 0
               ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'}.`
               : 'Ranked by exact perk names first, then perk group and category matches, then background, scenario, and full text.'}
         </p>
       </div>
 
-      <div className="results-list" data-testid="results-list">
+      <ul className="results-list" data-testid="results-list">
         {visiblePerks.length === 0 ? (
-          <div className="empty-state">
+          <li className="empty-state">
             <h2>No perks found</h2>
             <p>Try a broader search or switch the category filters.</p>
-          </div>
+          </li>
         ) : (
           visiblePerks.map((perk) => {
             const isSelected = perk.id === selectedPerk?.id
@@ -81,7 +79,7 @@ export function PerkResults({
             const previewParagraphs = getPerkPreviewParagraphs(perk)
 
             return (
-              <div
+              <li
                 key={perk.id}
                 className={getPerkRowClassName({ isHighlighted, isPicked, isSelected })}
                 onBlurCapture={(event) => {
@@ -152,11 +150,11 @@ export function PerkResults({
                   perkName={perk.perkName}
                   source="results"
                 />
-              </div>
+              </li>
             )
           })
         )}
-      </div>
+      </ul>
     </section>
   )
 }

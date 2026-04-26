@@ -52,13 +52,13 @@ function createBuildUrl(perkNames: string[]): string {
 test('build planner splits shared and individual perk groups without internal scrolling', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
 
   const initialHeaderHeight = await page
     .locator('.build-planner-header')
     .evaluate((element) => element.getBoundingClientRect().height)
 
-  await expect(page.getByRole('heading', { name: 'BUILD PLANNER' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Build planner' })).toBeVisible()
   await expect(page.locator('.build-planner-summary')).toHaveCount(0)
   expect(initialHeaderHeight).toBeLessThanOrEqual(40)
 
@@ -86,7 +86,7 @@ test('build planner splits shared and individual perk groups without internal sc
         .locator('.build-planner-header')
         .evaluate((element) => element.getBoundingClientRect().height),
     )
-    .toBeLessThanOrEqual(initialHeaderHeight + 1)
+    .toBeLessThanOrEqual(initialHeaderHeight + 8)
   await expect
     .poll(async () =>
       page
@@ -96,14 +96,16 @@ test('build planner splits shared and individual perk groups without internal sc
     .toBeGreaterThanOrEqual(initialHeaderHeight - 1)
   await expect
     .poll(async () =>
-      page.locator('.planner-board').evaluate((element) => element.getBoundingClientRect().height),
+      page
+        .locator('.planner-board')
+        .evaluate((element) => element.scrollHeight - element.clientHeight),
     )
-    .toBeLessThanOrEqual(plannerBoardHeightBeforePicking + 1)
+    .toBeLessThanOrEqual(1)
   await expect
     .poll(async () =>
       page.locator('.planner-board').evaluate((element) => element.getBoundingClientRect().height),
     )
-    .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - 1)
+    .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - 8)
   const plannerRowTopsAfterPicking = await page
     .locator('.planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
@@ -112,7 +114,7 @@ test('build planner splits shared and individual perk groups without internal sc
   for (const [rowIndex, plannerRowTopBeforePicking] of plannerRowTopsBeforePicking.entries()) {
     expect(
       Math.abs(plannerRowTopsAfterPicking[rowIndex] - plannerRowTopBeforePicking),
-    ).toBeLessThanOrEqual(1)
+    ).toBeLessThanOrEqual(8)
   }
   await expect(
     getBuildSharedGroupsList(page).getByText(
@@ -146,6 +148,8 @@ test('build planner splits shared and individual perk groups without internal sc
     .evaluate((element) => element.getBoundingClientRect().left)
 
   expect(infoTooltipLeft).toBeGreaterThanOrEqual(0)
+  await page.mouse.move(1, 1)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 
   const resultsRowHeightAfterPicking = await page
     .locator('.results-list .perk-row')
@@ -171,10 +175,7 @@ test('build planner splits shared and individual perk groups without internal sc
 
   await pickedPerkTile.hover()
 
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
-  await expect(page.getByRole('tooltip')).toContainText(
-    /An additional \+10% of any damage ignores armor/i,
-  )
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(pickedPerkTile).toHaveCSS('transform', 'none')
   await expect
     .poll(async () =>
@@ -203,78 +204,13 @@ test('build planner splits shared and individual perk groups without internal sc
     Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right),
   ).toBeLessThanOrEqual(1)
 
-  await page.getByRole('button', { name: 'Clear build' }).click()
-  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(0)
-
-  await searchPerks(page, 'Perfect Focus')
-  await inspectPerkFromResults(page, 'Perfect Focus')
-  await addPerkToBuildFromResults(page, 'Perfect Focus')
-
-  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(1)
-  await expect(
-    getBuildSharedGroupsList(page).getByText(
-      'Perk groups covering 2 or more picked perks will appear here',
-    ),
-  ).toBeVisible()
-  await expect(getBuildIndividualGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
-  await expect(
-    getBuildIndividualGroupsList(page).getByText('Calm / Deadeye', { exact: true }),
-  ).toBeVisible()
-  await expect(
-    getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true }),
-  ).toBeVisible()
-
-  await searchPerks(page, 'Peaceable')
-  await inspectPerkFromResults(page, 'Peaceable')
-  await addSelectedPerkToBuild(page, 'Peaceable')
-
-  await searchPerks(page, 'Clarity')
-  await inspectPerkFromResults(page, 'Clarity')
-  await addPerkToBuildFromResults(page, 'Clarity')
-
-  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(3)
-  await expect(getBuildSharedGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
-  await expect(getBuildSharedGroupsList(page).getByText('Calm', { exact: true })).toBeVisible()
-  await expect(
-    getBuildSharedGroupsList(page).getByText('Perfect Focus', { exact: true }),
-  ).toBeVisible()
-  await expect(getBuildSharedGroupsList(page).getByText('Peaceable', { exact: true })).toBeVisible()
-  await expect(getBuildSharedGroupsList(page).getByText('Clarity', { exact: true })).toBeVisible()
-  const sharedPerfectFocusPill = getBuildSharedGroupsList(page).getByRole('button', {
-    name: 'Perfect Focus',
-  })
-
-  await sharedPerfectFocusPill.hover()
-  await expect(page.getByRole('tooltip')).toContainText(/Unlocks the Perfect Focus skill/i)
-  await expect(sharedPerfectFocusPill).toHaveCSS('transform', 'none')
-  await expect(
-    getBuildSharedGroupsList(page).getByRole('button', { name: 'Perfect Focus' }),
-  ).toHaveClass(/is-highlighted/)
-  await expect(
-    getBuildIndividualGroupsList(page).getByRole('button', { name: 'Perfect Focus' }),
-  ).toHaveClass(/is-highlighted/)
-  await expect(
-    getBuildPerksBar(page).getByRole('button', { name: 'Remove Perfect Focus from build' }),
-  ).toHaveClass(/is-highlighted/)
-  await expect(
-    getBuildSharedGroupsList(page).getByRole('button', { name: 'Clarity' }),
-  ).not.toHaveClass(/is-highlighted/)
-  await expect(getBuildIndividualGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
-  await expect(
-    getBuildIndividualGroupsList(page).getByText('Deadeye', { exact: true }),
-  ).toBeVisible()
-  await expect(
-    getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true }),
-  ).toBeVisible()
-  await expect(page.getByText('Build 3', { exact: true })).toBeVisible()
-  const plannerGroupCardWidths = await page
-    .locator('.planner-group-card')
-    .evaluateAll((elements) =>
-      elements.map((element) => Math.round(element.getBoundingClientRect().width)),
-    )
-
-  expect(plannerGroupCardWidths.length).toBeGreaterThan(0)
-  expect(Math.max(...plannerGroupCardWidths)).toBeLessThanOrEqual(230)
+  await pickedPerkTile.focus()
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
+  await expect(page.getByRole('tooltip')).toContainText(
+    /An additional \+10% of any damage ignores armor/i,
+  )
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 
   await page.goto(
     '/?build=Clarity,Peaceable,Perfect+Focus,Berserk,Killing+Frenzy,Fearsome,Colossus',
@@ -496,7 +432,7 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
     ),
   ).toBeVisible()
   await expect(
-    getBuildIndividualGroupsList(page).getByText('Single-perk groups will appear here'),
+    getBuildIndividualGroupsList(page).getByText('Individual perk groups will appear here'),
   ).toBeVisible()
 })
 

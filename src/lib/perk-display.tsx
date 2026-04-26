@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { BackgroundFitMatch, RankedBackgroundFit } from './background-fit'
+import type { RankedBackgroundFit } from './background-fit'
+import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
 import { getTierLabel } from './perk-search'
 import type {
   LegendsPerkBackgroundSource,
@@ -11,14 +12,14 @@ export type GroupedBackgroundSource = {
   backgroundNames: string[]
   categoryName: string
   chance: number | null
-  minimumTrees: number | null
-  treeId: string
-  treeName: string
+  minimumPerkGroups: number | null
+  perkGroupId: string
+  perkGroupName: string
 }
 
 type PerkGroupHoverTarget = {
   categoryName: string
-  treeId: string
+  perkGroupId: string
 }
 
 export type TooltipAnchorRectangle = {
@@ -98,9 +99,9 @@ export function groupBackgroundSources(
   for (const backgroundSource of backgroundSources) {
     const key = [
       backgroundSource.categoryName,
-      backgroundSource.treeId,
-      backgroundSource.treeName,
-      backgroundSource.minimumTrees ?? 'none',
+      backgroundSource.perkGroupId,
+      backgroundSource.perkGroupName,
+      backgroundSource.minimumPerkGroups ?? 'none',
       backgroundSource.chance ?? 'none',
     ].join('::')
 
@@ -109,9 +110,9 @@ export function groupBackgroundSources(
         backgroundNames: [],
         categoryName: backgroundSource.categoryName,
         chance: backgroundSource.chance,
-        minimumTrees: backgroundSource.minimumTrees,
-        treeId: backgroundSource.treeId,
-        treeName: backgroundSource.treeName,
+        minimumPerkGroups: backgroundSource.minimumPerkGroups,
+        perkGroupId: backgroundSource.perkGroupId,
+        perkGroupName: backgroundSource.perkGroupName,
       })
     }
 
@@ -125,7 +126,7 @@ export function getPerkContextLabel(perk: LegendsPerkRecord): string {
   const primaryPlacement = perk.placements[0]
 
   if (!primaryPlacement) {
-    return `${perk.primaryGroupName} / No perk group placement`
+    return `${perk.primaryCategoryName} / No perk group placement`
   }
 
   const additionalPlacementsCount = Math.max(0, perk.placements.length - 1)
@@ -133,11 +134,11 @@ export function getPerkContextLabel(perk: LegendsPerkRecord): string {
   const placementLabel =
     additionalPlacementsCount > 0 ? `${tierLabel} + ${additionalPlacementsCount} more` : tierLabel
 
-  return `${perk.primaryGroupName} / ${primaryPlacement.treeName} / ${placementLabel}`
+  return `${perk.primaryCategoryName} / ${primaryPlacement.perkGroupName} / ${placementLabel}`
 }
 
 export function getPerkDisplayIconPath(perk: LegendsPerkRecord): string | null {
-  return perk.iconPath ?? perk.placements[0]?.treeIconPath ?? null
+  return perk.iconPath ?? perk.placements[0]?.perkGroupIconPath ?? null
 }
 
 export function formatChanceLabel(chance: number | null): string {
@@ -148,12 +149,12 @@ export function formatChanceLabel(chance: number | null): string {
   return `${Math.round(chance * 100)}% chance`
 }
 
-export function formatMinimumTreesLabel(minimumTrees: number | null): string {
-  if (minimumTrees === null) {
+export function formatMinimumPerkGroupsLabel(minimumPerkGroups: number | null): string {
+  if (minimumPerkGroups === null) {
     return 'No minimum override'
   }
 
-  return `Minimum ${minimumTrees}`
+  return `Minimum ${minimumPerkGroups}`
 }
 
 export function formatScenarioGrantLabel(scenarioSource: LegendsPerkScenarioSource): string {
@@ -181,7 +182,7 @@ export function formatBackgroundFitScoreLabel(score: number): string {
 }
 
 function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
-  const sourceLabel = disambiguator.replace(/^background\./, '')
+  const sourceLabel = getBackgroundSourceLabel(disambiguator)
   const companionMatch = /^companion_(1h|2h|ranged)$/.exec(sourceLabel)
   const originCompanionMatch = /^legend_companion_(melee|ranged)$/.exec(sourceLabel)
 
@@ -214,9 +215,7 @@ function normalizeBackgroundLabelForComparison(label: string): string {
   return label.trim().toLowerCase()
 }
 
-export function getVisibleBackgroundDisambiguatorLabel(
-  backgroundFit: RankedBackgroundFit,
-): string | null {
+function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundFit): string | null {
   if (backgroundFit.disambiguator === null) {
     return null
   }
@@ -229,6 +228,15 @@ export function getVisibleBackgroundDisambiguatorLabel(
     : disambiguatorLabel
 }
 
+export function getVisibleBackgroundPillLabel(backgroundFit: RankedBackgroundFit): string | null {
+  // Unique origin backgrounds are not duplicate-name disambiguation cases, but still need a
+  // visible source label so the origin filter is understandable from the list.
+  return (
+    getOriginBackgroundPillLabel(backgroundFit) ??
+    getVisibleBackgroundDisambiguatorLabel(backgroundFit)
+  )
+}
+
 export function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string {
   return `${backgroundFit.backgroundId}::${backgroundFit.sourceFilePath}`
 }
@@ -236,12 +244,14 @@ export function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string 
 export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): string {
   const sourceFileName =
     backgroundFit.sourceFilePath.split('/').at(-1) ?? backgroundFit.sourceFilePath
+  const visibleBackgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const searchParts = [
     backgroundFit.backgroundName,
     backgroundFit.disambiguator,
     backgroundFit.disambiguator === null
       ? null
       : formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator),
+    visibleBackgroundPillLabel,
     backgroundFit.backgroundId,
     sourceFileName,
     backgroundFit.sourceFilePath,
@@ -253,10 +263,6 @@ export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): 
     )
     .join(' ')
     .toLowerCase()
-}
-
-export function getCoveredPickedPerkNames(matches: BackgroundFitMatch[]): string[] {
-  return [...new Set(matches.flatMap((match) => match.pickedPerkNames))]
 }
 
 export function formatBackgroundFitPickablePerksLabel(
@@ -273,17 +279,19 @@ export function formatBackgroundFitGuaranteedPerksLabel(
   return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
 }
 
-export function formatBackgroundFitMatchedGroupsLabel(
-  matchedGroupCount: number,
-  supportedBuildTargetTreeCount: number,
+export function formatBackgroundFitMatchedPerkGroupsLabel(
+  matchedPerkGroupCount: number,
+  supportedBuildTargetPerkGroupCount: number,
 ): string {
-  return `${matchedGroupCount}/${supportedBuildTargetTreeCount} matched group${
-    supportedBuildTargetTreeCount === 1 ? '' : 's'
+  return `${matchedPerkGroupCount}/${supportedBuildTargetPerkGroupCount} matched perk group${
+    supportedBuildTargetPerkGroupCount === 1 ? '' : 's'
   }`
 }
 
-export function formatBackgroundFitMaximumTotalGroupsLabel(maximumTotalGroupCount: number): string {
-  return `Maximum ${maximumTotalGroupCount} total groups`
+export function formatBackgroundFitMaximumTotalPerkGroupsLabel(
+  maximumTotalPerkGroupCount: number,
+): string {
+  return `Maximum ${maximumTotalPerkGroupCount} total perk groups`
 }
 
 export function getPerkRowClassName({
@@ -312,8 +320,8 @@ export function getPerkRowClassName({
   return classNames.join(' ')
 }
 
-export function getPerkGroupHoverKey({ categoryName, treeId }: PerkGroupHoverTarget): string {
-  return `${categoryName}::${treeId}`
+export function getPerkGroupHoverKey({ categoryName, perkGroupId }: PerkGroupHoverTarget): string {
+  return `${categoryName}::${perkGroupId}`
 }
 
 function getGameIconUrl(iconPath: string | null): string | null {

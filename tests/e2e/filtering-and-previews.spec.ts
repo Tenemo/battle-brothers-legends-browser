@@ -16,9 +16,9 @@ test('filters by multiple categories and scoped perk groups, then clears everyth
   await gotoPerksBrowser(page)
 
   await enableCategory(page, 'Traits')
-  await expect(page.locator('.subgroup-heading')).toHaveText('Perk groups')
+  await expect(page.locator('.perk-group-heading')).toHaveText('Perk groups')
   await disableCategory(page, 'Traits')
-  await expect(page.locator('.subgroup-heading')).toHaveCount(0)
+  await expect(page.locator('.perk-group-heading')).toHaveCount(0)
 
   await enableCategory(page, 'Traits')
   await togglePerkGroup(page, 'Calm')
@@ -41,7 +41,7 @@ test('filters by multiple categories and scoped perk groups, then clears everyth
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
 })
 
-test('shows real effect previews for hooked perk descriptions instead of tree text', async ({
+test('shows real effect previews for hooked perk descriptions instead of perk group text', async ({
   page,
 }) => {
   await gotoPerksBrowser(page)
@@ -90,17 +90,17 @@ test('reorders categories and perk groups around the active perk search query an
 
   await searchPerks(page, 'Shady')
 
-  const categoryButtons = page.locator('.sidebar .category-card > button.group-chip')
+  const categoryButtons = page.locator('.sidebar .category-card > button.category-chip')
 
   await expect(categoryButtons.first()).toHaveAttribute('aria-label', 'Enable category Other')
 
   await enableCategory(page, 'Other')
 
-  const subgroupButtons = page.locator(
-    '.sidebar .subgroup-panel button[aria-label^="Toggle perk group "]',
+  const perkGroupButtons = page.locator(
+    '.sidebar .perk-group-panel button[aria-label^="Toggle perk group "]',
   )
 
-  await expect(subgroupButtons.first()).toHaveAttribute('aria-label', 'Toggle perk group Shady')
+  await expect(perkGroupButtons.first()).toHaveAttribute('aria-label', 'Toggle perk group Shady')
   await expect(page.locator('.sidebar .search-highlight')).toContainText(['Shady'])
 })
 
@@ -113,7 +113,7 @@ test('highlights the searched perk phrase in the visible perk results', async ({
 })
 
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
   await page.locator('.hero').evaluate(async (element) => {
     await Promise.all(
       element.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
@@ -233,7 +233,7 @@ test('keeps middle-of-word search highlights from adding visual gaps', async ({ 
   })
 })
 
-test('shows picked categories and subgroups with stars and keeps picked result rows outlined while selection changes the background', async ({
+test('shows picked categories and perk groups with stars and keeps picked result rows outlined while selection changes the background', async ({
   page,
 }) => {
   await gotoPerksBrowser(page)
@@ -254,12 +254,12 @@ test('shows picked categories and subgroups with stars and keeps picked result r
   await expect(
     page
       .getByRole('button', { name: 'Enable category Traits' })
-      .locator('.group-chip-picked-stars .build-star'),
+      .locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(2)
   await expect(
     page
       .getByRole('button', { name: 'Enable category Magic' })
-      .locator('.group-chip-picked-stars .build-star'),
+      .locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(1)
 
   await enableCategory(page, 'Traits')
@@ -268,12 +268,12 @@ test('shows picked categories and subgroups with stars and keeps picked result r
   await expect(
     page
       .getByRole('button', { name: 'Toggle perk group Calm' })
-      .locator('.group-chip-picked-stars .build-star'),
+      .locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(2)
   await expect(
     page
       .getByRole('button', { name: 'Toggle perk group Deadeye' })
-      .locator('.group-chip-picked-stars .build-star'),
+      .locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(1)
 
   await disableCategory(page, 'Traits')

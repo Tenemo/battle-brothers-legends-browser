@@ -34,14 +34,15 @@
 }
 
 .build-planner-title {
+  display: inline-flex;
+  gap: 0.36rem;
+  align-items: center;
   flex: 0 0 auto;
   min-width: 0;
 }
 
 .build-planner-title h2 {
-  display: inline-flex;
-  gap: 0.36rem;
-  align-items: center;
+  display: block;
 }
 
 .build-planner-actions {
@@ -68,12 +69,13 @@
 }
 
 .build-planner-info-button {
+  position: relative;
   appearance: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.2rem;
-  height: 1.2rem;
+  width: var(--target-size-compact);
+  height: var(--target-size-compact);
   border: 1px solid rgb(204 155 84 / 0.22);
   border-radius: 999px;
   background: rgb(20 17 14 / 0.92);
@@ -86,10 +88,15 @@
   cursor: help;
 }
 
+.build-planner-info-button::before {
+  content: '';
+  position: absolute;
+  inset: -0.15rem;
+}
+
 .build-planner-info-tooltip {
   position: absolute;
   z-index: 12;
-  display: none;
   top: calc(100% + 0.42rem);
   left: 0;
   width: min(24rem, calc(100vw - 2rem));
@@ -103,22 +110,7 @@
   font-size: 0.78rem;
   font-weight: 400;
   line-height: 1.32;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-0.12rem);
-  transition:
-    opacity 140ms ease,
-    transform 140ms ease,
-    visibility 140ms ease;
-  visibility: hidden;
-}
-
-.build-planner-info:hover .build-planner-info-tooltip,
-.build-planner-info-button:focus-visible + .build-planner-info-tooltip {
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
-  visibility: visible;
+  pointer-events: auto;
 }
 
 .planner-action-button {
@@ -256,22 +248,14 @@
 }
 
 .planner-track-perks .planner-slot-perk::after {
-  content: 'X';
+  content: '';
   position: absolute;
   inset: 0;
   z-index: 2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: rgb(255 168 168 / 0.78);
-  font-size: 2.8rem;
-  font-weight: 800;
-  line-height: 1;
+  border-radius: inherit;
+  background: rgb(190 80 64 / 0.16);
   opacity: 0;
   pointer-events: none;
-  text-shadow:
-    0 0 10px rgb(255 80 80 / 0.22),
-    0 1px 0 rgb(0 0 0 / 0.42);
   transition: opacity 120ms ease;
 }
 
@@ -448,7 +432,8 @@
   appearance: none;
   display: inline-flex;
   align-items: center;
-  min-height: 1.2rem;
+  min-height: var(--target-size-compact);
+  position: relative;
   padding: 0.08rem 0.34rem;
   border: 1px solid rgb(204 155 84 / 0.12);
   border-radius: 999px;
@@ -462,6 +447,12 @@
     border-color 160ms ease,
     background-color 160ms ease,
     color 160ms ease;
+}
+
+.planner-pill::before {
+  content: '';
+  position: absolute;
+  inset: -0.16rem -0.08rem;
 }
 
 .planner-pill:hover,
@@ -502,7 +493,7 @@
   box-shadow:
     0 18px 36px rgb(0 0 0 / 0.34),
     inset 0 1px 0 rgb(255 255 255 / 0.04);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .build-perk-tooltip-title {
@@ -529,8 +520,8 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 2.3rem;
-  height: 2.3rem;
+  width: var(--target-size);
+  height: var(--target-size);
   border: 1px solid rgb(204 155 84 / 0.18);
   border-radius: 999px;
   background: rgb(20 17 14 / 0.92);
@@ -564,7 +555,7 @@
   height: 0.95rem;
 }
 
-.group-chip-picked-stars .build-star {
+.category-chip-picked-stars .build-star {
   width: 0.66rem;
   height: 0.66rem;
 }
@@ -581,12 +572,18 @@
   border-radius: 0.42rem;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1279px) {
   .build-planner {
     flex: 0 0 auto;
     overflow: visible;
   }
 
+  .build-planner.is-background-fit-search-active {
+    overflow: visible;
+  }
+}
+
+@media (max-width: 760px) {
   .planner-row {
     grid-template-columns: 1fr;
   }

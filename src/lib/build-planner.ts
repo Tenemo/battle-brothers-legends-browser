@@ -2,13 +2,13 @@ import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-p
 
 type BuildPlannerPerkGroupRequirement = {
   categoryName: string
-  treeIconPath: string | null
-  treeId: string
-  treeName: string
+  perkGroupIconPath: string | null
+  perkGroupId: string
+  perkGroupName: string
 }
 
 export type BuildPlannerPerkGroupRequirementOption = BuildPlannerPerkGroupRequirement & {
-  treeLabel: string
+  perkGroupLabel: string
 }
 
 export type BuildPlannerGroupedPerkGroup = {
@@ -30,20 +30,20 @@ type BuildPlannerSearchGroup = BuildPlannerPerkGroupRequirementOption & {
 function getUniquePerkGroupRequirements(
   placements: LegendsPerkPlacement[],
 ): BuildPlannerPerkGroupRequirement[] {
-  const seenTreeIds = new Set<string>()
+  const seenPerkGroupIds = new Set<string>()
   const perkGroupRequirements: BuildPlannerPerkGroupRequirement[] = []
 
   for (const placement of placements) {
-    if (seenTreeIds.has(placement.treeId)) {
+    if (seenPerkGroupIds.has(placement.perkGroupId)) {
       continue
     }
 
-    seenTreeIds.add(placement.treeId)
+    seenPerkGroupIds.add(placement.perkGroupId)
     perkGroupRequirements.push({
       categoryName: placement.categoryName,
-      treeIconPath: placement.treeIconPath,
-      treeId: placement.treeId,
-      treeName: placement.treeName,
+      perkGroupIconPath: placement.perkGroupIconPath,
+      perkGroupId: placement.perkGroupId,
+      perkGroupName: placement.perkGroupName,
     })
   }
 
@@ -57,21 +57,21 @@ function getPerkGroupRequirements(perk: LegendsPerkRecord): BuildPlannerPerkGrou
 function getRequirementOptionsWithLabels(
   perkGroupRequirements: BuildPlannerPerkGroupRequirement[],
 ): BuildPlannerPerkGroupRequirementOption[] {
-  const treeNameCounts = new Map<string, number>()
+  const perkGroupNameCounts = new Map<string, number>()
 
   for (const perkGroupRequirement of perkGroupRequirements) {
-    treeNameCounts.set(
-      perkGroupRequirement.treeName,
-      (treeNameCounts.get(perkGroupRequirement.treeName) ?? 0) + 1,
+    perkGroupNameCounts.set(
+      perkGroupRequirement.perkGroupName,
+      (perkGroupNameCounts.get(perkGroupRequirement.perkGroupName) ?? 0) + 1,
     )
   }
 
   return perkGroupRequirements.map((perkGroupRequirement) => ({
     ...perkGroupRequirement,
-    treeLabel:
-      treeNameCounts.get(perkGroupRequirement.treeName) === 1
-        ? perkGroupRequirement.treeName
-        : `${perkGroupRequirement.categoryName}: ${perkGroupRequirement.treeName}`,
+    perkGroupLabel:
+      perkGroupNameCounts.get(perkGroupRequirement.perkGroupName) === 1
+        ? perkGroupRequirement.perkGroupName
+        : `${perkGroupRequirement.categoryName}: ${perkGroupRequirement.perkGroupName}`,
   }))
 }
 
@@ -84,15 +84,15 @@ function getPerkGroupRequirementOptions(
 function getNoPerkGroupPlacementOption(perkId: string): BuildPlannerPerkGroupRequirementOption {
   return {
     categoryName: 'No perk group',
-    treeIconPath: null,
-    treeId: `no-perk-group-placement::${perkId}`,
-    treeLabel: 'No perk group placement',
-    treeName: 'No perk group placement',
+    perkGroupIconPath: null,
+    perkGroupId: `no-perk-group-placement::${perkId}`,
+    perkGroupLabel: 'No perk group placement',
+    perkGroupName: 'No perk group placement',
   }
 }
 
 function getPlannerGroupSortLabel(group: BuildPlannerGroupedPerkGroup): string {
-  return group.perkGroupOptions.map((perkGroupOption) => perkGroupOption.treeLabel).join(' / ')
+  return group.perkGroupOptions.map((perkGroupOption) => perkGroupOption.perkGroupLabel).join(' / ')
 }
 
 function getGroupedPerkGroups(
@@ -123,10 +123,10 @@ function getGroupedPerkGroups(
 
     groupedPerkGroupsByMatchKey.get(matchKey)?.perkGroupOptions.push({
       categoryName: group.categoryName,
-      treeIconPath: group.treeIconPath,
-      treeId: group.treeId,
-      treeLabel: group.treeLabel,
-      treeName: group.treeName,
+      perkGroupIconPath: group.perkGroupIconPath,
+      perkGroupId: group.perkGroupId,
+      perkGroupLabel: group.perkGroupLabel,
+      perkGroupName: group.perkGroupName,
     })
   }
 
@@ -135,11 +135,14 @@ function getGroupedPerkGroups(
       ...groupedPerkGroup,
       perkGroupOptions: groupedPerkGroup.perkGroupOptions.toSorted((leftOption, rightOption) => {
         const leftOrder =
-          groupsById.get(leftOption.treeId)?.encounterOrder ?? Number.POSITIVE_INFINITY
+          groupsById.get(leftOption.perkGroupId)?.encounterOrder ?? Number.POSITIVE_INFINITY
         const rightOrder =
-          groupsById.get(rightOption.treeId)?.encounterOrder ?? Number.POSITIVE_INFINITY
+          groupsById.get(rightOption.perkGroupId)?.encounterOrder ?? Number.POSITIVE_INFINITY
 
-        return leftOrder - rightOrder || leftOption.treeLabel.localeCompare(rightOption.treeLabel)
+        return (
+          leftOrder - rightOrder ||
+          leftOption.perkGroupLabel.localeCompare(rightOption.perkGroupLabel)
+        )
       }),
     }))
     .toSorted((leftGroup, rightGroup) => {
@@ -176,8 +179,8 @@ export function getBuildPlannerGroups(pickedPerks: LegendsPerkRecord[]): BuildPl
         : [getNoPerkGroupPlacementOption(pickedPerk.id)]
 
     for (const perkGroupOption of normalizedPerkGroupOptions) {
-      if (!groupsById.has(perkGroupOption.treeId)) {
-        groupsById.set(perkGroupOption.treeId, {
+      if (!groupsById.has(perkGroupOption.perkGroupId)) {
+        groupsById.set(perkGroupOption.perkGroupId, {
           ...perkGroupOption,
           coveredPerkIds: new Set(),
           encounterOrder: nextEncounterOrder,
@@ -185,7 +188,7 @@ export function getBuildPlannerGroups(pickedPerks: LegendsPerkRecord[]): BuildPl
         nextEncounterOrder += 1
       }
 
-      groupsById.get(perkGroupOption.treeId)?.coveredPerkIds.add(pickedPerk.id)
+      groupsById.get(perkGroupOption.perkGroupId)?.coveredPerkIds.add(pickedPerk.id)
     }
   }
 

@@ -14,16 +14,15 @@ export type LegendsDynamicBackgroundCategoryName =
 
 export type LegendsPerkPlacement = {
   categoryName: string
-  sourceFilePath: string
   tier: number | null
-  treeAttributes: string[]
-  treeDescriptions: string[]
-  treeIconPath: string | null
-  treeId: string
-  treeName: string
+  perkGroupAttributes: string[]
+  perkGroupDescriptions: string[]
+  perkGroupIconPath: string | null
+  perkGroupId: string
+  perkGroupName: string
 }
 
-export type LegendsFavoredEnemyTarget = {
+export type LegendsFavouredEnemyTarget = {
   entityConstName: string
   entityName: string
   killsPerPercentBonus: number | null
@@ -34,10 +33,9 @@ export type LegendsPerkBackgroundSource = {
   backgroundName: string
   categoryName: string
   chance: number | null
-  minimumTrees: number | null
-  sourceFilePath: string
-  treeId: string
-  treeName: string
+  minimumPerkGroups: number | null
+  perkGroupId: string
+  perkGroupName: string
 }
 
 export type LegendsPerkScenarioSource = {
@@ -45,31 +43,28 @@ export type LegendsPerkScenarioSource = {
   grantType: 'direct' | 'random-pool'
   scenarioId: string
   scenarioName: string
-  sourceFilePath: string
   sourceMethodName: string
 }
 
 export type LegendsPerkRecord = {
   backgroundSources: LegendsPerkBackgroundSource[]
   descriptionParagraphs: string[]
-  favoredEnemyTargets?: LegendsFavoredEnemyTarget[]
-  groupNames: string[]
+  favouredEnemyTargets?: LegendsFavouredEnemyTarget[]
+  categoryNames: string[]
   iconPath: string | null
   id: string
   perkConstName: string
   perkName: string
   placements: LegendsPerkPlacement[]
-  primaryGroupName: string
+  primaryCategoryName: string
   scenarioSources: LegendsPerkScenarioSource[]
-  scriptPath: string | null
   searchText: string
-  sourceFilePaths: string[]
 }
 
 export type LegendsBackgroundFitCategoryDefinition = {
   chance: number | null
-  minimumTrees: number | null
-  treeIds: string[]
+  minimumPerkGroups: number | null
+  perkGroupIds: string[]
 }
 
 export type LegendsBackgroundFitBackgroundDefinition = {
@@ -83,8 +78,8 @@ export type LegendsBackgroundFitBackgroundDefinition = {
 }
 
 export type LegendsBackgroundFitClassWeaponDependency = {
-  classTreeId: string
-  weaponTreeId: string
+  classPerkGroupId: string
+  weaponPerkGroupId: string
 }
 
 type LegendsBackgroundFitRules = {
@@ -100,5 +95,5 @@ export type LegendsPerksDataset = {
   referenceRoot: string
   referenceVersion: string
   sourceFiles: LegendsSourceFile[]
-  treeCount: number
+  perkGroupCount: number
 }

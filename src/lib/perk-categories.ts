@@ -1,16 +1,10 @@
 import type { LegendsDynamicBackgroundCategoryName } from '../types/legends-perks'
+import {
+  dynamicBackgroundCategoryNames,
+  dynamicBackgroundCategoryOrder,
+} from './dynamic-background-categories'
 
-export const dynamicBackgroundCategoryNames = [
-  'Weapon',
-  'Defense',
-  'Traits',
-  'Enemy',
-  'Class',
-  'Profession',
-  'Magic',
-] as const satisfies LegendsDynamicBackgroundCategoryName[]
-
-const categoryOrder = [...dynamicBackgroundCategoryNames, 'Other'] as const
+const categoryOrder = dynamicBackgroundCategoryOrder
 
 const dynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
   dynamicBackgroundCategoryNames,

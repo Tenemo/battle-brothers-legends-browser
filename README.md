@@ -7,13 +7,13 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 ## What this project does
 
 - Browses the Legends perk catalog in a fast client-side UI.
-- Searches across perk names, descriptions, perk groups, tree names, background sources, scenario overlays, and favored enemy targets.
+- Searches across perk names, descriptions, perk groups, perk group names, background sources, scenario overlays, and favoured enemy targets.
 - Filters by category and perk group.
 - Lets you pick perks into a build planner, splits matching perk groups into shared 2-plus-perk coverage and individual-perk coverage, merges identical match sets, and previews picked-perk effects on hover.
-- Ranks parsed Legends backgrounds against the current build by exact perk-tree fit, separating guaranteed matches from probabilistic matches and showing exact marginal probabilities for non-guaranteed trees.
+- Ranks parsed Legends backgrounds against the current build by exact perk-perk-group fit, separating guaranteed matches from probabilistic matches and showing exact marginal probabilities for non-guaranteed perk groups.
 - Persists the current filters and picked build in grouped readable query params so the current setup can be shared or reloaded directly from the URL.
 - Serves a centralized static SEO metadata contract for the root app URL, including canonical tags, an Open Graph preview image, JSON-LD, `robots.txt`, and a one-page sitemap.
-- Shows exact tree placement, tree descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favored enemy metadata for the selected perk.
+- Shows exact perk group placement, perk group descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favoured enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
 - Keeps the runtime deterministic by committing the generated data snapshot instead of fetching live data in the app.
 
@@ -22,10 +22,9 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 The current committed dataset in this repository contains:
 
 - `367` perks
-- `116` perk trees
+- `116` perk groups
 - `225` parsed source files
 - Legends reference version `19.3.17`
-- dataset generation timestamp `2026-04-23T17:28:49.286Z`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 
@@ -39,21 +38,21 @@ The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` di
 - a searchable result list
 - a detail panel for the currently selected perk
 
-Search and filtering are fully client-side. The ranking logic in `src/lib/perk-search.ts` prefers exact perk-name matches first, then prefix and substring matches, then tree names and category names, and finally broader text matches from descriptions and related metadata. When there is no search query, results are sorted by category, tree, tier, and perk name.
+Search and filtering are fully client-side. The ranking logic in `src/lib/perk-search.ts` prefers exact perk-name matches first, then prefix and substring matches, then perk group names and category names, and finally broader text matches from descriptions and related metadata. When there is no search query, results are sorted by category, perk group, tier, and perk name.
 
 The app also keeps the current search, selected categories, selected perk groups, and picked build in the URL query string. The supported format groups selected values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`.
 
-The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique tree targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build trees such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed picked-perk coverage first, then total picked-perk coverage, then stable background name and source ordering.
+The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique perk group targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build perk groups such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed picked-perk coverage first, then total picked-perk coverage, then stable background name and source ordering.
 
-The probability model is exact and deterministic. Explicit trees on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy`, `Magic`, and `Profession` use the same chance-attempt loops as the Legends source. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-tree probabilities change when a background can or cannot produce the required weapon trees.
+The probability model is exact and deterministic. Explicit perk groups on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy`, `Magic`, and `Profession` use the same chance-attempt loops as the Legends source. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-perk-group probabilities change when a background can or cannot produce the required weapon perk groups.
 
 The detail panel can show:
 
 - perk descriptions from Legends strings
-- tree placements and tiers
-- tree descriptions and attribute ranges
-- favored enemy targets and their kill scaling values
-- dynamic background tree sources
+- perk group placements and tiers
+- perk group descriptions and attribute ranges
+- favoured enemy targets and their kill scaling values
+- dynamic background perk group sources
 - scenario-based grants and random pools
 
 If an icon cannot be found, the UI falls back to a styled placeholder instead of breaking the layout.
@@ -80,7 +79,7 @@ The committed data files are generated by the scripts in `scripts/`.
 `pnpm sync:icons`:
 
 1. Reads the already generated dataset.
-2. Collects all perk and tree icon paths referenced by that dataset.
+2. Collects all perk and perk group icon paths referenced by that dataset.
 3. Scans the local Battle Brothers archives for matching `gfx/...` entries.
 4. Extracts only the required files into a staging directory.
 5. Replaces `public/game-icons` with the staged result.
@@ -105,18 +104,18 @@ From those files it builds a dataset with:
 
 - source provenance
 - perk definitions and descriptions
-- category and tree placement
-- background dynamic-tree sources for all currently playable backgrounds the app can resolve from the Legends source
+- category and perk group placement
+- background dynamic-perk-group sources for all currently playable backgrounds the app can resolve from the Legends source
 - aggregated background-fit definitions and class-to-weapon dependency rules
 - scenario overlay and direct-grant data
-- favored enemy targets and scaling values
+- favoured enemy targets and scaling values
 
 ## Generated files
 
 The generated artifacts that the runtime actually uses are:
 
 - `src/data/legends-perks.json`
-  This is the main dataset consumed by the app. It includes metadata such as `generatedAt`, `referenceVersion`, `referenceRoot`, `sourceFiles`, `perkCount`, `treeCount`, and the full `perks` array.
+  This is the main dataset consumed by the app. It includes metadata such as `generatedAt`, `referenceVersion`, `referenceRoot`, `sourceFiles`, `perkCount`, `perkGroupCount`, and the full `perks` array.
 - `public/game-icons/**`
   These are the extracted icon files served by Vite at runtime.
 - `public/favicon/**`
@@ -271,7 +270,7 @@ It still regenerates the deterministic root social preview image before building
 - `scripts/squirrel-subset-parser.mjs`
   The Squirrel parser primitives used by the importer.
 - `tests/fixtures/legends-reference/`
-  A fixture Legends tree used by importer tests.
+  A fixture Legends source tree used by importer tests.
 - `tests/`
   Unit and integration tests for the UI and the data pipeline.
 - `tests/e2e/`

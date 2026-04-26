@@ -37,8 +37,10 @@ test('stores readable filters and build state in the url and restores them on a 
   expect(savedUrl).toContain('group-traits=Calm')
   expect(savedUrl).toContain('group-magic=Deadeye')
   expect(savedUrl).toContain('build=Perfect+Focus,Clarity')
+  expect(savedUrl).toContain('origin-backgrounds=true')
   expect(new URL(savedUrl).searchParams.getAll('category')).toEqual(['Traits,Magic'])
   expect(new URL(savedUrl).searchParams.getAll('build')).toEqual(['Perfect Focus,Clarity'])
+  expect(new URL(savedUrl).searchParams.get('origin-backgrounds')).toBe('true')
 
   const sharedPage = await page.context().newPage()
 
@@ -92,4 +94,5 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
   expect(new URL(page.url()).searchParams.get('build')).toBe(
     'Chain Lightning--perk.legend_chain_lightning,Chain Lightning--perk.legend_magic_chain_lightning',
   )
+  expect(new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
 })

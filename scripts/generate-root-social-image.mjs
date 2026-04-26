@@ -67,7 +67,7 @@ export async function createRootSocialImageSvg({
     }
   </g>
   <text x="430" y="320" fill="#fffaf0" font-family="Cinzel, serif" font-size="41" font-weight="700" letter-spacing="0.02em">
-    <tspan x="430" dy="0">Search perks, inspect tree</tspan>
+    <tspan x="430" dy="0">Search perks, inspect perk groups</tspan>
     <tspan x="430" dy="48">placement, and plan builds</tspan>
     <tspan x="430" dy="48">with exact in-mod labels</tspan>
     <tspan x="430" dy="48">and real game icons.</tspan>

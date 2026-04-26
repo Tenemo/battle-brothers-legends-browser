@@ -36,7 +36,7 @@ function normalizeWhitespace(value) {
 function createFetchHeaders() {
   return {
     Accept: 'application/vnd.github+json',
-    'User-Agent': 'battle-brothers-legends-perks-browser',
+    'User-Agent': 'battle-brothers-legends-browser',
   }
 }
 
