@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
@@ -47,6 +47,59 @@ function createBuildUrl(perkNames: string[]): string {
     .join(',')
 
   return `/?build=${buildValue}`
+}
+
+async function getPlannerWrapMetrics(page: Page) {
+  return page.evaluate(() => {
+    function getVisualRowCount(listSelector: string, itemSelector: string) {
+      const listElement = document.querySelector(listSelector)
+
+      if (!(listElement instanceof HTMLElement)) {
+        return 0
+      }
+
+      const visualRowTops: number[] = []
+      const itemElements = [...listElement.querySelectorAll(itemSelector)].filter(
+        (element): element is HTMLElement => element instanceof HTMLElement,
+      )
+
+      for (const itemElement of itemElements) {
+        const itemElementBox = itemElement.getBoundingClientRect()
+
+        if (itemElementBox.width === 0 || itemElementBox.height === 0) {
+          continue
+        }
+
+        if (
+          !visualRowTops.some((visualRowTop) => Math.abs(visualRowTop - itemElementBox.top) <= 2)
+        ) {
+          visualRowTops.push(itemElementBox.top)
+        }
+      }
+
+      return visualRowTops.length
+    }
+
+    const buildPlanner = document.querySelector('.build-planner') as HTMLElement | null
+    const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+
+    return {
+      boardOverflow:
+        plannerBoard === null
+          ? Number.POSITIVE_INFINITY
+          : plannerBoard.scrollHeight - plannerBoard.clientHeight,
+      className: buildPlanner?.className ?? '',
+      individualRows: getVisualRowCount(
+        '[data-testid="build-individual-groups-list"] .planner-group-list',
+        '.planner-group-card',
+      ),
+      perkRows: getVisualRowCount('.planner-track-perks', '.planner-slot-perk'),
+      sharedRows: getVisualRowCount(
+        '[data-testid="build-shared-groups-list"] .planner-group-list',
+        '.planner-group-card',
+      ),
+    }
+  })
 }
 
 test('build planner splits shared and individual perk groups without layout drift', async ({
@@ -221,6 +274,9 @@ test('build planner splits shared and individual perk groups without layout drif
   )
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(7)
+  await expect(page.getByRole('region', { name: 'Build planner' })).not.toHaveClass(
+    /is-scroll-constrained/,
+  )
   expect(
     await getBuildSharedGroupsList(page).locator('.planner-group-card').count(),
   ).toBeGreaterThan(0)
@@ -232,7 +288,7 @@ test('build planner splits shared and individual perk groups without layout drif
         ? Number.NEGATIVE_INFINITY
         : plannerBoard.scrollHeight - plannerBoard.clientHeight
     }),
-  ).toBeGreaterThan(20)
+  ).toBeLessThanOrEqual(1)
 
   const perksBarHorizontalOverflow = await page.evaluate(() => {
     const buildPerksBar = document.querySelector(
@@ -268,6 +324,54 @@ test('build planner splits shared and individual perk groups without layout drif
         wrappedPerkTilePositions.find((position) => position.top === wrappedPerkRowTops[1])!.left,
     ),
   ).toBeLessThanOrEqual(2)
+})
+
+test('scrolls the planner below wide desktop only after content wraps past two rows', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 7)))
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const twoRowPlannerMetrics = await getPlannerWrapMetrics(page)
+
+  expect(twoRowPlannerMetrics.className).not.toContain('is-scroll-constrained')
+  expect(twoRowPlannerMetrics.boardOverflow).toBeLessThanOrEqual(1)
+  expect(
+    Math.max(
+      twoRowPlannerMetrics.perkRows,
+      twoRowPlannerMetrics.sharedRows,
+      twoRowPlannerMetrics.individualRows,
+    ),
+  ).toBeLessThanOrEqual(2)
+
+  await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 12)))
+  await expect(page.getByText('12 perks picked.')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Build planner' })).toHaveClass(
+    /is-scroll-constrained/,
+  )
+
+  const overflowingPlannerMetrics = await getPlannerWrapMetrics(page)
+
+  expect(overflowingPlannerMetrics.boardOverflow).toBeGreaterThan(20)
+  expect(
+    Math.max(
+      overflowingPlannerMetrics.perkRows,
+      overflowingPlannerMetrics.sharedRows,
+      overflowingPlannerMetrics.individualRows,
+    ),
+  ).toBeGreaterThan(2)
+
+  await page.setViewportSize({ width: 2560, height: 900 })
+  await page.goto(createBuildUrl(manyPickedPerkNames))
+  await expect(page.getByText('27 perks picked.')).toBeVisible()
+  await expect(page.getByRole('region', { name: 'Build planner' })).not.toHaveClass(
+    /is-scroll-constrained/,
+  )
+
+  const wideDesktopPlannerMetrics = await getPlannerWrapMetrics(page)
+
+  expect(wideDesktopPlannerMetrics.boardOverflow).toBeLessThanOrEqual(1)
 })
 
 test('groups perk groups by shared and individual perk coverage', async ({ page }) => {

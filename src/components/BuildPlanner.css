@@ -779,15 +779,15 @@
   }
 }
 
-@media (min-width: 1280px) and (max-height: 800px) {
-  .build-planner.is-dense-build {
+@media (min-width: 1280px) and (max-width: 2559px) {
+  .build-planner.is-scroll-constrained {
     flex: 0 1 auto;
     max-height: 16rem;
     min-height: 0;
     overflow: hidden;
   }
 
-  .build-planner.is-dense-build .planner-board {
+  .build-planner.is-scroll-constrained .planner-board {
     flex: 1 1 auto;
     overflow: auto;
     padding-right: 0.18rem;

@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
+import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
 import {
   Check,
   CircleAlert,
@@ -53,6 +53,58 @@ type PlannerPerkGroupSelection = {
 
 const buildPlannerGuidance =
   'Use the star in the detail panel or search results to collect perk picks, then review the shared perk groups and the remaining individual-perk groups below.'
+const buildPlannerScrollConstraintMinimumWidth = 1280
+const buildPlannerScrollConstraintMaximumWidth = 2560
+const maximumVisiblePlannerContentRows = 2
+
+function getVisualRowCount(elements: HTMLElement[]): number {
+  const rowTops: number[] = []
+
+  for (const element of elements) {
+    const elementBox = element.getBoundingClientRect()
+
+    if (elementBox.width === 0 || elementBox.height === 0) {
+      continue
+    }
+
+    if (!rowTops.some((rowTop) => Math.abs(rowTop - elementBox.top) <= 2)) {
+      rowTops.push(elementBox.top)
+    }
+  }
+
+  return rowTops.length
+}
+
+function hasPlannerContentPastVisibleRows(plannerBoard: HTMLElement): boolean {
+  const plannerCollections = [
+    {
+      itemSelector: '.planner-slot-perk',
+      listSelector: '.planner-track-perks',
+    },
+    {
+      itemSelector: '.planner-group-card',
+      listSelector: '[data-testid="build-shared-groups-list"] .planner-group-list',
+    },
+    {
+      itemSelector: '.planner-group-card',
+      listSelector: '[data-testid="build-individual-groups-list"] .planner-group-list',
+    },
+  ]
+
+  return plannerCollections.some(({ itemSelector, listSelector }) => {
+    const plannerCollection = plannerBoard.querySelector(listSelector)
+
+    if (!(plannerCollection instanceof HTMLElement)) {
+      return false
+    }
+
+    const plannerItems = [...plannerCollection.querySelectorAll(itemSelector)].filter(
+      (element): element is HTMLElement => element instanceof HTMLElement,
+    )
+
+    return getVisualRowCount(plannerItems) > maximumVisiblePlannerContentRows
+  })
+}
 
 function getDefaultSavedBuildName(savedBuilds: BuildPlannerSavedBuild[]): string {
   const savedBuildNames = new Set(savedBuilds.map((savedBuild) => savedBuild.name))
@@ -582,17 +634,68 @@ export function BuildPlanner({
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }) {
   const hasPickedPerks = pickedPerks.length > 0
-  const isDenseBuild = pickedPerks.length >= 5
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
+  const plannerBoardRef = useRef<HTMLDivElement | null>(null)
+  const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(false)
   const [isSavedBuildsDialogOpen, setIsSavedBuildsDialogOpen] = useState(false)
+  const updatePlannerScrollConstraint = useCallback(() => {
+    const plannerBoard = plannerBoardRef.current
+    const shouldConstrainPlanner =
+      plannerBoard !== null &&
+      window.innerWidth >= buildPlannerScrollConstraintMinimumWidth &&
+      window.innerWidth < buildPlannerScrollConstraintMaximumWidth &&
+      hasPlannerContentPastVisibleRows(plannerBoard)
+
+    setIsPlannerScrollConstrained((currentShouldConstrainPlanner) =>
+      currentShouldConstrainPlanner === shouldConstrainPlanner
+        ? currentShouldConstrainPlanner
+        : shouldConstrainPlanner,
+    )
+  }, [])
   const buildPlannerClassName = [
     'build-planner',
     hasPickedPerks ? 'has-picked-perks' : '',
-    isDenseBuild ? 'is-dense-build' : '',
+    isPlannerScrollConstrained ? 'is-scroll-constrained' : '',
     hasActiveBackgroundFitSearch ? 'is-background-fit-search-active' : '',
   ]
     .filter(Boolean)
     .join(' ')
+
+  useEffect(() => {
+    let animationFrameId = 0
+
+    function schedulePlannerScrollConstraintUpdate() {
+      window.cancelAnimationFrame(animationFrameId)
+      animationFrameId = window.requestAnimationFrame(updatePlannerScrollConstraint)
+    }
+
+    schedulePlannerScrollConstraintUpdate()
+    window.addEventListener('resize', schedulePlannerScrollConstraintUpdate)
+
+    const plannerBoard = plannerBoardRef.current
+    const plannerResizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(schedulePlannerScrollConstraintUpdate)
+
+    if (plannerBoard !== null) {
+      plannerResizeObserver?.observe(plannerBoard)
+      plannerBoard
+        .querySelectorAll('.planner-track-perks, .planner-group-list')
+        .forEach((plannerCollection) => plannerResizeObserver?.observe(plannerCollection))
+    }
+
+    return () => {
+      window.cancelAnimationFrame(animationFrameId)
+      window.removeEventListener('resize', schedulePlannerScrollConstraintUpdate)
+      plannerResizeObserver?.disconnect()
+    }
+  }, [
+    individualPerkGroups.length,
+    pickedPerks.length,
+    sharedPerkGroups.length,
+    updatePlannerScrollConstraint,
+  ])
 
   return (
     <>
@@ -670,7 +773,11 @@ export function BuildPlanner({
           </div>
         </div>
 
-        <div className="planner-board" onScrollCapture={onCloseBuildPerkTooltip}>
+        <div
+          className="planner-board"
+          onScrollCapture={onCloseBuildPerkTooltip}
+          ref={plannerBoardRef}
+        >
           <div className="planner-row">
             <span className="planner-row-label">Perks</span>
             <div className="planner-track-scroll">
