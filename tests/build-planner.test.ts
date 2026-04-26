@@ -13,7 +13,6 @@ const samplePerk: LegendsPerkRecord = {
   placements: [
     {
       categoryName: 'Defense',
-      sourceFilePath: 'reference/mod_legends/config/z_perks_tree_defense.nut',
       tier: 2,
       treeAttributes: [],
       treeDescriptions: ['defensive footwork'],
@@ -23,7 +22,6 @@ const samplePerk: LegendsPerkRecord = {
     },
     {
       categoryName: 'Traits',
-      sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
       tier: 1,
       treeAttributes: [],
       treeDescriptions: ['never gives up'],
@@ -33,7 +31,6 @@ const samplePerk: LegendsPerkRecord = {
     },
     {
       categoryName: 'Defense',
-      sourceFilePath: 'reference/mod_legends/config/z_perks_tree_defense.nut',
       tier: 3,
       treeAttributes: [],
       treeDescriptions: ['duplicate placement in the same tree'],
@@ -44,9 +41,7 @@ const samplePerk: LegendsPerkRecord = {
   ],
   primaryGroupName: 'Defense',
   scenarioSources: [],
-  scriptPath: null,
   searchText: 'Sample perk cloth armor tenacious',
-  sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_defense.nut'],
 }
 
 const overlappingPerk: LegendsPerkRecord = {

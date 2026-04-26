@@ -1,8 +1,6 @@
 import legendsPerksDatasetJson from '../data/legends-perks.json'
 import type { RankedBackgroundFit } from './background-fit'
 import { createBackgroundFitEngine } from './background-fit'
-import type { BuildPlannerGroupedPerkGroup } from './build-planner'
-import { getBuildPlannerGroups } from './build-planner'
 import { buildPerkBrowserBuildUrlSearch, readPerkBrowserUrlState } from './perk-browser-url-state'
 import type { LegendsPerkRecord, LegendsPerksDataset } from '../types/legends-perks'
 
@@ -11,17 +9,10 @@ export type BuildSharePreviewPerk = {
   perkName: string
 }
 
-type BuildSharePreviewSharedGroup = {
-  groupLabel: string
-  perkCount: number
-}
-
 export type BuildSharePreviewBackgroundFit = {
   backgroundName: string
   expectedMatchedTreeCount: number
   iconPath: string | null
-  matchedGroupCount: number
-  matchLabels: string[]
   maximumTotalGroupCount: number
 }
 
@@ -33,11 +24,9 @@ export type BuildSharePreviewPayload = {
   pickedPerkCount: number
   pickedPerks: BuildSharePreviewPerk[]
   referenceVersion: string
-  sharedGroups: BuildSharePreviewSharedGroup[]
   status: 'empty' | 'found'
   title: string
   topBackgroundFits: BuildSharePreviewBackgroundFit[]
-  unsupportedTargetCount: number
 }
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
@@ -49,8 +38,6 @@ const buildSocialImagePathPrefix = '/social/builds'
 const maxDescriptionPerks = 4
 const maxDescriptionBackgrounds = 2
 const maxPreviewBackgroundFits = 3
-const maxPreviewSharedGroups = 3
-const maxBackgroundMatchLabels = 3
 
 function getPerksFromPickedPerkIds(pickedPerkIds: string[]): LegendsPerkRecord[] {
   return pickedPerkIds.flatMap((pickedPerkId) => {
@@ -89,17 +76,6 @@ function formatPerkListForSentence(perkNames: string[], maxVisiblePerks: number)
   return `${visiblePerkNames.join(', ')}, and ${hiddenPerkCount} more`
 }
 
-function createSharedGroupPreview(
-  groupedPerkGroup: BuildPlannerGroupedPerkGroup,
-): BuildSharePreviewSharedGroup {
-  return {
-    groupLabel: groupedPerkGroup.perkGroupOptions
-      .map((perkGroupOption) => perkGroupOption.treeLabel)
-      .join(' / '),
-    perkCount: groupedPerkGroup.perkNames.length,
-  }
-}
-
 function createBackgroundFitPreview(
   backgroundFit: RankedBackgroundFit,
 ): BuildSharePreviewBackgroundFit {
@@ -107,13 +83,6 @@ function createBackgroundFitPreview(
     backgroundName: backgroundFit.backgroundName,
     expectedMatchedTreeCount: backgroundFit.expectedMatchedTreeCount,
     iconPath: backgroundFit.iconPath,
-    matchedGroupCount: backgroundFit.matches.length,
-    matchLabels: backgroundFit.matches
-      .slice(0, maxBackgroundMatchLabels)
-      .map(
-        (match) =>
-          `${match.treeName}${match.isGuaranteed ? '' : ` ${Math.round(match.probability * 100)}%`}`,
-      ),
     maximumTotalGroupCount: backgroundFit.maximumTotalGroupCount,
   }
 }
@@ -179,15 +148,12 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
       pickedPerkCount: 0,
       pickedPerks: [],
       referenceVersion: legendsPerksDataset.referenceVersion,
-      sharedGroups: [],
       status: 'empty',
       title: 'Battle Brothers Legends perks browser',
       topBackgroundFits: [],
-      unsupportedTargetCount: 0,
     }
   }
 
-  const buildPlannerGroups = getBuildPlannerGroups(pickedPerks)
   const backgroundFitView = backgroundFitEngine.getBackgroundFitView(pickedPerks)
   const topBackgroundFits = getTopBackgroundFits(backgroundFitView.rankedBackgroundFits)
   const canonicalSearch = buildShareSearchFromPickedPerkIds(
@@ -212,13 +178,9 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
     pickedPerkCount: pickedPerks.length,
     pickedPerks: previewPerks,
     referenceVersion: legendsPerksDataset.referenceVersion,
-    sharedGroups: buildPlannerGroups.sharedPerkGroups
-      .slice(0, maxPreviewSharedGroups)
-      .map(createSharedGroupPreview),
     status: 'found',
     title,
     topBackgroundFits,
-    unsupportedTargetCount: backgroundFitView.unsupportedBuildTargetTrees.length,
   }
 }
 

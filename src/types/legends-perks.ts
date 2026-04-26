@@ -14,7 +14,6 @@ export type LegendsDynamicBackgroundCategoryName =
 
 export type LegendsPerkPlacement = {
   categoryName: string
-  sourceFilePath: string
   tier: number | null
   treeAttributes: string[]
   treeDescriptions: string[]
@@ -35,7 +34,6 @@ export type LegendsPerkBackgroundSource = {
   categoryName: string
   chance: number | null
   minimumTrees: number | null
-  sourceFilePath: string
   treeId: string
   treeName: string
 }
@@ -45,7 +43,6 @@ export type LegendsPerkScenarioSource = {
   grantType: 'direct' | 'random-pool'
   scenarioId: string
   scenarioName: string
-  sourceFilePath: string
   sourceMethodName: string
 }
 
@@ -61,9 +58,7 @@ export type LegendsPerkRecord = {
   placements: LegendsPerkPlacement[]
   primaryGroupName: string
   scenarioSources: LegendsPerkScenarioSource[]
-  scriptPath: string | null
   searchText: string
-  sourceFilePaths: string[]
 }
 
 export type LegendsBackgroundFitCategoryDefinition = {

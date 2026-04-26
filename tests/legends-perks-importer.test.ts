@@ -83,12 +83,6 @@ describe('legends perks importer', () => {
       'The hook override replaces the base string.',
       'Passive: â€¢ Gain calm certainty from the hook override.',
     ])
-    expect(clarity?.sourceFilePaths).toEqual(
-      expect.arrayContaining([
-        'tests/fixtures/legends-reference/mod_legends/!!config/perk_strings.nut',
-        'tests/fixtures/legends-reference/mod_legends/hooks/config/perk_strings.nut',
-      ]),
-    )
     expect(dataset.sourceFiles).toEqual(
       expect.arrayContaining([
         {
@@ -258,8 +252,6 @@ describe('legends perks importer', () => {
         expect.objectContaining({
           backgroundId: 'legend_gladiator_prizefighter_background',
           backgroundName: 'Gladiator Prizefighter',
-          sourceFilePath:
-            'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_gladiator_prizefighter_background.nut',
           treeName: 'Calm',
         }),
       ]),

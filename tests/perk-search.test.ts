@@ -11,7 +11,6 @@ const samplePerks: LegendsPerkRecord[] = [
         categoryName: 'Magic',
         chance: 0.2,
         minimumTrees: 1,
-        sourceFilePath: 'reference/mod_legends/hooks/skills/backgrounds/legend_vala_background.nut',
         treeId: 'ValaChantMagicTree',
         treeName: 'Vala Chant',
       },
@@ -25,7 +24,6 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Magic',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_magic.nut',
         tier: 3,
         treeAttributes: [],
         treeDescriptions: ['chants'],
@@ -36,10 +34,8 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryGroupName: 'Magic',
     scenarioSources: [],
-    scriptPath: null,
     searchText:
       'Heightened Senses Magic Vala Chant chants gain heightened senses nearby allies Vala',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_magic.nut'],
   },
   {
     backgroundSources: [],
@@ -52,7 +48,6 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Weapon',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_weapons.nut',
         tier: 1,
         treeAttributes: ['Ranged skill: +2 to +4'],
         treeDescriptions: ['bows'],
@@ -63,9 +58,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryGroupName: 'Weapon',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Lookout Weapon Bows bows ranged skill scouting accuracy',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_weapons.nut'],
   },
   {
     backgroundSources: [
@@ -75,8 +68,6 @@ const samplePerks: LegendsPerkRecord[] = [
         categoryName: 'Enemy',
         chance: 0.05,
         minimumTrees: 2,
-        sourceFilePath:
-          'reference/mod_legends/hooks/skills/backgrounds/beast_hunter_background.nut',
         treeId: 'BeastTree',
         treeName: 'Beasts',
       },
@@ -97,7 +88,6 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Enemy',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_enemy.nut',
         tier: 3,
         treeAttributes: [],
         treeDescriptions: ['beasts'],
@@ -113,14 +103,11 @@ const samplePerks: LegendsPerkRecord[] = [
         grantType: 'random-pool',
         scenarioId: 'scenario.beast_hunters',
         scenarioName: 'Beast Slayers',
-        sourceFilePath: 'reference/mod_legends/hooks/scenarios/world/beast_hunters_scenario.nut',
         sourceMethodName: 'onBuildPerkTree',
       },
     ],
-    scriptPath: null,
     searchText:
       'Favoured Enemy - Beasts Enemy Beasts beasts bear beast slayer Beast Slayers random-pool',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_enemy.nut'],
   },
   {
     backgroundSources: [],
@@ -133,7 +120,6 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Traits',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
         tier: 5,
         treeAttributes: [],
         treeDescriptions: ['is calm'],
@@ -144,9 +130,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryGroupName: 'Traits',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Clarity Traits Calm is calm ignore armor',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_traits.nut'],
   },
 ]
 

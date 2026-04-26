@@ -131,23 +131,17 @@ function wrapTextByVisualWidth(value: string, maxLineWidth: number, maxLines: nu
 }
 
 function renderTextLines({
-  className,
   fill,
-  fontFamily = 'Source Sans 3, Arial, sans-serif',
   fontSize,
   fontWeight,
-  letterSpacing,
   lines,
   lineStep,
   x,
   y,
 }: {
-  className?: string
   fill: string
-  fontFamily?: string
   fontSize: number
   fontWeight: number
-  letterSpacing?: string
   lines: string[]
   lineStep: number
   x: number
@@ -156,11 +150,11 @@ function renderTextLines({
   return lines
     .map(
       (line, lineIndex) =>
-        `<text${className ? ` class="${className}"` : ''} x="${x}" y="${
+        `<text x="${x}" y="${
           y + lineIndex * lineStep
-        }" fill="${fill}" font-family="${fontFamily}" font-size="${fontSize}" font-weight="${fontWeight}"${
-          letterSpacing ? ` letter-spacing="${letterSpacing}"` : ''
-        }>${escapeXml(line)}</text>`,
+        }" fill="${fill}" font-family="Source Sans 3, Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}">${escapeXml(
+          line,
+        )}</text>`,
     )
     .join('')
 }

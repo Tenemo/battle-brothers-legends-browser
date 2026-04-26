@@ -882,7 +882,8 @@ function applyBackgroundCreateBody({
     stringValue(extractAssignedValue(createBody, 'this.m.Name')) ??
     baseBackgroundDefinition.backgroundName
   const iconPath =
-    stringValue(extractAssignedValue(createBody, 'this.m.Icon')) ?? baseBackgroundDefinition.iconPath
+    stringValue(extractAssignedValue(createBody, 'this.m.Icon')) ??
+    baseBackgroundDefinition.iconPath
   const dynamicTreeValue =
     extractAssignedValue(createBody, 'this.m.PerkTreeDynamic') ??
     baseBackgroundDefinition.dynamicTreeValue
@@ -1908,7 +1909,6 @@ export async function createDataset(
 
         placementsByPerkConstName.get(perkConstName).push({
           categoryName: treeDefinition.categoryName ?? 'Other',
-          sourceFilePath: treeDefinition.sourceFilePath,
           tier,
           treeAttributes: treeDefinition.attributeLines,
           treeDescriptions: treeDefinition.descriptionLines,
@@ -1949,7 +1949,6 @@ export async function createDataset(
               categoryName,
               chance,
               minimumTrees,
-              sourceFilePath: background.sourceFilePath,
               treeId: treeDefinition.id,
               treeName: treeDefinition.name,
             })
@@ -2070,22 +2069,8 @@ export async function createDataset(
         grantType: scenarioSource.grantType,
         scenarioId: scenarioSource.scenarioId,
         scenarioName: scenarioSource.scenarioName,
-        sourceFilePath: scenarioSource.sourceFilePath,
         sourceMethodName: scenarioSource.sourceMethodName,
       }))
-    const sourceFilePaths = sortUniqueStrings([
-      perkDefinition.sourceFilePath,
-      ...perkStringFileEntries.map((perkStringFileEntry) => perkStringFileEntry.sourceFilePath),
-      ...placements.map((placement) => placement.sourceFilePath),
-      ...backgroundSources.map((backgroundSource) => backgroundSource.sourceFilePath),
-      ...scenarioSources.map((scenarioSource) => scenarioSource.sourceFilePath),
-      ...(favoredEnemyTargets.length > 0
-        ? [
-            toPosixRelativePath(favoriteEnemyConfigFilePath),
-            toPosixRelativePath(entityNamesFilePath),
-          ]
-        : []),
-    ])
 
     const perkRecord = {
       backgroundSources,
@@ -2099,8 +2084,6 @@ export async function createDataset(
       placements,
       primaryGroupName,
       scenarioSources,
-      scriptPath: perkDefinition.scriptPath ?? null,
-      sourceFilePaths,
       searchText: '',
     }
 

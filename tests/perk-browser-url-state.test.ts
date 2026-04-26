@@ -17,7 +17,6 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Traits',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
         tier: 5,
         treeAttributes: [],
         treeDescriptions: ['is calm'],
@@ -28,9 +27,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryGroupName: 'Traits',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Clarity traits calm',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_traits.nut'],
   },
   {
     backgroundSources: [],
@@ -43,7 +40,6 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Traits',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
         tier: 6,
         treeAttributes: [],
         treeDescriptions: ['is calm'],
@@ -54,9 +50,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryGroupName: 'Traits',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Peaceable traits calm',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_traits.nut'],
   },
   {
     backgroundSources: [],
@@ -69,7 +63,6 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       {
         categoryName: 'Traits',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_traits.nut',
         tier: 7,
         treeAttributes: [],
         treeDescriptions: ['is calm'],
@@ -79,7 +72,6 @@ const samplePerks: LegendsPerkRecord[] = [
       },
       {
         categoryName: 'Magic',
-        sourceFilePath: 'reference/mod_legends/config/z_perks_tree_magic.nut',
         tier: 7,
         treeAttributes: [],
         treeDescriptions: ['archery'],
@@ -90,9 +82,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryGroupName: 'Traits',
     scenarioSources: [],
-    scriptPath: null,
     searchText: 'Perfect Focus traits calm magic deadeye',
-    sourceFilePaths: ['reference/mod_legends/config/z_perks_tree_traits.nut'],
   },
 ]
 

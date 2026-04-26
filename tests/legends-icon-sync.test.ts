@@ -33,7 +33,6 @@ const sampleDataset: LegendsPerksDataset = {
       placements: [
         {
           categoryName: 'Traits',
-          sourceFilePath: 'config/z_perks_tree_traits.nut',
           tier: 2,
           treeAttributes: [],
           treeDescriptions: [],
@@ -44,9 +43,7 @@ const sampleDataset: LegendsPerksDataset = {
       ],
       primaryGroupName: 'Traits',
       scenarioSources: [],
-      scriptPath: null,
       searchText: 'clarity',
-      sourceFilePaths: [],
     },
     {
       backgroundSources: [],
@@ -59,7 +56,6 @@ const sampleDataset: LegendsPerksDataset = {
       placements: [
         {
           categoryName: 'Other',
-          sourceFilePath: 'config/z_perks_tree_other.nut',
           tier: 1,
           treeAttributes: [],
           treeDescriptions: [],
@@ -70,9 +66,7 @@ const sampleDataset: LegendsPerksDataset = {
       ],
       primaryGroupName: 'Other',
       scenarioSources: [],
-      scriptPath: null,
       searchText: 'passive',
-      sourceFilePaths: [],
     },
   ],
   referenceRoot: 'tests/fixtures/legends-reference/mod_legends',

@@ -26,7 +26,7 @@ export function escapeXml(value: string): string {
     .replaceAll("'", '&apos;')
 }
 
-export function formatSocialImageReferenceVersion(referenceVersion: string): string {
+function formatSocialImageReferenceVersion(referenceVersion: string): string {
   return referenceVersion.replace(/^reference-mod_/u, '')
 }
 

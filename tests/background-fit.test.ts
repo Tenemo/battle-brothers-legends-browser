@@ -24,7 +24,6 @@ function createPlacement({
 }): LegendsPerkPlacement {
   return {
     categoryName,
-    sourceFilePath: `reference/${treeId}.nut`,
     tier: 1,
     treeAttributes: [],
     treeDescriptions: [treeName.toLowerCase()],
@@ -56,9 +55,7 @@ function createPerk({
     placements,
     primaryGroupName: placements[0]?.categoryName ?? 'Other',
     scenarioSources: [],
-    scriptPath: null,
     searchText: `${perkName} ${placements.map((placement) => placement.treeName).join(' ')}`,
-    sourceFilePaths: placements.map((placement) => placement.sourceFilePath),
   }
 }
 

@@ -84,8 +84,6 @@ describe('build social image', () => {
         backgroundName: `Background ${backgroundIndex}`,
         expectedMatchedTreeCount: 6,
         iconPath: null,
-        matchedGroupCount: 6,
-        matchLabels: [],
         maximumTotalGroupCount: 28,
       })),
     })
@@ -99,17 +97,6 @@ describe('build social image', () => {
     expect(svg).toContain('translate(664 446)')
     expect(svg).toContain('translate(664 498)')
     expect(svg).toContain('translate(664 550)')
-  })
-
-  test('omits unsupported group counts from the footer', () => {
-    const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity')
-    const svg = createBuildSocialImageSvg({
-      ...payload,
-      unsupportedTargetCount: 2,
-    })
-
-    expect(svg).not.toContain('unsupported groups')
-    expect([...svg].every((character) => character.charCodeAt(0) <= 0x7f)).toBe(true)
   })
 
   test('renders background icons when they are available', () => {
