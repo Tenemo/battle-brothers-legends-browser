@@ -412,6 +412,26 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
   await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
 })
 
+test('selects build planner perk groups from their group controls', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await searchPerks(page, 'temporary search')
+
+  const heavyArmorGroupButton = getBuildSharedGroupsList(page).getByRole('button', {
+    name: 'Select perk group Heavy Armor',
+  })
+
+  await heavyArmorGroupButton.click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Defense' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Toggle perk group Heavy Armor' })).toHaveClass(
+    /is-active/,
+  )
+})
+
 test('truncates long planner group categories without growing the card', async ({ page }) => {
   await gotoPerksBrowser(page)
 

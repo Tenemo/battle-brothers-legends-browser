@@ -24,43 +24,45 @@ import { BackgroundFitAccordionChevron } from './SharedControls'
 function getBackgroundFitPickablePerksSummaryCopy(
   coveredPickedPerkCount: number,
   pickedPerkCount: number,
-): string[] {
-  return [
-    `Best-case picked-perk coverage for this background: up to ${coveredPickedPerkCount} of your ${pickedPerkCount} picked perks can be covered if every relevant non-guaranteed perk group roll lands.`,
-    'This counts picked perks, not perk groups, so multiple picked perks can be covered by the same matched perk group.',
-  ]
+): string {
+  return `Best-case picked-perk coverage: up to ${coveredPickedPerkCount} of ${pickedPerkCount} picked perks can be covered if every relevant optional perk group appears.`
 }
 
 function getBackgroundFitGuaranteedPerksSummaryCopy(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
-): string[] {
-  return [
-    `Guaranteed picked-perk coverage for this background: ${guaranteedCoveredPickedPerkCount} of your ${pickedPerkCount} picked perks are covered before any optional rolls.`,
-    'Only always-present perk group matches count here. Optional Enemy, Class, and Profession additions do not.',
-  ]
+): string {
+  return `Guaranteed picked-perk coverage: ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} picked perks are covered before optional rolls.`
 }
 
 function getBackgroundFitMatchedPerkGroupsSummaryCopy(
   matchedPerkGroupCount: number,
   supportedBuildTargetPerkGroupCount: number,
-): string[] {
-  return [
-    `Build perk group overlap for this build: this background matches ${matchedPerkGroupCount} of the ${supportedBuildTargetPerkGroupCount} supported build perk groups.`,
-    'A matched perk group means the background can roll that perk group, whether the match is guaranteed or probabilistic.',
-  ]
+): string {
+  return `Matched build perk groups: this background can roll ${matchedPerkGroupCount} of ${supportedBuildTargetPerkGroupCount} supported build perk groups.`
 }
 
 function getBackgroundFitExpectedBuildPerksSummaryCopy(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
-): string[] {
-  return [
-    `Expected build-perk coverage for this background: ${formatBackgroundFitScoreLabel(
-      expectedCoveredPickedPerkCount,
-    )} of your ${pickedPerkCount} picked perks are expected to be covered after dynamic perk group rolls.`,
-    'This counts unique picked perks, so alternate perk groups for the same picked perk are not double-counted.',
-  ]
+): string {
+  return `Expected picked-perk coverage: ${formatBackgroundFitScoreLabel(
+    expectedCoveredPickedPerkCount,
+  )} of ${pickedPerkCount} picked perks are expected to be covered after dynamic perk group rolls.`
+}
+
+function getBackgroundFitGuaranteedPerkGroupsSummaryCopy(
+  guaranteedMatchedPerkGroupCount: number,
+): string {
+  return `Guaranteed matched perk groups: ${guaranteedMatchedPerkGroupCount} build perk groups are always present.`
+}
+
+function getBackgroundFitExpectedPerkGroupsSummaryCopy(
+  expectedMatchedPerkGroupCount: number,
+): string {
+  return `Expected matched perk groups: ${formatBackgroundFitScoreLabel(
+    expectedMatchedPerkGroupCount,
+  )} build perk groups are expected after dynamic rolls.`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -145,17 +147,20 @@ function BackgroundFitMatchRow({
   )
 }
 
-function BackgroundFitSummaryBadge({
+function BackgroundFitMetricBadge({
+  className = '',
   label,
-  summaryCopy,
+  tooltip,
 }: {
+  className?: string
   label: string
-  summaryCopy: string[]
+  tooltip: string
 }) {
   return (
     <span
-      aria-label={`${label}. ${summaryCopy.join(' ')}`}
-      className="detail-badge background-fit-summary-badge"
+      aria-label={`${label}. ${tooltip}`}
+      className={['detail-badge background-fit-metric-badge', className].filter(Boolean).join(' ')}
+      title={tooltip}
     >
       {label}
     </span>
@@ -263,46 +268,37 @@ export function BackgroundFitCard({
 
           <div className="background-fit-accordion-summary">
             <div className="background-fit-accordion-summary-row">
-              <BackgroundFitSummaryBadge
+              <BackgroundFitMetricBadge
+                className="background-fit-summary-badge"
                 label={formatBackgroundFitExpectedBuildPerksLabel(
                   backgroundFit.expectedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                summaryCopy={getBackgroundFitExpectedBuildPerksSummaryCopy(
+                tooltip={getBackgroundFitExpectedBuildPerksSummaryCopy(
                   backgroundFit.expectedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
               />
-              <BackgroundFitSummaryBadge
+              <BackgroundFitMetricBadge
+                className="background-fit-summary-badge"
                 label={formatBackgroundFitGuaranteedPerksLabel(
                   guaranteedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                summaryCopy={getBackgroundFitGuaranteedPerksSummaryCopy(
+                tooltip={getBackgroundFitGuaranteedPerksSummaryCopy(
                   guaranteedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
               />
-            </div>
-            <div className="background-fit-accordion-summary-row">
-              <BackgroundFitSummaryBadge
+              <BackgroundFitMetricBadge
+                className="background-fit-summary-badge"
                 label={formatBackgroundFitPickablePerksLabel(
                   coveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                summaryCopy={getBackgroundFitPickablePerksSummaryCopy(
+                tooltip={getBackgroundFitPickablePerksSummaryCopy(
                   coveredPickedPerkCount,
                   pickedPerkCount,
-                )}
-              />
-              <BackgroundFitSummaryBadge
-                label={formatBackgroundFitMatchedPerkGroupsLabel(
-                  backgroundFit.matches.length,
-                  supportedBuildTargetPerkGroupCount,
-                )}
-                summaryCopy={getBackgroundFitMatchedPerkGroupsSummaryCopy(
-                  backgroundFit.matches.length,
-                  supportedBuildTargetPerkGroupCount,
                 )}
               />
             </div>
@@ -321,13 +317,30 @@ export function BackgroundFitCard({
         <div className="background-fit-card-panel-inner">
           <div className="background-fit-card-content">
             <div className="background-fit-score-row">
-              <span className="detail-badge">
-                Guaranteed perk groups {backgroundFit.guaranteedMatchedPerkGroupCount}
-              </span>
-              <span className="detail-badge">
-                Expected perk groups{' '}
-                {formatBackgroundFitScoreLabel(backgroundFit.expectedMatchedPerkGroupCount)}
-              </span>
+              <BackgroundFitMetricBadge
+                label={formatBackgroundFitMatchedPerkGroupsLabel(
+                  backgroundFit.matches.length,
+                  supportedBuildTargetPerkGroupCount,
+                )}
+                tooltip={getBackgroundFitMatchedPerkGroupsSummaryCopy(
+                  backgroundFit.matches.length,
+                  supportedBuildTargetPerkGroupCount,
+                )}
+              />
+              <BackgroundFitMetricBadge
+                label={`Guaranteed perk groups ${backgroundFit.guaranteedMatchedPerkGroupCount}`}
+                tooltip={getBackgroundFitGuaranteedPerkGroupsSummaryCopy(
+                  backgroundFit.guaranteedMatchedPerkGroupCount,
+                )}
+              />
+              <BackgroundFitMetricBadge
+                label={`Expected perk groups ${formatBackgroundFitScoreLabel(
+                  backgroundFit.expectedMatchedPerkGroupCount,
+                )}`}
+                tooltip={getBackgroundFitExpectedPerkGroupsSummaryCopy(
+                  backgroundFit.expectedMatchedPerkGroupCount,
+                )}
+              />
             </div>
 
             {guaranteedMatches.length > 0 ? (

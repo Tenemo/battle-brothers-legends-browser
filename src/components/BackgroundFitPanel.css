@@ -356,14 +356,14 @@
   min-width: 0;
 }
 
-.background-fit-accordion-summary .detail-badge,
-.background-fit-score-row .detail-badge {
+.background-fit-metric-badge {
   padding: 0.14rem 0.42rem;
   border: 1px solid rgb(204 155 84 / 0.14);
   border-radius: 999px;
   background: rgb(20 17 14 / 0.8);
   color: var(--accent-soft);
   overflow-wrap: anywhere;
+  cursor: help;
 }
 
 .background-fit-accordion-chevron-frame {
@@ -411,7 +411,7 @@
   display: grid;
   gap: 0.56rem;
   min-width: 0;
-  padding: 0 0.68rem 0.68rem;
+  padding: 0.56rem 0.68rem 0.68rem;
 }
 
 .background-fit-score-row {

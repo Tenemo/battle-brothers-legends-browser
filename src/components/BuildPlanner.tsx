@@ -193,6 +193,12 @@ function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirement
   ].join(' / ')
 }
 
+function isSelectablePlannerPerkGroupOption(
+  perkGroupOption: BuildPlannerPerkGroupRequirementOption,
+): boolean {
+  return perkGroupOption.categoryName !== 'No perk group'
+}
+
 function keepKeyboardFocusInsideDialog(event: KeyboardEvent<HTMLElement>) {
   if (event.key !== 'Tab') {
     return
@@ -583,9 +589,12 @@ function renderPlannerGroupCard({
   hoveredTooltipId,
   keyPrefix,
   onCloseHover,
+  onClosePerkGroupHover,
   onCloseTooltip,
+  onInspectPerkGroup,
   onInspectPerk,
   onOpenHover,
+  onOpenPerkGroupHover,
   onOpenTooltip,
 }: {
   groupedPerkGroup: BuildPlannerGroupedPerkGroup
@@ -594,9 +603,12 @@ function renderPlannerGroupCard({
   hoveredTooltipId: string | undefined
   keyPrefix: string
   onCloseHover: (perkId: string) => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
   onCloseTooltip: () => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
   onOpenHover: (perkId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOpenTooltip: (perkId: string, currentTarget: HTMLButtonElement) => void
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
@@ -616,15 +628,56 @@ function renderPlannerGroupCard({
     >
       <div className="planner-group-card-header">
         <div className="planner-card-icon-stack">
-          {groupedPerkGroup.perkGroupOptions.map((perkGroupOption) => (
-            <span className="planner-card-icon-stack-item" key={perkGroupOption.perkGroupId}>
-              {renderGameIcon({
-                className: 'perk-icon perk-icon-group',
-                iconPath: perkGroupOption.perkGroupIconPath,
-                label: `${perkGroupOption.perkGroupLabel} perk group icon`,
-              })}
-            </span>
-          ))}
+          {groupedPerkGroup.perkGroupOptions.map((perkGroupOption) => {
+            const perkGroupKey = getPerkGroupHoverKey(perkGroupOption)
+            const isOptionHighlighted = hoveredPerkGroupKey === perkGroupKey
+
+            if (!isSelectablePlannerPerkGroupOption(perkGroupOption)) {
+              return (
+                <span
+                  className="planner-card-icon-stack-item"
+                  key={`${perkGroupOption.categoryName}-${perkGroupOption.perkGroupId}`}
+                >
+                  {renderGameIcon({
+                    className: 'perk-icon perk-icon-group planner-group-option-icon',
+                    iconPath: perkGroupOption.perkGroupIconPath,
+                    label: `${perkGroupOption.perkGroupLabel} perk group icon`,
+                  })}
+                </span>
+              )
+            }
+
+            return (
+              <button
+                aria-label={`Select perk group ${perkGroupOption.perkGroupLabel}`}
+                className={
+                  isOptionHighlighted
+                    ? 'planner-group-option-button is-highlighted'
+                    : 'planner-group-option-button'
+                }
+                key={`${perkGroupOption.categoryName}-${perkGroupOption.perkGroupId}`}
+                onBlur={() => onClosePerkGroupHover(perkGroupKey)}
+                onClick={() =>
+                  onInspectPerkGroup(perkGroupOption.categoryName, perkGroupOption.perkGroupId)
+                }
+                onFocus={() =>
+                  onOpenPerkGroupHover(perkGroupOption.categoryName, perkGroupOption.perkGroupId)
+                }
+                onMouseEnter={() =>
+                  onOpenPerkGroupHover(perkGroupOption.categoryName, perkGroupOption.perkGroupId)
+                }
+                onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
+                title={`Select ${perkGroupOption.perkGroupLabel} perk group`}
+                type="button"
+              >
+                {renderGameIcon({
+                  className: 'perk-icon perk-icon-group planner-group-option-icon',
+                  iconPath: perkGroupOption.perkGroupIconPath,
+                  label: `${perkGroupOption.perkGroupLabel} perk group icon`,
+                })}
+              </button>
+            )
+          })}
         </div>
         <div className="planner-group-card-copy">
           <div className="planner-slot-topline">
@@ -700,12 +753,15 @@ export function BuildPlanner({
   onClearBuild,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
+  onClosePerkGroupHover,
   onCopySavedBuildLink,
   onDeleteSavedBuild,
+  onInspectPerkGroup,
   onInspectPlannerPerk,
   onLoadSavedBuild,
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
+  onOpenPerkGroupHover,
   onRemovePickedPerk,
   onSaveCurrentBuild,
   onShareBuild,
@@ -728,12 +784,15 @@ export function BuildPlanner({
   onClearBuild: () => void
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
   onCopySavedBuildLink: (savedBuildId: string) => Promise<void>
   onDeleteSavedBuild: (savedBuildId: string) => Promise<void>
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPlannerPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
   onLoadSavedBuild: (savedBuildId: string) => void
   onOpenBuildPerkHover: (perkId: string) => void
   onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLButtonElement) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onRemovePickedPerk: (perkId: string) => void
   onSaveCurrentBuild: (name: string) => Promise<void>
   onShareBuild: () => Promise<void>
@@ -999,9 +1058,12 @@ export function BuildPlanner({
                       hoveredTooltipId: hoveredBuildPerkTooltipId,
                       keyPrefix: 'shared',
                       onCloseHover: onCloseBuildPerkHover,
+                      onClosePerkGroupHover,
                       onCloseTooltip: onCloseBuildPerkTooltip,
+                      onInspectPerkGroup,
                       onInspectPerk: onInspectPlannerPerk,
                       onOpenHover: onOpenBuildPerkHover,
+                      onOpenPerkGroupHover,
                       onOpenTooltip: onOpenBuildPerkTooltip,
                     }),
                   )}
@@ -1034,9 +1096,12 @@ export function BuildPlanner({
                         hoveredTooltipId: hoveredBuildPerkTooltipId,
                         keyPrefix: 'individual',
                         onCloseHover: onCloseBuildPerkHover,
+                        onClosePerkGroupHover,
                         onCloseTooltip: onCloseBuildPerkTooltip,
+                        onInspectPerkGroup,
                         onInspectPerk: onInspectPlannerPerk,
                         onOpenHover: onOpenBuildPerkHover,
+                        onOpenPerkGroupHover,
                         onOpenTooltip: onOpenBuildPerkTooltip,
                       }),
                     )}

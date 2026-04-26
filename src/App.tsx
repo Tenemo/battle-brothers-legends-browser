@@ -374,6 +374,23 @@ export default function App() {
     }
   }
 
+  function selectPerkGroup(
+    perkGroupSelection: { categoryName: string; perkGroupId: string } | null,
+  ) {
+    if (perkGroupSelection === null) {
+      setSelectedCategoryNames([])
+      setExpandedCategoryNames([])
+      setSelectedPerkGroupIdsByCategory({})
+      return
+    }
+
+    setSelectedCategoryNames([perkGroupSelection.categoryName])
+    setExpandedCategoryNames([perkGroupSelection.categoryName])
+    setSelectedPerkGroupIdsByCategory({
+      [perkGroupSelection.categoryName]: [perkGroupSelection.perkGroupId],
+    })
+  }
+
   function handleInspectPlannerPerk(
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
@@ -384,30 +401,14 @@ export default function App() {
     startTransition(() => {
       setQuery('')
       setSelectedPerkId(perkId)
-
-      if (nextPerkGroupSelection === null) {
-        setSelectedCategoryNames([])
-        setExpandedCategoryNames([])
-        setSelectedPerkGroupIdsByCategory({})
-        return
-      }
-
-      setSelectedCategoryNames([nextPerkGroupSelection.categoryName])
-      setExpandedCategoryNames([nextPerkGroupSelection.categoryName])
-      setSelectedPerkGroupIdsByCategory({
-        [nextPerkGroupSelection.categoryName]: [nextPerkGroupSelection.perkGroupId],
-      })
+      selectPerkGroup(nextPerkGroupSelection)
     })
   }
 
   function handleInspectPerkGroup(categoryName: string, perkGroupId: string) {
     startTransition(() => {
       setQuery('')
-      setSelectedCategoryNames([categoryName])
-      setExpandedCategoryNames([categoryName])
-      setSelectedPerkGroupIdsByCategory({
-        [categoryName]: [perkGroupId],
-      })
+      selectPerkGroup({ categoryName, perkGroupId })
     })
   }
 
@@ -536,12 +537,15 @@ export default function App() {
         onClearBuild={handleClearBuild}
         onCloseBuildPerkHover={closeBuildPerkHover}
         onCloseBuildPerkTooltip={closeBuildPerkTooltip}
+        onClosePerkGroupHover={closePerkGroupHover}
         onCopySavedBuildLink={handleCopySavedBuildLink}
         onDeleteSavedBuild={handleDeleteSavedBuild}
+        onInspectPerkGroup={handleInspectPerkGroup}
         onInspectPlannerPerk={handleInspectPlannerPerk}
         onLoadSavedBuild={handleLoadSavedBuild}
         onOpenBuildPerkHover={openBuildPerkHover}
         onOpenBuildPerkTooltip={openBuildPerkTooltip}
+        onOpenPerkGroupHover={openPerkGroupHover}
         onRemovePickedPerk={handleRemovePickedPerk}
         onSaveCurrentBuild={handleSaveCurrentBuild}
         onShareBuild={handleShareBuild}

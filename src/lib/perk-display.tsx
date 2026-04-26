@@ -262,7 +262,7 @@ export function formatBackgroundFitExpectedBuildPerksLabel(
 ): string {
   return `Expected ${formatBackgroundFitScoreLabel(
     expectedCoveredPickedPerkCount,
-  )}/${pickedPerkCount} build perks`
+  )}/${pickedPerkCount} perks pickable`
 }
 
 export function formatBackgroundFitGuaranteedPerksLabel(
