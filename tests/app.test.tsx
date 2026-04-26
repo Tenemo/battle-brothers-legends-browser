@@ -722,9 +722,7 @@ describe('app', () => {
     expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
     expect(screen.getByLabelText('Search perks')).toHaveValue('')
     expect(screen.getByRole('button', { name: 'Disable category Traits' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
-      'is-active',
-    )
+    expect(screen.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass('is-active')
     expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 
     await user.click(
@@ -740,6 +738,25 @@ describe('app', () => {
 
     await user.click(screen.getByRole('button', { name: 'Add Clarity to build' }))
     await user.click(screen.getByRole('button', { name: 'Clear build' }))
+
+    const clearBuildDialog = screen.getByRole('alertdialog', { name: 'Clear this build?' })
+
+    expect(clearBuildDialog).toHaveTextContent('This removes 1 picked perk')
+    expect(clearBuildDialog).toHaveTextContent('Saved builds are not affected.')
+    expect(within(clearBuildDialog).getByRole('button', { name: 'Keep build' })).toHaveFocus()
+    expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
+
+    await user.click(within(clearBuildDialog).getByRole('button', { name: 'Keep build' }))
+
+    expect(screen.queryByRole('alertdialog', { name: 'Clear this build?' })).not.toBeInTheDocument()
+    expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Clear build' }))
+    await user.click(
+      within(screen.getByRole('alertdialog', { name: 'Clear this build?' })).getByRole('button', {
+        name: 'Clear build',
+      }),
+    )
 
     expect(screen.getByText('No perks picked yet.')).toBeInTheDocument()
     expect(

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, type Page, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   expectNoDocumentHorizontalOverflow,
@@ -6,6 +6,15 @@ import {
   gotoPerksBrowser,
   searchPerks,
 } from './support/perks-browser'
+
+async function clearBuildWithConfirmation(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Clear build' }).click()
+
+  const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
+
+  await expect(clearBuildDialog).toBeVisible()
+  await clearBuildDialog.getByRole('button', { name: 'Clear build' }).click()
+}
 
 test('saves a build locally, copies its link, and loads it after a reload', async ({ page }) => {
   await page.addInitScript(() => {
@@ -33,7 +42,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
   await expect(page.getByRole('status')).toHaveText('Saved build')
   await expect(page.getByTestId('saved-builds-list')).toContainText('Calm focus')
   await page.getByRole('button', { name: 'Close saved builds' }).click()
-  await page.getByRole('button', { name: 'Clear build' }).click()
+  await clearBuildWithConfirmation(page)
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 
   await page.goto('/')
@@ -77,6 +86,11 @@ test('keeps local save and load controls usable on mobile', async ({ page }) => 
 
   await page.getByRole('button', { name: 'Close saved builds' }).click()
   await page.getByRole('button', { name: 'Clear build' }).click()
+  const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
+
+  await expect(clearBuildDialog).toBeVisible()
+  await expectNoDocumentHorizontalOverflow(page)
+  await clearBuildDialog.getByRole('button', { name: 'Clear build' }).click()
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 
   await page.getByRole('button', { name: 'Open saved builds' }).click()

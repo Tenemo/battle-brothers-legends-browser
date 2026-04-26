@@ -172,7 +172,15 @@
   color: rgb(244 205 197);
 }
 
-.saved-builds-dialog-backdrop {
+.clear-build-action-button:hover:not(:disabled),
+.clear-build-action-button:focus-visible:not(:disabled) {
+  border-color: rgb(190 80 64 / 0.54);
+  background: rgb(74 31 25 / 0.72);
+  color: rgb(244 205 197);
+}
+
+.saved-builds-dialog-backdrop,
+.clear-build-dialog-backdrop {
   position: fixed;
   z-index: 30;
   inset: 0;
@@ -183,11 +191,10 @@
   background: rgb(0 0 0 / 0.62);
 }
 
-.saved-builds-dialog {
+.saved-builds-dialog,
+.clear-build-dialog {
   display: grid;
   gap: 0.72rem;
-  width: min(42rem, 100%);
-  max-height: min(40rem, calc(100vh - 2rem));
   border: 1px solid rgb(204 155 84 / 0.2);
   border-radius: 0.72rem;
   padding: 0.82rem;
@@ -198,6 +205,17 @@
   overflow: hidden;
 }
 
+.saved-builds-dialog {
+  width: min(42rem, 100%);
+  max-height: min(40rem, calc(100vh - 2rem));
+}
+
+.clear-build-dialog {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  width: min(30rem, 100%);
+}
+
 .saved-builds-dialog-header {
   display: flex;
   justify-content: space-between;
@@ -205,9 +223,66 @@
   align-items: flex-start;
 }
 
-.saved-builds-dialog h2 {
+.saved-builds-dialog h2,
+.clear-build-dialog h2 {
   margin: 0;
   font-size: 1rem;
+}
+
+.clear-build-dialog-icon {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 2.15rem;
+  height: 2.15rem;
+  border: 1px solid rgb(190 80 64 / 0.36);
+  border-radius: 0.62rem;
+  background: rgb(74 31 25 / 0.52);
+  color: rgb(244 205 197);
+}
+
+.clear-build-dialog-icon-svg {
+  width: 1.12rem;
+  height: 1.12rem;
+  stroke-width: 1.9;
+}
+
+.clear-build-dialog-copy {
+  display: grid;
+  gap: 0.34rem;
+  min-width: 0;
+}
+
+.clear-build-dialog-copy p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  line-height: 1.32;
+}
+
+.clear-build-dialog-copy .clear-build-dialog-warning {
+  color: rgb(244 205 197);
+}
+
+.clear-build-dialog-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.42rem;
+}
+
+.clear-build-confirm-button {
+  border-color: rgb(190 80 64 / 0.54);
+  background: rgb(74 31 25 / 0.68);
+  color: rgb(244 205 197);
+}
+
+.clear-build-confirm-button:hover:not(:disabled),
+.clear-build-confirm-button:focus-visible:not(:disabled) {
+  border-color: rgb(229 106 85 / 0.74);
+  background: rgb(106 40 31 / 0.88);
+  color: rgb(244 205 197);
 }
 
 .saved-builds-storage-status {
@@ -806,13 +881,28 @@
     width: 100%;
   }
 
-  .saved-builds-dialog-backdrop {
+  .saved-builds-dialog-backdrop,
+  .clear-build-dialog-backdrop {
     align-items: stretch;
     padding: 0.52rem;
   }
 
-  .saved-builds-dialog {
+  .saved-builds-dialog,
+  .clear-build-dialog {
     max-height: calc(100vh - 1.04rem);
+  }
+
+  .clear-build-dialog {
+    grid-template-columns: 1fr;
+    align-content: start;
+  }
+
+  .clear-build-dialog-actions {
+    justify-content: stretch;
+  }
+
+  .clear-build-dialog-actions .planner-action-button {
+    flex: 1 1 100%;
   }
 
   .saved-build-form-row,

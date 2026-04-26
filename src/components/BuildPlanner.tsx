@@ -1,4 +1,12 @@
-import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react'
+import {
+  type FormEvent,
+  type KeyboardEvent,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from 'react'
 import {
   Check,
   CircleAlert,
@@ -185,6 +193,34 @@ function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirement
   ].join(' / ')
 }
 
+function keepKeyboardFocusInsideDialog(event: KeyboardEvent<HTMLElement>) {
+  if (event.key !== 'Tab') {
+    return
+  }
+
+  const focusableButtons = [
+    ...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)'),
+  ]
+
+  if (focusableButtons.length === 0) {
+    return
+  }
+
+  const firstFocusableButton = focusableButtons[0]
+  const lastFocusableButton = focusableButtons.at(-1) ?? firstFocusableButton
+
+  if (event.shiftKey && document.activeElement === firstFocusableButton) {
+    event.preventDefault()
+    lastFocusableButton.focus()
+    return
+  }
+
+  if (!event.shiftKey && document.activeElement === lastFocusableButton) {
+    event.preventDefault()
+    firstFocusableButton.focus()
+  }
+}
+
 function BuildPlannerInfoButton() {
   const tooltipId = useId()
   const [isOpen, setIsOpen] = useState(false)
@@ -228,6 +264,82 @@ function BuildPlannerInfoButton() {
         </span>
       ) : null}
     </span>
+  )
+}
+
+function ClearBuildConfirmationDialog({
+  onCancel,
+  onConfirm,
+  pickedPerkCount,
+}: {
+  onCancel: () => void
+  onConfirm: () => void
+  pickedPerkCount: number
+}) {
+  const titleId = useId()
+  const descriptionId = useId()
+  const keepBuildButtonRef = useRef<HTMLButtonElement | null>(null)
+  const pickedPerkLabel = `${pickedPerkCount} picked perk${pickedPerkCount === 1 ? '' : 's'}`
+
+  useEffect(() => {
+    keepBuildButtonRef.current?.focus()
+  }, [])
+
+  return (
+    <div
+      className="clear-build-dialog-backdrop"
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          onCancel()
+          return
+        }
+
+        keepKeyboardFocusInsideDialog(event)
+      }}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onCancel()
+        }
+      }}
+    >
+      <section
+        aria-describedby={descriptionId}
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className="clear-build-dialog"
+        role="alertdialog"
+      >
+        <span aria-hidden="true" className="clear-build-dialog-icon">
+          <CircleAlert className="clear-build-dialog-icon-svg" />
+        </span>
+        <div className="clear-build-dialog-copy">
+          <h2 id={titleId}>Clear this build?</h2>
+          <p id={descriptionId}>
+            This removes {pickedPerkLabel} from the current planner. Saved builds are not affected.
+          </p>
+          <p className="clear-build-dialog-warning">This cannot be undone.</p>
+        </div>
+        <div className="clear-build-dialog-actions">
+          <button
+            className="planner-action-button saved-build-primary-button"
+            onClick={onCancel}
+            ref={keepBuildButtonRef}
+            type="button"
+          >
+            <X aria-hidden="true" className="planner-button-icon" />
+            Keep build
+          </button>
+          <button
+            className="planner-action-button clear-build-confirm-button"
+            onClick={onConfirm}
+            type="button"
+          >
+            <RotateCcw aria-hidden="true" className="planner-button-icon" />
+            Clear build
+          </button>
+        </div>
+      </section>
+    </div>
   )
 }
 
@@ -636,7 +748,9 @@ export function BuildPlanner({
   const hasPickedPerks = pickedPerks.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
   const plannerBoardRef = useRef<HTMLDivElement | null>(null)
+  const clearBuildButtonRef = useRef<HTMLButtonElement | null>(null)
   const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(false)
+  const [isClearBuildDialogOpen, setIsClearBuildDialogOpen] = useState(false)
   const [isSavedBuildsDialogOpen, setIsSavedBuildsDialogOpen] = useState(false)
   const updatePlannerScrollConstraint = useCallback(() => {
     const plannerBoard = plannerBoardRef.current
@@ -696,6 +810,21 @@ export function BuildPlanner({
     sharedPerkGroups.length,
     updatePlannerScrollConstraint,
   ])
+
+  function handleCloseClearBuildDialog() {
+    setIsClearBuildDialogOpen(false)
+    window.setTimeout(() => {
+      clearBuildButtonRef.current?.focus()
+    }, 0)
+  }
+
+  function handleConfirmClearBuild() {
+    setIsClearBuildDialogOpen(false)
+
+    if (hasPickedPerks) {
+      onClearBuild()
+    }
+  }
 
   return (
     <>
@@ -762,9 +891,10 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Clear build"
-              className="planner-action-button"
+              className="planner-action-button clear-build-action-button"
               disabled={pickedPerks.length === 0}
-              onClick={onClearBuild}
+              onClick={() => setIsClearBuildDialogOpen(true)}
+              ref={clearBuildButtonRef}
               type="button"
             >
               <RotateCcw aria-hidden="true" className="planner-button-icon" />
@@ -950,6 +1080,14 @@ export function BuildPlanner({
           savedBuildPersistenceState={savedBuildPersistenceState}
           savedBuilds={savedBuilds}
           savedBuildsErrorMessage={savedBuildsErrorMessage}
+        />
+      ) : null}
+
+      {isClearBuildDialogOpen && hasPickedPerks ? (
+        <ClearBuildConfirmationDialog
+          onCancel={handleCloseClearBuildDialog}
+          onConfirm={handleConfirmClearBuild}
+          pickedPerkCount={pickedPerks.length}
         />
       ) : null}
 

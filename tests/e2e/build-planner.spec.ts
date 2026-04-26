@@ -532,6 +532,36 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Clear build' }).click()
 
+  const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
+
+  await expect(clearBuildDialog).toBeVisible()
+  await expect(clearBuildDialog).toContainText('This removes 1 picked perk')
+  await expect(clearBuildDialog).toContainText('Saved builds are not affected.')
+  await expect(page.getByText('1 perk picked.')).toBeVisible()
+
+  const confirmClearButton = clearBuildDialog.getByRole('button', { name: 'Clear build' })
+  const confirmClearButtonBackgroundBeforeHover = await confirmClearButton.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
+
+  await confirmClearButton.hover()
+  await expect
+    .poll(() =>
+      confirmClearButton.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .not.toBe(confirmClearButtonBackgroundBeforeHover)
+
+  await clearBuildDialog.getByRole('button', { name: 'Keep build' }).click()
+
+  await expect(clearBuildDialog).toHaveCount(0)
+  await expect(page.getByText('1 perk picked.')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Clear build' }).click()
+  await page
+    .getByRole('alertdialog', { name: 'Clear this build?' })
+    .getByRole('button', { name: 'Clear build' })
+    .click()
+
   await expect(page.getByText('No perks picked yet.')).toBeVisible()
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
   await expect(
