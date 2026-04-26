@@ -61,17 +61,18 @@ describe('background origin detection', () => {
       }),
     ]
 
-    expect(originBackgroundFits.every((backgroundFit) => isOriginBackgroundFit(backgroundFit))).toBe(
-      true,
-    )
-    expect(originBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)))
-      .toEqual([
-        'origin sisterhood',
-        'origin lone wolf',
-        'origin necromancer',
-        'origin necromancer',
-        'origin necromancer',
-      ])
+    expect(
+      originBackgroundFits.every((backgroundFit) => isOriginBackgroundFit(backgroundFit)),
+    ).toBe(true)
+    expect(
+      originBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)),
+    ).toEqual([
+      'origin sisterhood',
+      'origin lone wolf',
+      'origin necromancer',
+      'origin necromancer',
+      'origin necromancer',
+    ])
   })
 
   test('detects every Legion origin background', () => {
@@ -92,11 +93,12 @@ describe('background origin detection', () => {
       }),
     )
 
-    expect(legionBackgroundFits.every((backgroundFit) => isOriginBackgroundFit(backgroundFit))).toBe(
-      true,
-    )
-    expect(legionBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)))
-      .toEqual(legionBackgroundFits.map(() => 'origin legion'))
+    expect(
+      legionBackgroundFits.every((backgroundFit) => isOriginBackgroundFit(backgroundFit)),
+    ).toBe(true)
+    expect(
+      legionBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)),
+    ).toEqual(legionBackgroundFits.map(() => 'origin legion'))
   })
 
   test('does not classify Puppet as origin-only because it is also recruitable elsewhere', () => {
@@ -128,21 +130,24 @@ describe('background origin detection', () => {
     ])
     const importedBackgroundFits = legendsPerksDataset.backgroundFitBackgrounds
       .filter((backgroundFit) => expectedOriginBackgroundIds.has(backgroundFit.backgroundId))
-      .map((backgroundFit): RankedBackgroundFit => ({
-        ...backgroundFit,
-        disambiguator: null,
-        expectedCoveredPickedPerkCount: 0,
-        expectedMatchedPerkGroupCount: 0,
-        guaranteedMatchedPerkGroupCount: 0,
-        matches: [],
-        maximumTotalPerkGroupCount: 0,
-      }))
+      .map(
+        (backgroundFit): RankedBackgroundFit => ({
+          ...backgroundFit,
+          disambiguator: null,
+          expectedCoveredPickedPerkCount: 0,
+          expectedMatchedPerkGroupCount: 0,
+          guaranteedMatchedPerkGroupCount: 0,
+          matches: [],
+          maximumTotalPerkGroupCount: 0,
+        }),
+      )
 
-    expect(importedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId).sort()).toEqual(
-      [...expectedOriginBackgroundIds].sort(),
-    )
-    expect(importedBackgroundFits.every((backgroundFit) => isOriginBackgroundFit(backgroundFit)))
-      .toBe(true)
+    expect(
+      importedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId).sort(),
+    ).toEqual([...expectedOriginBackgroundIds].sort())
+    expect(
+      importedBackgroundFits.every((backgroundFit) => isOriginBackgroundFit(backgroundFit)),
+    ).toBe(true)
     expect(
       importedBackgroundFits.every(
         (backgroundFit) => getOriginBackgroundPillLabel(backgroundFit) !== null,

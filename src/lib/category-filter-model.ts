@@ -1,6 +1,6 @@
 import type { PerkBrowserUrlPerkGroupOption } from './perk-browser-url-state'
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import { compareCategoryNames } from './perk-categories'
+import { compareCategoryNames } from './dynamic-background-categories'
 import { getSearchMatchPriority } from './perk-display'
 
 export type CategoryPerkGroupOption = PerkBrowserUrlPerkGroupOption & {

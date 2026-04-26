@@ -73,24 +73,22 @@ describe('build share preview', () => {
     expect(payload.topBackgroundFits[0].expectedCoveredPickedPerkCount).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].guaranteedCoveredPickedPerkCount).toBeGreaterThan(0)
     expect(
-      payload.topBackgroundFits.every(
-        (backgroundFit, backgroundFitIndex, backgroundFits) => {
-          if (backgroundFitIndex === 0) {
-            return true
-          }
+      payload.topBackgroundFits.every((backgroundFit, backgroundFitIndex, backgroundFits) => {
+        if (backgroundFitIndex === 0) {
+          return true
+        }
 
-          const previousBackgroundFit = backgroundFits[backgroundFitIndex - 1]
+        const previousBackgroundFit = backgroundFits[backgroundFitIndex - 1]
 
-          return (
-            backgroundFit.guaranteedCoveredPickedPerkCount <
-              previousBackgroundFit.guaranteedCoveredPickedPerkCount ||
-            (backgroundFit.guaranteedCoveredPickedPerkCount ===
-              previousBackgroundFit.guaranteedCoveredPickedPerkCount &&
-              backgroundFit.expectedCoveredPickedPerkCount <=
-                previousBackgroundFit.expectedCoveredPickedPerkCount)
-          )
-        },
-      ),
+        return (
+          backgroundFit.guaranteedCoveredPickedPerkCount <
+            previousBackgroundFit.guaranteedCoveredPickedPerkCount ||
+          (backgroundFit.guaranteedCoveredPickedPerkCount ===
+            previousBackgroundFit.guaranteedCoveredPickedPerkCount &&
+            backgroundFit.expectedCoveredPickedPerkCount <=
+              previousBackgroundFit.expectedCoveredPickedPerkCount)
+        )
+      }),
     ).toBe(true)
   })
 

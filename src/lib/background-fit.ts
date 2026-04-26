@@ -11,8 +11,9 @@ import {
   chanceDynamicBackgroundCategoryNames,
   deterministicDynamicBackgroundCategoryNames,
   dynamicBackgroundCategoryNames,
+  getCategoryPriority,
+  isDynamicBackgroundCategoryName,
 } from './dynamic-background-categories'
-import { getCategoryPriority, isDynamicBackgroundCategoryName } from './perk-categories'
 
 const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
   deterministicDynamicBackgroundCategoryNames,
@@ -381,7 +382,10 @@ function getCategoryDefinition(
   )
 }
 
-function hasEveryPerkGroup(perkGroupIdSet: Set<string>, requiredPerkGroupIds: Set<string>): boolean {
+function hasEveryPerkGroup(
+  perkGroupIdSet: Set<string>,
+  requiredPerkGroupIds: Set<string>,
+): boolean {
   for (const requiredPerkGroupId of requiredPerkGroupIds) {
     if (!perkGroupIdSet.has(requiredPerkGroupId)) {
       return false
@@ -420,10 +424,7 @@ function getDeterministicCategoryRequiredProbability(
     return 1
   }
 
-  const remainingPerkGroupIds = getRemainingPerkGroupIds(
-    poolPerkGroupIds,
-    explicitPerkGroupIdSet,
-  )
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
   const randomPerkGroupCount = getAdditionalRandomPerkGroupCount(
     categoryDefinition,
     remainingPerkGroupIds.length,
@@ -726,8 +727,7 @@ function getRequirementSubsetProbability({
       backgroundDefinition,
       classRequiredPerkGroupIds,
       context,
-      weaponRequiredPerkGroupIds:
-        requiredPerkGroupIdsByCategory.get('Weapon') ?? new Set<string>(),
+      weaponRequiredPerkGroupIds: requiredPerkGroupIdsByCategory.get('Weapon') ?? new Set<string>(),
     })
   }
 
@@ -827,7 +827,7 @@ function getPerkCoverageProbability({
   return clampProbability(coverageProbability)
 }
 
-export function calculateExpectedCoveredPickedPerkCount(
+function calculateExpectedCoveredPickedPerkCount(
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
   pickedPerks: LegendsPerkRecord[],
   context: BackgroundProbabilityContext,

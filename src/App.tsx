@@ -27,7 +27,7 @@ import {
   getVisiblePerkCountsByCategoryPerkGroup,
   getVisiblePerkCountsByCategory,
 } from './lib/category-filter-model'
-import { compareCategoryNames } from './lib/perk-categories'
+import { compareCategoryNames } from './lib/dynamic-background-categories'
 import { buildPerkBrowserBuildUrlSearch } from './lib/perk-browser-url-state'
 import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'

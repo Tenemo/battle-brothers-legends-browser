@@ -13,6 +13,18 @@ test('exposes the expected static SEO metadata contract', async ({ page }) => {
     'content',
     rootSeoMetadata.applicationName,
   )
+  await expect(page.locator('head meta[name="theme-color"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.themeColor,
+  )
+  await expect(page.locator('head meta[name="color-scheme"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.colorScheme,
+  )
+  await expect(page.locator('head meta[name="apple-mobile-web-app-title"]')).toHaveAttribute(
+    'content',
+    rootSeoMetadata.shortName,
+  )
   await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', siteDescription)
   await expect(page.locator('meta[name="keywords"]')).toHaveAttribute(
     'content',
@@ -146,4 +158,50 @@ test('serves robots, sitemap, and the social preview image', async ({ request })
 
   const socialImageResponse = await request.get('/seo/og-image-v2.png')
   expect(socialImageResponse.ok()).toBe(true)
+
+  const faviconPngResponse = await request.get('/favicon/favicon-96x96.png')
+  expect(faviconPngResponse.ok()).toBe(true)
+
+  const faviconSvgResponse = await request.get('/favicon/favicon.svg')
+  expect(faviconSvgResponse.ok()).toBe(true)
+
+  const faviconIcoResponse = await request.get('/favicon/favicon.ico')
+  expect(faviconIcoResponse.ok()).toBe(true)
+
+  const appleTouchIconResponse = await request.get('/favicon/apple-touch-icon.png')
+  expect(appleTouchIconResponse.ok()).toBe(true)
+
+  const manifestResponse = await request.get('/favicon/site.webmanifest')
+  expect(manifestResponse.ok()).toBe(true)
+
+  const webApplicationIcon192Response = await request.get('/favicon/web-app-manifest-192x192.png')
+  expect(webApplicationIcon192Response.ok()).toBe(true)
+
+  const webApplicationIcon512Response = await request.get('/favicon/web-app-manifest-512x512.png')
+  expect(webApplicationIcon512Response.ok()).toBe(true)
+
+  const manifest = await manifestResponse.json()
+  expect(manifest).toEqual({
+    name: rootSeoMetadata.applicationName,
+    short_name: rootSeoMetadata.shortName,
+    description: rootSeoMetadata.description,
+    icons: [
+      {
+        src: '/favicon/web-app-manifest-192x192.png',
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable',
+      },
+      {
+        src: '/favicon/web-app-manifest-512x512.png',
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any maskable',
+      },
+    ],
+    theme_color: rootSeoMetadata.themeColor,
+    background_color: rootSeoMetadata.themeColor,
+    display: 'standalone',
+    start_url: '/',
+  })
 })
