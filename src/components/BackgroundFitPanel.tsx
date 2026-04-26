@@ -146,11 +146,7 @@ export function BackgroundFitPanel({
         }
         data-testid="background-fit-panel"
       >
-        <div
-          aria-hidden={!isExpanded}
-          className="background-fit-panel-body"
-          hidden={!isExpanded}
-        >
+        <div aria-hidden={!isExpanded} className="background-fit-panel-body" hidden={!isExpanded}>
           <ClearableSearchField
             className="background-fit-search-field"
             clearLabel="Clear background search"
@@ -273,9 +269,7 @@ export function BackgroundFitPanel({
                         onClearPerkGroupHover()
                         setBackgroundFitAccordionState({
                           expandedBackgroundFitKey:
-                            expandedBackgroundFitKey === backgroundFitKey
-                              ? null
-                              : backgroundFitKey,
+                            expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
                           rankedBackgroundFitKeySignature,
                         })
                       }}
@@ -318,11 +312,9 @@ export function BackgroundFitPanel({
           <span aria-hidden="true" className="background-fit-rail-button-icon">
             <BackgroundFitRailChevron isExpanded={isExpanded} />
           </span>
-          {!isExpanded ? (
-            <span aria-hidden="true" className="background-fit-rail-button-label">
-              Background fit
-            </span>
-          ) : null}
+          <span aria-hidden="true" className="background-fit-rail-button-label">
+            Background fit
+          </span>
         </button>
       </aside>
     </>

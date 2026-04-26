@@ -82,6 +82,7 @@ export default function App() {
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(
     getInitialBackgroundFitExpandedState,
   )
+  const [isPerkDetailPanelExpanded, setIsPerkDetailPanelExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const {
     clearAllHover,
@@ -229,6 +230,14 @@ export default function App() {
     (perkGroupCount, selectedPerkGroupIds) => perkGroupCount + selectedPerkGroupIds.length,
     0,
   )
+  const workspaceClassName = [
+    'workspace',
+    isBackgroundFitPanelExpanded ? 'is-background-fit-expanded' : 'is-background-fit-collapsed',
+    isPerkDetailPanelExpanded ? 'is-detail-expanded' : 'is-detail-collapsed',
+    hasActiveBackgroundFitSearch ? 'has-active-background-fit-search' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   usePerkBrowserUrlSync(
     {
@@ -545,15 +554,7 @@ export default function App() {
         sharedPerkGroups={buildPlannerGroups.sharedPerkGroups}
       />
 
-      <main
-        className={
-          isBackgroundFitPanelExpanded
-            ? hasActiveBackgroundFitSearch
-              ? 'workspace is-background-fit-expanded has-active-background-fit-search'
-              : 'workspace is-background-fit-expanded'
-            : 'workspace is-background-fit-collapsed'
-        }
-      >
+      <main className={workspaceClassName}>
         <BackgroundFitPanel
           backgroundFitView={backgroundFitView}
           hoveredPerkGroupKey={hoveredPerkGroupKey}
@@ -608,6 +609,8 @@ export default function App() {
 
         <PerkDetail
           groupedBackgroundSources={groupedBackgroundSources}
+          isExpanded={isPerkDetailPanelExpanded}
+          onToggleExpanded={() => setIsPerkDetailPanelExpanded((isExpanded) => !isExpanded)}
           onTogglePerkPicked={handleTogglePerkPicked}
           selectedPerk={selectedPerk}
           selectedPerkBuildSlot={selectedPerkBuildSlot}

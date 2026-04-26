@@ -182,12 +182,14 @@
 }
 
 .workspace {
+  --workspace-background-fit-column: minmax(24rem, 0.96fr);
+  --workspace-detail-column: minmax(22.5rem, 1.02fr);
   flex: 1;
   min-height: 0;
   display: grid;
   grid-template-columns:
-    minmax(24rem, 0.96fr) minmax(12rem, 0.56fr) minmax(20.625rem, 0.96fr)
-    minmax(22.5rem, 1.02fr);
+    var(--workspace-background-fit-column) minmax(12rem, 0.56fr)
+    minmax(20.625rem, 0.96fr) var(--workspace-detail-column);
   gap: 0.7rem;
   align-items: stretch;
   overflow: hidden;
@@ -198,9 +200,11 @@
 }
 
 .workspace.is-background-fit-collapsed {
-  grid-template-columns:
-    auto minmax(12rem, 0.56fr) minmax(20.625rem, 0.96fr)
-    minmax(22.5rem, 1.02fr);
+  --workspace-background-fit-column: auto;
+}
+
+.workspace.is-detail-collapsed {
+  --workspace-detail-column: auto;
 }
 
 .background-fit-panel,
@@ -258,6 +262,7 @@
 .background-fit-accordion-trigger:focus-visible,
 .background-fit-match:focus-visible,
 .background-fit-filter-button:focus-visible,
+.detail-panel-rail-button:focus-visible,
 .category-chip:focus-visible,
 .perk-group-chip:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -686,24 +691,38 @@
   }
 
   .workspace {
+    --workspace-background-fit-column: minmax(18rem, 0.8fr);
+    --workspace-detail-column: minmax(18rem, 1fr);
     grid-template-columns:
-      minmax(18rem, 0.8fr) minmax(10.5rem, 0.52fr) minmax(18rem, 1fr)
-      minmax(18rem, 1fr);
+      var(--workspace-background-fit-column) minmax(10.5rem, 0.52fr) minmax(18rem, 1fr)
+      var(--workspace-detail-column);
     gap: 0.55rem;
   }
 
   .workspace.is-background-fit-collapsed {
-    grid-template-columns:
-      auto minmax(10.5rem, 0.52fr) minmax(18rem, 1fr)
-      minmax(18rem, 1fr);
+    --workspace-background-fit-column: auto;
+  }
+
+  .workspace.is-detail-collapsed {
+    --workspace-detail-column: auto;
   }
 }
 
 @media (min-width: 1440px) {
   .workspace {
+    --workspace-background-fit-column: minmax(0, 32.4rem);
+    --workspace-detail-column: minmax(20rem, 1.02fr);
     grid-template-columns:
-      minmax(0, 32.4rem) minmax(11.875rem, 0.56fr) minmax(20.625rem, 0.96fr)
-      minmax(20rem, 1.02fr);
+      var(--workspace-background-fit-column) minmax(11.875rem, 0.56fr)
+      minmax(20.625rem, 0.96fr) var(--workspace-detail-column);
+  }
+
+  .workspace.is-background-fit-collapsed {
+    --workspace-background-fit-column: auto;
+  }
+
+  .workspace.is-detail-collapsed {
+    --workspace-detail-column: auto;
   }
 
   .workspace .background-fit-panel {

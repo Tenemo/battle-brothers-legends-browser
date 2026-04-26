@@ -892,7 +892,6 @@ describe('app', () => {
 
     expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
     expect(backgroundFitCollapseToggle).toHaveAttribute('aria-expanded', 'true')
-    expect(within(backgroundFitPanel).queryByText('Background fit')).not.toBeInTheDocument()
     expect(
       within(backgroundFitPanel).getByText(
         /Ranked by guaranteed build perks first, then expected build perks/i,
@@ -1040,6 +1039,41 @@ describe('app', () => {
     )
 
     expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'false')
+  })
+
+  test('collapses and expands the perk details panel while preserving the selected perk', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    setPerkSearchQuery('Clarity')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Clarity' }),
+    )
+
+    const perkDetailPanel = screen.getByRole('complementary', { name: 'Perk details' })
+    const perkDetailPanelBody = screen.getByTestId('perk-detail-panel-body')
+    const collapsePerkDetailsButton = within(perkDetailPanel).getByRole('button', {
+      name: 'Collapse perk details',
+    })
+
+    expect(perkDetailPanel).toHaveClass('is-expanded')
+    expect(perkDetailPanelBody).toHaveAttribute('aria-hidden', 'false')
+    expect(screen.getByRole('heading', { level: 2, name: 'Clarity' })).toBeInTheDocument()
+
+    await user.click(collapsePerkDetailsButton)
+
+    expect(perkDetailPanel).toHaveClass('is-collapsed')
+    expect(perkDetailPanelBody).toHaveAttribute('aria-hidden', 'true')
+    expect(perkDetailPanelBody).toHaveAttribute('hidden')
+    expect(
+      within(perkDetailPanel).getByRole('button', { name: 'Expand perk details' }),
+    ).toHaveAttribute('aria-expanded', 'false')
+
+    await user.click(within(perkDetailPanel).getByRole('button', { name: 'Expand perk details' }))
+
+    expect(perkDetailPanel).toHaveClass('is-expanded')
+    expect(perkDetailPanelBody).toHaveAttribute('aria-hidden', 'false')
+    expect(screen.getByRole('heading', { level: 2, name: 'Clarity' })).toBeInTheDocument()
   })
 
   test('filters background fit cards by background name', async () => {

@@ -201,7 +201,7 @@
   min-height: 0;
   min-width: 0;
   overflow-x: hidden;
-  overflow-y: auto;
+  overflow-y: scroll;
   padding-right: 0.18rem;
   scrollbar-gutter: stable;
 }
@@ -591,33 +591,63 @@
   display: none;
 }
 
+@media (min-width: 1280px) {
+  .background-fit-card-heading h3 {
+    min-width: 5.8rem;
+  }
+}
+
 @media (max-width: 1279px) {
   .background-fit-panel {
+    flex-direction: column;
     width: 100%;
     min-height: 3.25rem;
+  }
+
+  .background-fit-panel.is-collapsed {
+    width: 100%;
   }
 
   .background-fit-panel.is-expanded {
     min-height: 12rem;
   }
 
+  .background-fit-rail-button {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    order: 0;
+    min-height: 3.25rem;
+    border-left: 0;
+    border-bottom: 1px solid rgb(204 155 84 / 0.14);
+    padding: 0.62rem 0.8rem;
+  }
+
   .background-fit-panel-body {
+    order: 1;
     max-height: min(36rem, 70vh);
+    transform: translateY(0);
   }
 
   .background-fit-panel.is-collapsed .background-fit-rail-button {
     flex: 1 1 auto;
-    flex-direction: row;
-    justify-content: flex-start;
-    min-height: 3.25rem;
-    border-left: 0;
-    border-top: 1px solid rgb(204 155 84 / 0.14);
-    padding: 0.62rem 0.8rem;
   }
 
-  .background-fit-panel.is-collapsed .background-fit-rail-button-label {
+  .background-fit-panel.is-collapsed .background-fit-panel-body {
+    transform: translateY(-0.45rem);
+  }
+
+  .background-fit-rail-button-label,
+  .background-fit-panel.is-expanded .background-fit-rail-button-label {
+    max-height: none;
+    overflow: visible;
+    opacity: 1;
     writing-mode: horizontal-tb;
     transform: none;
+  }
+
+  .background-fit-rail-chevron.is-expanded {
+    transform: rotate(90deg);
   }
 }
 

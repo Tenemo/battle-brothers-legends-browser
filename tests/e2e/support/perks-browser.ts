@@ -31,6 +31,10 @@ export function getBackgroundFitPanel(page: Page): Locator {
   return page.getByTestId('background-fit-panel')
 }
 
+export function getPerkDetailPanel(page: Page): Locator {
+  return page.getByTestId('perk-detail-panel')
+}
+
 export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
 }
@@ -52,12 +56,12 @@ export async function expectViewportLocked(page: Page): Promise<void> {
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const detailPanel = document.querySelector('.detail-panel') as HTMLElement | null
+        const detailPanelBody = document.querySelector('.detail-panel-body') as HTMLElement | null
         const resultsList = document.querySelector('.results-list') as HTMLElement | null
 
         return {
           detailPanelIsScrollable:
-            detailPanel !== null && detailPanel.scrollHeight > detailPanel.clientHeight,
+            detailPanelBody !== null && detailPanelBody.scrollHeight > detailPanelBody.clientHeight,
           documentScrollHeight: document.documentElement.scrollHeight,
           resultsListIsScrollable:
             resultsList !== null && resultsList.scrollHeight > resultsList.clientHeight,
