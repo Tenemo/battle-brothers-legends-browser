@@ -582,19 +582,21 @@ export function BuildPlanner({
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }) {
   const hasPickedPerks = pickedPerks.length > 0
+  const isDenseBuild = pickedPerks.length >= 5
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
   const [isSavedBuildsDialogOpen, setIsSavedBuildsDialogOpen] = useState(false)
+  const buildPlannerClassName = [
+    'build-planner',
+    hasPickedPerks ? 'has-picked-perks' : '',
+    isDenseBuild ? 'is-dense-build' : '',
+    hasActiveBackgroundFitSearch ? 'is-background-fit-search-active' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <>
-      <section
-        aria-label="Build planner"
-        className={
-          hasActiveBackgroundFitSearch
-            ? 'build-planner is-background-fit-search-active'
-            : 'build-planner'
-        }
-      >
+      <section aria-label="Build planner" className={buildPlannerClassName}>
         <div className="build-planner-header">
           <div className="build-planner-title-row">
             <div className="build-planner-title">

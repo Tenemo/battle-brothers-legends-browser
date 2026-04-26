@@ -45,10 +45,19 @@ const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
+const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
 
 const categoryCounts = getCategoryCounts(allPerks)
 const perkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
 const availableCategories = [...categoryCounts.keys()].toSorted(compareCategoryNames)
+
+function getInitialBackgroundFitExpandedState() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return true
+  }
+
+  return !window.matchMedia(mediumDesktopBackgroundFitMediaQuery).matches
+}
 
 export default function App() {
   const initialUrlState = useInitialPerkBrowserUrlState({
@@ -70,7 +79,9 @@ export default function App() {
   const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(
     initialUrlState.shouldIncludeOriginBackgrounds,
   )
-  const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
+  const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(
+    getInitialBackgroundFitExpandedState,
+  )
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const {
     clearAllHover,
@@ -247,6 +258,25 @@ export default function App() {
       window.clearTimeout(resetSavedBuildOperationStatusTimeout)
     }
   }, [savedBuildOperationStatus])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+
+    const backgroundFitMediaQueryList = window.matchMedia(mediumDesktopBackgroundFitMediaQuery)
+
+    function handleBackgroundFitMediaChange(event: { matches: boolean }) {
+      setIsBackgroundFitPanelExpanded(!event.matches)
+    }
+
+    handleBackgroundFitMediaChange(backgroundFitMediaQueryList)
+    backgroundFitMediaQueryList.addEventListener('change', handleBackgroundFitMediaChange)
+
+    return () => {
+      backgroundFitMediaQueryList.removeEventListener('change', handleBackgroundFitMediaChange)
+    }
+  }, [])
 
   function handleResetCategories() {
     startTransition(() => {

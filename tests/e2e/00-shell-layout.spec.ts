@@ -2,13 +2,18 @@ import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   expectNoDocumentHorizontalOverflow,
+  expectNoWorkspaceHorizontalClip,
   expectViewportLocked,
+  getBackgroundFitPanel,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
   gotoPerksBrowser,
   searchPerks,
 } from './support/perks-browser'
+
+const denseSmallDesktopBuildUrl =
+  '/?build=Axe+Mastery,Mace+Mastery,Sword+Mastery,Recover,Berserk,Nimble,Dodge,Underdog,Battle+Flow,Killing+Frenzy,Rotation,Colossus'
 
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
   page,
@@ -67,6 +72,37 @@ test('uses normal page scrolling on tablet widths instead of cramped viewport ro
     () => document.documentElement.scrollHeight - window.innerHeight,
   )
   expect(scrollableDocumentHeight).toBeGreaterThan(200)
+})
+
+test('keeps dense picked builds usable on small desktop viewports', async ({ page }) => {
+  await page.setViewportSize({ height: 720, width: 1280 })
+  await page.goto(denseSmallDesktopBuildUrl)
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expect(page.getByLabel('Search perks')).toBeVisible()
+  await expect(
+    getBackgroundFitPanel(page).getByRole('button', { name: 'Expand background fit' }),
+  ).toHaveAttribute('aria-expanded', 'false')
+  await expectNoWorkspaceHorizontalClip(page)
+
+  const smallDesktopMetrics = await page.evaluate(() => {
+    const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+    const resultsList = document.querySelector('.results-list') as HTMLElement | null
+    const workspace = document.querySelector('.workspace') as HTMLElement | null
+
+    return {
+      plannerBoardOverflow:
+        plannerBoard === null
+          ? Number.POSITIVE_INFINITY
+          : plannerBoard.scrollHeight - plannerBoard.clientHeight,
+      resultsListHeight: resultsList?.clientHeight ?? 0,
+      workspaceHeight: workspace?.clientHeight ?? 0,
+    }
+  })
+
+  expect(smallDesktopMetrics.plannerBoardOverflow).toBeGreaterThan(20)
+  expect(smallDesktopMetrics.resultsListHeight).toBeGreaterThanOrEqual(160)
+  expect(smallDesktopMetrics.workspaceHeight).toBeGreaterThanOrEqual(340)
 })
 
 test('uses normal page scrolling on mobile while keeping core controls usable', async ({

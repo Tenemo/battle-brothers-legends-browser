@@ -49,7 +49,7 @@ function createBuildUrl(perkNames: string[]): string {
   return `/?build=${buildValue}`
 }
 
-test('build planner splits shared and individual perk groups without internal scrolling', async ({
+test('build planner splits shared and individual perk groups without layout drift', async ({
   page,
 }) => {
   await gotoPerksBrowser(page, { height: 768, width: 1366 })
@@ -57,6 +57,7 @@ test('build planner splits shared and individual perk groups without internal sc
   const initialHeaderHeight = await page
     .locator('.build-planner-header')
     .evaluate((element) => element.getBoundingClientRect().height)
+  const headerHeightSubpixelTolerance = 2
 
   await expect(page.getByRole('heading', { name: 'Build planner' })).toBeVisible()
   await expect(page.locator('.build-planner-summary')).toHaveCount(0)
@@ -93,7 +94,7 @@ test('build planner splits shared and individual perk groups without internal sc
         .locator('.build-planner-header')
         .evaluate((element) => element.getBoundingClientRect().height),
     )
-    .toBeGreaterThanOrEqual(initialHeaderHeight - 1)
+    .toBeGreaterThanOrEqual(initialHeaderHeight - headerHeightSubpixelTolerance)
   await expect
     .poll(async () =>
       page
@@ -207,9 +208,7 @@ test('build planner splits shared and individual perk groups without internal sc
     Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right),
   ).toBeLessThanOrEqual(1)
 
-  await pickedPerkTile
-    .getByRole('button', { name: 'View Clarity from build planner' })
-    .focus()
+  await pickedPerkTile.getByRole('button', { name: 'View Clarity from build planner' }).focus()
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
   await expect(page.getByRole('tooltip')).toContainText(
     /An additional \+10% of any damage ignores armor/i,
@@ -230,10 +229,10 @@ test('build planner splits shared and individual perk groups without internal sc
       const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
 
       return plannerBoard === null
-        ? Number.POSITIVE_INFINITY
+        ? Number.NEGATIVE_INFINITY
         : plannerBoard.scrollHeight - plannerBoard.clientHeight
     }),
-  ).toBeLessThanOrEqual(1)
+  ).toBeGreaterThan(20)
 
   const perksBarHorizontalOverflow = await page.evaluate(() => {
     const buildPerksBar = document.querySelector(

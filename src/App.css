@@ -679,6 +679,26 @@
   }
 }
 
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .app-shell {
+    gap: 0.6rem;
+    padding: 0.65rem;
+  }
+
+  .workspace {
+    grid-template-columns:
+      minmax(18rem, 0.8fr) minmax(10.5rem, 0.52fr) minmax(18rem, 1fr)
+      minmax(18rem, 1fr);
+    gap: 0.55rem;
+  }
+
+  .workspace.is-background-fit-collapsed {
+    grid-template-columns:
+      auto minmax(10.5rem, 0.52fr) minmax(18rem, 1fr)
+      minmax(18rem, 1fr);
+  }
+}
+
 @media (min-width: 1440px) {
   .workspace {
     grid-template-columns:

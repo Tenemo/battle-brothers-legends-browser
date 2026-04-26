@@ -32,6 +32,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
 
   await expect(backgroundFitPanel).toBeVisible()
   await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }),
+  ).toHaveAttribute('aria-expanded', 'false')
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
   await expect(
@@ -528,6 +532,10 @@ test('keeps dense background names readable from a shared build url and starts c
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
   await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }),
+  ).toHaveAttribute('aria-expanded', 'false')
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
   await expect(
@@ -579,6 +587,7 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
   const backgroundFitResultsScroll = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
   await backgroundSearchInput.fill('hedge')
 
   const hedgeKnightHeading = backgroundFitPanel.getByRole('heading', {
@@ -621,9 +630,7 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const backgroundFitPanelBody = document.querySelector(
-          '.background-fit-results-scroll',
-        )
+        const backgroundFitPanelBody = document.querySelector('.background-fit-results-scroll')
         const hedgeKnightHeading = [...document.querySelectorAll('.background-fit-card h3')].find(
           (heading) => heading.textContent?.trim() === 'Hedge Knight',
         )
@@ -655,6 +662,7 @@ test('does not stretch the background search field on tall desktop screens', asy
   const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
   await backgroundSearchInput.fill('hedge')
   await expect(
     backgroundFitPanel.getByRole('heading', { level: 3, name: 'Hedge Knight' }),

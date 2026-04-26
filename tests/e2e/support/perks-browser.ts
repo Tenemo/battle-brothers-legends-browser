@@ -89,6 +89,34 @@ export async function expectNoDocumentHorizontalOverflow(page: Page): Promise<vo
     .toBeLessThanOrEqual(1)
 }
 
+export async function expectNoWorkspaceHorizontalClip(page: Page): Promise<void> {
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const workspace = document.querySelector('.workspace') as HTMLElement | null
+
+        if (workspace === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        const workspaceRight = workspace.getBoundingClientRect().right
+        const workspaceColumnRights = [
+          '.background-fit-panel',
+          '.sidebar',
+          '.results-panel',
+          '.detail-panel',
+        ].flatMap((selector) => {
+          const element = document.querySelector(selector)
+
+          return element instanceof HTMLElement ? [element.getBoundingClientRect().right] : []
+        })
+
+        return Math.max(0, Math.max(...workspaceColumnRights) - workspaceRight)
+      }),
+    )
+    .toBeLessThanOrEqual(1)
+}
+
 export async function searchPerks(page: Page, query: string): Promise<void> {
   await page.getByLabel('Search perks').fill(query)
 }
