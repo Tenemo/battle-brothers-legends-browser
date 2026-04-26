@@ -455,21 +455,10 @@ export default function App() {
     )
   }
 
-  function handlePerkGroupToggle(categoryName: string, nextPerkGroupId: string) {
-    startTransition(() =>
-      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => {
-        const currentSelectedPerkGroupIds =
-          currentSelectedPerkGroupIdsByCategory[categoryName] ?? []
-        const nextSelectedPerkGroupIds = currentSelectedPerkGroupIds.includes(nextPerkGroupId)
-          ? currentSelectedPerkGroupIds.filter((perkGroupId) => perkGroupId !== nextPerkGroupId)
-          : [...currentSelectedPerkGroupIds, nextPerkGroupId]
-
-        return {
-          ...currentSelectedPerkGroupIdsByCategory,
-          [categoryName]: nextSelectedPerkGroupIds,
-        }
-      }),
-    )
+  function handlePerkGroupSelect(categoryName: string, perkGroupId: string) {
+    startTransition(() => {
+      selectPerkGroup({ categoryName, perkGroupId })
+    })
   }
 
   useEffect(() => {
@@ -584,7 +573,7 @@ export default function App() {
           onCategoryToggle={handleCategoryToggle}
           onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
           onResetCategories={handleResetCategories}
-          onPerkGroupToggle={handlePerkGroupToggle}
+          onPerkGroupSelect={handlePerkGroupSelect}
           pickedPerkCountsByCategory={pickedPerkCountsByCategory}
           pickedPerkCountsByPerkGroup={pickedPerkCountsByPerkGroup}
           query={query}

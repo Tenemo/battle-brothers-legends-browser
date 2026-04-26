@@ -39,6 +39,16 @@ export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
 }
 
+export function getSidebar(page: Page): Locator {
+  return page.locator('.sidebar')
+}
+
+export function getSidebarPerkGroupButton(page: Page, perkGroupName: string): Locator {
+  return getSidebar(page).getByRole('button', {
+    name: `Select perk group ${perkGroupName}`,
+  })
+}
+
 export async function gotoPerksBrowser(
   page: Page,
   viewport: PerksBrowserViewport = defaultPerksBrowserViewport,
@@ -138,8 +148,8 @@ export async function disableCategory(page: Page, categoryName: string): Promise
   await page.getByRole('button', { name: `Disable category ${categoryName}` }).click()
 }
 
-export async function togglePerkGroup(page: Page, perkGroupName: string): Promise<void> {
-  await page.getByRole('button', { name: `Toggle perk group ${perkGroupName}` }).click()
+export async function selectPerkGroup(page: Page, perkGroupName: string): Promise<void> {
+  await getSidebarPerkGroupButton(page, perkGroupName).click()
 }
 
 export async function inspectPerkFromResults(page: Page, perkName: string): Promise<void> {

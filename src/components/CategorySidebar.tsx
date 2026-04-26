@@ -12,7 +12,7 @@ type CategorySidebarProps = {
   onCategoryToggle: (categoryName: string) => void
   onResetCategoryPerkGroups: (categoryName: string) => void
   onResetCategories: () => void
-  onPerkGroupToggle: (categoryName: string, perkGroupId: string) => void
+  onPerkGroupSelect: (categoryName: string, perkGroupId: string) => void
   pickedPerkCountsByCategory: Map<string, number>
   pickedPerkCountsByPerkGroup: Map<string, number>
   query: string
@@ -44,7 +44,7 @@ export function CategorySidebar({
   onCategoryToggle,
   onResetCategoryPerkGroups,
   onResetCategories,
-  onPerkGroupToggle,
+  onPerkGroupSelect,
   pickedPerkCountsByCategory,
   pickedPerkCountsByPerkGroup,
   query,
@@ -55,7 +55,7 @@ export function CategorySidebar({
     <aside className="sidebar app-scrollbar" aria-label="Perk categories">
       <div className="panel-heading">
         <h2>Categories</h2>
-        <p>Enable one or more categories, then narrow each one to the perk groups you want.</p>
+        <p>Enable categories, then choose one perk group to focus the results.</p>
       </div>
       <button
         aria-label="Reset all category filters"
@@ -165,12 +165,12 @@ export function CategorySidebar({
 
                   return (
                     <button
-                      aria-label={`Toggle perk group ${perkGroupOption.perkGroupName}`}
+                      aria-label={`Select perk group ${perkGroupOption.perkGroupName}`}
                       aria-pressed={selectedPerkGroupIds.includes(perkGroupOption.perkGroupId)}
                       className={perkGroupChipClassName}
                       key={perkGroupOption.perkGroupId}
                       onClick={() =>
-                        onPerkGroupToggle(availableCategoryName, perkGroupOption.perkGroupId)
+                        onPerkGroupSelect(availableCategoryName, perkGroupOption.perkGroupId)
                       }
                       type="button"
                     >

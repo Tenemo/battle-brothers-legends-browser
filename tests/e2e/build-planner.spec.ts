@@ -5,6 +5,7 @@ import {
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
+  getSidebarPerkGroupButton,
   gotoPerksBrowser,
   inspectPerkFromResults,
   mediumPerksBrowserViewport,
@@ -432,9 +433,7 @@ test('selects build planner perk groups from their group tiles', async ({ page }
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Defense' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Toggle perk group Heavy Armor' })).toHaveClass(
-    /is-active/,
-  )
+  await expect(getSidebarPerkGroupButton(page, 'Heavy Armor')).toHaveClass(/is-active/)
 
   const emptyPillListPosition = await heavyArmorGroupCard.evaluate((card) => {
     const pillList = card.querySelector('.planner-pill-list')
@@ -490,9 +489,7 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   })
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
-  await expect(page.getByRole('button', { name: 'Toggle perk group Heavy Armor' })).toHaveClass(
-    /is-active/,
-  )
+  await expect(getSidebarPerkGroupButton(page, 'Heavy Armor')).toHaveClass(/is-active/)
 
   await searchPerks(page, 'temporary search')
   await heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' }).click()
@@ -610,7 +607,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
 
   await searchPerks(page, 'Perfect Focus')
   await page.getByRole('button', { name: 'Enable category Magic' }).click()
-  await page.getByRole('button', { name: 'Toggle perk group Deadeye' }).click()
+  await getSidebarPerkGroupButton(page, 'Deadeye').click()
 
   await getBuildPerksBar(page)
     .getByRole('button', { name: 'View Clarity from build planner' })
@@ -619,9 +616,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await expect(page.getByText('1 perk picked.')).toBeVisible()
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
-    /is-active/,
-  )
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveClass(/is-active/)
   await expect(page.getByRole('button', { name: 'Inspect Clarity' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
   await expect(page.getByText('Build slot 1')).toBeVisible()

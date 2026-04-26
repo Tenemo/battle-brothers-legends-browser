@@ -6,10 +6,11 @@ import {
   getBackgroundFitPanel,
   getBuildIndividualGroupsList,
   getResultsList,
+  getSidebarPerkGroupButton,
   gotoPerksBrowser,
   mediumPerksBrowserViewport,
   searchPerks,
-  togglePerkGroup,
+  selectPerkGroup,
 } from './support/perks-browser'
 
 const denseSharedBuildUrl =
@@ -156,13 +157,13 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(plannerAxeGroupCard).toHaveClass(/is-highlighted/)
 
   await enableCategory(page, 'Traits')
-  await togglePerkGroup(page, 'Calm')
+  await selectPerkGroup(page, 'Calm')
   await searchPerks(page, 'Berserk')
 
   await axeMatchButton.click()
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Toggle perk group Axe' })).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toHaveClass(/is-active/)
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
 
   await backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }).click()
@@ -445,9 +446,7 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await barterMatchButton.click()
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Profession' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Toggle perk group Barter' })).toHaveClass(
-    /is-active/,
-  )
+  await expect(getSidebarPerkGroupButton(page, 'Barter')).toHaveClass(/is-active/)
 })
 
 test('keeps the background search enabled without any picked perks', async ({ page }) => {

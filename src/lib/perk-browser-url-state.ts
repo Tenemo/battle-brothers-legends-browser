@@ -187,6 +187,7 @@ export function readPerkBrowserUrlState(
   const pickedPerkIdSet = new Set<string>()
   const pickedPerkIds: string[] = []
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
+  let selectedPerkGroupCategoryName: string | null = null
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
   const shouldIncludeOriginBackgrounds = readShouldIncludeOriginBackgrounds(params)
 
@@ -199,6 +200,10 @@ export function readPerkBrowserUrlState(
   }
 
   for (const [perkGroupParamKey, categoryName] of categoryNameByParamKey) {
+    if (selectedPerkGroupCategoryName !== null) {
+      break
+    }
+
     for (const perkGroupValue of getGroupedParamValues(params, perkGroupParamKey)) {
       const perkGroupId = perkGroupIdByLookupValueByGroup
         .get(categoryName)
@@ -209,14 +214,9 @@ export function readPerkBrowserUrlState(
       }
 
       selectedCategoryNameSet.add(categoryName)
-
-      if (!(categoryName in selectedPerkGroupIdsByCategory)) {
-        selectedPerkGroupIdsByCategory[categoryName] = []
-      }
-
-      if (!selectedPerkGroupIdsByCategory[categoryName].includes(perkGroupId)) {
-        selectedPerkGroupIdsByCategory[categoryName].push(perkGroupId)
-      }
+      selectedPerkGroupIdsByCategory[categoryName] = [perkGroupId]
+      selectedPerkGroupCategoryName = categoryName
+      break
     }
   }
 
@@ -252,6 +252,7 @@ export function buildPerkBrowserUrlSearch(
   const orderedSelectedCategoryNames = options.availableCategoryNames.filter((categoryName) =>
     selectedCategoryNameSet.has(categoryName),
   )
+  let hasWrittenPerkGroup = false
   const normalizedQuery = collapseWhitespace(urlState.query)
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
 
@@ -270,6 +271,10 @@ export function buildPerkBrowserUrlSearch(
   appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedCategoryNames)
 
   for (const categoryName of orderedSelectedCategoryNames) {
+    if (hasWrittenPerkGroup) {
+      break
+    }
+
     const selectedPerkGroupIdSet = new Set(
       urlState.selectedPerkGroupIdsByCategory[categoryName] ?? [],
     )
@@ -279,10 +284,12 @@ export function buildPerkBrowserUrlSearch(
     for (const perkGroupOption of perkGroupOptions) {
       if (selectedPerkGroupIdSet.has(perkGroupOption.perkGroupId)) {
         selectedPerkGroupNames.push(perkGroupOption.perkGroupName)
+        break
       }
     }
 
     appendGroupedQueryEntry(entries, createPerkGroupParamKey(categoryName), selectedPerkGroupNames)
+    hasWrittenPerkGroup = selectedPerkGroupNames.length > 0
   }
 
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
