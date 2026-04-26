@@ -5,7 +5,11 @@ import '@fontsource/source-sans-3/600.css'
 import '@fontsource/source-sans-3/700.css'
 import './App.css'
 import { BackgroundFitPanel } from './components/BackgroundFitPanel'
-import { BuildPlanner } from './components/BuildPlanner'
+import {
+  BuildPlanner,
+  type BuildPlannerSavedBuild,
+  type SavedBuildOperationStatus,
+} from './components/BuildPlanner'
 import { CategorySidebar } from './components/CategorySidebar'
 import { PerkDetail } from './components/PerkDetail'
 import { PerkResults } from './components/PerkResults'
@@ -27,12 +31,13 @@ import { compareCategoryNames } from './lib/perk-categories'
 import { buildPerkBrowserBuildUrlSearch } from './lib/perk-browser-url-state'
 import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
-import { useBuildShareLink } from './lib/use-build-share-link'
+import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
 import {
   usePerkBrowserUrlSync,
   useInitialPerkBrowserUrlState,
 } from './lib/use-perk-browser-url-sync'
 import { usePerkHoverState } from './lib/use-perk-hover-state'
+import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
@@ -115,6 +120,40 @@ export default function App() {
     buildShareSearch,
     hasPickedPerks,
   })
+  const {
+    deleteSavedBuild,
+    isSavedBuildsLoading,
+    saveCurrentBuild,
+    savedBuildPersistenceState,
+    savedBuilds,
+    savedBuildsErrorMessage,
+  } = useSavedBuilds({
+    referenceVersion: legendsPerksDataset.referenceVersion,
+  })
+  const [savedBuildOperationStatus, setSavedBuildOperationStatus] =
+    useState<SavedBuildOperationStatus>('idle')
+  const savedBuildViews = useMemo<BuildPlannerSavedBuild[]>(
+    () =>
+      savedBuilds.map((savedBuild) => {
+        const availablePerks = savedBuild.pickedPerkIds.flatMap((pickedPerkId) => {
+          const pickedPerk = allPerksById.get(pickedPerkId)
+
+          return pickedPerk ? [pickedPerk] : []
+        })
+
+        return {
+          availablePerkIds: availablePerks.map((perk) => perk.id),
+          id: savedBuild.id,
+          missingPerkCount: savedBuild.pickedPerkIds.length - availablePerks.length,
+          name: savedBuild.name,
+          perkNames: availablePerks.map((perk) => perk.perkName),
+          pickedPerkCount: savedBuild.pickedPerkIds.length,
+          referenceVersion: savedBuild.referenceVersion,
+          updatedAt: savedBuild.updatedAt,
+        }
+      }),
+    [savedBuilds],
+  )
   const buildPlannerGroups = useMemo(() => getBuildPlannerGroups(pickedPerks), [pickedPerks])
   const backgroundFitView = useMemo(
     () => backgroundFitEngine.getBackgroundFitView(pickedPerks),
@@ -195,6 +234,20 @@ export default function App() {
     },
   )
 
+  useEffect(() => {
+    if (savedBuildOperationStatus === 'idle') {
+      return
+    }
+
+    const resetSavedBuildOperationStatusTimeout = window.setTimeout(() => {
+      setSavedBuildOperationStatus('idle')
+    }, 1600)
+
+    return () => {
+      window.clearTimeout(resetSavedBuildOperationStatusTimeout)
+    }
+  }, [savedBuildOperationStatus])
+
   function handleResetCategories() {
     startTransition(() => {
       setExpandedCategoryNames([])
@@ -231,6 +284,55 @@ export default function App() {
       clearAllHover()
       resetShareBuildStatus()
     })
+  }
+
+  async function handleSaveCurrentBuild(name: string) {
+    await saveCurrentBuild({
+      name,
+      pickedPerkIds,
+    })
+    setSavedBuildOperationStatus('saved')
+  }
+
+  function handleLoadSavedBuild(savedBuildId: string) {
+    const savedBuild = savedBuildViews.find(
+      (currentSavedBuild) => currentSavedBuild.id === savedBuildId,
+    )
+
+    if (!savedBuild || savedBuild.availablePerkIds.length === 0) {
+      return
+    }
+
+    startTransition(() => {
+      setPickedPerkIds(savedBuild.availablePerkIds)
+      clearAllHover()
+      resetShareBuildStatus()
+    })
+    setSavedBuildOperationStatus('loaded')
+  }
+
+  async function handleDeleteSavedBuild(savedBuildId: string) {
+    await deleteSavedBuild(savedBuildId)
+    setSavedBuildOperationStatus('deleted')
+  }
+
+  async function handleCopySavedBuildLink(savedBuildId: string) {
+    const savedBuild = savedBuildViews.find(
+      (currentSavedBuild) => currentSavedBuild.id === savedBuildId,
+    )
+
+    if (!savedBuild || savedBuild.availablePerkIds.length === 0) {
+      return
+    }
+
+    try {
+      await copyBuildShareUrl(
+        buildPerkBrowserBuildUrlSearch(savedBuild.availablePerkIds, allPerksById),
+      )
+      setSavedBuildOperationStatus('copied')
+    } catch {
+      setSavedBuildOperationStatus('copy-error')
+    }
   }
 
   function handleInspectPlannerPerk(perkId: string) {
@@ -387,15 +489,24 @@ export default function App() {
         hoveredPerkGroupKey={hoveredPerkGroupKey}
         hoveredPerkId={hoveredPerkId}
         individualPerkGroups={buildPlannerGroups.individualPerkGroups}
+        isSavedBuildsLoading={isSavedBuildsLoading}
         onClearBuild={handleClearBuild}
         onCloseBuildPerkHover={closeBuildPerkHover}
         onCloseBuildPerkTooltip={closeBuildPerkTooltip}
+        onCopySavedBuildLink={handleCopySavedBuildLink}
+        onDeleteSavedBuild={handleDeleteSavedBuild}
         onInspectPlannerPerk={handleInspectPlannerPerk}
+        onLoadSavedBuild={handleLoadSavedBuild}
         onOpenBuildPerkHover={openBuildPerkHover}
         onOpenBuildPerkTooltip={openBuildPerkTooltip}
         onRemovePickedPerk={handleRemovePickedPerk}
+        onSaveCurrentBuild={handleSaveCurrentBuild}
         onShareBuild={handleShareBuild}
         pickedPerks={pickedPerks}
+        savedBuildOperationStatus={savedBuildOperationStatus}
+        savedBuildPersistenceState={savedBuildPersistenceState}
+        savedBuilds={savedBuildViews}
+        savedBuildsErrorMessage={savedBuildsErrorMessage}
         shareBuildStatus={shareBuildStatus}
         sharedPerkGroups={buildPlannerGroups.sharedPerkGroups}
       />

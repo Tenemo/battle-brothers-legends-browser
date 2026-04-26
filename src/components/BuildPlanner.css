@@ -48,7 +48,7 @@
 .build-planner-actions {
   display: flex;
   flex: 0 0 auto;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 0.42rem;
   align-items: center;
@@ -148,6 +148,10 @@
   min-width: 6.7rem;
 }
 
+.saved-build-action-button {
+  min-width: 5.9rem;
+}
+
 .share-build-button.is-confirmed {
   border-color: rgb(116 168 105 / 0.54);
   background: rgb(33 55 31 / 0.72);
@@ -155,6 +159,174 @@
 }
 
 .share-build-button.is-error {
+  border-color: rgb(190 80 64 / 0.54);
+  background: rgb(74 31 25 / 0.72);
+  color: rgb(244 205 197);
+}
+
+.saved-builds-dialog-backdrop {
+  position: fixed;
+  z-index: 30;
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 0.62);
+}
+
+.saved-builds-dialog {
+  display: grid;
+  gap: 0.72rem;
+  width: min(42rem, 100%);
+  max-height: min(40rem, calc(100vh - 2rem));
+  border: 1px solid rgb(204 155 84 / 0.2);
+  border-radius: 0.72rem;
+  padding: 0.82rem;
+  background: linear-gradient(180deg, rgb(26 21 17 / 0.98), rgb(15 12 10 / 0.99)), rgb(15 12 10);
+  box-shadow:
+    0 24px 58px rgb(0 0 0 / 0.48),
+    inset 0 1px 0 rgb(255 255 255 / 0.04);
+  overflow: hidden;
+}
+
+.saved-builds-dialog-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.8rem;
+  align-items: flex-start;
+}
+
+.saved-builds-dialog h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.saved-builds-storage-status {
+  margin: 0.22rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.saved-builds-close-button {
+  flex: 0 0 auto;
+}
+
+.saved-build-form {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.saved-build-form label {
+  color: var(--text-muted);
+  font-size: 0.72rem;
+}
+
+.saved-build-form-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 0.42rem;
+}
+
+.saved-build-form input {
+  min-width: 0;
+  min-height: 2rem;
+  border: 1px solid rgb(204 155 84 / 0.16);
+  border-radius: 0.62rem;
+  padding: 0.4rem 0.58rem;
+  background: rgb(11 9 8 / 0.72);
+  color: var(--text-primary);
+  font: inherit;
+}
+
+.saved-build-form input:disabled {
+  opacity: 0.48;
+}
+
+.saved-build-primary-button {
+  border-color: rgb(204 155 84 / 0.32);
+  color: var(--text-primary);
+}
+
+.saved-builds-status-message {
+  margin: 0;
+  border: 1px solid rgb(116 168 105 / 0.28);
+  border-radius: 0.58rem;
+  padding: 0.42rem 0.54rem;
+  background: rgb(33 55 31 / 0.42);
+  color: rgb(211 237 199);
+  font-size: 0.78rem;
+}
+
+.saved-builds-status-message.is-error {
+  border-color: rgb(190 80 64 / 0.42);
+  background: rgb(74 31 25 / 0.52);
+  color: rgb(244 205 197);
+}
+
+.saved-builds-list {
+  display: grid;
+  gap: 0.46rem;
+  min-height: 0;
+  overflow: auto;
+}
+
+.saved-builds-empty {
+  margin: 0;
+  border: 1px dashed rgb(204 155 84 / 0.18);
+  border-radius: 0.62rem;
+  padding: 0.74rem;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.saved-build-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  gap: 0.7rem;
+  align-items: center;
+  border: 1px solid rgb(204 155 84 / 0.12);
+  border-radius: 0.62rem;
+  padding: 0.62rem;
+  background: rgb(18 15 13 / 0.84);
+}
+
+.saved-build-card-copy {
+  min-width: 0;
+}
+
+.saved-build-card-name {
+  display: block;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-build-card-meta,
+.saved-build-card-preview {
+  margin: 0.16rem 0 0;
+  color: var(--text-muted);
+  font-size: 0.74rem;
+}
+
+.saved-build-card-preview {
+  overflow: hidden;
+  color: var(--text-secondary);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.saved-build-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.32rem;
+}
+
+.saved-build-delete-button:hover:not(:disabled),
+.saved-build-delete-button:focus-visible:not(:disabled) {
   border-color: rgb(190 80 64 / 0.54);
   background: rgb(74 31 25 / 0.72);
   color: rgb(244 205 197);
@@ -584,6 +756,34 @@
 }
 
 @media (max-width: 760px) {
+  .build-planner-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .build-planner-actions {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .saved-builds-dialog-backdrop {
+    align-items: stretch;
+    padding: 0.52rem;
+  }
+
+  .saved-builds-dialog {
+    max-height: calc(100vh - 1.04rem);
+  }
+
+  .saved-build-form-row,
+  .saved-build-card {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-build-card-actions {
+    justify-content: flex-start;
+  }
+
   .planner-row {
     grid-template-columns: 1fr;
   }
