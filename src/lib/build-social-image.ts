@@ -290,9 +290,11 @@ function renderBackgroundFits(
         28,
         Math.min(
           160,
-          backgroundFit.maximumTotalGroupCount === 0
+          backgroundFit.maximumTotalPerkGroupCount === 0
             ? 28
-            : (backgroundFit.expectedMatchedTreeCount / backgroundFit.maximumTotalGroupCount) * 160,
+            : (backgroundFit.expectedMatchedPerkGroupCount /
+                backgroundFit.maximumTotalPerkGroupCount) *
+                160,
         ),
       )
       const name = truncateLineByVisualWidth(backgroundFit.backgroundName, 16)
@@ -310,9 +312,9 @@ function renderBackgroundFits(
         )}</text>
         <rect x="270" y="-24" width="160" height="11" rx="5.5" fill="#2a211b" />
         <rect x="270" y="-24" width="${scoreWidth.toFixed(1)}" height="11" rx="5.5" fill="#c89d66" />
-        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.expectedMatchedTreeCount.toFixed(
+        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.expectedMatchedPerkGroupCount.toFixed(
           1,
-        )}/${backgroundFit.maximumTotalGroupCount} expected groups</text>
+        )}/${backgroundFit.maximumTotalPerkGroupCount} expected perk groups</text>
       </g>`
     })
     .join('')

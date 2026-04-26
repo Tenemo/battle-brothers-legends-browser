@@ -14,14 +14,14 @@ import legendsPerksDatasetJson from './data/legends-perks.json'
 import { createBackgroundFitEngine } from './lib/background-fit'
 import { getBuildPlannerGroups } from './lib/build-planner'
 import {
-  compareDisplayedGroups,
-  compareDisplayedTreeOptions,
-  getCategoryTreeOptions,
-  getGroupCounts,
-  getPickedPerkCountsByGroup,
-  getPickedPerkCountsByTree,
-  getVisiblePerkCountsByCategoryTree,
-  getVisiblePerkCountsByGroup,
+  compareDisplayedCategories,
+  compareDisplayedPerkGroupOptions,
+  getCategoryPerkGroupOptions,
+  getCategoryCounts,
+  getPickedPerkCountsByCategory,
+  getPickedPerkCountsByPerkGroup,
+  getVisiblePerkCountsByCategoryPerkGroup,
+  getVisiblePerkCountsByCategory,
 } from './lib/category-filter-model'
 import { compareCategoryNames } from './lib/perk-categories'
 import {
@@ -43,29 +43,29 @@ const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 
-const groupCounts = getGroupCounts(allPerks)
-const categoryTreeOptionsByGroup = getCategoryTreeOptions(allPerks)
-const availableGroups = [...groupCounts.keys()].toSorted(compareCategoryNames)
+const categoryCounts = getCategoryCounts(allPerks)
+const perkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
+const availableCategories = [...categoryCounts.keys()].toSorted(compareCategoryNames)
 
 export default function App() {
   const [initialUrlState] = useState(() =>
     readPerkBrowserUrlStateFromLocation({
-      availableGroupNames: availableGroups,
+      availableCategoryNames: availableCategories,
       perks: allPerks,
-      treeOptionsByGroup: categoryTreeOptionsByGroup,
+      perkGroupOptionsByCategory: perkGroupOptionsByCategory,
     }),
   )
   const [query, setQuery] = useState(initialUrlState.query)
   const [pickedPerkIds, setPickedPerkIds] = useState<string[]>(initialUrlState.pickedPerkIds)
-  const [selectedGroupNames, setSelectedGroupNames] = useState<string[]>(
-    initialUrlState.selectedGroupNames,
+  const [selectedCategoryNames, setSelectedCategoryNames] = useState<string[]>(
+    initialUrlState.selectedCategoryNames,
   )
-  const [expandedGroupNames, setExpandedGroupNames] = useState<string[]>(
-    initialUrlState.selectedGroupNames,
+  const [expandedCategoryNames, setExpandedCategoryNames] = useState<string[]>(
+    initialUrlState.selectedCategoryNames,
   )
-  const [selectedTreeIdsByGroup, setSelectedTreeIdsByGroup] = useState<Record<string, string[]>>(
-    initialUrlState.selectedTreeIdsByGroup,
-  )
+  const [selectedPerkGroupIdsByCategory, setSelectedPerkGroupIdsByCategory] = useState<
+    Record<string, string[]>
+  >(initialUrlState.selectedPerkGroupIdsByCategory)
   const [hoveredPerkId, setHoveredPerkId] = useState<string | null>(null)
   const [hoveredPerkGroupKey, setHoveredPerkGroupKey] = useState<string | null>(null)
   const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
@@ -76,8 +76,8 @@ export default function App() {
   const normalizedPerkSearchPhrase = normalizeSearchPhrase(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
     query,
-    selectedGroupNames,
-    selectedTreeIdsByGroup,
+    selectedCategoryNames,
+    selectedPerkGroupIdsByCategory,
   })
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(
     () => visiblePerks[0]?.id ?? null,
@@ -102,51 +102,51 @@ export default function App() {
     () => backgroundFitEngine.getBackgroundFitView(pickedPerks),
     [pickedPerks],
   )
-  const visiblePerkCountsByGroup = useMemo(
-    () => getVisiblePerkCountsByGroup(visiblePerks),
+  const visiblePerkCountsByCategory = useMemo(
+    () => getVisiblePerkCountsByCategory(visiblePerks),
     [visiblePerks],
   )
-  const visiblePerkCountsByCategoryTree = useMemo(
-    () => getVisiblePerkCountsByCategoryTree(visiblePerks),
+  const visiblePerkCountsByCategoryPerkGroup = useMemo(
+    () => getVisiblePerkCountsByCategoryPerkGroup(visiblePerks),
     [visiblePerks],
   )
-  const displayedGroupNames = useMemo(
+  const displayedCategoryNames = useMemo(
     () =>
-      [...availableGroups].toSorted((leftGroupName, rightGroupName) =>
-        compareDisplayedGroups({
-          leftGroupName,
+      [...availableCategories].toSorted((leftCategoryName, rightCategoryName) =>
+        compareDisplayedCategories({
+          leftCategoryName,
           normalizedSearchPhrase: normalizedPerkSearchPhrase,
-          rightGroupName,
-          treeOptionsByGroup: categoryTreeOptionsByGroup,
-          visiblePerkCountsByGroup,
+          rightCategoryName,
+          perkGroupOptionsByCategory: perkGroupOptionsByCategory,
+          visiblePerkCountsByCategory,
         }),
       ),
-    [normalizedPerkSearchPhrase, visiblePerkCountsByGroup],
+    [normalizedPerkSearchPhrase, visiblePerkCountsByCategory],
   )
-  const displayedTreeOptionsByGroup = useMemo(
+  const displayedPerkGroupOptionsByCategory = useMemo(
     () =>
       new Map(
-        displayedGroupNames.map((groupName) => {
-          const treeOptions = categoryTreeOptionsByGroup.get(groupName) ?? []
+        displayedCategoryNames.map((categoryName) => {
+          const perkGroupOptions = perkGroupOptionsByCategory.get(categoryName) ?? []
 
           return [
-            groupName,
-            [...treeOptions].toSorted((leftTreeOption, rightTreeOption) =>
-              compareDisplayedTreeOptions({
-                categoryName: groupName,
-                leftTreeOption,
+            categoryName,
+            [...perkGroupOptions].toSorted((leftPerkGroupOption, rightPerkGroupOption) =>
+              compareDisplayedPerkGroupOptions({
+                categoryName: categoryName,
+                leftPerkGroupOption,
                 normalizedSearchPhrase: normalizedPerkSearchPhrase,
-                rightTreeOption,
-                visiblePerkCountsByCategoryTree,
+                rightPerkGroupOption,
+                visiblePerkCountsByCategoryPerkGroup,
               }),
             ),
           ] as const
         }),
       ),
-    [displayedGroupNames, normalizedPerkSearchPhrase, visiblePerkCountsByCategoryTree],
+    [displayedCategoryNames, normalizedPerkSearchPhrase, visiblePerkCountsByCategoryPerkGroup],
   )
-  const pickedPerkCountsByGroup = getPickedPerkCountsByGroup(pickedPerks)
-  const pickedPerkCountsByTree = getPickedPerkCountsByTree(pickedPerks)
+  const pickedPerkCountsByCategory = getPickedPerkCountsByCategory(pickedPerks)
+  const pickedPerkCountsByPerkGroup = getPickedPerkCountsByPerkGroup(pickedPerks)
   const pickedPerkOrderById = new Map(
     pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
   )
@@ -163,17 +163,17 @@ export default function App() {
   const hoveredBuildPerkTooltipId =
     hoveredBuildPerk === null ? undefined : `build-perk-tooltip-${hoveredBuildPerk.id}`
   const hasPickedPerks = pickedPerks.length > 0
-  const selectedCategoryCount = selectedGroupNames.length
-  const selectedTreeCount = Object.values(selectedTreeIdsByGroup).reduce(
-    (treeCount, selectedTreeIds) => treeCount + selectedTreeIds.length,
+  const selectedCategoryCount = selectedCategoryNames.length
+  const selectedPerkGroupCount = Object.values(selectedPerkGroupIdsByCategory).reduce(
+    (perkGroupCount, selectedPerkGroupIds) => perkGroupCount + selectedPerkGroupIds.length,
     0,
   )
 
-  function handleResetGroups() {
+  function handleResetCategories() {
     startTransition(() => {
-      setExpandedGroupNames([])
-      setSelectedGroupNames([])
-      setSelectedTreeIdsByGroup({})
+      setExpandedCategoryNames([])
+      setSelectedCategoryNames([])
+      setSelectedPerkGroupIdsByCategory({})
     })
   }
 
@@ -303,8 +303,8 @@ export default function App() {
     )
   }
 
-  function handleOpenPerkGroupHover(categoryName: string, treeId: string) {
-    setHoveredPerkGroupKey(getPerkGroupHoverKey({ categoryName, treeId }))
+  function handleOpenPerkGroupHover(categoryName: string, perkGroupId: string) {
+    setHoveredPerkGroupKey(getPerkGroupHoverKey({ categoryName, perkGroupId }))
     setHoveredPerkId(null)
     setHoveredBuildPerkTooltip(null)
   }
@@ -315,86 +315,90 @@ export default function App() {
     )
   }
 
-  function handleInspectPerkGroup(categoryName: string, treeId: string) {
+  function handleInspectPerkGroup(categoryName: string, perkGroupId: string) {
     startTransition(() => {
       setQuery('')
-      setSelectedGroupNames((currentSelectedGroupNames) =>
-        currentSelectedGroupNames.includes(categoryName)
-          ? currentSelectedGroupNames
-          : [...currentSelectedGroupNames, categoryName],
+      setSelectedCategoryNames((currentSelectedCategoryNames) =>
+        currentSelectedCategoryNames.includes(categoryName)
+          ? currentSelectedCategoryNames
+          : [...currentSelectedCategoryNames, categoryName],
       )
-      setExpandedGroupNames((currentExpandedGroupNames) =>
-        currentExpandedGroupNames.includes(categoryName)
-          ? currentExpandedGroupNames
-          : [...currentExpandedGroupNames, categoryName],
+      setExpandedCategoryNames((currentExpandedCategoryNames) =>
+        currentExpandedCategoryNames.includes(categoryName)
+          ? currentExpandedCategoryNames
+          : [...currentExpandedCategoryNames, categoryName],
       )
-      setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => {
-        const currentSelectedTreeIds = currentSelectedTreeIdsByGroup[categoryName] ?? []
+      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => {
+        const currentSelectedPerkGroupIds =
+          currentSelectedPerkGroupIdsByCategory[categoryName] ?? []
 
-        if (currentSelectedTreeIds.includes(treeId)) {
-          return currentSelectedTreeIdsByGroup
+        if (currentSelectedPerkGroupIds.includes(perkGroupId)) {
+          return currentSelectedPerkGroupIdsByCategory
         }
 
         return {
-          ...currentSelectedTreeIdsByGroup,
-          [categoryName]: [...currentSelectedTreeIds, treeId],
+          ...currentSelectedPerkGroupIdsByCategory,
+          [categoryName]: [...currentSelectedPerkGroupIds, perkGroupId],
         }
       })
     })
   }
 
-  function handleGroupToggle(nextGroupName: string) {
+  function handleCategoryToggle(nextCategoryName: string) {
     startTransition(() => {
-      const isSelected = selectedGroupNames.includes(nextGroupName)
+      const isSelected = selectedCategoryNames.includes(nextCategoryName)
 
       if (isSelected) {
-        setExpandedGroupNames((currentExpandedGroupNames) =>
-          currentExpandedGroupNames.filter((groupName) => groupName !== nextGroupName),
+        setExpandedCategoryNames((currentExpandedCategoryNames) =>
+          currentExpandedCategoryNames.filter((categoryName) => categoryName !== nextCategoryName),
         )
-        setSelectedGroupNames((currentSelectedGroupNames) =>
-          currentSelectedGroupNames.filter((groupName) => groupName !== nextGroupName),
+        setSelectedCategoryNames((currentSelectedCategoryNames) =>
+          currentSelectedCategoryNames.filter((categoryName) => categoryName !== nextCategoryName),
         )
-        setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => {
-          const remainingSelectedTreeIdsByGroup = { ...currentSelectedTreeIdsByGroup }
-          delete remainingSelectedTreeIdsByGroup[nextGroupName]
+        setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => {
+          const remainingSelectedPerkGroupIdsByCategory = {
+            ...currentSelectedPerkGroupIdsByCategory,
+          }
+          delete remainingSelectedPerkGroupIdsByCategory[nextCategoryName]
 
-          return remainingSelectedTreeIdsByGroup
+          return remainingSelectedPerkGroupIdsByCategory
         })
         return
       }
 
-      setExpandedGroupNames((currentExpandedGroupNames) =>
-        currentExpandedGroupNames.includes(nextGroupName)
-          ? currentExpandedGroupNames
-          : [...currentExpandedGroupNames, nextGroupName],
+      setExpandedCategoryNames((currentExpandedCategoryNames) =>
+        currentExpandedCategoryNames.includes(nextCategoryName)
+          ? currentExpandedCategoryNames
+          : [...currentExpandedCategoryNames, nextCategoryName],
       )
-      setSelectedGroupNames((currentSelectedGroupNames) => [
-        ...currentSelectedGroupNames,
-        nextGroupName,
+      setSelectedCategoryNames((currentSelectedCategoryNames) => [
+        ...currentSelectedCategoryNames,
+        nextCategoryName,
       ])
     })
   }
 
-  function handleResetGroupTrees(groupName: string) {
+  function handleResetCategoryPerkGroups(categoryName: string) {
     startTransition(() =>
-      setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => ({
-        ...currentSelectedTreeIdsByGroup,
-        [groupName]: [],
+      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => ({
+        ...currentSelectedPerkGroupIdsByCategory,
+        [categoryName]: [],
       })),
     )
   }
 
-  function handleTreeToggle(groupName: string, nextTreeId: string) {
+  function handlePerkGroupToggle(categoryName: string, nextPerkGroupId: string) {
     startTransition(() =>
-      setSelectedTreeIdsByGroup((currentSelectedTreeIdsByGroup) => {
-        const currentSelectedTreeIds = currentSelectedTreeIdsByGroup[groupName] ?? []
-        const nextSelectedTreeIds = currentSelectedTreeIds.includes(nextTreeId)
-          ? currentSelectedTreeIds.filter((treeId) => treeId !== nextTreeId)
-          : [...currentSelectedTreeIds, nextTreeId]
+      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => {
+        const currentSelectedPerkGroupIds =
+          currentSelectedPerkGroupIdsByCategory[categoryName] ?? []
+        const nextSelectedPerkGroupIds = currentSelectedPerkGroupIds.includes(nextPerkGroupId)
+          ? currentSelectedPerkGroupIds.filter((perkGroupId) => perkGroupId !== nextPerkGroupId)
+          : [...currentSelectedPerkGroupIds, nextPerkGroupId]
 
         return {
-          ...currentSelectedTreeIdsByGroup,
-          [groupName]: nextSelectedTreeIds,
+          ...currentSelectedPerkGroupIdsByCategory,
+          [categoryName]: nextSelectedPerkGroupIds,
         }
       }),
     )
@@ -423,13 +427,13 @@ export default function App() {
       {
         pickedPerkIds,
         query,
-        selectedGroupNames,
-        selectedTreeIdsByGroup,
+        selectedCategoryNames,
+        selectedPerkGroupIdsByCategory,
       },
       {
-        availableGroupNames: availableGroups,
+        availableCategoryNames: availableCategories,
         perksById: allPerksById,
-        treeOptionsByGroup: categoryTreeOptionsByGroup,
+        perkGroupOptionsByCategory: perkGroupOptionsByCategory,
       },
     )
 
@@ -442,7 +446,7 @@ export default function App() {
       '',
       `${window.location.pathname}${nextSearch}${window.location.hash}`,
     )
-  }, [pickedPerkIds, query, selectedGroupNames, selectedTreeIdsByGroup])
+  }, [pickedPerkIds, query, selectedCategoryNames, selectedPerkGroupIdsByCategory])
 
   useEffect(() => {
     if (hoveredBuildPerkTooltip === null || typeof window === 'undefined') {
@@ -493,7 +497,7 @@ export default function App() {
               </div>
               <div>
                 <dt>Perk groups</dt>
-                <dd>{legendsPerksDataset.treeCount}</dd>
+                <dd>{legendsPerksDataset.perkGroupCount}</dd>
               </div>
               <div>
                 <dt>Reference</dt>
@@ -558,20 +562,20 @@ export default function App() {
 
         <CategorySidebar
           allPerkCount={allPerks.length}
-          displayedGroupNames={displayedGroupNames}
-          displayedTreeOptionsByGroup={displayedTreeOptionsByGroup}
-          expandedGroupNames={expandedGroupNames}
-          groupCounts={groupCounts}
+          displayedCategoryNames={displayedCategoryNames}
+          displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
+          expandedCategoryNames={expandedCategoryNames}
+          categoryCounts={categoryCounts}
           hoveredPerkGroupKey={hoveredPerkGroupKey}
-          onGroupToggle={handleGroupToggle}
-          onResetGroupTrees={handleResetGroupTrees}
-          onResetGroups={handleResetGroups}
-          onTreeToggle={handleTreeToggle}
-          pickedPerkCountsByGroup={pickedPerkCountsByGroup}
-          pickedPerkCountsByTree={pickedPerkCountsByTree}
+          onCategoryToggle={handleCategoryToggle}
+          onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
+          onResetCategories={handleResetCategories}
+          onPerkGroupToggle={handlePerkGroupToggle}
+          pickedPerkCountsByCategory={pickedPerkCountsByCategory}
+          pickedPerkCountsByPerkGroup={pickedPerkCountsByPerkGroup}
           query={query}
-          selectedGroupNames={selectedGroupNames}
-          selectedTreeIdsByGroup={selectedTreeIdsByGroup}
+          selectedCategoryNames={selectedCategoryNames}
+          selectedPerkGroupIdsByCategory={selectedPerkGroupIdsByCategory}
         />
 
         <PerkResults
@@ -584,7 +588,7 @@ export default function App() {
           query={query}
           selectedCategoryCount={selectedCategoryCount}
           selectedPerk={selectedPerk}
-          selectedTreeCount={selectedTreeCount}
+          selectedPerkGroupCount={selectedPerkGroupCount}
           setQuery={setQuery}
           visiblePerks={visiblePerks}
         />

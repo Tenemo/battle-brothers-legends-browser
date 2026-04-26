@@ -82,9 +82,9 @@ describe('build social image', () => {
       })),
       topBackgroundFits: [1, 2, 3].map((backgroundIndex) => ({
         backgroundName: `Background ${backgroundIndex}`,
-        expectedMatchedTreeCount: 6,
+        expectedMatchedPerkGroupCount: 6,
         iconPath: null,
-        maximumTotalGroupCount: 28,
+        maximumTotalPerkGroupCount: 28,
       })),
     })
 

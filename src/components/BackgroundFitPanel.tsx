@@ -9,7 +9,7 @@ import {
 } from '../lib/perk-display'
 import {
   BackgroundFitCard,
-  BackgroundFitTargetTree,
+  BackgroundFitTargetPerkGroup,
   type BackgroundFitSummaryTooltipOpenHandler,
 } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField } from './SharedControls'
@@ -41,8 +41,8 @@ export function BackgroundFitPanel({
   onClearHoveredPerk: () => void
   onClearPerkGroupHover: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
-  onInspectPerkGroup: (categoryName: string, treeId: string) => void
-  onOpenPerkGroupHover: (categoryName: string, treeId: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
   onToggleExpanded: () => void
   pickedPerkCount: number
@@ -62,9 +62,10 @@ export function BackgroundFitPanel({
   const hoveredBackgroundFitSummaryTooltipId =
     hoveredBackgroundFitSummaryTooltip === null ? undefined : 'background-fit-summary-tooltip'
   const hasPickedPerks = pickedPerkCount > 0
-  const hasSupportedBackgroundFitTargets = backgroundFitView.supportedBuildTargetTrees.length > 0
+  const hasSupportedBackgroundFitTargets =
+    backgroundFitView.supportedBuildTargetPerkGroups.length > 0
   const hasUnsupportedBackgroundFitTargets =
-    backgroundFitView.unsupportedBuildTargetTrees.length > 0
+    backgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
   const visibleRankedBackgroundFits = useMemo(
@@ -233,12 +234,14 @@ export function BackgroundFitPanel({
                     Profession, and Magic.
                   </p>
                   <ul className="background-fit-target-list is-unsupported">
-                    {backgroundFitView.unsupportedBuildTargetTrees.map((buildTargetTree) => (
-                      <BackgroundFitTargetTree
-                        buildTargetTree={buildTargetTree}
-                        key={`unsupported-${buildTargetTree.categoryName}-${buildTargetTree.treeId}`}
-                      />
-                    ))}
+                    {backgroundFitView.unsupportedBuildTargetPerkGroups.map(
+                      (buildTargetPerkGroup) => (
+                        <BackgroundFitTargetPerkGroup
+                          buildTargetPerkGroup={buildTargetPerkGroup}
+                          key={`unsupported-${buildTargetPerkGroup.categoryName}-${buildTargetPerkGroup.perkGroupId}`}
+                        />
+                      ),
+                    )}
                   </ul>
                 </>
               ) : null}
@@ -273,8 +276,8 @@ export function BackgroundFitPanel({
                       rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
                       backgroundFitIndex
                     }
-                    supportedBuildTargetTreeCount={
-                      backgroundFitView.supportedBuildTargetTrees.length
+                    supportedBuildTargetPerkGroupCount={
+                      backgroundFitView.supportedBuildTargetPerkGroups.length
                     }
                   />
                 </li>

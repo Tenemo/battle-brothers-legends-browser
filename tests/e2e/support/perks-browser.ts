@@ -106,8 +106,8 @@ export async function disableCategory(page: Page, categoryName: string): Promise
   await page.getByRole('button', { name: `Disable category ${categoryName}` }).click()
 }
 
-export async function togglePerkGroup(page: Page, treeName: string): Promise<void> {
-  await page.getByRole('button', { name: `Toggle perk group ${treeName}` }).click()
+export async function togglePerkGroup(page: Page, perkGroupName: string): Promise<void> {
+  await page.getByRole('button', { name: `Toggle perk group ${perkGroupName}` }).click()
 }
 
 export async function inspectPerkFromResults(page: Page, perkName: string): Promise<void> {

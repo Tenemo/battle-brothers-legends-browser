@@ -10,7 +10,7 @@ await writeDatasetFile(dataset)
 const iconSyncResult = await syncLegendsIcons({ dataset })
 
 console.log(
-  `Synced ${dataset.perkCount} perks across ${dataset.treeCount} trees from ${dataset.sourceFiles.length} source files in Legends ${referenceMetadata.tagName} and ${iconSyncResult.extractedIconCount} icons from ${iconSyncResult.archivePaths.length} local archives.`,
+  `Synced ${dataset.perkCount} perks across ${dataset.perkGroupCount} perk groups from ${dataset.sourceFiles.length} source files in Legends ${referenceMetadata.tagName} and ${iconSyncResult.extractedIconCount} icons from ${iconSyncResult.archivePaths.length} local archives.`,
 )
 
 if (iconSyncResult.missingIconPaths.length > 0) {

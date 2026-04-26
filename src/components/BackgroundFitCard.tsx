@@ -1,12 +1,12 @@
 import type {
   BackgroundFitMatch,
-  BuildTargetTree,
+  BuildTargetPerkGroup,
   RankedBackgroundFit,
 } from '../lib/background-fit'
 import {
   formatBackgroundFitGuaranteedPerksLabel,
-  formatBackgroundFitMatchedGroupsLabel,
-  formatBackgroundFitMaximumTotalGroupsLabel,
+  formatBackgroundFitMatchedPerkGroupsLabel,
+  formatBackgroundFitMaximumTotalPerkGroupsLabel,
   formatBackgroundFitPickablePerksLabel,
   formatBackgroundFitProbabilityLabel,
   formatBackgroundFitScoreLabel,
@@ -32,7 +32,7 @@ function getBackgroundFitPickablePerksTooltipCopy(
 ): string[] {
   return [
     `Best-case picked-perk coverage for this background: up to ${coveredPickedPerkCount} of your ${pickedPerkCount} picked perks can be covered if every relevant non-guaranteed perk group roll lands.`,
-    'This counts picked perks, not perk groups, so multiple picked perks can be covered by the same matched group.',
+    'This counts picked perks, not perk groups, so multiple picked perks can be covered by the same matched perk group.',
   ]
 }
 
@@ -46,34 +46,40 @@ function getBackgroundFitGuaranteedPerksTooltipCopy(
   ]
 }
 
-function getBackgroundFitMatchedGroupsTooltipCopy(
-  matchedGroupCount: number,
-  supportedBuildTargetTreeCount: number,
+function getBackgroundFitMatchedPerkGroupsTooltipCopy(
+  matchedPerkGroupCount: number,
+  supportedBuildTargetPerkGroupCount: number,
 ): string[] {
   return [
-    `Build perk group overlap for this build: this background matches ${matchedGroupCount} of the ${supportedBuildTargetTreeCount} supported build groups.`,
-    'A matched group means the background can roll that perk group, whether the match is guaranteed or probabilistic.',
+    `Build perk group overlap for this build: this background matches ${matchedPerkGroupCount} of the ${supportedBuildTargetPerkGroupCount} supported build perk groups.`,
+    'A matched perk group means the background can roll that perk group, whether the match is guaranteed or probabilistic.',
   ]
 }
 
-function getBackgroundFitMaximumTotalGroupsTooltipCopy(maximumTotalGroupCount: number): string[] {
+function getBackgroundFitMaximumTotalPerkGroupsTooltipCopy(
+  maximumTotalPerkGroupCount: number,
+): string[] {
   return [
-    `Overall hard cap for this background across all dynamic perk groups: it can end up with at most ${maximumTotalGroupCount} total groups.`,
-    'This is not limited to your build. It includes every dynamic group the background can gain after all fills and optional rolls.',
+    `Overall hard cap for this background across all dynamic perk groups: it can end up with at most ${maximumTotalPerkGroupCount} total perk groups.`,
+    'This is not limited to your build. It includes every dynamic perk group the background can gain after all fills and optional rolls.',
   ]
 }
 
-export function BackgroundFitTargetTree({ buildTargetTree }: { buildTargetTree: BuildTargetTree }) {
+export function BackgroundFitTargetPerkGroup({
+  buildTargetPerkGroup,
+}: {
+  buildTargetPerkGroup: BuildTargetPerkGroup
+}) {
   return (
     <li className="background-fit-target">
       <div>
-        <strong>{buildTargetTree.treeName}</strong>
+        <strong>{buildTargetPerkGroup.perkGroupName}</strong>
         <p className="detail-support">
-          {buildTargetTree.categoryName} / {buildTargetTree.pickedPerkNames.join(', ')}
+          {buildTargetPerkGroup.categoryName} / {buildTargetPerkGroup.pickedPerkNames.join(', ')}
         </p>
       </div>
       <span className="detail-badge">
-        {formatPickedPerkCountLabel(buildTargetTree.pickedPerkCount)}
+        {formatPickedPerkCountLabel(buildTargetPerkGroup.pickedPerkCount)}
       </span>
     </li>
   )
@@ -89,8 +95,8 @@ function BackgroundFitMatchRow({
   hoveredPerkGroupKey: string | null
   match: BackgroundFitMatch
   onClosePerkGroupHover: (perkGroupKey: string) => void
-  onInspectPerkGroup: (categoryName: string, treeId: string) => void
-  onOpenPerkGroupHover: (categoryName: string, treeId: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
 }) {
   const perkGroupKey = getPerkGroupHoverKey(match)
   const className =
@@ -101,17 +107,17 @@ function BackgroundFitMatchRow({
   return (
     <li>
       <button
-        aria-label={`Select perk group ${match.treeName}`}
+        aria-label={`Select perk group ${match.perkGroupName}`}
         className={className}
         onBlur={() => onClosePerkGroupHover(perkGroupKey)}
-        onClick={() => onInspectPerkGroup(match.categoryName, match.treeId)}
-        onFocus={() => onOpenPerkGroupHover(match.categoryName, match.treeId)}
-        onMouseEnter={() => onOpenPerkGroupHover(match.categoryName, match.treeId)}
+        onClick={() => onInspectPerkGroup(match.categoryName, match.perkGroupId)}
+        onFocus={() => onOpenPerkGroupHover(match.categoryName, match.perkGroupId)}
+        onMouseEnter={() => onOpenPerkGroupHover(match.categoryName, match.perkGroupId)}
         onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
         type="button"
       >
         <div>
-          <strong>{match.treeName}</strong>
+          <strong>{match.perkGroupName}</strong>
           <p className="detail-support">
             {match.categoryName} / {formatPickedPerkCountLabel(match.pickedPerkCount)} /{' '}
             {match.pickedPerkNames.join(', ')}
@@ -166,7 +172,7 @@ export function BackgroundFitCard({
   pickedPerkCount,
   query,
   rank,
-  supportedBuildTargetTreeCount,
+  supportedBuildTargetPerkGroupCount,
 }: {
   backgroundFit: RankedBackgroundFit
   expandedBackgroundFitKey: string | null
@@ -174,14 +180,14 @@ export function BackgroundFitCard({
   onClearPerkGroupHover: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onCloseSummaryTooltip: () => void
-  onInspectPerkGroup: (categoryName: string, treeId: string) => void
-  onOpenPerkGroupHover: (categoryName: string, treeId: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOpenSummaryTooltip: BackgroundFitSummaryTooltipOpenHandler
   onToggle: (backgroundFitKey: string) => void
   pickedPerkCount: number
   query: string
   rank: number
-  supportedBuildTargetTreeCount: number
+  supportedBuildTargetPerkGroupCount: number
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
   const disambiguatorLabel = getVisibleBackgroundDisambiguatorLabel(backgroundFit)
@@ -284,28 +290,28 @@ export function BackgroundFitCard({
             </div>
             <div className="background-fit-accordion-summary-row">
               <BackgroundFitSummaryBadge
-                label={formatBackgroundFitMatchedGroupsLabel(
+                label={formatBackgroundFitMatchedPerkGroupsLabel(
                   backgroundFit.matches.length,
-                  supportedBuildTargetTreeCount,
+                  supportedBuildTargetPerkGroupCount,
                 )}
                 onCloseTooltip={onCloseSummaryTooltip}
                 onOpenTooltip={onOpenSummaryTooltip}
-                tooltipCopy={getBackgroundFitMatchedGroupsTooltipCopy(
+                tooltipCopy={getBackgroundFitMatchedPerkGroupsTooltipCopy(
                   backgroundFit.matches.length,
-                  supportedBuildTargetTreeCount,
+                  supportedBuildTargetPerkGroupCount,
                 )}
-                tooltipTitle="Matched groups"
+                tooltipTitle="Matched perk groups"
               />
               <BackgroundFitSummaryBadge
-                label={formatBackgroundFitMaximumTotalGroupsLabel(
-                  backgroundFit.maximumTotalGroupCount,
+                label={formatBackgroundFitMaximumTotalPerkGroupsLabel(
+                  backgroundFit.maximumTotalPerkGroupCount,
                 )}
                 onCloseTooltip={onCloseSummaryTooltip}
                 onOpenTooltip={onOpenSummaryTooltip}
-                tooltipCopy={getBackgroundFitMaximumTotalGroupsTooltipCopy(
-                  backgroundFit.maximumTotalGroupCount,
+                tooltipCopy={getBackgroundFitMaximumTotalPerkGroupsTooltipCopy(
+                  backgroundFit.maximumTotalPerkGroupCount,
                 )}
-                tooltipTitle="Maximum total groups"
+                tooltipTitle="Maximum total perk groups"
               />
             </div>
           </div>
@@ -323,11 +329,11 @@ export function BackgroundFitCard({
           <div className="background-fit-card-content">
             <div className="background-fit-score-row">
               <span className="detail-badge">
-                Guaranteed groups {backgroundFit.guaranteedMatchedTreeCount}
+                Guaranteed perk groups {backgroundFit.guaranteedMatchedPerkGroupCount}
               </span>
               <span className="detail-badge">
-                Expected groups{' '}
-                {formatBackgroundFitScoreLabel(backgroundFit.expectedMatchedTreeCount)}
+                Expected perk groups{' '}
+                {formatBackgroundFitScoreLabel(backgroundFit.expectedMatchedPerkGroupCount)}
               </span>
             </div>
 
@@ -338,7 +344,7 @@ export function BackgroundFitCard({
                   {guaranteedMatches.map((match) => (
                     <BackgroundFitMatchRow
                       hoveredPerkGroupKey={hoveredPerkGroupKey}
-                      key={`${match.categoryName}-${match.treeId}`}
+                      key={`${match.categoryName}-${match.perkGroupId}`}
                       match={match}
                       onClosePerkGroupHover={onClosePerkGroupHover}
                       onInspectPerkGroup={onInspectPerkGroup}
@@ -356,7 +362,7 @@ export function BackgroundFitCard({
                   {probabilisticMatches.map((match) => (
                     <BackgroundFitMatchRow
                       hoveredPerkGroupKey={hoveredPerkGroupKey}
-                      key={`${match.categoryName}-${match.treeId}`}
+                      key={`${match.categoryName}-${match.perkGroupId}`}
                       match={match}
                       onClosePerkGroupHover={onClosePerkGroupHover}
                       onInspectPerkGroup={onInspectPerkGroup}

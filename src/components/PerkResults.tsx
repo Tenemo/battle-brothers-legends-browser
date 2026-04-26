@@ -19,7 +19,7 @@ export function PerkResults({
   query,
   selectedCategoryCount,
   selectedPerk,
-  selectedTreeCount,
+  selectedPerkGroupCount,
   setQuery,
   visiblePerks,
   hoveredPerkId,
@@ -33,7 +33,7 @@ export function PerkResults({
   query: string
   selectedCategoryCount: number
   selectedPerk: LegendsPerkRecord | null
-  selectedTreeCount: number
+  selectedPerkGroupCount: number
   setQuery: (query: string) => void
   visiblePerks: LegendsPerkRecord[]
 }) {
@@ -56,8 +56,8 @@ export function PerkResults({
           {visiblePerks.length === 1 ? '' : 's'}
         </p>
         <p className="results-note">
-          {selectedTreeCount > 0
-            ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'} and ${selectedTreeCount} perk group${selectedTreeCount === 1 ? '' : 's'}.`
+          {selectedPerkGroupCount > 0
+            ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'} and ${selectedPerkGroupCount} perk group${selectedPerkGroupCount === 1 ? '' : 's'}.`
             : selectedCategoryCount > 0
               ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'}.`
               : 'Ranked by exact perk names first, then perk group and category matches, then background, scenario, and full text.'}

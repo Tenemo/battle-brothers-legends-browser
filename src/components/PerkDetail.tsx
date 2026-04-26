@@ -1,6 +1,6 @@
 import {
   formatChanceLabel,
-  formatMinimumTreesLabel,
+  formatMinimumPerkGroupsLabel,
   formatScenarioGrantLabel,
   getPerkDisplayIconPath,
   renderGameIcon,
@@ -9,7 +9,7 @@ import {
 import './PerkDetail.css'
 import { getTierLabel } from '../lib/perk-search'
 import type {
-  LegendsFavoredEnemyTarget,
+  LegendsFavouredEnemyTarget,
   LegendsPerkPlacement,
   LegendsPerkRecord,
 } from '../types/legends-perks'
@@ -18,11 +18,11 @@ import { BuildToggleButton } from './SharedControls'
 function renderPlacementDescription(placement: LegendsPerkPlacement) {
   return (
     <>
-      {placement.treeDescriptions.length > 0 ? (
-        <p className="detail-support">{placement.treeDescriptions.join(' / ')}</p>
+      {placement.perkGroupDescriptions.length > 0 ? (
+        <p className="detail-support">{placement.perkGroupDescriptions.join(' / ')}</p>
       ) : null}
-      {placement.treeAttributes.length > 0 ? (
-        <p className="detail-support">{placement.treeAttributes.join(' / ')}</p>
+      {placement.perkGroupAttributes.length > 0 ? (
+        <p className="detail-support">{placement.perkGroupAttributes.join(' / ')}</p>
       ) : null}
     </>
   )
@@ -34,27 +34,27 @@ function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
       <div>
         <strong>{backgroundSource.backgroundNames.join(', ')}</strong>
         <p className="detail-support">
-          {backgroundSource.categoryName} / {backgroundSource.treeName}
+          {backgroundSource.categoryName} / {backgroundSource.perkGroupName}
         </p>
       </div>
       <span className="detail-badge">
-        {formatMinimumTreesLabel(backgroundSource.minimumTrees)} /{' '}
+        {formatMinimumPerkGroupsLabel(backgroundSource.minimumPerkGroups)} /{' '}
         {formatChanceLabel(backgroundSource.chance)}
       </span>
     </>
   )
 }
 
-function renderFavoredEnemyTarget(favoredEnemyTarget: LegendsFavoredEnemyTarget) {
+function renderFavouredEnemyTarget(favouredEnemyTarget: LegendsFavouredEnemyTarget) {
   return (
     <>
       <div>
-        <strong>{favoredEnemyTarget.entityName}</strong>
+        <strong>{favouredEnemyTarget.entityName}</strong>
       </div>
       <span className="detail-badge">
-        {favoredEnemyTarget.killsPerPercentBonus === null
+        {favouredEnemyTarget.killsPerPercentBonus === null
           ? 'Varies'
-          : `${favoredEnemyTarget.killsPerPercentBonus} kills / 1%`}
+          : `${favouredEnemyTarget.killsPerPercentBonus} kills / 1%`}
       </span>
     </>
   )
@@ -88,9 +88,9 @@ export function PerkDetail({
                 label: `${selectedPerk.perkName} icon`,
               })}
               <div>
-                <p className="eyebrow">{selectedPerk.primaryGroupName}</p>
+                <p className="eyebrow">{selectedPerk.primaryCategoryName}</p>
                 <h2>{selectedPerk.perkName}</h2>
-                <p className="detail-meta">{selectedPerk.groupNames.join(', ')}</p>
+                <p className="detail-meta">{selectedPerk.categoryNames.join(', ')}</p>
               </div>
             </div>
             <div className="detail-header-actions">
@@ -125,17 +125,18 @@ export function PerkDetail({
               <ul className="detail-list">
                 {selectedPerk.placements.map((placement) => (
                   <li
-                    key={`${placement.categoryName}-${placement.treeId}-${placement.tier ?? 'none'}`}
+                    key={`${placement.categoryName}-${placement.perkGroupId}-${placement.tier ?? 'none'}`}
                   >
                     <div className="detail-item-main">
                       {renderGameIcon({
                         className: 'perk-icon perk-icon-tiny',
-                        iconPath: placement.treeIconPath ?? getPerkDisplayIconPath(selectedPerk),
-                        label: `${placement.treeName} perk group icon`,
+                        iconPath:
+                          placement.perkGroupIconPath ?? getPerkDisplayIconPath(selectedPerk),
+                        label: `${placement.perkGroupName} perk group icon`,
                       })}
                       <div>
                         <strong>
-                          {placement.categoryName} / {placement.treeName}
+                          {placement.categoryName} / {placement.perkGroupName}
                         </strong>
                         {renderPlacementDescription(placement)}
                       </div>
@@ -149,13 +150,13 @@ export function PerkDetail({
             )}
           </div>
 
-          {selectedPerk.favoredEnemyTargets && selectedPerk.favoredEnemyTargets.length > 0 ? (
+          {selectedPerk.favouredEnemyTargets && selectedPerk.favouredEnemyTargets.length > 0 ? (
             <div className="detail-section">
-              <h3>Favored enemy targets</h3>
+              <h3>Favoured enemy targets</h3>
               <ul className="detail-list">
-                {selectedPerk.favoredEnemyTargets.map((favoredEnemyTarget) => (
-                  <li key={favoredEnemyTarget.entityConstName}>
-                    {renderFavoredEnemyTarget(favoredEnemyTarget)}
+                {selectedPerk.favouredEnemyTargets.map((favouredEnemyTarget) => (
+                  <li key={favouredEnemyTarget.entityConstName}>
+                    {renderFavouredEnemyTarget(favouredEnemyTarget)}
                   </li>
                 ))}
               </ul>
@@ -168,8 +169,8 @@ export function PerkDetail({
               <ul className="detail-list">
                 {groupedBackgroundSources.map((backgroundSource) => (
                   <li
-                    key={`${backgroundSource.categoryName}-${backgroundSource.treeId}-${
-                      backgroundSource.minimumTrees ?? 'none'
+                    key={`${backgroundSource.categoryName}-${backgroundSource.perkGroupId}-${
+                      backgroundSource.minimumPerkGroups ?? 'none'
                     }-${backgroundSource.chance ?? 'none'}`}
                   >
                     {renderBackgroundSource(backgroundSource)}

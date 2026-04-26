@@ -1,9 +1,9 @@
-import type { PerkBrowserUrlTreeOption } from './perk-browser-url-state'
+import type { PerkBrowserUrlPerkGroupOption } from './perk-browser-url-state'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import { compareCategoryNames } from './perk-categories'
 import { getSearchMatchPriority } from './perk-display'
 
-export type CategoryTreeOption = PerkBrowserUrlTreeOption & {
+export type CategoryPerkGroupOption = PerkBrowserUrlPerkGroupOption & {
   perkCount: number
 }
 
@@ -30,30 +30,34 @@ function getPerkCountsByValues(
   return counts
 }
 
-export function getGroupCounts(perks: LegendsPerkRecord[]): Map<string, number> {
-  return getPerkCountsByValues(perks, (perk) => perk.groupNames)
+export function getCategoryCounts(perks: LegendsPerkRecord[]): Map<string, number> {
+  return getPerkCountsByValues(perks, (perk) => perk.categoryNames)
 }
 
-export function getPickedPerkCountsByGroup(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
-  return getPerkCountsByValues(pickedPerks, (pickedPerk) => pickedPerk.groupNames, {
+export function getPickedPerkCountsByCategory(
+  pickedPerks: LegendsPerkRecord[],
+): Map<string, number> {
+  return getPerkCountsByValues(pickedPerks, (pickedPerk) => pickedPerk.categoryNames, {
     dedupeValuesPerPerk: true,
   })
 }
 
-export function getPickedPerkCountsByTree(pickedPerks: LegendsPerkRecord[]): Map<string, number> {
+export function getPickedPerkCountsByPerkGroup(
+  pickedPerks: LegendsPerkRecord[],
+): Map<string, number> {
   return getPerkCountsByValues(
     pickedPerks,
-    (pickedPerk) => pickedPerk.placements.map((placement) => placement.treeId),
+    (pickedPerk) => pickedPerk.placements.map((placement) => placement.perkGroupId),
     { dedupeValuesPerPerk: true },
   )
 }
 
-export function getCategoryTreeOptions(
+export function getCategoryPerkGroupOptions(
   perks: LegendsPerkRecord[],
-): Map<string, CategoryTreeOption[]> {
+): Map<string, CategoryPerkGroupOption[]> {
   const optionsByCategory = new Map<
     string,
-    Map<string, { perkIds: Set<string>; treeId: string; treeName: string }>
+    Map<string, { perkIds: Set<string>; perkGroupId: string; perkGroupName: string }>
   >()
 
   for (const perk of perks) {
@@ -64,131 +68,141 @@ export function getCategoryTreeOptions(
 
       const categoryOptions = optionsByCategory.get(placement.categoryName)
 
-      if (!categoryOptions?.has(placement.treeId)) {
-        categoryOptions?.set(placement.treeId, {
+      if (!categoryOptions?.has(placement.perkGroupId)) {
+        categoryOptions?.set(placement.perkGroupId, {
           perkIds: new Set(),
-          treeId: placement.treeId,
-          treeName: placement.treeName,
+          perkGroupId: placement.perkGroupId,
+          perkGroupName: placement.perkGroupName,
         })
       }
 
-      categoryOptions?.get(placement.treeId)?.perkIds.add(perk.id)
+      categoryOptions?.get(placement.perkGroupId)?.perkIds.add(perk.id)
     }
   }
 
   return new Map(
-    [...optionsByCategory.entries()].map(([categoryName, treeOptions]) => [
+    [...optionsByCategory.entries()].map(([categoryName, perkGroupOptions]) => [
       categoryName,
-      [...treeOptions.values()]
-        .map((treeOption) => ({
-          perkCount: treeOption.perkIds.size,
-          treeId: treeOption.treeId,
-          treeName: treeOption.treeName,
+      [...perkGroupOptions.values()]
+        .map((perkGroupOption) => ({
+          perkCount: perkGroupOption.perkIds.size,
+          perkGroupId: perkGroupOption.perkGroupId,
+          perkGroupName: perkGroupOption.perkGroupName,
         }))
-        .toSorted((leftTreeOption, rightTreeOption) =>
-          leftTreeOption.treeName.localeCompare(rightTreeOption.treeName),
+        .toSorted((leftPerkGroupOption, rightPerkGroupOption) =>
+          leftPerkGroupOption.perkGroupName.localeCompare(rightPerkGroupOption.perkGroupName),
         ),
     ]),
   )
 }
 
-export function getVisiblePerkCountsByGroup(perks: LegendsPerkRecord[]): Map<string, number> {
-  return getPerkCountsByValues(perks, (perk) => perk.groupNames, {
+export function getVisiblePerkCountsByCategory(perks: LegendsPerkRecord[]): Map<string, number> {
+  return getPerkCountsByValues(perks, (perk) => perk.categoryNames, {
     dedupeValuesPerPerk: true,
   })
 }
 
-export function getVisiblePerkCountsByCategoryTree(
+export function getVisiblePerkCountsByCategoryPerkGroup(
   perks: LegendsPerkRecord[],
 ): Map<string, number> {
-  const countsByCategoryTree = new Map<string, number>()
+  const countsByCategoryPerkGroup = new Map<string, number>()
 
   for (const perk of perks) {
     for (const placement of perk.placements) {
-      const categoryTreeKey = `${placement.categoryName}::${placement.treeId}`
-      countsByCategoryTree.set(
-        categoryTreeKey,
-        (countsByCategoryTree.get(categoryTreeKey) ?? 0) + 1,
+      const categoryPerkGroupKey = `${placement.categoryName}::${placement.perkGroupId}`
+      countsByCategoryPerkGroup.set(
+        categoryPerkGroupKey,
+        (countsByCategoryPerkGroup.get(categoryPerkGroupKey) ?? 0) + 1,
       )
     }
   }
 
-  return countsByCategoryTree
+  return countsByCategoryPerkGroup
 }
 
-export function compareDisplayedGroups({
-  leftGroupName,
+export function compareDisplayedCategories({
+  leftCategoryName,
   normalizedSearchPhrase,
-  rightGroupName,
-  treeOptionsByGroup,
-  visiblePerkCountsByGroup,
+  rightCategoryName,
+  perkGroupOptionsByCategory,
+  visiblePerkCountsByCategory,
 }: {
-  leftGroupName: string
+  leftCategoryName: string
   normalizedSearchPhrase: string
-  rightGroupName: string
-  treeOptionsByGroup: Map<string, CategoryTreeOption[]>
-  visiblePerkCountsByGroup: Map<string, number>
+  rightCategoryName: string
+  perkGroupOptionsByCategory: Map<string, CategoryPerkGroupOption[]>
+  visiblePerkCountsByCategory: Map<string, number>
 }): number {
   if (normalizedSearchPhrase.length === 0) {
-    return compareCategoryNames(leftGroupName, rightGroupName)
+    return compareCategoryNames(leftCategoryName, rightCategoryName)
   }
 
-  const leftTreeOptions = treeOptionsByGroup.get(leftGroupName) ?? []
-  const rightTreeOptions = treeOptionsByGroup.get(rightGroupName) ?? []
-  const leftGroupMatchPriority = getSearchMatchPriority(leftGroupName, normalizedSearchPhrase)
-  const rightGroupMatchPriority = getSearchMatchPriority(rightGroupName, normalizedSearchPhrase)
-  const leftTreeMatchPriority = Math.min(
-    ...leftTreeOptions.map((treeOption) =>
-      getSearchMatchPriority(treeOption.treeName, normalizedSearchPhrase),
+  const leftPerkGroupOptions = perkGroupOptionsByCategory.get(leftCategoryName) ?? []
+  const rightPerkGroupOptions = perkGroupOptionsByCategory.get(rightCategoryName) ?? []
+  const leftCategoryMatchPriority = getSearchMatchPriority(leftCategoryName, normalizedSearchPhrase)
+  const rightCategoryMatchPriority = getSearchMatchPriority(
+    rightCategoryName,
+    normalizedSearchPhrase,
+  )
+  const leftPerkGroupMatchPriority = Math.min(
+    ...leftPerkGroupOptions.map((perkGroupOption) =>
+      getSearchMatchPriority(perkGroupOption.perkGroupName, normalizedSearchPhrase),
     ),
     2,
   )
-  const rightTreeMatchPriority = Math.min(
-    ...rightTreeOptions.map((treeOption) =>
-      getSearchMatchPriority(treeOption.treeName, normalizedSearchPhrase),
+  const rightPerkGroupMatchPriority = Math.min(
+    ...rightPerkGroupOptions.map((perkGroupOption) =>
+      getSearchMatchPriority(perkGroupOption.perkGroupName, normalizedSearchPhrase),
     ),
     2,
   )
-  const leftVisiblePerkCount = visiblePerkCountsByGroup.get(leftGroupName) ?? 0
-  const rightVisiblePerkCount = visiblePerkCountsByGroup.get(rightGroupName) ?? 0
+  const leftVisiblePerkCount = visiblePerkCountsByCategory.get(leftCategoryName) ?? 0
+  const rightVisiblePerkCount = visiblePerkCountsByCategory.get(rightCategoryName) ?? 0
   const leftHasVisiblePerksPriority = leftVisiblePerkCount > 0 ? 0 : 1
   const rightHasVisiblePerksPriority = rightVisiblePerkCount > 0 ? 0 : 1
 
   return (
-    leftGroupMatchPriority - rightGroupMatchPriority ||
-    leftTreeMatchPriority - rightTreeMatchPriority ||
+    leftCategoryMatchPriority - rightCategoryMatchPriority ||
+    leftPerkGroupMatchPriority - rightPerkGroupMatchPriority ||
     leftHasVisiblePerksPriority - rightHasVisiblePerksPriority ||
     rightVisiblePerkCount - leftVisiblePerkCount ||
-    compareCategoryNames(leftGroupName, rightGroupName)
+    compareCategoryNames(leftCategoryName, rightCategoryName)
   )
 }
 
-export function compareDisplayedTreeOptions({
+export function compareDisplayedPerkGroupOptions({
   categoryName,
-  leftTreeOption,
+  leftPerkGroupOption,
   normalizedSearchPhrase,
-  rightTreeOption,
-  visiblePerkCountsByCategoryTree,
+  rightPerkGroupOption,
+  visiblePerkCountsByCategoryPerkGroup,
 }: {
   categoryName: string
-  leftTreeOption: CategoryTreeOption
+  leftPerkGroupOption: CategoryPerkGroupOption
   normalizedSearchPhrase: string
-  rightTreeOption: CategoryTreeOption
-  visiblePerkCountsByCategoryTree: Map<string, number>
+  rightPerkGroupOption: CategoryPerkGroupOption
+  visiblePerkCountsByCategoryPerkGroup: Map<string, number>
 }): number {
   if (normalizedSearchPhrase.length === 0) {
-    return leftTreeOption.treeName.localeCompare(rightTreeOption.treeName)
+    return leftPerkGroupOption.perkGroupName.localeCompare(rightPerkGroupOption.perkGroupName)
   }
 
-  const leftMatchPriority = getSearchMatchPriority(leftTreeOption.treeName, normalizedSearchPhrase)
+  const leftMatchPriority = getSearchMatchPriority(
+    leftPerkGroupOption.perkGroupName,
+    normalizedSearchPhrase,
+  )
   const rightMatchPriority = getSearchMatchPriority(
-    rightTreeOption.treeName,
+    rightPerkGroupOption.perkGroupName,
     normalizedSearchPhrase,
   )
   const leftVisiblePerkCount =
-    visiblePerkCountsByCategoryTree.get(`${categoryName}::${leftTreeOption.treeId}`) ?? 0
+    visiblePerkCountsByCategoryPerkGroup.get(
+      `${categoryName}::${leftPerkGroupOption.perkGroupId}`,
+    ) ?? 0
   const rightVisiblePerkCount =
-    visiblePerkCountsByCategoryTree.get(`${categoryName}::${rightTreeOption.treeId}`) ?? 0
+    visiblePerkCountsByCategoryPerkGroup.get(
+      `${categoryName}::${rightPerkGroupOption.perkGroupId}`,
+    ) ?? 0
   const leftHasVisiblePerksPriority = leftVisiblePerkCount > 0 ? 0 : 1
   const rightHasVisiblePerksPriority = rightVisiblePerkCount > 0 ? 0 : 1
 
@@ -196,6 +210,6 @@ export function compareDisplayedTreeOptions({
     leftMatchPriority - rightMatchPriority ||
     leftHasVisiblePerksPriority - rightHasVisiblePerksPriority ||
     rightVisiblePerkCount - leftVisiblePerkCount ||
-    leftTreeOption.treeName.localeCompare(rightTreeOption.treeName)
+    leftPerkGroupOption.perkGroupName.localeCompare(rightPerkGroupOption.perkGroupName)
   )
 }

@@ -70,6 +70,6 @@ describe('build share preview', () => {
     expect(payload.status).toBe('found')
     expect(payload.topBackgroundFits.length).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].backgroundName).toBeTruthy()
-    expect(payload.topBackgroundFits[0].maximumTotalGroupCount).toBeGreaterThan(0)
+    expect(payload.topBackgroundFits[0].maximumTotalPerkGroupCount).toBeGreaterThan(0)
   })
 })

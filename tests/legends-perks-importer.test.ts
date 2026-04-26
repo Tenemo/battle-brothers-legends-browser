@@ -18,23 +18,23 @@ describe('legends perks importer', () => {
     dataset = await createDataset(fixtureReferenceRootDirectoryPath)
   })
 
-  test('parses local tree placement and background dynamic sources', () => {
+  test('parses local perk group placement and background dynamic sources', () => {
     const clarity = dataset.perks.find((perk) => perk.perkConstName === 'LegendClarity')
     const beastSlayerBackground = dataset.backgroundFitBackgrounds.find(
       (background) => background.backgroundId === 'background.beast_slayer',
     )
 
     expect(clarity).toMatchObject({
-      groupNames: ['Traits'],
+      categoryNames: ['Traits'],
       perkName: 'Clarity',
       placements: [
         {
           categoryName: 'Traits',
           tier: 5,
-          treeName: 'Calm',
+          perkGroupName: 'Calm',
         },
       ],
-      primaryGroupName: 'Traits',
+      primaryCategoryName: 'Traits',
     })
 
     expect(clarity?.backgroundSources).toEqual(
@@ -44,8 +44,8 @@ describe('legends perks importer', () => {
           backgroundName: 'Beast Slayer',
           categoryName: 'Traits',
           chance: null,
-          minimumTrees: 7,
-          treeName: 'Calm',
+          minimumPerkGroups: 7,
+          perkGroupName: 'Calm',
         }),
       ]),
     )
@@ -57,18 +57,18 @@ describe('legends perks importer', () => {
         categories: expect.objectContaining({
           Enemy: expect.objectContaining({
             chance: 0.05,
-            minimumTrees: 2,
-            treeIds: ['BeastTree'],
+            minimumPerkGroups: 2,
+            perkGroupIds: ['BeastTree'],
           }),
           Traits: expect.objectContaining({
             chance: null,
-            minimumTrees: 7,
-            treeIds: ['CalmTree'],
+            minimumPerkGroups: 7,
+            perkGroupIds: ['CalmTree'],
           }),
           Weapon: expect.objectContaining({
             chance: null,
-            minimumTrees: 8,
-            treeIds: [],
+            minimumPerkGroups: 8,
+            perkGroupIds: [],
           }),
         }),
         iconPath: 'ui/backgrounds/background_57.png',
@@ -97,23 +97,23 @@ describe('legends perks importer', () => {
     )
   })
 
-  test('parses favored enemy targets, scaling values, and entity names from the local files', () => {
-    const favoredEnemyBeast = dataset.perks.find(
+  test('parses favoured enemy targets, scaling values, and entity names from the local files', () => {
+    const favouredEnemyBeast = dataset.perks.find(
       (perk) => perk.perkConstName === 'LegendFavouredEnemyBeast',
     )
 
-    expect(favoredEnemyBeast).toMatchObject({
-      groupNames: ['Enemy'],
+    expect(favouredEnemyBeast).toMatchObject({
+      categoryNames: ['Enemy'],
       perkName: 'Favoured Enemy - Beasts',
       placements: [
         {
           categoryName: 'Enemy',
           tier: 3,
-          treeName: 'Beasts',
+          perkGroupName: 'Beasts',
         },
       ],
     })
-    expect(favoredEnemyBeast?.favoredEnemyTargets).toEqual([
+    expect(favouredEnemyBeast?.favouredEnemyTargets).toEqual([
       {
         entityConstName: 'LegendBear',
         entityName: 'Bear',
@@ -131,14 +131,14 @@ describe('legends perks importer', () => {
     const axeMastery = dataset.perks.find((perk) => perk.perkConstName === 'SpecAxe')
 
     expect(axeMastery).toMatchObject({
-      groupNames: ['Weapon'],
+      categoryNames: ['Weapon'],
       id: 'perk.mastery.axe',
       perkName: 'Axe Mastery',
       placements: [
         {
           categoryName: 'Weapon',
           tier: 3,
-          treeName: 'Axe',
+          perkGroupName: 'Axe',
         },
       ],
     })
@@ -150,12 +150,12 @@ describe('legends perks importer', () => {
   })
 
   test('parses direct and random scenario overlays plus local source provenance', () => {
-    const favoredEnemyBeast = dataset.perks.find(
+    const favouredEnemyBeast = dataset.perks.find(
       (perk) => perk.perkConstName === 'LegendFavouredEnemyBeast',
     )
     const peaceful = dataset.perks.find((perk) => perk.perkConstName === 'LegendPeaceful')
 
-    expect(favoredEnemyBeast?.scenarioSources).toEqual([
+    expect(favouredEnemyBeast?.scenarioSources).toEqual([
       expect.objectContaining({
         candidatePerkNames: ['Favoured Enemy - Beasts', 'Favoured Enemy - Occult'],
         grantType: 'random-pool',
@@ -198,11 +198,11 @@ describe('legends perks importer', () => {
     )
   })
 
-  test('extracts class-to-weapon dependency rules from the dynamic perk tree builder', () => {
+  test('extracts class-to-weapon dependency rules from the dynamic perk group builder', () => {
     expect(dataset.backgroundFitRules.classWeaponDependencies).toEqual([
       {
-        classTreeId: 'MilitiaClassTree',
-        weaponTreeId: 'AxeTree',
+        classPerkGroupId: 'MilitiaClassTree',
+        weaponPerkGroupId: 'AxeTree',
       },
     ])
   })
@@ -223,13 +223,13 @@ describe('legends perks importer', () => {
         backgroundName: 'Gladiator Prizefighter',
         categories: expect.objectContaining({
           Enemy: expect.objectContaining({
-            treeIds: ['BeastTree'],
+            perkGroupIds: ['BeastTree'],
           }),
           Traits: expect.objectContaining({
-            treeIds: ['CalmTree'],
+            perkGroupIds: ['CalmTree'],
           }),
           Weapon: expect.objectContaining({
-            treeIds: ['AxeTree'],
+            perkGroupIds: ['AxeTree'],
           }),
         }),
         iconPath: 'ui/backgrounds/background_gladiator_prizefighter.png',
@@ -252,7 +252,7 @@ describe('legends perks importer', () => {
         expect.objectContaining({
           backgroundId: 'legend_gladiator_prizefighter_background',
           backgroundName: 'Gladiator Prizefighter',
-          treeName: 'Calm',
+          perkGroupName: 'Calm',
         }),
       ]),
     )
@@ -261,12 +261,12 @@ describe('legends perks importer', () => {
         expect.objectContaining({
           backgroundId: 'legend_gladiator_prizefighter_background',
           backgroundName: 'Gladiator Prizefighter',
-          treeName: 'Axe',
+          perkGroupName: 'Axe',
         }),
         expect.objectContaining({
           backgroundId: 'background.legend_legionary',
           backgroundName: 'Legionary',
-          treeName: 'Axe',
+          perkGroupName: 'Axe',
         }),
       ]),
     )

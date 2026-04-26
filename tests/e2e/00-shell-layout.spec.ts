@@ -22,7 +22,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
     ),
   ).toBeVisible()
   await expect(
-    getBuildIndividualGroupsList(page).getByText('Single-perk groups will appear here'),
+    getBuildIndividualGroupsList(page).getByText('Individual perk groups will appear here'),
   ).toBeVisible()
   await expect(buildPlanner.getByText('Perks', { exact: true })).toBeVisible()
   await expect(buildPlanner.getByText('Perk groups for 2+ perks', { exact: true })).toBeVisible()

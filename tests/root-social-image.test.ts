@@ -23,7 +23,7 @@ describe('root social image generation', () => {
     expect(svg).toContain(
       '<text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>',
     )
-    expect(svg).toContain('Search perks, inspect tree')
+    expect(svg).toContain('Search perks, inspect perk groups')
     expect(svg).toContain('with exact in-mod labels')
     expect(svg).toContain('and real game icons.')
     expect(svg).toContain('fill="url(#background)"')

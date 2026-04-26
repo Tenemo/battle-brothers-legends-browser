@@ -1,23 +1,23 @@
-import type { CategoryTreeOption } from '../lib/category-filter-model'
+import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
-import { BuildStar, TreeChevron } from './SharedControls'
+import { BuildStar, CategoryChevron } from './SharedControls'
 
 type CategorySidebarProps = {
   allPerkCount: number
-  displayedGroupNames: string[]
-  displayedTreeOptionsByGroup: Map<string, CategoryTreeOption[]>
-  expandedGroupNames: string[]
-  groupCounts: Map<string, number>
+  displayedCategoryNames: string[]
+  displayedPerkGroupOptionsByCategory: Map<string, CategoryPerkGroupOption[]>
+  expandedCategoryNames: string[]
+  categoryCounts: Map<string, number>
   hoveredPerkGroupKey: string | null
-  onGroupToggle: (groupName: string) => void
-  onResetGroupTrees: (groupName: string) => void
-  onResetGroups: () => void
-  onTreeToggle: (groupName: string, treeId: string) => void
-  pickedPerkCountsByGroup: Map<string, number>
-  pickedPerkCountsByTree: Map<string, number>
+  onCategoryToggle: (categoryName: string) => void
+  onResetCategoryPerkGroups: (categoryName: string) => void
+  onResetCategories: () => void
+  onPerkGroupToggle: (categoryName: string, perkGroupId: string) => void
+  pickedPerkCountsByCategory: Map<string, number>
+  pickedPerkCountsByPerkGroup: Map<string, number>
   query: string
-  selectedGroupNames: string[]
-  selectedTreeIdsByGroup: Record<string, string[]>
+  selectedCategoryNames: string[]
+  selectedPerkGroupIdsByCategory: Record<string, string[]>
 }
 
 function renderPickedStars(keyPrefix: string, count: number) {
@@ -26,7 +26,7 @@ function renderPickedStars(keyPrefix: string, count: number) {
   }
 
   return (
-    <span aria-hidden="true" className="group-chip-picked-stars">
+    <span aria-hidden="true" className="category-chip-picked-stars">
       {Array.from({ length: count }, (_, pickedPerkIndex) => (
         <BuildStar isPicked key={`${keyPrefix}-picked-${pickedPerkIndex}`} />
       ))}
@@ -36,20 +36,20 @@ function renderPickedStars(keyPrefix: string, count: number) {
 
 export function CategorySidebar({
   allPerkCount,
-  displayedGroupNames,
-  displayedTreeOptionsByGroup,
-  expandedGroupNames,
-  groupCounts,
+  displayedCategoryNames,
+  displayedPerkGroupOptionsByCategory,
+  expandedCategoryNames,
+  categoryCounts,
   hoveredPerkGroupKey,
-  onGroupToggle,
-  onResetGroupTrees,
-  onResetGroups,
-  onTreeToggle,
-  pickedPerkCountsByGroup,
-  pickedPerkCountsByTree,
+  onCategoryToggle,
+  onResetCategoryPerkGroups,
+  onResetCategories,
+  onPerkGroupToggle,
+  pickedPerkCountsByCategory,
+  pickedPerkCountsByPerkGroup,
   query,
-  selectedGroupNames,
-  selectedTreeIdsByGroup,
+  selectedCategoryNames,
+  selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
   return (
     <aside className="sidebar" aria-label="Perk categories">
@@ -59,36 +59,38 @@ export function CategorySidebar({
       </div>
       <button
         aria-label="Reset all category filters"
-        className={selectedGroupNames.length === 0 ? 'group-chip is-active' : 'group-chip'}
-        onClick={onResetGroups}
+        className={selectedCategoryNames.length === 0 ? 'category-chip is-active' : 'category-chip'}
+        onClick={onResetCategories}
         type="button"
       >
-        <span className="group-chip-start">
-          <span className="group-label">All categories</span>
+        <span className="category-chip-start">
+          <span className="category-label">All categories</span>
         </span>
         <span>{allPerkCount}</span>
       </button>
-      {displayedGroupNames.map((availableGroupName) => {
-        const activeTreeOptions = displayedTreeOptionsByGroup.get(availableGroupName) ?? []
-        const isExpanded = expandedGroupNames.includes(availableGroupName)
-        const isActive = selectedGroupNames.includes(availableGroupName)
-        const pickedPerkCountInGroup = pickedPerkCountsByGroup.get(availableGroupName) ?? 0
-        const selectedTreeIds = selectedTreeIdsByGroup[availableGroupName] ?? []
+      {displayedCategoryNames.map((availableCategoryName) => {
+        const activePerkGroupOptions =
+          displayedPerkGroupOptionsByCategory.get(availableCategoryName) ?? []
+        const isExpanded = expandedCategoryNames.includes(availableCategoryName)
+        const isActive = selectedCategoryNames.includes(availableCategoryName)
+        const pickedPerkCountInCategory = pickedPerkCountsByCategory.get(availableCategoryName) ?? 0
+        const selectedPerkGroupIds = selectedPerkGroupIdsByCategory[availableCategoryName] ?? []
         const isHoveredCategory =
-          hoveredPerkGroupKey?.startsWith(`${availableGroupName}::`) ?? false
-        const hasVisibleHoveredTree =
+          hoveredPerkGroupKey?.startsWith(`${availableCategoryName}::`) ?? false
+        const hasVisibleHoveredPerkGroup =
           isHoveredCategory &&
-          activeTreeOptions.some(
-            (treeOption) =>
+          activePerkGroupOptions.some(
+            (perkGroupOption) =>
               hoveredPerkGroupKey ===
               getPerkGroupHoverKey({
-                categoryName: availableGroupName,
-                treeId: treeOption.treeId,
+                categoryName: availableCategoryName,
+                perkGroupId: perkGroupOption.perkGroupId,
               }),
           )
-        const shouldHighlightCategory = isHoveredCategory && (!isExpanded || !hasVisibleHoveredTree)
+        const shouldHighlightCategory =
+          isHoveredCategory && (!isExpanded || !hasVisibleHoveredPerkGroup)
         const categoryChipClassName = [
-          'group-chip',
+          'category-chip',
           isActive ? 'is-active' : '',
           shouldHighlightCategory ? 'is-highlighted' : '',
         ]
@@ -98,75 +100,86 @@ export function CategorySidebar({
         return (
           <div
             className={isExpanded ? 'category-card is-active' : 'category-card'}
-            key={availableGroupName}
+            key={availableCategoryName}
           >
             <button
               aria-expanded={isExpanded}
-              aria-label={`${isActive ? 'Disable' : 'Enable'} category ${availableGroupName}`}
+              aria-label={`${isActive ? 'Disable' : 'Enable'} category ${availableCategoryName}`}
               className={categoryChipClassName}
-              onClick={() => onGroupToggle(availableGroupName)}
+              onClick={() => onCategoryToggle(availableCategoryName)}
               type="button"
             >
-              <span className="group-chip-start">
-                <TreeChevron isExpanded={isExpanded} />
-                <span className="group-label">
-                  {renderHighlightedText(availableGroupName, query, `${availableGroupName}-group`)}
+              <span className="category-chip-start">
+                <CategoryChevron isExpanded={isExpanded} />
+                <span className="category-label">
+                  {renderHighlightedText(
+                    availableCategoryName,
+                    query,
+                    `${availableCategoryName}-group`,
+                  )}
                 </span>
               </span>
-              <span className="group-chip-end">
-                {renderPickedStars(availableGroupName, pickedPerkCountInGroup)}
-                <span>{groupCounts.get(availableGroupName)}</span>
+              <span className="category-chip-end">
+                {renderPickedStars(availableCategoryName, pickedPerkCountInCategory)}
+                <span>{categoryCounts.get(availableCategoryName)}</span>
               </span>
             </button>
 
             {isExpanded ? (
-              <div className="subgroup-panel">
-                <p className="subgroup-heading">Perk groups</p>
+              <div className="perk-group-panel">
+                <p className="perk-group-heading">Perk groups</p>
                 <button
                   aria-label="Show all perk groups"
                   className={
-                    selectedTreeIds.length === 0 ? 'subgroup-chip is-active' : 'subgroup-chip'
+                    selectedPerkGroupIds.length === 0
+                      ? 'perk-group-chip is-active'
+                      : 'perk-group-chip'
                   }
-                  onClick={() => onResetGroupTrees(availableGroupName)}
+                  onClick={() => onResetCategoryPerkGroups(availableCategoryName)}
                   type="button"
                 >
-                  <span className="subgroup-chip-start">All perk groups</span>
-                  <span className="subgroup-chip-end">{groupCounts.get(availableGroupName)}</span>
+                  <span className="perk-group-chip-start">All perk groups</span>
+                  <span className="perk-group-chip-end">
+                    {categoryCounts.get(availableCategoryName)}
+                  </span>
                 </button>
-                {activeTreeOptions.map((treeOption) => {
-                  const pickedPerkCountInTree = pickedPerkCountsByTree.get(treeOption.treeId) ?? 0
-                  const isTreeHighlighted =
+                {activePerkGroupOptions.map((perkGroupOption) => {
+                  const pickedPerkCountInPerkGroup =
+                    pickedPerkCountsByPerkGroup.get(perkGroupOption.perkGroupId) ?? 0
+                  const isPerkGroupHighlighted =
                     hoveredPerkGroupKey ===
                     getPerkGroupHoverKey({
-                      categoryName: availableGroupName,
-                      treeId: treeOption.treeId,
+                      categoryName: availableCategoryName,
+                      perkGroupId: perkGroupOption.perkGroupId,
                     })
-                  const treeChipClassName = [
-                    'subgroup-chip',
-                    selectedTreeIds.includes(treeOption.treeId) ? 'is-active' : '',
-                    isTreeHighlighted ? 'is-highlighted' : '',
+                  const perkGroupChipClassName = [
+                    'perk-group-chip',
+                    selectedPerkGroupIds.includes(perkGroupOption.perkGroupId) ? 'is-active' : '',
+                    isPerkGroupHighlighted ? 'is-highlighted' : '',
                   ]
                     .filter(Boolean)
                     .join(' ')
 
                   return (
                     <button
-                      aria-label={`Toggle perk group ${treeOption.treeName}`}
-                      className={treeChipClassName}
-                      key={treeOption.treeId}
-                      onClick={() => onTreeToggle(availableGroupName, treeOption.treeId)}
+                      aria-label={`Toggle perk group ${perkGroupOption.perkGroupName}`}
+                      className={perkGroupChipClassName}
+                      key={perkGroupOption.perkGroupId}
+                      onClick={() =>
+                        onPerkGroupToggle(availableCategoryName, perkGroupOption.perkGroupId)
+                      }
                       type="button"
                     >
-                      <span className="subgroup-chip-start">
+                      <span className="perk-group-chip-start">
                         {renderHighlightedText(
-                          treeOption.treeName,
+                          perkGroupOption.perkGroupName,
                           query,
-                          `${availableGroupName}-${treeOption.treeId}-tree`,
+                          `${availableCategoryName}-${perkGroupOption.perkGroupId}-perk-group`,
                         )}
                       </span>
-                      <span className="subgroup-chip-end">
-                        {renderPickedStars(treeOption.treeId, pickedPerkCountInTree)}
-                        <span>{treeOption.perkCount}</span>
+                      <span className="perk-group-chip-end">
+                        {renderPickedStars(perkGroupOption.perkGroupId, pickedPerkCountInPerkGroup)}
+                        <span>{perkGroupOption.perkCount}</span>
                       </span>
                     </button>
                   )

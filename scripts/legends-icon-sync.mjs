@@ -104,8 +104,8 @@ export function collectRequiredGameIconPaths(dataset) {
     }
 
     for (const placement of perk.placements) {
-      if (placement.treeIconPath) {
-        iconPaths.add(normalizeRelativeIconPath(placement.treeIconPath))
+      if (placement.perkGroupIconPath) {
+        iconPaths.add(normalizeRelativeIconPath(placement.perkGroupIconPath))
       }
     }
   }

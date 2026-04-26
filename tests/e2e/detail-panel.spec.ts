@@ -24,13 +24,15 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
   await expect(page.getByText('Minimum 7 / No chance override')).toHaveCount(1)
 })
 
-test('shows favored enemy targets and scenario overlays for enemy perks', async ({ page }) => {
+test('shows favoured enemy targets and scenario overlays for enemy perks', async ({ page }) => {
   await gotoPerksBrowser(page)
 
   await searchPerks(page, 'Favoured Enemy - Beasts')
   await inspectPerkFromResults(page, 'Favoured Enemy - Beasts')
 
-  await expect(page.getByRole('heading', { level: 3, name: 'Favored enemy targets' })).toBeVisible()
+  await expect(
+    page.getByRole('heading', { level: 3, name: 'Favoured enemy targets' }),
+  ).toBeVisible()
   await expect(page.getByText('Bear', { exact: true })).toBeVisible()
   await expect(page.getByText('Spider', { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Scenario overlays' })).toBeVisible()

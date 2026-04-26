@@ -1,32 +1,32 @@
 import type { LegendsPerkRecord } from '../types/legends-perks'
 
-export type PerkBrowserUrlTreeOption = {
-  treeId: string
-  treeName: string
+export type PerkBrowserUrlPerkGroupOption = {
+  perkGroupId: string
+  perkGroupName: string
 }
 
 type PerkBrowserUrlState = {
   pickedPerkIds: string[]
   query: string
-  selectedGroupNames: string[]
-  selectedTreeIdsByGroup: Record<string, string[]>
+  selectedCategoryNames: string[]
+  selectedPerkGroupIdsByCategory: Record<string, string[]>
 }
 
 type PerkBrowserUrlStateReadOptions = {
-  availableGroupNames: string[]
+  availableCategoryNames: string[]
   perks: LegendsPerkRecord[]
-  treeOptionsByGroup: Map<string, PerkBrowserUrlTreeOption[]>
+  perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
 }
 
 type PerkBrowserUrlStateWriteOptions = {
-  availableGroupNames: string[]
+  availableCategoryNames: string[]
   perksById: Map<string, LegendsPerkRecord>
-  treeOptionsByGroup: Map<string, PerkBrowserUrlTreeOption[]>
+  perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
 }
 
 const buildParamName = 'build'
 const categoryParamName = 'category'
-const groupParamKeyPrefix = 'group-'
+const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
 
@@ -54,8 +54,8 @@ function createUrlToken(value: string): string {
     .replace(/-+$/u, '')
 }
 
-function createGroupParamKey(groupName: string): string {
-  return `${groupParamKeyPrefix}${createUrlToken(groupName)}`
+function createPerkGroupParamKey(categoryName: string): string {
+  return `${perkGroupParamKeyPrefix}${createUrlToken(categoryName)}`
 }
 
 function createPerkNameCountByLookupValue(perks: Iterable<LegendsPerkRecord>): Map<string, number> {
@@ -135,8 +135,8 @@ function createDefaultUrlState(): PerkBrowserUrlState {
   return {
     pickedPerkIds: [],
     query: '',
-    selectedGroupNames: [],
-    selectedTreeIdsByGroup: {},
+    selectedCategoryNames: [],
+    selectedPerkGroupIdsByCategory: {},
   }
 }
 
@@ -145,56 +145,62 @@ export function readPerkBrowserUrlState(
   options: PerkBrowserUrlStateReadOptions,
 ): PerkBrowserUrlState {
   const params = new URLSearchParams(search)
-  const groupNameByLookupValue = new Map(
-    options.availableGroupNames.map((groupName) => [normalizeLookupValue(groupName), groupName]),
+  const categoryNameByLookupValue = new Map(
+    options.availableCategoryNames.map((categoryName) => [
+      normalizeLookupValue(categoryName),
+      categoryName,
+    ]),
   )
-  const groupNameByParamKey = new Map(
-    options.availableGroupNames.map((groupName) => [createGroupParamKey(groupName), groupName]),
+  const categoryNameByParamKey = new Map(
+    options.availableCategoryNames.map((categoryName) => [
+      createPerkGroupParamKey(categoryName),
+      categoryName,
+    ]),
   )
   const perkIdByLookupValue = createPerkIdByLookupValue(options.perks)
-  const treeIdByLookupValueByGroup = new Map(
-    [...options.treeOptionsByGroup.entries()].map(([groupName, treeOptions]) => [
-      groupName,
+  const perkGroupIdByLookupValueByGroup = new Map(
+    [...options.perkGroupOptionsByCategory.entries()].map(([categoryName, perkGroupOptions]) => [
+      categoryName,
       new Map(
-        treeOptions.map((treeOption) => [
-          normalizeLookupValue(treeOption.treeName),
-          treeOption.treeId,
+        perkGroupOptions.map((perkGroupOption) => [
+          normalizeLookupValue(perkGroupOption.perkGroupName),
+          perkGroupOption.perkGroupId,
         ]),
       ),
     ]),
   )
-  const selectedGroupNameSet = new Set<string>()
+  const selectedCategoryNameSet = new Set<string>()
   const pickedPerkIdSet = new Set<string>()
   const pickedPerkIds: string[] = []
-  const selectedTreeIdsByGroup: Record<string, string[]> = {}
+  const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
 
   for (const categoryValue of getGroupedParamValues(params, categoryParamName)) {
-    const groupName = groupNameByLookupValue.get(normalizeLookupValue(categoryValue))
+    const categoryName = categoryNameByLookupValue.get(normalizeLookupValue(categoryValue))
 
-    if (groupName) {
-      selectedGroupNameSet.add(groupName)
+    if (categoryName) {
+      selectedCategoryNameSet.add(categoryName)
     }
   }
 
-  for (const [groupParamKey, groupName] of groupNameByParamKey) {
-    for (const groupValue of getGroupedParamValues(params, groupParamKey)) {
-      const treeId = treeIdByLookupValueByGroup
-        .get(groupName)
-        ?.get(normalizeLookupValue(groupValue))
+  for (const [perkGroupParamKey, categoryName] of categoryNameByParamKey) {
+    for (const perkGroupValue of getGroupedParamValues(params, perkGroupParamKey)) {
+      const perkGroupId = perkGroupIdByLookupValueByGroup
+        .get(categoryName)
+        ?.get(normalizeLookupValue(perkGroupValue))
 
-      if (!treeId) {
+      if (!perkGroupId) {
         continue
       }
 
-      selectedGroupNameSet.add(groupName)
+      selectedCategoryNameSet.add(categoryName)
 
-      if (!(groupName in selectedTreeIdsByGroup)) {
-        selectedTreeIdsByGroup[groupName] = []
+      if (!(categoryName in selectedPerkGroupIdsByCategory)) {
+        selectedPerkGroupIdsByCategory[categoryName] = []
       }
 
-      if (!selectedTreeIdsByGroup[groupName].includes(treeId)) {
-        selectedTreeIdsByGroup[groupName].push(treeId)
+      if (!selectedPerkGroupIdsByCategory[categoryName].includes(perkGroupId)) {
+        selectedPerkGroupIdsByCategory[categoryName].push(perkGroupId)
       }
     }
   }
@@ -214,10 +220,10 @@ export function readPerkBrowserUrlState(
   return {
     pickedPerkIds,
     query,
-    selectedGroupNames: options.availableGroupNames.filter((groupName) =>
-      selectedGroupNameSet.has(groupName),
+    selectedCategoryNames: options.availableCategoryNames.filter((categoryName) =>
+      selectedCategoryNameSet.has(categoryName),
     ),
-    selectedTreeIdsByGroup,
+    selectedPerkGroupIdsByCategory,
   }
 }
 
@@ -226,9 +232,9 @@ export function buildPerkBrowserUrlSearch(
   options: PerkBrowserUrlStateWriteOptions,
 ): string {
   const entries: string[] = []
-  const selectedGroupNameSet = new Set(urlState.selectedGroupNames)
-  const orderedSelectedGroupNames = options.availableGroupNames.filter((groupName) =>
-    selectedGroupNameSet.has(groupName),
+  const selectedCategoryNameSet = new Set(urlState.selectedCategoryNames)
+  const orderedSelectedCategoryNames = options.availableCategoryNames.filter((categoryName) =>
+    selectedCategoryNameSet.has(categoryName),
   )
   const normalizedQuery = collapseWhitespace(urlState.query)
 
@@ -236,20 +242,22 @@ export function buildPerkBrowserUrlSearch(
     appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
   }
 
-  appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedGroupNames)
+  appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedCategoryNames)
 
-  for (const groupName of orderedSelectedGroupNames) {
-    const selectedTreeIdSet = new Set(urlState.selectedTreeIdsByGroup[groupName] ?? [])
-    const treeOptions = options.treeOptionsByGroup.get(groupName) ?? []
-    const selectedTreeNames: string[] = []
+  for (const categoryName of orderedSelectedCategoryNames) {
+    const selectedPerkGroupIdSet = new Set(
+      urlState.selectedPerkGroupIdsByCategory[categoryName] ?? [],
+    )
+    const perkGroupOptions = options.perkGroupOptionsByCategory.get(categoryName) ?? []
+    const selectedPerkGroupNames: string[] = []
 
-    for (const treeOption of treeOptions) {
-      if (selectedTreeIdSet.has(treeOption.treeId)) {
-        selectedTreeNames.push(treeOption.treeName)
+    for (const perkGroupOption of perkGroupOptions) {
+      if (selectedPerkGroupIdSet.has(perkGroupOption.perkGroupId)) {
+        selectedPerkGroupNames.push(perkGroupOption.perkGroupName)
       }
     }
 
-    appendGroupedQueryEntry(entries, createGroupParamKey(groupName), selectedTreeNames)
+    appendGroupedQueryEntry(entries, createPerkGroupParamKey(categoryName), selectedPerkGroupNames)
   }
 
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
@@ -277,13 +285,13 @@ export function buildPerkBrowserBuildUrlSearch(
     {
       pickedPerkIds,
       query: '',
-      selectedGroupNames: [],
-      selectedTreeIdsByGroup: {},
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     },
     {
-      availableGroupNames: [],
+      availableCategoryNames: [],
       perksById,
-      treeOptionsByGroup: new Map(),
+      perkGroupOptionsByCategory: new Map(),
     },
   )
 }

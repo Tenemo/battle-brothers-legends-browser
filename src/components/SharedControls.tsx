@@ -62,11 +62,11 @@ export function GitHubIcon({ className }: { className: string }) {
   )
 }
 
-export function TreeChevron({ isExpanded }: { isExpanded: boolean }) {
+export function CategoryChevron({ isExpanded }: { isExpanded: boolean }) {
   return (
     <svg
       aria-hidden="true"
-      className={isExpanded ? 'tree-chevron is-expanded' : 'tree-chevron'}
+      className={isExpanded ? 'category-chevron is-expanded' : 'category-chevron'}
       viewBox="0 0 12 12"
     >
       <path

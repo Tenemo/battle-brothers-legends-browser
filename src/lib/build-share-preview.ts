@@ -11,9 +11,9 @@ export type BuildSharePreviewPerk = {
 
 export type BuildSharePreviewBackgroundFit = {
   backgroundName: string
-  expectedMatchedTreeCount: number
+  expectedMatchedPerkGroupCount: number
   iconPath: string | null
-  maximumTotalGroupCount: number
+  maximumTotalPerkGroupCount: number
 }
 
 export type BuildSharePreviewPayload = {
@@ -33,7 +33,7 @@ const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
-const emptyTreeOptionsByGroup = new Map<string, []>()
+const emptyPerkGroupOptionsByGroup = new Map<string, []>()
 const buildSocialImagePathPrefix = '/social/builds'
 const maxDescriptionPerks = 4
 const maxDescriptionBackgrounds = 2
@@ -49,9 +49,9 @@ function getPerksFromPickedPerkIds(pickedPerkIds: string[]): LegendsPerkRecord[]
 
 function getPickedPerkIdsFromSearch(search: string | URLSearchParams): string[] {
   const urlState = readPerkBrowserUrlState(search.toString(), {
-    availableGroupNames: [],
+    availableCategoryNames: [],
     perks: allPerks,
-    treeOptionsByGroup: emptyTreeOptionsByGroup,
+    perkGroupOptionsByCategory: emptyPerkGroupOptionsByGroup,
   })
 
   return urlState.pickedPerkIds
@@ -81,9 +81,9 @@ function createBackgroundFitPreview(
 ): BuildSharePreviewBackgroundFit {
   return {
     backgroundName: backgroundFit.backgroundName,
-    expectedMatchedTreeCount: backgroundFit.expectedMatchedTreeCount,
+    expectedMatchedPerkGroupCount: backgroundFit.expectedMatchedPerkGroupCount,
     iconPath: backgroundFit.iconPath,
-    maximumTotalGroupCount: backgroundFit.maximumTotalGroupCount,
+    maximumTotalPerkGroupCount: backgroundFit.maximumTotalPerkGroupCount,
   }
 }
 
@@ -94,8 +94,8 @@ function getTopBackgroundFits(
     .filter(
       (backgroundFit) =>
         backgroundFit.matches.length > 0 ||
-        backgroundFit.guaranteedMatchedTreeCount > 0 ||
-        backgroundFit.expectedMatchedTreeCount > 0,
+        backgroundFit.guaranteedMatchedPerkGroupCount > 0 ||
+        backgroundFit.expectedMatchedPerkGroupCount > 0,
     )
     .slice(0, maxPreviewBackgroundFits)
     .map(createBackgroundFitPreview)

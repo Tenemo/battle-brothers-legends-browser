@@ -4,8 +4,8 @@ import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
 const samplePerk: LegendsPerkRecord = {
   backgroundSources: [],
-  descriptionParagraphs: ['Unlocks disciplined movement through several trees.'],
-  groupNames: ['Defense', 'Traits'],
+  descriptionParagraphs: ['Unlocks disciplined movement through several perk groups.'],
+  categoryNames: ['Defense', 'Traits'],
   iconPath: 'ui/perks/sample_perk.png',
   id: 'perk.legend_sample',
   perkConstName: 'LegendSample',
@@ -14,32 +14,32 @@ const samplePerk: LegendsPerkRecord = {
     {
       categoryName: 'Defense',
       tier: 2,
-      treeAttributes: [],
-      treeDescriptions: ['defensive footwork'],
-      treeIconPath: 'ui/perks/cloth_armor_tree.png',
-      treeId: 'ClothArmorTree',
-      treeName: 'Cloth Armor',
+      perkGroupAttributes: [],
+      perkGroupDescriptions: ['defensive footwork'],
+      perkGroupIconPath: 'ui/perks/cloth_armor_tree.png',
+      perkGroupId: 'ClothArmorTree',
+      perkGroupName: 'Cloth Armor',
     },
     {
       categoryName: 'Traits',
       tier: 1,
-      treeAttributes: [],
-      treeDescriptions: ['never gives up'],
-      treeIconPath: 'ui/perks/tenacious_tree.png',
-      treeId: 'TenaciousTree',
-      treeName: 'Tenacious',
+      perkGroupAttributes: [],
+      perkGroupDescriptions: ['never gives up'],
+      perkGroupIconPath: 'ui/perks/tenacious_tree.png',
+      perkGroupId: 'TenaciousTree',
+      perkGroupName: 'Tenacious',
     },
     {
       categoryName: 'Defense',
       tier: 3,
-      treeAttributes: [],
-      treeDescriptions: ['duplicate placement in the same tree'],
-      treeIconPath: 'ui/perks/cloth_armor_tree.png',
-      treeId: 'ClothArmorTree',
-      treeName: 'Cloth Armor',
+      perkGroupAttributes: [],
+      perkGroupDescriptions: ['duplicate placement in the same perk group'],
+      perkGroupIconPath: 'ui/perks/cloth_armor_tree.png',
+      perkGroupId: 'ClothArmorTree',
+      perkGroupName: 'Cloth Armor',
     },
   ],
-  primaryGroupName: 'Defense',
+  primaryCategoryName: 'Defense',
   scenarioSources: [],
   searchText: 'Sample perk cloth armor tenacious',
 }
@@ -53,15 +53,15 @@ const overlappingPerk: LegendsPerkRecord = {
     {
       ...samplePerk.placements[0],
       categoryName: 'Defense',
-      treeId: 'ClothArmorTree',
-      treeName: 'Cloth Armor',
+      perkGroupId: 'ClothArmorTree',
+      perkGroupName: 'Cloth Armor',
     },
     {
       ...samplePerk.placements[1],
       categoryName: 'Magic',
-      treeIconPath: 'ui/perks/faith_tree.png',
-      treeId: 'FaithTree',
-      treeName: 'Faith',
+      perkGroupIconPath: 'ui/perks/faith_tree.png',
+      perkGroupId: 'FaithTree',
+      perkGroupName: 'Faith',
     },
   ],
   searchText: 'Overlapping perk cloth armor faith',
@@ -84,70 +84,70 @@ const multiOptionPerk: LegendsPerkRecord = {
     {
       ...samplePerk.placements[0],
       categoryName: 'Defense',
-      treeId: 'ClothArmorTree',
-      treeName: 'Cloth Armor',
+      perkGroupId: 'ClothArmorTree',
+      perkGroupName: 'Cloth Armor',
     },
     {
       ...samplePerk.placements[1],
       categoryName: 'Traits',
-      treeIconPath: 'ui/perks/tenacious_tree.png',
-      treeId: 'TenaciousTree',
-      treeName: 'Tenacious',
+      perkGroupIconPath: 'ui/perks/tenacious_tree.png',
+      perkGroupId: 'TenaciousTree',
+      perkGroupName: 'Tenacious',
     },
     {
       ...samplePerk.placements[1],
       categoryName: 'Magic',
-      treeIconPath: 'ui/perks/faith_tree.png',
-      treeId: 'FaithTree',
-      treeName: 'Faith',
+      perkGroupIconPath: 'ui/perks/faith_tree.png',
+      perkGroupId: 'FaithTree',
+      perkGroupName: 'Faith',
     },
   ],
   searchText: 'Multi option perk cloth armor tenacious faith',
 }
 
-const repeatedTreeNamePerk: LegendsPerkRecord = {
+const repeatedPerkGroupNamePerk: LegendsPerkRecord = {
   ...samplePerk,
   id: 'perk.legend_repeated_tree_name',
-  perkConstName: 'LegendRepeatedTreeName',
-  perkName: 'Repeated tree name perk',
+  perkConstName: 'LegendRepeatedPerkGroupName',
+  perkName: 'Repeated perk group name perk',
   placements: [
     {
       ...samplePerk.placements[0],
       categoryName: 'Class',
-      treeIconPath: 'ui/perks/blacksmith_class.png',
-      treeId: 'ClassBlacksmithTree',
-      treeName: 'Blacksmith',
+      perkGroupIconPath: 'ui/perks/blacksmith_class.png',
+      perkGroupId: 'ClassBlacksmithTree',
+      perkGroupName: 'Blacksmith',
     },
     {
       ...samplePerk.placements[1],
       categoryName: 'Profession',
-      treeIconPath: 'ui/perks/blacksmith_profession.png',
-      treeId: 'ProfessionBlacksmithTree',
-      treeName: 'Blacksmith',
+      perkGroupIconPath: 'ui/perks/blacksmith_profession.png',
+      perkGroupId: 'ProfessionBlacksmithTree',
+      perkGroupName: 'Blacksmith',
     },
   ],
-  searchText: 'Repeated tree name perk blacksmith',
+  searchText: 'Repeated perk group name perk blacksmith',
 }
 
 describe('build planner', () => {
-  test('groups all single-perk matches into the individual row', () => {
+  test('places all single-perk matches into the individual row', () => {
     expect(getBuildPlannerGroups([samplePerk])).toEqual({
       individualPerkGroups: [
         {
           perkGroupOptions: [
             {
               categoryName: 'Defense',
-              treeIconPath: 'ui/perks/cloth_armor_tree.png',
-              treeId: 'ClothArmorTree',
-              treeLabel: 'Cloth Armor',
-              treeName: 'Cloth Armor',
+              perkGroupIconPath: 'ui/perks/cloth_armor_tree.png',
+              perkGroupId: 'ClothArmorTree',
+              perkGroupLabel: 'Cloth Armor',
+              perkGroupName: 'Cloth Armor',
             },
             {
               categoryName: 'Traits',
-              treeIconPath: 'ui/perks/tenacious_tree.png',
-              treeId: 'TenaciousTree',
-              treeLabel: 'Tenacious',
-              treeName: 'Tenacious',
+              perkGroupIconPath: 'ui/perks/tenacious_tree.png',
+              perkGroupId: 'TenaciousTree',
+              perkGroupLabel: 'Tenacious',
+              perkGroupName: 'Tenacious',
             },
           ],
           perkIds: ['perk.legend_sample'],
@@ -158,7 +158,7 @@ describe('build planner', () => {
     })
   })
 
-  test('splits shared and individual groups by how many picked perks they cover', () => {
+  test('splits shared and individual perk groups by how many picked perks they cover', () => {
     expect(
       getBuildPlannerGroups([samplePerk, matchingSharedCoveragePerk, overlappingPerk]),
     ).toEqual({
@@ -167,10 +167,10 @@ describe('build planner', () => {
           perkGroupOptions: [
             {
               categoryName: 'Magic',
-              treeIconPath: 'ui/perks/faith_tree.png',
-              treeId: 'FaithTree',
-              treeLabel: 'Faith',
-              treeName: 'Faith',
+              perkGroupIconPath: 'ui/perks/faith_tree.png',
+              perkGroupId: 'FaithTree',
+              perkGroupLabel: 'Faith',
+              perkGroupName: 'Faith',
             },
           ],
           perkIds: ['perk.legend_overlapping'],
@@ -182,10 +182,10 @@ describe('build planner', () => {
           perkGroupOptions: [
             {
               categoryName: 'Defense',
-              treeIconPath: 'ui/perks/cloth_armor_tree.png',
-              treeId: 'ClothArmorTree',
-              treeLabel: 'Cloth Armor',
-              treeName: 'Cloth Armor',
+              perkGroupIconPath: 'ui/perks/cloth_armor_tree.png',
+              perkGroupId: 'ClothArmorTree',
+              perkGroupLabel: 'Cloth Armor',
+              perkGroupName: 'Cloth Armor',
             },
           ],
           perkIds: [
@@ -199,10 +199,10 @@ describe('build planner', () => {
           perkGroupOptions: [
             {
               categoryName: 'Traits',
-              treeIconPath: 'ui/perks/tenacious_tree.png',
-              treeId: 'TenaciousTree',
-              treeLabel: 'Tenacious',
-              treeName: 'Tenacious',
+              perkGroupIconPath: 'ui/perks/tenacious_tree.png',
+              perkGroupId: 'TenaciousTree',
+              perkGroupLabel: 'Tenacious',
+              perkGroupName: 'Tenacious',
             },
           ],
           perkIds: ['perk.legend_sample', 'perk.legend_matching_shared_coverage'],
@@ -212,31 +212,31 @@ describe('build planner', () => {
     })
   })
 
-  test('merges multiple group options when they unlock the same single picked perk', () => {
+  test('merges multiple perk group options when they unlock the same single picked perk', () => {
     expect(getBuildPlannerGroups([multiOptionPerk])).toEqual({
       individualPerkGroups: [
         {
           perkGroupOptions: [
             {
               categoryName: 'Defense',
-              treeIconPath: 'ui/perks/cloth_armor_tree.png',
-              treeId: 'ClothArmorTree',
-              treeLabel: 'Cloth Armor',
-              treeName: 'Cloth Armor',
+              perkGroupIconPath: 'ui/perks/cloth_armor_tree.png',
+              perkGroupId: 'ClothArmorTree',
+              perkGroupLabel: 'Cloth Armor',
+              perkGroupName: 'Cloth Armor',
             },
             {
               categoryName: 'Traits',
-              treeIconPath: 'ui/perks/tenacious_tree.png',
-              treeId: 'TenaciousTree',
-              treeLabel: 'Tenacious',
-              treeName: 'Tenacious',
+              perkGroupIconPath: 'ui/perks/tenacious_tree.png',
+              perkGroupId: 'TenaciousTree',
+              perkGroupLabel: 'Tenacious',
+              perkGroupName: 'Tenacious',
             },
             {
               categoryName: 'Magic',
-              treeIconPath: 'ui/perks/faith_tree.png',
-              treeId: 'FaithTree',
-              treeLabel: 'Faith',
-              treeName: 'Faith',
+              perkGroupIconPath: 'ui/perks/faith_tree.png',
+              perkGroupId: 'FaithTree',
+              perkGroupLabel: 'Faith',
+              perkGroupName: 'Faith',
             },
           ],
           perkIds: ['perk.legend_multi_option'],
@@ -248,27 +248,27 @@ describe('build planner', () => {
   })
 
   test('keeps disambiguated labels when grouped perk options share the same perk', () => {
-    expect(getBuildPlannerGroups([repeatedTreeNamePerk])).toEqual({
+    expect(getBuildPlannerGroups([repeatedPerkGroupNamePerk])).toEqual({
       individualPerkGroups: [
         {
           perkGroupOptions: [
             {
               categoryName: 'Class',
-              treeIconPath: 'ui/perks/blacksmith_class.png',
-              treeId: 'ClassBlacksmithTree',
-              treeLabel: 'Class: Blacksmith',
-              treeName: 'Blacksmith',
+              perkGroupIconPath: 'ui/perks/blacksmith_class.png',
+              perkGroupId: 'ClassBlacksmithTree',
+              perkGroupLabel: 'Class: Blacksmith',
+              perkGroupName: 'Blacksmith',
             },
             {
               categoryName: 'Profession',
-              treeIconPath: 'ui/perks/blacksmith_profession.png',
-              treeId: 'ProfessionBlacksmithTree',
-              treeLabel: 'Profession: Blacksmith',
-              treeName: 'Blacksmith',
+              perkGroupIconPath: 'ui/perks/blacksmith_profession.png',
+              perkGroupId: 'ProfessionBlacksmithTree',
+              perkGroupLabel: 'Profession: Blacksmith',
+              perkGroupName: 'Blacksmith',
             },
           ],
           perkIds: ['perk.legend_repeated_tree_name'],
-          perkNames: ['Repeated tree name perk'],
+          perkNames: ['Repeated perk group name perk'],
         },
       ],
       sharedPerkGroups: [],
@@ -292,10 +292,10 @@ describe('build planner', () => {
           perkGroupOptions: [
             {
               categoryName: 'No perk group',
-              treeIconPath: null,
-              treeId: 'no-perk-group-placement::perk.legend_direct',
-              treeLabel: 'No perk group placement',
-              treeName: 'No perk group placement',
+              perkGroupIconPath: null,
+              perkGroupId: 'no-perk-group-placement::perk.legend_direct',
+              perkGroupLabel: 'No perk group placement',
+              perkGroupName: 'No perk group placement',
             },
           ],
           perkIds: ['perk.legend_direct'],

@@ -58,7 +58,7 @@ test('build planner splits shared and individual perk groups without internal sc
     .locator('.build-planner-header')
     .evaluate((element) => element.getBoundingClientRect().height)
 
-  await expect(page.getByRole('heading', { name: 'BUILD PLANNER' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Build planner' })).toBeVisible()
   await expect(page.locator('.build-planner-summary')).toHaveCount(0)
   expect(initialHeaderHeight).toBeLessThanOrEqual(40)
 
@@ -423,7 +423,7 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
     ),
   ).toBeVisible()
   await expect(
-    getBuildIndividualGroupsList(page).getByText('Single-perk groups will appear here'),
+    getBuildIndividualGroupsList(page).getByText('Individual perk groups will appear here'),
   ).toBeVisible()
 })
 

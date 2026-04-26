@@ -38,9 +38,9 @@ vi.mock('../src/data/legends-perks.json', async () => {
     '../src/data/legends-perks.json',
   )) as LegendsPerksDataset
   const perks = actualDataset.perks.filter((perk) => perkNamesForAppTests.has(perk.perkName))
-  const treeCount = new Set(
+  const perkGroupCount = new Set(
     perks.flatMap((perk) =>
-      perk.placements.map((placement) => `${placement.categoryName}::${placement.treeId}`),
+      perk.placements.map((placement) => `${placement.categoryName}::${placement.perkGroupId}`),
     ),
   ).size
   const backgroundFitBackgrounds = actualDataset.backgroundFitBackgrounds.filter((backgroundFit) =>
@@ -55,7 +55,7 @@ vi.mock('../src/data/legends-perks.json', async () => {
       backgroundFitBackgrounds,
       perkCount: perks.length,
       perks,
-      treeCount,
+      perkGroupCount,
     },
   }
 })
@@ -198,7 +198,7 @@ describe('app', () => {
     ).not.toBeInTheDocument()
   })
 
-  test('renders favored enemy targets and scenario overlay details in the detail panel', async () => {
+  test('renders favoured enemy targets and scenario overlay details in the detail panel', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -211,7 +211,7 @@ describe('app', () => {
     )
 
     expect(
-      screen.getByRole('heading', { level: 3, name: 'Favored enemy targets' }),
+      screen.getByRole('heading', { level: 3, name: 'Favoured enemy targets' }),
     ).toBeInTheDocument()
     expect(screen.getByText('Bear')).toBeInTheDocument()
     expect(screen.getByRole('heading', { level: 3, name: 'Scenario overlays' })).toBeInTheDocument()
@@ -340,9 +340,9 @@ describe('app', () => {
 
     await user.click(categoryButtons[0])
 
-    const subgroupButtons = screen.getAllByRole('button', { name: /Toggle perk group / })
+    const perkGroupButtons = screen.getAllByRole('button', { name: /Toggle perk group / })
 
-    expect(subgroupButtons[0]).toHaveAccessibleName('Toggle perk group Shady')
+    expect(perkGroupButtons[0]).toHaveAccessibleName('Toggle perk group Shady')
     expect(container.querySelectorAll('.sidebar .search-highlight')).toHaveLength(1)
     expect(container.querySelector('.sidebar .search-highlight')?.textContent).toBe('Shady')
   })
@@ -362,7 +362,7 @@ describe('app', () => {
     ).toBe(true)
   })
 
-  test('can filter by multiple categories at the same time while keeping subgroup filters scoped', async () => {
+  test('can filter by multiple categories at the same time while keeping perk group filters scoped', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -558,7 +558,7 @@ describe('app', () => {
     expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
   })
 
-  test('shows picked-perk stars next to category and subgroup counts based on the current build', async () => {
+  test('shows picked-perk stars next to category and perk group counts based on the current build', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -579,10 +579,10 @@ describe('app', () => {
     const traitsCategoryButton = screen.getByRole('button', { name: 'Enable category Traits' })
     const magicCategoryButton = screen.getByRole('button', { name: 'Enable category Magic' })
     const traitsCategoryStarCount = traitsCategoryButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+      '.category-chip-picked-stars .build-star',
     ).length
     const magicCategoryStarCount = magicCategoryButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+      '.category-chip-picked-stars .build-star',
     ).length
 
     expect(traitsCategoryStarCount).toBe(2)
@@ -591,17 +591,17 @@ describe('app', () => {
     await user.click(traitsCategoryButton)
     await user.click(magicCategoryButton)
 
-    const calmSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Calm' })
-    const deadeyeSubgroupButton = screen.getByRole('button', { name: 'Toggle perk group Deadeye' })
-    const calmSubgroupStarCount = calmSubgroupButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+    const calmPerkGroupButton = screen.getByRole('button', { name: 'Toggle perk group Calm' })
+    const deadeyePerkGroupButton = screen.getByRole('button', { name: 'Toggle perk group Deadeye' })
+    const calmPerkGroupStarCount = calmPerkGroupButton.querySelectorAll(
+      '.category-chip-picked-stars .build-star',
     ).length
-    const deadeyeSubgroupStarCount = deadeyeSubgroupButton.querySelectorAll(
-      '.group-chip-picked-stars .build-star',
+    const deadeyePerkGroupStarCount = deadeyePerkGroupButton.querySelectorAll(
+      '.category-chip-picked-stars .build-star',
     ).length
 
-    expect(calmSubgroupStarCount).toBe(2)
-    expect(deadeyeSubgroupStarCount).toBe(1)
+    expect(calmPerkGroupStarCount).toBe(2)
+    expect(deadeyePerkGroupStarCount).toBe(1)
   })
 
   test('merges individual perk groups that unlock the same picked perk into one card', () => {
@@ -710,7 +710,7 @@ describe('app', () => {
     ).toBeInTheDocument()
     expect(
       within(screen.getByTestId('build-individual-groups-list')).getByText(
-        'Single-perk groups will appear here',
+        'Individual perk groups will appear here',
       ),
     ).toBeInTheDocument()
   })
@@ -809,16 +809,18 @@ describe('app', () => {
       within(apprenticeCard as HTMLElement).getByText('Guaranteed 1/1 perks pickable'),
     ).toBeInTheDocument()
     expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'true')
-    expect(within(apprenticeCard as HTMLElement).getByText('1/1 matched group')).toBeInTheDocument()
     expect(
-      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total groups/),
+      within(apprenticeCard as HTMLElement).getByText('1/1 matched perk group'),
+    ).toBeInTheDocument()
+    expect(
+      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total perk groups/),
     ).toBeInTheDocument()
     expect(
       (apprenticeCard as HTMLElement).querySelectorAll('.background-fit-accordion-summary-row'),
     ).toHaveLength(2)
 
     fireEvent.mouseEnter(
-      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total groups/),
+      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total perk groups/),
     )
 
     const backgroundFitSummaryTooltip = screen.getByRole('tooltip')
@@ -840,7 +842,7 @@ describe('app', () => {
     ).toBeInTheDocument()
     expect(apprenticePanel as HTMLElement).toHaveAttribute('aria-hidden', 'false')
     expect(
-      within(apprenticeCard as HTMLElement).getByText('Guaranteed groups 1'),
+      within(apprenticeCard as HTMLElement).getByText('Guaranteed perk groups 1'),
     ).toBeInTheDocument()
     expect(
       within(apprenticeCard as HTMLElement).queryByText(/^Guaranteed weight /),

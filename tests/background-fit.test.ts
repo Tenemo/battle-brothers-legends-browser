@@ -1,8 +1,8 @@
 import { describe, expect, test } from 'vitest'
 import {
-  calculateBackgroundTreeProbabilities,
+  calculateBackgroundPerkGroupProbabilities,
   createBackgroundFitEngine,
-  getBuildTargetTrees,
+  getBuildTargetPerkGroups,
 } from '../src/lib/background-fit'
 import type {
   LegendsBackgroundFitBackgroundDefinition,
@@ -15,21 +15,21 @@ import type {
 
 function createPlacement({
   categoryName,
-  treeId,
-  treeName,
+  perkGroupId,
+  perkGroupName,
 }: {
   categoryName: string
-  treeId: string
-  treeName: string
+  perkGroupId: string
+  perkGroupName: string
 }): LegendsPerkPlacement {
   return {
     categoryName,
     tier: 1,
-    treeAttributes: [],
-    treeDescriptions: [treeName.toLowerCase()],
-    treeIconPath: null,
-    treeId,
-    treeName,
+    perkGroupAttributes: [],
+    perkGroupDescriptions: [perkGroupName.toLowerCase()],
+    perkGroupIconPath: null,
+    perkGroupId,
+    perkGroupName,
   }
 }
 
@@ -47,15 +47,15 @@ function createPerk({
   return {
     backgroundSources: [],
     descriptionParagraphs: [perkName],
-    groupNames: [...new Set(placements.map((placement) => placement.categoryName))],
+    categoryNames: [...new Set(placements.map((placement) => placement.categoryName))],
     iconPath: null,
     id,
     perkConstName,
     perkName,
     placements,
-    primaryGroupName: placements[0]?.categoryName ?? 'Other',
+    primaryCategoryName: placements[0]?.categoryName ?? 'Other',
     scenarioSources: [],
-    searchText: `${perkName} ${placements.map((placement) => placement.treeName).join(' ')}`,
+    searchText: `${perkName} ${placements.map((placement) => placement.perkGroupName).join(' ')}`,
   }
 }
 
@@ -64,13 +64,13 @@ function createEmptyCategoryDefinitions(): Record<
   LegendsBackgroundFitCategoryDefinition
 > {
   return {
-    Class: { chance: 0, minimumTrees: 0, treeIds: [] },
-    Defense: { chance: null, minimumTrees: 0, treeIds: [] },
-    Enemy: { chance: 0, minimumTrees: 0, treeIds: [] },
-    Magic: { chance: 0, minimumTrees: 0, treeIds: [] },
-    Profession: { chance: 0, minimumTrees: 0, treeIds: [] },
-    Traits: { chance: null, minimumTrees: 0, treeIds: [] },
-    Weapon: { chance: null, minimumTrees: 0, treeIds: [] },
+    Class: { chance: 0, minimumPerkGroups: 0, perkGroupIds: [] },
+    Defense: { chance: null, minimumPerkGroups: 0, perkGroupIds: [] },
+    Enemy: { chance: 0, minimumPerkGroups: 0, perkGroupIds: [] },
+    Magic: { chance: 0, minimumPerkGroups: 0, perkGroupIds: [] },
+    Profession: { chance: 0, minimumPerkGroups: 0, perkGroupIds: [] },
+    Traits: { chance: null, minimumPerkGroups: 0, perkGroupIds: [] },
+    Weapon: { chance: null, minimumPerkGroups: 0, perkGroupIds: [] },
   }
 }
 
@@ -108,19 +108,25 @@ const samplePerks: LegendsPerkRecord[] = [
     id: 'perk.weapon.axe_one',
     perkConstName: 'SpecAxeOne',
     perkName: 'Axe drill',
-    placements: [createPlacement({ categoryName: 'Weapon', treeId: 'AxeTree', treeName: 'Axe' })],
+    placements: [
+      createPlacement({ categoryName: 'Weapon', perkGroupId: 'AxeTree', perkGroupName: 'Axe' }),
+    ],
   }),
   createPerk({
     id: 'perk.weapon.axe_two',
     perkConstName: 'SpecAxeTwo',
     perkName: 'Axe finish',
-    placements: [createPlacement({ categoryName: 'Weapon', treeId: 'AxeTree', treeName: 'Axe' })],
+    placements: [
+      createPlacement({ categoryName: 'Weapon', perkGroupId: 'AxeTree', perkGroupName: 'Axe' }),
+    ],
   }),
   createPerk({
     id: 'perk.weapon.bow',
     perkConstName: 'SpecBow',
     perkName: 'Bow drill',
-    placements: [createPlacement({ categoryName: 'Weapon', treeId: 'BowTree', treeName: 'Bow' })],
+    placements: [
+      createPlacement({ categoryName: 'Weapon', perkGroupId: 'BowTree', perkGroupName: 'Bow' }),
+    ],
   }),
   createPerk({
     id: 'perk.defense.heavy',
@@ -129,8 +135,8 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       createPlacement({
         categoryName: 'Defense',
-        treeId: 'HeavyDefenseTree',
-        treeName: 'Heavy armor',
+        perkGroupId: 'HeavyDefenseTree',
+        perkGroupName: 'Heavy armor',
       }),
     ],
   }),
@@ -138,20 +144,24 @@ const samplePerks: LegendsPerkRecord[] = [
     id: 'perk.traits.calm',
     perkConstName: 'LegendCalm',
     perkName: 'Calm focus',
-    placements: [createPlacement({ categoryName: 'Traits', treeId: 'CalmTree', treeName: 'Calm' })],
+    placements: [
+      createPlacement({ categoryName: 'Traits', perkGroupId: 'CalmTree', perkGroupName: 'Calm' }),
+    ],
   }),
   createPerk({
     id: 'perk.traits.bold',
     perkConstName: 'LegendBold',
     perkName: 'Bold spirit',
-    placements: [createPlacement({ categoryName: 'Traits', treeId: 'BoldTree', treeName: 'Bold' })],
+    placements: [
+      createPlacement({ categoryName: 'Traits', perkGroupId: 'BoldTree', perkGroupName: 'Bold' }),
+    ],
   }),
   createPerk({
     id: 'perk.traits.lucky',
     perkConstName: 'LegendLucky',
     perkName: 'Lucky break',
     placements: [
-      createPlacement({ categoryName: 'Traits', treeId: 'LuckyTree', treeName: 'Lucky' }),
+      createPlacement({ categoryName: 'Traits', perkGroupId: 'LuckyTree', perkGroupName: 'Lucky' }),
     ],
   }),
   createPerk({
@@ -159,7 +169,7 @@ const samplePerks: LegendsPerkRecord[] = [
     perkConstName: 'LegendEnemyBeasts',
     perkName: 'Favoured Enemy - Beasts',
     placements: [
-      createPlacement({ categoryName: 'Enemy', treeId: 'BeastTree', treeName: 'Beasts' }),
+      createPlacement({ categoryName: 'Enemy', perkGroupId: 'BeastTree', perkGroupName: 'Beasts' }),
     ],
   }),
   createPerk({
@@ -167,7 +177,11 @@ const samplePerks: LegendsPerkRecord[] = [
     perkConstName: 'LegendEnemyRaiders',
     perkName: 'Favoured Enemy - Raiders',
     placements: [
-      createPlacement({ categoryName: 'Enemy', treeId: 'RaiderTree', treeName: 'Raiders' }),
+      createPlacement({
+        categoryName: 'Enemy',
+        perkGroupId: 'RaiderTree',
+        perkGroupName: 'Raiders',
+      }),
     ],
   }),
   createPerk({
@@ -175,7 +189,11 @@ const samplePerks: LegendsPerkRecord[] = [
     perkConstName: 'LegendEnemyOccult',
     perkName: 'Favoured Enemy - Occult',
     placements: [
-      createPlacement({ categoryName: 'Enemy', treeId: 'OccultTree', treeName: 'Occult' }),
+      createPlacement({
+        categoryName: 'Enemy',
+        perkGroupId: 'OccultTree',
+        perkGroupName: 'Occult',
+      }),
     ],
   }),
   createPerk({
@@ -183,7 +201,11 @@ const samplePerks: LegendsPerkRecord[] = [
     perkConstName: 'LegendMilitia',
     perkName: 'Militia drill',
     placements: [
-      createPlacement({ categoryName: 'Class', treeId: 'MilitiaClassTree', treeName: 'Militia' }),
+      createPlacement({
+        categoryName: 'Class',
+        perkGroupId: 'MilitiaClassTree',
+        perkGroupName: 'Militia',
+      }),
     ],
   }),
   createPerk({
@@ -191,7 +213,11 @@ const samplePerks: LegendsPerkRecord[] = [
     perkConstName: 'LegendArcher',
     perkName: 'Archer drill',
     placements: [
-      createPlacement({ categoryName: 'Class', treeId: 'ArcherClassTree', treeName: 'Archer' }),
+      createPlacement({
+        categoryName: 'Class',
+        perkGroupId: 'ArcherClassTree',
+        perkGroupName: 'Archer',
+      }),
     ],
   }),
   createPerk({
@@ -201,8 +227,8 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       createPlacement({
         categoryName: 'Profession',
-        treeId: 'BlacksmithProfessionTree',
-        treeName: 'Blacksmith',
+        perkGroupId: 'BlacksmithProfessionTree',
+        perkGroupName: 'Blacksmith',
       }),
     ],
   }),
@@ -213,8 +239,8 @@ const samplePerks: LegendsPerkRecord[] = [
     placements: [
       createPlacement({
         categoryName: 'Profession',
-        treeId: 'ScholarProfessionTree',
-        treeName: 'Scholar',
+        perkGroupId: 'ScholarProfessionTree',
+        perkGroupName: 'Scholar',
       }),
     ],
   }),
@@ -223,7 +249,11 @@ const samplePerks: LegendsPerkRecord[] = [
     perkConstName: 'LegendForceful',
     perkName: 'Forceful stance',
     placements: [
-      createPlacement({ categoryName: 'Other', treeId: 'ForcefulTree', treeName: 'Forceful' }),
+      createPlacement({
+        categoryName: 'Other',
+        perkGroupId: 'ForcefulTree',
+        perkGroupName: 'Forceful',
+      }),
     ],
   }),
 ]
@@ -234,62 +264,62 @@ const sampleDataset: LegendsPerksDataset = {
       backgroundId: 'background.explicit_heavy',
       backgroundName: 'Heavy hand',
       overrides: {
-        Defense: { minimumTrees: 1, treeIds: ['HeavyDefenseTree'] },
+        Defense: { minimumPerkGroups: 1, perkGroupIds: ['HeavyDefenseTree'] },
       },
     }),
     createBackgroundDefinition({
       backgroundId: 'background.traits_fill',
       backgroundName: 'Balanced scholar',
       overrides: {
-        Traits: { minimumTrees: 2, treeIds: ['CalmTree'] },
+        Traits: { minimumPerkGroups: 2, perkGroupIds: ['CalmTree'] },
       },
     }),
     createBackgroundDefinition({
       backgroundId: 'background.enemy_roll',
       backgroundName: 'Hunter',
       overrides: {
-        Enemy: { chance: 0.5, minimumTrees: 1, treeIds: [] },
+        Enemy: { chance: 0.5, minimumPerkGroups: 1, perkGroupIds: [] },
       },
     }),
     createBackgroundDefinition({
       backgroundId: 'background.class_roll',
       backgroundName: 'Militia captain',
       overrides: {
-        Class: { chance: 1, minimumTrees: 0, treeIds: [] },
-        Weapon: { minimumTrees: 1, treeIds: [] },
+        Class: { chance: 1, minimumPerkGroups: 0, perkGroupIds: [] },
+        Weapon: { minimumPerkGroups: 1, perkGroupIds: [] },
       },
     }),
     createBackgroundDefinition({
       backgroundId: 'background.profession_roll',
       backgroundName: 'Crafter',
       overrides: {
-        Profession: { chance: 0.5, minimumTrees: 1, treeIds: [] },
+        Profession: { chance: 0.5, minimumPerkGroups: 1, perkGroupIds: [] },
       },
     }),
     createBackgroundDefinition({
       backgroundId: 'background.high_weight',
       backgroundName: 'Champion',
       overrides: {
-        Weapon: { minimumTrees: 1, treeIds: ['AxeTree'] },
+        Weapon: { minimumPerkGroups: 1, perkGroupIds: ['AxeTree'] },
       },
     }),
     createBackgroundDefinition({
       backgroundId: 'background.low_weight',
       backgroundName: 'Champion',
       overrides: {
-        Weapon: { minimumTrees: 1, treeIds: ['BowTree'] },
+        Weapon: { minimumPerkGroups: 1, perkGroupIds: ['BowTree'] },
       },
     }),
   ],
   backgroundFitRules: {
     classWeaponDependencies: [
       {
-        classTreeId: 'ArcherClassTree',
-        weaponTreeId: 'BowTree',
+        classPerkGroupId: 'ArcherClassTree',
+        weaponPerkGroupId: 'BowTree',
       },
       {
-        classTreeId: 'MilitiaClassTree',
-        weaponTreeId: 'AxeTree',
+        classPerkGroupId: 'MilitiaClassTree',
+        weaponPerkGroupId: 'AxeTree',
       },
     ],
   },
@@ -299,44 +329,44 @@ const sampleDataset: LegendsPerksDataset = {
   referenceRoot: 'tests/fixtures',
   referenceVersion: 'tests',
   sourceFiles: [],
-  treeCount: 11,
+  perkGroupCount: 11,
 }
 
 describe('background fit', () => {
   test('derives shared supported targets and separates unsupported categories', () => {
-    expect(getBuildTargetTrees([samplePerks[0], samplePerks[1], samplePerks[14]])).toEqual({
-      supportedBuildTargetTrees: [
+    expect(getBuildTargetPerkGroups([samplePerks[0], samplePerks[1], samplePerks[14]])).toEqual({
+      supportedBuildTargetPerkGroups: [
         {
           categoryName: 'Weapon',
           pickedPerkCount: 2,
           pickedPerkNames: ['Axe drill', 'Axe finish'],
-          treeId: 'AxeTree',
-          treeName: 'Axe',
+          perkGroupId: 'AxeTree',
+          perkGroupName: 'Axe',
         },
       ],
-      unsupportedBuildTargetTrees: [
+      unsupportedBuildTargetPerkGroups: [
         {
           categoryName: 'Other',
           pickedPerkCount: 1,
           pickedPerkNames: ['Forceful stance'],
-          treeId: 'ForcefulTree',
-          treeName: 'Forceful',
+          perkGroupId: 'ForcefulTree',
+          perkGroupName: 'Forceful',
         },
       ],
     })
   })
 
-  test('keeps explicit trees guaranteed', () => {
-    const probabilitiesByTreeId = calculateBackgroundTreeProbabilities(
+  test('keeps explicit perk groups guaranteed', () => {
+    const probabilitiesByPerkGroupId = calculateBackgroundPerkGroupProbabilities(
       sampleDataset.backgroundFitBackgrounds[0],
       {
-        classWeaponDependencyByClassTreeId: new Map(
+        classWeaponDependencyByClassPerkGroupId: new Map(
           sampleDataset.backgroundFitRules.classWeaponDependencies.map((dependency) => [
-            dependency.classTreeId,
-            new Set([dependency.weaponTreeId]),
+            dependency.classPerkGroupId,
+            new Set([dependency.weaponPerkGroupId]),
           ]),
         ),
-        treeIdsByCategory: new Map([
+        perkGroupIdsByCategory: new Map([
           ['Class', ['ArcherClassTree', 'MilitiaClassTree']],
           ['Defense', ['HeavyDefenseTree']],
           ['Enemy', ['BeastTree', 'OccultTree', 'RaiderTree']],
@@ -348,22 +378,22 @@ describe('background fit', () => {
       },
     )
 
-    expect(probabilitiesByTreeId.get('HeavyDefenseTree')).toBe(1)
+    expect(probabilitiesByPerkGroupId.get('HeavyDefenseTree')).toBe(1)
   })
 
-  test('treats duplicate explicit background trees as one unique perk group', () => {
+  test('treats duplicate explicit background perk groups as one unique perk group', () => {
     const duplicateExplicitBackground = createBackgroundDefinition({
       backgroundId: 'background.duplicate_explicit',
       backgroundName: 'Duplicate explicit',
       overrides: {
-        Weapon: { minimumTrees: 2, treeIds: ['AxeTree', 'AxeTree'] },
+        Weapon: { minimumPerkGroups: 2, perkGroupIds: ['AxeTree', 'AxeTree'] },
       },
     })
-    const probabilitiesByTreeId = calculateBackgroundTreeProbabilities(
+    const probabilitiesByPerkGroupId = calculateBackgroundPerkGroupProbabilities(
       duplicateExplicitBackground,
       {
-        classWeaponDependencyByClassTreeId: new Map(),
-        treeIdsByCategory: new Map([
+        classWeaponDependencyByClassPerkGroupId: new Map(),
+        perkGroupIdsByCategory: new Map([
           ['Class', []],
           ['Defense', []],
           ['Enemy', []],
@@ -381,13 +411,13 @@ describe('background fit', () => {
     const duplicateExplicitFit = engine.getBackgroundFitView([samplePerks[0], samplePerks[2]])
       .rankedBackgroundFits[0]
 
-    expect(probabilitiesByTreeId.get('AxeTree')).toBe(1)
-    expect(probabilitiesByTreeId.get('BowTree')).toBe(1)
-    expect(duplicateExplicitFit.maximumTotalGroupCount).toBe(2)
+    expect(probabilitiesByPerkGroupId.get('AxeTree')).toBe(1)
+    expect(probabilitiesByPerkGroupId.get('BowTree')).toBe(1)
+    expect(duplicateExplicitFit.maximumTotalPerkGroupCount).toBe(2)
     expect(duplicateExplicitFit.matches).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ treeId: 'AxeTree' }),
-        expect.objectContaining({ treeId: 'BowTree' }),
+        expect.objectContaining({ perkGroupId: 'AxeTree' }),
+        expect.objectContaining({ perkGroupId: 'BowTree' }),
       ]),
     )
   })
@@ -408,12 +438,12 @@ describe('background fit', () => {
         expect.objectContaining({
           isGuaranteed: true,
           probability: 1,
-          treeId: 'CalmTree',
+          perkGroupId: 'CalmTree',
         }),
         expect.objectContaining({
           isGuaranteed: false,
           probability: 0.5,
-          treeId: 'BoldTree',
+          perkGroupId: 'BoldTree',
         }),
       ]),
     )
@@ -434,20 +464,20 @@ describe('background fit', () => {
 
     expect(enemyRollFit?.matches).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ probability: 1 / 3, treeId: 'BeastTree' }),
-        expect.objectContaining({ probability: 1 / 3, treeId: 'OccultTree' }),
-        expect.objectContaining({ probability: 1 / 3, treeId: 'RaiderTree' }),
+        expect.objectContaining({ probability: 1 / 3, perkGroupId: 'BeastTree' }),
+        expect.objectContaining({ probability: 1 / 3, perkGroupId: 'OccultTree' }),
+        expect.objectContaining({ probability: 1 / 3, perkGroupId: 'RaiderTree' }),
       ]),
     )
     expect(professionRollFit?.matches).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ probability: 0.5, treeId: 'BlacksmithProfessionTree' }),
-        expect.objectContaining({ probability: 0.5, treeId: 'ScholarProfessionTree' }),
+        expect.objectContaining({ probability: 0.5, perkGroupId: 'BlacksmithProfessionTree' }),
+        expect.objectContaining({ probability: 0.5, perkGroupId: 'ScholarProfessionTree' }),
       ]),
     )
   })
 
-  test('changes class probabilities based on the exact weapon trees a background can produce', () => {
+  test('changes class probabilities based on the exact weapon perk groups a background can produce', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const classRollFit = engine
       .getBackgroundFitView([samplePerks[10], samplePerks[11]])
@@ -457,8 +487,8 @@ describe('background fit', () => {
 
     expect(classRollFit?.matches).toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ probability: 0.5, treeId: 'ArcherClassTree' }),
-        expect.objectContaining({ probability: 0.5, treeId: 'MilitiaClassTree' }),
+        expect.objectContaining({ probability: 0.5, perkGroupId: 'ArcherClassTree' }),
+        expect.objectContaining({ probability: 0.5, perkGroupId: 'MilitiaClassTree' }),
       ]),
     )
   })
@@ -476,13 +506,13 @@ describe('background fit', () => {
         backgroundId: 'background.high_weight',
         backgroundName: 'Champion',
         disambiguator: 'background.high_weight',
-        matches: [expect.objectContaining({ pickedPerkCount: 2, treeId: 'AxeTree' })],
+        matches: [expect.objectContaining({ pickedPerkCount: 2, perkGroupId: 'AxeTree' })],
       }),
       expect.objectContaining({
         backgroundId: 'background.low_weight',
         backgroundName: 'Champion',
         disambiguator: 'background.low_weight',
-        matches: [expect.objectContaining({ pickedPerkCount: 1, treeId: 'BowTree' })],
+        matches: [expect.objectContaining({ pickedPerkCount: 1, perkGroupId: 'BowTree' })],
       }),
     ])
   })
@@ -522,8 +552,8 @@ describe('background fit', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([])
 
-    expect(backgroundFitView.supportedBuildTargetTrees).toEqual([])
-    expect(backgroundFitView.unsupportedBuildTargetTrees).toEqual([])
+    expect(backgroundFitView.supportedBuildTargetPerkGroups).toEqual([])
+    expect(backgroundFitView.unsupportedBuildTargetPerkGroups).toEqual([])
     expect(
       backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName),
     ).toEqual([
@@ -537,7 +567,7 @@ describe('background fit', () => {
     ])
   })
 
-  test('tracks each backgrounds overall group cap separately from build matches', () => {
+  test('tracks each backgrounds overall perk group cap separately from build matches', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([samplePerks[7]])
 
@@ -547,8 +577,8 @@ describe('background fit', () => {
       ),
     ).toEqual(
       expect.objectContaining({
-        guaranteedMatchedTreeCount: 0,
-        maximumTotalGroupCount: 2,
+        guaranteedMatchedPerkGroupCount: 0,
+        maximumTotalPerkGroupCount: 2,
       }),
     )
     expect(
@@ -557,7 +587,7 @@ describe('background fit', () => {
       ),
     ).toEqual(
       expect.objectContaining({
-        maximumTotalGroupCount: 2,
+        maximumTotalPerkGroupCount: 2,
       }),
     )
   })

@@ -31,9 +31,9 @@ function getPlannerGroupCategoryLabel(
 }
 
 function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirementOption[]): string {
-  return [...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.treeLabel))].join(
-    ' / ',
-  )
+  return [
+    ...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.perkGroupLabel)),
+  ].join(' / ')
 }
 
 function BuildPlannerInfoButton() {
@@ -79,7 +79,7 @@ function renderPlannerGroupCard({
       hoveredPerkGroupKey ===
       getPerkGroupHoverKey({
         categoryName: perkGroupOption.categoryName,
-        treeId: perkGroupOption.treeId,
+        perkGroupId: perkGroupOption.perkGroupId,
       }),
   )
 
@@ -91,11 +91,11 @@ function renderPlannerGroupCard({
       <div className="planner-group-card-header">
         <div className="planner-card-icon-stack">
           {groupedPerkGroup.perkGroupOptions.map((perkGroupOption) => (
-            <span className="planner-card-icon-stack-item" key={perkGroupOption.treeId}>
+            <span className="planner-card-icon-stack-item" key={perkGroupOption.perkGroupId}>
               {renderGameIcon({
                 className: 'perk-icon perk-icon-group',
-                iconPath: perkGroupOption.treeIconPath,
-                label: `${perkGroupOption.treeLabel} perk group icon`,
+                iconPath: perkGroupOption.perkGroupIconPath,
+                label: `${perkGroupOption.perkGroupLabel} perk group icon`,
               })}
             </span>
           ))}
@@ -195,7 +195,7 @@ export function BuildPlanner({
           <div className="build-planner-title-row">
             <div className="build-planner-title">
               <h2>
-                BUILD PLANNER
+                Build planner
                 {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
               </h2>
             </div>
@@ -346,7 +346,7 @@ export function BuildPlanner({
                 ) : (
                   <div className="planner-section-placeholder">
                     <strong className="planner-slot-name">
-                      This build has no individual-perk-only groups
+                      This build has no individual-only perk groups
                     </strong>
                     <p className="planner-slot-meta">
                       Every available perk group for the current build already covers two or more
@@ -356,9 +356,11 @@ export function BuildPlanner({
                 )
               ) : (
                 <div className="planner-section-placeholder">
-                  <strong className="planner-slot-name">Single-perk groups will appear here</strong>
+                  <strong className="planner-slot-name">
+                    Individual perk groups will appear here
+                  </strong>
                   <p className="planner-slot-meta">
-                    Groups that only match one picked perk are merged by perk and shown here.
+                    Perk groups that only match one picked perk are merged by perk and shown here.
                   </p>
                 </div>
               )}

@@ -54,13 +54,13 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .toBeGreaterThan(0)
   await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
   await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
-  await expect(apprenticeCard.getByText('1/1 matched group')).toBeVisible()
-  await expect(apprenticeCard.getByText(/Maximum \d+ total groups/)).toBeVisible()
+  await expect(apprenticeCard.getByText('1/1 matched perk group')).toBeVisible()
+  await expect(apprenticeCard.getByText(/Maximum \d+ total perk groups/)).toBeVisible()
   await expect(apprenticeCard.locator('.background-fit-accordion-summary-row')).toHaveCount(2)
   await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
   const maximumTotalGroupsBadge = apprenticeCard
     .locator('.background-fit-summary-badge')
-    .filter({ hasText: /Maximum \d+ total groups/ })
+    .filter({ hasText: /Maximum \d+ total perk groups/ })
 
   await expect(maximumTotalGroupsBadge).not.toHaveAttribute('title', /.+/)
   await expect(maximumTotalGroupsBadge).toHaveAttribute(
@@ -90,7 +90,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
     'aria-hidden',
     'false',
   )
-  await expect(apprenticeCard.getByText('Guaranteed groups 1')).toBeVisible()
+  await expect(apprenticeCard.getByText('Guaranteed perk groups 1')).toBeVisible()
   await expect
     .poll(async () =>
       apprenticeCard
@@ -258,7 +258,7 @@ test('shows probabilistic background fit matches with percentage badges', async 
   })
 
   await expect(apprenticeCard.getByText('Possible', { exact: true })).toBeVisible()
-  await expect(apprenticeCard.getByText(/Expected groups \d+(\.\d)?/)).toBeVisible()
+  await expect(apprenticeCard.getByText(/Expected perk groups \d+(\.\d)?/)).toBeVisible()
   await expect(barterMatchButton).toBeVisible()
   await expect(barterMatchButton.locator('.detail-badge')).toHaveText(/\d+(\.\d)?%/)
   await barterMatchButton.click()

@@ -10,13 +10,13 @@ const samplePerks: LegendsPerkRecord[] = [
         backgroundName: 'Vala',
         categoryName: 'Magic',
         chance: 0.2,
-        minimumTrees: 1,
-        treeId: 'ValaChantMagicTree',
-        treeName: 'Vala Chant',
+        minimumPerkGroups: 1,
+        perkGroupId: 'ValaChantMagicTree',
+        perkGroupName: 'Vala Chant',
       },
     ],
     descriptionParagraphs: ['Gain heightened senses for nearby allies.'],
-    groupNames: ['Magic'],
+    categoryNames: ['Magic'],
     iconPath: null,
     id: 'perk.legend_heightened_senses',
     perkConstName: 'LegendHeightenedSenses',
@@ -25,14 +25,14 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Magic',
         tier: 3,
-        treeAttributes: [],
-        treeDescriptions: ['chants'],
-        treeIconPath: null,
-        treeId: 'ValaChantMagicTree',
-        treeName: 'Vala Chant',
+        perkGroupAttributes: [],
+        perkGroupDescriptions: ['chants'],
+        perkGroupIconPath: null,
+        perkGroupId: 'ValaChantMagicTree',
+        perkGroupName: 'Vala Chant',
       },
     ],
-    primaryGroupName: 'Magic',
+    primaryCategoryName: 'Magic',
     scenarioSources: [],
     searchText:
       'Heightened Senses Magic Vala Chant chants gain heightened senses nearby allies Vala',
@@ -40,7 +40,7 @@ const samplePerks: LegendsPerkRecord[] = [
   {
     backgroundSources: [],
     descriptionParagraphs: ['Improve ranged accuracy and scouting.'],
-    groupNames: ['Weapon'],
+    categoryNames: ['Weapon'],
     iconPath: null,
     id: 'perk.legend_lookout',
     perkConstName: 'LegendLookout',
@@ -49,14 +49,14 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Weapon',
         tier: 1,
-        treeAttributes: ['Ranged skill: +2 to +4'],
-        treeDescriptions: ['bows'],
-        treeIconPath: null,
-        treeId: 'BowTree',
-        treeName: 'Bows',
+        perkGroupAttributes: ['Ranged skill: +2 to +4'],
+        perkGroupDescriptions: ['bows'],
+        perkGroupIconPath: null,
+        perkGroupId: 'BowTree',
+        perkGroupName: 'Bows',
       },
     ],
-    primaryGroupName: 'Weapon',
+    primaryCategoryName: 'Weapon',
     scenarioSources: [],
     searchText: 'Lookout Weapon Bows bows ranged skill scouting accuracy',
   },
@@ -67,20 +67,20 @@ const samplePerks: LegendsPerkRecord[] = [
         backgroundName: 'Beast Slayer',
         categoryName: 'Enemy',
         chance: 0.05,
-        minimumTrees: 2,
-        treeId: 'BeastTree',
-        treeName: 'Beasts',
+        minimumPerkGroups: 2,
+        perkGroupId: 'BeastTree',
+        perkGroupName: 'Beasts',
       },
     ],
-    descriptionParagraphs: ['Favored enemy bonuses scale with kills.'],
-    favoredEnemyTargets: [
+    descriptionParagraphs: ['Favoured enemy bonuses scale with kills.'],
+    favouredEnemyTargets: [
       {
         entityConstName: 'LegendBear',
         entityName: 'Bear',
         killsPerPercentBonus: 2,
       },
     ],
-    groupNames: ['Enemy'],
+    categoryNames: ['Enemy'],
     iconPath: null,
     id: 'perk.legend_favoured_enemy_beast',
     perkConstName: 'LegendFavouredEnemyBeast',
@@ -89,14 +89,14 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Enemy',
         tier: 3,
-        treeAttributes: [],
-        treeDescriptions: ['beasts'],
-        treeIconPath: null,
-        treeId: 'BeastTree',
-        treeName: 'Beasts',
+        perkGroupAttributes: [],
+        perkGroupDescriptions: ['beasts'],
+        perkGroupIconPath: null,
+        perkGroupId: 'BeastTree',
+        perkGroupName: 'Beasts',
       },
     ],
-    primaryGroupName: 'Enemy',
+    primaryCategoryName: 'Enemy',
     scenarioSources: [
       {
         candidatePerkNames: ['Favoured Enemy - Beasts', 'Favoured Enemy - Occult'],
@@ -112,7 +112,7 @@ const samplePerks: LegendsPerkRecord[] = [
   {
     backgroundSources: [],
     descriptionParagraphs: ['Remain calm and ignore armor more effectively.'],
-    groupNames: ['Traits'],
+    categoryNames: ['Traits'],
     iconPath: null,
     id: 'perk.legend_clarity',
     perkConstName: 'LegendClarity',
@@ -121,14 +121,14 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Traits',
         tier: 5,
-        treeAttributes: [],
-        treeDescriptions: ['is calm'],
-        treeIconPath: null,
-        treeId: 'CalmTree',
-        treeName: 'Calm',
+        perkGroupAttributes: [],
+        perkGroupDescriptions: ['is calm'],
+        perkGroupIconPath: null,
+        perkGroupId: 'CalmTree',
+        perkGroupName: 'Calm',
       },
     ],
-    primaryGroupName: 'Traits',
+    primaryCategoryName: 'Traits',
     scenarioSources: [],
     searchText: 'Clarity Traits Calm is calm ignore armor',
   },
@@ -138,60 +138,60 @@ describe('perk search', () => {
   test('prefers exact name matches over broader text matches', () => {
     const results = filterAndSortPerks(samplePerks, {
       query: 'Clarity',
-      selectedGroupNames: [],
-      selectedTreeIdsByGroup: {},
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     })
 
     expect(results.map((perk) => perk.perkName)[0]).toBe('Clarity')
   })
 
-  test('matches description-only text when no name or tree match exists', () => {
+  test('matches description-only text when no name or perk group match exists', () => {
     const results = filterAndSortPerks(samplePerks, {
       query: 'scouting',
-      selectedGroupNames: [],
-      selectedTreeIdsByGroup: {},
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     })
 
     expect(results.map((perk) => perk.perkName)).toEqual(['Lookout'])
   })
 
-  test('matches tree text and dynamic background names', () => {
+  test('matches perk group text and dynamic background names', () => {
     const treeResults = filterAndSortPerks(samplePerks, {
       query: 'vala chant',
-      selectedGroupNames: [],
-      selectedTreeIdsByGroup: {},
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     })
     const backgroundResults = filterAndSortPerks(samplePerks, {
       query: 'Beast Slayer',
-      selectedGroupNames: [],
-      selectedTreeIdsByGroup: {},
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     })
 
     expect(treeResults.map((perk) => perk.perkName)).toEqual(['Heightened Senses'])
     expect(backgroundResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
   })
 
-  test('matches scenario names and favored enemy targets', () => {
+  test('matches scenario names and favoured enemy targets', () => {
     const scenarioResults = filterAndSortPerks(samplePerks, {
       query: 'Beast Slayers',
-      selectedGroupNames: [],
-      selectedTreeIdsByGroup: {},
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     })
     const targetResults = filterAndSortPerks(samplePerks, {
       query: 'Bear',
-      selectedGroupNames: [],
-      selectedTreeIdsByGroup: {},
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     })
 
     expect(scenarioResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
     expect(targetResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
   })
 
-  test('treats multiple selected categories as a union while keeping subgroup filters scoped per category', () => {
+  test('treats multiple selected categories as a union while keeping perk group filters scoped per category', () => {
     const results = filterAndSortPerks(samplePerks, {
       query: '',
-      selectedGroupNames: ['Traits', 'Enemy'],
-      selectedTreeIdsByGroup: { Traits: ['CalmTree'] },
+      selectedCategoryNames: ['Traits', 'Enemy'],
+      selectedPerkGroupIdsByCategory: { Traits: ['CalmTree'] },
     })
 
     expect(results.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts', 'Clarity'])

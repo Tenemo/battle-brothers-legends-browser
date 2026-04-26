@@ -2,17 +2,17 @@ import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-p
 
 type PerkBrowserFilters = {
   query: string
-  selectedGroupNames: string[]
-  selectedTreeIdsByGroup: Record<string, string[]>
+  selectedCategoryNames: string[]
+  selectedPerkGroupIdsByCategory: Record<string, string[]>
 }
 
 type NormalizedPerkSearchIndex = {
   backgroundNames: string[]
-  groupNames: string[]
+  categoryNames: string[]
   perkName: string
   scenarioNames: string[]
   searchText: string
-  treeNames: string[]
+  perkGroupNames: string[]
 }
 
 const normalizedPerkSearchIndexByPerkId = new Map<string, NormalizedPerkSearchIndex>()
@@ -32,13 +32,13 @@ function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSe
     backgroundNames: perk.backgroundSources.map((backgroundSource) =>
       backgroundSource.backgroundName.toLowerCase(),
     ),
-    groupNames: perk.groupNames.map((groupName) => groupName.toLowerCase()),
+    categoryNames: perk.categoryNames.map((categoryName) => categoryName.toLowerCase()),
     perkName: perk.perkName.toLowerCase(),
     scenarioNames: perk.scenarioSources.map((scenarioSource) =>
       scenarioSource.scenarioName.toLowerCase(),
     ),
     searchText: perk.searchText.toLowerCase(),
-    treeNames: perk.placements.map((placement) => placement.treeName.toLowerCase()),
+    perkGroupNames: perk.placements.map((placement) => placement.perkGroupName.toLowerCase()),
   }
 
   normalizedPerkSearchIndexByPerkId.set(perk.id, normalizedSearchIndex)
@@ -103,7 +103,7 @@ function getPreviewDescriptionParagraphs(descriptionParagraphs: string[]): strin
 
 export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
   const primaryPlacement = getPrimaryPlacement(perk)
-  const favoredEnemyTarget = perk.favoredEnemyTargets?.[0]
+  const favouredEnemyTarget = perk.favouredEnemyTargets?.[0]
   const backgroundSource = perk.backgroundSources[0]
   const scenarioSource = perk.scenarioSources[0]
   const descriptionParagraphs = getPreviewDescriptionParagraphs(perk.descriptionParagraphs)
@@ -112,22 +112,22 @@ export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
     return descriptionParagraphs.map(formatPreviewParagraph)
   }
 
-  if (primaryPlacement?.treeAttributes[0]) {
-    return [primaryPlacement.treeAttributes[0]]
+  if (primaryPlacement?.perkGroupAttributes[0]) {
+    return [primaryPlacement.perkGroupAttributes[0]]
   }
 
-  if (primaryPlacement?.treeDescriptions[0]) {
-    return [primaryPlacement.treeDescriptions[0]]
+  if (primaryPlacement?.perkGroupDescriptions[0]) {
+    return [primaryPlacement.perkGroupDescriptions[0]]
   }
 
-  if (favoredEnemyTarget) {
+  if (favouredEnemyTarget) {
     return [
-      `${favoredEnemyTarget.entityName} (${favoredEnemyTarget.killsPerPercentBonus ?? 'varies'})`,
+      `${favouredEnemyTarget.entityName} (${favouredEnemyTarget.killsPerPercentBonus ?? 'varies'})`,
     ]
   }
 
   if (backgroundSource) {
-    return [`${backgroundSource.backgroundName} via ${backgroundSource.treeName}`]
+    return [`${backgroundSource.backgroundName} via ${backgroundSource.perkGroupName}`]
   }
 
   if (scenarioSource) {
@@ -147,37 +147,42 @@ function comparePerksAlphabetically(
   const rightTier = getLowestPlacementTier(rightPerk) ?? Number.POSITIVE_INFINITY
 
   return (
-    leftPerk.primaryGroupName.localeCompare(rightPerk.primaryGroupName) ||
-    (leftPrimaryPlacement?.treeName ?? '').localeCompare(rightPrimaryPlacement?.treeName ?? '') ||
+    leftPerk.primaryCategoryName.localeCompare(rightPerk.primaryCategoryName) ||
+    (leftPrimaryPlacement?.perkGroupName ?? '').localeCompare(
+      rightPrimaryPlacement?.perkGroupName ?? '',
+    ) ||
     leftTier - rightTier ||
     leftPerk.perkName.localeCompare(rightPerk.perkName)
   )
 }
 
 function perkMatchesFilters(perk: LegendsPerkRecord, filters: PerkBrowserFilters): boolean {
-  if (filters.selectedGroupNames.length > 0) {
-    const matchingSelectedGroupNames = filters.selectedGroupNames.filter((groupName) =>
-      perk.groupNames.includes(groupName),
+  if (filters.selectedCategoryNames.length > 0) {
+    const matchingSelectedCategoryNames = filters.selectedCategoryNames.filter((categoryName) =>
+      perk.categoryNames.includes(categoryName),
     )
 
-    if (matchingSelectedGroupNames.length === 0) {
+    if (matchingSelectedCategoryNames.length === 0) {
       return false
     }
 
-    const matchesSelectedCategoryTreeFilter = matchingSelectedGroupNames.some((groupName) => {
-      const selectedTreeIds = filters.selectedTreeIdsByGroup[groupName] ?? []
+    const matchesSelectedCategoryPerkGroupFilter = matchingSelectedCategoryNames.some(
+      (categoryName) => {
+        const selectedPerkGroupIds = filters.selectedPerkGroupIdsByCategory[categoryName] ?? []
 
-      if (selectedTreeIds.length === 0) {
-        return true
-      }
+        if (selectedPerkGroupIds.length === 0) {
+          return true
+        }
 
-      return perk.placements.some(
-        (placement) =>
-          placement.categoryName === groupName && selectedTreeIds.includes(placement.treeId),
-      )
-    })
+        return perk.placements.some(
+          (placement) =>
+            placement.categoryName === categoryName &&
+            selectedPerkGroupIds.includes(placement.perkGroupId),
+        )
+      },
+    )
 
-    if (!matchesSelectedCategoryTreeFilter) {
+    if (!matchesSelectedCategoryPerkGroupFilter) {
       return false
     }
   }
@@ -193,7 +198,7 @@ function getSearchScore(perk: LegendsPerkRecord, query: string): number | null {
   const normalizedQuery = normalizeSearchValue(query)
   const searchTerms = normalizedQuery.split(/\s+/).filter(Boolean)
   const normalizedSearchIndex = getNormalizedPerkSearchIndex(perk)
-  const { backgroundNames, groupNames, perkName, scenarioNames, searchText, treeNames } =
+  const { backgroundNames, categoryNames, perkName, scenarioNames, searchText, perkGroupNames } =
     normalizedSearchIndex
 
   if (!searchTerms.every((searchTerm) => searchText.includes(searchTerm))) {
@@ -212,19 +217,19 @@ function getSearchScore(perk: LegendsPerkRecord, query: string): number | null {
     return 2
   }
 
-  if (treeNames.some((treeName) => treeName === normalizedQuery)) {
+  if (perkGroupNames.some((perkGroupName) => perkGroupName === normalizedQuery)) {
     return 3
   }
 
-  if (treeNames.some((treeName) => treeName.startsWith(normalizedQuery))) {
+  if (perkGroupNames.some((perkGroupName) => perkGroupName.startsWith(normalizedQuery))) {
     return 4
   }
 
-  if (groupNames.some((groupName) => groupName === normalizedQuery)) {
+  if (categoryNames.some((categoryName) => categoryName === normalizedQuery)) {
     return 5
   }
 
-  if (groupNames.some((groupName) => groupName.startsWith(normalizedQuery))) {
+  if (categoryNames.some((categoryName) => categoryName.startsWith(normalizedQuery))) {
     return 6
   }
 

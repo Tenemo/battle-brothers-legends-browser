@@ -430,7 +430,7 @@ function formatAttributeRange(attributeName, numericRange) {
   return `${label}: ${formatNumericModifier(minimumValue)} to ${formatNumericModifier(maximumValue)}`
 }
 
-function flattenTreeAttributes(attributesValue) {
+function flattenPerkGroupAttributes(attributesValue) {
   const attributesTable = unwrapTable(attributesValue)
 
   if (attributesTable === null) {
@@ -663,10 +663,10 @@ function parsePerkDefinitionsFile(fileSource, sourceFilePath) {
   return perkDefinitions
 }
 
-function parseTreeConfigFile(fileSource, sourceFilePath) {
+function parsePerkGroupConfigFile(fileSource, sourceFilePath) {
   const localValues = new Map()
   const categoryDefinitions = []
-  const treeDefinitions = []
+  const perkGroupDefinitions = []
 
   for (const statement of collectTopLevelStatements(fileSource)) {
     if (statement.type === 'local-assignment') {
@@ -679,9 +679,9 @@ function parseTreeConfigFile(fileSource, sourceFilePath) {
     }
 
     const tableEntries = tableEntriesToMap(statement.value, localValues)
-    const treeProperty = tableEntries.get('Tree')
+    const perkGroupProperty = tableEntries.get('Tree')
 
-    if (!treeProperty) {
+    if (!perkGroupProperty) {
       continue
     }
 
@@ -689,18 +689,20 @@ function parseTreeConfigFile(fileSource, sourceFilePath) {
       categoryDefinitions.push({
         categoryName: stringValue(tableEntries.get('GroupsCategory'), localValues) ?? 'Other',
         sourceFilePath,
-        treeConstNames: referenceArrayValue(treeProperty, localValues).map(getLastPathSegment),
+        perkGroupConstNames: referenceArrayValue(perkGroupProperty, localValues).map(
+          getLastPathSegment,
+        ),
       })
       continue
     }
 
     const constName = getLastPathSegment(statement.target)
-    const treeRows = arrayValues(treeProperty, localValues).map((row) =>
+    const perkGroupRows = arrayValues(perkGroupProperty, localValues).map((row) =>
       referenceArrayValue(row, localValues).map(getLastPathSegment),
     )
 
-    treeDefinitions.push({
-      attributeLines: flattenTreeAttributes(tableEntries.get('Attributes')),
+    perkGroupDefinitions.push({
+      attributeLines: flattenPerkGroupAttributes(tableEntries.get('Attributes')),
       categoryName: stringValue(tableEntries.get('Category'), localValues),
       constName,
       descriptionLines: stringArrayValue(tableEntries.get('Descriptions'), localValues).map(
@@ -709,14 +711,14 @@ function parseTreeConfigFile(fileSource, sourceFilePath) {
       iconPath: stringValue(tableEntries.get('Icon'), localValues),
       id: stringValue(tableEntries.get('ID'), localValues) ?? constName,
       name: stringValue(tableEntries.get('Name'), localValues) ?? prettifyIdentifier(constName),
-      perkConstNamesByTier: treeRows,
+      perkConstNamesByTier: perkGroupRows,
       sourceFilePath,
     })
   }
 
   return {
     categoryDefinitions,
-    treeDefinitions,
+    perkGroupDefinitions,
   }
 }
 
@@ -1069,7 +1071,7 @@ function resolveScriptBackgroundDefinitions(
   return resolvedBackgroundDefinitionsByScriptId
 }
 
-function parseBackgroundFitRulesFile(fileSource, treeDefinitions) {
+function parseBackgroundFitRulesFile(fileSource, perkGroupDefinitions) {
   const dynamicPerkTreeAssignment = collectTopLevelStatements(fileSource).find(
     (statement) =>
       statement.type === 'assignment' &&
@@ -1102,9 +1104,13 @@ function parseBackgroundFitRulesFile(fileSource, treeDefinitions) {
       .flatMap((dependencyPair) => {
         const [classTreeConstName, weaponTreeConstName] = dependencyPair
         const classTreeDefinition =
-          classTreeConstName === undefined ? undefined : treeDefinitions.get(classTreeConstName)
+          classTreeConstName === undefined
+            ? undefined
+            : perkGroupDefinitions.get(classTreeConstName)
         const weaponTreeDefinition =
-          weaponTreeConstName === undefined ? undefined : treeDefinitions.get(weaponTreeConstName)
+          weaponTreeConstName === undefined
+            ? undefined
+            : perkGroupDefinitions.get(weaponTreeConstName)
 
         if (!classTreeDefinition || !weaponTreeDefinition) {
           return []
@@ -1112,8 +1118,8 @@ function parseBackgroundFitRulesFile(fileSource, treeDefinitions) {
 
         return [
           {
-            classTreeId: classTreeDefinition.id,
-            weaponTreeId: weaponTreeDefinition.id,
+            classPerkGroupId: classTreeDefinition.id,
+            weaponPerkGroupId: weaponTreeDefinition.id,
           },
         ]
       })
@@ -1121,19 +1127,19 @@ function parseBackgroundFitRulesFile(fileSource, treeDefinitions) {
         (dependency, index, dependencies) =>
           dependencies.findIndex(
             (candidate) =>
-              candidate.classTreeId === dependency.classTreeId &&
-              candidate.weaponTreeId === dependency.weaponTreeId,
+              candidate.classPerkGroupId === dependency.classPerkGroupId &&
+              candidate.weaponPerkGroupId === dependency.weaponPerkGroupId,
           ) === index,
       )
       .toSorted(
         (leftDependency, rightDependency) =>
-          leftDependency.classTreeId.localeCompare(rightDependency.classTreeId) ||
-          leftDependency.weaponTreeId.localeCompare(rightDependency.weaponTreeId),
+          leftDependency.classPerkGroupId.localeCompare(rightDependency.classPerkGroupId) ||
+          leftDependency.weaponPerkGroupId.localeCompare(rightDependency.weaponPerkGroupId),
       ),
   }
 }
 
-function buildBackgroundFitBackgrounds(backgrounds, treeDefinitions) {
+function buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions) {
   return backgrounds
     .map((background) => {
       const dynamicTreeEntries = tableEntriesToMap(background.dynamicTreeValue)
@@ -1143,20 +1149,20 @@ function buildBackgroundFitBackgrounds(backgrounds, treeDefinitions) {
         backgroundName: background.backgroundName,
         categories: Object.fromEntries(
           dynamicBackgroundCategoryNames.map((categoryName) => {
-            const treeValue = dynamicTreeEntries.get(categoryName)
+            const perkGroupValue = dynamicTreeEntries.get(categoryName)
 
             return [
               categoryName,
               {
                 chance: resolveChanceValue(background.minimums, categoryName),
-                minimumTrees: resolveMinimumValue(background.minimums, categoryName),
-                treeIds: [
+                minimumPerkGroups: resolveMinimumValue(background.minimums, categoryName),
+                perkGroupIds: [
                   ...new Set(
-                    referenceArrayValue(treeValue)
+                    referenceArrayValue(perkGroupValue)
                       .map(getLastPathSegment)
-                      .flatMap((treeConstName) => {
-                        const treeDefinition = treeDefinitions.get(treeConstName)
-                        return treeDefinition ? [treeDefinition.id] : []
+                      .flatMap((perkGroupConstName) => {
+                        const perkGroupDefinition = perkGroupDefinitions.get(perkGroupConstName)
+                        return perkGroupDefinition ? [perkGroupDefinition.id] : []
                       }),
                   ),
                 ],
@@ -1182,12 +1188,12 @@ function buildBackgroundFitBackgrounds(backgrounds, treeDefinitions) {
           const rightCategory = rightBackground.categories[categoryName]
 
           return (
-            (leftCategory?.minimumTrees ?? Number.NEGATIVE_INFINITY) -
-              (rightCategory?.minimumTrees ?? Number.NEGATIVE_INFINITY) ||
+            (leftCategory?.minimumPerkGroups ?? Number.NEGATIVE_INFINITY) -
+              (rightCategory?.minimumPerkGroups ?? Number.NEGATIVE_INFINITY) ||
             (leftCategory?.chance ?? Number.NEGATIVE_INFINITY) -
               (rightCategory?.chance ?? Number.NEGATIVE_INFINITY) ||
-            (leftCategory?.treeIds.join('::') ?? '').localeCompare(
-              rightCategory?.treeIds.join('::') ?? '',
+            (leftCategory?.perkGroupIds.join('::') ?? '').localeCompare(
+              rightCategory?.perkGroupIds.join('::') ?? '',
             )
           )
         }, 0),
@@ -1506,9 +1512,9 @@ function buildSearchText(perkRecord) {
   const placementText = perkRecord.placements
     .flatMap((placement) => [
       placement.categoryName,
-      placement.treeName,
-      placement.treeDescriptions.join(' '),
-      placement.treeAttributes.join(' '),
+      placement.perkGroupName,
+      placement.perkGroupDescriptions.join(' '),
+      placement.perkGroupAttributes.join(' '),
     ])
     .join(' ')
 
@@ -1517,7 +1523,7 @@ function buildSearchText(perkRecord) {
       [
         backgroundSource.backgroundName,
         backgroundSource.categoryName,
-        backgroundSource.treeName,
+        backgroundSource.perkGroupName,
       ].join(' '),
     )
     .join(' ')
@@ -1526,20 +1532,20 @@ function buildSearchText(perkRecord) {
     .map((scenarioSource) => [scenarioSource.scenarioName, scenarioSource.grantType].join(' '))
     .join(' ')
 
-  const favoredEnemyText = (perkRecord.favoredEnemyTargets ?? [])
+  const favouredEnemyText = (perkRecord.favouredEnemyTargets ?? [])
     .map((target) => `${target.entityName} ${target.killsPerPercentBonus ?? ''}`.trim())
     .join(' ')
 
   return normalizeWhitespace(
     [
       perkRecord.perkName,
-      perkRecord.primaryGroupName,
-      perkRecord.groupNames.join(' '),
+      perkRecord.primaryCategoryName,
+      perkRecord.categoryNames.join(' '),
       perkRecord.descriptionParagraphs.join(' '),
       placementText,
       backgroundText,
       scenarioText,
-      favoredEnemyText,
+      favouredEnemyText,
     ].join(' '),
   )
 }
@@ -1548,7 +1554,7 @@ function comparePlacements(leftPlacement, rightPlacement, categoryOrder) {
   return (
     getCategoryPriority(categoryOrder, leftPlacement.categoryName) -
       getCategoryPriority(categoryOrder, rightPlacement.categoryName) ||
-    leftPlacement.treeName.localeCompare(rightPlacement.treeName) ||
+    leftPlacement.perkGroupName.localeCompare(rightPlacement.perkGroupName) ||
     (leftPlacement.tier ?? Number.POSITIVE_INFINITY) -
       (rightPlacement.tier ?? Number.POSITIVE_INFINITY)
   )
@@ -1559,7 +1565,7 @@ function compareBackgroundSources(leftSource, rightSource, categoryOrder) {
     leftSource.backgroundName.localeCompare(rightSource.backgroundName) ||
     getCategoryPriority(categoryOrder, leftSource.categoryName) -
       getCategoryPriority(categoryOrder, rightSource.categoryName) ||
-    leftSource.treeName.localeCompare(rightSource.treeName)
+    leftSource.perkGroupName.localeCompare(rightSource.perkGroupName)
   )
 }
 
@@ -1601,7 +1607,7 @@ export async function createDataset(
     'config',
     'z_legends_fav_enemies.nut',
   )
-  const perksTreeRulesFilePath = path.join(referenceRootDirectoryPath, 'config', 'perks_tree.nut')
+  const perkGroupRulesFilePath = path.join(referenceRootDirectoryPath, 'config', 'perks_tree.nut')
   const hookBackgroundDirectoryPath = path.join(
     referenceRootDirectoryPath,
     'hooks',
@@ -1610,7 +1616,7 @@ export async function createDataset(
   )
   const scriptBackgroundDirectoryPath = path.join(scriptsRootDirectoryPath, 'skills', 'backgrounds')
   const scenarioDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'scenarios', 'world')
-  const treeDirectoryPath = path.join(referenceRootDirectoryPath, 'config')
+  const perkGroupDirectoryPath = path.join(referenceRootDirectoryPath, 'config')
   const characterBackgroundFilePath = path.join(
     hookBackgroundDirectoryPath,
     'character_background.nut',
@@ -1630,7 +1636,7 @@ export async function createDataset(
     entityNamesFileSource,
     categoryOrderFileSource,
     favoriteEnemyConfigFileSource,
-    perksTreeRulesFileSource,
+    perkGroupRulesFileSource,
     characterBackgroundFileSource,
   ] = await Promise.all([
     readFileIfExists(characterBackgroundReferencesFilePath),
@@ -1638,7 +1644,7 @@ export async function createDataset(
     readFile(entityNamesFilePath, 'utf8'),
     readFile(categoryOrderFilePath, 'utf8'),
     readFile(favoriteEnemyConfigFilePath, 'utf8'),
-    readFile(perksTreeRulesFilePath, 'utf8'),
+    readFile(perkGroupRulesFilePath, 'utf8'),
     readFile(characterBackgroundFilePath, 'utf8'),
   ])
 
@@ -1665,13 +1671,13 @@ export async function createDataset(
     )
   }
 
-  const treeFileNames = (await readdir(treeDirectoryPath))
+  const perkGroupFileNames = (await readdir(perkGroupDirectoryPath))
     .filter((fileName) => /^z_perks_tree_.*\.nut$/i.test(fileName))
     .toSorted((left, right) => left.localeCompare(right))
 
   const treeFileEntries = await Promise.all(
-    treeFileNames.map(async (fileName) => {
-      const absolutePath = path.join(treeDirectoryPath, fileName)
+    perkGroupFileNames.map(async (fileName) => {
+      const absolutePath = path.join(perkGroupDirectoryPath, fileName)
       return {
         fileSource: await readFile(absolutePath, 'utf8'),
         sourceFilePath: toPosixRelativePath(absolutePath),
@@ -1745,12 +1751,12 @@ export async function createDataset(
   const entityNamesByConstName = parseEntityNamesFile(entityNamesFileSource)
   const favoriteEnemyConfig = parseFavoriteEnemyConfigFile(favoriteEnemyConfigFileSource)
 
-  const treeDefinitions = new Map()
-  const treeCategoryNames = new Map()
+  const perkGroupDefinitions = new Map()
+  const perkGroupCategoryNames = new Map()
   const defaultCategoryNamesBySourceFilePath = new Map()
 
   for (const treeFileEntry of treeFileEntries) {
-    const parsedTreeConfig = parseTreeConfigFile(
+    const parsedTreeConfig = parsePerkGroupConfigFile(
       treeFileEntry.fileSource,
       treeFileEntry.sourceFilePath,
     )
@@ -1761,28 +1767,28 @@ export async function createDataset(
         categoryDefinition.categoryName,
       )
 
-      for (const treeConstName of categoryDefinition.treeConstNames) {
-        treeCategoryNames.set(treeConstName, categoryDefinition.categoryName)
+      for (const perkGroupConstName of categoryDefinition.perkGroupConstNames) {
+        perkGroupCategoryNames.set(perkGroupConstName, categoryDefinition.categoryName)
       }
     }
 
-    for (const treeDefinition of parsedTreeConfig.treeDefinitions) {
-      treeDefinitions.set(treeDefinition.constName, treeDefinition)
+    for (const perkGroupDefinition of parsedTreeConfig.perkGroupDefinitions) {
+      perkGroupDefinitions.set(perkGroupDefinition.constName, perkGroupDefinition)
     }
   }
 
-  for (const [treeConstName, treeDefinition] of treeDefinitions.entries()) {
-    if (treeCategoryNames.has(treeConstName)) {
-      treeDefinition.categoryName = treeCategoryNames.get(treeConstName)
+  for (const [perkGroupConstName, perkGroupDefinition] of perkGroupDefinitions.entries()) {
+    if (perkGroupCategoryNames.has(perkGroupConstName)) {
+      perkGroupDefinition.categoryName = perkGroupCategoryNames.get(perkGroupConstName)
       continue
     }
 
-    if (treeDefinition.categoryName) {
+    if (perkGroupDefinition.categoryName) {
       continue
     }
 
-    treeDefinition.categoryName =
-      defaultCategoryNamesBySourceFilePath.get(treeDefinition.sourceFilePath) ?? 'Other'
+    perkGroupDefinition.categoryName =
+      defaultCategoryNamesBySourceFilePath.get(perkGroupDefinition.sourceFilePath) ?? 'Other'
   }
 
   const characterBackgroundWrapperCall = collectTopLevelStatements(
@@ -1813,7 +1819,7 @@ export async function createDataset(
   )
 
   if (baseMinimumsValue === null || baseDynamicTreeValue === null) {
-    throw new Error('Unable to parse the base background dynamic perk tree defaults.')
+    throw new Error('Unable to parse the base background dynamic perk group defaults.')
   }
 
   const baseMinimums = buildMinimumsObject(baseMinimumsValue)
@@ -1887,8 +1893,11 @@ export async function createDataset(
         : []
     })
   const backgrounds = [...hookBackgrounds, ...scriptBackgrounds]
-  const backgroundFitRules = parseBackgroundFitRulesFile(perksTreeRulesFileSource, treeDefinitions)
-  const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(backgrounds, treeDefinitions)
+  const backgroundFitRules = parseBackgroundFitRulesFile(
+    perkGroupRulesFileSource,
+    perkGroupDefinitions,
+  )
+  const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions)
 
   const scenarios = scenarioFileEntries
     .map((scenarioFileEntry) =>
@@ -1898,8 +1907,8 @@ export async function createDataset(
 
   const placementsByPerkConstName = new Map()
 
-  for (const treeDefinition of treeDefinitions.values()) {
-    for (const [tierIndex, perkConstNames] of treeDefinition.perkConstNamesByTier.entries()) {
+  for (const perkGroupDefinition of perkGroupDefinitions.values()) {
+    for (const [tierIndex, perkConstNames] of perkGroupDefinition.perkConstNamesByTier.entries()) {
       const tier = tierIndex + 1
 
       for (const perkConstName of perkConstNames) {
@@ -1908,13 +1917,13 @@ export async function createDataset(
         }
 
         placementsByPerkConstName.get(perkConstName).push({
-          categoryName: treeDefinition.categoryName ?? 'Other',
+          categoryName: perkGroupDefinition.categoryName ?? 'Other',
           tier,
-          treeAttributes: treeDefinition.attributeLines,
-          treeDescriptions: treeDefinition.descriptionLines,
-          treeIconPath: treeDefinition.iconPath ?? null,
-          treeId: treeDefinition.id,
-          treeName: treeDefinition.name,
+          perkGroupAttributes: perkGroupDefinition.attributeLines,
+          perkGroupDescriptions: perkGroupDefinition.descriptionLines,
+          perkGroupIconPath: perkGroupDefinition.iconPath ?? null,
+          perkGroupId: perkGroupDefinition.id,
+          perkGroupName: perkGroupDefinition.name,
         })
       }
     }
@@ -1925,19 +1934,19 @@ export async function createDataset(
   for (const background of backgrounds) {
     const dynamicTreeEntries = tableEntriesToMap(background.dynamicTreeValue)
 
-    for (const [categoryName, treeValue] of dynamicTreeEntries.entries()) {
-      const treeConstNames = referenceArrayValue(treeValue).map(getLastPathSegment)
-      const minimumTrees = resolveMinimumValue(background.minimums, categoryName)
+    for (const [categoryName, perkGroupValue] of dynamicTreeEntries.entries()) {
+      const perkGroupConstNames = referenceArrayValue(perkGroupValue).map(getLastPathSegment)
+      const minimumPerkGroups = resolveMinimumValue(background.minimums, categoryName)
       const chance = resolveChanceValue(background.minimums, categoryName)
 
-      for (const treeConstName of treeConstNames) {
-        const treeDefinition = treeDefinitions.get(treeConstName)
+      for (const perkGroupConstName of perkGroupConstNames) {
+        const perkGroupDefinition = perkGroupDefinitions.get(perkGroupConstName)
 
-        if (!treeDefinition) {
+        if (!perkGroupDefinition) {
           continue
         }
 
-        for (const perkConstNames of treeDefinition.perkConstNamesByTier) {
+        for (const perkConstNames of perkGroupDefinition.perkConstNamesByTier) {
           for (const perkConstName of perkConstNames) {
             if (!backgroundSourcesByPerkConstName.has(perkConstName)) {
               backgroundSourcesByPerkConstName.set(perkConstName, [])
@@ -1948,9 +1957,9 @@ export async function createDataset(
               backgroundName: background.backgroundName,
               categoryName,
               chance,
-              minimumTrees,
-              treeId: treeDefinition.id,
-              treeName: treeDefinition.name,
+              minimumPerkGroups,
+              perkGroupId: perkGroupDefinition.id,
+              perkGroupName: perkGroupDefinition.name,
             })
           }
         }
@@ -2004,28 +2013,28 @@ export async function createDataset(
     const descriptionParagraphs = splitDescriptionParagraphs(descriptionSourceText)
     const placements = (placementsByPerkConstName.get(perkDefinition.constName) ?? [])
       .filter((placement, index, placementsList) => {
-        const key = `${placement.categoryName}::${placement.treeId}::${placement.tier}`
+        const key = `${placement.categoryName}::${placement.perkGroupId}::${placement.tier}`
         return (
           placementsList.findIndex(
             (candidate) =>
-              `${candidate.categoryName}::${candidate.treeId}::${candidate.tier}` === key,
+              `${candidate.categoryName}::${candidate.perkGroupId}::${candidate.tier}` === key,
           ) === index
         )
       })
       .toSorted((leftPlacement, rightPlacement) =>
         comparePlacements(leftPlacement, rightPlacement, categoryOrder),
       )
-    const groupNames = sortUniqueStrings(
+    const categoryNames = sortUniqueStrings(
       placements.length > 0 ? placements.map((placement) => placement.categoryName) : ['Other'],
     )
-    const primaryGroupName =
-      groupNames.toSorted(
-        (leftGroupName, rightGroupName) =>
-          getCategoryPriority(categoryOrder, leftGroupName) -
-            getCategoryPriority(categoryOrder, rightGroupName) ||
-          leftGroupName.localeCompare(rightGroupName),
+    const primaryCategoryName =
+      categoryNames.toSorted(
+        (leftCategoryName, rightCategoryName) =>
+          getCategoryPriority(categoryOrder, leftCategoryName) -
+            getCategoryPriority(categoryOrder, rightCategoryName) ||
+          leftCategoryName.localeCompare(rightCategoryName),
       )[0] ?? 'Other'
-    const favoredEnemyTargets = buildFavoriteEnemyTargets(
+    const favouredEnemyTargets = buildFavoriteEnemyTargets(
       perkDefinition.constName,
       favoriteEnemyConfig.targetConstNamesByPerkConstName,
       favoriteEnemyConfig.killsPerPercentBonusByEntityConstName,
@@ -2033,11 +2042,12 @@ export async function createDataset(
     )
     const backgroundSources = (backgroundSourcesByPerkConstName.get(perkDefinition.constName) ?? [])
       .filter((backgroundSource, index, backgroundSourcesList) => {
-        const key = `${backgroundSource.backgroundId}::${backgroundSource.categoryName}::${backgroundSource.treeId}`
+        const key = `${backgroundSource.backgroundId}::${backgroundSource.categoryName}::${backgroundSource.perkGroupId}`
         return (
           backgroundSourcesList.findIndex(
             (candidate) =>
-              `${candidate.backgroundId}::${candidate.categoryName}::${candidate.treeId}` === key,
+              `${candidate.backgroundId}::${candidate.categoryName}::${candidate.perkGroupId}` ===
+              key,
           ) === index
         )
       })
@@ -2075,14 +2085,14 @@ export async function createDataset(
     const perkRecord = {
       backgroundSources,
       descriptionParagraphs,
-      favoredEnemyTargets: favoredEnemyTargets.length > 0 ? favoredEnemyTargets : undefined,
-      groupNames,
+      favouredEnemyTargets: favouredEnemyTargets.length > 0 ? favouredEnemyTargets : undefined,
+      categoryNames,
       iconPath: perkDefinition.iconPath ?? null,
       id: perkDefinition.identifier,
       perkConstName: perkDefinition.constName,
       perkName,
       placements,
-      primaryGroupName,
+      primaryCategoryName,
       scenarioSources,
       searchText: '',
     }
@@ -2091,8 +2101,10 @@ export async function createDataset(
     perkRecords.push(perkRecord)
   }
 
-  const uniqueTreeIdentifiers = new Set(
-    perkRecords.flatMap((perkRecord) => perkRecord.placements.map((placement) => placement.treeId)),
+  const uniquePerkGroupIdentifiers = new Set(
+    perkRecords.flatMap((perkRecord) =>
+      perkRecord.placements.map((placement) => placement.perkGroupId),
+    ),
   )
 
   const sourceFiles = [
@@ -2103,8 +2115,8 @@ export async function createDataset(
     })),
     { path: toPosixRelativePath(entityNamesFilePath), role: 'entity names' },
     { path: toPosixRelativePath(categoryOrderFilePath), role: 'perk category order' },
-    { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favored enemy metadata' },
-    { path: toPosixRelativePath(perksTreeRulesFilePath), role: 'background fit rules' },
+    { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favoured enemy metadata' },
+    { path: toPosixRelativePath(perkGroupRulesFilePath), role: 'background fit rules' },
     ...(characterBackgroundReferencesFileSource
       ? [
           {
@@ -2116,7 +2128,7 @@ export async function createDataset(
     { path: toPosixRelativePath(characterBackgroundFilePath), role: 'background defaults' },
     ...treeFileEntries.map((treeFileEntry) => ({
       path: treeFileEntry.sourceFilePath,
-      role: 'perk trees',
+      role: 'perk groups',
     })),
     ...[...hookBackgroundFileEntries, ...scriptBackgroundFileEntries].map(
       (backgroundFileEntry) => ({
@@ -2151,7 +2163,7 @@ export async function createDataset(
       (await readReferenceVersionFromMetadata(referenceRootDirectoryPath)) ??
       getReferenceVersion(referenceRootDirectoryPath),
     sourceFiles,
-    treeCount: uniqueTreeIdentifiers.size,
+    perkGroupCount: uniquePerkGroupIdentifiers.size,
   }
 }
 
