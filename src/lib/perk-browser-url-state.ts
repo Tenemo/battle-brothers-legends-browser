@@ -10,6 +10,7 @@ export type PerkBrowserUrlState = {
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
+  shouldIncludeOriginBackgrounds: boolean
 }
 
 export type PerkBrowserUrlStateReadOptions = {
@@ -22,10 +23,12 @@ export type PerkBrowserUrlStateWriteOptions = {
   availableCategoryNames: string[]
   perksById: Map<string, LegendsPerkRecord>
   perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
+  shouldWriteOriginBackgroundsParam?: boolean
 }
 
 const buildParamName = 'build'
 const categoryParamName = 'category'
+const originBackgroundsParamName = 'origin-backgrounds'
 const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
@@ -137,7 +140,18 @@ function createDefaultUrlState(): PerkBrowserUrlState {
     query: '',
     selectedCategoryNames: [],
     selectedPerkGroupIdsByCategory: {},
+    shouldIncludeOriginBackgrounds: true,
   }
+}
+
+function readShouldIncludeOriginBackgrounds(params: URLSearchParams): boolean {
+  const value = params.get(originBackgroundsParamName)
+
+  if (value === null) {
+    return true
+  }
+
+  return !['0', 'false', 'no', 'off'].includes(collapseWhitespace(value).toLowerCase())
 }
 
 export function readPerkBrowserUrlState(
@@ -174,6 +188,7 @@ export function readPerkBrowserUrlState(
   const pickedPerkIds: string[] = []
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
+  const shouldIncludeOriginBackgrounds = readShouldIncludeOriginBackgrounds(params)
 
   for (const categoryValue of getGroupedParamValues(params, categoryParamName)) {
     const categoryName = categoryNameByLookupValue.get(normalizeLookupValue(categoryValue))
@@ -224,6 +239,7 @@ export function readPerkBrowserUrlState(
       selectedCategoryNameSet.has(categoryName),
     ),
     selectedPerkGroupIdsByCategory,
+    shouldIncludeOriginBackgrounds,
   }
 }
 
@@ -237,9 +253,18 @@ export function buildPerkBrowserUrlSearch(
     selectedCategoryNameSet.has(categoryName),
   )
   const normalizedQuery = collapseWhitespace(urlState.query)
+  const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
 
   if (normalizedQuery) {
     appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
+  }
+
+  if (shouldWriteOriginBackgroundsParam) {
+    appendScalarQueryEntry(
+      entries,
+      originBackgroundsParamName,
+      urlState.shouldIncludeOriginBackgrounds ? 'true' : 'false',
+    )
   }
 
   appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedCategoryNames)
@@ -287,11 +312,13 @@ export function buildPerkBrowserBuildUrlSearch(
       query: '',
       selectedCategoryNames: [],
       selectedPerkGroupIdsByCategory: {},
+      shouldIncludeOriginBackgrounds: true,
     },
     {
       availableCategoryNames: [],
       perksById,
       perkGroupOptionsByCategory: new Map(),
+      shouldWriteOriginBackgroundsParam: false,
     },
   )
 }

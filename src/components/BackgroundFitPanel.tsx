@@ -14,9 +14,11 @@ export function BackgroundFitPanel({
   onClosePerkGroupHover,
   onInspectPerkGroup,
   onOpenPerkGroupHover,
+  onOriginBackgroundsChange,
   onSearchActivityChange,
   onToggleExpanded,
   pickedPerkCount,
+  shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView
   hoveredPerkGroupKey: string | null
@@ -25,12 +27,13 @@ export function BackgroundFitPanel({
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
   onToggleExpanded: () => void
   pickedPerkCount: number
+  shouldIncludeOriginBackgrounds: boolean
 }) {
   const [backgroundFitInputValue, setBackgroundFitInputValue] = useState('')
-  const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(true)
   const [isBackgroundFilterMenuOpen, setIsBackgroundFilterMenuOpen] = useState(false)
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitInputValue)
   const backgroundFitFilterMenuId = useId()
@@ -48,8 +51,7 @@ export function BackgroundFitPanel({
     backgroundFitView.supportedBuildTargetPerkGroups.length > 0
   const hasUnsupportedBackgroundFitTargets =
     backgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
-  const hasActiveBackgroundFitSearch =
-    backgroundFitInputValue.trim().length > 0 || !shouldIncludeOriginBackgrounds
+  const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
   const visibleRankedBackgroundFits = useMemo(
     () =>
@@ -184,11 +186,7 @@ export function BackgroundFitPanel({
                   aria-controls={backgroundFitFilterMenuId}
                   aria-expanded={isBackgroundFilterMenuOpen}
                   aria-label="Filter backgrounds"
-                  className={
-                    shouldIncludeOriginBackgrounds
-                      ? 'background-fit-filter-button'
-                      : 'background-fit-filter-button has-active-filter'
-                  }
+                  className="background-fit-filter-button has-active-filter"
                   onClick={() => {
                     onClearPerkGroupHover()
                     setIsBackgroundFilterMenuOpen(
@@ -197,7 +195,7 @@ export function BackgroundFitPanel({
                   }}
                   type="button"
                 >
-                  <FunnelIcon className="background-fit-filter-icon" />
+                  <FunnelIcon className="background-fit-filter-icon" isFilled />
                 </button>
                 {isBackgroundFilterMenuOpen ? (
                   <div
@@ -211,7 +209,7 @@ export function BackgroundFitPanel({
                         checked={shouldIncludeOriginBackgrounds}
                         onChange={(event) => {
                           onClearPerkGroupHover()
-                          setShouldIncludeOriginBackgrounds(event.target.checked)
+                          onOriginBackgroundsChange(event.target.checked)
                         }}
                         type="checkbox"
                       />

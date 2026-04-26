@@ -134,6 +134,7 @@ describe('perk browser url state', () => {
           Magic: ['DeadeyeTree'],
           Traits: ['CalmTree'],
         },
+        shouldIncludeOriginBackgrounds: true,
       },
       {
         availableCategoryNames,
@@ -143,7 +144,7 @@ describe('perk browser url state', () => {
     )
 
     expect(search).toBe(
-      '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
+      '?search=Perfect+Focus&origin-backgrounds=true&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
     )
   })
 
@@ -165,6 +166,7 @@ describe('perk browser url state', () => {
         Magic: ['DeadeyeTree'],
         Traits: ['CalmTree'],
       },
+      shouldIncludeOriginBackgrounds: true,
     })
   })
 
@@ -186,7 +188,34 @@ describe('perk browser url state', () => {
         Traits: ['CalmTree'],
         Magic: ['DeadeyeTree'],
       },
+      shouldIncludeOriginBackgrounds: true,
     })
+  })
+
+  test('serializes and restores the non-default origin background filter', () => {
+    const search = buildPerkBrowserUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        shouldIncludeOriginBackgrounds: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?origin-backgrounds=false')
+    expect(
+      readPerkBrowserUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).shouldIncludeOriginBackgrounds,
+    ).toBe(false)
   })
 
   test('serializes duplicate-name build perks with readable stable ids and restores both ids', () => {
@@ -196,6 +225,7 @@ describe('perk browser url state', () => {
         query: '',
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
+        shouldIncludeOriginBackgrounds: true,
       },
       {
         availableCategoryNames,
@@ -205,7 +235,7 @@ describe('perk browser url state', () => {
     )
 
     expect(search).toBe(
-      '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+      '?origin-backgrounds=true&build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
     expect(
       readPerkBrowserUrlState(search, {
@@ -224,6 +254,7 @@ describe('perk browser url state', () => {
           query: '',
           selectedCategoryNames: [],
           selectedPerkGroupIdsByCategory: {},
+          shouldIncludeOriginBackgrounds: true,
         },
         {
           availableCategoryNames,
@@ -231,6 +262,6 @@ describe('perk browser url state', () => {
           perkGroupOptionsByCategory,
         },
       ),
-    ).toBe('')
+    ).toBe('?origin-backgrounds=true')
   })
 })

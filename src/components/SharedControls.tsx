@@ -112,12 +112,18 @@ export function BackgroundFitRailChevron({ isExpanded }: { isExpanded: boolean }
   )
 }
 
-export function FunnelIcon({ className }: { className: string }) {
+export function FunnelIcon({
+  className,
+  isFilled = false,
+}: {
+  className: string
+  isFilled?: boolean
+}) {
   return (
     <svg
       aria-hidden="true"
       className={className}
-      fill="none"
+      fill={isFilled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeLinecap="round"
       strokeLinejoin="round"

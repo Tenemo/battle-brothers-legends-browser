@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { RankedBackgroundFit } from './background-fit'
-import { getBackgroundSourceLabel } from './background-origin'
+import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
 import { getTierLabel } from './perk-search'
 import type {
   LegendsPerkBackgroundSource,
@@ -215,9 +215,7 @@ function normalizeBackgroundLabelForComparison(label: string): string {
   return label.trim().toLowerCase()
 }
 
-export function getVisibleBackgroundDisambiguatorLabel(
-  backgroundFit: RankedBackgroundFit,
-): string | null {
+function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundFit): string | null {
   if (backgroundFit.disambiguator === null) {
     return null
   }
@@ -230,6 +228,15 @@ export function getVisibleBackgroundDisambiguatorLabel(
     : disambiguatorLabel
 }
 
+export function getVisibleBackgroundPillLabel(backgroundFit: RankedBackgroundFit): string | null {
+  // Unique origin backgrounds are not duplicate-name disambiguation cases, but still need a
+  // visible source label so the origin filter is understandable from the list.
+  return (
+    getOriginBackgroundPillLabel(backgroundFit) ??
+    getVisibleBackgroundDisambiguatorLabel(backgroundFit)
+  )
+}
+
 export function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string {
   return `${backgroundFit.backgroundId}::${backgroundFit.sourceFilePath}`
 }
@@ -237,12 +244,14 @@ export function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string 
 export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): string {
   const sourceFileName =
     backgroundFit.sourceFilePath.split('/').at(-1) ?? backgroundFit.sourceFilePath
+  const visibleBackgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const searchParts = [
     backgroundFit.backgroundName,
     backgroundFit.disambiguator,
     backgroundFit.disambiguator === null
       ? null
       : formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator),
+    visibleBackgroundPillLabel,
     backgroundFit.backgroundId,
     sourceFileName,
     backgroundFit.sourceFilePath,

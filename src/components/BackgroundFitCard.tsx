@@ -15,7 +15,7 @@ import {
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
   getPerkGroupHoverKey,
-  getVisibleBackgroundDisambiguatorLabel,
+  getVisibleBackgroundPillLabel,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
@@ -173,7 +173,7 @@ export function BackgroundFitCard({
   supportedBuildTargetPerkGroupCount: number
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
-  const disambiguatorLabel = getVisibleBackgroundDisambiguatorLabel(backgroundFit)
+  const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
   const coveredPickedPerkCount = getCoveredPickedPerkCount(backgroundFit.matches)
@@ -200,7 +200,7 @@ export function BackgroundFitCard({
         aria-controls={accordionPanelId}
         aria-expanded={isExpanded}
         aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background ${backgroundFit.backgroundName}${
-          disambiguatorLabel ? ` (${disambiguatorLabel})` : ''
+          backgroundPillLabel ? ` (${backgroundPillLabel})` : ''
         }`}
         className="background-fit-accordion-trigger"
         id={accordionButtonId}
@@ -227,10 +227,10 @@ export function BackgroundFitCard({
                     `${backgroundFitKey}-name`,
                   )}
                 </h3>
-                {disambiguatorLabel ? (
+                {backgroundPillLabel ? (
                   <span className="background-fit-disambiguator">
                     {renderHighlightedText(
-                      disambiguatorLabel,
+                      backgroundPillLabel,
                       query,
                       `${backgroundFitKey}-disambiguator`,
                     )}

@@ -249,7 +249,13 @@ test('filters origin backgrounds from the background search menu', async ({ page
   })
 
   await expect(filterBackgroundsButton).toBeVisible()
-  await backgroundSearchInput.fill('origin melee')
+  await expect(filterBackgroundsButton).toHaveClass(/has-active-filter/)
+  await expect(filterBackgroundsButton.locator('.background-fit-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
+  await backgroundSearchInput.fill('origin crusader')
 
   const clearBackgroundSearchButton = backgroundFitPanel.getByRole('button', {
     name: 'Clear background search',
@@ -262,7 +268,13 @@ test('filters origin backgrounds from the background search menu', async ({ page
   expect(clearButtonBox).not.toBeNull()
   expect(filterButtonBox).not.toBeNull()
   expect(clearButtonBox!.x).toBeLessThan(filterButtonBox!.x)
-  await expect(backgroundFitPanel.getByText('origin melee').first()).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByRole('heading', {
+      level: 3,
+      name: 'Holy Crusader',
+    }),
+  ).toBeVisible()
+  await expect(backgroundFitPanel.getByText('origin crusader').first()).toBeVisible()
 
   await filterBackgroundsButton.click()
 
@@ -297,12 +309,39 @@ test('filters origin backgrounds from the background search menu', async ({ page
   await originBackgroundsLabel.click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
   await expect(originBackgroundsCheckbox).not.toBeChecked()
-  await expect(backgroundFitPanel.getByText('No backgrounds match "origin melee".')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('false')
+  await expect(
+    backgroundFitPanel.getByText('No backgrounds match "origin crusader".'),
+  ).toBeVisible()
+
+  const savedUrl = page.url()
+  const sharedPage = await page.context().newPage()
+
+  try {
+    await sharedPage.setViewportSize(mediumPerksBrowserViewport)
+    await sharedPage.goto(savedUrl)
+
+    const sharedBackgroundFitPanel = getBackgroundFitPanel(sharedPage)
+    const sharedFilterBackgroundsButton = sharedBackgroundFitPanel.getByRole('button', {
+      name: 'Filter backgrounds',
+    })
+
+    await expect(sharedBackgroundFitPanel.getByText('origin crusader')).toHaveCount(0)
+    await sharedFilterBackgroundsButton.click()
+    await expect(
+      sharedBackgroundFitPanel.getByRole('checkbox', {
+        name: 'Origin backgrounds',
+      }),
+    ).not.toBeChecked()
+  } finally {
+    await sharedPage.close()
+  }
 
   await originBackgroundsLabel.click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
   await expect(originBackgroundsCheckbox).toBeChecked()
-  await expect(backgroundFitPanel.getByText('origin melee').first()).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
+  await expect(backgroundFitPanel.getByText('origin crusader').first()).toBeVisible()
 
   await page.getByLabel('Search perks').click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'false')

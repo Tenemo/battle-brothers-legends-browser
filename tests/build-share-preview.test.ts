@@ -88,6 +88,6 @@ describe('build share preview', () => {
 
     expect(
       payload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName),
-    ).not.toEqual(expect.arrayContaining(['Companion', 'Berserker']))
+    ).not.toEqual(expect.arrayContaining(['Companion', 'Berserker', 'Holy Crusader']))
   })
 })

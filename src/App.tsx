@@ -62,6 +62,9 @@ export default function App() {
   const [selectedPerkGroupIdsByCategory, setSelectedPerkGroupIdsByCategory] = useState<
     Record<string, string[]>
   >(initialUrlState.selectedPerkGroupIdsByCategory)
+  const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(
+    initialUrlState.shouldIncludeOriginBackgrounds,
+  )
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const {
@@ -183,6 +186,7 @@ export default function App() {
       query,
       selectedCategoryNames,
       selectedPerkGroupIdsByCategory,
+      shouldIncludeOriginBackgrounds,
     },
     {
       availableCategoryNames: availableCategories,
@@ -413,9 +417,11 @@ export default function App() {
           onClosePerkGroupHover={closePerkGroupHover}
           onInspectPerkGroup={handleInspectPerkGroup}
           onOpenPerkGroupHover={openPerkGroupHover}
+          onOriginBackgroundsChange={setShouldIncludeOriginBackgrounds}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}
           onToggleExpanded={() => setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)}
           pickedPerkCount={pickedPerks.length}
+          shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 
         <CategorySidebar

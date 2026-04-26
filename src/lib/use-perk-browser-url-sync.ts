@@ -20,7 +20,13 @@ export function usePerkBrowserUrlSync(
   options: PerkBrowserUrlStateWriteOptions,
 ): void {
   const { availableCategoryNames, perkGroupOptionsByCategory, perksById } = options
-  const { pickedPerkIds, query, selectedCategoryNames, selectedPerkGroupIdsByCategory } = urlState
+  const {
+    pickedPerkIds,
+    query,
+    selectedCategoryNames,
+    selectedPerkGroupIdsByCategory,
+    shouldIncludeOriginBackgrounds,
+  } = urlState
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -33,6 +39,7 @@ export function usePerkBrowserUrlSync(
         query,
         selectedCategoryNames,
         selectedPerkGroupIdsByCategory,
+        shouldIncludeOriginBackgrounds,
       },
       {
         availableCategoryNames,
@@ -58,5 +65,6 @@ export function usePerkBrowserUrlSync(
     query,
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
+    shouldIncludeOriginBackgrounds,
   ])
 }

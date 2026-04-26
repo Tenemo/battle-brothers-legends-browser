@@ -15,6 +15,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'legend_berserker_commander_background.nut',
     'legend_companion_melee_background.nut',
     'legend_companion_ranged_background.nut',
+    'legend_crusader_background.nut',
     'paladin_background.nut',
   ]),
   perkNamesForAppTests: new Set([
@@ -994,7 +995,14 @@ describe('app', () => {
     expect(within(backgroundFitPanel).getByText('starting shield')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getByText('origin ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin crusader')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getAllByText('origin commander').length).toBeGreaterThan(0)
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
+        name: 'Holy Crusader',
+      }),
+    ).toBeInTheDocument()
 
     await user.click(filterBackgroundsButton)
 
@@ -1018,11 +1026,23 @@ describe('app', () => {
 
     expect(originBackgroundsCheckbox).not.toBeChecked()
     expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
-    expect(workspace).toHaveClass('has-active-background-fit-search')
+    expect(workspace).not.toHaveClass('has-active-background-fit-search')
+    expect(
+      within(backgroundFitPanel).getByText(
+        /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+      ),
+    ).toBeInTheDocument()
     expect(within(backgroundFitPanel).queryByText('starting shield')).not.toBeInTheDocument()
     expect(within(backgroundFitPanel).queryByText('origin melee')).not.toBeInTheDocument()
     expect(within(backgroundFitPanel).queryByText('origin ranged')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin crusader')).not.toBeInTheDocument()
     expect(within(backgroundFitPanel).queryByText('origin commander')).not.toBeInTheDocument()
+    expect(
+      within(backgroundFitPanel).queryByRole('heading', {
+        level: 3,
+        name: 'Holy Crusader',
+      }),
+    ).not.toBeInTheDocument()
     expect(
       within(backgroundFitPanel).getByRole('heading', {
         level: 3,
@@ -1101,7 +1121,7 @@ describe('app', () => {
     )
   })
 
-  test('shows duplicate-name disambiguators only for repeated backgrounds in the background fit list', async () => {
+  test('shows duplicate-name and origin source labels in the background fit list', async () => {
     const user = userEvent.setup()
     render(<App />)
 
@@ -1126,6 +1146,7 @@ describe('app', () => {
     expect(within(backgroundFitPanel).getByText('starting ranged')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getByText('origin ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin crusader')).toBeInTheDocument()
     expect(within(backgroundFitPanel).getAllByText('origin commander').length).toBeGreaterThan(0)
     expect(within(backgroundFitPanel).getByText('converted cultist')).toBeInTheDocument()
   })
