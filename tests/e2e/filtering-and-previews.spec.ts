@@ -174,9 +174,15 @@ test('keeps search result and repository hover states fixed in place', async ({ 
 
   await searchPerks(page, 'Perfect')
 
+  const perfectFitInspectButton = getResultsList(page).getByRole('button', {
+    name: 'Inspect Perfect Fit',
+  })
   const perfectFocusInspectButton = getResultsList(page).getByRole('button', {
     name: 'Inspect Perfect Focus',
   })
+  const perfectFitResultRow = perfectFitInspectButton.locator(
+    'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
+  )
   const perfectFocusResultRow = perfectFocusInspectButton.locator(
     'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
   )
@@ -185,6 +191,8 @@ test('keeps search result and repository hover states fixed in place', async ({ 
   )
 
   await expect(perfectFocusResultRow).toBeVisible()
+  await perfectFitInspectButton.click()
+  await expect(page.getByRole('heading', { level: 2, name: 'Perfect Fit' })).toBeVisible()
   await perfectFocusInspectButton.scrollIntoViewIfNeeded()
 
   const resultRowBeforeHover = await perfectFocusResultRow.evaluate((element) => {
@@ -198,6 +206,9 @@ test('keeps search result and repository hover states fixed in place', async ({ 
       width: rectangle.width,
     }
   })
+  const selectedResultRowBackgroundColor = await perfectFitResultRow.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
 
   await perfectFocusInspectButton.hover()
 
@@ -215,10 +226,26 @@ test('keeps search result and repository hover states fixed in place', async ({ 
     }
   })
 
-  expect(resultRowAfterHover.backgroundColor).toBe(resultRowBeforeHover.backgroundColor)
+  expect(resultRowAfterHover.backgroundColor).not.toBe(resultRowBeforeHover.backgroundColor)
+  expect(resultRowAfterHover.backgroundColor).not.toBe(selectedResultRowBackgroundColor)
   expect(Math.abs(resultRowAfterHover.top - resultRowBeforeHover.top)).toBeLessThanOrEqual(1)
   expect(Math.abs(resultRowAfterHover.height - resultRowBeforeHover.height)).toBeLessThanOrEqual(1)
   expect(Math.abs(resultRowAfterHover.width - resultRowBeforeHover.width)).toBeLessThanOrEqual(1)
+
+  const [previewBox, resultRowBox] = await Promise.all([
+    perfectFocusResultRow.locator('.perk-preview').boundingBox(),
+    perfectFocusResultRow.boundingBox(),
+  ])
+
+  expect(previewBox).not.toBeNull()
+  expect(resultRowBox).not.toBeNull()
+  await perfectFocusResultRow.click({
+    position: {
+      x: previewBox!.x - resultRowBox!.x + 8,
+      y: previewBox!.y - resultRowBox!.y + 8,
+    },
+  })
+  await expect(page.getByRole('heading', { level: 2, name: 'Perfect Focus' })).toBeVisible()
 
   const repositoryLinkBeforeHover = await repositoryLink.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()

@@ -55,25 +55,31 @@
   padding: 0.68rem 3.7rem 2.35rem 0.72rem;
 }
 
+.perk-row:hover:not(.is-selected) {
+  background: rgb(25 20 17 / 0.88);
+}
+
 .perk-row-select {
-  display: block;
-  grid-column: 2;
-  width: 100%;
+  appearance: none;
+  position: absolute;
+  z-index: 0;
+  inset: 0;
   border: 0;
-  border-radius: 0.5rem;
+  border-radius: inherit;
   padding: 0;
   background: transparent;
-  color: inherit;
-  text-align: left;
   cursor: pointer;
 }
 
 .perk-row-layout {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 2.7rem minmax(0, 1fr);
   column-gap: 0.68rem;
   row-gap: 0.18rem;
   align-items: start;
+  pointer-events: none;
 }
 
 .perk-row-icon {
@@ -125,6 +131,8 @@
 }
 
 .perk-placement-chip {
+  position: relative;
+  z-index: 2;
   display: inline-flex;
   max-width: 100%;
   align-items: center;
@@ -137,6 +145,7 @@
   font: inherit;
   vertical-align: middle;
   cursor: pointer;
+  pointer-events: auto;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
@@ -199,7 +208,6 @@
     grid-template-columns: 2.7rem minmax(0, 1fr);
   }
 
-  .perk-row-select,
   .perk-row-context-slot {
     grid-column: 2;
   }

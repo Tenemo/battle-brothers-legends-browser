@@ -742,6 +742,7 @@
 
 .perk-row .build-toggle-button {
   position: absolute;
+  z-index: 2;
   right: 0.65rem;
   bottom: 0.58rem;
 }

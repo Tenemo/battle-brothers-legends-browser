@@ -188,31 +188,30 @@ export function PerkResults({
                 onMouseEnter={() => onOpenResultsPerkHover(perk.id)}
                 onMouseLeave={() => onCloseResultsPerkHover(perk.id)}
               >
+                <button
+                  aria-label={`Inspect ${perk.perkName}`}
+                  className="perk-row-select"
+                  onClick={() => onSelectPerk(perk.id)}
+                  type="button"
+                />
                 <div className="perk-row-layout">
                   {renderGameIcon({
                     className: 'perk-icon perk-icon-small perk-row-icon',
                     iconPath: getPerkDisplayIconPath(perk),
                     label: `${perk.perkName} icon`,
                   })}
-                  <button
-                    aria-label={`Inspect ${perk.perkName}`}
-                    className="perk-row-select"
-                    onClick={() => onSelectPerk(perk.id)}
-                    type="button"
-                  >
-                    <div className="perk-row-copy">
-                      <div className="perk-row-topline">
-                        <span className="perk-name">
-                          {renderHighlightedText(perk.perkName, query, `${perk.id}-name`)}
+                  <div className="perk-row-copy">
+                    <div className="perk-row-topline">
+                      <span className="perk-name">
+                        {renderHighlightedText(perk.perkName, query, `${perk.id}-name`)}
+                      </span>
+                      <div className="perk-row-badges">
+                        <span className="tier-badge">
+                          {getTierLabel(perk.placements[0]?.tier ?? null)}
                         </span>
-                        <div className="perk-row-badges">
-                          <span className="tier-badge">
-                            {getTierLabel(perk.placements[0]?.tier ?? null)}
-                          </span>
-                        </div>
                       </div>
                     </div>
-                  </button>
+                  </div>
                   <div className="perk-row-context-slot">
                     <div className="perk-context perk-placement-list">
                       {renderPerkPlacements({
