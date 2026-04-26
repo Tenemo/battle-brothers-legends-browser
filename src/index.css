@@ -28,10 +28,10 @@
   --panel-shadow: 0 24px 80px rgb(0 0 0 / 0.32);
   --target-size: 2.3rem;
   --target-size-compact: 1.2rem;
-  --app-scrollbar-size: 0.88rem;
+  --app-scrollbar-size: 0.62rem;
   --app-scrollbar-track: rgb(14 11 10 / 0.88);
-  --app-scrollbar-thumb: rgb(198 138 73 / 0.8);
-  --app-scrollbar-thumb-hover: rgb(221 176 123 / 0.94);
+  --app-scrollbar-thumb: rgb(120 76 36 / 0.58);
+  --app-scrollbar-thumb-hover: rgb(154 96 45 / 0.72);
   --app-scrollbar-thumb-border: rgb(14 11 10 / 0.88);
 }
 
@@ -67,7 +67,7 @@
   body::-webkit-scrollbar-thumb,
   .app-scrollbar::-webkit-scrollbar-thumb {
     min-height: 2.4rem;
-    border: 0.18rem solid var(--app-scrollbar-thumb-border);
+    border: 0.13rem solid var(--app-scrollbar-thumb-border);
     border-radius: 999px;
     background: var(--app-scrollbar-thumb);
     background-clip: padding-box;
