@@ -25,7 +25,6 @@ The current committed dataset in this repository contains:
 - `116` perk groups
 - `225` parsed source files
 - Legends reference version `19.3.17`
-- dataset generation timestamp `2026-04-23T17:28:49.286Z`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 

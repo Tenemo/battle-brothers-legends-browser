@@ -1,5 +1,7 @@
+import { readFile } from 'node:fs/promises'
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import { injectSeoIntoHtml, rootSeoMetadata } from '../src/lib/seo-metadata'
+import { injectRootSeoIntoHtml, injectSeoIntoHtml, rootSeoMetadata } from '../src/lib/seo-metadata'
 import { renderDocumentHtml, resolveSeoMetadataForUrl } from '../src/lib/build-seo-metadata'
 
 const baseHtml = `<!doctype html>
@@ -11,6 +13,56 @@ const baseHtml = `<!doctype html>
   </head>
   <body><div id="root"></div></body>
 </html>`
+
+function sortJsonValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map(sortJsonValue)
+  }
+
+  if (value !== null && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value)
+        .toSorted(([leftKey], [rightKey]) => leftKey.localeCompare(rightKey))
+        .map(([key, nestedValue]) => [key, sortJsonValue(nestedValue)]),
+    )
+  }
+
+  return value
+}
+
+function serializeSeoElement(element: Element): string {
+  const tagName = element.tagName.toLowerCase()
+
+  if (tagName === 'title') {
+    return `title:${element.textContent ?? ''}`
+  }
+
+  if (tagName === 'script') {
+    return `script:${JSON.stringify(sortJsonValue(JSON.parse(element.textContent ?? '{}')))}`
+  }
+
+  return [
+    tagName,
+    element.getAttribute('name') ?? '',
+    element.getAttribute('property') ?? '',
+    element.getAttribute('rel') ?? '',
+    element.getAttribute('href') ?? '',
+    element.getAttribute('content') ?? '',
+  ].join(':')
+}
+
+function getSeoBlockSignature(html: string): string[] {
+  const document = new DOMParser().parseFromString(html, 'text/html')
+  const headElements = [...document.head.children]
+  const startMarkerIndex = headElements.findIndex(
+    (element) => element.getAttribute('name') === 'battle-brothers-seo-start',
+  )
+  const endMarkerIndex = headElements.findIndex(
+    (element) => element.getAttribute('name') === 'battle-brothers-seo-end',
+  )
+
+  return headElements.slice(startMarkerIndex + 1, endMarkerIndex).map(serializeSeoElement)
+}
 
 describe('SEO metadata', () => {
   test('keeps root metadata indexable', () => {
@@ -121,6 +173,14 @@ describe('SEO metadata', () => {
   test('throws a clear error when SEO markers are missing', () => {
     expect(() => injectSeoIntoHtml('<html><head></head><body></body></html>')).toThrow(
       'SEO start marker is missing from index.html.',
+    )
+  })
+
+  test('keeps checked-in root SEO metadata in sync with generated metadata', async () => {
+    const indexHtml = await readFile(path.resolve(process.cwd(), 'index.html'), 'utf8')
+
+    expect(getSeoBlockSignature(indexHtml)).toEqual(
+      getSeoBlockSignature(injectRootSeoIntoHtml(indexHtml)),
     )
   })
 })

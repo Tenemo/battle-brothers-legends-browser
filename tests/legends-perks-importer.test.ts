@@ -1,6 +1,7 @@
+import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { createDataset } from '../scripts/legends-perks-importer.mjs'
+import { createDataset, createImporterDiagnostics } from '../scripts/legends-perks-importer.mjs'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const fixtureReferenceRootDirectoryPath = path.resolve(
@@ -285,5 +286,90 @@ describe('legends perks importer', () => {
         ),
       ),
     ).toBe(false)
+  })
+
+  test('reports skipped parser failures without dropping other scenario data', async () => {
+    const temporaryRootDirectoryPath = path.join(
+      process.cwd(),
+      'node_modules',
+      '.tmp',
+      'legends-importer-diagnostics',
+    )
+
+    await mkdir(temporaryRootDirectoryPath, { recursive: true })
+
+    const temporaryFixtureDirectoryPath = await mkdtemp(
+      path.join(temporaryRootDirectoryPath, 'reference-'),
+    )
+
+    try {
+      const temporaryReferenceDirectoryPath = path.join(
+        temporaryFixtureDirectoryPath,
+        'legends-reference',
+      )
+
+      await cp(path.dirname(fixtureReferenceRootDirectoryPath), temporaryReferenceDirectoryPath, {
+        recursive: true,
+      })
+
+      const traderScenarioFilePath = path.join(
+        temporaryReferenceDirectoryPath,
+        'mod_legends',
+        'hooks',
+        'scenarios',
+        'world',
+        'trader_scenario.nut',
+      )
+      const traderScenarioSource = await readFile(traderScenarioFilePath, 'utf8')
+
+      await writeFile(
+        traderScenarioFilePath,
+        traderScenarioSource.replace(
+          '  o.onBuildPerkTree <- function ( _background )\n  {',
+          [
+            '  o.onBuildPerkTree <- function ( _background )',
+            '  {',
+            '    local brokenDiagnosticValue = [;',
+            '    this.addScenarioPerk(_background, [;, 0, true);',
+          ].join('\n'),
+        ),
+        'utf8',
+      )
+
+      const diagnostics = createImporterDiagnostics()
+      const datasetWithWarnings = await createDataset(
+        path.join(temporaryReferenceDirectoryPath, 'mod_legends'),
+        { diagnostics },
+      )
+      const peaceful = datasetWithWarnings.perks.find(
+        (perk) => perk.perkConstName === 'LegendPeaceful',
+      )
+
+      expect(peaceful?.scenarioSources).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            scenarioId: 'scenario.trader',
+            scenarioName: 'Trader',
+            sourceMethodName: 'onBuildPerkTree',
+          }),
+        ]),
+      )
+      expect(diagnostics.warnings).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'parse-warning',
+            parserContext: 'local brokenDiagnosticValue assignment',
+            sourceFilePath: expect.stringContaining('trader_scenario.nut'),
+          }),
+          expect.objectContaining({
+            kind: 'parse-warning',
+            parserContext: 'onBuildPerkTree scenario perk argument',
+            sourceFilePath: expect.stringContaining('trader_scenario.nut'),
+          }),
+        ]),
+      )
+    } finally {
+      await rm(temporaryFixtureDirectoryPath, { force: true, recursive: true })
+    }
   })
 })

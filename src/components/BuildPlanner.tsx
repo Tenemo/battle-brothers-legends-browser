@@ -11,17 +11,12 @@ import {
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
   renderGameIcon,
-  type TooltipAnchorRectangle,
 } from '../lib/perk-display'
+import type { HoveredBuildPerkTooltip } from '../lib/use-perk-hover-state'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 
 const buildPlannerGuidance =
   'Use the star in the detail panel or search results to collect perk picks, then review the shared perk groups and the remaining individual-perk groups below.'
-
-export type HoveredBuildPerkTooltip = {
-  anchorRectangle: TooltipAnchorRectangle
-  perkId: string
-}
 
 function getPlannerGroupCategoryLabel(
   perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],

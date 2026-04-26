@@ -3,6 +3,12 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { defaultLegendsReferenceDirectoryPath } from './ensure-legends-reference.mjs'
 import {
+  dynamicBackgroundCategoryChanceKeys,
+  dynamicBackgroundCategoryMinimumKeys,
+  dynamicBackgroundCategoryNames,
+  dynamicBackgroundCategoryOrder,
+} from '../src/lib/dynamic-background-categories.ts'
+import {
   SquirrelSubsetParser,
   collectTopLevelStatements,
   parseSquirrelValue,
@@ -19,42 +25,35 @@ const projectRootDirectoryPath = path.resolve(__dirname, '..')
 
 export const defaultReferenceRootDirectoryPath = defaultLegendsReferenceDirectoryPath
 
-const defaultCategoryOrder = [
-  'Weapon',
-  'Defense',
-  'Traits',
-  'Enemy',
-  'Class',
-  'Profession',
-  'Magic',
-  'Other',
-]
+const defaultCategoryOrder = [...dynamicBackgroundCategoryOrder]
 
-const dynamicBackgroundCategoryNames = [
-  'Weapon',
-  'Defense',
-  'Traits',
-  'Enemy',
-  'Class',
-  'Profession',
-  'Magic',
-]
-
-const categoryMinimumKeyMap = {
-  Class: 'Class',
-  Defense: 'Defense',
-  Enemy: 'Enemy',
-  Magic: 'Magic',
-  Profession: 'Profession',
-  Traits: 'Traits',
-  Weapon: 'Weapon',
+export function createImporterDiagnostics() {
+  return {
+    warnings: [],
+  }
 }
 
-const categoryChanceKeyMap = {
-  Class: 'ClassChance',
-  Enemy: 'EnemyChance',
-  Magic: 'MagicChance',
-  Profession: 'ProfessionChance',
+function summarizeDiagnosticSource(source) {
+  return source.replace(/\s+/g, ' ').trim().slice(0, 180)
+}
+
+function describeDiagnosticError(error) {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function addImporterParseWarning(diagnosticContext, parserContext, source, error) {
+  if (!diagnosticContext?.diagnostics) {
+    return
+  }
+
+  diagnosticContext.diagnostics.warnings.push({
+    kind: 'parse-warning',
+    message: `Unable to parse ${parserContext}.`,
+    parserContext,
+    source: summarizeDiagnosticSource(source),
+    sourceFilePath: diagnosticContext.sourceFilePath ?? null,
+    errorMessage: describeDiagnosticError(error),
+  })
 }
 
 const favoriteEnemyPerkConstByArrayName = {
@@ -480,7 +479,7 @@ function escapeForRegularExpression(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function extractAssignedValue(source, assignmentTarget) {
+function extractAssignedValue(source, assignmentTarget, diagnosticContext = null) {
   const pattern = new RegExp(`${escapeForRegularExpression(assignmentTarget)}\\s*(?:<-|=)\\s*`, 'g')
   const match = pattern.exec(source)
 
@@ -490,7 +489,13 @@ function extractAssignedValue(source, assignmentTarget) {
 
   try {
     return parseSquirrelValue(source, match.index + match[0].length).value
-  } catch {
+  } catch (error) {
+    addImporterParseWarning(
+      diagnosticContext,
+      `${assignmentTarget} assignment`,
+      source.slice(match.index),
+      error,
+    )
     return null
   }
 }
@@ -536,7 +541,7 @@ function extractCallArgumentLists(source, callee) {
   return argumentLists
 }
 
-function extractLocalAssignments(source) {
+function extractLocalAssignments(source, diagnosticContext = null) {
   const assignments = new Map()
   const pattern = /\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*/g
 
@@ -544,7 +549,13 @@ function extractLocalAssignments(source) {
     try {
       const parsedValue = parseSquirrelValue(source, match.index + match[0].length).value
       assignments.set(match[1], parsedValue)
-    } catch {
+    } catch (error) {
+      addImporterParseWarning(
+        diagnosticContext,
+        `local ${match[1]} assignment`,
+        source.slice(match.index),
+        error,
+      )
       continue
     }
   }
@@ -827,12 +838,12 @@ function extractHookWrapperFunction(fileSource) {
 }
 
 function resolveMinimumValue(backgroundMinimums, categoryName) {
-  const key = categoryMinimumKeyMap[categoryName]
+  const key = dynamicBackgroundCategoryMinimumKeys[categoryName]
   return key ? (backgroundMinimums[key] ?? null) : null
 }
 
 function resolveChanceValue(backgroundMinimums, categoryName) {
-  const key = categoryChanceKeyMap[categoryName]
+  const key = dynamicBackgroundCategoryChanceKeys[categoryName]
   return key ? (backgroundMinimums[key] ?? null) : null
 }
 
@@ -876,18 +887,22 @@ function applyBackgroundCreateBody({
   backgroundScriptId,
   baseBackgroundDefinition,
   createBody,
+  diagnostics,
   preferScriptIdWhenIdentifierIsInherited,
   sourceFilePath,
 }) {
-  const explicitBackgroundIdentifier = stringValue(extractAssignedValue(createBody, 'this.m.ID'))
+  const diagnosticContext = { diagnostics, sourceFilePath }
+  const explicitBackgroundIdentifier = stringValue(
+    extractAssignedValue(createBody, 'this.m.ID', diagnosticContext),
+  )
   const backgroundName =
-    stringValue(extractAssignedValue(createBody, 'this.m.Name')) ??
+    stringValue(extractAssignedValue(createBody, 'this.m.Name', diagnosticContext)) ??
     baseBackgroundDefinition.backgroundName
   const iconPath =
-    stringValue(extractAssignedValue(createBody, 'this.m.Icon')) ??
+    stringValue(extractAssignedValue(createBody, 'this.m.Icon', diagnosticContext)) ??
     baseBackgroundDefinition.iconPath
   const dynamicTreeValue =
-    extractAssignedValue(createBody, 'this.m.PerkTreeDynamic') ??
+    extractAssignedValue(createBody, 'this.m.PerkTreeDynamic', diagnosticContext) ??
     baseBackgroundDefinition.dynamicTreeValue
   const minimums = cloneMinimums(baseBackgroundDefinition.minimums)
 
@@ -926,7 +941,13 @@ function applyBackgroundCreateBody({
   }
 }
 
-function parseBackgroundHookFile(fileSource, sourceFilePath, baseDynamicTreeValue, baseMinimums) {
+function parseBackgroundHookFile(
+  fileSource,
+  sourceFilePath,
+  baseDynamicTreeValue,
+  baseMinimums,
+  diagnostics,
+) {
   const wrapperFunction = extractHookWrapperFunction(fileSource)
 
   if (wrapperFunction === null) {
@@ -949,6 +970,7 @@ function parseBackgroundHookFile(fileSource, sourceFilePath, baseDynamicTreeValu
       sourceFilePath,
     ),
     createBody: createFunctionLiteral.body,
+    diagnostics,
     preferScriptIdWhenIdentifierIsInherited: false,
     sourceFilePath,
   })
@@ -1010,6 +1032,7 @@ function resolveScriptBackgroundDefinitions(
   rawBackgroundDefinitionsByScriptId,
   baseDynamicTreeValue,
   baseMinimums,
+  diagnostics,
 ) {
   const resolvedBackgroundDefinitionsByScriptId = new Map()
 
@@ -1050,6 +1073,7 @@ function resolveScriptBackgroundDefinitions(
       backgroundScriptId,
       baseBackgroundDefinition,
       createBody: rawBackgroundDefinition.createBody,
+      diagnostics,
       preferScriptIdWhenIdentifierIsInherited:
         parentBackgroundDefinition !== null &&
         rawBackgroundDefinition.parentBackgroundScriptId !== backgroundScriptId,
@@ -1071,7 +1095,7 @@ function resolveScriptBackgroundDefinitions(
   return resolvedBackgroundDefinitionsByScriptId
 }
 
-function parseBackgroundFitRulesFile(fileSource, perkGroupDefinitions) {
+function parseBackgroundFitRulesFile(fileSource, perkGroupDefinitions, diagnosticContext = null) {
   const dynamicPerkTreeAssignment = collectTopLevelStatements(fileSource).find(
     (statement) =>
       statement.type === 'assignment' &&
@@ -1087,7 +1111,10 @@ function parseBackgroundFitRulesFile(fileSource, perkGroupDefinitions) {
     }
   }
 
-  const localAssignments = extractLocalAssignments(dynamicPerkTreeAssignment.value.body)
+  const localAssignments = extractLocalAssignments(
+    dynamicPerkTreeAssignment.value.body,
+    diagnosticContext,
+  )
   const weaponClassMapValue = localAssignments.get('weaponClassMap')
 
   if (!weaponClassMapValue) {
@@ -1299,12 +1326,14 @@ function collectPlayableBackgroundScriptIdsFromFileEntries(
   fileEntries,
   knownBackgroundScriptIds,
   backgroundScriptIdsByReference,
+  diagnostics,
 ) {
   const playableBackgroundScriptIds = new Set()
 
   for (const fileEntry of fileEntries) {
     const uncommentedFileSource = stripSquirrelComments(fileEntry.fileSource)
-    const localValues = extractLocalAssignments(uncommentedFileSource)
+    const diagnosticContext = { diagnostics, sourceFilePath: fileEntry.sourceFilePath }
+    const localValues = extractLocalAssignments(uncommentedFileSource, diagnosticContext)
 
     for (const callee of ['setStartValuesEx', 'setStartValues', 'addBroToRoster']) {
       for (const argumentList of extractCallArgumentLists(uncommentedFileSource, callee)) {
@@ -1320,7 +1349,13 @@ function collectPlayableBackgroundScriptIdsFromFileEntries(
 
           try {
             parsedValue = parseSquirrelValue(candidateArgumentSource).value
-          } catch {
+          } catch (error) {
+            addImporterParseWarning(
+              diagnosticContext,
+              `${callee} background argument`,
+              candidateArgumentSource,
+              error,
+            )
             continue
           }
 
@@ -1339,7 +1374,8 @@ function collectPlayableBackgroundScriptIdsFromFileEntries(
   return playableBackgroundScriptIds
 }
 
-function parseScenarioHookFile(fileSource, sourceFilePath) {
+function parseScenarioHookFile(fileSource, sourceFilePath, diagnostics) {
+  const diagnosticContext = { diagnostics, sourceFilePath }
   const wrapperFunction = extractHookWrapperFunction(fileSource)
 
   if (!wrapperFunction || wrapperFunction.type !== 'function') {
@@ -1357,8 +1393,12 @@ function parseScenarioHookFile(fileSource, sourceFilePath) {
 
   const createFunctionLiteral = readFunctionAssignmentBody(wrapperStatements, 'o.create')
   const createBody = createFunctionLiteral?.body ?? ''
-  const scenarioIdentifier = stringValue(extractAssignedValue(createBody, 'this.m.ID'))
-  const scenarioName = stringValue(extractAssignedValue(createBody, 'this.m.Name'))
+  const scenarioIdentifier = stringValue(
+    extractAssignedValue(createBody, 'this.m.ID', diagnosticContext),
+  )
+  const scenarioName = stringValue(
+    extractAssignedValue(createBody, 'this.m.Name', diagnosticContext),
+  )
 
   if (scenarioIdentifier === null || scenarioName === null) {
     return null
@@ -1395,7 +1435,13 @@ function parseScenarioHookFile(fileSource, sourceFilePath) {
         if (perkConstName !== null) {
           directPerkConstNames.add(perkConstName)
         }
-      } catch {
+      } catch (error) {
+        addImporterParseWarning(
+          diagnosticContext,
+          `${methodName} grant perk argument`,
+          perkReferenceSource,
+          error,
+        )
         continue
       }
     }
@@ -1404,7 +1450,7 @@ function parseScenarioHookFile(fileSource, sourceFilePath) {
       continue
     }
 
-    const localAssignments = extractLocalAssignments(functionBody)
+    const localAssignments = extractLocalAssignments(functionBody, diagnosticContext)
 
     for (const argumentList of extractCallArgumentLists(functionBody, 'this.addScenarioPerk')) {
       const perkArgumentSource = argumentList[1]
@@ -1417,7 +1463,13 @@ function parseScenarioHookFile(fileSource, sourceFilePath) {
 
       try {
         parsedArgumentValue = parseSquirrelValue(perkArgumentSource).value
-      } catch {
+      } catch (error) {
+        addImporterParseWarning(
+          diagnosticContext,
+          `${methodName} scenario perk argument`,
+          perkArgumentSource,
+          error,
+        )
         continue
       }
 
@@ -1581,6 +1633,7 @@ export async function createDataset(
   referenceRootDirectoryPath = defaultReferenceRootDirectoryPath,
   options = {},
 ) {
+  const diagnostics = options.diagnostics ?? null
   const scriptsRootDirectoryPath = getScriptsRootDirectoryPath(referenceRootDirectoryPath)
   const perkDefinitionsFilePath = path.join(
     referenceRootDirectoryPath,
@@ -1812,10 +1865,12 @@ export async function createDataset(
   const baseMinimumsValue = extractAssignedValue(
     characterBackgroundWrapperFunction.body,
     'o.m.PerkTreeDynamicMins',
+    { diagnostics, sourceFilePath: toPosixRelativePath(characterBackgroundFilePath) },
   )
   const baseDynamicTreeValue = extractAssignedValue(
     characterBackgroundWrapperFunction.body,
     'o.m.PerkTreeDynamicBase',
+    { diagnostics, sourceFilePath: toPosixRelativePath(characterBackgroundFilePath) },
   )
 
   if (baseMinimumsValue === null || baseDynamicTreeValue === null) {
@@ -1830,6 +1885,7 @@ export async function createDataset(
         backgroundFileEntry.sourceFilePath,
         baseDynamicTreeValue,
         baseMinimums,
+        diagnostics,
       ),
     )
     .filter((background) => background !== null)
@@ -1851,6 +1907,7 @@ export async function createDataset(
     rawScriptBackgroundDefinitionsByScriptId,
     baseDynamicTreeValue,
     baseMinimums,
+    diagnostics,
   )
   const knownBackgroundScriptIds = new Set([
     ...hookBackgroundFileEntries.map((backgroundFileEntry) =>
@@ -1876,6 +1933,7 @@ export async function createDataset(
     playableBackgroundScanFileEntries,
     knownBackgroundScriptIds,
     backgroundScriptIdsByReference,
+    diagnostics,
   )) {
     playableBackgroundScriptIds.add(backgroundScriptId)
   }
@@ -1896,12 +1954,17 @@ export async function createDataset(
   const backgroundFitRules = parseBackgroundFitRulesFile(
     perkGroupRulesFileSource,
     perkGroupDefinitions,
+    { diagnostics, sourceFilePath: toPosixRelativePath(perkGroupRulesFilePath) },
   )
   const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions)
 
   const scenarios = scenarioFileEntries
     .map((scenarioFileEntry) =>
-      parseScenarioHookFile(scenarioFileEntry.fileSource, scenarioFileEntry.sourceFilePath),
+      parseScenarioHookFile(
+        scenarioFileEntry.fileSource,
+        scenarioFileEntry.sourceFilePath,
+        diagnostics,
+      ),
     )
     .filter((scenario) => scenario !== null)
 

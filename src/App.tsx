@@ -5,7 +5,7 @@ import '@fontsource/source-sans-3/600.css'
 import '@fontsource/source-sans-3/700.css'
 import './App.css'
 import { BackgroundFitPanel } from './components/BackgroundFitPanel'
-import { BuildPlanner, type HoveredBuildPerkTooltip } from './components/BuildPlanner'
+import { BuildPlanner } from './components/BuildPlanner'
 import { CategorySidebar } from './components/CategorySidebar'
 import { PerkDetail } from './components/PerkDetail'
 import { PerkResults } from './components/PerkResults'
@@ -26,15 +26,12 @@ import {
 import { compareCategoryNames } from './lib/perk-categories'
 import {
   buildPerkBrowserBuildUrlSearch,
-  buildPerkBrowserUrlSearch,
-  readPerkBrowserUrlStateFromLocation,
 } from './lib/perk-browser-url-state'
-import {
-  getPerkGroupHoverKey,
-  groupBackgroundSources,
-  normalizeSearchPhrase,
-} from './lib/perk-display'
+import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
+import { useBuildShareLink } from './lib/use-build-share-link'
+import { usePerkBrowserUrlSync, useInitialPerkBrowserUrlState } from './lib/use-perk-browser-url-sync'
+import { usePerkHoverState } from './lib/use-perk-hover-state'
 import type { LegendsPerksDataset } from './types/legends-perks'
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
@@ -48,13 +45,11 @@ const perkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
 const availableCategories = [...categoryCounts.keys()].toSorted(compareCategoryNames)
 
 export default function App() {
-  const [initialUrlState] = useState(() =>
-    readPerkBrowserUrlStateFromLocation({
-      availableCategoryNames: availableCategories,
-      perks: allPerks,
-      perkGroupOptionsByCategory: perkGroupOptionsByCategory,
-    }),
-  )
+  const initialUrlState = useInitialPerkBrowserUrlState({
+    availableCategoryNames: availableCategories,
+    perks: allPerks,
+    perkGroupOptionsByCategory: perkGroupOptionsByCategory,
+  })
   const [query, setQuery] = useState(initialUrlState.query)
   const [pickedPerkIds, setPickedPerkIds] = useState<string[]>(initialUrlState.pickedPerkIds)
   const [selectedCategoryNames, setSelectedCategoryNames] = useState<string[]>(
@@ -66,13 +61,27 @@ export default function App() {
   const [selectedPerkGroupIdsByCategory, setSelectedPerkGroupIdsByCategory] = useState<
     Record<string, string[]>
   >(initialUrlState.selectedPerkGroupIdsByCategory)
-  const [hoveredPerkId, setHoveredPerkId] = useState<string | null>(null)
-  const [hoveredPerkGroupKey, setHoveredPerkGroupKey] = useState<string | null>(null)
-  const [hoveredBuildPerkTooltip, setHoveredBuildPerkTooltip] =
-    useState<HoveredBuildPerkTooltip | null>(null)
-  const [shareBuildStatus, setShareBuildStatus] = useState<'copied' | 'error' | 'idle'>('idle')
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
+  const {
+    clearAllHover,
+    clearBuildPerkTooltip,
+    clearPerkGroupHover,
+    clearPerkHover,
+    closeBuildPerkHover,
+    closeBuildPerkTooltip,
+    closePerkGroupHover,
+    closeResultsPerkHover,
+    hoveredBuildPerk,
+    hoveredBuildPerkTooltip,
+    hoveredBuildPerkTooltipId,
+    hoveredPerkGroupKey,
+    hoveredPerkId,
+    openBuildPerkHover,
+    openBuildPerkTooltip,
+    openPerkGroupHover,
+    openResultsPerkHover,
+  } = usePerkHoverState(allPerksById)
   const normalizedPerkSearchPhrase = normalizeSearchPhrase(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
     query,
@@ -97,6 +106,11 @@ export default function App() {
     () => buildPerkBrowserBuildUrlSearch(pickedPerkIds, allPerksById),
     [pickedPerkIds],
   )
+  const hasPickedPerks = pickedPerks.length > 0
+  const { handleShareBuild, resetShareBuildStatus, shareBuildStatus } = useBuildShareLink({
+    buildShareSearch,
+    hasPickedPerks,
+  })
   const buildPlannerGroups = useMemo(() => getBuildPlannerGroups(pickedPerks), [pickedPerks])
   const backgroundFitView = useMemo(
     () => backgroundFitEngine.getBackgroundFitView(pickedPerks),
@@ -156,17 +170,24 @@ export default function App() {
   const groupedBackgroundSources = selectedPerk
     ? groupBackgroundSources(selectedPerk.backgroundSources)
     : []
-  const hoveredBuildPerk =
-    hoveredBuildPerkTooltip === null
-      ? null
-      : (allPerksById.get(hoveredBuildPerkTooltip.perkId) ?? null)
-  const hoveredBuildPerkTooltipId =
-    hoveredBuildPerk === null ? undefined : `build-perk-tooltip-${hoveredBuildPerk.id}`
-  const hasPickedPerks = pickedPerks.length > 0
   const selectedCategoryCount = selectedCategoryNames.length
   const selectedPerkGroupCount = Object.values(selectedPerkGroupIdsByCategory).reduce(
     (perkGroupCount, selectedPerkGroupIds) => perkGroupCount + selectedPerkGroupIds.length,
     0,
+  )
+
+  usePerkBrowserUrlSync(
+    {
+      pickedPerkIds,
+      query,
+      selectedCategoryNames,
+      selectedPerkGroupIdsByCategory,
+    },
+    {
+      availableCategoryNames: availableCategories,
+      perksById: allPerksById,
+      perkGroupOptionsByCategory: perkGroupOptionsByCategory,
+    },
   )
 
   function handleResetCategories() {
@@ -184,9 +205,7 @@ export default function App() {
           ? currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId)
           : [...currentPickedPerkIds, perkId],
       )
-      setHoveredBuildPerkTooltip((currentTooltip) =>
-        currentTooltip?.perkId === perkId ? null : currentTooltip,
-      )
+      clearBuildPerkTooltip(perkId)
     })
   }
 
@@ -195,134 +214,22 @@ export default function App() {
       setPickedPerkIds((currentPickedPerkIds) =>
         currentPickedPerkIds.filter((currentPickedPerkId) => currentPickedPerkId !== perkId),
       )
-      setHoveredPerkId((currentHoveredPerkId) =>
-        currentHoveredPerkId === perkId ? null : currentHoveredPerkId,
-      )
-      setHoveredBuildPerkTooltip((currentTooltip) =>
-        currentTooltip?.perkId === perkId ? null : currentTooltip,
-      )
-      setHoveredPerkGroupKey(null)
+      clearPerkHover(perkId)
+      clearBuildPerkTooltip(perkId)
+      clearPerkGroupHover()
     })
   }
 
   function handleClearBuild() {
     startTransition(() => {
       setPickedPerkIds([])
-      setHoveredPerkId(null)
-      setHoveredPerkGroupKey(null)
-      setHoveredBuildPerkTooltip(null)
-      setShareBuildStatus('idle')
+      clearAllHover()
+      resetShareBuildStatus()
     })
-  }
-
-  function getBuildShareUrl(): string {
-    const buildSharePath = buildShareSearch ? `/${buildShareSearch}` : '/'
-
-    if (typeof window === 'undefined') {
-      return buildSharePath
-    }
-
-    return new URL(buildSharePath, window.location.origin).toString()
-  }
-
-  async function copyTextToClipboard(text: string): Promise<void> {
-    if (navigator.clipboard) {
-      try {
-        await navigator.clipboard.writeText(text)
-        return
-      } catch {
-        // Fall back to the selection-based copy path below.
-      }
-    }
-
-    const textArea = document.createElement('textarea')
-    textArea.value = text
-    textArea.setAttribute('readonly', '')
-    textArea.style.position = 'fixed'
-    textArea.style.top = '0'
-    textArea.style.left = '-9999px'
-    document.body.append(textArea)
-    textArea.select()
-
-    const didCopy = document.execCommand('copy')
-    textArea.remove()
-
-    if (!didCopy) {
-      throw new Error('Clipboard copy failed.')
-    }
-  }
-
-  async function handleShareBuild() {
-    if (!hasPickedPerks) {
-      return
-    }
-
-    try {
-      await copyTextToClipboard(getBuildShareUrl())
-      setShareBuildStatus('copied')
-    } catch {
-      setShareBuildStatus('error')
-    }
   }
 
   function handleInspectPlannerPerk(perkId: string) {
     setSelectedPerkId(perkId)
-  }
-
-  function handleOpenBuildPerkTooltip(perkId: string, currentTarget: HTMLButtonElement) {
-    const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
-
-    setHoveredPerkId(perkId)
-    setHoveredPerkGroupKey(null)
-    setHoveredBuildPerkTooltip({
-      anchorRectangle: {
-        bottom,
-        left,
-        right,
-        top,
-        width,
-      },
-      perkId,
-    })
-  }
-
-  function handleOpenBuildPerkHover(perkId: string) {
-    setHoveredPerkId(perkId)
-    setHoveredPerkGroupKey(null)
-  }
-
-  function handleCloseBuildPerkHover(perkId: string) {
-    setHoveredPerkId((currentHoveredPerkId) =>
-      currentHoveredPerkId === perkId ? null : currentHoveredPerkId,
-    )
-  }
-
-  function handleCloseBuildPerkTooltip() {
-    setHoveredBuildPerkTooltip(null)
-  }
-
-  function handleOpenResultsPerkHover(perkId: string) {
-    setHoveredPerkId(perkId)
-    setHoveredPerkGroupKey(null)
-    setHoveredBuildPerkTooltip(null)
-  }
-
-  function handleCloseResultsPerkHover(perkId: string) {
-    setHoveredPerkId((currentHoveredPerkId) =>
-      currentHoveredPerkId === perkId ? null : currentHoveredPerkId,
-    )
-  }
-
-  function handleOpenPerkGroupHover(categoryName: string, perkGroupId: string) {
-    setHoveredPerkGroupKey(getPerkGroupHoverKey({ categoryName, perkGroupId }))
-    setHoveredPerkId(null)
-    setHoveredBuildPerkTooltip(null)
-  }
-
-  function handleClosePerkGroupHover(perkGroupKey: string) {
-    setHoveredPerkGroupKey((currentHoveredPerkGroupKey) =>
-      currentHoveredPerkGroupKey === perkGroupKey ? null : currentHoveredPerkGroupKey,
-    )
   }
 
   function handleInspectPerkGroup(categoryName: string, perkGroupId: string) {
@@ -428,66 +335,6 @@ export default function App() {
     }
   }, [selectedPerkId, visiblePerks])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    const nextSearch = buildPerkBrowserUrlSearch(
-      {
-        pickedPerkIds,
-        query,
-        selectedCategoryNames,
-        selectedPerkGroupIdsByCategory,
-      },
-      {
-        availableCategoryNames: availableCategories,
-        perksById: allPerksById,
-        perkGroupOptionsByCategory: perkGroupOptionsByCategory,
-      },
-    )
-
-    if (window.location.search === nextSearch) {
-      return
-    }
-
-    window.history.replaceState(
-      window.history.state,
-      '',
-      `${window.location.pathname}${nextSearch}${window.location.hash}`,
-    )
-  }, [pickedPerkIds, query, selectedCategoryNames, selectedPerkGroupIdsByCategory])
-
-  useEffect(() => {
-    if (hoveredBuildPerkTooltip === null || typeof window === 'undefined') {
-      return
-    }
-
-    const handleWindowResize = () => {
-      setHoveredBuildPerkTooltip(null)
-    }
-
-    window.addEventListener('resize', handleWindowResize)
-
-    return () => {
-      window.removeEventListener('resize', handleWindowResize)
-    }
-  }, [hoveredBuildPerkTooltip])
-
-  useEffect(() => {
-    if (shareBuildStatus === 'idle') {
-      return
-    }
-
-    const resetShareBuildStatusTimeout = window.setTimeout(() => {
-      setShareBuildStatus('idle')
-    }, 1600)
-
-    return () => {
-      window.clearTimeout(resetShareBuildStatusTimeout)
-    }
-  }, [shareBuildStatus])
-
   return (
     <div className="app-shell">
       <div className="background-runes" aria-hidden="true" />
@@ -536,11 +383,11 @@ export default function App() {
         hoveredPerkId={hoveredPerkId}
         individualPerkGroups={buildPlannerGroups.individualPerkGroups}
         onClearBuild={handleClearBuild}
-        onCloseBuildPerkHover={handleCloseBuildPerkHover}
-        onCloseBuildPerkTooltip={handleCloseBuildPerkTooltip}
+        onCloseBuildPerkHover={closeBuildPerkHover}
+        onCloseBuildPerkTooltip={closeBuildPerkTooltip}
         onInspectPlannerPerk={handleInspectPlannerPerk}
-        onOpenBuildPerkHover={handleOpenBuildPerkHover}
-        onOpenBuildPerkTooltip={handleOpenBuildPerkTooltip}
+        onOpenBuildPerkHover={openBuildPerkHover}
+        onOpenBuildPerkTooltip={openBuildPerkTooltip}
         onRemovePickedPerk={handleRemovePickedPerk}
         onShareBuild={handleShareBuild}
         pickedPerks={pickedPerks}
@@ -561,10 +408,10 @@ export default function App() {
           backgroundFitView={backgroundFitView}
           hoveredPerkGroupKey={hoveredPerkGroupKey}
           isExpanded={isBackgroundFitPanelExpanded}
-          onClearPerkGroupHover={() => setHoveredPerkGroupKey(null)}
-          onClosePerkGroupHover={handleClosePerkGroupHover}
+          onClearPerkGroupHover={clearPerkGroupHover}
+          onClosePerkGroupHover={closePerkGroupHover}
           onInspectPerkGroup={handleInspectPerkGroup}
-          onOpenPerkGroupHover={handleOpenPerkGroupHover}
+          onOpenPerkGroupHover={openPerkGroupHover}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}
           onToggleExpanded={() => setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)}
           pickedPerkCount={pickedPerks.length}
@@ -590,8 +437,8 @@ export default function App() {
 
         <PerkResults
           hoveredPerkId={hoveredPerkId}
-          onCloseResultsPerkHover={handleCloseResultsPerkHover}
-          onOpenResultsPerkHover={handleOpenResultsPerkHover}
+          onCloseResultsPerkHover={closeResultsPerkHover}
+          onOpenResultsPerkHover={openResultsPerkHover}
           onSelectPerk={setSelectedPerkId}
           onTogglePerkPicked={handleTogglePerkPicked}
           pickedPerkOrderById={pickedPerkOrderById}

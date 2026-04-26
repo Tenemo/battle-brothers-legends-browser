@@ -8,19 +8,21 @@ import type {
   LegendsPerksDataset,
 } from '../types/legends-perks'
 import {
+  chanceDynamicBackgroundCategoryNames,
+  deterministicDynamicBackgroundCategoryNames,
   dynamicBackgroundCategoryNames,
+} from './dynamic-background-categories'
+import {
   getCategoryPriority,
   isDynamicBackgroundCategoryName,
 } from './perk-categories'
 
 const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
-  ['Weapon', 'Defense', 'Traits'],
+  deterministicDynamicBackgroundCategoryNames,
 )
 
 const chanceDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>([
-  'Enemy',
-  'Profession',
-  'Magic',
+  ...chanceDynamicBackgroundCategoryNames,
 ])
 
 type BackgroundProbabilityRecord = {

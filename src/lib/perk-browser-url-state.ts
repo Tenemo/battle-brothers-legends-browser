@@ -5,20 +5,20 @@ export type PerkBrowserUrlPerkGroupOption = {
   perkGroupName: string
 }
 
-type PerkBrowserUrlState = {
+export type PerkBrowserUrlState = {
   pickedPerkIds: string[]
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
 }
 
-type PerkBrowserUrlStateReadOptions = {
+export type PerkBrowserUrlStateReadOptions = {
   availableCategoryNames: string[]
   perks: LegendsPerkRecord[]
   perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
 }
 
-type PerkBrowserUrlStateWriteOptions = {
+export type PerkBrowserUrlStateWriteOptions = {
   availableCategoryNames: string[]
   perksById: Map<string, LegendsPerkRecord>
   perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
