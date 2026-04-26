@@ -8,7 +8,7 @@ import {
 import './PerkResults.css'
 import { getPerkPreviewParagraphs, getTierLabel } from '../lib/perk-search'
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import { BuildToggleButton } from './SharedControls'
+import { BuildToggleButton, ClearableSearchField } from './SharedControls'
 
 export function PerkResults({
   onCloseResultsPerkHover,
@@ -40,16 +40,14 @@ export function PerkResults({
   return (
     <section className="results-panel" aria-label="Perk results">
       <div className="toolbar">
-        <label className="search-field">
-          <span className="visually-hidden">Search perks</span>
-          <input
-            aria-label="Search perks"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search perks, perk groups, backgrounds, scenarios, or enemy targets"
-            type="search"
-            value={query}
-          />
-        </label>
+        <ClearableSearchField
+          clearLabel="Clear perk search"
+          inputId="perk-results-search"
+          label="Search perks"
+          onValueChange={setQuery}
+          placeholder="Search perks, perk groups, backgrounds, scenarios, or enemy targets"
+          value={query}
+        />
       </div>
 
       <div className="results-summary">

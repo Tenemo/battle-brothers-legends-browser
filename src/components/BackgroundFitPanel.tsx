@@ -12,7 +12,7 @@ import {
   BackgroundFitTargetTree,
   type BackgroundFitSummaryTooltipOpenHandler,
 } from './BackgroundFitCard'
-import { BackgroundFitRailChevron } from './SharedControls'
+import { BackgroundFitRailChevron, ClearableSearchField } from './SharedControls'
 
 type HoveredBackgroundFitSummaryTooltip = {
   anchorRectangle: TooltipAnchorRectangle
@@ -201,20 +201,19 @@ export function BackgroundFitPanel({
           }}
           ref={backgroundFitPanelBodyRef}
         >
-          <label className="search-field background-fit-search-field">
-            <span className="visually-hidden">Search backgrounds</span>
-            <input
-              aria-label="Search backgrounds"
-              onChange={(event) => {
-                setHoveredBackgroundFitSummaryTooltip(null)
-                onClearPerkGroupHover()
-                setBackgroundFitInputValue(event.target.value)
-              }}
-              placeholder="Search backgrounds"
-              type="search"
-              value={backgroundFitInputValue}
-            />
-          </label>
+          <ClearableSearchField
+            className="background-fit-search-field"
+            clearLabel="Clear background search"
+            inputId="background-fit-search"
+            label="Search backgrounds"
+            onValueChange={(nextValue) => {
+              setHoveredBackgroundFitSummaryTooltip(null)
+              onClearPerkGroupHover()
+              setBackgroundFitInputValue(nextValue)
+            }}
+            placeholder="Search backgrounds"
+            value={backgroundFitInputValue}
+          />
           {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (
             <p className="background-fit-ranking-summary">
               Ranked by guaranteed perks pickable first, then total perks pickable.

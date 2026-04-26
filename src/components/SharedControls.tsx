@@ -1,3 +1,59 @@
+import { useRef } from 'react'
+
+export function ClearableSearchField({
+  className = '',
+  clearLabel,
+  inputId,
+  label,
+  onValueChange,
+  placeholder,
+  value,
+}: {
+  className?: string
+  clearLabel: string
+  inputId: string
+  label: string
+  onValueChange: (nextValue: string) => void
+  placeholder: string
+  value: string
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null)
+  const searchFieldClassName = className.length > 0 ? `search-field ${className}` : 'search-field'
+  const hasSearchValue = value.length > 0
+
+  return (
+    <div className={searchFieldClassName}>
+      <label className="visually-hidden" htmlFor={inputId}>
+        {label}
+      </label>
+      <div className="search-input-control">
+        <input
+          aria-label={label}
+          id={inputId}
+          onChange={(event) => onValueChange(event.target.value)}
+          placeholder={placeholder}
+          ref={inputRef}
+          type="search"
+          value={value}
+        />
+        {hasSearchValue ? (
+          <button
+            aria-label={clearLabel}
+            className="search-clear-button"
+            onClick={() => {
+              onValueChange('')
+              inputRef.current?.focus()
+            }}
+            type="button"
+          >
+            <span aria-hidden="true" className="search-clear-icon" />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 export function GitHubIcon({ className }: { className: string }) {
   return (
     <svg aria-hidden="true" className={className} fill="currentColor" viewBox="0 0 24 24">

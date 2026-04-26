@@ -149,8 +149,14 @@ test('filters the background fit list with the background search field', async (
   await expect
     .poll(async () => backgroundFitPanelBody.evaluate((element) => element.scrollTop))
     .toBeGreaterThan(0)
+  const backgroundSearchWidthWithScrollbar = await backgroundSearchInput.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  )
 
   await backgroundSearchInput.fill('Oath')
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Clear background search' }),
+  ).toBeVisible()
   await expect
     .poll(async () => backgroundFitPanelBody.evaluate((element) => element.scrollTop))
     .toBeLessThanOrEqual(1)
@@ -219,6 +225,18 @@ test('filters the background fit list with the background search field', async (
   await expect(
     backgroundFitPanel.getByText('No backgrounds match "zzzz impossible background".'),
   ).toBeVisible()
+  await expect
+    .poll(async () =>
+      backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeLessThanOrEqual(1)
+  const backgroundSearchWidthWithoutScrollbar = await backgroundSearchInput.evaluate(
+    (element) => element.getBoundingClientRect().width,
+  )
+
+  expect(
+    Math.abs(backgroundSearchWidthWithoutScrollbar - backgroundSearchWidthWithScrollbar),
+  ).toBeLessThanOrEqual(1)
 })
 
 test('shows probabilistic background fit matches with percentage badges', async ({ page }) => {

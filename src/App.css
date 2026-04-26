@@ -434,21 +434,81 @@
   font: inherit;
 }
 
-.search-field input[type='search']::-webkit-search-cancel-button {
-  appearance: none;
-  width: 1.8rem;
-  height: 1.8rem;
-  border-radius: 999px;
-  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.4 4.4 11.6 11.6M11.6 4.4 4.4 11.6' stroke='%23bda98f' stroke-width='1.9' stroke-linecap='round'/%3E%3C/svg%3E")
-    center / 1.24rem 1.24rem no-repeat;
-  cursor: pointer;
+.search-input-control {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
 }
 
-.search-field input[type='search']::-webkit-search-cancel-button:hover {
-  background:
-    radial-gradient(circle, rgb(204 155 84 / 0.18) 0 64%, transparent 66%),
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4.4 4.4 11.6 11.6M11.6 4.4 4.4 11.6' stroke='%23f6eee5' stroke-width='1.9' stroke-linecap='round'/%3E%3C/svg%3E")
-      center / 1.24rem 1.24rem no-repeat;
+.search-input-control input {
+  padding-right: 2.72rem;
+}
+
+.search-field input[type='search']::-webkit-search-cancel-button,
+.search-field input[type='search']::-webkit-search-decoration {
+  display: none;
+  appearance: none;
+}
+
+.search-clear-button {
+  appearance: none;
+  position: absolute;
+  top: 50%;
+  right: 0.36rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0;
+  background: transparent;
+  color: #bda98f;
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.search-clear-button:hover,
+.search-clear-button:focus-visible {
+  background: rgb(204 155 84 / 0.18);
+  color: var(--text-primary);
+}
+
+.search-clear-button:focus-visible {
+  outline: 2px solid rgb(221 176 123 / 0.9);
+  outline-offset: -2px;
+}
+
+.search-clear-icon {
+  position: relative;
+  width: 0.92rem;
+  height: 0.92rem;
+}
+
+.search-clear-icon::before,
+.search-clear-icon::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.9rem;
+  height: 0.12rem;
+  border-radius: 999px;
+  background: currentColor;
+  transform-origin: center;
+}
+
+.search-clear-icon::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.search-clear-icon::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .tier-badge,

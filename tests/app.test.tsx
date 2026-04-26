@@ -107,6 +107,62 @@ describe('app', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'No perks found' })).toBeInTheDocument()
   })
 
+  test('shows and applies the perk search clear button only while search has text', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const perkSearchInput = screen.getByLabelText('Search perks')
+
+    expect(screen.queryByRole('button', { name: 'Clear perk search' })).not.toBeInTheDocument()
+
+    await user.type(perkSearchInput, 'Berserk')
+
+    const clearPerkSearchButton = screen.getByRole('button', { name: 'Clear perk search' })
+
+    expect(clearPerkSearchButton).toBeVisible()
+    expect(perkSearchInput).toHaveValue('Berserk')
+
+    await user.click(clearPerkSearchButton)
+
+    expect(perkSearchInput).toHaveValue('')
+    expect(screen.queryByRole('button', { name: 'Clear perk search' })).not.toBeInTheDocument()
+    expect(perkSearchInput).toHaveFocus()
+  })
+
+  test('shows and applies the background search clear button only while search has text', async () => {
+    const user = userEvent.setup()
+    const { container } = render(<App />)
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
+
+    expect(
+      within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
+    ).not.toBeInTheDocument()
+
+    await user.type(backgroundSearchInput, 'Oath')
+
+    const clearBackgroundSearchButton = within(backgroundFitPanel).getByRole('button', {
+      name: 'Clear background search',
+    })
+
+    expect(clearBackgroundSearchButton).toBeVisible()
+    expect(backgroundSearchInput).toHaveValue('Oath')
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
+        name: 'Oathtaker',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(clearBackgroundSearchButton)
+
+    expect(backgroundSearchInput).toHaveValue('')
+    expect(
+      within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
+    ).not.toBeInTheDocument()
+    expect(container.querySelector('.background-fit-panel .search-highlight')).toBeNull()
+    expect(backgroundSearchInput).toHaveFocus()
+  })
+
   test('can expand and collapse a category, then filter by perk group and inspect a trait perk', async () => {
     const user = userEvent.setup()
     render(<App />)
