@@ -41,7 +41,7 @@ The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` di
 
 Search and filtering are fully client-side. The ranking logic in `src/lib/perk-search.ts` prefers exact perk-name matches first, then prefix and substring matches, then tree names and category names, and finally broader text matches from descriptions and related metadata. When there is no search query, results are sorted by category, tree, tier, and perk name.
 
-The app also keeps the current search, selected categories, selected perk groups, and picked build in the URL query string. The canonical format groups repeated values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`. Older repeated-param links are still accepted and are normalized to the canonical grouped format after load.
+The app also keeps the current search, selected categories, selected perk groups, and picked build in the URL query string. The supported format groups selected values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`.
 
 The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique tree targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build trees such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed picked-perk coverage first, then total picked-perk coverage, then stable background name and source ordering.
 
@@ -253,7 +253,7 @@ It still regenerates the deterministic root social preview image before building
 - `src/lib/perk-search.ts`
   Client-side search ranking, filtering, tier labeling, and perk preview selection.
 - `src/lib/perk-browser-url-state.ts`
-  Grouped readable query-string parsing and serialization for shared filter and build state, including canonicalization of older repeated-param links.
+  Grouped readable query-string parsing and serialization for shared filter and build state.
 - `src/lib/build-planner.ts`
   Build-planner helpers for deduping perk-group options, grouping perk coverage across the current build, and formatting grouped labels.
 - `src/types/legends-perks.ts`

@@ -199,27 +199,6 @@ describe('perk browser url state', () => {
     })
   })
 
-  test('accepts older repeated query params and treats them like grouped values', () => {
-    expect(
-      readPerkBrowserUrlState(
-        '?category=Traits&category=Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity&build=Perfect+Focus',
-        {
-          availableGroupNames,
-          perks: samplePerks,
-          treeOptionsByGroup,
-        },
-      ),
-    ).toEqual({
-      pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
-      query: '',
-      selectedGroupNames: ['Traits', 'Magic'],
-      selectedTreeIdsByGroup: {
-        Magic: ['DeadeyeTree'],
-        Traits: ['CalmTree'],
-      },
-    })
-  })
-
   test('serializes duplicate-name build perks with readable stable ids and restores both ids', () => {
     const search = buildPerkBrowserUrlSearch(
       {

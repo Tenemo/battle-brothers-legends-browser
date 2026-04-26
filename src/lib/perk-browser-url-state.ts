@@ -112,7 +112,9 @@ function splitGroupedParamValue(value: string): string[] {
 }
 
 function getGroupedParamValues(params: URLSearchParams, key: string): string[] {
-  return params.getAll(key).flatMap(splitGroupedParamValue)
+  const value = params.get(key)
+
+  return value ? splitGroupedParamValue(value) : []
 }
 
 function appendScalarQueryEntry(entries: string[], key: string, value: string): void {
