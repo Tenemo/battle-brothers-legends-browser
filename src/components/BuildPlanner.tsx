@@ -612,6 +612,9 @@ function renderPlannerGroupCard({
   onOpenTooltip: (perkId: string, currentTarget: HTMLButtonElement) => void
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
+  const primaryPerkGroupOption = groupedPerkGroup.perkGroupOptions.find(
+    isSelectablePlannerPerkGroupOption,
+  )
   const isHighlighted = groupedPerkGroup.perkGroupOptions.some(
     (perkGroupOption) =>
       hoveredPerkGroupKey ===
@@ -626,6 +629,34 @@ function renderPlannerGroupCard({
       className={isHighlighted ? 'planner-group-card is-highlighted' : 'planner-group-card'}
       key={`${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`}
     >
+      {primaryPerkGroupOption ? (
+        <button
+          aria-label={`Select perk group ${plannerGroupLabel}`}
+          className="planner-group-card-inspect"
+          onBlur={() => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption))}
+          onClick={() =>
+            onInspectPerkGroup(
+              primaryPerkGroupOption.categoryName,
+              primaryPerkGroupOption.perkGroupId,
+            )
+          }
+          onFocus={() =>
+            onOpenPerkGroupHover(
+              primaryPerkGroupOption.categoryName,
+              primaryPerkGroupOption.perkGroupId,
+            )
+          }
+          onMouseEnter={() =>
+            onOpenPerkGroupHover(
+              primaryPerkGroupOption.categoryName,
+              primaryPerkGroupOption.perkGroupId,
+            )
+          }
+          onMouseLeave={() => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption))}
+          title={`Select ${plannerGroupLabel} perk group`}
+          type="button"
+        />
+      ) : null}
       <div className="planner-group-card-header">
         <div className="planner-card-icon-stack">
           {groupedPerkGroup.perkGroupOptions.map((perkGroupOption) => {

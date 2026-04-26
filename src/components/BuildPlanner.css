@@ -640,22 +640,49 @@
 }
 
 .planner-group-card {
+  position: relative;
   flex: 0 0 min(14rem, 100%);
+  overflow: hidden;
   transition:
     border-color 160ms ease,
     background-color 160ms ease;
 }
 
+.planner-group-card:hover,
 .planner-group-card.is-highlighted {
   border-color: var(--accent-color);
   background: var(--button-background-active);
 }
 
+.planner-group-card:focus-within {
+  border-color: var(--accent-color);
+}
+
+.planner-group-card-inspect {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  appearance: none;
+  border: 0;
+  border-radius: inherit;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.planner-group-card-inspect:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
 .planner-group-card-header {
+  position: relative;
+  z-index: 2;
   display: grid;
   grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
   gap: 0.42rem;
   align-items: start;
+  pointer-events: none;
 }
 
 .planner-group-card-copy {
@@ -692,6 +719,8 @@
 }
 
 .planner-group-option-button {
+  position: relative;
+  z-index: 3;
   appearance: none;
   display: inline-flex;
   align-items: center;
@@ -702,6 +731,7 @@
   background: transparent;
   color: inherit;
   cursor: pointer;
+  pointer-events: auto;
 }
 
 .planner-group-option-button:focus-visible {
@@ -729,10 +759,13 @@
 }
 
 .planner-pill-list {
+  position: relative;
+  z-index: 3;
   display: flex;
   flex-wrap: wrap;
   gap: 0.22rem;
   margin-top: 0.42rem;
+  pointer-events: none;
 }
 
 .planner-pill {
@@ -750,6 +783,7 @@
   font-size: 0.68rem;
   line-height: 1;
   cursor: pointer;
+  pointer-events: auto;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,

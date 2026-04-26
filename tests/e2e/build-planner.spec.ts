@@ -412,24 +412,93 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
   await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
 })
 
-test('selects build planner perk groups from their group controls', async ({ page }) => {
+test('selects build planner perk groups from their group tiles', async ({ page }) => {
   await gotoPerksBrowser(page)
 
   await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
   await searchPerks(page, 'temporary search')
 
-  const heavyArmorGroupButton = getBuildSharedGroupsList(page).getByRole('button', {
-    name: 'Select perk group Heavy Armor',
+  const heavyArmorGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
+    hasText: 'Heavy Armor',
   })
 
-  await heavyArmorGroupButton.click()
+  await heavyArmorGroupCard.click({
+    position: {
+      x: 96,
+      y: 38,
+    },
+  })
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Defense' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Toggle perk group Heavy Armor' })).toHaveClass(
     /is-active/,
   )
+
+  const emptyPillListPosition = await heavyArmorGroupCard.evaluate((card) => {
+    const pillList = card.querySelector('.planner-pill-list')
+
+    if (!(pillList instanceof HTMLElement)) {
+      return null
+    }
+
+    const cardRectangle = card.getBoundingClientRect()
+    const pillListRectangle = pillList.getBoundingClientRect()
+    const pillRectangles = [...pillList.querySelectorAll('.planner-pill')].map((pill) =>
+      pill.getBoundingClientRect(),
+    )
+    const sampleStep = 8
+
+    for (
+      let y = pillListRectangle.top + sampleStep;
+      y < pillListRectangle.bottom - sampleStep;
+      y += sampleStep
+    ) {
+      for (
+        let x = pillListRectangle.left + sampleStep;
+        x < pillListRectangle.right - sampleStep;
+        x += sampleStep
+      ) {
+        const isInsidePill = pillRectangles.some(
+          (pillRectangle) =>
+            x >= pillRectangle.left &&
+            x <= pillRectangle.right &&
+            y >= pillRectangle.top &&
+            y <= pillRectangle.bottom,
+        )
+
+        if (!isInsidePill) {
+          return {
+            x: x - cardRectangle.left,
+            y: y - cardRectangle.top,
+          }
+        }
+      }
+    }
+
+    return null
+  })
+
+  expect(emptyPillListPosition).not.toBeNull()
+  await searchPerks(page, 'temporary search')
+  await heavyArmorGroupCard.click({
+    position: emptyPillListPosition ?? {
+      x: 0,
+      y: 0,
+    },
+  })
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Toggle perk group Heavy Armor' })).toHaveClass(
+    /is-active/,
+  )
+
+  await searchPerks(page, 'temporary search')
+  await heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' }).click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('heading', { level: 2, name: 'Battle Forged' })).toBeVisible()
 })
 
 test('truncates long planner group categories without growing the card', async ({ page }) => {
