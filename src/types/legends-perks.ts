@@ -1,4 +1,4 @@
-export type LegendsSourceFile = {
+type LegendsSourceFile = {
   path: string
   role: string
 }
@@ -78,6 +78,7 @@ export type LegendsBackgroundFitBackgroundDefinition = {
   categories: Partial<
     Record<LegendsDynamicBackgroundCategoryName, LegendsBackgroundFitCategoryDefinition>
   >
+  iconPath: string | null
   sourceFilePath: string
 }
 
@@ -86,7 +87,7 @@ export type LegendsBackgroundFitClassWeaponDependency = {
   weaponTreeId: string
 }
 
-export type LegendsBackgroundFitRules = {
+type LegendsBackgroundFitRules = {
   classWeaponDependencies: LegendsBackgroundFitClassWeaponDependency[]
 }
 
@@ -100,8 +101,4 @@ export type LegendsPerksDataset = {
   referenceVersion: string
   sourceFiles: LegendsSourceFile[]
   treeCount: number
-}
-
-export type LegendsTechnicalNameMappings = {
-  labelsByTechnicalName: Record<string, string>
 }

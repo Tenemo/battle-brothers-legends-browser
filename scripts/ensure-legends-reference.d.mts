@@ -46,10 +46,7 @@ export function ensureLatestLegendsReference(options?: {
     archiveFilePath: string,
     fetchImpl: typeof fetch,
   ) => Promise<void>
-  extractArchiveImpl?: (
-    archiveFilePath: string,
-    extractionDirectoryPath: string,
-  ) => Promise<void>
+  extractArchiveImpl?: (archiveFilePath: string, extractionDirectoryPath: string) => Promise<void>
   fetchImpl?: typeof fetch
   githubApiBaseUrl?: string
   githubRepository?: string

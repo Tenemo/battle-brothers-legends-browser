@@ -18,7 +18,9 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
 
   await expect(page.getByRole('heading', { level: 2, name: 'Perfect Focus' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Background sources' })).toBeVisible()
-  await expect(backgroundSourcesSection.locator('strong').getByText(/Anatomist.*Beast Slayer.*Youngblood/i)).toBeVisible()
+  await expect(
+    backgroundSourcesSection.locator('strong').getByText(/Anatomist.*Beast Slayer.*Youngblood/i),
+  ).toBeVisible()
   await expect(page.getByText('Minimum 7 / No chance override')).toHaveCount(1)
 })
 
@@ -32,7 +34,9 @@ test('shows favored enemy targets and scenario overlays for enemy perks', async 
   await expect(page.getByText('Bear', { exact: true })).toBeVisible()
   await expect(page.getByText('Spider', { exact: true })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Scenario overlays' })).toBeVisible()
-  await expect(page.getByText(/Random pool: Favoured Enemy - Occult, Favoured Enemy - Beasts/i)).toBeVisible()
+  await expect(
+    page.getByText(/Random pool: Favoured Enemy - Occult, Favoured Enemy - Beasts/i),
+  ).toBeVisible()
 
   await expect(
     getResultsList(page).getByRole('button', {

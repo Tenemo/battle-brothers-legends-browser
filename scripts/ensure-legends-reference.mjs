@@ -1,14 +1,5 @@
 import { createWriteStream } from 'node:fs'
-import {
-  access,
-  cp,
-  mkdir,
-  mkdtemp,
-  readFile,
-  readdir,
-  rm,
-  writeFile,
-} from 'node:fs/promises'
+import { access, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
@@ -179,7 +170,9 @@ export async function fetchLatestLegendsReleaseDescriptor({
   })
 
   if (!response.ok) {
-    throw new Error(`Unable to resolve the Legends release from ${latestReleaseApiUrl}. GitHub returned ${response.status}.`)
+    throw new Error(
+      `Unable to resolve the Legends release from ${latestReleaseApiUrl}. GitHub returned ${response.status}.`,
+    )
   }
 
   const releasePayload = await response.json()
@@ -229,7 +222,8 @@ async function populateCurrentReferenceDirectory({
     await downloadArchiveImpl(archiveDownloadUrl, archiveFilePath, fetchImpl)
     await extractArchiveImpl(archiveFilePath, extractionDirectoryPath)
 
-    const extractedReferenceRootDirectoryPath = await findModLegendsDirectory(extractionDirectoryPath)
+    const extractedReferenceRootDirectoryPath =
+      await findModLegendsDirectory(extractionDirectoryPath)
 
     if (extractedReferenceRootDirectoryPath === null) {
       throw new Error('Downloaded Legends archive did not contain a mod_legends directory.')
@@ -319,10 +313,7 @@ export async function ensureLatestLegendsReference({
       releaseDescriptor,
     })
   } catch (error) {
-    if (
-      cachedReferenceMetadata &&
-      (await pathExists(expectedReferenceRootDirectoryPath))
-    ) {
+    if (cachedReferenceMetadata && (await pathExists(expectedReferenceRootDirectoryPath))) {
       return {
         ...cachedReferenceMetadata,
         cacheFallbackReason: error instanceof Error ? error.message : String(error),
@@ -341,6 +332,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   )
 
   if (referenceMetadata.cacheFallbackReason) {
-    console.warn(`GitHub refresh failed. Reused the cached dependency instead:\n${referenceMetadata.cacheFallbackReason}`)
+    console.warn(
+      `GitHub refresh failed. Reused the cached dependency instead:\n${referenceMetadata.cacheFallbackReason}`,
+    )
   }
 }

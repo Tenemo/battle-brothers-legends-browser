@@ -1,15 +1,40 @@
 [build]
 command = "pnpm build:netlify"
+edge_functions = "netlify/generated-edge-functions"
 publish = "dist"
 
 [build.environment]
-NODE_VERSION = "22"
+NODE_VERSION = "24.14.1"
+PNPM_VERSION = "10.33.0"
 
 [dev]
 command = "pnpm dev"
 port = 8888
 targetPort = 5173
 framework = "#custom"
+
+[functions]
+node_bundler = "esbuild"
+external_node_modules = ["@resvg/resvg-js"]
+included_files = [
+  "scripts/assets/fonts/SourceSans3-Regular.ttf",
+  "scripts/assets/fonts/SourceSans3-Semibold.ttf",
+  "scripts/assets/fonts/SourceSans3-Bold.ttf",
+  "public/game-icons/**/*",
+]
+
+[[edge_functions]]
+function = "build-seo"
+path = "/*"
+excludedPath = [
+  "/assets/*",
+  "/favicon/*",
+  "/game-icons/*",
+  "/robots.txt",
+  "/seo/*",
+  "/sitemap.xml",
+  "/social/*",
+]
 
 [[headers]]
 for = "/*"

@@ -42,7 +42,11 @@ const manyPickedPerkNames = [
 ]
 
 function createBuildUrl(perkNames: string[]): string {
-  return `/?${perkNames.map((perkName) => `build=${encodeURIComponent(perkName)}`).join('&')}`
+  const buildValue = perkNames
+    .map((perkName) => encodeURIComponent(perkName).replace(/%20/gu, '+'))
+    .join(',')
+
+  return `/?build=${buildValue}`
 }
 
 test('build planner splits shared and individual perk groups without internal scrolling', async ({
@@ -53,27 +57,10 @@ test('build planner splits shared and individual perk groups without internal sc
   const initialHeaderHeight = await page
     .locator('.build-planner-header')
     .evaluate((element) => element.getBoundingClientRect().height)
-  const introLayout = await page.evaluate(() => {
-    const summary = document.querySelector('.build-planner-summary') as HTMLElement | null
-    const title = document.querySelector('.build-planner-title') as HTMLElement | null
 
-    if (!summary || !title) {
-      return null
-    }
-
-    const summaryRectangle = summary.getBoundingClientRect()
-    const titleRectangle = title.getBoundingClientRect()
-
-    return {
-      summaryLeft: summaryRectangle.left,
-      summaryOverflow: summary.scrollWidth - summary.clientWidth,
-      titleRight: titleRectangle.right,
-    }
-  })
-
-  expect(introLayout).not.toBeNull()
-  expect(introLayout!.titleRight).toBeLessThanOrEqual(introLayout!.summaryLeft + 1)
-  expect(introLayout!.summaryOverflow).toBeLessThanOrEqual(1)
+  await expect(page.getByRole('heading', { name: 'BUILD PLANNER' })).toBeVisible()
+  await expect(page.locator('.build-planner-summary')).toHaveCount(0)
+  expect(initialHeaderHeight).toBeLessThanOrEqual(40)
 
   await searchPerks(page, 'Clarity')
   await inspectPerkFromResults(page, 'Clarity')
@@ -84,15 +71,15 @@ test('build planner splits shared and individual perk groups without internal sc
   const plannerBoardHeightBeforePicking = await page
     .locator('.planner-board')
     .evaluate((element) => element.getBoundingClientRect().height)
-  const plannerRowTopsBeforePicking = await page.locator('.planner-row').evaluateAll((rows) =>
-    rows.map((row) => Math.round(row.getBoundingClientRect().top)),
-  )
+  const plannerRowTopsBeforePicking = await page
+    .locator('.planner-row')
+    .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
 
   await addPerkToBuildFromResults(page, 'Clarity')
   await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
-  await expect(page.locator('.build-planner-summary:not(.is-layout-spacer)')).toHaveCount(0)
-  await expect(page.locator('.build-planner-summary.is-layout-spacer')).toBeHidden()
+  await expect(page.locator('.build-planner-summary')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Show build planner guidance' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Copy build link' })).toBeVisible()
   await expect
     .poll(async () =>
       page
@@ -109,31 +96,33 @@ test('build planner splits shared and individual perk groups without internal sc
     .toBeGreaterThanOrEqual(initialHeaderHeight - 1)
   await expect
     .poll(async () =>
-      page
-        .locator('.planner-board')
-        .evaluate((element) => element.getBoundingClientRect().height),
+      page.locator('.planner-board').evaluate((element) => element.getBoundingClientRect().height),
     )
     .toBeLessThanOrEqual(plannerBoardHeightBeforePicking + 1)
   await expect
     .poll(async () =>
-      page
-        .locator('.planner-board')
-        .evaluate((element) => element.getBoundingClientRect().height),
+      page.locator('.planner-board').evaluate((element) => element.getBoundingClientRect().height),
     )
     .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - 1)
-  const plannerRowTopsAfterPicking = await page.locator('.planner-row').evaluateAll((rows) =>
-    rows.map((row) => Math.round(row.getBoundingClientRect().top)),
-  )
+  const plannerRowTopsAfterPicking = await page
+    .locator('.planner-row')
+    .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
 
   expect(plannerRowTopsAfterPicking).toHaveLength(plannerRowTopsBeforePicking.length)
   for (const [rowIndex, plannerRowTopBeforePicking] of plannerRowTopsBeforePicking.entries()) {
-    expect(Math.abs(plannerRowTopsAfterPicking[rowIndex] - plannerRowTopBeforePicking)).toBeLessThanOrEqual(1)
+    expect(
+      Math.abs(plannerRowTopsAfterPicking[rowIndex] - plannerRowTopBeforePicking),
+    ).toBeLessThanOrEqual(1)
   }
   await expect(
-    getBuildSharedGroupsList(page).getByText('Perk groups covering 2 or more picked perks will appear here'),
+    getBuildSharedGroupsList(page).getByText(
+      'Perk groups covering 2 or more picked perks will appear here',
+    ),
   ).toBeVisible()
   await expect(getBuildIndividualGroupsList(page).getByText('Calm', { exact: true })).toBeVisible()
-  await expect(getBuildIndividualGroupsList(page).getByText('Clarity', { exact: true })).toBeVisible()
+  await expect(
+    getBuildIndividualGroupsList(page).getByText('Clarity', { exact: true }),
+  ).toBeVisible()
 
   const infoButton = page.getByRole('button', { name: 'Show build planner guidance' })
   const infoButtonText = await infoButton.textContent()
@@ -142,11 +131,13 @@ test('build planner splits shared and individual perk groups without internal sc
 
     return {
       fontFamily: computedStyle.fontFamily,
+      cursor: computedStyle.cursor,
       textTransform: computedStyle.textTransform,
     }
   })
 
   expect(infoButtonText).toBe('i')
+  expect(infoButtonStyle.cursor).toBe('help')
   expect(infoButtonStyle.textTransform).toBe('none')
 
   await infoButton.hover()
@@ -160,13 +151,17 @@ test('build planner splits shared and individual perk groups without internal sc
     .locator('.results-list .perk-row')
     .evaluate((element) => element.getBoundingClientRect().height)
 
-  expect(Math.abs(resultsRowHeightAfterPicking - resultsRowHeightBeforePicking)).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(resultsRowHeightAfterPicking - resultsRowHeightBeforePicking),
+  ).toBeLessThanOrEqual(1)
 
   const pickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk').first()
   const hoverMetricsBefore = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(element)
 
     return {
+      backgroundColor: computedStyle.backgroundColor,
       tileRectangle: {
         right: tileRectangle.right,
         top: tileRectangle.top,
@@ -177,13 +172,22 @@ test('build planner splits shared and individual perk groups without internal sc
   await pickedPerkTile.hover()
 
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
-  await expect(page.getByRole('tooltip')).toContainText(/An additional \+10% of any damage ignores armor/i)
+  await expect(page.getByRole('tooltip')).toContainText(
+    /An additional \+10% of any damage ignores armor/i,
+  )
   await expect(pickedPerkTile).toHaveCSS('transform', 'none')
+  await expect
+    .poll(async () =>
+      pickedPerkTile.evaluate((element) => window.getComputedStyle(element, '::after').opacity),
+    )
+    .toBe('1')
 
   const hoverMetricsAfter = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(element)
 
     return {
+      backgroundColor: computedStyle.backgroundColor,
       tileRectangle: {
         right: tileRectangle.right,
         top: tileRectangle.top,
@@ -191,8 +195,13 @@ test('build planner splits shared and individual perk groups without internal sc
     }
   })
 
-  expect(Math.abs(hoverMetricsAfter.tileRectangle.top - hoverMetricsBefore.tileRectangle.top)).toBeLessThanOrEqual(1)
-  expect(Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right)).toBeLessThanOrEqual(1)
+  expect(hoverMetricsAfter.backgroundColor).toBe(hoverMetricsBefore.backgroundColor)
+  expect(
+    Math.abs(hoverMetricsAfter.tileRectangle.top - hoverMetricsBefore.tileRectangle.top),
+  ).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right),
+  ).toBeLessThanOrEqual(1)
 
   await page.getByRole('button', { name: 'Clear build' }).click()
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(0)
@@ -202,10 +211,18 @@ test('build planner splits shared and individual perk groups without internal sc
   await addPerkToBuildFromResults(page, 'Perfect Focus')
 
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(1)
-  await expect(getBuildSharedGroupsList(page).getByText('Perk groups covering 2 or more picked perks will appear here')).toBeVisible()
+  await expect(
+    getBuildSharedGroupsList(page).getByText(
+      'Perk groups covering 2 or more picked perks will appear here',
+    ),
+  ).toBeVisible()
   await expect(getBuildIndividualGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
-  await expect(getBuildIndividualGroupsList(page).getByText('Calm / Deadeye', { exact: true })).toBeVisible()
-  await expect(getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
+  await expect(
+    getBuildIndividualGroupsList(page).getByText('Calm / Deadeye', { exact: true }),
+  ).toBeVisible()
+  await expect(
+    getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true }),
+  ).toBeVisible()
 
   await searchPerks(page, 'Peaceable')
   await inspectPerkFromResults(page, 'Peaceable')
@@ -218,7 +235,9 @@ test('build planner splits shared and individual perk groups without internal sc
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(3)
   await expect(getBuildSharedGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
   await expect(getBuildSharedGroupsList(page).getByText('Calm', { exact: true })).toBeVisible()
-  await expect(getBuildSharedGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
+  await expect(
+    getBuildSharedGroupsList(page).getByText('Perfect Focus', { exact: true }),
+  ).toBeVisible()
   await expect(getBuildSharedGroupsList(page).getByText('Peaceable', { exact: true })).toBeVisible()
   await expect(getBuildSharedGroupsList(page).getByText('Clarity', { exact: true })).toBeVisible()
   const sharedPerfectFocusPill = getBuildSharedGroupsList(page).getByRole('button', {
@@ -241,28 +260,48 @@ test('build planner splits shared and individual perk groups without internal sc
     getBuildSharedGroupsList(page).getByRole('button', { name: 'Clarity' }),
   ).not.toHaveClass(/is-highlighted/)
   await expect(getBuildIndividualGroupsList(page).locator('.planner-group-card')).toHaveCount(1)
-  await expect(getBuildIndividualGroupsList(page).getByText('Deadeye', { exact: true })).toBeVisible()
-  await expect(getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true })).toBeVisible()
+  await expect(
+    getBuildIndividualGroupsList(page).getByText('Deadeye', { exact: true }),
+  ).toBeVisible()
+  await expect(
+    getBuildIndividualGroupsList(page).getByText('Perfect Focus', { exact: true }),
+  ).toBeVisible()
   await expect(page.getByText('Build 3', { exact: true })).toBeVisible()
+  const plannerGroupCardWidths = await page
+    .locator('.planner-group-card')
+    .evaluateAll((elements) =>
+      elements.map((element) => Math.round(element.getBoundingClientRect().width)),
+    )
+
+  expect(plannerGroupCardWidths.length).toBeGreaterThan(0)
+  expect(Math.max(...plannerGroupCardWidths)).toBeLessThanOrEqual(230)
 
   await page.goto(
-    '/?build=Clarity&build=Peaceable&build=Perfect+Focus&build=Berserk&build=Killing+Frenzy&build=Fearsome&build=Colossus',
+    '/?build=Clarity,Peaceable,Perfect+Focus,Berserk,Killing+Frenzy,Fearsome,Colossus',
   )
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
   await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(7)
-  expect(await getBuildSharedGroupsList(page).locator('.planner-group-card').count()).toBeGreaterThan(0)
+  expect(
+    await getBuildSharedGroupsList(page).locator('.planner-group-card').count(),
+  ).toBeGreaterThan(0)
   expect(
     await page.evaluate(() => {
       const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
 
-      return plannerBoard === null ? Number.POSITIVE_INFINITY : plannerBoard.scrollHeight - plannerBoard.clientHeight
+      return plannerBoard === null
+        ? Number.POSITIVE_INFINITY
+        : plannerBoard.scrollHeight - plannerBoard.clientHeight
     }),
   ).toBeLessThanOrEqual(1)
 
   const perksBarHorizontalOverflow = await page.evaluate(() => {
-    const buildPerksBar = document.querySelector('[data-testid="build-perks-bar"]') as HTMLElement | null
+    const buildPerksBar = document.querySelector(
+      '[data-testid="build-perks-bar"]',
+    ) as HTMLElement | null
 
-    return buildPerksBar === null ? Number.POSITIVE_INFINITY : buildPerksBar.scrollWidth - buildPerksBar.clientWidth
+    return buildPerksBar === null
+      ? Number.POSITIVE_INFINITY
+      : buildPerksBar.scrollWidth - buildPerksBar.clientWidth
   })
 
   expect(perksBarHorizontalOverflow).toBeLessThanOrEqual(1)
@@ -294,7 +333,7 @@ test('build planner splits shared and individual perk groups without internal sc
 test('groups perk groups by shared and individual perk coverage', async ({ page }) => {
   await gotoPerksBrowser(page)
 
-  await page.goto('/?build=Battle+Forged&build=Immovable+Object&build=Steadfast')
+  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
 
   const buildSharedGroupsList = getBuildSharedGroupsList(page)
@@ -306,12 +345,71 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
   await expect(buildSharedGroupsList).toContainText('Immovable Object')
   await expect(buildSharedGroupsList).toContainText('Steadfast')
   await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
-  await expect(buildIndividualGroupsList.getByText('Sturdy / Swordmasters', { exact: true })).toBeVisible()
+  await expect(
+    buildIndividualGroupsList.getByText('Sturdy / Swordmasters', { exact: true }),
+  ).toBeVisible()
   await expect(buildIndividualGroupsList.getByText('Steadfast', { exact: true })).toBeVisible()
   await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
 })
 
-test('links search result hover highlighting with matching build planner perks', async ({ page }) => {
+test('truncates long planner group categories without growing the card', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await page.goto('/?build=Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const plannerGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card', {
+    hasText: 'Heavy Armor / Sturdy / Swordmasters',
+  })
+
+  await expect(plannerGroupCard).toBeVisible()
+  await expect(plannerGroupCard.getByText('Steadfast', { exact: true })).toBeVisible()
+
+  const plannerGroupCardMetrics = await plannerGroupCard.evaluate((card) => {
+    const category = card.querySelector('.planner-slot-category')
+
+    if (!(category instanceof HTMLElement)) {
+      return null
+    }
+
+    const cardRectangle = card.getBoundingClientRect()
+    const categoryRectangle = category.getBoundingClientRect()
+    const categoryStyle = window.getComputedStyle(category)
+    const categoryLineHeight = Number.parseFloat(categoryStyle.lineHeight)
+    const fallbackCategoryLineHeight = Number.parseFloat(categoryStyle.fontSize) * 1.2
+    const cardMinimumHeight = Number.parseFloat(window.getComputedStyle(card).minHeight)
+
+    return {
+      cardHeight: cardRectangle.height,
+      cardMinimumHeight,
+      categoryClientWidth: category.clientWidth,
+      categoryHeight: categoryRectangle.height,
+      categoryLineHeight: Number.isFinite(categoryLineHeight)
+        ? categoryLineHeight
+        : fallbackCategoryLineHeight,
+      categoryOverflow: category.scrollWidth - category.clientWidth,
+      categoryText: category.textContent,
+      categoryTextOverflow: categoryStyle.textOverflow,
+      categoryWhiteSpace: categoryStyle.whiteSpace,
+    }
+  })
+
+  expect(plannerGroupCardMetrics).not.toBeNull()
+  expect(plannerGroupCardMetrics!.categoryText).toBe('Defense / Traits / Enemy')
+  expect(plannerGroupCardMetrics!.categoryWhiteSpace).toBe('nowrap')
+  expect(plannerGroupCardMetrics!.categoryTextOverflow).toBe('ellipsis')
+  expect(plannerGroupCardMetrics!.categoryOverflow).toBeGreaterThan(0)
+  expect(plannerGroupCardMetrics!.categoryHeight).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.categoryLineHeight + 1,
+  )
+  expect(plannerGroupCardMetrics!.cardHeight).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.cardMinimumHeight + 1,
+  )
+})
+
+test('links search result hover highlighting with matching build planner perks', async ({
+  page,
+}) => {
   await gotoPerksBrowser(page, mediumPerksBrowserViewport)
 
   await searchPerks(page, 'Clarity')
@@ -366,10 +464,14 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
   await expect(page.getByText('No perks picked yet.')).toBeVisible()
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
   await expect(
-    getBuildPerksBar(page).getByText('Use the star in the detail panel or the search results list.'),
+    getBuildPerksBar(page).getByText(
+      'Use the star in the detail panel or the search results list.',
+    ),
   ).toBeVisible()
   const placeholderMetrics = await getBuildPerksBar(page).evaluate((buildPerksBar) => {
-    const placeholder = buildPerksBar.querySelector('.planner-slot-placeholder') as HTMLElement | null
+    const placeholder = buildPerksBar.querySelector(
+      '.planner-slot-placeholder',
+    ) as HTMLElement | null
     const placeholderMeta = buildPerksBar.querySelector('.planner-slot-meta') as HTMLElement | null
 
     if (!placeholder || !placeholderMeta) {
@@ -389,7 +491,9 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
   )
   expect(placeholderMetrics!.metaOverflow).toBeLessThanOrEqual(1)
   await expect(
-    getBuildSharedGroupsList(page).getByText('Perk groups covering 2 or more picked perks will appear here'),
+    getBuildSharedGroupsList(page).getByText(
+      'Perk groups covering 2 or more picked perks will appear here',
+    ),
   ).toBeVisible()
   await expect(
     getBuildIndividualGroupsList(page).getByText('Single-perk groups will appear here'),
@@ -405,7 +509,9 @@ test('keeps the picked count and clear action aligned for dense builds', async (
 
   const actionMetrics = await page.evaluate(() => {
     const count = document.querySelector('.build-planner-count') as HTMLElement | null
-    const clearButton = document.querySelector('.planner-action-button') as HTMLElement | null
+    const clearButton = document.querySelector(
+      '.planner-action-button[aria-label="Clear build"]',
+    ) as HTMLElement | null
 
     if (!count || !clearButton) {
       return null
@@ -421,5 +527,7 @@ test('keeps the picked count and clear action aligned for dense builds', async (
   })
 
   expect(actionMetrics).not.toBeNull()
-  expect(Math.abs(actionMetrics!.clearButtonCenter - actionMetrics!.countCenter)).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(actionMetrics!.clearButtonCenter - actionMetrics!.countCenter),
+  ).toBeLessThanOrEqual(1)
 })

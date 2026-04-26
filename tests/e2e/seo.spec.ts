@@ -43,7 +43,10 @@ test('exposes the expected static SEO metadata contract', async ({ page }) => {
     siteDescription,
   )
   await expect(page.locator('meta[property="og:type"]')).toHaveAttribute('content', 'website')
-  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute('content', productionSiteUrl)
+  await expect(page.locator('meta[property="og:url"]')).toHaveAttribute(
+    'content',
+    productionSiteUrl,
+  )
   await expect(page.locator('meta[property="og:image"]')).toHaveAttribute('content', socialImageUrl)
   await expect(page.locator('meta[property="og:image:secure_url"]')).toHaveAttribute(
     'content',
@@ -77,7 +80,10 @@ test('exposes the expected static SEO metadata contract', async ({ page }) => {
     'content',
     siteDescription,
   )
-  await expect(page.locator('meta[name="twitter:url"]')).toHaveAttribute('content', productionSiteUrl)
+  await expect(page.locator('meta[name="twitter:url"]')).toHaveAttribute(
+    'content',
+    productionSiteUrl,
+  )
   await expect(page.locator('meta[name="twitter:image"]')).toHaveAttribute(
     'content',
     socialImageUrl,
@@ -138,6 +144,6 @@ test('serves robots, sitemap, and the social preview image', async ({ request })
   expect(sitemapText).toContain(`<loc>${productionSiteUrl}</loc>`)
   expect(sitemapText).not.toMatch(/<loc>[^<]*\?[^<]*<\/loc>/)
 
-  const socialImageResponse = await request.get('/seo/og-image.png')
+  const socialImageResponse = await request.get('/seo/og-image-v2.png')
   expect(socialImageResponse.ok()).toBe(true)
 })

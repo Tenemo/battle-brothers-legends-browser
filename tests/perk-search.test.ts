@@ -1,10 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import {
-  allTiersFilterValue,
-  filterAndSortPerks,
-  getPerkPreview,
-  getPerkPreviewParagraphs,
-} from '../src/lib/perk-search'
+import { filterAndSortPerks, getPerkPreviewParagraphs } from '../src/lib/perk-search'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
 const samplePerks: LegendsPerkRecord[] = [
@@ -80,7 +75,8 @@ const samplePerks: LegendsPerkRecord[] = [
         categoryName: 'Enemy',
         chance: 0.05,
         minimumTrees: 2,
-        sourceFilePath: 'reference/mod_legends/hooks/skills/backgrounds/beast_hunter_background.nut',
+        sourceFilePath:
+          'reference/mod_legends/hooks/skills/backgrounds/beast_hunter_background.nut',
         treeId: 'BeastTree',
         treeName: 'Beasts',
       },
@@ -160,7 +156,6 @@ describe('perk search', () => {
       query: 'Clarity',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(results.map((perk) => perk.perkName)[0]).toBe('Clarity')
@@ -171,7 +166,6 @@ describe('perk search', () => {
       query: 'scouting',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(results.map((perk) => perk.perkName)).toEqual(['Lookout'])
@@ -182,19 +176,15 @@ describe('perk search', () => {
       query: 'vala chant',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
     const backgroundResults = filterAndSortPerks(samplePerks, {
       query: 'Beast Slayer',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(treeResults.map((perk) => perk.perkName)).toEqual(['Heightened Senses'])
-    expect(backgroundResults.map((perk) => perk.perkName)).toEqual([
-      'Favoured Enemy - Beasts',
-    ])
+    expect(backgroundResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
   })
 
   test('matches scenario names and favored enemy targets', () => {
@@ -202,39 +192,15 @@ describe('perk search', () => {
       query: 'Beast Slayers',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
     const targetResults = filterAndSortPerks(samplePerks, {
       query: 'Bear',
       selectedGroupNames: [],
       selectedTreeIdsByGroup: {},
-      tierValue: allTiersFilterValue,
     })
 
     expect(scenarioResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
     expect(targetResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
-  })
-
-  test('combines category and tier filters', () => {
-    const results = filterAndSortPerks(samplePerks, {
-      query: '',
-      selectedGroupNames: ['Traits'],
-      selectedTreeIdsByGroup: {},
-      tierValue: '5',
-    })
-
-    expect(results.map((perk) => perk.perkName)).toEqual(['Clarity'])
-  })
-
-  test('combines category, perk group, and tier filters', () => {
-    const results = filterAndSortPerks(samplePerks, {
-      query: '',
-      selectedGroupNames: ['Enemy'],
-      selectedTreeIdsByGroup: { Enemy: ['BeastTree'] },
-      tierValue: '3',
-    })
-
-    expect(results.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
   })
 
   test('treats multiple selected categories as a union while keeping subgroup filters scoped per category', () => {
@@ -242,13 +208,9 @@ describe('perk search', () => {
       query: '',
       selectedGroupNames: ['Traits', 'Enemy'],
       selectedTreeIdsByGroup: { Traits: ['CalmTree'] },
-      tierValue: allTiersFilterValue,
     })
 
-    expect(results.map((perk) => perk.perkName)).toEqual([
-      'Favoured Enemy - Beasts',
-      'Clarity',
-    ])
+    expect(results.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts', 'Clarity'])
   })
 
   test('returns the full effect block after skipping a flavor quote in the perk preview', () => {
@@ -261,10 +223,7 @@ describe('perk search', () => {
       ],
     })
 
-    expect(previewParagraphs).toEqual([
-      'Repairs armor after combat.',
-      'Costs no AP.',
-    ])
+    expect(previewParagraphs).toEqual(['Repairs armor after combat.', 'Costs no AP.'])
   })
 
   test('returns the full effect block after skipping unquoted flavor text in the perk preview', () => {
@@ -281,21 +240,5 @@ describe('perk search', () => {
       'Currently equipped throwing items regain 1 ammo each turn.',
       'Costs no AP.',
     ])
-  })
-
-  test('keeps the string preview readable by joining the full effect block', () => {
-    const preview = getPerkPreview({
-      ...samplePerks[0],
-      descriptionParagraphs: [
-        'Master the bow.',
-        'Passive: Attacks build up less fatigue.',
-        'Active: Gain a burst of focus for the next attack.',
-        'Costs 15 fatigue.',
-      ],
-    })
-
-    expect(preview).toBe(
-      'Attacks build up less fatigue. Active: Gain a burst of focus for the next attack. Costs 15 fatigue.',
-    )
   })
 })

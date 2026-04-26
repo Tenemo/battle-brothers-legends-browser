@@ -1,12 +1,10 @@
-type StructuredData = Record<string, unknown>
+import {
+  createSeoStructuredData,
+  type SeoStructuredData,
+  type SeoStructuredDataImage,
+} from './seo-structured-data'
 
-type SeoImageMetadata = {
-  alt: string
-  height: number
-  type: string
-  url: string
-  width: number
-}
+type SeoImageMetadata = SeoStructuredDataImage
 
 export type SeoMetadata = {
   applicationName: string
@@ -18,10 +16,7 @@ export type SeoMetadata = {
   locale: string
   robots: string
   shortName: string
-  structuredData: {
-    '@context': 'https://schema.org'
-    '@graph': StructuredData[]
-  }
+  structuredData: SeoStructuredData
   themeColor: string
   title: string
   url: string
@@ -29,120 +24,60 @@ export type SeoMetadata = {
 
 const siteOrigin = 'https://battlebrothers.academy'
 const sitePath = '/'
-const socialImagePath = '/seo/og-image.png'
-const siteLanguage = 'en'
-const applicationCategory = 'ReferenceApplication'
+const socialImagePath = '/seo/og-image-v2.png'
+const rootTitle = 'Battle Brothers Legends perks browser'
+const rootDescription =
+  'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.'
+const rootKeywords =
+  'Battle Brothers, Legends mod, perks browser, perk trees, build planner, Battle Brothers Legends'
+const rootShortName = 'Legends perks'
+const rootThemeColor = '#0c0908'
+const rootColorScheme = 'dark'
+const rootLocale = 'en_US'
+const rootRobots = 'index, follow, max-image-preview:large'
+const rootSocialImageAlt =
+  'Student icon and build planner preview for the Battle Brothers Legends perks browser.'
 
-const createAbsoluteUrl = (pathname: string): string => new URL(pathname, siteOrigin).toString()
+const createAbsoluteUrl = (pathname: string, origin: string = siteOrigin): string =>
+  new URL(pathname, origin).toString()
 
-const createImageObject = (image: SeoImageMetadata, pageUrl: string): StructuredData => ({
-  '@type': 'ImageObject',
-  '@id': `${pageUrl}#social-image`,
-  caption: image.alt,
-  contentUrl: image.url,
-  height: {
-    '@type': 'QuantitativeValue',
-    unitText: 'px',
-    value: image.height,
-  },
-  url: image.url,
-  width: {
-    '@type': 'QuantitativeValue',
-    unitText: 'px',
-    value: image.width,
-  },
-})
+export function createRootSeoMetadata(origin: string = siteOrigin): SeoMetadata {
+  const rootUrl = createAbsoluteUrl(sitePath, origin)
+  const socialImage: SeoImageMetadata = {
+    alt: rootSocialImageAlt,
+    height: 630,
+    type: 'image/png',
+    url: createAbsoluteUrl(socialImagePath, origin),
+    width: 1200,
+  }
 
-const createRootStructuredData = ({
-  description,
-  image,
-  title,
-  url,
-}: {
-  description: string
-  image: SeoImageMetadata
-  title: string
-  url: string
-}): SeoMetadata['structuredData'] => ({
-  '@context': 'https://schema.org',
-  '@graph': [
-    {
-      '@type': 'WebSite',
-      '@id': `${url}#website`,
-      description,
-      inLanguage: siteLanguage,
-      name: title,
-      url,
-    },
-    {
-      '@type': 'WebPage',
-      '@id': `${url}#webpage`,
-      description,
-      image: {
-        '@id': `${url}#social-image`,
-      },
-      inLanguage: siteLanguage,
-      isPartOf: {
-        '@id': `${url}#website`,
-      },
-      name: title,
-      primaryImageOfPage: {
-        '@id': `${url}#social-image`,
-      },
-      url,
-    },
-    {
-      '@type': 'WebApplication',
-      '@id': `${url}#webapp`,
-      applicationCategory,
-      browserRequirements: 'JavaScript required',
-      description,
-      image: image.url,
-      inLanguage: siteLanguage,
-      isAccessibleForFree: true,
-      isPartOf: {
-        '@id': `${url}#website`,
-      },
-      name: title,
-      operatingSystem: 'Any',
-      url,
-    },
-    createImageObject(image, url),
-  ],
-})
-
-const rootUrl = createAbsoluteUrl(sitePath)
-const socialImage: SeoImageMetadata = {
-  alt: 'Student icon and build planner preview for the Battle Brothers Legends perks browser.',
-  height: 630,
-  type: 'image/png',
-  url: createAbsoluteUrl(socialImagePath),
-  width: 1200,
-}
-
-export const rootSeoMetadata: SeoMetadata = {
-  applicationName: 'Battle Brothers legends perks browser',
-  canonicalUrl: rootUrl,
-  colorScheme: 'dark',
-  description:
-    'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.',
-  image: socialImage,
-  keywords:
-    'Battle Brothers, Legends mod, perks browser, perk trees, build planner, Battle Brothers Legends',
-  locale: 'en_US',
-  robots: 'index, follow, max-image-preview:large',
-  shortName: 'Legends perks',
-  structuredData: createRootStructuredData({
-    description:
-      'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.',
+  return {
+    applicationName: rootTitle,
+    canonicalUrl: rootUrl,
+    colorScheme: rootColorScheme,
+    description: rootDescription,
     image: socialImage,
-    title: 'Battle Brothers legends perks browser',
+    keywords: rootKeywords,
+    locale: rootLocale,
+    robots: rootRobots,
+    shortName: rootShortName,
+    structuredData: createSeoStructuredData({
+      applicationTitle: rootTitle,
+      applicationUrl: rootUrl,
+      description: rootDescription,
+      image: socialImage,
+      pageTitle: rootTitle,
+      pageUrl: rootUrl,
+      websiteTitle: rootTitle,
+      websiteUrl: rootUrl,
+    }),
+    themeColor: rootThemeColor,
+    title: rootTitle,
     url: rootUrl,
-  }),
-  themeColor: '#0c0908',
-  title: 'Battle Brothers legends perks browser',
-  url: rootUrl,
+  }
 }
+
+export const rootSeoMetadata: SeoMetadata = createRootSeoMetadata()
 
 const escapeHtml = (value: string): string =>
   value
@@ -161,10 +96,13 @@ const renderMetaTag = (
 const renderLinkTag = (rel: string, href: string): string =>
   `<link rel="${escapeHtml(rel)}" href="${escapeHtml(href)}" />`
 
-export const serializeStructuredData = (value: unknown): string =>
-  JSON.stringify(value).replaceAll('<', '\\u003c').replaceAll('>', '\\u003e').replaceAll('&', '\\u0026')
+const serializeStructuredData = (value: unknown): string =>
+  JSON.stringify(value)
+    .replaceAll('<', '\\u003c')
+    .replaceAll('>', '\\u003e')
+    .replaceAll('&', '\\u0026')
 
-export const renderRootSeoHead = (metadata: SeoMetadata = rootSeoMetadata): string =>
+const renderRootSeoHead = (metadata: SeoMetadata = rootSeoMetadata): string =>
   [
     renderMetaTag('application-name', metadata.applicationName),
     renderMetaTag('apple-mobile-web-app-title', metadata.shortName),
@@ -197,10 +135,7 @@ export const renderRootSeoHead = (metadata: SeoMetadata = rootSeoMetadata): stri
     `<title>${escapeHtml(metadata.title)}</title>`,
   ].join('\n    ')
 
-export const injectRootSeoIntoHtml = (
-  html: string,
-  metadata: SeoMetadata = rootSeoMetadata,
-): string => {
+export function injectSeoIntoHtml(html: string, metadata: SeoMetadata = rootSeoMetadata): string {
   const startMarkerPattern = /<meta\s+name=["']battle-brothers-seo-start["'][^>]*>/i
   const endMarkerPattern = /<meta\s+name=["']battle-brothers-seo-end["'][^>]*>/i
   const startMarkerMatch = startMarkerPattern.exec(html)
@@ -219,8 +154,17 @@ export const injectRootSeoIntoHtml = (
   }
 
   const endMarkerEndIndex = endMarkerMatch.index + endMarkerMatch[0].length
+  const startMarker = startMarkerMatch[0]
+  const endMarker = endMarkerMatch[0]
 
-  return `${html.slice(0, startMarkerMatch.index)}${renderRootSeoHead(metadata)}${html.slice(
+  return `${html.slice(0, startMarkerMatch.index)}${startMarker}\n    ${renderRootSeoHead(metadata)}\n    ${endMarker}${html.slice(
     endMarkerEndIndex,
   )}`
+}
+
+export function injectRootSeoIntoHtml(
+  html: string,
+  metadata: SeoMetadata = rootSeoMetadata,
+): string {
+  return injectSeoIntoHtml(html, metadata)
 }

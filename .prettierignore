@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-ssr
+.cache
+.netlify
+netlify/generated-edge-functions
+public/game-icons
+public/seo/*.png
+src/data/*.json
+temp.txt

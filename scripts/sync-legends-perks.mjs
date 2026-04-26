@@ -1,9 +1,4 @@
-import {
-  createDataset,
-  createTechnicalNameMappings,
-  writeDatasetFile,
-  writeTechnicalNameMappingsFile,
-} from './legends-perks-importer.mjs'
+import { createDataset, writeDatasetFile } from './legends-perks-importer.mjs'
 import { ensureLatestLegendsReference } from './ensure-legends-reference.mjs'
 import { syncLegendsIcons } from './legends-icon-sync.mjs'
 
@@ -12,7 +7,6 @@ const dataset = await createDataset(referenceMetadata.referenceRootDirectoryPath
   referenceVersion: referenceMetadata.tagName,
 })
 await writeDatasetFile(dataset)
-await writeTechnicalNameMappingsFile(createTechnicalNameMappings(dataset))
 const iconSyncResult = await syncLegendsIcons({ dataset })
 
 console.log(

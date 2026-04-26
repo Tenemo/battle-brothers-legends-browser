@@ -1,0 +1,355 @@
+import { Buffer } from 'node:buffer'
+import { existsSync, readFileSync } from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+import type { Config, Context } from '@netlify/functions'
+
+import { createBuildSharePreviewPayloadFromSearch } from '../../src/lib/build-share-preview'
+import { buildSocialImageWidth, createBuildSocialImageSvg } from '../../src/lib/build-social-image'
+import type {
+  BuildSharePreviewBackgroundFit,
+  BuildSharePreviewPayload,
+  BuildSharePreviewPerk,
+} from '../../src/lib/build-share-preview'
+
+type BuildSocialImageCachePolicy = {
+  browser: string
+  cdn: string
+  netlifyCdn: string
+}
+
+type BuildSocialImageResponse = {
+  body: Uint8Array
+  headers: Record<string, string>
+  status: number
+}
+
+type BuildSocialImageRenderResult = {
+  body: Uint8Array
+  usedFallback: boolean
+}
+
+type BuildSocialImageRenderPng = (
+  payload: BuildSharePreviewPayload,
+) => Promise<Uint8Array> | Uint8Array
+
+type BuildSocialImageResponseOptions = {
+  renderPng?: BuildSocialImageRenderPng
+  routeParams?: Record<string, string | undefined>
+}
+
+type BuildSocialImageHandlerOptions = {
+  createResponse?: (
+    requestUrl: URL,
+    options?: BuildSocialImageResponseOptions,
+  ) => Promise<BuildSocialImageResponse>
+}
+
+const dayInSeconds = 60 * 60 * 24
+const hourInSeconds = 60 * 60
+const buildSocialImagePathPrefix = '/social/builds/'
+const socialImageFontFamily = 'Source Sans 3'
+const socialImageFontFileNames = [
+  'SourceSans3-Regular.ttf',
+  'SourceSans3-Semibold.ttf',
+  'SourceSans3-Bold.ttf',
+]
+const successfulImageCachePolicy: BuildSocialImageCachePolicy = {
+  browser: 'public, max-age=0, must-revalidate',
+  cdn: `public, max-age=${30 * dayInSeconds}, stale-while-revalidate=${30 * dayInSeconds}`,
+  netlifyCdn: `public, durable, max-age=${30 * dayInSeconds}, stale-while-revalidate=${30 * dayInSeconds}`,
+}
+const fallbackImageCachePolicy: BuildSocialImageCachePolicy = {
+  browser: `public, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
+  cdn: `public, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
+  netlifyCdn: `public, durable, max-age=${hourInSeconds}, stale-while-revalidate=${dayInSeconds}`,
+}
+function getGameIconsDirectory(): string {
+  return path.resolve(process.cwd(), 'public', 'game-icons')
+}
+
+function getCurrentModuleDirectory(): string {
+  return path.dirname(fileURLToPath(import.meta.url))
+}
+
+function getSocialImageFontFileCandidates(fileName: string): string[] {
+  const moduleDirectory = getCurrentModuleDirectory()
+  const fontPath = path.join('scripts', 'assets', 'fonts', fileName)
+
+  return [
+    path.resolve(process.cwd(), fontPath),
+    path.resolve(moduleDirectory, '..', '..', fontPath),
+    path.resolve(moduleDirectory, '..', '..', '..', fontPath),
+  ]
+}
+
+export function resolveBuildSocialImageFontFiles(): string[] {
+  const resolvedFontFilePaths: string[] = []
+  const seenFontFilePaths = new Set<string>()
+
+  for (const fontFileName of socialImageFontFileNames) {
+    const fontFilePath = getSocialImageFontFileCandidates(fontFileName).find((candidatePath) =>
+      existsSync(candidatePath),
+    )
+
+    if (fontFilePath && !seenFontFilePaths.has(fontFilePath)) {
+      resolvedFontFilePaths.push(fontFilePath)
+      seenFontFilePaths.add(fontFilePath)
+    }
+  }
+
+  return resolvedFontFilePaths
+}
+
+function resolveIconFilePath(iconPath: string | null): string | null {
+  if (!iconPath || iconPath.includes('\0')) {
+    return null
+  }
+
+  const gameIconsDirectory = getGameIconsDirectory()
+  const iconFilePath = path.resolve(gameIconsDirectory, iconPath)
+  const relativeIconFilePath = path.relative(gameIconsDirectory, iconFilePath)
+
+  if (relativeIconFilePath.startsWith('..') || path.isAbsolute(relativeIconFilePath)) {
+    return null
+  }
+
+  return iconFilePath
+}
+
+function getIconDataUrlFromPath(iconPath: string | null): string | null {
+  const iconFilePath = resolveIconFilePath(iconPath)
+
+  if (!iconFilePath || !existsSync(iconFilePath)) {
+    return null
+  }
+
+  return `data:image/png;base64,${readFileSync(iconFilePath).toString('base64')}`
+}
+
+function getPerkIconDataUrl(perk: BuildSharePreviewPerk): string | null {
+  return getIconDataUrlFromPath(perk.iconPath)
+}
+
+function getBackgroundIconDataUrl(backgroundFit: BuildSharePreviewBackgroundFit): string | null {
+  return getIconDataUrlFromPath(backgroundFit.iconPath)
+}
+
+export async function renderBuildSocialImagePng(
+  payload: BuildSharePreviewPayload,
+): Promise<Uint8Array> {
+  const { Resvg } = await import('@resvg/resvg-js')
+  const svg = createBuildSocialImageSvg(payload, {
+    resolveBackgroundIconDataUrl: getBackgroundIconDataUrl,
+    resolvePerkIconDataUrl: getPerkIconDataUrl,
+  })
+  const fontFiles = resolveBuildSocialImageFontFiles()
+  const resvg = new Resvg(svg, {
+    fitTo: {
+      mode: 'width',
+      value: buildSocialImageWidth,
+    },
+    font: {
+      defaultFontFamily: socialImageFontFamily,
+      fontFiles,
+      loadSystemFonts: fontFiles.length === 0,
+      sansSerifFamily: socialImageFontFamily,
+    },
+  })
+
+  return resvg.render().asPng()
+}
+
+function createFallbackPayload(): BuildSharePreviewPayload {
+  return createBuildSharePreviewPayloadFromSearch('')
+}
+
+async function renderBuildSocialImagePngWithFallback(
+  payload: BuildSharePreviewPayload,
+  renderPng: BuildSocialImageRenderPng = renderBuildSocialImagePng,
+): Promise<BuildSocialImageRenderResult> {
+  try {
+    const body = await renderPng(payload)
+
+    return {
+      body,
+      usedFallback: false,
+    }
+  } catch (renderError) {
+    try {
+      const body = await renderPng(createFallbackPayload())
+
+      return {
+        body,
+        usedFallback: true,
+      }
+    } catch (fallbackRenderError) {
+      throw new AggregateError(
+        [renderError, fallbackRenderError],
+        'Failed to render build social image, including fallback image.',
+        {
+          cause: fallbackRenderError,
+        },
+      )
+    }
+  }
+}
+
+function buildHeaders({
+  byteLength,
+  cachePolicy,
+}: {
+  byteLength: number
+  cachePolicy: BuildSocialImageCachePolicy
+}): Record<string, string> {
+  return {
+    'cache-control': cachePolicy.browser,
+    'cdn-cache-control': cachePolicy.cdn,
+    'content-length': byteLength.toString(),
+    'content-type': 'image/png',
+    'netlify-cdn-cache-control': cachePolicy.netlifyCdn,
+  }
+}
+
+export function createBuildSocialImageSearchParamsFromPathname(
+  pathname: string,
+): URLSearchParams | null {
+  if (!pathname.startsWith(buildSocialImagePathPrefix)) {
+    return null
+  }
+
+  const pathTail = pathname.slice(buildSocialImagePathPrefix.length)
+  const pathSegments = pathTail.split('/')
+
+  if (pathSegments.length !== 2) {
+    return new URLSearchParams()
+  }
+
+  const [encodedReference, encodedBuildFileName] = pathSegments
+
+  if (!encodedReference || !encodedBuildFileName.toLowerCase().endsWith('.png')) {
+    return new URLSearchParams()
+  }
+
+  try {
+    decodeURIComponent(encodedReference)
+
+    const encodedBuild = encodedBuildFileName.slice(0, -'.png'.length)
+    const build = decodeURIComponent(encodedBuild)
+
+    if (!build.trim()) {
+      return new URLSearchParams()
+    }
+
+    return new URLSearchParams({
+      build,
+    })
+  } catch {
+    return new URLSearchParams()
+  }
+}
+
+function decodeRouteParam(value: string): string | null {
+  try {
+    return decodeURIComponent(value)
+  } catch {
+    return null
+  }
+}
+
+export function createBuildSocialImageSearchParamsFromRouteParams(
+  routeParams: Record<string, string | undefined> | undefined,
+): URLSearchParams | null {
+  const rawBuild = routeParams?.buildSlug ?? routeParams?.build
+
+  if (!rawBuild) {
+    return null
+  }
+
+  const build = decodeRouteParam(rawBuild)
+
+  if (!build?.trim()) {
+    return null
+  }
+
+  return new URLSearchParams({
+    build,
+  })
+}
+
+export async function createBuildSocialImageResponse(
+  requestUrl: URL,
+  { renderPng, routeParams }: BuildSocialImageResponseOptions = {},
+): Promise<BuildSocialImageResponse> {
+  const searchParams =
+    createBuildSocialImageSearchParamsFromRouteParams(routeParams) ??
+    createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ??
+    new URLSearchParams()
+  const payload = createBuildSharePreviewPayloadFromSearch(searchParams)
+  const renderedImage = await renderBuildSocialImagePngWithFallback(payload, renderPng)
+  const cachePolicy =
+    payload.status === 'found' && !renderedImage.usedFallback
+      ? successfulImageCachePolicy
+      : fallbackImageCachePolicy
+
+  return {
+    body: renderedImage.body,
+    headers: buildHeaders({
+      byteLength: renderedImage.body.byteLength,
+      cachePolicy,
+    }),
+    status: 200,
+  }
+}
+
+function createBuildSocialImageErrorResponse(requestMethod: string): Response {
+  return new Response(requestMethod === 'HEAD' ? null : 'Failed to render image.', {
+    headers: {
+      'cache-control': 'no-store, max-age=0',
+      'content-type': 'text/plain; charset=utf-8',
+    },
+    status: 500,
+  })
+}
+
+export function createBuildSocialImageHandler({
+  createResponse = createBuildSocialImageResponse,
+}: BuildSocialImageHandlerOptions = {}): (
+  request: Request,
+  context?: Context,
+) => Promise<Response> {
+  return async function buildSocialImage(request: Request, context?: Context): Promise<Response> {
+    if (request.method !== 'GET' && request.method !== 'HEAD') {
+      return new Response(null, {
+        headers: {
+          allow: 'GET, HEAD',
+        },
+        status: 405,
+      })
+    }
+
+    try {
+      const imageResponse = await createResponse(new URL(request.url), {
+        routeParams: context?.params,
+      })
+
+      return new Response(request.method === 'HEAD' ? null : Buffer.from(imageResponse.body), {
+        headers: imageResponse.headers,
+        status: imageResponse.status,
+      })
+    } catch (error) {
+      console.error(error instanceof Error ? error.message : 'Failed to render build social image.')
+
+      return createBuildSocialImageErrorResponse(request.method)
+    }
+  }
+}
+
+const buildSocialImage = createBuildSocialImageHandler()
+
+export default buildSocialImage
+
+export const config: Config = {
+  path: '/social/builds/:reference/:buildSlug.png',
+}

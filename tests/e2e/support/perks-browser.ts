@@ -5,7 +5,7 @@ type PerksBrowserViewport = {
   width: number
 }
 
-export const defaultPerksBrowserViewport = {
+const defaultPerksBrowserViewport = {
   height: 720,
   width: 900,
 } as const
@@ -77,12 +77,25 @@ export async function expectViewportLocked(page: Page): Promise<void> {
     .toBeLessThanOrEqual(2)
 }
 
+export async function expectNoDocumentHorizontalOverflow(page: Page): Promise<void> {
+  await expect
+    .poll(async () =>
+      page.evaluate(
+        () =>
+          Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) -
+          window.innerWidth,
+      ),
+    )
+    .toBeLessThanOrEqual(1)
+}
+
 export async function searchPerks(page: Page, query: string): Promise<void> {
   await page.getByLabel('Search perks').fill(query)
 }
 
 export async function clearAllFilters(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Clear all filters' }).click()
+  await page.getByRole('button', { name: 'Reset all category filters' }).click()
+  await page.getByLabel('Search perks').fill('')
 }
 
 export async function enableCategory(page: Page, categoryName: string): Promise<void> {

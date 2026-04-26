@@ -1,0 +1,22 @@
+{
+  "$schema": "https://unpkg.com/knip/schema.json",
+  "entry": [
+    "netlify/edge-functions/build-seo.ts",
+    "scripts/*.mjs",
+    "scripts/*.d.mts",
+    "tests/**/*.test.ts",
+    "tests/**/*.test.tsx",
+    "tests/e2e/**/*.spec.ts"
+  ],
+  "project": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "netlify/**/*.ts",
+    "scripts/**/*.mjs",
+    "scripts/**/*.mts",
+    "tests/**/*.ts",
+    "tests/**/*.tsx",
+    "*.config.ts",
+    "*.config.js"
+  ]
+}

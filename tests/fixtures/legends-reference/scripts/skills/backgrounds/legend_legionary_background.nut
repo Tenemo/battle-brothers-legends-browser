@@ -5,6 +5,7 @@ this.legend_legionary_background <- this.inherit("scripts/skills/backgrounds/cha
     this.character_background.create();
     this.m.ID = "background.legend_legionary";
     this.m.Name = "Legionary";
+    this.m.Icon = "ui/backgrounds/background_puppet.png";
     this.m.PerkTreeDynamic = {
       Weapon = [
         ::Const.Perks.AxeTree

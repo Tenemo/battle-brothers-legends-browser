@@ -97,7 +97,6 @@ const samplePerks: LegendsPerkRecord[] = [
 ]
 
 const availableGroupNames = ['Traits', 'Magic', 'Enemy']
-const tierOptions = ['5', '6', '7', 'no-tier']
 const treeOptionsByGroup = new Map([
   [
     'Traits',
@@ -110,6 +109,29 @@ const treeOptionsByGroup = new Map([
   ['Enemy', [{ treeId: 'BeastTree', treeName: 'Beasts' }]],
 ])
 const perksById = new Map(samplePerks.map((perk) => [perk.id, perk]))
+const duplicateNamePerks: LegendsPerkRecord[] = [
+  ...samplePerks,
+  {
+    ...samplePerks[0],
+    groupNames: ['Magic'],
+    id: 'perk.legend_chain_lightning',
+    perkConstName: 'LegendChainLightning',
+    perkName: 'Chain Lightning',
+    primaryGroupName: 'Magic',
+    searchText: 'Chain Lightning magic evocation',
+  },
+  {
+    ...samplePerks[0],
+    groupNames: ['Other'],
+    id: 'perk.legend_magic_chain_lightning',
+    perkConstName: 'LegendMagicChainLightning',
+    perkName: 'Chain Lightning',
+    placements: [],
+    primaryGroupName: 'Other',
+    searchText: 'Chain Lightning other spell',
+  },
+]
+const duplicateNamePerksById = new Map(duplicateNamePerks.map((perk) => [perk.id, perk]))
 
 describe('perk browser url state', () => {
   test('serializes filters and build into grouped readable query params', () => {
@@ -122,7 +144,6 @@ describe('perk browser url state', () => {
           Magic: ['DeadeyeTree'],
           Traits: ['CalmTree'],
         },
-        tierValue: '7',
       },
       {
         availableGroupNames,
@@ -132,18 +153,17 @@ describe('perk browser url state', () => {
     )
 
     expect(search).toBe(
-      '?search=Perfect+Focus&tier=7&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
+      '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
     )
   })
 
-  test('parses the grouped readable query params back into filter and build state', () => {
+  test('parses the grouped readable query params', () => {
     expect(
       readPerkBrowserUrlState(
-        '?search=Perfect+Focus&tier=7&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
+        '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
         {
           availableGroupNames,
           perks: samplePerks,
-          tierOptions,
           treeOptionsByGroup,
         },
       ),
@@ -155,41 +175,16 @@ describe('perk browser url state', () => {
         Magic: ['DeadeyeTree'],
         Traits: ['CalmTree'],
       },
-      tierValue: '7',
     })
   })
 
-  test('parses legacy repeated params back into the same filter and build state', () => {
+  test('ignores unknown values, normalizes values, and infers categories from groups', () => {
     expect(
       readPerkBrowserUrlState(
-        '?search=Perfect+Focus&tier=7&category=Traits&category=Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity&build=Perfect+Focus',
+        '?category=traits,missing&group-traits=calm,calm,unknown&group-magic=deadeye&build=perfect-focus,perfect-focus,unknown,peaceable,Clarity&search=++Perfect+++Focus++',
         {
           availableGroupNames,
           perks: samplePerks,
-          tierOptions,
-          treeOptionsByGroup,
-        },
-      ),
-    ).toEqual({
-      pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
-      query: 'Perfect Focus',
-      selectedGroupNames: ['Traits', 'Magic'],
-      selectedTreeIdsByGroup: {
-        Magic: ['DeadeyeTree'],
-        Traits: ['CalmTree'],
-      },
-      tierValue: '7',
-    })
-  })
-
-  test('accepts mixed grouped and repeated params, ignores unknown values, and infers categories from groups', () => {
-    expect(
-      readPerkBrowserUrlState(
-        '?category=traits,missing&group-traits=calm,calm,unknown&group-magic=deadeye&build=perfect-focus,perfect-focus,unknown&build=peaceable&build=Clarity&tier=bad-value&search=++Perfect+++Focus++',
-        {
-          availableGroupNames,
-          perks: samplePerks,
-          tierOptions,
           treeOptionsByGroup,
         },
       ),
@@ -201,8 +196,34 @@ describe('perk browser url state', () => {
         Traits: ['CalmTree'],
         Magic: ['DeadeyeTree'],
       },
-      tierValue: 'all-tiers',
     })
+  })
+
+  test('serializes duplicate-name build perks with readable stable ids and restores both ids', () => {
+    const search = buildPerkBrowserUrlSearch(
+      {
+        pickedPerkIds: ['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'],
+        query: '',
+        selectedGroupNames: [],
+        selectedTreeIdsByGroup: {},
+      },
+      {
+        availableGroupNames,
+        perksById: duplicateNamePerksById,
+        treeOptionsByGroup,
+      },
+    )
+
+    expect(search).toBe(
+      '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+    )
+    expect(
+      readPerkBrowserUrlState(search, {
+        availableGroupNames,
+        perks: duplicateNamePerks,
+        treeOptionsByGroup,
+      }).pickedPerkIds,
+    ).toEqual(['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'])
   })
 
   test('omits the query string entirely when nothing needs to be shared', () => {
@@ -213,7 +234,6 @@ describe('perk browser url state', () => {
           query: '',
           selectedGroupNames: [],
           selectedTreeIdsByGroup: {},
-          tierValue: 'all-tiers',
         },
         {
           availableGroupNames,

@@ -7,33 +7,21 @@ import type {
   LegendsPerkRecord,
   LegendsPerksDataset,
 } from '../types/legends-perks'
+import {
+  dynamicBackgroundCategoryNames,
+  getCategoryPriority,
+  isDynamicBackgroundCategoryName,
+} from './perk-categories'
 
-const dynamicBackgroundCategoryNames = [
-  'Weapon',
-  'Defense',
-  'Traits',
-  'Enemy',
-  'Class',
-  'Profession',
-  'Magic',
-] as const satisfies LegendsDynamicBackgroundCategoryName[]
-
-const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>([
-  'Weapon',
-  'Defense',
-  'Traits',
-])
+const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
+  ['Weapon', 'Defense', 'Traits'],
+)
 
 const chanceDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>([
   'Enemy',
   'Profession',
   'Magic',
 ])
-
-const categoryOrder = ['Weapon', 'Defense', 'Traits', 'Enemy', 'Class', 'Profession', 'Magic', 'Other']
-const dynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
-  dynamicBackgroundCategoryNames,
-)
 
 type BackgroundProbabilityRecord = {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
@@ -65,10 +53,9 @@ export type RankedBackgroundFit = {
   backgroundId: string
   backgroundName: string
   disambiguator: string | null
-  expectedExtraMatchedBuildWeight: number
   expectedMatchedTreeCount: number
-  guaranteedMatchedBuildWeight: number
   guaranteedMatchedTreeCount: number
+  iconPath: string | null
   maximumTotalGroupCount: number
   matches: BackgroundFitMatch[]
   sourceFilePath: string
@@ -80,13 +67,8 @@ export type BackgroundFitView = {
   unsupportedBuildTargetTrees: BuildTargetTree[]
 }
 
-export type BackgroundFitEngine = {
+type BackgroundFitEngine = {
   getBackgroundFitView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitView
-}
-
-function getCategoryPriority(categoryName: string): number {
-  const priority = categoryOrder.indexOf(categoryName)
-  return priority === -1 ? Number.POSITIVE_INFINITY : priority
 }
 
 function compareBuildTargetTrees(leftTree: BuildTargetTree, rightTree: BuildTargetTree): number {
@@ -132,7 +114,8 @@ function getExpectedSuccessfulDrawCount(
         continue
       }
 
-      nextSuccessCountDistribution[successCountIndex] += currentProbability * (1 - successProbability)
+      nextSuccessCountDistribution[successCountIndex] +=
+        currentProbability * (1 - successProbability)
       nextSuccessCountDistribution[successCountIndex + 1] += currentProbability * successProbability
     }
 
@@ -157,17 +140,23 @@ function getAdditionalRandomTreeCount(
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   availableTreeCount: number,
 ): number {
+  const explicitTreeCount = new Set(categoryDefinition.treeIds).size
+
   return Math.min(
-    Math.max(0, (categoryDefinition.minimumTrees ?? 0) - categoryDefinition.treeIds.length),
+    Math.max(0, (categoryDefinition.minimumTrees ?? 0) - explicitTreeCount),
     availableTreeCount,
   )
 }
 
 function getChanceAttemptCount(categoryDefinition: LegendsBackgroundFitCategoryDefinition): number {
-  return Math.max(0, (categoryDefinition.minimumTrees ?? 0) - categoryDefinition.treeIds.length + 1)
+  const explicitTreeCount = new Set(categoryDefinition.treeIds).size
+
+  return Math.max(0, (categoryDefinition.minimumTrees ?? 0) - explicitTreeCount + 1)
 }
 
-function buildTreeIdsByCategory(perks: LegendsPerkRecord[]): Map<LegendsDynamicBackgroundCategoryName, string[]> {
+function buildTreeIdsByCategory(
+  perks: LegendsPerkRecord[],
+): Map<LegendsDynamicBackgroundCategoryName, string[]> {
   const treeIdsByCategory = new Map<LegendsDynamicBackgroundCategoryName, Set<string>>()
 
   for (const categoryName of dynamicBackgroundCategoryNames) {
@@ -176,13 +165,11 @@ function buildTreeIdsByCategory(perks: LegendsPerkRecord[]): Map<LegendsDynamicB
 
   for (const perk of perks) {
     for (const placement of perk.placements) {
-      if (!dynamicBackgroundCategoryNameSet.has(placement.categoryName as LegendsDynamicBackgroundCategoryName)) {
+      if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
         continue
       }
 
-      treeIdsByCategory
-        .get(placement.categoryName as LegendsDynamicBackgroundCategoryName)
-        ?.add(placement.treeId)
+      treeIdsByCategory.get(placement.categoryName)?.add(placement.treeId)
     }
   }
 
@@ -226,10 +213,7 @@ function addExplicitTreeProbabilities(
   return explicitTreeIdSet
 }
 
-function getRemainingTreeIds(
-  poolTreeIds: string[],
-  explicitTreeIdSet: Set<string>,
-): string[] {
+function getRemainingTreeIds(poolTreeIds: string[], explicitTreeIdSet: Set<string>): string[] {
   return poolTreeIds.filter((treeId) => !explicitTreeIdSet.has(treeId))
 }
 
@@ -271,7 +255,10 @@ function addDeterministicCategoryProbabilities(
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   poolTreeIds: string[],
 ): void {
-  const explicitTreeIdSet = addExplicitTreeProbabilities(probabilitiesByTreeId, categoryDefinition.treeIds)
+  const explicitTreeIdSet = addExplicitTreeProbabilities(
+    probabilitiesByTreeId,
+    categoryDefinition.treeIds,
+  )
   const remainingTreeIds = getRemainingTreeIds(poolTreeIds, explicitTreeIdSet)
   const additionalRandomTreeCount = getAdditionalRandomTreeCount(
     categoryDefinition,
@@ -290,7 +277,10 @@ function addChanceCategoryProbabilities(
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   poolTreeIds: string[],
 ): void {
-  const explicitTreeIdSet = addExplicitTreeProbabilities(probabilitiesByTreeId, categoryDefinition.treeIds)
+  const explicitTreeIdSet = addExplicitTreeProbabilities(
+    probabilitiesByTreeId,
+    categoryDefinition.treeIds,
+  )
   const remainingTreeIds = getRemainingTreeIds(poolTreeIds, explicitTreeIdSet)
   const marginalProbability =
     remainingTreeIds.length === 0
@@ -364,7 +354,10 @@ function addClassCategoryProbabilities(
   weaponPoolTreeIds: string[],
   classWeaponDependencyByClassTreeId: ClassWeaponDependencyByClassTreeId,
 ): void {
-  const explicitTreeIdSet = addExplicitTreeProbabilities(probabilitiesByTreeId, categoryDefinition.treeIds)
+  const explicitTreeIdSet = addExplicitTreeProbabilities(
+    probabilitiesByTreeId,
+    categoryDefinition.treeIds,
+  )
   const explicitWeaponTreeIdSet = new Set<string>(weaponCategoryDefinition.treeIds)
   const remainingWeaponTreeIds = getRemainingTreeIds(weaponPoolTreeIds, explicitWeaponTreeIdSet)
   const randomWeaponTreeCount = getAdditionalRandomTreeCount(
@@ -375,8 +368,7 @@ function addClassCategoryProbabilities(
     remainingWeaponTreeIds.length,
     randomWeaponTreeCount,
   )
-  const subsetProbability =
-    totalWeaponSubsetCount === 0 ? 0 : 1 / totalWeaponSubsetCount
+  const subsetProbability = totalWeaponSubsetCount === 0 ? 0 : 1 / totalWeaponSubsetCount
   const successProbability = clampProbability(categoryDefinition.chance ?? 0)
   const classAttemptCount = getChanceAttemptCount(categoryDefinition)
 
@@ -433,7 +425,10 @@ function addClassCategoryProbabilities(
       subsetProbability
 
     for (const treeId of eligibleRemainingTreeIds) {
-      probabilitiesByTreeId.set(treeId, (probabilitiesByTreeId.get(treeId) ?? 0) + marginalProbability)
+      probabilitiesByTreeId.set(
+        treeId,
+        (probabilitiesByTreeId.get(treeId) ?? 0) + marginalProbability,
+      )
     }
   })
 }
@@ -498,49 +493,52 @@ function getMaximumCategoryTreeCount(
 
   const poolTreeIds = context.treeIdsByCategory.get(categoryName) ?? []
   const explicitTreeIdSet = new Set<string>(categoryDefinition.treeIds)
+  const explicitTreeCount = explicitTreeIdSet.size
   const remainingTreeIds = getRemainingTreeIds(poolTreeIds, explicitTreeIdSet)
 
   if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
-    return categoryDefinition.treeIds.length + getAdditionalRandomTreeCount(
-      categoryDefinition,
-      remainingTreeIds.length,
+    return (
+      explicitTreeCount + getAdditionalRandomTreeCount(categoryDefinition, remainingTreeIds.length)
     )
   }
 
   if (categoryName === 'Enemy' || categoryName === 'Profession') {
     if (clampProbability(categoryDefinition.chance ?? 0) <= 0) {
-      return categoryDefinition.treeIds.length
+      return explicitTreeCount
     }
 
-    return categoryDefinition.treeIds.length + Math.min(
-      getChanceAttemptCount(categoryDefinition),
-      remainingTreeIds.length,
+    return (
+      explicitTreeCount +
+      Math.min(getChanceAttemptCount(categoryDefinition), remainingTreeIds.length)
     )
   }
 
   if (categoryName === 'Class') {
     if (clampProbability(categoryDefinition.chance ?? 0) <= 0) {
-      return categoryDefinition.treeIds.length
+      return explicitTreeCount
     }
 
-    return categoryDefinition.treeIds.length + Math.min(
-      getChanceAttemptCount(categoryDefinition),
-      getMaximumEligibleRemainingClassTreeCount(
-        categoryDefinition,
-        poolTreeIds,
-        backgroundDefinition.categories.Weapon ?? {
-          chance: null,
-          minimumTrees: 0,
-          treeIds: [],
-        },
-        context.treeIdsByCategory.get('Weapon') ?? [],
-        context.classWeaponDependencyByClassTreeId,
-      ),
+    return (
+      explicitTreeCount +
+      Math.min(
+        getChanceAttemptCount(categoryDefinition),
+        getMaximumEligibleRemainingClassTreeCount(
+          categoryDefinition,
+          poolTreeIds,
+          backgroundDefinition.categories.Weapon ?? {
+            chance: null,
+            minimumTrees: 0,
+            treeIds: [],
+          },
+          context.treeIdsByCategory.get('Weapon') ?? [],
+          context.classWeaponDependencyByClassTreeId,
+        ),
+      )
     )
   }
 
   // In Legends 19.3.17, GetDynamicPerkTree's magic loop never appends random trees.
-  return categoryDefinition.treeIds.length
+  return explicitTreeCount
 }
 
 function getMaximumTotalGroupCount(
@@ -549,7 +547,8 @@ function getMaximumTotalGroupCount(
 ): number {
   return dynamicBackgroundCategoryNames.reduce(
     (maximumTotalGroupCount, categoryName) =>
-      maximumTotalGroupCount + getMaximumCategoryTreeCount(backgroundDefinition, categoryName, context),
+      maximumTotalGroupCount +
+      getMaximumCategoryTreeCount(backgroundDefinition, categoryName, context),
     0,
   )
 }
@@ -654,16 +653,18 @@ export function getBuildTargetTrees(pickedPerks: LegendsPerkRecord[]): {
 
   return {
     supportedBuildTargetTrees: buildTargetTrees.filter((buildTargetTree) =>
-      dynamicBackgroundCategoryNameSet.has(buildTargetTree.categoryName as LegendsDynamicBackgroundCategoryName),
+      isDynamicBackgroundCategoryName(buildTargetTree.categoryName),
     ),
     unsupportedBuildTargetTrees: buildTargetTrees.filter(
-      (buildTargetTree) =>
-        !dynamicBackgroundCategoryNameSet.has(buildTargetTree.categoryName as LegendsDynamicBackgroundCategoryName),
+      (buildTargetTree) => !isDynamicBackgroundCategoryName(buildTargetTree.categoryName),
     ),
   }
 }
 
-function compareBackgroundFitMatches(leftMatch: BackgroundFitMatch, rightMatch: BackgroundFitMatch): number {
+function compareBackgroundFitMatches(
+  leftMatch: BackgroundFitMatch,
+  rightMatch: BackgroundFitMatch,
+): number {
   return (
     Number(rightMatch.isGuaranteed) - Number(leftMatch.isGuaranteed) ||
     rightMatch.probability - leftMatch.probability ||
@@ -731,8 +732,8 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
     )
   }
 
-  const backgroundProbabilityRecords: BackgroundProbabilityRecord[] = dataset.backgroundFitBackgrounds.map(
-    (backgroundDefinition) => ({
+  const backgroundProbabilityRecords: BackgroundProbabilityRecord[] =
+    dataset.backgroundFitBackgrounds.map((backgroundDefinition) => ({
       backgroundDefinition,
       maximumTotalGroupCount: getMaximumTotalGroupCount(
         backgroundDefinition,
@@ -742,12 +743,12 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         backgroundDefinition,
         backgroundProbabilityContext,
       ),
-    }),
-  )
+    }))
 
   return {
     getBackgroundFitView(pickedPerks) {
-      const { supportedBuildTargetTrees, unsupportedBuildTargetTrees } = getBuildTargetTrees(pickedPerks)
+      const { supportedBuildTargetTrees, unsupportedBuildTargetTrees } =
+        getBuildTargetTrees(pickedPerks)
 
       return {
         rankedBackgroundFits: backgroundProbabilityRecords
@@ -774,24 +775,16 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
               backgroundId: backgroundDefinition.backgroundId,
               backgroundName: backgroundDefinition.backgroundName,
               disambiguator:
-                (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
+                (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) >
+                1
                   ? getBackgroundDisambiguator(backgroundDefinition)
                   : null,
-              expectedExtraMatchedBuildWeight: matches.reduce(
-                (expectedBuildWeight, match) =>
-                  expectedBuildWeight + (match.isGuaranteed ? 0 : match.probability * match.pickedPerkCount),
-                0,
-              ),
               expectedMatchedTreeCount: matches.reduce(
                 (expectedTreeCount, match) => expectedTreeCount + match.probability,
                 0,
               ),
-              guaranteedMatchedBuildWeight: matches.reduce(
-                (guaranteedBuildWeight, match) =>
-                  guaranteedBuildWeight + (match.isGuaranteed ? match.pickedPerkCount : 0),
-                0,
-              ),
               guaranteedMatchedTreeCount: matches.filter((match) => match.isGuaranteed).length,
+              iconPath: backgroundDefinition.iconPath ?? null,
               maximumTotalGroupCount,
               matches,
               sourceFilePath: backgroundDefinition.sourceFilePath,
@@ -805,6 +798,6 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   }
 }
 
-export function getPlacementGroupRequirementKey(placement: LegendsPerkPlacement): string {
+function getPlacementGroupRequirementKey(placement: LegendsPerkPlacement): string {
   return `${placement.categoryName}::${placement.treeId}`
 }

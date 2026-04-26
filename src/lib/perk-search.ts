@@ -1,14 +1,9 @@
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 
-export const allGroupsFilterValue = 'all-groups'
-export const allTiersFilterValue = 'all-tiers'
-export const noTierFilterValue = 'no-tier'
-
-export type PerkBrowserFilters = {
+type PerkBrowserFilters = {
   query: string
   selectedGroupNames: string[]
   selectedTreeIdsByGroup: Record<string, string[]>
-  tierValue: string
 }
 
 type NormalizedPerkSearchIndex = {
@@ -23,7 +18,7 @@ type NormalizedPerkSearchIndex = {
 const normalizedPerkSearchIndexByPerkId = new Map<string, NormalizedPerkSearchIndex>()
 
 function normalizeSearchValue(value: string): string {
-  return value.trim().toLocaleLowerCase()
+  return value.trim().toLowerCase()
 }
 
 function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSearchIndex {
@@ -35,15 +30,15 @@ function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSe
 
   const normalizedSearchIndex = {
     backgroundNames: perk.backgroundSources.map((backgroundSource) =>
-      backgroundSource.backgroundName.toLocaleLowerCase(),
+      backgroundSource.backgroundName.toLowerCase(),
     ),
-    groupNames: perk.groupNames.map((groupName) => groupName.toLocaleLowerCase()),
-    perkName: perk.perkName.toLocaleLowerCase(),
+    groupNames: perk.groupNames.map((groupName) => groupName.toLowerCase()),
+    perkName: perk.perkName.toLowerCase(),
     scenarioNames: perk.scenarioSources.map((scenarioSource) =>
-      scenarioSource.scenarioName.toLocaleLowerCase(),
+      scenarioSource.scenarioName.toLowerCase(),
     ),
-    searchText: perk.searchText.toLocaleLowerCase(),
-    treeNames: perk.placements.map((placement) => placement.treeName.toLocaleLowerCase()),
+    searchText: perk.searchText.toLowerCase(),
+    treeNames: perk.placements.map((placement) => placement.treeName.toLowerCase()),
   }
 
   normalizedPerkSearchIndexByPerkId.set(perk.id, normalizedSearchIndex)
@@ -65,18 +60,6 @@ function getPrimaryPlacement(perk: LegendsPerkRecord): LegendsPerkPlacement | nu
 
 export function getTierLabel(tier: number | null): string {
   return tier === null ? 'No tier' : `Tier ${tier}`
-}
-
-export function getTierFilterValue(tier: number | null): string {
-  return tier === null ? noTierFilterValue : String(tier)
-}
-
-function getPerkTierValues(perk: LegendsPerkRecord): string[] {
-  if (perk.placements.length === 0) {
-    return [noTierFilterValue]
-  }
-
-  return [...new Set(perk.placements.map((placement) => getTierFilterValue(placement.tier)))]
 }
 
 function isFlavorQuoteParagraph(paragraph: string): boolean {
@@ -154,33 +137,10 @@ export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
   return ['No description available.']
 }
 
-export function getPerkPreview(perk: LegendsPerkRecord): string {
-  return getPerkPreviewParagraphs(perk).join(' ')
-}
-
-export function buildTierOptions(perks: LegendsPerkRecord[]): string[] {
-  const tierValues = new Set<string>()
-
-  for (const perk of perks) {
-    for (const tierValue of getPerkTierValues(perk)) {
-      tierValues.add(tierValue)
-    }
-  }
-
-  return [...tierValues].toSorted((leftTierValue, rightTierValue) => {
-    if (leftTierValue === noTierFilterValue) {
-      return 1
-    }
-
-    if (rightTierValue === noTierFilterValue) {
-      return -1
-    }
-
-    return Number(leftTierValue) - Number(rightTierValue)
-  })
-}
-
-function comparePerksAlphabetically(leftPerk: LegendsPerkRecord, rightPerk: LegendsPerkRecord): number {
+function comparePerksAlphabetically(
+  leftPerk: LegendsPerkRecord,
+  rightPerk: LegendsPerkRecord,
+): number {
   const leftPrimaryPlacement = getPrimaryPlacement(leftPerk)
   const rightPrimaryPlacement = getPrimaryPlacement(rightPerk)
   const leftTier = getLowestPlacementTier(leftPerk) ?? Number.POSITIVE_INFINITY
@@ -218,14 +178,6 @@ function perkMatchesFilters(perk: LegendsPerkRecord, filters: PerkBrowserFilters
     })
 
     if (!matchesSelectedCategoryTreeFilter) {
-      return false
-    }
-  }
-
-  if (filters.tierValue !== allTiersFilterValue) {
-    const perkTierValues = getPerkTierValues(perk)
-
-    if (!perkTierValues.includes(filters.tierValue)) {
       return false
     }
   }

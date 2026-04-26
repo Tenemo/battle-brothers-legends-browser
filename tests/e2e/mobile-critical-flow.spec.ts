@@ -1,0 +1,42 @@
+import { expect, test } from '@playwright/test'
+import {
+  addPerkToBuildFromResults,
+  expectNoDocumentHorizontalOverflow,
+  getBackgroundFitPanel,
+  getBuildPerksBar,
+  gotoPerksBrowser,
+  searchPerks,
+} from './support/perks-browser'
+
+test('keeps the main build and filtering flow usable on mobile', async ({ page }) => {
+  await gotoPerksBrowser(page, { width: 390, height: 844 })
+  await expectNoDocumentHorizontalOverflow(page)
+
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  await expect(getBuildPerksBar(page).getByText('Axe Mastery')).toBeVisible()
+  await expect(page.getByText('1 perk picked.')).toBeVisible()
+  await expect(page.getByText('Build slot 1')).toBeVisible()
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const apprenticeCard = backgroundFitPanel
+    .locator('.background-fit-card')
+    .filter({ hasText: 'Apprentice' })
+    .first()
+
+  await expect(backgroundFitPanel.getByLabel('Search backgrounds')).toBeVisible()
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
+  await apprenticeCard.getByRole('button', { name: 'Select perk group Axe' }).click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Toggle perk group Axe' })).toHaveClass(/is-active/)
+  await expect(page.getByRole('button', { name: 'Inspect Axe Mastery' })).toBeVisible()
+
+  await backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }).click()
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }),
+  ).toHaveAttribute('aria-expanded', 'false')
+  await expectNoDocumentHorizontalOverflow(page)
+})

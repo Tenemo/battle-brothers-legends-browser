@@ -4,23 +4,35 @@
   "version": "0.1.0",
   "type": "module",
   "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=24.14.1"
+  },
   "scripts": {
     "prepare": "husky",
-    "predev": "node ./scripts/ensure-legends-reference.mjs",
+    "prepare:assets": "node ./scripts/ensure-legends-reference.mjs && node ./scripts/generate-root-social-image.mjs",
+    "generate:social-image": "node ./scripts/generate-root-social-image.mjs",
+    "predev": "pnpm run generate:social-image",
     "dev": "vite",
-    "predev:test": "node ./scripts/ensure-legends-reference.mjs",
+    "predev:test": "pnpm run generate:social-image",
     "dev:test": "vite --host 127.0.0.1 --port 4173",
-    "prebuild": "node ./scripts/ensure-legends-reference.mjs",
+    "prebuild": "pnpm run generate:social-image",
     "build": "tsc -b && vite build",
-    "build:netlify": "tsc -b && vite build",
+    "build:netlify": "pnpm run generate:social-image && tsc -b && vite build && node ./scripts/build-netlify-edge-functions.mjs",
+    "check:netlify-manifest": "node ./scripts/assert-netlify-edge-manifest.mjs",
+    "format": "prettier . --write --ignore-unknown",
+    "format:check": "prettier . --check --ignore-unknown",
+    "knip": "knip --config knip.json",
+    "knip:production": "knip --production --config knip.production.json",
+    "netlify:build": "pnpm --package=netlify-cli@25.6.0 dlx netlify build --offline",
     "preview": "vite preview",
+    "smoke:deployed-seo": "node ./scripts/smoke-deployed-seo.mjs",
     "typecheck": "tsc -b",
     "tsc": "tsc -b",
     "lint": "eslint .",
     "eslint": "eslint .",
     "eslint:fix": "eslint . --fix",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "node ./node_modules/@playwright/test/cli.js test",
     "ensure:legends-reference": "node ./scripts/ensure-legends-reference.mjs",
     "sync:icons": "node ./scripts/sync-legends-icons.mjs",
     "sync:perks": "node ./scripts/sync-legends-perks.mjs"
@@ -28,11 +40,14 @@
   "dependencies": {
     "@fontsource/cinzel": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",
+    "@resvg/resvg-js": "^2.6.2",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@netlify/edge-functions": "^3.0.6",
+    "@netlify/functions": "^5.2.0",
     "@playwright/test": "^1.59.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
@@ -41,15 +56,23 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "esbuild": "^0.27.7",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
     "husky": "^9.1.7",
     "jsdom": "^29.0.2",
+    "knip": "^6.6.3",
+    "prettier": "^3.8.3",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
     "vite": "^8.0.9",
     "vitest": "^4.1.5"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
