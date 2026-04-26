@@ -6,9 +6,9 @@ import {
   type RankedBackgroundFit,
 } from '../lib/background-fit'
 import {
+  formatBackgroundFitExpectedBuildPerksLabel,
   formatBackgroundFitGuaranteedPerksLabel,
   formatBackgroundFitMatchedPerkGroupsLabel,
-  formatBackgroundFitMaximumTotalPerkGroupsLabel,
   formatBackgroundFitPickablePerksLabel,
   formatBackgroundFitProbabilityLabel,
   formatBackgroundFitScoreLabel,
@@ -51,12 +51,15 @@ function getBackgroundFitMatchedPerkGroupsSummaryCopy(
   ]
 }
 
-function getBackgroundFitMaximumTotalPerkGroupsSummaryCopy(
-  maximumTotalPerkGroupCount: number,
+function getBackgroundFitExpectedBuildPerksSummaryCopy(
+  expectedCoveredPickedPerkCount: number,
+  pickedPerkCount: number,
 ): string[] {
   return [
-    `Overall hard cap for this background across all dynamic perk groups: it can end up with at most ${maximumTotalPerkGroupCount} total perk groups.`,
-    'This is not limited to your build. It includes every dynamic perk group the background can gain after all fills and optional rolls.',
+    `Expected build-perk coverage for this background: ${formatBackgroundFitScoreLabel(
+      expectedCoveredPickedPerkCount,
+    )} of your ${pickedPerkCount} picked perks are expected to be covered after dynamic perk group rolls.`,
+    'This counts unique picked perks, so alternate perk groups for the same picked perk are not double-counted.',
   ]
 }
 
@@ -261,12 +264,12 @@ export function BackgroundFitCard({
           <div className="background-fit-accordion-summary">
             <div className="background-fit-accordion-summary-row">
               <BackgroundFitSummaryBadge
-                label={formatBackgroundFitPickablePerksLabel(
-                  coveredPickedPerkCount,
+                label={formatBackgroundFitExpectedBuildPerksLabel(
+                  backgroundFit.expectedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                summaryCopy={getBackgroundFitPickablePerksSummaryCopy(
-                  coveredPickedPerkCount,
+                summaryCopy={getBackgroundFitExpectedBuildPerksSummaryCopy(
+                  backgroundFit.expectedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
               />
@@ -283,6 +286,16 @@ export function BackgroundFitCard({
             </div>
             <div className="background-fit-accordion-summary-row">
               <BackgroundFitSummaryBadge
+                label={formatBackgroundFitPickablePerksLabel(
+                  coveredPickedPerkCount,
+                  pickedPerkCount,
+                )}
+                summaryCopy={getBackgroundFitPickablePerksSummaryCopy(
+                  coveredPickedPerkCount,
+                  pickedPerkCount,
+                )}
+              />
+              <BackgroundFitSummaryBadge
                 label={formatBackgroundFitMatchedPerkGroupsLabel(
                   backgroundFit.matches.length,
                   supportedBuildTargetPerkGroupCount,
@@ -290,14 +303,6 @@ export function BackgroundFitCard({
                 summaryCopy={getBackgroundFitMatchedPerkGroupsSummaryCopy(
                   backgroundFit.matches.length,
                   supportedBuildTargetPerkGroupCount,
-                )}
-              />
-              <BackgroundFitSummaryBadge
-                label={formatBackgroundFitMaximumTotalPerkGroupsLabel(
-                  backgroundFit.maximumTotalPerkGroupCount,
-                )}
-                summaryCopy={getBackgroundFitMaximumTotalPerkGroupsSummaryCopy(
-                  backgroundFit.maximumTotalPerkGroupCount,
                 )}
               />
             </div>

@@ -859,7 +859,7 @@ describe('app', () => {
     expect(within(backgroundFitPanel).queryByText('Background fit')).not.toBeInTheDocument()
     expect(
       within(backgroundFitPanel).getByText(
-        /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+        /Ranked by guaranteed build perks first, then expected build perks/i,
       ),
     ).toBeInTheDocument()
     expect(apprenticeCard).not.toBeNull()
@@ -871,7 +871,7 @@ describe('app', () => {
       }),
     ).toHaveAttribute('src', '/game-icons/ui/backgrounds/background_40.png')
     expect(
-      within(apprenticeCard as HTMLElement).getByText('Up to 1/1 perks pickable'),
+      within(apprenticeCard as HTMLElement).getByText('Expected 1/1 build perks'),
     ).toBeInTheDocument()
     expect(
       within(apprenticeCard as HTMLElement).getByText('Guaranteed 1/1 perks pickable'),
@@ -881,7 +881,7 @@ describe('app', () => {
       within(apprenticeCard as HTMLElement).getByText('1/1 matched perk group'),
     ).toBeInTheDocument()
     expect(
-      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total perk groups/),
+      within(apprenticeCard as HTMLElement).getByText('Up to 1/1 perks pickable'),
     ).toBeInTheDocument()
     expect(
       (apprenticeCard as HTMLElement).querySelectorAll('.background-fit-accordion-summary-row'),
@@ -889,7 +889,7 @@ describe('app', () => {
 
     expect(
       within(apprenticeCard as HTMLElement).getByLabelText(
-        /Maximum \d+ total perk groups\. Overall hard cap for this background/i,
+        /Expected 1\/1 build perks\. Expected build-perk coverage for this background/i,
       ),
     ).toBeInTheDocument()
     expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
@@ -1116,7 +1116,7 @@ describe('app', () => {
     expect(workspace).not.toHaveClass('has-active-background-fit-search')
     expect(
       within(backgroundFitPanel).getByText(
-        /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+        /Ranked by guaranteed build perks first, then expected build perks/i,
       ),
     ).toBeInTheDocument()
     expect(within(backgroundFitPanel).queryByText('starting shield')).not.toBeInTheDocument()
@@ -1180,7 +1180,7 @@ describe('app', () => {
     )
     expect(
       within(backgroundFitPanel).queryByText(
-        /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+        /Ranked by guaranteed build perks first, then expected build perks/i,
       ),
     ).not.toBeInTheDocument()
   })

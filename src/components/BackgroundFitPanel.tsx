@@ -223,7 +223,7 @@ export function BackgroundFitPanel({
           />
           {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (
             <p className="background-fit-ranking-summary">
-              Ranked by guaranteed perks pickable first, then total perks pickable.
+              Ranked by guaranteed build perks first, then expected build perks.
             </p>
           ) : (
             <div className="background-fit-empty-state">

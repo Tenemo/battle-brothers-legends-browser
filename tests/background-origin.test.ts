@@ -21,6 +21,7 @@ function createBackgroundFit({
     backgroundId,
     backgroundName,
     disambiguator,
+    expectedCoveredPickedPerkCount: 0,
     expectedMatchedPerkGroupCount: 0,
     guaranteedMatchedPerkGroupCount: 0,
     iconPath: null,
@@ -130,6 +131,7 @@ describe('background origin detection', () => {
       .map((backgroundFit): RankedBackgroundFit => ({
         ...backgroundFit,
         disambiguator: null,
+        expectedCoveredPickedPerkCount: 0,
         expectedMatchedPerkGroupCount: 0,
         guaranteedMatchedPerkGroupCount: 0,
         matches: [],

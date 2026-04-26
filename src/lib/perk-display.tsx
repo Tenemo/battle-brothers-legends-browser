@@ -256,6 +256,15 @@ export function formatBackgroundFitPickablePerksLabel(
   return `Up to ${coveredPickedPerkCount}/${pickedPerkCount} perks pickable`
 }
 
+export function formatBackgroundFitExpectedBuildPerksLabel(
+  expectedCoveredPickedPerkCount: number,
+  pickedPerkCount: number,
+): string {
+  return `Expected ${formatBackgroundFitScoreLabel(
+    expectedCoveredPickedPerkCount,
+  )}/${pickedPerkCount} build perks`
+}
+
 export function formatBackgroundFitGuaranteedPerksLabel(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
@@ -270,12 +279,6 @@ export function formatBackgroundFitMatchedPerkGroupsLabel(
   return `${matchedPerkGroupCount}/${supportedBuildTargetPerkGroupCount} matched perk group${
     supportedBuildTargetPerkGroupCount === 1 ? '' : 's'
   }`
-}
-
-export function formatBackgroundFitMaximumTotalPerkGroupsLabel(
-  maximumTotalPerkGroupCount: number,
-): string {
-  return `Maximum ${maximumTotalPerkGroupCount} total perk groups`
 }
 
 export function getPerkRowClassName({

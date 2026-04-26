@@ -50,7 +50,7 @@ describe('build social image', () => {
     expect(svg).toContain('3 picked perks')
     expect(svg).toContain('Perfect Focus')
     expect(svg).toContain('Best background fits')
-    expect(svg).toContain('guaranteed perks')
+    expect(svg).toContain('expected perks')
     expect(svg).not.toContain('expected perk groups')
     expect(svg).toContain('BATTLE BROTHERS')
     expect(svg).toContain('LEGENDS')
@@ -84,6 +84,7 @@ describe('build social image', () => {
       })),
       topBackgroundFits: [1, 2, 3].map((backgroundIndex) => ({
         backgroundName: `Background ${backgroundIndex}`,
+        expectedCoveredPickedPerkCount: backgroundIndex + 0.5,
         guaranteedCoveredPickedPerkCount: backgroundIndex,
         iconPath: null,
       })),

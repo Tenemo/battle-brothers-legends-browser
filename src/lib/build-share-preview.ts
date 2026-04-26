@@ -12,6 +12,7 @@ export type BuildSharePreviewPerk = {
 
 export type BuildSharePreviewBackgroundFit = {
   backgroundName: string
+  expectedCoveredPickedPerkCount: number
   guaranteedCoveredPickedPerkCount: number
   iconPath: string | null
 }
@@ -81,6 +82,7 @@ function createBackgroundFitPreview(
 ): BuildSharePreviewBackgroundFit {
   return {
     backgroundName: backgroundFit.backgroundName,
+    expectedCoveredPickedPerkCount: backgroundFit.expectedCoveredPickedPerkCount,
     guaranteedCoveredPickedPerkCount: getGuaranteedCoveredPickedPerkCount(backgroundFit.matches),
     iconPath: backgroundFit.iconPath,
   }

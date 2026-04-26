@@ -34,7 +34,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   ).toHaveAttribute('aria-expanded', 'true')
   await expect(
     backgroundFitPanel.getByText(
-      /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+      /Ranked by guaranteed build perks first, then expected build perks/i,
     ),
   ).toBeVisible()
   await expect(
@@ -56,20 +56,20 @@ test('shows the background fit panel for a picked build and keeps the shell view
       ),
     )
     .toBeGreaterThan(0)
-  await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
+  await expect(apprenticeCard.getByText('Expected 1/1 build perks')).toBeVisible()
   await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
   await expect(apprenticeCard.getByText('1/1 matched perk group')).toBeVisible()
-  await expect(apprenticeCard.getByText(/Maximum \d+ total perk groups/)).toBeVisible()
+  await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
   await expect(apprenticeCard.locator('.background-fit-accordion-summary-row')).toHaveCount(2)
   await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
-  const maximumTotalGroupsBadge = apprenticeCard
+  const expectedBuildPerksBadge = apprenticeCard
     .locator('.background-fit-summary-badge')
-    .filter({ hasText: /Maximum \d+ total perk groups/ })
+    .filter({ hasText: 'Expected 1/1 build perks' })
 
-  await expect(maximumTotalGroupsBadge).not.toHaveAttribute('title', /.+/)
-  await expect(maximumTotalGroupsBadge).toHaveAttribute(
+  await expect(expectedBuildPerksBadge).not.toHaveAttribute('title', /.+/)
+  await expect(expectedBuildPerksBadge).toHaveAttribute(
     'aria-label',
-    /Overall hard cap for this background/i,
+    /Expected build-perk coverage for this background/i,
   )
   await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute(
     'aria-hidden',
@@ -163,7 +163,7 @@ test('filters the background fit list with the background search field', async (
     .first()
 
   await expect(backgroundSearchInput).toBeVisible()
-  await expect(oathtakerCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
+  await expect(oathtakerCard.getByText('Expected 0.3/1 build perks')).toBeVisible()
   const oathtakerRankBeforeFiltering = await page.evaluate(() => {
     const oathtakerCard = [...document.querySelectorAll('.background-fit-card')].find(
       (backgroundFitCard) =>
@@ -440,7 +440,7 @@ test('keeps the background search enabled without any picked perks', async ({ pa
   await expect(backgroundFitPanel.locator('.search-highlight')).toContainText(['Oath'])
   await expect(
     backgroundFitPanel.getByText(
-      /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+      /Ranked by guaranteed build perks first, then expected build perks/i,
     ),
   ).toHaveCount(0)
 })
@@ -510,7 +510,7 @@ test('keeps dense background names readable from a shared build url and starts c
   ).toHaveAttribute('aria-expanded', 'true')
   await expect(
     backgroundFitPanel.getByText(
-      /Ranked by guaranteed perks pickable first, then total perks pickable/i,
+      /Ranked by guaranteed build perks first, then expected build perks/i,
     ),
   ).toBeVisible()
 

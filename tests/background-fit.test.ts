@@ -415,6 +415,7 @@ describe('background fit', () => {
 
     expect(probabilitiesByPerkGroupId.get('AxeTree')).toBe(1)
     expect(probabilitiesByPerkGroupId.get('BowTree')).toBe(1)
+    expect(duplicateExplicitFit.expectedCoveredPickedPerkCount).toBe(2)
     expect(duplicateExplicitFit.maximumTotalPerkGroupCount).toBe(2)
     expect(duplicateExplicitFit.matches).toEqual(
       expect.arrayContaining([
@@ -422,6 +423,52 @@ describe('background fit', () => {
         expect.objectContaining({ perkGroupId: 'BowTree' }),
       ]),
     )
+  })
+
+  test('calculates expected covered picked perks without double-counting alternate placements', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const alternateCoveragePerk = createPerk({
+      id: 'perk.traits.calm_or_bold',
+      perkConstName: 'LegendCalmOrBold',
+      perkName: 'Calm or bold',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'CalmTree',
+          perkGroupName: 'Calm',
+        }),
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'BoldTree',
+          perkGroupName: 'Bold',
+        }),
+      ],
+    })
+    const balancedScholarFit = engine
+      .getBackgroundFitView([alternateCoveragePerk])
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.traits_fill',
+      )
+
+    expect(balancedScholarFit?.expectedMatchedPerkGroupCount).toBe(1.5)
+    expect(balancedScholarFit?.expectedCoveredPickedPerkCount).toBe(1)
+  })
+
+  test('calculates expected covered picked perks across deterministic fills and class dependencies', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const balancedScholarFit = engine
+      .getBackgroundFitView([samplePerks[4], samplePerks[5], samplePerks[6]])
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.traits_fill',
+      )
+    const classRollFit = engine
+      .getBackgroundFitView([samplePerks[10], samplePerks[11]])
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.class_roll',
+      )
+
+    expect(balancedScholarFit?.expectedCoveredPickedPerkCount).toBe(2)
+    expect(classRollFit?.expectedCoveredPickedPerkCount).toBe(1)
   })
 
   test('uses exact fill-to-minimum probabilities for deterministic categories', () => {
