@@ -65,3 +65,25 @@ select {
   min-height: 100vh;
   overflow: hidden;
 }
+
+@media (max-width: 760px) {
+  html {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  body {
+    height: auto;
+    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: visible;
+  }
+
+  #root {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+  }
+}

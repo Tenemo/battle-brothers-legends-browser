@@ -582,6 +582,11 @@
 }
 
 @media (max-width: 760px) {
+  .build-planner {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
   .planner-row {
     grid-template-columns: 1fr;
   }

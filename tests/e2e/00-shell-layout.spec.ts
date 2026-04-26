@@ -41,3 +41,35 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
     )
     .toBeLessThanOrEqual(1)
 })
+
+test('uses normal page scrolling on mobile while keeping core controls usable', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page, { height: 740, width: 360 })
+
+  await expect
+    .poll(async () =>
+      page.evaluate(() => ({
+        documentOverflow: window.getComputedStyle(document.documentElement).overflowY,
+        documentScrollHeight: document.documentElement.scrollHeight,
+        viewportHeight: window.innerHeight,
+      })),
+    )
+    .toMatchObject({
+      documentOverflow: 'auto',
+    })
+
+  const scrollableDocumentHeight = await page.evaluate(
+    () => document.documentElement.scrollHeight - window.innerHeight,
+  )
+  expect(scrollableDocumentHeight).toBeGreaterThan(600)
+
+  await page.evaluate(() => window.scrollTo(0, 640))
+  await expect.poll(async () => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+
+  await page.getByLabel('Search perks').fill('student')
+  await expect(page.getByRole('button', { name: 'Inspect Student' })).toBeVisible()
+  await page.getByRole('button', { name: 'Add Student to build from results' }).click()
+  await expect(getBuildPerksBar(page).getByRole('button', { name: 'Remove Student from build' }))
+    .toBeVisible()
+})

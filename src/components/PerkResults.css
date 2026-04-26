@@ -101,3 +101,17 @@
 .tier-badge {
   color: var(--accent-soft);
 }
+
+@media (max-width: 760px) {
+  .results-panel {
+    overflow: visible;
+  }
+
+  .results-list {
+    flex: 0 1 auto;
+    max-height: min(42rem, 68vh);
+    min-height: 18rem;
+    overflow: auto;
+    content-visibility: visible;
+  }
+}

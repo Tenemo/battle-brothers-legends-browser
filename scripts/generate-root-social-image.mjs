@@ -50,7 +50,13 @@ export async function createRootSocialImageSvg({
   ${renderSocialImageBackground()}
   <rect x="65" y="65" width="1070" height="502" fill="#16100d" stroke="#6f4f27" stroke-width="2" />
   <rect x="65" y="65" width="1070" height="502" fill="url(#panel-light)" />
-  <g transform="translate(126 186)">
+  <text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>
+  ${renderSocialImageBrand({
+    fontSize: 26,
+    x: 96,
+    y: 214,
+  })}
+  <g transform="translate(126 268)">
     <rect x="0" y="0" width="258" height="258" rx="129" fill="#090908" fill-opacity="0.42" />
     <circle cx="129" cy="129" r="120" fill="#0f1111" stroke="#343432" stroke-width="6" />
     <circle cx="129" cy="129" r="114" fill="#151615" stroke="#575653" stroke-width="3" />
@@ -60,9 +66,7 @@ export async function createRootSocialImageSvg({
         : ''
     }
   </g>
-  ${renderSocialImageBrand()}
-  <text x="430" y="282" fill="#f4eee6" font-family="Cinzel, Georgia, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>
-  <text x="430" y="344" fill="#fffaf0" font-family="Source Sans 3, Arial, sans-serif" font-size="41" font-weight="600">
+  <text x="430" y="320" fill="#fffaf0" font-family="Source Sans 3, Arial, sans-serif" font-size="41" font-weight="600">
     <tspan x="430" dy="0">Search perks, inspect tree</tspan>
     <tspan x="430" dy="48">placement, and plan builds</tspan>
     <tspan x="430" dy="48">with exact in-mod labels</tspan>

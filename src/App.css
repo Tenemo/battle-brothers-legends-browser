@@ -576,6 +576,51 @@
 }
 
 @media (max-width: 760px) {
+  .app-shell {
+    height: auto;
+    max-height: none;
+    min-height: 100vh;
+    overflow: visible;
+  }
+
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .background-fit-panel,
+  .sidebar,
+  .results-panel,
+  .detail-panel {
+    height: auto;
+    min-height: 0;
+  }
+
+  .results-panel {
+    order: 1;
+  }
+
+  .detail-panel {
+    order: 2;
+  }
+
+  .sidebar {
+    order: 3;
+  }
+
+  .background-fit-panel {
+    order: 4;
+  }
+
+  .sidebar,
+  .results-panel,
+  .detail-panel {
+    overflow: visible;
+  }
+
   .hero-top-bar,
   .hero-top-actions {
     align-items: flex-start;

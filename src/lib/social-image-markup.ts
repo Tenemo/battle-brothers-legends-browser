@@ -11,6 +11,12 @@ type SocialImageFooterOptions = {
   siteUrlY: number
 }
 
+type SocialImageBrandOptions = {
+  fontSize?: number
+  x?: number
+  y?: number
+}
+
 export function escapeXml(value: string): string {
   return value
     .replaceAll('&', '&amp;')
@@ -57,8 +63,12 @@ export function renderSocialImageBackground(): string {
   <rect width="${socialImageWidth}" height="${socialImageHeight}" fill="url(#line-pattern)" opacity="0.32" />`
 }
 
-export function renderSocialImageBrand(): string {
-  return `<text x="80" y="98" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">
+export function renderSocialImageBrand({
+  fontSize = 16,
+  x = 80,
+  y = 98,
+}: SocialImageBrandOptions = {}): string {
+  return `<text x="${x}" y="${y}" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="${fontSize}" font-weight="400" letter-spacing="0.16em">
     <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
   </text>`
 }
@@ -69,7 +79,7 @@ export function renderSocialImageFooter({
   siteUrlY,
 }: SocialImageFooterOptions): string {
   return `<text x="12" y="${siteUrlY}" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="${siteUrlFontSize}" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
-  <text x="1196" y="624" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
+  <text x="${socialImageWidth - 12}" y="${siteUrlY}" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
     formatSocialImageReferenceVersion(referenceVersion),
   )}</text>`
 }

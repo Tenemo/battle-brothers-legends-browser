@@ -64,7 +64,7 @@ describe('build social image', () => {
     expect(svg).toContain('battlebrothers.academy')
     expect(svg).toContain('text-decoration="underline"')
     expect(svg).not.toContain('<line x1="4" y1="628"')
-    expect(svg).toContain('<text x="1196" y="624"')
+    expect(svg).toContain('<text x="1188" y="620"')
     expect(svg).not.toContain('Shared perk groups')
     expect(svg).not.toContain('>Perfect Focus, Peaceable, Clarity<')
     expect(svg).not.toContain('<script')

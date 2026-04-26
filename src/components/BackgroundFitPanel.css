@@ -436,6 +436,18 @@
 }
 
 @media (max-width: 760px) {
+  .background-fit-panel {
+    min-height: 3.25rem;
+  }
+
+  .background-fit-panel.is-expanded {
+    min-height: 12rem;
+  }
+
+  .background-fit-panel-body {
+    max-height: 24rem;
+  }
+
   .background-fit-card-heading,
   .background-fit-card-header-main {
     width: 100%;

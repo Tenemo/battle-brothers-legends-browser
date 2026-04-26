@@ -12,14 +12,17 @@ describe('root social image generation', () => {
 
     expect(svg).toContain('<tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>')
     expect(svg).toContain('letter-spacing="0.16em"')
-    expect(svg).toContain('font-family="Cinzel, Georgia, serif"')
+    expect(svg).toContain('font-family="Cinzel, serif"')
     expect(svg).toContain('letter-spacing="0.02em"')
     expect(svg).toContain(
-      '<text x="80" y="98" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="16" font-weight="400" letter-spacing="0.16em">',
+      '<text x="96" y="214" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="26" font-weight="400" letter-spacing="0.16em">',
     )
     expect(svg).toContain('font-size="78"')
     expect(svg).toContain('font-size="41"')
     expect(svg).toContain('Perks browser')
+    expect(svg).toContain(
+      '<text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>',
+    )
     expect(svg).toContain('Search perks, inspect tree')
     expect(svg).toContain('with exact in-mod labels')
     expect(svg).toContain('and real game icons.')
@@ -27,9 +30,11 @@ describe('root social image generation', () => {
     expect(svg).toContain('fill="url(#warm-accent)"')
     expect(svg).toContain('fill="url(#line-pattern)"')
     expect(svg).toContain('width="258" height="258"')
+    expect(svg).toContain('<g transform="translate(126 268)">')
+    expect(svg).toContain('<text x="430" y="320"')
     expect(svg).toContain('<text x="12" y="614"')
     expect(svg).toContain('text-decoration="underline"')
-    expect(svg).toContain('<text x="1196" y="624"')
+    expect(svg).toContain('<text x="1188" y="614"')
     expect(svg).toContain('Legends 19.3.17')
     expect(svg).not.toContain('<line x1="4" y1="626"')
     expect(svg).not.toContain('PERKS BROWSER')
