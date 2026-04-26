@@ -23,6 +23,8 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitResultsScroll = backgroundFitPanel.getByTestId('background-fit-panel-body')
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
   const apprenticeCard = backgroundFitPanel
     .locator('.background-fit-card')
     .filter({ hasText: 'Apprentice' })
@@ -88,6 +90,26 @@ test('shows the background fit panel for a picked build and keeps the shell view
       }),
     )
     .toBeLessThanOrEqual(1)
+  const searchInputTopBeforeBackgroundScroll = await backgroundSearchInput.evaluate(
+    (element) => element.getBoundingClientRect().top,
+  )
+
+  await backgroundFitResultsScroll.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await expect
+    .poll(async () =>
+      backgroundSearchInput.evaluate(
+        (element, searchInputTopBeforeScroll) =>
+          Math.abs(element.getBoundingClientRect().top - searchInputTopBeforeScroll),
+        searchInputTopBeforeBackgroundScroll,
+      ),
+    )
+    .toBeLessThanOrEqual(1)
+  await expect(backgroundSearchInput).toBeVisible()
+  await backgroundFitResultsScroll.evaluate((element) => {
+    element.scrollTop = 0
+  })
 
   await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
   await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute(
@@ -553,7 +575,8 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
   await page.goto(denseSharedBuildUrl)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
+  const backgroundFitPanelBody = backgroundFitPanel.locator('.background-fit-panel-body')
+  const backgroundFitResultsScroll = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
   await backgroundSearchInput.fill('hedge')
@@ -592,14 +615,14 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
     .toBeGreaterThanOrEqual(280)
   await expect
     .poll(async () =>
-      backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
+      backgroundFitResultsScroll.evaluate((element) => element.scrollHeight - element.clientHeight),
     )
     .toBeLessThanOrEqual(1)
   await expect
     .poll(async () =>
       page.evaluate(() => {
         const backgroundFitPanelBody = document.querySelector(
-          '[data-testid="background-fit-panel-body"]',
+          '.background-fit-results-scroll',
         )
         const hedgeKnightHeading = [...document.querySelectorAll('.background-fit-card h3')].find(
           (heading) => heading.textContent?.trim() === 'Hedge Knight',

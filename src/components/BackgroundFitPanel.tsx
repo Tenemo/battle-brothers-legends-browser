@@ -44,7 +44,7 @@ export function BackgroundFitPanel({
     expandedBackgroundFitKey: null,
     rankedBackgroundFitKeySignature: '',
   })
-  const backgroundFitPanelBodyRef = useRef<HTMLDivElement | null>(null)
+  const backgroundFitResultsScrollRef = useRef<HTMLDivElement | null>(null)
   const backgroundFitFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const hasPickedPerks = pickedPerkCount > 0
   const hasSupportedBackgroundFitTargets =
@@ -98,20 +98,20 @@ export function BackgroundFitPanel({
       return
     }
 
-    const backgroundFitPanelBody = backgroundFitPanelBodyRef.current
+    const backgroundFitResultsScroll = backgroundFitResultsScrollRef.current
 
-    if (backgroundFitPanelBody === null) {
+    if (backgroundFitResultsScroll === null) {
       return
     }
 
-    if (typeof backgroundFitPanelBody.scrollTo === 'function') {
-      backgroundFitPanelBody.scrollTo({
+    if (typeof backgroundFitResultsScroll.scrollTo === 'function') {
+      backgroundFitResultsScroll.scrollTo({
         top: 0,
       })
       return
     }
 
-    backgroundFitPanelBody.scrollTop = 0
+    backgroundFitResultsScroll.scrollTop = 0
   }, [isExpanded, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds])
 
   useEffect(() => {
@@ -149,12 +149,7 @@ export function BackgroundFitPanel({
         <div
           aria-hidden={!isExpanded}
           className="background-fit-panel-body"
-          data-testid="background-fit-panel-body"
           hidden={!isExpanded}
-          onScrollCapture={() => {
-            onClearPerkGroupHover()
-          }}
-          ref={backgroundFitPanelBodyRef}
         >
           <ClearableSearchField
             className="background-fit-search-field"
@@ -253,49 +248,61 @@ export function BackgroundFitPanel({
               ) : null}
             </div>
           )}
-          {visibleRankedBackgroundFits.length > 0 ? (
-            <ol className="background-fit-ranking" data-testid="background-fit-ranking">
-              {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
-                <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
-                  <BackgroundFitCard
-                    backgroundFit={backgroundFit}
-                    expandedBackgroundFitKey={expandedBackgroundFitKey}
-                    hoveredPerkGroupKey={hoveredPerkGroupKey}
-                    onClearPerkGroupHover={onClearPerkGroupHover}
-                    onClosePerkGroupHover={onClosePerkGroupHover}
-                    onInspectPerkGroup={onInspectPerkGroup}
-                    onOpenPerkGroupHover={onOpenPerkGroupHover}
-                    onToggle={(backgroundFitKey: string) => {
-                      onClearPerkGroupHover()
-                      setBackgroundFitAccordionState({
-                        expandedBackgroundFitKey:
-                          expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
-                        rankedBackgroundFitKeySignature,
-                      })
-                    }}
-                    pickedPerkCount={pickedPerkCount}
-                    query={deferredBackgroundFitQuery}
-                    rank={
-                      rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
-                      backgroundFitIndex
-                    }
-                    supportedBuildTargetPerkGroupCount={
-                      backgroundFitView.supportedBuildTargetPerkGroups.length
-                    }
-                  />
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div className="background-fit-empty-state">
-              <p className="background-fit-summary-copy">
-                No backgrounds match "{deferredBackgroundFitQuery.trim()}".
-              </p>
-              <p className="background-fit-summary-copy">
-                Try a different background name or clear the search.
-              </p>
-            </div>
-          )}
+          <div
+            aria-hidden={!isExpanded}
+            className="background-fit-results-scroll"
+            data-testid="background-fit-panel-body"
+            onScrollCapture={() => {
+              onClearPerkGroupHover()
+            }}
+            ref={backgroundFitResultsScrollRef}
+          >
+            {visibleRankedBackgroundFits.length > 0 ? (
+              <ol className="background-fit-ranking" data-testid="background-fit-ranking">
+                {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
+                  <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
+                    <BackgroundFitCard
+                      backgroundFit={backgroundFit}
+                      expandedBackgroundFitKey={expandedBackgroundFitKey}
+                      hoveredPerkGroupKey={hoveredPerkGroupKey}
+                      onClearPerkGroupHover={onClearPerkGroupHover}
+                      onClosePerkGroupHover={onClosePerkGroupHover}
+                      onInspectPerkGroup={onInspectPerkGroup}
+                      onOpenPerkGroupHover={onOpenPerkGroupHover}
+                      onToggle={(backgroundFitKey: string) => {
+                        onClearPerkGroupHover()
+                        setBackgroundFitAccordionState({
+                          expandedBackgroundFitKey:
+                            expandedBackgroundFitKey === backgroundFitKey
+                              ? null
+                              : backgroundFitKey,
+                          rankedBackgroundFitKeySignature,
+                        })
+                      }}
+                      pickedPerkCount={pickedPerkCount}
+                      query={deferredBackgroundFitQuery}
+                      rank={
+                        rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
+                        backgroundFitIndex
+                      }
+                      supportedBuildTargetPerkGroupCount={
+                        backgroundFitView.supportedBuildTargetPerkGroups.length
+                      }
+                    />
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className="background-fit-empty-state">
+                <p className="background-fit-summary-copy">
+                  No backgrounds match "{deferredBackgroundFitQuery.trim()}".
+                </p>
+                <p className="background-fit-summary-copy">
+                  Try a different background name or clear the search.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         <button
