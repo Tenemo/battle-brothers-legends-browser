@@ -335,8 +335,30 @@ export default function App() {
     }
   }
 
-  function handleInspectPlannerPerk(perkId: string) {
-    setSelectedPerkId(perkId)
+  function handleInspectPlannerPerk(
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) {
+    const inspectedPerk = allPerksById.get(perkId)
+    const nextPerkGroupSelection = perkGroupSelection ?? inspectedPerk?.placements[0] ?? null
+
+    startTransition(() => {
+      setQuery('')
+      setSelectedPerkId(perkId)
+
+      if (nextPerkGroupSelection === null) {
+        setSelectedCategoryNames([])
+        setExpandedCategoryNames([])
+        setSelectedPerkGroupIdsByCategory({})
+        return
+      }
+
+      setSelectedCategoryNames([nextPerkGroupSelection.categoryName])
+      setExpandedCategoryNames([nextPerkGroupSelection.categoryName])
+      setSelectedPerkGroupIdsByCategory({
+        [nextPerkGroupSelection.categoryName]: [nextPerkGroupSelection.perkGroupId],
+      })
+    })
   }
 
   function handleInspectPerkGroup(categoryName: string, perkGroupId: string) {

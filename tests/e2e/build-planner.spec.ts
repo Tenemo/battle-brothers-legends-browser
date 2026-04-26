@@ -173,15 +173,18 @@ test('build planner splits shared and individual perk groups without internal sc
     }
   })
 
+  const pickedPerkRemoveControl = pickedPerkTile.locator('.planner-slot-remove-button')
+  await expect(pickedPerkRemoveControl).toBeHidden()
+
   await pickedPerkTile.hover()
+  const pickedPerkRemoveButton = pickedPerkTile.getByRole('button', {
+    name: 'Remove Clarity from build',
+  })
 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(pickedPerkTile).toHaveCSS('transform', 'none')
-  await expect
-    .poll(async () =>
-      pickedPerkTile.evaluate((element) => window.getComputedStyle(element, '::after').opacity),
-    )
-    .toBe('1')
+  await expect(pickedPerkRemoveControl).toBeVisible()
+  await expect(pickedPerkRemoveButton).toBeVisible()
 
   const hoverMetricsAfter = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
@@ -204,7 +207,9 @@ test('build planner splits shared and individual perk groups without internal sc
     Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right),
   ).toBeLessThanOrEqual(1)
 
-  await pickedPerkTile.focus()
+  await pickedPerkTile
+    .getByRole('button', { name: 'View Clarity from build planner' })
+    .focus()
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
   await expect(page.getByRole('tooltip')).toContainText(
     /An additional \+10% of any damage ignores armor/i,
@@ -354,9 +359,11 @@ test('links search result hover highlighting with matching build planner perks',
   await searchPerks(page, 'Perfect Focus')
   await addPerkToBuildFromResults(page, 'Perfect Focus')
 
-  const perfectFocusResultsButton = page.getByRole('button', { name: 'Inspect Perfect Focus' })
-  const perfectFocusResultsRow = page.locator('.perk-row', {
-    has: perfectFocusResultsButton,
+  const perfectFocusResultsButton = page
+    .getByTestId('results-list')
+    .getByRole('button', { name: 'Inspect Perfect Focus' })
+  const perfectFocusResultsRow = page.getByTestId('results-list').locator('.perk-row', {
+    hasText: 'Perfect Focus',
   })
   const sharedPerfectFocusButton = getBuildSharedGroupsList(page).getByRole('button', {
     name: 'Perfect Focus',
@@ -364,8 +371,8 @@ test('links search result hover highlighting with matching build planner perks',
   const individualPerfectFocusButton = getBuildIndividualGroupsList(page).getByRole('button', {
     name: 'Perfect Focus',
   })
-  const pickedPerfectFocusButton = getBuildPerksBar(page).getByRole('button', {
-    name: 'Remove Perfect Focus from build',
+  const pickedPerfectFocusTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Perfect Focus',
   })
 
   await perfectFocusResultsButton.hover()
@@ -373,18 +380,43 @@ test('links search result hover highlighting with matching build planner perks',
   await expect(perfectFocusResultsRow).toHaveClass(/is-highlighted/)
   await expect(sharedPerfectFocusButton).toHaveClass(/is-highlighted/)
   await expect(individualPerfectFocusButton).toHaveClass(/is-highlighted/)
-  await expect(pickedPerfectFocusButton).toHaveClass(/is-highlighted/)
+  await expect(pickedPerfectFocusTile).toHaveClass(/is-highlighted/)
 
   await sharedPerfectFocusButton.hover()
 
   await expect(perfectFocusResultsRow).toHaveClass(/is-highlighted/)
   await expect(sharedPerfectFocusButton).toHaveClass(/is-highlighted/)
   await expect(individualPerfectFocusButton).toHaveClass(/is-highlighted/)
-  await expect(pickedPerfectFocusButton).toHaveClass(/is-highlighted/)
+  await expect(pickedPerfectFocusTile).toHaveClass(/is-highlighted/)
   await expect(perfectFocusResultsRow).toHaveCSS('transform', 'none')
   await expect(sharedPerfectFocusButton).toHaveCSS('transform', 'none')
   await expect(individualPerfectFocusButton).toHaveCSS('transform', 'none')
-  await expect(pickedPerfectFocusButton).toHaveCSS('transform', 'none')
+  await expect(pickedPerfectFocusTile).toHaveCSS('transform', 'none')
+})
+
+test('inspects picked perk tiles without removing them', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  await searchPerks(page, 'Perfect Focus')
+  await page.getByRole('button', { name: 'Enable category Magic' }).click()
+  await page.getByRole('button', { name: 'Toggle perk group Deadeye' }).click()
+
+  await getBuildPerksBar(page)
+    .getByRole('button', { name: 'View Clarity from build planner' })
+    .click()
+
+  await expect(page.getByText('1 perk picked.')).toBeVisible()
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
+    /is-active/,
+  )
+  await expect(page.getByRole('button', { name: 'Inspect Clarity' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
+  await expect(page.getByText('Build slot 1')).toBeVisible()
 })
 
 test('clears the build and restores planner placeholders', async ({ page }) => {

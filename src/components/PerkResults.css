@@ -6,10 +6,6 @@
   padding: 0.72rem;
 }
 
-.perk-row.is-highlighted {
-  border-color: var(--accent-color);
-}
-
 .perk-row.is-picked {
   border-color: var(--accent-color);
 }
@@ -57,6 +53,11 @@
 
 .perk-row:hover:not(.is-selected) {
   background: rgb(25 20 17 / 0.88);
+}
+
+.perk-row:hover,
+.perk-row.is-highlighted.is-picked {
+  border-color: var(--accent-color);
 }
 
 .perk-row-select {

@@ -409,16 +409,11 @@
 
 .planner-slot-perk {
   position: relative;
-  appearance: none;
   display: flex;
-  gap: 0.45rem;
-  align-items: center;
+  align-items: stretch;
   width: min(var(--planner-slot-width), 100%);
-  padding: 0.38rem 0.46rem;
+  padding: 0;
   color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
   isolation: isolate;
   overflow: hidden;
   transition:
@@ -427,29 +422,49 @@
     box-shadow 160ms ease;
 }
 
-.planner-track-perks .planner-slot-perk::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  border-radius: inherit;
-  background: rgb(190 80 64 / 0.16);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 120ms ease;
-}
-
-.planner-track-perks .planner-slot-perk:hover::after,
-.planner-track-perks .planner-slot-perk:focus-visible::after {
-  opacity: 1;
-}
-
 .planner-slot-perk:hover,
-.planner-slot-perk:focus-visible,
+.planner-slot-perk:focus-within,
 .planner-slot-perk.is-highlighted {
   border-color: var(--accent-color);
   color: var(--text-primary);
   box-shadow: inset 0 0 0 1px rgb(204 155 84 / 0.12);
+}
+
+.planner-slot-perk-inspect {
+  appearance: none;
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+  width: 100%;
+  min-height: calc(var(--planner-perk-row-min-height) - 2px);
+  border: 0;
+  border-radius: inherit;
+  padding: 0.38rem 2.34rem 0.38rem 0.46rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.planner-slot-perk-inspect:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: -2px;
+}
+
+.planner-slot-remove-button {
+  right: 0.26rem;
+  z-index: 3;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.planner-slot-perk:hover .planner-slot-remove-button,
+.planner-slot-perk:focus-within .planner-slot-remove-button {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
 }
 
 .planner-slot-placeholder {

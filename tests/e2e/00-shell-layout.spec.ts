@@ -108,7 +108,9 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
   await expect(page.getByRole('button', { name: 'Inspect Student' })).toBeVisible()
   await page.getByRole('button', { name: 'Add Student to build from results' }).click()
   await expect(
-    getBuildPerksBar(page).getByRole('button', { name: 'Remove Student from build' }),
+    getBuildPerksBar(page).getByRole('button', {
+      name: 'View Student from build planner',
+    }),
   ).toBeVisible()
 })
 

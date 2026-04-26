@@ -510,17 +510,20 @@ describe('app', () => {
       name: 'Perfect Focus',
     })
     const pickedPerfectFocusButton = within(buildPerksBar).getByRole('button', {
-      name: 'Remove Perfect Focus from build',
+      name: 'View Perfect Focus from build planner',
     })
+    const pickedPerfectFocusTile = pickedPerfectFocusButton.closest('.planner-slot-perk')
     const sharedClarityButton = within(buildSharedGroupsList).getByRole('button', {
       name: 'Clarity',
     })
+
+    expect(pickedPerfectFocusTile).not.toBeNull()
 
     fireEvent.mouseEnter(sharedPerfectFocusButton)
 
     expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
     expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
-    expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(pickedPerfectFocusTile).toHaveClass('is-highlighted')
     expect(sharedClarityButton).not.toHaveClass('is-highlighted')
   })
 
@@ -557,17 +560,19 @@ describe('app', () => {
       name: 'Perfect Focus',
     })
     const pickedPerfectFocusButton = within(buildPerksBar).getByRole('button', {
-      name: 'Remove Perfect Focus from build',
+      name: 'View Perfect Focus from build planner',
     })
+    const pickedPerfectFocusTile = pickedPerfectFocusButton.closest('.planner-slot-perk')
 
     expect(perfectFocusResultsRow).not.toBeNull()
+    expect(pickedPerfectFocusTile).not.toBeNull()
 
     fireEvent.mouseEnter(perfectFocusResultsRow as HTMLElement)
 
     expect(perfectFocusResultsRow).toHaveClass('is-highlighted')
     expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
     expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
-    expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(pickedPerfectFocusTile).toHaveClass('is-highlighted')
 
     fireEvent.mouseLeave(perfectFocusResultsRow as HTMLElement)
     fireEvent.mouseEnter(sharedPerfectFocusButton)
@@ -575,7 +580,7 @@ describe('app', () => {
     expect(perfectFocusResultsRow).toHaveClass('is-highlighted')
     expect(sharedPerfectFocusButton).toHaveClass('is-highlighted')
     expect(individualPerfectFocusButton).toHaveClass('is-highlighted')
-    expect(pickedPerfectFocusButton).toHaveClass('is-highlighted')
+    expect(pickedPerfectFocusTile).toHaveClass('is-highlighted')
   })
 
   test('shows picked-perk stars next to category and perk group counts based on the current build', async () => {
@@ -650,7 +655,7 @@ describe('app', () => {
     )
 
     const pickedPerkTile = within(screen.getByTestId('build-perks-bar')).getByRole('button', {
-      name: 'Remove Clarity from build',
+      name: 'View Clarity from build planner',
     })
 
     fireEvent.focus(pickedPerkTile)
@@ -707,6 +712,20 @@ describe('app', () => {
     await user.click(screen.getByRole('button', { name: 'Add Clarity to build' }))
 
     expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
+
+    await user.click(
+      within(screen.getByTestId('build-perks-bar')).getByRole('button', {
+        name: 'View Clarity from build planner',
+      }),
+    )
+
+    expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
+    expect(screen.getByLabelText('Search perks')).toHaveValue('')
+    expect(screen.getByRole('button', { name: 'Disable category Traits' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
+      'is-active',
+    )
+    expect(screen.getByText('Build slot 1')).toBeInTheDocument()
 
     await user.click(
       within(screen.getByTestId('build-perks-bar')).getByRole('button', {
