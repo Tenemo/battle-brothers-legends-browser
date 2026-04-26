@@ -1,9 +1,10 @@
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
 import './BackgroundFitPanel.css'
 import type { BackgroundFitView } from '../lib/background-fit'
+import { isOriginBackgroundFit } from '../lib/background-origin'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
-import { BackgroundFitRailChevron, ClearableSearchField } from './SharedControls'
+import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
 
 export function BackgroundFitPanel({
   backgroundFitView,
@@ -29,7 +30,10 @@ export function BackgroundFitPanel({
   pickedPerkCount: number
 }) {
   const [backgroundFitInputValue, setBackgroundFitInputValue] = useState('')
+  const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(true)
+  const [isBackgroundFilterMenuOpen, setIsBackgroundFilterMenuOpen] = useState(false)
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitInputValue)
+  const backgroundFitFilterMenuId = useId()
   const [backgroundFitAccordionState, setBackgroundFitAccordionState] = useState<{
     expandedBackgroundFitKey: string | null
     rankedBackgroundFitKeySignature: string
@@ -43,16 +47,22 @@ export function BackgroundFitPanel({
     backgroundFitView.supportedBuildTargetPerkGroups.length > 0
   const hasUnsupportedBackgroundFitTargets =
     backgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
-  const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
+  const hasActiveBackgroundFitSearch =
+    backgroundFitInputValue.trim().length > 0 || !shouldIncludeOriginBackgrounds
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
   const visibleRankedBackgroundFits = useMemo(
     () =>
-      normalizedBackgroundFitQuery.length === 0
-        ? backgroundFitView.rankedBackgroundFits
-        : backgroundFitView.rankedBackgroundFits.filter((backgroundFit) =>
-            getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery),
-          ),
-    [backgroundFitView, normalizedBackgroundFitQuery],
+      backgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
+        if (!shouldIncludeOriginBackgrounds && isOriginBackgroundFit(backgroundFit)) {
+          return false
+        }
+
+        return (
+          normalizedBackgroundFitQuery.length === 0 ||
+          getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery)
+        )
+      }),
+    [backgroundFitView, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds],
   )
   const rankedBackgroundFitIndexByKey = useMemo(
     () =>
@@ -99,7 +109,7 @@ export function BackgroundFitPanel({
     }
 
     backgroundFitPanelBody.scrollTop = 0
-  }, [isExpanded, normalizedBackgroundFitQuery])
+  }, [isExpanded, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds])
 
   return (
     <>
@@ -130,6 +140,62 @@ export function BackgroundFitPanel({
               setBackgroundFitInputValue(nextValue)
             }}
             placeholder="Search backgrounds"
+            trailingControl={
+              <div
+                className="background-fit-filter-menu"
+                onKeyDown={(event) => {
+                  if (event.key !== 'Escape') {
+                    return
+                  }
+
+                  event.preventDefault()
+                  setIsBackgroundFilterMenuOpen(false)
+                  event.currentTarget
+                    .querySelector<HTMLButtonElement>('.background-fit-filter-button')
+                    ?.focus()
+                }}
+              >
+                <button
+                  aria-controls={backgroundFitFilterMenuId}
+                  aria-expanded={isBackgroundFilterMenuOpen}
+                  aria-label="Filter backgrounds"
+                  className={
+                    shouldIncludeOriginBackgrounds
+                      ? 'background-fit-filter-button'
+                      : 'background-fit-filter-button has-active-filter'
+                  }
+                  onClick={() => {
+                    onClearPerkGroupHover()
+                    setIsBackgroundFilterMenuOpen(
+                      (wasBackgroundFilterMenuOpen) => !wasBackgroundFilterMenuOpen,
+                    )
+                  }}
+                  type="button"
+                >
+                  <FunnelIcon className="background-fit-filter-icon" />
+                </button>
+                {isBackgroundFilterMenuOpen ? (
+                  <div
+                    aria-label="Background filters"
+                    className="background-fit-filter-popover"
+                    id={backgroundFitFilterMenuId}
+                    role="group"
+                  >
+                    <label className="background-fit-filter-option">
+                      <input
+                        checked={shouldIncludeOriginBackgrounds}
+                        onChange={(event) => {
+                          onClearPerkGroupHover()
+                          setShouldIncludeOriginBackgrounds(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Origin backgrounds</span>
+                    </label>
+                  </div>
+                ) : null}
+              </div>
+            }
             value={backgroundFitInputValue}
           />
           {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (

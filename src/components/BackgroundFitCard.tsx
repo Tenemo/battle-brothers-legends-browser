@@ -1,7 +1,9 @@
-import type {
-  BackgroundFitMatch,
-  BuildTargetPerkGroup,
-  RankedBackgroundFit,
+import {
+  getCoveredPickedPerkCount,
+  getGuaranteedCoveredPickedPerkCount,
+  type BackgroundFitMatch,
+  type BuildTargetPerkGroup,
+  type RankedBackgroundFit,
 } from '../lib/background-fit'
 import {
   formatBackgroundFitGuaranteedPerksLabel,
@@ -12,7 +14,6 @@ import {
   formatBackgroundFitScoreLabel,
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
-  getCoveredPickedPerkNames,
   getPerkGroupHoverKey,
   getVisibleBackgroundDisambiguatorLabel,
   renderGameIcon,
@@ -175,8 +176,10 @@ export function BackgroundFitCard({
   const disambiguatorLabel = getVisibleBackgroundDisambiguatorLabel(backgroundFit)
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
-  const coveredPickedPerkCount = getCoveredPickedPerkNames(backgroundFit.matches).length
-  const guaranteedCoveredPickedPerkCount = getCoveredPickedPerkNames(guaranteedMatches).length
+  const coveredPickedPerkCount = getCoveredPickedPerkCount(backgroundFit.matches)
+  const guaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
+    backgroundFit.matches,
+  )
   const isExpanded = expandedBackgroundFitKey === backgroundFitKey
   const accordionButtonId = `background-fit-card-button-${rank}`
   const accordionPanelId = `background-fit-card-panel-${rank}`

@@ -133,10 +133,21 @@ describe('app', () => {
     const { container } = render(<App />)
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
+    const filterBackgroundsButton = within(backgroundFitPanel).getByRole('button', {
+      name: 'Filter backgrounds',
+    })
+    const searchInputControl = backgroundSearchInput.closest('.search-input-control')
 
     expect(
       within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
     ).not.toBeInTheDocument()
+    expect(filterBackgroundsButton).toBeVisible()
+    expect(searchInputControl).not.toBeNull()
+    expect(
+      within(searchInputControl as HTMLElement)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Filter backgrounds'])
 
     await user.type(backgroundSearchInput, 'Oath')
 
@@ -145,6 +156,11 @@ describe('app', () => {
     })
 
     expect(clearBackgroundSearchButton).toBeVisible()
+    expect(
+      within(searchInputControl as HTMLElement)
+        .getAllByRole('button')
+        .map((button) => button.getAttribute('aria-label')),
+    ).toEqual(['Clear background search', 'Filter backgrounds'])
     expect(backgroundSearchInput).toHaveValue('Oath')
     expect(
       within(backgroundFitPanel).getByRole('heading', {
@@ -956,6 +972,69 @@ describe('app', () => {
     expect(
       within(backgroundFitPanel).getByText('No backgrounds match "zzzz impossible background".'),
     ).toBeInTheDocument()
+  })
+
+  test('filters origin background fit cards from the background filter menu', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+
+    setPerkSearchQuery('Axe Mastery')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', {
+        name: 'Add Axe Mastery to build from results',
+      }),
+    )
+
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+    const workspace = screen.getByRole('main')
+    const filterBackgroundsButton = within(backgroundFitPanel).getByRole('button', {
+      name: 'Filter backgrounds',
+    })
+
+    expect(within(backgroundFitPanel).getByText('starting shield')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getByText('origin ranged')).toBeInTheDocument()
+    expect(within(backgroundFitPanel).getAllByText('origin commander').length).toBeGreaterThan(0)
+
+    await user.click(filterBackgroundsButton)
+
+    const backgroundFiltersGroup = within(backgroundFitPanel).getByRole('group', {
+      name: 'Background filters',
+    })
+    const originBackgroundsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Origin backgrounds',
+    })
+    const originBackgroundsLabel = within(backgroundFiltersGroup).getByText('Origin backgrounds')
+
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(originBackgroundsCheckbox).toBeChecked()
+
+    fireEvent.click(backgroundFiltersGroup)
+
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(originBackgroundsCheckbox).toBeChecked()
+
+    await user.click(originBackgroundsLabel)
+
+    expect(originBackgroundsCheckbox).not.toBeChecked()
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(workspace).toHaveClass('has-active-background-fit-search')
+    expect(within(backgroundFitPanel).queryByText('starting shield')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin melee')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin ranged')).not.toBeInTheDocument()
+    expect(within(backgroundFitPanel).queryByText('origin commander')).not.toBeInTheDocument()
+    expect(
+      within(backgroundFitPanel).getByRole('heading', {
+        level: 3,
+        name: 'Apprentice',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(originBackgroundsLabel)
+
+    expect(originBackgroundsCheckbox).toBeChecked()
+    expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+    expect(within(backgroundFitPanel).getByText('origin melee')).toBeInTheDocument()
   })
 
   test('keeps background search enabled and usable without any picked perks', async () => {

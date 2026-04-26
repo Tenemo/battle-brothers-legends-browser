@@ -239,6 +239,57 @@ test('filters the background fit list with the background search field', async (
   ).toBeLessThanOrEqual(1)
 })
 
+test('filters origin backgrounds from the background search menu', async ({ page }) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+  const filterBackgroundsButton = backgroundFitPanel.getByRole('button', {
+    name: 'Filter backgrounds',
+  })
+
+  await expect(filterBackgroundsButton).toBeVisible()
+  await backgroundSearchInput.fill('origin melee')
+
+  const clearBackgroundSearchButton = backgroundFitPanel.getByRole('button', {
+    name: 'Clear background search',
+  })
+  const [clearButtonBox, filterButtonBox] = await Promise.all([
+    clearBackgroundSearchButton.boundingBox(),
+    filterBackgroundsButton.boundingBox(),
+  ])
+
+  expect(clearButtonBox).not.toBeNull()
+  expect(filterButtonBox).not.toBeNull()
+  expect(clearButtonBox!.x).toBeLessThan(filterButtonBox!.x)
+  await expect(backgroundFitPanel.getByText('origin melee').first()).toBeVisible()
+
+  await filterBackgroundsButton.click()
+
+  const originBackgroundsCheckbox = backgroundFitPanel.getByRole('checkbox', {
+    name: 'Origin backgrounds',
+  })
+  const backgroundFiltersGroup = backgroundFitPanel.getByRole('group', {
+    name: 'Background filters',
+  })
+  const originBackgroundsLabel = backgroundFiltersGroup.getByText('Origin backgrounds')
+
+  await expect(originBackgroundsCheckbox).toBeChecked()
+  await backgroundFiltersGroup.click({ position: { x: 2, y: 2 } })
+  await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+  await expect(originBackgroundsCheckbox).toBeChecked()
+
+  await originBackgroundsLabel.click()
+  await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+  await expect(originBackgroundsCheckbox).not.toBeChecked()
+  await expect(backgroundFitPanel.getByText('No backgrounds match "origin melee".')).toBeVisible()
+
+  await originBackgroundsLabel.click()
+  await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
+  await expect(originBackgroundsCheckbox).toBeChecked()
+  await expect(backgroundFitPanel.getByText('origin melee').first()).toBeVisible()
+})
+
 test('shows probabilistic background fit matches with percentage badges', async ({ page }) => {
   await gotoPerksBrowser(page, mediumPerksBrowserViewport)
   await searchPerks(page, 'Danger Pay')

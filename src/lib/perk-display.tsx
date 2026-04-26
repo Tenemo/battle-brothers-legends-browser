@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
-import type { BackgroundFitMatch, RankedBackgroundFit } from './background-fit'
+import type { RankedBackgroundFit } from './background-fit'
+import { getBackgroundSourceLabel } from './background-origin'
 import { getTierLabel } from './perk-search'
 import type {
   LegendsPerkBackgroundSource,
@@ -181,7 +182,7 @@ export function formatBackgroundFitScoreLabel(score: number): string {
 }
 
 function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
-  const sourceLabel = disambiguator.replace(/^background\./, '')
+  const sourceLabel = getBackgroundSourceLabel(disambiguator)
   const companionMatch = /^companion_(1h|2h|ranged)$/.exec(sourceLabel)
   const originCompanionMatch = /^legend_companion_(melee|ranged)$/.exec(sourceLabel)
 
@@ -253,10 +254,6 @@ export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): 
     )
     .join(' ')
     .toLowerCase()
-}
-
-export function getCoveredPickedPerkNames(matches: BackgroundFitMatch[]): string[] {
-  return [...new Set(matches.flatMap((match) => match.pickedPerkNames))]
 }
 
 export function formatBackgroundFitPickablePerksLabel(

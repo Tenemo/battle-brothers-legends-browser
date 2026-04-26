@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { type ReactNode, useRef } from 'react'
 
 export function ClearableSearchField({
   className = '',
@@ -7,6 +7,7 @@ export function ClearableSearchField({
   label,
   onValueChange,
   placeholder,
+  trailingControl,
   value,
 }: {
   className?: string
@@ -15,11 +16,19 @@ export function ClearableSearchField({
   label: string
   onValueChange: (nextValue: string) => void
   placeholder: string
+  trailingControl?: ReactNode
   value: string
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const searchFieldClassName = className.length > 0 ? `search-field ${className}` : 'search-field'
   const hasSearchValue = value.length > 0
+  const searchFieldClassName = [
+    'search-field',
+    className,
+    trailingControl ? 'has-trailing-control' : '',
+    hasSearchValue ? 'has-clear-button' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <div className={searchFieldClassName}>
@@ -48,6 +57,9 @@ export function ClearableSearchField({
           >
             <span aria-hidden="true" className="search-clear-icon" />
           </button>
+        ) : null}
+        {trailingControl ? (
+          <span className="search-trailing-control">{trailingControl}</span>
         ) : null}
       </div>
     </div>
@@ -96,6 +108,23 @@ export function BackgroundFitRailChevron({ isExpanded }: { isExpanded: boolean }
         strokeLinecap="round"
         strokeWidth="1.4"
       />
+    </svg>
+  )
+}
+
+export function FunnelIcon({ className }: { className: string }) {
+  return (
+    <svg
+      aria-hidden="true"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth="1.6"
+      viewBox="0 0 24 24"
+    >
+      <path d="M4 5h16l-6.1 7.1v5.1l-3.8 1.8v-6.9L4 5Z" />
     </svg>
   )
 }

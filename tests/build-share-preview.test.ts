@@ -70,6 +70,24 @@ describe('build share preview', () => {
     expect(payload.status).toBe('found')
     expect(payload.topBackgroundFits.length).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].backgroundName).toBeTruthy()
-    expect(payload.topBackgroundFits[0].maximumTotalPerkGroupCount).toBeGreaterThan(0)
+    expect(payload.topBackgroundFits[0].guaranteedCoveredPickedPerkCount).toBeGreaterThan(0)
+    expect(
+      payload.topBackgroundFits.every(
+        (backgroundFit, backgroundFitIndex, backgroundFits) =>
+          backgroundFitIndex === 0 ||
+          backgroundFit.guaranteedCoveredPickedPerkCount <=
+            backgroundFits[backgroundFitIndex - 1].guaranteedCoveredPickedPerkCount,
+      ),
+    ).toBe(true)
+  })
+
+  test('excludes origin-specific backgrounds from shared build social image previews', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      '?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Hold+Out,Underdog,Assured+Conquest,Colossus,Tactical+Maneuvers,Nine+Lives,Crippling+Strikes,Perfect+Focus',
+    )
+
+    expect(
+      payload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName),
+    ).not.toEqual(expect.arrayContaining(['Companion', 'Berserker']))
   })
 })

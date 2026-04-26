@@ -286,15 +286,15 @@ function renderBackgroundFits(
   return payload.topBackgroundFits
     .map((backgroundFit, backgroundFitIndex) => {
       const rowY = 446 + backgroundFitIndex * 52
+      const guaranteedCoverageRatio =
+        payload.pickedPerkCount === 0
+          ? 0
+          : backgroundFit.guaranteedCoveredPickedPerkCount / payload.pickedPerkCount
       const scoreWidth = Math.max(
-        28,
+        backgroundFit.guaranteedCoveredPickedPerkCount === 0 ? 0 : 28,
         Math.min(
           160,
-          backgroundFit.maximumTotalPerkGroupCount === 0
-            ? 28
-            : (backgroundFit.expectedMatchedPerkGroupCount /
-                backgroundFit.maximumTotalPerkGroupCount) *
-                160,
+          backgroundFit.guaranteedCoveredPickedPerkCount === 0 ? 0 : guaranteedCoverageRatio * 160,
         ),
       )
       const name = truncateLineByVisualWidth(backgroundFit.backgroundName, 16)
@@ -312,9 +312,7 @@ function renderBackgroundFits(
         )}</text>
         <rect x="270" y="-24" width="160" height="11" rx="5.5" fill="#2a211b" />
         <rect x="270" y="-24" width="${scoreWidth.toFixed(1)}" height="11" rx="5.5" fill="#c89d66" />
-        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.expectedMatchedPerkGroupCount.toFixed(
-          1,
-        )}/${backgroundFit.maximumTotalPerkGroupCount} expected perk groups</text>
+        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.guaranteedCoveredPickedPerkCount}/${payload.pickedPerkCount} guaranteed perks</text>
       </g>`
     })
     .join('')

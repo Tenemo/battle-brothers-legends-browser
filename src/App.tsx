@@ -24,13 +24,14 @@ import {
   getVisiblePerkCountsByCategory,
 } from './lib/category-filter-model'
 import { compareCategoryNames } from './lib/perk-categories'
-import {
-  buildPerkBrowserBuildUrlSearch,
-} from './lib/perk-browser-url-state'
+import { buildPerkBrowserBuildUrlSearch } from './lib/perk-browser-url-state'
 import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
 import { useBuildShareLink } from './lib/use-build-share-link'
-import { usePerkBrowserUrlSync, useInitialPerkBrowserUrlState } from './lib/use-perk-browser-url-sync'
+import {
+  usePerkBrowserUrlSync,
+  useInitialPerkBrowserUrlState,
+} from './lib/use-perk-browser-url-sync'
 import { usePerkHoverState } from './lib/use-perk-hover-state'
 import type { LegendsPerksDataset } from './types/legends-perks'
 

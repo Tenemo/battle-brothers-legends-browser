@@ -1,8 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import {
-  getPerkGroupHoverKey,
-  type TooltipAnchorRectangle,
-} from './perk-display'
+import { getPerkGroupHoverKey, type TooltipAnchorRectangle } from './perk-display'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 
 export type HoveredBuildPerkTooltip = {

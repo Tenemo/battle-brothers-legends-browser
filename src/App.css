@@ -257,6 +257,7 @@
 .planner-pill:focus-visible,
 .background-fit-accordion-trigger:focus-visible,
 .background-fit-match:focus-visible,
+.background-fit-filter-button:focus-visible,
 .category-chip:focus-visible,
 .perk-group-chip:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -453,6 +454,10 @@
   padding-right: 2.72rem;
 }
 
+.search-field.has-trailing-control.has-clear-button input {
+  padding-right: 4.84rem;
+}
+
 .search-field input[type='search']::-webkit-search-cancel-button,
 .search-field input[type='search']::-webkit-search-decoration {
   display: none;
@@ -479,6 +484,10 @@
   transition:
     background-color 160ms ease,
     color 160ms ease;
+}
+
+.search-field.has-trailing-control .search-clear-button {
+  right: 2.34rem;
 }
 
 .search-clear-button:hover,
@@ -517,6 +526,15 @@
 
 .search-clear-icon::after {
   transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.search-trailing-control {
+  position: absolute;
+  top: 50%;
+  right: 0.36rem;
+  z-index: 2;
+  display: inline-flex;
+  transform: translateY(-50%);
 }
 
 .tier-badge,

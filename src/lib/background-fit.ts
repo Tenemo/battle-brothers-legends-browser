@@ -12,10 +12,7 @@ import {
   deterministicDynamicBackgroundCategoryNames,
   dynamicBackgroundCategoryNames,
 } from './dynamic-background-categories'
-import {
-  getCategoryPriority,
-  isDynamicBackgroundCategoryName,
-} from './perk-categories'
+import { getCategoryPriority, isDynamicBackgroundCategoryName } from './perk-categories'
 
 const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
   deterministicDynamicBackgroundCategoryNames,
@@ -718,11 +715,11 @@ function compareBackgroundFitMatches(
   )
 }
 
-function getCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
+export function getCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
   return new Set(matches.flatMap((match) => match.pickedPerkNames)).size
 }
 
-function getGuaranteedCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
+export function getGuaranteedCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
   return getCoveredPickedPerkCount(matches.filter((match) => match.isGuaranteed))
 }
 

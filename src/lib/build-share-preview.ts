@@ -1,6 +1,7 @@
 import legendsPerksDatasetJson from '../data/legends-perks.json'
 import type { RankedBackgroundFit } from './background-fit'
-import { createBackgroundFitEngine } from './background-fit'
+import { createBackgroundFitEngine, getGuaranteedCoveredPickedPerkCount } from './background-fit'
+import { isOriginBackgroundFit } from './background-origin'
 import { buildPerkBrowserBuildUrlSearch, readPerkBrowserUrlState } from './perk-browser-url-state'
 import type { LegendsPerkRecord, LegendsPerksDataset } from '../types/legends-perks'
 
@@ -11,9 +12,8 @@ export type BuildSharePreviewPerk = {
 
 export type BuildSharePreviewBackgroundFit = {
   backgroundName: string
-  expectedMatchedPerkGroupCount: number
+  guaranteedCoveredPickedPerkCount: number
   iconPath: string | null
-  maximumTotalPerkGroupCount: number
 }
 
 export type BuildSharePreviewPayload = {
@@ -81,9 +81,8 @@ function createBackgroundFitPreview(
 ): BuildSharePreviewBackgroundFit {
   return {
     backgroundName: backgroundFit.backgroundName,
-    expectedMatchedPerkGroupCount: backgroundFit.expectedMatchedPerkGroupCount,
+    guaranteedCoveredPickedPerkCount: getGuaranteedCoveredPickedPerkCount(backgroundFit.matches),
     iconPath: backgroundFit.iconPath,
-    maximumTotalPerkGroupCount: backgroundFit.maximumTotalPerkGroupCount,
   }
 }
 
@@ -93,9 +92,10 @@ function getTopBackgroundFits(
   return rankedBackgroundFits
     .filter(
       (backgroundFit) =>
-        backgroundFit.matches.length > 0 ||
-        backgroundFit.guaranteedMatchedPerkGroupCount > 0 ||
-        backgroundFit.expectedMatchedPerkGroupCount > 0,
+        !isOriginBackgroundFit(backgroundFit) &&
+        (backgroundFit.matches.length > 0 ||
+          backgroundFit.guaranteedMatchedPerkGroupCount > 0 ||
+          backgroundFit.expectedMatchedPerkGroupCount > 0),
     )
     .slice(0, maxPreviewBackgroundFits)
     .map(createBackgroundFitPreview)
