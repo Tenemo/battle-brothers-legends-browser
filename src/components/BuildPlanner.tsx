@@ -1,3 +1,4 @@
+import { useId, useState } from 'react'
 import type {
   BuildPlannerGroupedPerkGroup,
   BuildPlannerPerkGroupRequirementOption,
@@ -37,19 +38,47 @@ function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirement
 }
 
 function BuildPlannerInfoButton() {
+  const tooltipId = useId()
+  const [isOpen, setIsOpen] = useState(false)
+
   return (
-    <span className="build-planner-info">
+    <span
+      className="build-planner-info"
+      onBlurCapture={(event) => {
+        if (
+          event.relatedTarget instanceof Node &&
+          event.currentTarget.contains(event.relatedTarget)
+        ) {
+          return
+        }
+
+        setIsOpen(false)
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          setIsOpen(false)
+        }
+      }}
+      onMouseEnter={() => setIsOpen(true)}
+      onMouseLeave={() => setIsOpen(false)}
+    >
       <button
-        aria-describedby="build-planner-info-tooltip"
+        aria-controls={isOpen ? tooltipId : undefined}
+        aria-describedby={isOpen ? tooltipId : undefined}
+        aria-expanded={isOpen}
         aria-label="Show build planner guidance"
         className="build-planner-info-button"
+        onClick={() => setIsOpen((currentIsOpen) => !currentIsOpen)}
+        onFocus={() => setIsOpen(true)}
         type="button"
       >
         i
       </button>
-      <span className="build-planner-info-tooltip" id="build-planner-info-tooltip">
-        {buildPlannerGuidance}
-      </span>
+      {isOpen ? (
+        <span className="build-planner-info-tooltip" id={tooltipId} role="tooltip">
+          {buildPlannerGuidance}
+        </span>
+      ) : null}
     </span>
   )
 }
@@ -60,8 +89,10 @@ function renderPlannerGroupCard({
   hoveredPerkId,
   hoveredTooltipId,
   keyPrefix,
+  onCloseHover,
   onCloseTooltip,
   onInspectPerk,
+  onOpenHover,
   onOpenTooltip,
 }: {
   groupedPerkGroup: BuildPlannerGroupedPerkGroup
@@ -69,8 +100,10 @@ function renderPlannerGroupCard({
   hoveredPerkId: string | null
   hoveredTooltipId: string | undefined
   keyPrefix: string
+  onCloseHover: (perkId: string) => void
   onCloseTooltip: () => void
   onInspectPerk: (perkId: string) => void
+  onOpenHover: (perkId: string) => void
   onOpenTooltip: (perkId: string, currentTarget: HTMLButtonElement) => void
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
@@ -123,11 +156,19 @@ function renderPlannerGroupCard({
               aria-describedby={hoveredPerkId === perkId ? hoveredTooltipId : undefined}
               className={hoveredPerkId === perkId ? 'planner-pill is-highlighted' : 'planner-pill'}
               key={`${plannerGroupLabel}-${perkId}`}
-              onBlur={onCloseTooltip}
+              onBlur={() => {
+                onCloseTooltip()
+                onCloseHover(perkId)
+              }}
               onClick={() => onInspectPerk(perkId)}
               onFocus={(event) => onOpenTooltip(perkId, event.currentTarget)}
-              onMouseEnter={(event) => onOpenTooltip(perkId, event.currentTarget)}
-              onMouseLeave={onCloseTooltip}
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') {
+                  onCloseTooltip()
+                }
+              }}
+              onMouseEnter={() => onOpenHover(perkId)}
+              onMouseLeave={() => onCloseHover(perkId)}
               type="button"
             >
               {perkName}
@@ -152,8 +193,10 @@ export function BuildPlanner({
   hoveredPerkId,
   individualPerkGroups,
   onClearBuild,
+  onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onInspectPlannerPerk,
+  onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onRemovePickedPerk,
   onShareBuild,
@@ -169,8 +212,10 @@ export function BuildPlanner({
   hoveredPerkId: string | null
   individualPerkGroups: BuildPlannerGroupedPerkGroup[]
   onClearBuild: () => void
+  onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onInspectPlannerPerk: (perkId: string) => void
+  onOpenBuildPerkHover: (perkId: string) => void
   onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLButtonElement) => void
   onRemovePickedPerk: (perkId: string) => void
   onShareBuild: () => Promise<void>
@@ -194,10 +239,8 @@ export function BuildPlanner({
         <div className="build-planner-header">
           <div className="build-planner-title-row">
             <div className="build-planner-title">
-              <h2>
-                Build planner
-                {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
-              </h2>
+              <h2>Build planner</h2>
+              {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
             </div>
           </div>
           <div className="build-planner-actions">
@@ -259,15 +302,21 @@ export function BuildPlanner({
                           : 'planner-slot planner-slot-perk'
                       }
                       key={pickedPerk.id}
-                      onBlur={onCloseBuildPerkTooltip}
+                      onBlur={() => {
+                        onCloseBuildPerkTooltip()
+                        onCloseBuildPerkHover(pickedPerk.id)
+                      }}
                       onClick={() => onRemovePickedPerk(pickedPerk.id)}
                       onFocus={(event) =>
                         onOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)
                       }
-                      onMouseEnter={(event) =>
-                        onOpenBuildPerkTooltip(pickedPerk.id, event.currentTarget)
-                      }
-                      onMouseLeave={onCloseBuildPerkTooltip}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Escape') {
+                          onCloseBuildPerkTooltip()
+                        }
+                      }}
+                      onMouseEnter={() => onOpenBuildPerkHover(pickedPerk.id)}
+                      onMouseLeave={() => onCloseBuildPerkHover(pickedPerk.id)}
                       type="button"
                     >
                       {renderGameIcon({
@@ -304,8 +353,10 @@ export function BuildPlanner({
                       hoveredPerkId,
                       hoveredTooltipId: hoveredBuildPerkTooltipId,
                       keyPrefix: 'shared',
+                      onCloseHover: onCloseBuildPerkHover,
                       onCloseTooltip: onCloseBuildPerkTooltip,
                       onInspectPerk: onInspectPlannerPerk,
+                      onOpenHover: onOpenBuildPerkHover,
                       onOpenTooltip: onOpenBuildPerkTooltip,
                     }),
                   )}
@@ -337,8 +388,10 @@ export function BuildPlanner({
                         hoveredPerkId,
                         hoveredTooltipId: hoveredBuildPerkTooltipId,
                         keyPrefix: 'individual',
+                        onCloseHover: onCloseBuildPerkHover,
                         onCloseTooltip: onCloseBuildPerkTooltip,
                         onInspectPerk: onInspectPlannerPerk,
+                        onOpenHover: onOpenBuildPerkHover,
                         onOpenTooltip: onOpenBuildPerkTooltip,
                       }),
                     )}

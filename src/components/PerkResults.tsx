@@ -64,12 +64,12 @@ export function PerkResults({
         </p>
       </div>
 
-      <div className="results-list" data-testid="results-list">
+      <ul className="results-list" data-testid="results-list">
         {visiblePerks.length === 0 ? (
-          <div className="empty-state">
+          <li className="empty-state">
             <h2>No perks found</h2>
             <p>Try a broader search or switch the category filters.</p>
-          </div>
+          </li>
         ) : (
           visiblePerks.map((perk) => {
             const isSelected = perk.id === selectedPerk?.id
@@ -79,7 +79,7 @@ export function PerkResults({
             const previewParagraphs = getPerkPreviewParagraphs(perk)
 
             return (
-              <div
+              <li
                 key={perk.id}
                 className={getPerkRowClassName({ isHighlighted, isPicked, isSelected })}
                 onBlurCapture={(event) => {
@@ -150,11 +150,11 @@ export function PerkResults({
                   perkName={perk.perkName}
                   source="results"
                 />
-              </div>
+              </li>
             )
           })
         )}
-      </div>
+      </ul>
     </section>
   )
 }

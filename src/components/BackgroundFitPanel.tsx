@@ -1,31 +1,14 @@
 import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
 import './BackgroundFitPanel.css'
 import type { BackgroundFitView } from '../lib/background-fit'
-import {
-  getAnchoredTooltipStyle,
-  getBackgroundFitKey,
-  getBackgroundFitSearchText,
-  type TooltipAnchorRectangle,
-} from '../lib/perk-display'
-import {
-  BackgroundFitCard,
-  BackgroundFitTargetPerkGroup,
-  type BackgroundFitSummaryTooltipOpenHandler,
-} from './BackgroundFitCard'
+import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
+import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField } from './SharedControls'
-
-type HoveredBackgroundFitSummaryTooltip = {
-  anchorRectangle: TooltipAnchorRectangle
-  descriptionParagraphs: string[]
-  title: string
-}
 
 export function BackgroundFitPanel({
   backgroundFitView,
   hoveredPerkGroupKey,
   isExpanded,
-  onClearBuildPerkTooltip,
-  onClearHoveredPerk,
   onClearPerkGroupHover,
   onClosePerkGroupHover,
   onInspectPerkGroup,
@@ -37,8 +20,6 @@ export function BackgroundFitPanel({
   backgroundFitView: BackgroundFitView
   hoveredPerkGroupKey: string | null
   isExpanded: boolean
-  onClearBuildPerkTooltip: () => void
-  onClearHoveredPerk: () => void
   onClearPerkGroupHover: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
@@ -49,8 +30,6 @@ export function BackgroundFitPanel({
 }) {
   const [backgroundFitInputValue, setBackgroundFitInputValue] = useState('')
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitInputValue)
-  const [hoveredBackgroundFitSummaryTooltip, setHoveredBackgroundFitSummaryTooltip] =
-    useState<HoveredBackgroundFitSummaryTooltip | null>(null)
   const [backgroundFitAccordionState, setBackgroundFitAccordionState] = useState<{
     expandedBackgroundFitKey: string | null
     rankedBackgroundFitKeySignature: string
@@ -59,8 +38,6 @@ export function BackgroundFitPanel({
     rankedBackgroundFitKeySignature: '',
   })
   const backgroundFitPanelBodyRef = useRef<HTMLDivElement | null>(null)
-  const hoveredBackgroundFitSummaryTooltipId =
-    hoveredBackgroundFitSummaryTooltip === null ? undefined : 'background-fit-summary-tooltip'
   const hasPickedPerks = pickedPerkCount > 0
   const hasSupportedBackgroundFitTargets =
     backgroundFitView.supportedBuildTargetPerkGroups.length > 0
@@ -98,47 +75,10 @@ export function BackgroundFitPanel({
     backgroundFitAccordionState.rankedBackgroundFitKeySignature === rankedBackgroundFitKeySignature
       ? backgroundFitAccordionState.expandedBackgroundFitKey
       : null
-  const handleOpenBackgroundFitSummaryTooltip: BackgroundFitSummaryTooltipOpenHandler = (
-    title,
-    descriptionParagraphs,
-    currentTarget,
-  ) => {
-    const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
-
-    onClearHoveredPerk()
-    onClearBuildPerkTooltip()
-    setHoveredBackgroundFitSummaryTooltip({
-      anchorRectangle: {
-        bottom,
-        left,
-        right,
-        top,
-        width,
-      },
-      descriptionParagraphs,
-      title,
-    })
-  }
 
   useEffect(() => {
     onSearchActivityChange(hasActiveBackgroundFitSearch)
   }, [hasActiveBackgroundFitSearch, onSearchActivityChange])
-
-  useEffect(() => {
-    if (hoveredBackgroundFitSummaryTooltip === null || typeof window === 'undefined') {
-      return
-    }
-
-    const handleWindowResize = () => {
-      setHoveredBackgroundFitSummaryTooltip(null)
-    }
-
-    window.addEventListener('resize', handleWindowResize)
-
-    return () => {
-      window.removeEventListener('resize', handleWindowResize)
-    }
-  }, [hoveredBackgroundFitSummaryTooltip])
 
   useEffect(() => {
     if (!isExpanded) {
@@ -163,28 +103,6 @@ export function BackgroundFitPanel({
 
   return (
     <>
-      {hoveredBackgroundFitSummaryTooltip !== null ? (
-        <div
-          className="build-perk-tooltip"
-          id={hoveredBackgroundFitSummaryTooltipId}
-          role="tooltip"
-          style={getAnchoredTooltipStyle(hoveredBackgroundFitSummaryTooltip.anchorRectangle)}
-        >
-          <strong className="build-perk-tooltip-title">
-            {hoveredBackgroundFitSummaryTooltip.title}
-          </strong>
-          <div className="build-perk-tooltip-copy">
-            {hoveredBackgroundFitSummaryTooltip.descriptionParagraphs.map(
-              (descriptionParagraph, descriptionParagraphIndex) => (
-                <p key={`background-fit-summary-tooltip-${descriptionParagraphIndex}`}>
-                  {descriptionParagraph}
-                </p>
-              ),
-            )}
-          </div>
-        </div>
-      ) : null}
-
       <aside
         aria-label="Background fit"
         className={
@@ -196,8 +114,8 @@ export function BackgroundFitPanel({
           aria-hidden={!isExpanded}
           className="background-fit-panel-body"
           data-testid="background-fit-panel-body"
+          hidden={!isExpanded}
           onScrollCapture={() => {
-            setHoveredBackgroundFitSummaryTooltip(null)
             onClearPerkGroupHover()
           }}
           ref={backgroundFitPanelBodyRef}
@@ -208,7 +126,6 @@ export function BackgroundFitPanel({
             inputId="background-fit-search"
             label="Search backgrounds"
             onValueChange={(nextValue) => {
-              setHoveredBackgroundFitSummaryTooltip(null)
               onClearPerkGroupHover()
               setBackgroundFitInputValue(nextValue)
             }}
@@ -257,12 +174,9 @@ export function BackgroundFitPanel({
                     hoveredPerkGroupKey={hoveredPerkGroupKey}
                     onClearPerkGroupHover={onClearPerkGroupHover}
                     onClosePerkGroupHover={onClosePerkGroupHover}
-                    onCloseSummaryTooltip={() => setHoveredBackgroundFitSummaryTooltip(null)}
                     onInspectPerkGroup={onInspectPerkGroup}
                     onOpenPerkGroupHover={onOpenPerkGroupHover}
-                    onOpenSummaryTooltip={handleOpenBackgroundFitSummaryTooltip}
                     onToggle={(backgroundFitKey: string) => {
-                      setHoveredBackgroundFitSummaryTooltip(null)
                       onClearPerkGroupHover()
                       setBackgroundFitAccordionState({
                         expandedBackgroundFitKey:
@@ -300,7 +214,6 @@ export function BackgroundFitPanel({
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background fit`}
           className="background-fit-rail-button"
           onClick={() => {
-            setHoveredBackgroundFitSummaryTooltip(null)
             onClearPerkGroupHover()
             onToggleExpanded()
           }}

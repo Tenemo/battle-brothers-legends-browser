@@ -59,6 +59,7 @@ export function CategorySidebar({
       </div>
       <button
         aria-label="Reset all category filters"
+        aria-pressed={selectedCategoryNames.length === 0}
         className={selectedCategoryNames.length === 0 ? 'category-chip is-active' : 'category-chip'}
         onClick={onResetCategories}
         type="button"
@@ -105,6 +106,7 @@ export function CategorySidebar({
             <button
               aria-expanded={isExpanded}
               aria-label={`${isActive ? 'Disable' : 'Enable'} category ${availableCategoryName}`}
+              aria-pressed={isActive}
               className={categoryChipClassName}
               onClick={() => onCategoryToggle(availableCategoryName)}
               type="button"
@@ -130,6 +132,7 @@ export function CategorySidebar({
                 <p className="perk-group-heading">Perk groups</p>
                 <button
                   aria-label="Show all perk groups"
+                  aria-pressed={selectedPerkGroupIds.length === 0}
                   className={
                     selectedPerkGroupIds.length === 0
                       ? 'perk-group-chip is-active'
@@ -163,6 +166,7 @@ export function CategorySidebar({
                   return (
                     <button
                       aria-label={`Toggle perk group ${perkGroupOption.perkGroupName}`}
+                      aria-pressed={selectedPerkGroupIds.includes(perkGroupOption.perkGroupId)}
                       className={perkGroupChipClassName}
                       key={perkGroupOption.perkGroupId}
                       onClick={() =>

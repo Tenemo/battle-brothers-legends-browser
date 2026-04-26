@@ -40,10 +40,11 @@
   flex: 1 1 auto;
   flex-direction: column;
   gap: 0.42rem;
+  margin: 0;
   min-height: 0;
   overflow: auto;
-  padding-top: 0.28rem;
-  padding-right: 0.18rem;
+  padding: 0.28rem 0.18rem 0 0;
+  list-style: none;
   content-visibility: auto;
 }
 
@@ -102,7 +103,7 @@
   color: var(--accent-soft);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1279px) {
   .results-panel {
     overflow: visible;
   }

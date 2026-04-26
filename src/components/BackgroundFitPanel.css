@@ -2,10 +2,9 @@
   display: flex;
   flex-direction: row;
   gap: 0;
-  width: 32.4rem;
+  width: min(100%, 32.4rem);
   overflow: hidden;
   padding: 0;
-  will-change: width;
   transition:
     width 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 180ms ease,
@@ -48,6 +47,11 @@
   padding-left: 0;
   opacity: 0;
   transform: translateX(-0.9rem);
+}
+
+.background-fit-panel-body[hidden],
+.background-fit-card-panel[hidden] {
+  display: none !important;
 }
 
 .background-fit-rail-button {
@@ -336,10 +340,6 @@
   overflow-wrap: anywhere;
 }
 
-.background-fit-summary-badge {
-  cursor: help;
-}
-
 .background-fit-accordion-chevron-frame {
   display: inline-flex;
   flex: 0 0 auto;
@@ -411,33 +411,13 @@
   flex: 0 0 auto;
 }
 
-@media (max-width: 1100px) {
-  .workspace.is-background-fit-expanded {
-    grid-template-columns: 1fr;
-    grid-template-rows: minmax(0, 0.72fr) minmax(0, 0.84fr) minmax(0, 1fr) minmax(0, 1.2fr);
-  }
-
-  .workspace.is-background-fit-expanded.has-active-background-fit-search {
-    grid-template-rows: minmax(13.5rem, 3.6fr) minmax(0, 0.5fr) minmax(0, 0.74fr) minmax(0, 0.9fr);
-  }
-
-  .workspace.is-background-fit-expanded.has-active-background-fit-search
-    .background-fit-ranking-summary {
-    display: none;
-  }
-
-  .workspace.is-background-fit-collapsed {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 0.84fr) minmax(0, 1fr) minmax(0, 1.2fr);
-  }
-
-  .background-fit-panel {
-    width: 100%;
-  }
+.workspace.has-active-background-fit-search .background-fit-ranking-summary {
+  display: none;
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1279px) {
   .background-fit-panel {
+    width: 100%;
     min-height: 3.25rem;
   }
 
@@ -445,6 +425,27 @@
     min-height: 12rem;
   }
 
+  .background-fit-panel-body {
+    max-height: min(36rem, 70vh);
+  }
+
+  .background-fit-panel.is-collapsed .background-fit-rail-button {
+    flex: 1 1 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    min-height: 3.25rem;
+    border-left: 0;
+    border-top: 1px solid rgb(204 155 84 / 0.14);
+    padding: 0.62rem 0.8rem;
+  }
+
+  .background-fit-panel.is-collapsed .background-fit-rail-button-label {
+    writing-mode: horizontal-tb;
+    transform: none;
+  }
+}
+
+@media (max-width: 760px) {
   .background-fit-panel-body {
     max-height: 24rem;
   }

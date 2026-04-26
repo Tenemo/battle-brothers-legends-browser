@@ -14,7 +14,7 @@ const denseSharedBuildUrl =
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
@@ -505,36 +505,31 @@ test('does not stretch the background search field on tall desktop screens', asy
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const searchField = document.querySelector(
-          '.background-fit-search-field',
-        ) as HTMLElement | null
         const rankingSummary = document.querySelector(
           '.background-fit-ranking-summary',
         ) as HTMLElement | null
 
-        if (searchField === null || rankingSummary === null) {
-          return Number.POSITIVE_INFINITY
+        if (rankingSummary === null) {
+          return 'missing'
         }
 
-        return (
-          rankingSummary.getBoundingClientRect().top - searchField.getBoundingClientRect().bottom
-        )
+        return window.getComputedStyle(rankingSummary).display
       }),
     )
-    .toBeLessThanOrEqual(24)
+    .toBe('none')
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const rankingSummary = document.querySelector(
-          '.background-fit-ranking-summary',
+        const searchField = document.querySelector(
+          '.background-fit-search-field',
         ) as HTMLElement | null
         const firstCard = document.querySelector('.background-fit-card') as HTMLElement | null
 
-        if (rankingSummary === null || firstCard === null) {
+        if (searchField === null || firstCard === null) {
           return Number.POSITIVE_INFINITY
         }
 
-        return firstCard.getBoundingClientRect().top - rankingSummary.getBoundingClientRect().bottom
+        return firstCard.getBoundingClientRect().top - searchField.getBoundingClientRect().bottom
       }),
     )
     .toBeLessThanOrEqual(24)

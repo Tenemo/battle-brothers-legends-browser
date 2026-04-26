@@ -819,19 +819,12 @@ describe('app', () => {
       (apprenticeCard as HTMLElement).querySelectorAll('.background-fit-accordion-summary-row'),
     ).toHaveLength(2)
 
-    fireEvent.mouseEnter(
-      within(apprenticeCard as HTMLElement).getByText(/Maximum \d+ total perk groups/),
-    )
-
-    const backgroundFitSummaryTooltip = screen.getByRole('tooltip')
-
-    expect(backgroundFitSummaryTooltip).toBeInTheDocument()
     expect(
-      within(backgroundFitSummaryTooltip).getByText(/Overall hard cap for this background/i),
+      within(apprenticeCard as HTMLElement).getByLabelText(
+        /Maximum \d+ total perk groups\. Overall hard cap for this background/i,
+      ),
     ).toBeInTheDocument()
-    expect(
-      within(backgroundFitSummaryTooltip).getByText(/not limited to your build/i),
-    ).toBeInTheDocument()
+    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument()
 
     await user.click(apprenticeToggle)
 

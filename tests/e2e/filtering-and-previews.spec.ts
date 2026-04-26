@@ -113,7 +113,7 @@ test('highlights the searched perk phrase in the visible perk results', async ({
 })
 
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
   await page.locator('.hero').evaluate(async (element) => {
     await Promise.all(
       element.getAnimations().map((animation) => animation.finished.catch(() => undefined)),

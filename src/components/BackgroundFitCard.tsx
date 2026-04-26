@@ -20,13 +20,7 @@ import {
 } from '../lib/perk-display'
 import { BackgroundFitAccordionChevron } from './SharedControls'
 
-export type BackgroundFitSummaryTooltipOpenHandler = (
-  title: string,
-  descriptionParagraphs: string[],
-  currentTarget: HTMLSpanElement,
-) => void
-
-function getBackgroundFitPickablePerksTooltipCopy(
+function getBackgroundFitPickablePerksSummaryCopy(
   coveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string[] {
@@ -36,7 +30,7 @@ function getBackgroundFitPickablePerksTooltipCopy(
   ]
 }
 
-function getBackgroundFitGuaranteedPerksTooltipCopy(
+function getBackgroundFitGuaranteedPerksSummaryCopy(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string[] {
@@ -46,7 +40,7 @@ function getBackgroundFitGuaranteedPerksTooltipCopy(
   ]
 }
 
-function getBackgroundFitMatchedPerkGroupsTooltipCopy(
+function getBackgroundFitMatchedPerkGroupsSummaryCopy(
   matchedPerkGroupCount: number,
   supportedBuildTargetPerkGroupCount: number,
 ): string[] {
@@ -56,7 +50,7 @@ function getBackgroundFitMatchedPerkGroupsTooltipCopy(
   ]
 }
 
-function getBackgroundFitMaximumTotalPerkGroupsTooltipCopy(
+function getBackgroundFitMaximumTotalPerkGroupsSummaryCopy(
   maximumTotalPerkGroupCount: number,
 ): string[] {
   return [
@@ -135,23 +129,15 @@ function BackgroundFitMatchRow({
 
 function BackgroundFitSummaryBadge({
   label,
-  onCloseTooltip,
-  onOpenTooltip,
-  tooltipCopy,
-  tooltipTitle,
+  summaryCopy,
 }: {
   label: string
-  onCloseTooltip: () => void
-  onOpenTooltip: BackgroundFitSummaryTooltipOpenHandler
-  tooltipCopy: string[]
-  tooltipTitle: string
+  summaryCopy: string[]
 }) {
   return (
     <span
-      aria-label={`${label}. ${tooltipCopy.join(' ')}`}
+      aria-label={`${label}. ${summaryCopy.join(' ')}`}
       className="detail-badge background-fit-summary-badge"
-      onMouseEnter={(event) => onOpenTooltip(tooltipTitle, tooltipCopy, event.currentTarget)}
-      onMouseLeave={onCloseTooltip}
     >
       {label}
     </span>
@@ -164,10 +150,8 @@ export function BackgroundFitCard({
   hoveredPerkGroupKey,
   onClearPerkGroupHover,
   onClosePerkGroupHover,
-  onCloseSummaryTooltip,
   onInspectPerkGroup,
   onOpenPerkGroupHover,
-  onOpenSummaryTooltip,
   onToggle,
   pickedPerkCount,
   query,
@@ -179,10 +163,8 @@ export function BackgroundFitCard({
   hoveredPerkGroupKey: string | null
   onClearPerkGroupHover: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
-  onCloseSummaryTooltip: () => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  onOpenSummaryTooltip: BackgroundFitSummaryTooltipOpenHandler
   onToggle: (backgroundFitKey: string) => void
   pickedPerkCount: number
   query: string
@@ -266,26 +248,20 @@ export function BackgroundFitCard({
                   coveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                onCloseTooltip={onCloseSummaryTooltip}
-                onOpenTooltip={onOpenSummaryTooltip}
-                tooltipCopy={getBackgroundFitPickablePerksTooltipCopy(
+                summaryCopy={getBackgroundFitPickablePerksSummaryCopy(
                   coveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                tooltipTitle="Up to perks pickable"
               />
               <BackgroundFitSummaryBadge
                 label={formatBackgroundFitGuaranteedPerksLabel(
                   guaranteedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                onCloseTooltip={onCloseSummaryTooltip}
-                onOpenTooltip={onOpenSummaryTooltip}
-                tooltipCopy={getBackgroundFitGuaranteedPerksTooltipCopy(
+                summaryCopy={getBackgroundFitGuaranteedPerksSummaryCopy(
                   guaranteedCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                tooltipTitle="Guaranteed perks pickable"
               />
             </div>
             <div className="background-fit-accordion-summary-row">
@@ -294,24 +270,18 @@ export function BackgroundFitCard({
                   backgroundFit.matches.length,
                   supportedBuildTargetPerkGroupCount,
                 )}
-                onCloseTooltip={onCloseSummaryTooltip}
-                onOpenTooltip={onOpenSummaryTooltip}
-                tooltipCopy={getBackgroundFitMatchedPerkGroupsTooltipCopy(
+                summaryCopy={getBackgroundFitMatchedPerkGroupsSummaryCopy(
                   backgroundFit.matches.length,
                   supportedBuildTargetPerkGroupCount,
                 )}
-                tooltipTitle="Matched perk groups"
               />
               <BackgroundFitSummaryBadge
                 label={formatBackgroundFitMaximumTotalPerkGroupsLabel(
                   backgroundFit.maximumTotalPerkGroupCount,
                 )}
-                onCloseTooltip={onCloseSummaryTooltip}
-                onOpenTooltip={onOpenSummaryTooltip}
-                tooltipCopy={getBackgroundFitMaximumTotalPerkGroupsTooltipCopy(
+                summaryCopy={getBackgroundFitMaximumTotalPerkGroupsSummaryCopy(
                   backgroundFit.maximumTotalPerkGroupCount,
                 )}
-                tooltipTitle="Maximum total perk groups"
               />
             </div>
           </div>
@@ -322,6 +292,7 @@ export function BackgroundFitCard({
         aria-hidden={!isExpanded}
         aria-labelledby={accordionButtonId}
         className="background-fit-card-panel"
+        hidden={!isExpanded}
         id={accordionPanelId}
         role="region"
       >

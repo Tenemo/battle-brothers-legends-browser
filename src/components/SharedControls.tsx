@@ -162,6 +162,7 @@ export function BuildToggleButton({
   return (
     <button
       aria-label={actionLabel}
+      aria-pressed={isPicked}
       className={
         isCompact
           ? isPicked

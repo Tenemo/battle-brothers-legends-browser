@@ -286,8 +286,18 @@ export default function App() {
     })
   }
 
+  function handleOpenBuildPerkHover(perkId: string) {
+    setHoveredPerkId(perkId)
+    setHoveredPerkGroupKey(null)
+  }
+
+  function handleCloseBuildPerkHover(perkId: string) {
+    setHoveredPerkId((currentHoveredPerkId) =>
+      currentHoveredPerkId === perkId ? null : currentHoveredPerkId,
+    )
+  }
+
   function handleCloseBuildPerkTooltip() {
-    setHoveredPerkId(null)
     setHoveredBuildPerkTooltip(null)
   }
 
@@ -526,8 +536,10 @@ export default function App() {
         hoveredPerkId={hoveredPerkId}
         individualPerkGroups={buildPlannerGroups.individualPerkGroups}
         onClearBuild={handleClearBuild}
+        onCloseBuildPerkHover={handleCloseBuildPerkHover}
         onCloseBuildPerkTooltip={handleCloseBuildPerkTooltip}
         onInspectPlannerPerk={handleInspectPlannerPerk}
+        onOpenBuildPerkHover={handleOpenBuildPerkHover}
         onOpenBuildPerkTooltip={handleOpenBuildPerkTooltip}
         onRemovePickedPerk={handleRemovePickedPerk}
         onShareBuild={handleShareBuild}
@@ -549,8 +561,6 @@ export default function App() {
           backgroundFitView={backgroundFitView}
           hoveredPerkGroupKey={hoveredPerkGroupKey}
           isExpanded={isBackgroundFitPanelExpanded}
-          onClearBuildPerkTooltip={() => setHoveredBuildPerkTooltip(null)}
-          onClearHoveredPerk={() => setHoveredPerkId(null)}
           onClearPerkGroupHover={() => setHoveredPerkGroupKey(null)}
           onClosePerkGroupHover={handleClosePerkGroupHover}
           onInspectPerkGroup={handleInspectPerkGroup}

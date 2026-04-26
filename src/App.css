@@ -19,7 +19,7 @@
   background:
     radial-gradient(circle at top, rgb(181 128 73 / 0.16), transparent 30%),
     radial-gradient(circle at 80% 20%, rgb(120 72 43 / 0.18), transparent 24%),
-    linear-gradient(180deg, rgb(13 11 10 / 0.2), rgb(13 11 10 / 0.72)),
+    linear-gradient(rgb(13 11 10 / 0.2), rgb(13 11 10 / 0.72)),
     repeating-linear-gradient(
       135deg,
       transparent,
@@ -185,7 +185,9 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: auto minmax(190px, 0.56fr) minmax(330px, 0.96fr) minmax(360px, 1.02fr);
+  grid-template-columns:
+    minmax(24rem, 0.96fr) minmax(12rem, 0.56fr) minmax(20.625rem, 0.96fr)
+    minmax(22.5rem, 1.02fr);
   gap: 0.7rem;
   align-items: stretch;
   overflow: hidden;
@@ -193,6 +195,12 @@
 
 .workspace.has-active-background-fit-search {
   min-height: min(18rem, 38vh);
+}
+
+.workspace.is-background-fit-collapsed {
+  grid-template-columns:
+    auto minmax(12rem, 0.56fr) minmax(20.625rem, 0.96fr)
+    minmax(22.5rem, 1.02fr);
 }
 
 .background-fit-panel,
@@ -251,7 +259,7 @@
 .background-fit-match:focus-visible,
 .category-chip:focus-visible,
 .perk-group-chip:focus-visible {
-  outline: 2px solid rgb(221 176 123 / 0.9);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
@@ -480,7 +488,7 @@
 }
 
 .search-clear-button:focus-visible {
-  outline: 2px solid rgb(221 176 123 / 0.9);
+  outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
 }
 
@@ -627,15 +635,7 @@
   }
 }
 
-@media (max-width: 1100px) {
-  .sidebar,
-  .results-panel,
-  .detail-panel {
-    height: 100%;
-  }
-}
-
-@media (max-width: 760px) {
+@media (max-width: 1279px) {
   .app-shell {
     height: auto;
     max-height: none;
@@ -659,6 +659,30 @@
     min-height: 0;
   }
 
+  .sidebar,
+  .results-panel,
+  .detail-panel {
+    overflow: visible;
+  }
+}
+
+@media (min-width: 1440px) {
+  .workspace {
+    grid-template-columns:
+      minmax(0, 32.4rem) minmax(11.875rem, 0.56fr) minmax(20.625rem, 0.96fr)
+      minmax(20rem, 1.02fr);
+  }
+
+  .workspace .background-fit-panel {
+    width: 32.4rem;
+  }
+}
+
+@media (max-width: 760px) {
+  .workspace {
+    order: 1;
+  }
+
   .results-panel {
     order: 1;
   }
@@ -675,10 +699,8 @@
     order: 4;
   }
 
-  .sidebar,
-  .results-panel,
-  .detail-panel {
-    overflow: visible;
+  .build-planner {
+    order: 2;
   }
 
   .hero-top-bar,
@@ -726,5 +748,16 @@
   .perk-row-layout,
   .detail-header-main {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 1ms !important;
   }
 }
