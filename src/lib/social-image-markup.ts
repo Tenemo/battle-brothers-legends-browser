@@ -79,7 +79,7 @@ export function renderSocialImageFooter({
   siteUrlY,
 }: SocialImageFooterOptions): string {
   return `<text x="12" y="${siteUrlY}" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="${siteUrlFontSize}" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
-  <text x="${socialImageWidth - 12}" y="${siteUrlY}" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="18" font-weight="600" text-anchor="end">Legends ${escapeXml(
+  <text x="${socialImageWidth - 12}" y="${siteUrlY}" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="${siteUrlFontSize}" font-weight="600" text-anchor="end">Legends ${escapeXml(
     formatSocialImageReferenceVersion(referenceVersion),
   )}</text>`
 }

@@ -65,6 +65,7 @@ describe('build social image', () => {
     expect(svg).toContain('text-decoration="underline"')
     expect(svg).not.toContain('<line x1="4" y1="628"')
     expect(svg).toContain('<text x="1188" y="620"')
+    expect(svg).toContain('font-size="18" font-weight="600" text-anchor="end"')
     expect(svg).not.toContain('Shared perk groups')
     expect(svg).not.toContain('>Perfect Focus, Peaceable, Clarity<')
     expect(svg).not.toContain('<script')

@@ -33,7 +33,7 @@ const legendsPerksDataPath = path.join(
   'legends-perks.json',
 )
 const fontDirectoryPath = path.join(projectRootDirectoryPath, 'scripts', 'assets', 'fonts')
-const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel.ttf')
+const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel-Bold.ttf')
 const sourceSansRegularFontPath = path.join(fontDirectoryPath, 'SourceSans3-Regular.ttf')
 const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Semibold.ttf')
 const sourceSansBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Bold.ttf')
@@ -53,7 +53,7 @@ export async function createRootSocialImageSvg({
   <text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>
   ${renderSocialImageBrand({
     fontSize: 26,
-    x: 96,
+    x: 99,
     y: 214,
   })}
   <g transform="translate(126 268)">
@@ -66,7 +66,7 @@ export async function createRootSocialImageSvg({
         : ''
     }
   </g>
-  <text x="430" y="320" fill="#fffaf0" font-family="Source Sans 3, Arial, sans-serif" font-size="41" font-weight="600">
+  <text x="430" y="320" fill="#fffaf0" font-family="Cinzel, serif" font-size="41" font-weight="700" letter-spacing="0.02em">
     <tspan x="430" dy="0">Search perks, inspect tree</tspan>
     <tspan x="430" dy="48">placement, and plan builds</tspan>
     <tspan x="430" dy="48">with exact in-mod labels</tspan>
