@@ -249,9 +249,15 @@ test('shows probabilistic background fit matches with percentage badges', async 
     .locator('.background-fit-card')
     .filter({ hasText: 'Apprentice' })
     .first()
+  const apprenticePanel = apprenticeCard.locator('.background-fit-card-panel')
+  const apprenticeToggle = apprenticeCard.getByRole('button', {
+    name: 'Expand background Apprentice',
+  })
 
   await apprenticeCard.scrollIntoViewIfNeeded()
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
+  await expect(apprenticeCard.getByText('1/1 matched perk group')).toBeVisible()
+  await apprenticeToggle.click()
+  await expect(apprenticePanel).toHaveAttribute('aria-hidden', 'false')
 
   const barterMatchButton = apprenticeCard.getByRole('button', {
     name: 'Select perk group Barter',

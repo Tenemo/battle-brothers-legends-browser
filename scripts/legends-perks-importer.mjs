@@ -46,6 +46,7 @@ function addImporterParseWarning(diagnosticContext, parserContext, source, error
     return
   }
 
+  // Keep unsupported Squirrel fragments non-fatal while making skipped parsing visible during sync.
   diagnosticContext.diagnostics.warnings.push({
     kind: 'parse-warning',
     message: `Unable to parse ${parserContext}.`,

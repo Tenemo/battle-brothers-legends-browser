@@ -96,6 +96,7 @@ export function usePerkHoverState(allPerksById: Map<string, LegendsPerkRecord>) 
       return
     }
 
+    // The tooltip is positioned from a captured anchor rectangle, which is stale after resizing.
     const handleWindowResize = () => {
       setHoveredBuildPerkTooltip(null)
     }

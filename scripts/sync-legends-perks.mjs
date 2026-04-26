@@ -28,6 +28,7 @@ if (iconSyncResult.missingIconPaths.length > 0) {
 if (importerDiagnostics.warnings.length > 0) {
   const displayedWarnings = importerDiagnostics.warnings.slice(0, 20)
 
+  // Cap console output so one noisy source change does not bury the sync summary.
   console.warn(
     [
       `Importer reported ${importerDiagnostics.warnings.length} parse warnings while syncing Legends ${referenceMetadata.tagName}.`,

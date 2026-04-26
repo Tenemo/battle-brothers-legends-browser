@@ -103,6 +103,7 @@ function getExpectedSuccessfulDrawCount(
     return Math.min(attemptCount, availablePerkGroupCount)
   }
 
+  // Track the success-count distribution so repeated chance rolls can be capped by pool size.
   const successCountDistribution = new Array<number>(attemptCount + 1).fill(0)
   successCountDistribution[0] = 1
 
@@ -392,6 +393,7 @@ function addClassCategoryProbabilities(
   const successProbability = clampProbability(categoryDefinition.chance ?? 0)
   const classAttemptCount = getChanceAttemptCount(categoryDefinition)
 
+  // Class rolls can depend on which Weapon perk groups were randomly drawn first.
   if (randomWeaponPerkGroupCount === 0) {
     const presentWeaponPerkGroupIdSet = new Set<string>(explicitWeaponPerkGroupIdSet)
     const eligibleRemainingPerkGroupIds = getEligibleRemainingClassPerkGroupIds(
@@ -417,6 +419,7 @@ function addClassCategoryProbabilities(
     return
   }
 
+  // Enumerate each possible Weapon subset to compute exact marginal Class probabilities.
   forEachSubsetOfSize(
     remainingWeaponPerkGroupIds,
     randomWeaponPerkGroupCount,

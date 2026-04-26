@@ -19,6 +19,7 @@ function sortJsonValue(value: unknown): unknown {
     return value.map(sortJsonValue)
   }
 
+  // JSON-LD object key order can differ even when checked-in and generated metadata match.
   if (value !== null && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value)
