@@ -50,6 +50,25 @@ function createBuildUrl(perkNames: string[]): string {
   return `/?build=${buildValue}`
 }
 
+function getParsedCssRgbColor(cssColor: string) {
+  const colorMatch = cssColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(0|1|0?\.\d+))?\)$/u)
+
+  if (!colorMatch) {
+    throw new Error(`Unable to parse CSS rgb color: ${cssColor}`)
+  }
+
+  return {
+    alpha: colorMatch[4] === undefined ? 1 : Number(colorMatch[4]),
+    blue: Number(colorMatch[3]),
+    green: Number(colorMatch[2]),
+    red: Number(colorMatch[1]),
+  }
+}
+
+function expectCssRgbColorsToMatch(actualColor: string, expectedColor: string) {
+  expect(getParsedCssRgbColor(actualColor)).toEqual(getParsedCssRgbColor(expectedColor))
+}
+
 async function getPlannerWrapMetrics(page: Page) {
   return page.evaluate(() => {
     function getVisualRowCount(listSelector: string, itemSelector: string) {
@@ -215,12 +234,41 @@ test('build planner splits shared and individual perk groups without layout drif
   ).toBeLessThanOrEqual(1)
 
   const pickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk').first()
+  const activePlannerSurfaceColor = await page.evaluate(() => {
+    const colorProbe = document.createElement('div')
+    colorProbe.style.background = 'var(--surface-result-active)'
+    document.body.append(colorProbe)
+    const resolvedColor = window.getComputedStyle(colorProbe).backgroundColor
+
+    colorProbe.remove()
+
+    return resolvedColor
+  })
+  const plannerGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card').first()
+
+  await plannerGroupCard.hover()
+  await expect
+    .poll(() =>
+      plannerGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .toBe(activePlannerSurfaceColor)
+  const hoveredGroupCardStyle = await plannerGroupCard.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderColor: computedStyle.borderTopColor,
+    }
+  })
+  await page.mouse.move(1, 1)
+
   const hoverMetricsBefore = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
     const computedStyle = window.getComputedStyle(element)
 
     return {
       backgroundColor: computedStyle.backgroundColor,
+      borderColor: computedStyle.borderTopColor,
       tileRectangle: {
         right: tileRectangle.right,
         top: tileRectangle.top,
@@ -240,6 +288,11 @@ test('build planner splits shared and individual perk groups without layout drif
   await expect(pickedPerkTile).toHaveCSS('transform', 'none')
   await expect(pickedPerkRemoveControl).toBeVisible()
   await expect(pickedPerkRemoveButton).toBeVisible()
+  await expect
+    .poll(() =>
+      pickedPerkTile.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .toBe(activePlannerSurfaceColor)
 
   const hoverMetricsAfter = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
@@ -247,6 +300,7 @@ test('build planner splits shared and individual perk groups without layout drif
 
     return {
       backgroundColor: computedStyle.backgroundColor,
+      borderColor: computedStyle.borderTopColor,
       tileRectangle: {
         right: tileRectangle.right,
         top: tileRectangle.top,
@@ -254,7 +308,10 @@ test('build planner splits shared and individual perk groups without layout drif
     }
   })
 
-  expect(hoverMetricsAfter.backgroundColor).toBe(hoverMetricsBefore.backgroundColor)
+  expect(hoverMetricsAfter.backgroundColor).not.toBe(hoverMetricsBefore.backgroundColor)
+  expect(hoverMetricsAfter.backgroundColor).toBe(activePlannerSurfaceColor)
+  expect(hoverMetricsAfter.backgroundColor).toBe(hoveredGroupCardStyle.backgroundColor)
+  expectCssRgbColorsToMatch(hoverMetricsAfter.borderColor, hoveredGroupCardStyle.borderColor)
   expect(
     Math.abs(hoverMetricsAfter.tileRectangle.top - hoverMetricsBefore.tileRectangle.top),
   ).toBeLessThanOrEqual(1)
