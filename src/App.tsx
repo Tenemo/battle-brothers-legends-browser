@@ -36,7 +36,7 @@ import {
   usePerkBrowserUrlSync,
   useInitialPerkBrowserUrlState,
 } from './lib/use-perk-browser-url-sync'
-import { usePerkHoverState } from './lib/use-perk-hover-state'
+import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
 
@@ -94,6 +94,8 @@ export default function App() {
     closeBuildPerkTooltip,
     closePerkGroupHover,
     closeResultsPerkHover,
+    emphasizedCategoryNames,
+    emphasizedPerkGroupKeys,
     hoveredBuildPerk,
     hoveredBuildPerkTooltip,
     hoveredBuildPerkTooltipId,
@@ -103,7 +105,11 @@ export default function App() {
     openBuildPerkTooltip,
     openPerkGroupHover,
     openResultsPerkHover,
-  } = usePerkHoverState(allPerksById)
+  } = usePerkInteractionState({
+    allPerksById,
+    selectedCategoryNames,
+    selectedPerkGroupIdsByCategory,
+  })
   const normalizedPerkSearchPhrase = normalizeSearchPhrase(query)
   const visiblePerks = filterAndSortPerks(allPerks, {
     query,
@@ -521,10 +527,11 @@ export default function App() {
 
       <BuildPlanner
         hasActiveBackgroundFitSearch={hasActiveBackgroundFitSearch}
+        emphasizedCategoryNames={emphasizedCategoryNames}
+        emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
         hoveredBuildPerk={hoveredBuildPerk}
         hoveredBuildPerkTooltip={hoveredBuildPerkTooltip}
         hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-        hoveredPerkGroupKey={hoveredPerkGroupKey}
         hoveredPerkId={hoveredPerkId}
         individualPerkGroups={buildPlannerGroups.individualPerkGroups}
         isSavedBuildsLoading={isSavedBuildsLoading}
@@ -555,9 +562,10 @@ export default function App() {
       <main className={workspaceClassName}>
         <BackgroundFitPanel
           backgroundFitView={backgroundFitView}
+          emphasizedCategoryNames={emphasizedCategoryNames}
+          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
           hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-          hoveredPerkGroupKey={hoveredPerkGroupKey}
           hoveredPerkId={hoveredPerkId}
           isExpanded={isBackgroundFitPanelExpanded}
           onCloseBuildPerkHover={closeBuildPerkHover}
@@ -582,6 +590,8 @@ export default function App() {
           displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
           expandedCategoryNames={expandedCategoryNames}
           categoryCounts={categoryCounts}
+          emphasizedCategoryNames={emphasizedCategoryNames}
+          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           hoveredPerkGroupKey={hoveredPerkGroupKey}
           onCategoryToggle={handleCategoryToggle}
           onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
@@ -595,7 +605,8 @@ export default function App() {
         />
 
         <PerkResults
-          hoveredPerkGroupKey={hoveredPerkGroupKey}
+          emphasizedCategoryNames={emphasizedCategoryNames}
+          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           hoveredPerkId={hoveredPerkId}
           onClosePerkGroupHover={closePerkGroupHover}
           onCloseResultsPerkHover={closeResultsPerkHover}

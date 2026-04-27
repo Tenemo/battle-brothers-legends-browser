@@ -11,18 +11,20 @@ import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-p
 import { BuildToggleButton, ClearableSearchField } from './SharedControls'
 
 function renderPerkPlacementChip({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   keyPrefix,
   perk,
-  hoveredPerkGroupKey,
   onClosePerkGroupHover,
   onInspectPerkGroup,
   onOpenPerkGroupHover,
   placement,
   query,
 }: {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   keyPrefix: string
   perk: LegendsPerkRecord
-  hoveredPerkGroupKey: string | null
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
@@ -31,7 +33,7 @@ function renderPerkPlacementChip({
 }) {
   const perkGroupKey = getPerkGroupHoverKey(placement)
   const className =
-    hoveredPerkGroupKey === perkGroupKey
+    emphasizedPerkGroupKeys.has(perkGroupKey) || emphasizedCategoryNames.has(placement.categoryName)
       ? 'perk-placement-chip is-highlighted'
       : 'perk-placement-chip'
 
@@ -63,14 +65,16 @@ function renderPerkPlacementChip({
 }
 
 function renderPerkPlacements({
-  hoveredPerkGroupKey,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   onClosePerkGroupHover,
   onInspectPerkGroup,
   onOpenPerkGroupHover,
   perk,
   query,
 }: {
-  hoveredPerkGroupKey: string | null
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
@@ -83,7 +87,8 @@ function renderPerkPlacements({
 
   return perk.placements.map((placement, placementIndex) =>
     renderPerkPlacementChip({
-      hoveredPerkGroupKey,
+      emphasizedCategoryNames,
+      emphasizedPerkGroupKeys,
       keyPrefix: `${perk.id}-placement-${placementIndex}`,
       onClosePerkGroupHover,
       onInspectPerkGroup,
@@ -96,6 +101,8 @@ function renderPerkPlacements({
 }
 
 export function PerkResults({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   onCloseResultsPerkHover,
   onClosePerkGroupHover,
   onInspectPerkGroup,
@@ -111,9 +118,9 @@ export function PerkResults({
   setQuery,
   visiblePerks,
   hoveredPerkId,
-  hoveredPerkGroupKey,
 }: {
-  hoveredPerkGroupKey: string | null
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   hoveredPerkId: string | null
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onCloseResultsPerkHover: (perkId: string) => void
@@ -210,7 +217,8 @@ export function PerkResults({
                   <div className="perk-row-context-slot">
                     <div className="perk-context perk-placement-list">
                       {renderPerkPlacements({
-                        hoveredPerkGroupKey,
+                        emphasizedCategoryNames,
+                        emphasizedPerkGroupKeys,
                         onClosePerkGroupHover,
                         onInspectPerkGroup,
                         onOpenPerkGroupHover,

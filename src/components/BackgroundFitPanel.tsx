@@ -8,9 +8,10 @@ import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './Sh
 
 export function BackgroundFitPanel({
   backgroundFitView,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
-  hoveredPerkGroupKey,
   hoveredPerkId,
   isExpanded,
   onCloseBuildPerkHover,
@@ -29,9 +30,10 @@ export function BackgroundFitPanel({
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkGroupKey: string | null
   hoveredPerkId: string | null
   isExpanded: boolean
   onCloseBuildPerkHover: (perkId: string) => void
@@ -288,9 +290,10 @@ export function BackgroundFitPanel({
                     <BackgroundFitCard
                       backgroundFit={backgroundFit}
                       expandedBackgroundFitKey={expandedBackgroundFitKey}
+                      emphasizedCategoryNames={emphasizedCategoryNames}
+                      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
                       hoveredBuildPerkId={hoveredBuildPerkId}
                       hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                      hoveredPerkGroupKey={hoveredPerkGroupKey}
                       hoveredPerkId={hoveredPerkId}
                       onCloseBuildPerkHover={onCloseBuildPerkHover}
                       onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}

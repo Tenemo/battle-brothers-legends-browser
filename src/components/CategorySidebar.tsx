@@ -6,6 +6,8 @@ type CategorySidebarProps = {
   allPerkCount: number
   displayedCategoryNames: string[]
   displayedPerkGroupOptionsByCategory: Map<string, CategoryPerkGroupOption[]>
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   expandedCategoryNames: string[]
   categoryCounts: Map<string, number>
   hoveredPerkGroupKey: string | null
@@ -38,6 +40,8 @@ export function CategorySidebar({
   allPerkCount,
   displayedCategoryNames,
   displayedPerkGroupOptionsByCategory,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   expandedCategoryNames,
   categoryCounts,
   hoveredPerkGroupKey,
@@ -89,7 +93,8 @@ export function CategorySidebar({
               }),
           )
         const shouldHighlightCategory =
-          isHoveredCategory && (!isExpanded || !hasVisibleHoveredPerkGroup)
+          emphasizedCategoryNames.has(availableCategoryName) ||
+          (isHoveredCategory && (!isExpanded || !hasVisibleHoveredPerkGroup))
         const categoryChipClassName = [
           'category-chip',
           isActive ? 'is-active' : '',
@@ -149,12 +154,13 @@ export function CategorySidebar({
                 {activePerkGroupOptions.map((perkGroupOption) => {
                   const pickedPerkCountInPerkGroup =
                     pickedPerkCountsByPerkGroup.get(perkGroupOption.perkGroupId) ?? 0
+                  const perkGroupKey = getPerkGroupHoverKey({
+                    categoryName: availableCategoryName,
+                    perkGroupId: perkGroupOption.perkGroupId,
+                  })
                   const isPerkGroupHighlighted =
-                    hoveredPerkGroupKey ===
-                    getPerkGroupHoverKey({
-                      categoryName: availableCategoryName,
-                      perkGroupId: perkGroupOption.perkGroupId,
-                    })
+                    emphasizedPerkGroupKeys.has(perkGroupKey) ||
+                    emphasizedCategoryNames.has(availableCategoryName)
                   const perkGroupChipClassName = [
                     'perk-group-chip',
                     selectedPerkGroupIds.includes(perkGroupOption.perkGroupId) ? 'is-active' : '',

@@ -40,6 +40,21 @@ function getBuildPerkGroupTileClassName({
     .join(' ')
 }
 
+function isPerkGroupOptionEmphasized({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
+  perkGroupOption,
+}: {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  perkGroupOption: BuildPerkGroupTileOption
+}): boolean {
+  return (
+    emphasizedPerkGroupKeys.has(getPerkGroupHoverKey(perkGroupOption)) ||
+    emphasizedCategoryNames.has(perkGroupOption.categoryName)
+  )
+}
+
 function renderPerkGroupOptionIcon({
   arePerkGroupOptionsInteractive,
   isOptionHighlighted,
@@ -102,11 +117,12 @@ function renderPerkGroupOptionIcon({
 export function BuildPerkGroupTile({
   arePerkGroupOptionsInteractive = true,
   className,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   groupLabel,
   groupOptions,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
-  hoveredPerkGroupKey,
   hoveredPerkId,
   isWide = false,
   metaClassName,
@@ -123,11 +139,12 @@ export function BuildPerkGroupTile({
 }: {
   arePerkGroupOptionsInteractive?: boolean
   className?: string
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   groupLabel: string
   groupOptions: BuildPerkGroupTileOption[]
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkGroupKey: string | null
   hoveredPerkId: string | null
   isWide?: boolean
   metaClassName?: string
@@ -143,8 +160,12 @@ export function BuildPerkGroupTile({
   perks: BuildPerkGroupTilePerk[]
 }) {
   const primaryPerkGroupOption = groupOptions.find(isSelectablePerkGroupOption)
-  const isHighlighted = groupOptions.some(
-    (perkGroupOption) => hoveredPerkGroupKey === getPerkGroupHoverKey(perkGroupOption),
+  const isHighlighted = groupOptions.some((perkGroupOption) =>
+    isPerkGroupOptionEmphasized({
+      emphasizedCategoryNames,
+      emphasizedPerkGroupKeys,
+      perkGroupOption,
+    }),
   )
   const hasHighlightedPerk =
     hoveredPerkId !== null && perks.some((perk) => perk.perkId === hoveredPerkId)
@@ -196,7 +217,11 @@ export function BuildPerkGroupTile({
           {groupOptions.map((perkGroupOption) =>
             renderPerkGroupOptionIcon({
               arePerkGroupOptionsInteractive,
-              isOptionHighlighted: hoveredPerkGroupKey === getPerkGroupHoverKey(perkGroupOption),
+              isOptionHighlighted: isPerkGroupOptionEmphasized({
+                emphasizedCategoryNames,
+                emphasizedPerkGroupKeys,
+                perkGroupOption,
+              }),
               onClosePerkGroupHover,
               onInspectPerkGroup,
               onOpenPerkGroupHover,

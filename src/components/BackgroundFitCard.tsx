@@ -94,9 +94,10 @@ export function BackgroundFitTargetPerkGroup({
 }
 
 function BackgroundFitMatchRow({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
-  hoveredPerkGroupKey,
   hoveredPerkId,
   match,
   onCloseBuildPerkHover,
@@ -108,9 +109,10 @@ function BackgroundFitMatchRow({
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
 }: {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkGroupKey: string | null
   hoveredPerkId: string | null
   match: BackgroundFitMatch
   onCloseBuildPerkHover: (perkId: string) => void
@@ -130,6 +132,8 @@ function BackgroundFitMatchRow({
       <BuildPerkGroupTile
         arePerkGroupOptionsInteractive={false}
         className="background-fit-match"
+        emphasizedCategoryNames={emphasizedCategoryNames}
+        emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
         groupLabel={match.perkGroupName}
         groupOptions={[
           {
@@ -141,7 +145,6 @@ function BackgroundFitMatchRow({
         ]}
         hoveredBuildPerkId={hoveredBuildPerkId}
         hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-        hoveredPerkGroupKey={hoveredPerkGroupKey}
         hoveredPerkId={hoveredPerkId}
         isWide
         metaClassName="background-fit-match-probability-badge"
@@ -187,10 +190,11 @@ function BackgroundFitMetricBadge({
 
 export function BackgroundFitCard({
   backgroundFit,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   expandedBackgroundFitKey,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
-  hoveredPerkGroupKey,
   hoveredPerkId,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
@@ -208,10 +212,11 @@ export function BackgroundFitCard({
   supportedBuildTargetPerkGroupCount,
 }: {
   backgroundFit: RankedBackgroundFit
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   expandedBackgroundFitKey: string | null
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkGroupKey: string | null
   hoveredPerkId: string | null
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
@@ -386,9 +391,10 @@ export function BackgroundFitCard({
                 <ul className="background-fit-match-list">
                   {guaranteedMatches.map((match) => (
                     <BackgroundFitMatchRow
+                      emphasizedCategoryNames={emphasizedCategoryNames}
+                      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
                       hoveredBuildPerkId={hoveredBuildPerkId}
                       hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                      hoveredPerkGroupKey={hoveredPerkGroupKey}
                       hoveredPerkId={hoveredPerkId}
                       key={`${match.categoryName}-${match.perkGroupId}`}
                       match={match}
@@ -412,9 +418,10 @@ export function BackgroundFitCard({
                 <ul className="background-fit-match-list">
                   {probabilisticMatches.map((match) => (
                     <BackgroundFitMatchRow
+                      emphasizedCategoryNames={emphasizedCategoryNames}
+                      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
                       hoveredBuildPerkId={hoveredBuildPerkId}
                       hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                      hoveredPerkGroupKey={hoveredPerkGroupKey}
                       hoveredPerkId={hoveredPerkId}
                       key={`${match.categoryName}-${match.perkGroupId}`}
                       match={match}

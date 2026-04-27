@@ -861,6 +861,34 @@ test('links search result hover highlighting with matching build planner perks',
   await expect(pickedPerfectFocusTile).toHaveCSS('transform', 'none')
 })
 
+test('keeps sidebar perk group selection emphasized in the build planner', async ({ page }) => {
+  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await page.goto(createBuildUrl(['Colossus', 'Muscularity']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const sharedLargeGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
+    hasText: 'Large',
+  })
+  const colossusPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Colossus',
+  })
+  const muscularityPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Muscularity',
+  })
+
+  await expect(sharedLargeGroupCard).toBeVisible()
+  await expect(colossusPickedPerkTile).not.toHaveClass(/is-highlighted/)
+  await expect(muscularityPickedPerkTile).not.toHaveClass(/is-highlighted/)
+
+  await page.getByRole('button', { name: 'Enable category Traits' }).click()
+  await getSidebarPerkGroupButton(page, 'Large').click()
+
+  await expect(getSidebarPerkGroupButton(page, 'Large')).toHaveClass(/is-active/)
+  await expect(sharedLargeGroupCard).toHaveClass(/is-highlighted/)
+  await expect(colossusPickedPerkTile).toHaveClass(/is-highlighted/)
+  await expect(muscularityPickedPerkTile).toHaveClass(/is-highlighted/)
+})
+
 test('inspects picked perk tiles without removing them', async ({ page }) => {
   await gotoPerksBrowser(page)
 
