@@ -62,8 +62,20 @@ const buildPlannerGuidance =
   'Use the star in the detail panel or search results to collect perk picks, then review the shared perk groups and the remaining individual-perk groups below.'
 const buildPlannerScrollConstraintMinimumWidth = 1280
 const buildPlannerScrollConstraintMaximumWidth = 2560
-const buildPerkTooltipOpenDelayMs = 500
+const buildPerkTooltipCloseGraceMs = 120
+const buildPerkTooltipOpenDelayMs = 750
+const buildPerkTooltipTimerDelayMs = 250
 const maximumVisiblePlannerContentRows = 2
+
+function isBuildPerkTooltipTarget(relatedTarget: EventTarget | null): boolean {
+  const buildPerkTooltip = document.querySelector('.build-perk-tooltip')
+
+  return relatedTarget instanceof Node && buildPerkTooltip?.contains(relatedTarget) === true
+}
+
+function isBuildPerkTooltipHovered(): boolean {
+  return document.querySelector('.build-perk-tooltip:hover') !== null
+}
 
 function getVisualRowCount(elements: HTMLElement[]): number {
   const rowTops: number[] = []
@@ -233,16 +245,16 @@ function getHighlightedBuildPerkIdsForPerkGroup({
 
 function getPlannerSlotPerkClassName({
   isHighlighted,
-  isTooltipPending,
+  isTooltipIndicatorActive,
 }: {
   isHighlighted: boolean
-  isTooltipPending: boolean
+  isTooltipIndicatorActive: boolean
 }): string {
   return [
     'planner-slot',
     'planner-slot-perk',
     isHighlighted ? 'is-highlighted' : '',
-    isTooltipPending ? 'is-tooltip-pending' : '',
+    isTooltipIndicatorActive ? 'is-tooltip-pending' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -892,10 +904,11 @@ export function BuildPlanner({
   const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(false)
   const [isClearBuildDialogOpen, setIsClearBuildDialogOpen] = useState(false)
   const [isSavedBuildsDialogOpen, setIsSavedBuildsDialogOpen] = useState(false)
-  const [pendingBuildPerkTooltipPerkId, setPendingBuildPerkTooltipPerkId] = useState<string | null>(
-    null,
-  )
-  const buildPerkTooltipTimeoutRef = useRef<number | null>(null)
+  const [activeBuildPerkTooltipIndicatorPerkId, setActiveBuildPerkTooltipIndicatorPerkId] =
+    useState<string | null>(null)
+  const buildPerkTooltipCloseTimeoutRef = useRef<number | null>(null)
+  const buildPerkTooltipOpenTimeoutRef = useRef<number | null>(null)
+  const buildPerkTooltipTimerDelayTimeoutRef = useRef<number | null>(null)
   const updatePlannerScrollConstraint = useCallback(() => {
     const plannerBoard = plannerBoardRef.current
     const shouldConstrainPlanner =
@@ -928,37 +941,100 @@ export function BuildPlanner({
     [hoveredPerkGroupKey, individualPerkGroups, sharedPerkGroups],
   )
 
-  const clearPendingBuildPerkTooltip = useCallback(() => {
-    if (buildPerkTooltipTimeoutRef.current !== null) {
-      window.clearTimeout(buildPerkTooltipTimeoutRef.current)
-      buildPerkTooltipTimeoutRef.current = null
+  const clearBuildPerkTooltipOpenTimers = useCallback(() => {
+    if (buildPerkTooltipTimerDelayTimeoutRef.current !== null) {
+      window.clearTimeout(buildPerkTooltipTimerDelayTimeoutRef.current)
+      buildPerkTooltipTimerDelayTimeoutRef.current = null
     }
 
-    setPendingBuildPerkTooltipPerkId(null)
+    if (buildPerkTooltipOpenTimeoutRef.current !== null) {
+      window.clearTimeout(buildPerkTooltipOpenTimeoutRef.current)
+      buildPerkTooltipOpenTimeoutRef.current = null
+    }
   }, [])
 
+  const clearBuildPerkTooltipCloseTimer = useCallback(() => {
+    if (buildPerkTooltipCloseTimeoutRef.current !== null) {
+      window.clearTimeout(buildPerkTooltipCloseTimeoutRef.current)
+      buildPerkTooltipCloseTimeoutRef.current = null
+    }
+  }, [])
+
+  const clearPendingBuildPerkTooltip = useCallback(() => {
+    clearBuildPerkTooltipOpenTimers()
+    clearBuildPerkTooltipCloseTimer()
+    setActiveBuildPerkTooltipIndicatorPerkId(null)
+  }, [clearBuildPerkTooltipCloseTimer, clearBuildPerkTooltipOpenTimers])
+
   const closeBuildPerkTooltipPreview = useCallback(
-    (perkId: string) => {
-      clearPendingBuildPerkTooltip()
-      onCloseBuildPerkTooltip()
-      onCloseBuildPerkHover(perkId)
+    (perkId: string, relatedTarget?: EventTarget | null) => {
+      clearBuildPerkTooltipOpenTimers()
+
+      if (hoveredBuildPerk?.id !== perkId) {
+        clearBuildPerkTooltipCloseTimer()
+        setActiveBuildPerkTooltipIndicatorPerkId(null)
+        onCloseBuildPerkHover(perkId)
+        return
+      }
+
+      if (isBuildPerkTooltipTarget(relatedTarget ?? null)) {
+        return
+      }
+
+      clearBuildPerkTooltipCloseTimer()
+      buildPerkTooltipCloseTimeoutRef.current = window.setTimeout(() => {
+        buildPerkTooltipCloseTimeoutRef.current = null
+
+        if (isBuildPerkTooltipHovered()) {
+          return
+        }
+
+        setActiveBuildPerkTooltipIndicatorPerkId(null)
+        onCloseBuildPerkTooltip()
+        onCloseBuildPerkHover(perkId)
+      }, buildPerkTooltipCloseGraceMs)
     },
-    [clearPendingBuildPerkTooltip, onCloseBuildPerkHover, onCloseBuildPerkTooltip],
+    [
+      clearBuildPerkTooltipCloseTimer,
+      clearBuildPerkTooltipOpenTimers,
+      hoveredBuildPerk?.id,
+      onCloseBuildPerkHover,
+      onCloseBuildPerkTooltip,
+    ],
   )
 
   const openBuildPerkTooltipPreview = useCallback(
     (perkId: string, currentTarget: HTMLElement) => {
-      clearPendingBuildPerkTooltip()
+      clearBuildPerkTooltipCloseTimer()
+      clearBuildPerkTooltipOpenTimers()
       onOpenBuildPerkHover(perkId)
-      setPendingBuildPerkTooltipPerkId(perkId)
 
-      buildPerkTooltipTimeoutRef.current = window.setTimeout(() => {
-        buildPerkTooltipTimeoutRef.current = null
-        setPendingBuildPerkTooltipPerkId(null)
+      if (hoveredBuildPerk?.id === perkId) {
+        setActiveBuildPerkTooltipIndicatorPerkId(perkId)
+        return
+      }
+
+      onCloseBuildPerkTooltip()
+
+      buildPerkTooltipTimerDelayTimeoutRef.current = window.setTimeout(() => {
+        buildPerkTooltipTimerDelayTimeoutRef.current = null
+        setActiveBuildPerkTooltipIndicatorPerkId(perkId)
+      }, buildPerkTooltipTimerDelayMs)
+
+      buildPerkTooltipOpenTimeoutRef.current = window.setTimeout(() => {
+        buildPerkTooltipOpenTimeoutRef.current = null
+        setActiveBuildPerkTooltipIndicatorPerkId(perkId)
         onOpenBuildPerkTooltip(perkId, currentTarget)
       }, buildPerkTooltipOpenDelayMs)
     },
-    [clearPendingBuildPerkTooltip, onOpenBuildPerkHover, onOpenBuildPerkTooltip],
+    [
+      clearBuildPerkTooltipCloseTimer,
+      clearBuildPerkTooltipOpenTimers,
+      hoveredBuildPerk?.id,
+      onCloseBuildPerkTooltip,
+      onOpenBuildPerkHover,
+      onOpenBuildPerkTooltip,
+    ],
   )
 
   useEffect(() => {
@@ -999,11 +1075,10 @@ export function BuildPlanner({
 
   useEffect(() => {
     return () => {
-      if (buildPerkTooltipTimeoutRef.current !== null) {
-        window.clearTimeout(buildPerkTooltipTimeoutRef.current)
-      }
+      clearBuildPerkTooltipOpenTimers()
+      clearBuildPerkTooltipCloseTimer()
     }
-  }, [])
+  }, [clearBuildPerkTooltipCloseTimer, clearBuildPerkTooltipOpenTimers])
 
   function handleCloseClearBuildDialog() {
     setIsClearBuildDialogOpen(false)
@@ -1116,7 +1191,8 @@ export function BuildPlanner({
                         isHighlighted:
                           hoveredPerkId === pickedPerk.id ||
                           highlightedBuildPerkIdsForPerkGroup.has(pickedPerk.id),
-                        isTooltipPending: pendingBuildPerkTooltipPerkId === pickedPerk.id,
+                        isTooltipIndicatorActive:
+                          activeBuildPerkTooltipIndicatorPerkId === pickedPerk.id,
                       })}
                       key={pickedPerk.id}
                       onBlurCapture={(event) => {
@@ -1138,7 +1214,9 @@ export function BuildPlanner({
                       onMouseEnter={(event) =>
                         openBuildPerkTooltipPreview(pickedPerk.id, event.currentTarget)
                       }
-                      onMouseLeave={() => closeBuildPerkTooltipPreview(pickedPerk.id)}
+                      onMouseLeave={(event) =>
+                        closeBuildPerkTooltipPreview(pickedPerk.id, event.relatedTarget)
+                      }
                     >
                       <button
                         aria-describedby={
@@ -1304,10 +1382,15 @@ export function BuildPlanner({
         <div
           className="build-perk-tooltip"
           id={hoveredBuildPerkTooltipId}
+          onMouseEnter={clearBuildPerkTooltipCloseTimer}
+          onMouseLeave={() => {
+            clearPendingBuildPerkTooltip()
+            onCloseBuildPerkTooltip()
+            onCloseBuildPerkHover(hoveredBuildPerk.id)
+          }}
           role="tooltip"
           style={getAnchoredTooltipStyle(hoveredBuildPerkTooltip.anchorRectangle)}
         >
-          <strong className="build-perk-tooltip-title">{hoveredBuildPerk.perkName}</strong>
           <div className="build-perk-tooltip-copy">
             {getPerkPreviewParagraphs(hoveredBuildPerk).map(
               (previewParagraph, previewParagraphIndex) => (

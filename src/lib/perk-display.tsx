@@ -348,6 +348,6 @@ export function getAnchoredTooltipStyle(anchorRectangle: TooltipAnchorRectangle)
   return {
     left: `${left}px`,
     maxWidth: `${tooltipMaximumWidth}px`,
-    top: `${anchorRectangle.bottom + 8}px`,
+    top: `${anchorRectangle.bottom}px`,
   }
 }

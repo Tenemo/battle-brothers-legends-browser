@@ -329,8 +329,9 @@ test('build planner splits shared and individual perk groups without layout drif
     name: 'Remove Clarity from build',
   })
 
-  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/)
+  await expect(pickedPerkTile).not.toHaveClass(/is-tooltip-pending/)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/, { timeout: 500 })
   const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -384,13 +385,30 @@ test('build planner splits shared and individual perk groups without layout drif
     Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right),
   ).toBeLessThanOrEqual(1)
 
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 800 })
-  await expect(pickedPerkTile).not.toHaveClass(/is-tooltip-pending/)
-  await expect(page.getByRole('tooltip')).toContainText(
-    /An additional \+10% of any damage ignores armor/i,
-  )
+  const buildPerkTooltip = page.getByRole('tooltip')
+
+  await expect(buildPerkTooltip).toBeVisible({ timeout: 1200 })
+  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/)
+  await expect(buildPerkTooltip.locator('.build-perk-tooltip-title')).toHaveCount(0)
+  await expect(buildPerkTooltip).not.toContainText('Clarity')
+  await expect(buildPerkTooltip).toContainText(/An additional \+10% of any damage ignores armor/i)
+  const tooltipTouchGap = await page.evaluate(() => {
+    const tooltip = document.querySelector('.build-perk-tooltip')
+    const activeTrigger = document.querySelector('.planner-slot-perk.is-tooltip-pending')
+
+    if (!(tooltip instanceof HTMLElement) || !(activeTrigger instanceof HTMLElement)) {
+      return Number.POSITIVE_INFINITY
+    }
+
+    return tooltip.getBoundingClientRect().top - activeTrigger.getBoundingClientRect().bottom
+  })
+
+  expect(Math.abs(tooltipTouchGap)).toBeLessThanOrEqual(1)
+  await buildPerkTooltip.hover()
+  await expect(buildPerkTooltip).toBeVisible()
+  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/)
   await page.mouse.move(1, 1)
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(buildPerkTooltip).toHaveCount(0)
 
   await page.goto(
     '/?build=Clarity,Peaceable,Perfect+Focus,Berserk,Killing+Frenzy,Fearsome,Colossus',
@@ -682,7 +700,8 @@ test('separates planner group card hover from icon and perk pill hover states', 
   expectCssRgbColorsToMatch(iconBorderAfterDirectHover, iconBorderBeforeCardHover)
 
   await battleForgedPill.hover()
-  await expect(battleForgedPill).toHaveClass(/is-tooltip-pending/)
+  await expect(battleForgedPill).not.toHaveClass(/is-tooltip-pending/)
+  await expect(battleForgedPill).toHaveClass(/is-tooltip-pending/, { timeout: 500 })
   const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -717,8 +736,11 @@ test('separates planner group card hover from icon and perk pill hover states', 
   )
 
   expectCssRgbColorsToMatch(iconBorderAfterPerkHover, iconBorderBeforeCardHover)
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 800 })
-  await expect(page.getByRole('tooltip')).toContainText('Battle Forged')
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 1200 })
+  await expect(battleForgedPill).toHaveClass(/is-tooltip-pending/)
+  await expect(battleForgedPickedPerkTile).not.toHaveClass(/is-tooltip-pending/)
+  await expect(page.getByRole('tooltip')).not.toContainText('Battle Forged')
+  await expect(page.getByRole('tooltip')).toContainText(/Armor damage taken is reduced/i)
   await page.mouse.move(1, 1)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 })

@@ -5,7 +5,19 @@ export type BuildPerkPillSelection = {
   perkGroupId: string
 }
 
-const buildPerkPillTooltipOpenDelayMs = 500
+const buildPerkPillTooltipCloseGraceMs = 120
+const buildPerkPillTooltipOpenDelayMs = 750
+const buildPerkPillTooltipTimerDelayMs = 250
+
+function isBuildPerkTooltipTarget(relatedTarget: EventTarget | null): boolean {
+  const buildPerkTooltip = document.querySelector('.build-perk-tooltip')
+
+  return relatedTarget instanceof Node && buildPerkTooltip?.contains(relatedTarget) === true
+}
+
+function isBuildPerkTooltipHovered(): boolean {
+  return document.querySelector('.build-perk-tooltip:hover') !== null
+}
 
 function getBuildPerkPillClassName({
   isHighlighted,
@@ -48,58 +60,132 @@ export function BuildPerkPill({
   perkId: string
   perkName: string
 }) {
-  const [isTooltipPending, setIsTooltipPending] = useState(false)
-  const tooltipTimeoutRef = useRef<number | null>(null)
+  const [isTooltipIndicatorActive, setIsTooltipIndicatorActive] = useState(false)
+  const isPointerPreviewActiveRef = useRef(false)
+  const tooltipCloseTimeoutRef = useRef<number | null>(null)
+  const tooltipOpenTimeoutRef = useRef<number | null>(null)
+  const tooltipTimerDelayTimeoutRef = useRef<number | null>(null)
 
-  const clearPendingTooltip = useCallback(() => {
-    if (tooltipTimeoutRef.current !== null) {
-      window.clearTimeout(tooltipTimeoutRef.current)
-      tooltipTimeoutRef.current = null
+  const clearTooltipOpenTimers = useCallback(() => {
+    if (tooltipTimerDelayTimeoutRef.current !== null) {
+      window.clearTimeout(tooltipTimerDelayTimeoutRef.current)
+      tooltipTimerDelayTimeoutRef.current = null
     }
 
-    setIsTooltipPending(false)
+    if (tooltipOpenTimeoutRef.current !== null) {
+      window.clearTimeout(tooltipOpenTimeoutRef.current)
+      tooltipOpenTimeoutRef.current = null
+    }
   }, [])
 
-  const closeTooltipPreview = useCallback(() => {
-    clearPendingTooltip()
-    onCloseTooltip()
-    onCloseHover(perkId)
-  }, [clearPendingTooltip, onCloseHover, onCloseTooltip, perkId])
+  const clearTooltipCloseTimer = useCallback(() => {
+    if (tooltipCloseTimeoutRef.current !== null) {
+      window.clearTimeout(tooltipCloseTimeoutRef.current)
+      tooltipCloseTimeoutRef.current = null
+    }
+  }, [])
+
+  const closeTooltipPreview = useCallback(
+    (relatedTarget?: EventTarget | null) => {
+      isPointerPreviewActiveRef.current = false
+      clearTooltipOpenTimers()
+
+      if (hoveredBuildPerkId !== perkId) {
+        clearTooltipCloseTimer()
+        setIsTooltipIndicatorActive(false)
+        onCloseHover(perkId)
+        return
+      }
+
+      if (isBuildPerkTooltipTarget(relatedTarget ?? null)) {
+        return
+      }
+
+      clearTooltipCloseTimer()
+      tooltipCloseTimeoutRef.current = window.setTimeout(() => {
+        tooltipCloseTimeoutRef.current = null
+
+        if (isBuildPerkTooltipHovered()) {
+          return
+        }
+
+        setIsTooltipIndicatorActive(false)
+        onCloseTooltip()
+        onCloseHover(perkId)
+      }, buildPerkPillTooltipCloseGraceMs)
+    },
+    [
+      clearTooltipCloseTimer,
+      clearTooltipOpenTimers,
+      hoveredBuildPerkId,
+      onCloseHover,
+      onCloseTooltip,
+      perkId,
+    ],
+  )
 
   const openTooltipPreview = useCallback(
     (currentTarget: HTMLElement) => {
-      clearPendingTooltip()
-      onCloseTooltip()
+      isPointerPreviewActiveRef.current = true
+      clearTooltipCloseTimer()
+      clearTooltipOpenTimers()
       onOpenHover(perkId)
-      setIsTooltipPending(true)
 
-      tooltipTimeoutRef.current = window.setTimeout(() => {
-        tooltipTimeoutRef.current = null
-        setIsTooltipPending(false)
+      if (hoveredBuildPerkId === perkId) {
+        setIsTooltipIndicatorActive(true)
+        return
+      }
+
+      onCloseTooltip()
+
+      tooltipTimerDelayTimeoutRef.current = window.setTimeout(() => {
+        tooltipTimerDelayTimeoutRef.current = null
+        setIsTooltipIndicatorActive(true)
+      }, buildPerkPillTooltipTimerDelayMs)
+
+      tooltipOpenTimeoutRef.current = window.setTimeout(() => {
+        tooltipOpenTimeoutRef.current = null
+        setIsTooltipIndicatorActive(true)
         onOpenTooltip(perkId, currentTarget)
       }, buildPerkPillTooltipOpenDelayMs)
     },
-    [clearPendingTooltip, onCloseTooltip, onOpenHover, onOpenTooltip, perkId],
+    [
+      clearTooltipCloseTimer,
+      clearTooltipOpenTimers,
+      hoveredBuildPerkId,
+      onCloseTooltip,
+      onOpenHover,
+      onOpenTooltip,
+      perkId,
+    ],
   )
 
   useEffect(() => {
     return () => {
-      if (tooltipTimeoutRef.current !== null) {
-        window.clearTimeout(tooltipTimeoutRef.current)
-      }
+      clearTooltipOpenTimers()
+      clearTooltipCloseTimer()
     }
-  }, [])
+  }, [clearTooltipCloseTimer, clearTooltipOpenTimers])
+
+  useEffect(() => {
+    if (hoveredBuildPerkId !== perkId && !isPointerPreviewActiveRef.current) {
+      setIsTooltipIndicatorActive(false)
+    }
+  }, [hoveredBuildPerkId, perkId])
 
   return (
     <button
       aria-describedby={hoveredBuildPerkId === perkId ? hoveredBuildPerkTooltipId : undefined}
       className={getBuildPerkPillClassName({
         isHighlighted: hoveredPerkId === perkId,
-        isTooltipPending,
+        isTooltipPending: isTooltipIndicatorActive,
       })}
-      onBlur={closeTooltipPreview}
+      onBlur={() => closeTooltipPreview()}
       onClick={() => {
-        clearPendingTooltip()
+        isPointerPreviewActiveRef.current = false
+        clearTooltipOpenTimers()
+        clearTooltipCloseTimer()
+        setIsTooltipIndicatorActive(false)
         onCloseTooltip()
         onInspectPerk(perkId, perkGroupSelection)
       }}
@@ -110,7 +196,7 @@ export function BuildPerkPill({
         }
       }}
       onMouseEnter={(event) => openTooltipPreview(event.currentTarget)}
-      onMouseLeave={closeTooltipPreview}
+      onMouseLeave={(event) => closeTooltipPreview(event.relatedTarget)}
       type="button"
     >
       {perkName}
