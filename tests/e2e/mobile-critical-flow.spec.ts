@@ -24,7 +24,7 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const perkDetailPanel = getPerkDetailPanel(page)
   const apprenticeCard = backgroundFitPanel
-    .locator('.background-fit-card')
+    .getByTestId('background-fit-card')
     .filter({ hasText: 'Apprentice' })
     .first()
 
@@ -61,7 +61,7 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Axe')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Inspect Axe Mastery' })).toBeVisible()
 
   await backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }).click()

@@ -5,12 +5,14 @@ import {
   renderGameIcon,
   type GroupedBackgroundSource,
 } from '../lib/perk-display'
-import './PerkDetail.css'
+import { cx } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
 import type { LegendsFavouredEnemyTarget, LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton, DetailPanelRailChevron } from './SharedControls'
+import sharedStyles from './SharedControls.module.scss'
+import styles from './PerkDetail.module.scss'
 
 type PerkDetailProps = {
   emphasizedCategoryNames: ReadonlySet<string>
@@ -38,14 +40,14 @@ function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
   return (
     <>
       <div>
-        <span className="detail-background-source-names">
+        <span className={styles.detailBackgroundSourceNames} data-testid="detail-background-source-names">
           {backgroundSource.backgroundNames.join(', ')}
         </span>
-        <p className="detail-support">
+        <p className={styles.detailSupport}>
           {backgroundSource.categoryName} / {backgroundSource.perkGroupName}
         </p>
       </div>
-      <span className="detail-badge">
+      <span className={styles.detailBadge} data-testid="detail-badge">
         {formatBackgroundSourceProbabilityLabel(backgroundSource.probability)}
       </span>
     </>
@@ -58,7 +60,7 @@ function renderFavouredEnemyTarget(favouredEnemyTarget: LegendsFavouredEnemyTarg
       <div>
         <strong>{favouredEnemyTarget.entityName}</strong>
       </div>
-      <span className="detail-badge">
+      <span className={styles.detailBadge} data-testid="detail-badge">
         {favouredEnemyTarget.killsPerPercentBonus === null
           ? 'Varies'
           : `${favouredEnemyTarget.killsPerPercentBonus} kills / 1%`}
@@ -91,20 +93,21 @@ export function PerkDetail({
   return (
     <aside
       aria-label="Perk details"
-      className={isExpanded ? 'detail-panel is-expanded' : 'detail-panel is-collapsed'}
+      className={styles.detailPanel}
+      data-expanded={isExpanded}
       data-testid="perk-detail-panel"
     >
       <button
         aria-expanded={isExpanded}
         aria-label={`${isExpanded ? 'Collapse' : 'Expand'} perk details`}
-        className="detail-panel-rail-button"
+        className={styles.detailPanelRailButton}
         onClick={onToggleExpanded}
         type="button"
       >
-        <span aria-hidden="true" className="detail-panel-rail-button-icon">
-          <DetailPanelRailChevron isExpanded={isExpanded} />
+        <span aria-hidden="true" className={styles.detailPanelRailButtonIcon}>
+          <DetailPanelRailChevron className={styles.detailPanelRailChevron} isExpanded={isExpanded} />
         </span>
-        <span aria-hidden="true" className="detail-panel-rail-button-label">
+        <span aria-hidden="true" className={styles.detailPanelRailButtonLabel}>
           Perk details
         </span>
       </button>
@@ -112,31 +115,33 @@ export function PerkDetail({
       <div
         aria-hidden={!isExpanded}
         aria-live="polite"
-        className="detail-panel-body app-scrollbar"
+        className={cx(styles.detailPanelBody, 'app-scrollbar')}
+        data-scroll-container="true"
         data-testid="perk-detail-panel-body"
         hidden={!isExpanded}
       >
         {selectedPerk === null ? (
-          <div className="empty-state">
+          <div className={sharedStyles.emptyState} data-testid="empty-state">
             <h2>Select a perk</h2>
             <p>Pick any entry from the list to inspect its placement, sources, and overlays.</p>
           </div>
         ) : (
           <>
-            <div className="detail-header">
-              <div className="detail-header-main">
+            <div className={styles.detailHeader}>
+              <div className={styles.detailHeaderMain}>
                 {renderGameIcon({
-                  className: 'perk-icon perk-icon-large',
+                  className: cx(sharedStyles.perkIcon, sharedStyles.perkIconLarge),
                   iconPath: getPerkDisplayIconPath(selectedPerk),
                   label: `${selectedPerk.perkName} icon`,
+                  testId: 'detail-perk-icon',
                 })}
                 <div>
-                  <p className="eyebrow">{selectedPerk.primaryCategoryName}</p>
+                  <p className={styles.eyebrow}>{selectedPerk.primaryCategoryName}</p>
                   <h2>{selectedPerk.perkName}</h2>
-                  <p className="detail-meta">{selectedPerk.categoryNames.join(', ')}</p>
+                  <p className={styles.detailMeta}>{selectedPerk.categoryNames.join(', ')}</p>
                 </div>
               </div>
-              <div className="detail-header-actions">
+              <div className={styles.detailHeaderActions}>
                 <BuildToggleButton
                   isPicked={isSelectedPerkPicked}
                   onClick={() => onTogglePerkPicked(selectedPerk.id)}
@@ -146,7 +151,7 @@ export function PerkDetail({
               </div>
             </div>
 
-            <div className="detail-section">
+            <div className={styles.detailSection} data-testid="detail-section">
               <h3>Details</h3>
               {selectedPerk.descriptionParagraphs.length > 0 ? (
                 selectedPerk.descriptionParagraphs.map((paragraph) => (
@@ -157,16 +162,16 @@ export function PerkDetail({
               )}
             </div>
 
-            <div className="detail-section">
+            <div className={styles.detailSection} data-testid="detail-section">
               <h3>Perk group placement</h3>
               {selectedPerk.placements.length > 0 ? (
-                <ul className="detail-placement-list">
+                <ul className={styles.detailPlacementList}>
                   {selectedPerk.placements.map((placement) => (
                     <li
                       key={`${placement.categoryName}-${placement.perkGroupId}-${placement.tier ?? 'none'}`}
                     >
                       <BuildPerkGroupTile
-                        className="detail-placement-tile"
+                        className={styles.detailPlacementTile}
                         emphasizedCategoryNames={emphasizedCategoryNames}
                         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
                         groupLabel={placement.perkGroupName}
@@ -183,8 +188,9 @@ export function PerkDetail({
                         hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
                         hoveredPerkId={hoveredPerkId}
                         isWide
-                        metaClassName="detail-placement-tier-badge"
+                        metaClassName={styles.detailPlacementTierBadge}
                         metaLabel={getTierLabel(placement.tier)}
+                        metaTestId="detail-placement-tier-badge"
                         onCloseBuildPerkHover={onCloseBuildPerkHover}
                         onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
                         onClosePerkGroupHover={onClosePerkGroupHover}
@@ -209,9 +215,9 @@ export function PerkDetail({
             </div>
 
             {selectedPerk.favouredEnemyTargets && selectedPerk.favouredEnemyTargets.length > 0 ? (
-              <div className="detail-section">
+              <div className={styles.detailSection} data-testid="detail-section">
                 <h3>Favoured enemy targets</h3>
-                <ul className="detail-list">
+                <ul className={styles.detailList}>
                   {selectedPerk.favouredEnemyTargets.map((favouredEnemyTarget) => (
                     <li key={favouredEnemyTarget.entityConstName}>
                       {renderFavouredEnemyTarget(favouredEnemyTarget)}
@@ -221,10 +227,10 @@ export function PerkDetail({
               </div>
             ) : null}
 
-            <div className="detail-section">
+            <div className={styles.detailSection} data-testid="detail-section">
               <h3>Background sources</h3>
               {groupedBackgroundSources.length > 0 ? (
-                <ul className="detail-list">
+                <ul className={styles.detailList}>
                   {groupedBackgroundSources.map((backgroundSource) => (
                     <li
                       key={`${backgroundSource.categoryName}-${backgroundSource.perkGroupId}-${
@@ -240,17 +246,19 @@ export function PerkDetail({
               )}
             </div>
 
-            <div className="detail-section">
+            <div className={styles.detailSection} data-testid="detail-section">
               <h3>Scenario overlays</h3>
               {selectedPerk.scenarioSources.length > 0 ? (
-                <ul className="detail-list">
+                <ul className={styles.detailList}>
                   {selectedPerk.scenarioSources.map((scenarioSource) => (
                     <li
                       key={`${scenarioSource.scenarioId}-${scenarioSource.grantType}-${scenarioSource.sourceMethodName}`}
                     >
                       <div>
                         <strong>{scenarioSource.scenarioName}</strong>
-                        <p className="detail-support">{formatScenarioGrantLabel(scenarioSource)}</p>
+                        <p className={styles.detailSupport}>
+                          {formatScenarioGrantLabel(scenarioSource)}
+                        </p>
                       </div>
                     </li>
                   ))}

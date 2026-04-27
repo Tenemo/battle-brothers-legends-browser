@@ -5,13 +5,13 @@ const buildPerkTooltipOpenDelayMs = 750
 const buildPerkTooltipTimerDelayMs = 250
 
 function isBuildPerkTooltipTarget(relatedTarget: EventTarget | null): boolean {
-  const buildPerkTooltip = document.querySelector('.build-perk-tooltip')
+  const buildPerkTooltip = document.querySelector('[data-build-perk-tooltip="true"]')
 
   return relatedTarget instanceof Node && buildPerkTooltip?.contains(relatedTarget) === true
 }
 
 function isBuildPerkTooltipHovered(): boolean {
-  return document.querySelector('.build-perk-tooltip:hover') !== null
+  return document.querySelector('[data-build-perk-tooltip="true"]:hover') !== null
 }
 
 export function useBuildPerkTooltipPreview({

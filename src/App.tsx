@@ -3,7 +3,7 @@ import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
 import '@fontsource/source-sans-3/700.css'
-import './App.css'
+import styles from './App.module.scss'
 import { BackgroundFitPanel } from './components/BackgroundFitPanel'
 import {
   BuildPlanner,
@@ -32,6 +32,7 @@ import { buildPerkBrowserBuildUrlSearch } from './lib/perk-browser-url-state'
 import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
 import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
+import { cx } from './lib/class-names'
 import {
   usePerkBrowserUrlSync,
   useInitialPerkBrowserUrlState,
@@ -270,14 +271,6 @@ export default function App() {
       ),
     [selectedPerkGroupIdsByCategory],
   )
-  const workspaceClassName = [
-    'workspace',
-    isBackgroundFitPanelExpanded ? 'is-background-fit-expanded' : 'is-background-fit-collapsed',
-    isPerkDetailPanelExpanded ? 'is-detail-expanded' : 'is-detail-collapsed',
-    hasActiveBackgroundFitSearch ? 'has-active-background-fit-search' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
   const handleUrlStateChange = useCallback(
     (urlState: typeof initialUrlState) => {
       startTransition(() => {
@@ -516,24 +509,27 @@ export default function App() {
   }, [selectedPerkId, visiblePerks])
 
   return (
-    <div className="app-shell">
-      <div className="background-runes" aria-hidden="true" />
-      <header className="hero">
-        <div className="hero-copy">
+    <div className={styles.appShell} data-testid="app-shell">
+      <div className={styles.backgroundRunes} aria-hidden="true" />
+      <header className={styles.hero} data-testid="hero">
+        <div className={styles.heroCopy}>
           <h1>Build planner</h1>
           <a
             aria-label="Open the Battle Brothers Legends mod repository on GitHub"
-            className="eyebrow hero-brand"
+            className={cx(styles.eyebrow, styles.heroBrand)}
             href={legendsModRepositoryUrl}
             rel="noopener noreferrer"
             target="_blank"
           >
-            Battle Brothers <span className="hero-brand-emphasis">Legends</span>
+            Battle Brothers{' '}
+            <span className={styles.heroBrandEmphasis} data-testid="hero-brand-emphasis">
+              Legends
+            </span>
           </a>
         </div>
-        <div className="hero-top-bar">
-          <div className="hero-top-actions">
-            <dl className="hero-meta" aria-label="Perk catalog summary">
+        <div className={styles.heroTopBar}>
+          <div className={styles.heroTopActions}>
+            <dl className={styles.heroMeta} aria-label="Perk catalog summary">
               <div>
                 <dt>Perks</dt>
                 <dd>{legendsPerksDataset.perkCount}</dd>
@@ -553,12 +549,12 @@ export default function App() {
             </dl>
             <a
               aria-label="Open the build planner repository on GitHub"
-              className="hero-repository-link"
+              className={styles.heroRepositoryLink}
               href={repositoryUrl}
               rel="noopener noreferrer"
               target="_blank"
             >
-              <GitHubIcon className="hero-repository-link-icon" />
+              <GitHubIcon className={styles.heroRepositoryLinkIcon} />
             </a>
           </div>
         </div>
@@ -598,7 +594,13 @@ export default function App() {
         sharedPerkGroups={buildPlannerGroups.sharedPerkGroups}
       />
 
-      <main className={workspaceClassName}>
+      <main
+        className={styles.workspace}
+        data-background-fit-collapsed={!isBackgroundFitPanelExpanded}
+        data-background-fit-search-active={hasActiveBackgroundFitSearch}
+        data-detail-collapsed={!isPerkDetailPanelExpanded}
+        data-testid="workspace"
+      >
         <BackgroundFitPanel
           backgroundFitView={backgroundFitView}
           emphasizedCategoryNames={emphasizedCategoryNames}

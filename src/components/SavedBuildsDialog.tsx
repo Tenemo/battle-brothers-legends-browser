@@ -1,8 +1,10 @@
 import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
 import { Copy, Download, Save, Trash2, X } from 'lucide-react'
+import { cx } from '../lib/class-names'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
+import styles from './BuildPlanner.module.scss'
 
 function getDefaultSavedBuildName(savedBuilds: BuildPlannerSavedBuild[]): string {
   const savedBuildNames = new Set(savedBuilds.map((savedBuild) => savedBuild.name))
@@ -152,7 +154,7 @@ export function SavedBuildsDialog({
 
   return (
     <div
-      className="saved-builds-dialog-backdrop"
+      className={styles.dialogBackdrop}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           onClose()
@@ -167,30 +169,30 @@ export function SavedBuildsDialog({
       <section
         aria-labelledby={titleId}
         aria-modal="true"
-        className="saved-builds-dialog"
+        className={styles.savedBuildsDialog}
         role="dialog"
       >
-        <div className="saved-builds-dialog-header">
+        <div className={styles.savedBuildsDialogHeader}>
           <div>
             <h2 id={titleId}>Saved builds</h2>
-            <p className="saved-builds-storage-status">
+            <p className={styles.savedBuildsStorageStatus}>
               {getSavedBuildPersistenceLabel(savedBuildPersistenceState)}
             </p>
           </div>
           <button
             aria-label="Close saved builds"
-            className="planner-action-button saved-builds-close-button"
+            className={cx(styles.plannerActionButton, styles.savedBuildsCloseButton)}
             onClick={onClose}
             type="button"
           >
-            <X aria-hidden="true" className="planner-button-icon" />
+            <X aria-hidden="true" className={styles.plannerButtonIcon} />
             Close
           </button>
         </div>
 
-        <form className="saved-build-form" onSubmit={handleSaveCurrentBuild}>
+        <form className={styles.savedBuildForm} onSubmit={handleSaveCurrentBuild}>
           <label htmlFor={nameInputId}>Build name</label>
-          <div className="saved-build-form-row">
+          <div className={styles.savedBuildFormRow}>
             <input
               disabled={!hasPickedPerks || isSaving}
               id={nameInputId}
@@ -201,11 +203,11 @@ export function SavedBuildsDialog({
               value={buildName}
             />
             <button
-              className="planner-action-button saved-build-primary-button"
+              className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
               disabled={!hasPickedPerks || isSaving}
               type="submit"
             >
-              <Save aria-hidden="true" className="planner-button-icon" />
+              <Save aria-hidden="true" className={styles.plannerButtonIcon} />
               {isSaving ? 'Saving' : 'Save current'}
             </button>
           </div>
@@ -213,22 +215,23 @@ export function SavedBuildsDialog({
 
         {statusLabel ? (
           <p
-            className={
-              savedBuildsErrorMessage
-                ? 'saved-builds-status-message is-error'
-                : 'saved-builds-status-message'
-            }
+            className={styles.savedBuildsStatusMessage}
+            data-status={savedBuildsErrorMessage ? 'error' : 'success'}
             role={savedBuildsErrorMessage ? 'alert' : 'status'}
           >
             {statusLabel}
           </p>
         ) : null}
 
-        <div className="saved-builds-list app-scrollbar" data-testid="saved-builds-list">
+        <div
+          className={cx(styles.savedBuildsList, 'app-scrollbar')}
+          data-scroll-container="true"
+          data-testid="saved-builds-list"
+        >
           {isSavedBuildsLoading ? (
-            <p className="saved-builds-empty">Loading saved builds.</p>
+            <p className={styles.savedBuildsEmpty}>Loading saved builds.</p>
           ) : savedBuilds.length === 0 ? (
-            <p className="saved-builds-empty">No saved builds yet.</p>
+            <p className={styles.savedBuildsEmpty}>No saved builds yet.</p>
           ) : (
             savedBuilds.map((savedBuild) => {
               const visiblePerkNames = savedBuild.perkNames.slice(0, 4)
@@ -240,23 +243,27 @@ export function SavedBuildsDialog({
               const isPending = pendingSavedBuildId === savedBuild.id
 
               return (
-                <article className="saved-build-card" key={savedBuild.id}>
-                  <div className="saved-build-card-copy">
-                    <strong className="saved-build-card-name">{savedBuild.name}</strong>
-                    <p className="saved-build-card-meta">{perkSummary}</p>
-                    <p className="saved-build-card-preview">
+                <article
+                  className={styles.savedBuildCard}
+                  data-testid="saved-build-card"
+                  key={savedBuild.id}
+                >
+                  <div className={styles.savedBuildCardCopy}>
+                    <strong className={styles.savedBuildCardName}>{savedBuild.name}</strong>
+                    <p className={styles.savedBuildCardMeta}>{perkSummary}</p>
+                    <p className={styles.savedBuildCardPreview}>
                       {visiblePerkNames.length > 0
                         ? `${visiblePerkNames.join(', ')}${remainingPerkNameCount > 0 ? `, +${remainingPerkNameCount}` : ''}`
                         : 'No available perks'}
                     </p>
-                    <p className="saved-build-card-meta">
+                    <p className={styles.savedBuildCardMeta}>
                       Updated {formatSavedBuildUpdatedAt(savedBuild.updatedAt)}
                     </p>
                   </div>
-                  <div className="saved-build-card-actions">
+                  <div className={styles.savedBuildCardActions}>
                     <button
                       aria-label={`Load saved build ${savedBuild.name}`}
-                      className="planner-action-button saved-build-primary-button"
+                      className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
                       disabled={savedBuild.availablePerkIds.length === 0 || isPending}
                       onClick={() => {
                         onLoadSavedBuild(savedBuild.id)
@@ -264,31 +271,31 @@ export function SavedBuildsDialog({
                       }}
                       type="button"
                     >
-                      <Download aria-hidden="true" className="planner-button-icon" />
+                      <Download aria-hidden="true" className={styles.plannerButtonIcon} />
                       Load
                     </button>
                     <button
                       aria-label={`Copy saved build ${savedBuild.name} link`}
-                      className="planner-action-button"
+                      className={styles.plannerActionButton}
                       disabled={savedBuild.availablePerkIds.length === 0 || isPending}
                       onClick={() => {
                         void handleCopySavedBuildLink(savedBuild.id)
                       }}
                       type="button"
                     >
-                      <Copy aria-hidden="true" className="planner-button-icon" />
+                      <Copy aria-hidden="true" className={styles.plannerButtonIcon} />
                       Copy link
                     </button>
                     <button
                       aria-label={`Delete saved build ${savedBuild.name}`}
-                      className="planner-action-button saved-build-delete-button"
+                      className={cx(styles.plannerActionButton, styles.savedBuildDeleteButton)}
                       disabled={isPending}
                       onClick={() => {
                         void handleDeleteSavedBuild(savedBuild.id)
                       }}
                       type="button"
                     >
-                      <Trash2 aria-hidden="true" className="planner-button-icon" />
+                      <Trash2 aria-hidden="true" className={styles.plannerButtonIcon} />
                       Delete
                     </button>
                   </div>

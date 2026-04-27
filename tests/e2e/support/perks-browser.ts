@@ -40,7 +40,7 @@ export function getResultsList(page: Page): Locator {
 }
 
 function getSidebar(page: Page): Locator {
-  return page.locator('.sidebar')
+  return page.getByTestId('category-sidebar')
 }
 
 export function getSidebarPerkGroupButton(page: Page, perkGroupName: string): Locator {
@@ -66,8 +66,10 @@ export async function expectViewportLocked(page: Page): Promise<void> {
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const detailPanelBody = document.querySelector('.detail-panel-body') as HTMLElement | null
-        const resultsList = document.querySelector('.results-list') as HTMLElement | null
+        const detailPanelBody = document.querySelector(
+          '[data-testid="perk-detail-panel-body"]',
+        ) as HTMLElement | null
+        const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
 
         return {
           detailPanelIsScrollable:
@@ -107,7 +109,7 @@ export async function expectNoWorkspaceHorizontalClip(page: Page): Promise<void>
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const workspace = document.querySelector('.workspace') as HTMLElement | null
+        const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
 
         if (workspace === null) {
           return Number.POSITIVE_INFINITY
@@ -115,10 +117,10 @@ export async function expectNoWorkspaceHorizontalClip(page: Page): Promise<void>
 
         const workspaceRight = workspace.getBoundingClientRect().right
         const workspaceColumnRights = [
-          '.background-fit-panel',
-          '.sidebar',
-          '.results-panel',
-          '.detail-panel',
+          '[data-testid="background-fit-panel"]',
+          '[data-testid="category-sidebar"]',
+          '[aria-label="Perk results"]',
+          '[data-testid="perk-detail-panel"]',
         ].flatMap((selector) => {
           const element = document.querySelector(selector)
 

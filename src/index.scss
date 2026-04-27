@@ -119,3 +119,32 @@
     }
   }
 }
+
+@layer utilities {
+  .app-scrollbar {
+    scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: var(--primitive-length-1px);
+    height: var(--primitive-length-1px);
+    padding: 0;
+    margin: var(--primitive-length-negative-1px);
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: var(--primitive-duration-1ms) !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: var(--primitive-duration-1ms) !important;
+    }
+  }
+}

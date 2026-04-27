@@ -30,21 +30,21 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
   await inspectPerkFromResults(page, 'Perfect Focus')
 
   const backgroundSourcesSection = page
-    .locator('.detail-section')
+    .getByTestId('detail-section')
     .filter({ has: page.getByRole('heading', { level: 3, name: 'Background sources' }) })
 
   await expect(page.getByRole('heading', { level: 2, name: 'Perfect Focus' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Background sources' })).toBeVisible()
   await expect(
     backgroundSourcesSection
-      .locator('.detail-background-source-names')
+      .getByTestId('detail-background-source-names')
       .getByText(/Anatomist.*Beast Slayer.*Youngblood/i),
   ).toBeVisible()
   const groupedBackgroundSourceRow = backgroundSourcesSection.locator('li').filter({
     hasText: /Anatomist.*Beast Slayer.*Youngblood/i,
   })
   const backgroundSourceNamesFontWeight = await groupedBackgroundSourceRow
-    .locator('.detail-background-source-names')
+    .getByTestId('detail-background-source-names')
     .evaluate((element) => window.getComputedStyle(element).fontWeight)
 
   expect(Number(backgroundSourceNamesFontWeight)).toBeLessThan(600)
@@ -82,7 +82,7 @@ test('shows inferred random-fill background sources with calculated chance', asy
   await inspectPerkFromResults(page, 'Alert')
 
   const backgroundSourcesSection = page
-    .locator('.detail-section')
+    .getByTestId('detail-section')
     .filter({ has: page.getByRole('heading', { level: 3, name: 'Background sources' }) })
   const hedgeKnightBackgroundSourceRow = backgroundSourcesSection.locator('li').filter({
     hasText: /Hedge Knight/,
@@ -100,10 +100,10 @@ test('sorts background sources from guaranteed to lowest chance', async ({ page 
   await inspectPerkFromResults(page, 'Alert')
 
   const backgroundSourcesSection = page
-    .locator('.detail-section')
+    .getByTestId('detail-section')
     .filter({ has: page.getByRole('heading', { level: 3, name: 'Background sources' }) })
   const probabilityLabels = await backgroundSourcesSection
-    .locator('.detail-badge')
+    .getByTestId('detail-badge')
     .allTextContents()
   const probabilities = probabilityLabels.map(readBackgroundSourceProbabilityLabel)
 
@@ -121,17 +121,17 @@ test('keeps raw perk group flavour strings out of perk details', async ({ page }
   await inspectPerkFromResults(page, 'Favoured Enemy - Civilization')
 
   const perkGroupPlacementSection = page
-    .locator('.detail-section')
+    .getByTestId('detail-section')
     .filter({ has: page.getByRole('heading', { level: 3, name: 'Perk group placement' }) })
-  const civilizationPlacementTile = perkGroupPlacementSection.locator('.planner-group-card', {
-    hasText: 'Civilization',
-  })
+  const civilizationPlacementTile = perkGroupPlacementSection
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Civilization' })
 
-  await expect(civilizationPlacementTile).toHaveClass(/detail-placement-tile/)
+  await expect(civilizationPlacementTile).toHaveAttribute('data-testid', 'planner-group-card')
   await expect(
     civilizationPlacementTile.getByRole('img', { name: 'Civilization perk group icon' }),
   ).toBeVisible()
-  await expect(civilizationPlacementTile.locator('.detail-placement-tier-badge')).toHaveText(
+  await expect(civilizationPlacementTile.getByTestId('detail-placement-tier-badge')).toHaveText(
     'Tier 5',
   )
   await expect(
@@ -145,5 +145,5 @@ test('keeps raw perk group flavour strings out of perk details', async ({ page }
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Civilization')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Civilization')).toHaveAttribute('aria-pressed', 'true')
 })

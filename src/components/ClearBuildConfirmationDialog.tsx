@@ -1,5 +1,7 @@
 import { type KeyboardEvent, useEffect, useId, useRef } from 'react'
 import { CircleAlert, RotateCcw, X } from 'lucide-react'
+import { cx } from '../lib/class-names'
+import styles from './BuildPlanner.module.scss'
 
 function keepKeyboardFocusInsideDialog(event: KeyboardEvent<HTMLElement>) {
   if (event.key !== 'Tab') {
@@ -49,7 +51,7 @@ export function ClearBuildConfirmationDialog({
 
   return (
     <div
-      className="clear-build-dialog-backdrop"
+      className={styles.dialogBackdrop}
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           onCancel()
@@ -68,35 +70,35 @@ export function ClearBuildConfirmationDialog({
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
         aria-modal="true"
-        className="clear-build-dialog"
+        className={styles.clearBuildDialog}
         role="alertdialog"
       >
-        <span aria-hidden="true" className="clear-build-dialog-icon">
-          <CircleAlert className="clear-build-dialog-icon-svg" />
+        <span aria-hidden="true" className={styles.clearBuildDialogIcon}>
+          <CircleAlert className={styles.clearBuildDialogIconSvg} />
         </span>
-        <div className="clear-build-dialog-copy">
+        <div className={styles.clearBuildDialogCopy}>
           <h2 id={titleId}>Clear this build?</h2>
           <p id={descriptionId}>
             This removes {pickedPerkLabel} from the current planner. Saved builds are not affected.
           </p>
-          <p className="clear-build-dialog-warning">This cannot be undone.</p>
+          <p className={styles.clearBuildDialogWarning}>This cannot be undone.</p>
         </div>
-        <div className="clear-build-dialog-actions">
+        <div className={styles.clearBuildDialogActions}>
           <button
-            className="planner-action-button saved-build-primary-button"
+            className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
             onClick={onCancel}
             ref={keepBuildButtonRef}
             type="button"
           >
-            <X aria-hidden="true" className="planner-button-icon" />
+            <X aria-hidden="true" className={styles.plannerButtonIcon} />
             Keep build
           </button>
           <button
-            className="planner-action-button clear-build-confirm-button"
+            className={cx(styles.plannerActionButton, styles.clearBuildConfirmButton)}
             onClick={onConfirm}
             type="button"
           >
-            <RotateCcw aria-hidden="true" className="planner-button-icon" />
+            <RotateCcw aria-hidden="true" className={styles.plannerButtonIcon} />
             Clear build
           </button>
         </div>

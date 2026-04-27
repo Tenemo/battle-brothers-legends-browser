@@ -47,9 +47,9 @@ afterEach(() => {
 
 describe('app', () => {
   test('renders the catalog shell without the old reference root footer', () => {
-    const { container } = render(<App />)
+    render(<App />)
     const hero = screen.getByRole('banner')
-    const brandEmphasis = container.querySelector('.hero-brand-emphasis')
+    const brandEmphasis = screen.getByTestId('hero-brand-emphasis')
     const legendsModRepositoryLink = within(hero).getByRole('link', {
       name: 'Open the Battle Brothers Legends mod repository on GitHub',
     })
@@ -59,7 +59,6 @@ describe('app', () => {
       'href',
       'https://github.com/Battle-Brothers-Legends/Legends-public',
     )
-    expect(legendsModRepositoryLink).toHaveClass('eyebrow', 'hero-brand')
     expect(brandEmphasis).not.toBeNull()
     expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
@@ -108,13 +107,13 @@ describe('app', () => {
 
   test('shows the background search clear button only while search has text', async () => {
     const user = userEvent.setup()
-    const { container } = render(<App />)
+    render(<App />)
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
     const filterBackgroundsButton = within(backgroundFitPanel).getByRole('button', {
       name: 'Filter backgrounds',
     })
-    const searchInputControl = backgroundSearchInput.closest('.search-input-control')
+    const searchInputControl = backgroundSearchInput.closest('[data-testid="search-input-control"]')
 
     expect(
       within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
@@ -147,7 +146,7 @@ describe('app', () => {
     expect(
       within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
     ).not.toBeInTheDocument()
-    expect(container.querySelector('.background-fit-panel .search-highlight')).toBeNull()
+    expect(backgroundFitPanel.querySelector('[data-search-highlight="true"]')).toBeNull()
     expect(backgroundSearchInput).toHaveFocus()
   })
 

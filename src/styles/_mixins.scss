@@ -1,0 +1,277 @@
+@mixin panel-surface {
+  border: var(--primitive-length-1px) solid var(--border-color);
+  background: var(--panel-background);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(var(--primitive-length-10px));
+}
+
+@mixin rounded-panel {
+  @include panel-surface;
+
+  border-radius: var(--radius-2xl);
+}
+
+@mixin focus-ring($offset: var(--primitive-length-2px)) {
+  outline: var(--primitive-length-2px) solid var(--focus-ring);
+  outline-offset: $offset;
+}
+
+@mixin size($width, $height: $width) {
+  width: $width;
+  height: $height;
+}
+
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@mixin hidden-attribute {
+  &[hidden] {
+    display: none !important;
+  }
+}
+
+@mixin control-transition {
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    color var(--motion-fast),
+    opacity var(--motion-fast);
+}
+
+@mixin surface-transition {
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    color var(--motion-fast);
+}
+
+@mixin control-surface {
+  border: var(--primitive-length-1px) solid var(--border-muted);
+  background: var(--surface-control);
+  color: var(--text-secondary);
+
+  @include control-transition;
+}
+
+@mixin result-surface($radius: var(--radius-lg)) {
+  min-width: 0;
+  border: var(--primitive-length-1px) solid var(--border-subtle);
+  border-radius: $radius;
+  background: var(--surface-result);
+}
+
+@mixin badge-surface {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: var(--primitive-length-1px) solid var(--border-muted);
+  border-radius: var(--radius-pill);
+  background: var(--primitive-color-rgb-20-17-14-alpha-0-8);
+  color: var(--accent-soft);
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+}
+
+@mixin tooltip-surface {
+  z-index: var(--z-index-tooltip);
+  border: var(--primitive-length-1px) solid var(--border-overlay);
+  border-radius: var(--radius-lg);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-medium);
+  color: var(--text-secondary);
+  pointer-events: auto;
+}
+
+@mixin rail-panel-shell($body-selector, $label-selector, $body-transform, $label-transform) {
+  display: flex;
+  flex-direction: row;
+  gap: 0;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  transition:
+    width var(--motion-panel-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow var(--motion-medium-duration) ease,
+    border-color var(--motion-medium-duration) ease;
+
+  @include rounded-panel;
+
+  &[data-expanded='false'] {
+    width: var(--control-height-lg);
+
+    #{$body-selector} {
+      pointer-events: none;
+      flex: 0 0 0;
+      min-width: 0;
+      min-height: 0;
+      height: 0;
+      overflow: hidden;
+      padding: 0;
+      opacity: 0;
+      transform: $body-transform;
+    }
+  }
+
+  &[data-expanded='true'] #{$label-selector} {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transform: $label-transform;
+  }
+}
+
+@mixin rail-panel-body($padding, $overflow) {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-xl);
+  min-width: 0;
+  min-height: 0;
+  overflow: $overflow;
+  padding: $padding;
+  opacity: 1;
+  transform: translateX(0);
+  transition:
+    padding var(--motion-panel-duration) cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity var(--motion-medium-duration) ease,
+    transform var(--motion-panel-duration) cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @include hidden-attribute;
+}
+
+@mixin rail-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent-soft);
+}
+
+@mixin rail-chevron {
+  width: var(--icon-size-sm);
+  height: var(--icon-size-sm);
+  transition:
+    transform var(--motion-medium-duration) ease,
+    color var(--motion-medium-duration) ease;
+}
+
+@mixin rail-button {
+  appearance: none;
+  display: flex;
+  flex: 0 0 var(--control-height-lg);
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-lg);
+  align-self: stretch;
+  border: 0;
+  padding: var(--space-rail-padding-block) var(--space-sm);
+  background:
+    linear-gradient(180deg, var(--primitive-color-rgb-181-128-73-alpha-0-1), transparent 38%),
+    var(--primitive-color-rgb-20-17-14-alpha-0-92);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--motion-fast-duration) ease,
+    background-color var(--motion-fast-duration) ease,
+    color var(--motion-fast-duration) ease;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--accent-color);
+    background:
+      linear-gradient(180deg, var(--primitive-color-rgb-181-128-73-alpha-0-14), transparent 38%),
+      var(--primitive-color-rgb-28-23-20-alpha-0-95);
+  }
+
+  &:focus-visible {
+    @include focus-ring(var(--primitive-length-negative-2px));
+  }
+}
+
+@mixin rail-label {
+  color: var(--text-secondary);
+  font-family: var(--heading-font-family);
+  font-size: var(--font-size-base);
+  letter-spacing: var(--primitive-length-0-08em);
+  writing-mode: vertical-rl;
+  transition:
+    opacity var(--motion-fast-duration) ease,
+    transform var(--motion-fast-duration) ease;
+}
+
+@mixin mobile-rail {
+  flex: 0 0 auto;
+  flex-direction: row;
+  justify-content: flex-start;
+  order: 0;
+  min-height: var(--primitive-length-3-25rem);
+  border-bottom: var(--primitive-length-1px) solid var(--border-muted);
+  padding: var(--space-rail-block) var(--space-2xl);
+}
+
+@mixin icon-frame {
+  display: block;
+  flex-shrink: 0;
+  border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-22);
+  border-radius: var(--radius-icon);
+  background:
+    linear-gradient(
+      180deg,
+      var(--primitive-color-rgb-31-25-20-alpha-0-96),
+      var(--primitive-color-rgb-17-13-10-alpha-0-98)
+    ),
+    var(--panel-background);
+  box-shadow: var(--shadow-perk-icon);
+  object-fit: contain;
+
+  &[data-placeholder='true'] {
+    background:
+      radial-gradient(
+        circle at 30% 30%,
+        var(--primitive-color-rgb-204-155-84-alpha-0-2),
+        transparent 45%
+      ),
+      linear-gradient(
+        180deg,
+        var(--primitive-color-rgb-31-25-20-alpha-0-96),
+        var(--primitive-color-rgb-17-13-10-alpha-0-98)
+      );
+  }
+}
+
+@mixin desktop {
+  @media (min-width: 1280px) {
+    @content;
+  }
+}
+
+@mixin medium-desktop {
+  @media (min-width: 1280px) and (max-width: 1439px) {
+    @content;
+  }
+}
+
+@mixin constrained-desktop {
+  @media (min-width: 1280px) and (max-width: 2559px) {
+    @content;
+  }
+}
+
+@mixin below-desktop {
+  @media (max-width: 1279px) {
+    @content;
+  }
+}
+
+@mixin mobile {
+  @media (max-width: 760px) {
+    @content;
+  }
+}

@@ -24,18 +24,20 @@ function getPrimitiveStyleSnapshot() {
   }
 
   return {
-    backgroundFitCard: getElementStyle('.background-fit-card'),
-    backgroundFitMetricBadge: getElementStyle('.background-fit-metric-badge'),
-    backgroundFitPanel: getElementStyle('.background-fit-panel'),
-    buildPlannerInfoButton: getElementStyle('.build-planner-info-button'),
-    detailPanelRailChevron: getElementStyle('.detail-panel-rail-chevron'),
-    detailPanel: getElementStyle('.detail-panel'),
-    detailBadge: getElementStyle('.detail-panel .detail-badge'),
-    perkPlacementChip: getElementStyle('.perk-placement-chip'),
-    perkRow: getElementStyle('.perk-row:not(.is-picked):not(.is-selected)'),
-    plannerActionButton: getElementStyle('.planner-action-button'),
-    plannerButtonIcon: getElementStyle('.planner-button-icon'),
-    plannerPill: getElementStyle('.planner-pill'),
+    backgroundFitCard: getElementStyle('[data-testid="background-fit-card"]'),
+    backgroundFitMetricBadge: getElementStyle('[data-testid="background-fit-summary-badge"]'),
+    backgroundFitPanel: getElementStyle('[data-testid="background-fit-panel"]'),
+    buildPlannerInfoButton: getElementStyle('[aria-label="Show build planner guidance"]'),
+    detailPanelRailChevron: getElementStyle('[aria-label="Collapse perk details"] svg'),
+    detailPanel: getElementStyle('[data-testid="perk-detail-panel"]'),
+    detailBadge: getElementStyle('[data-testid="detail-badge"]'),
+    perkPlacementChip: getElementStyle('[data-testid="perk-placement-chip"]'),
+    perkRow: getElementStyle(
+      '[data-testid="perk-row"][data-picked="false"][data-selected="false"]',
+    ),
+    plannerActionButton: getElementStyle('[data-testid="clear-build-button"]'),
+    plannerButtonIcon: getElementStyle('[data-testid="clear-build-button"] svg'),
+    plannerPill: getElementStyle('[data-testid="planner-pill"]'),
   }
 }
 

@@ -1,24 +1,9 @@
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
+import styles from './BuildPlanner.module.scss'
 
 export type BuildPerkPillSelection = {
   categoryName: string
   perkGroupId: string
-}
-
-function getBuildPerkPillClassName({
-  isHighlighted,
-  isTooltipPending,
-}: {
-  isHighlighted: boolean
-  isTooltipPending: boolean
-}): string {
-  return [
-    'planner-pill',
-    isHighlighted ? 'is-highlighted' : '',
-    isTooltipPending ? 'is-tooltip-pending' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
 }
 
 export function BuildPerkPill({
@@ -62,10 +47,10 @@ export function BuildPerkPill({
   return (
     <button
       aria-describedby={hoveredBuildPerkId === perkId ? hoveredBuildPerkTooltipId : undefined}
-      className={getBuildPerkPillClassName({
-        isHighlighted: hoveredPerkId === perkId,
-        isTooltipPending: activeTooltipIndicatorPerkId === perkId,
-      })}
+      className={styles.plannerPill}
+      data-highlighted={hoveredPerkId === perkId}
+      data-testid="planner-pill"
+      data-tooltip-pending={activeTooltipIndicatorPerkId === perkId}
       onBlur={() => closeTooltipPreview(perkId)}
       onClick={() => {
         clearPendingTooltip()

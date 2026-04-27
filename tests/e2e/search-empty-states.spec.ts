@@ -29,5 +29,5 @@ test('searches imported metadata fields and shows a real empty state', async ({ 
 
   await expect(page.getByRole('heading', { level: 2, name: 'No perks found' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Select a perk' })).toBeVisible()
-  await expect(getResultsList(page).locator('.perk-row')).toHaveCount(0)
+  await expect(getResultsList(page).getByTestId('perk-row')).toHaveCount(0)
 })

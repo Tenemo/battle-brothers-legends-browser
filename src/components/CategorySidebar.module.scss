@@ -1,0 +1,182 @@
+@use '../styles/mixins' as *;
+
+@layer components {
+  .sidebar {
+    height: 100%;
+    min-height: 0;
+    overflow: auto;
+    padding: var(--space-xl);
+
+    @include rounded-panel;
+  }
+
+  .panelHeading {
+    margin-bottom: var(--space-md);
+
+    h2 {
+      margin: 0;
+      font-family: var(--heading-font-family);
+      font-size: var(--font-size-2xl);
+    }
+
+    p {
+      margin: var(--primitive-length-0-18rem) 0 0;
+      color: var(--text-secondary);
+      font-size: var(--font-size-lg);
+    }
+  }
+
+  .categoryCard {
+    margin-bottom: var(--space-2xs);
+    border: var(--primitive-length-1px) solid transparent;
+    border-radius: var(--radius-control);
+    background: var(--primitive-color-rgb-16-13-11-alpha-0-24);
+
+    &[data-active='true'] {
+      border-color: var(--primitive-color-rgb-204-155-84-alpha-0-22);
+    }
+  }
+
+  .categoryChip,
+  .perkGroupChip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+
+    @include control-transition;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+
+    &:hover,
+    &[data-highlighted='true'],
+    &[aria-pressed='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+    }
+  }
+
+  .categoryChip {
+    gap: var(--primitive-length-0-55rem);
+    margin-bottom: var(--primitive-length-0-18rem);
+    border: var(--primitive-length-1px) solid transparent;
+    border-radius: var(--radius-control);
+    padding: var(--primitive-length-0-3rem) var(--primitive-length-0-46rem);
+    background: var(--button-background);
+    font-size: var(--primitive-length-0-84rem);
+
+    .categoryCard > & {
+      margin-bottom: 0;
+    }
+  }
+
+  .categoryChipStart,
+  .categoryChipEnd,
+  .categoryChipPickedStars,
+  .perkGroupChipEnd {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .categoryChipStart {
+    gap: var(--primitive-length-0-38rem);
+    min-width: 0;
+  }
+
+  .categoryChipEnd,
+  .perkGroupChipEnd {
+    justify-content: flex-end;
+    gap: var(--primitive-length-0-28rem);
+    flex-shrink: 0;
+  }
+
+  .categoryChipPickedStars {
+    gap: var(--space-3xs);
+    color: var(--accent-soft);
+  }
+
+  .categoryChipPickedStar {
+    @include size(var(--primitive-length-0-66rem));
+  }
+
+  .categoryLabel,
+  .perkGroupChipStart {
+    min-width: 0;
+  }
+
+  .categoryChevron {
+    flex-shrink: 0;
+
+    @include size(var(--icon-size-xs));
+
+    color: var(--text-muted);
+    transition:
+      transform var(--motion-fast-duration) ease,
+      color var(--motion-fast-duration) ease;
+
+    &[data-expanded='true'] {
+      color: var(--accent-soft);
+      transform: rotate(90deg);
+    }
+  }
+
+  .perkGroupPanel {
+    display: grid;
+    gap: var(--space-2xs);
+    margin-left: var(--primitive-length-0-38rem);
+    border-left: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-11);
+    padding: var(--space-3xs) var(--primitive-length-0-18rem) var(--space-xs)
+      var(--primitive-length-0-55rem);
+    animation: fade-in var(--motion-medium-duration) ease-out;
+  }
+
+  .perkGroupHeading {
+    margin: 0 0 var(--primitive-length-0-04rem);
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    letter-spacing: var(--primitive-length-0-08em);
+    text-transform: uppercase;
+  }
+
+  .perkGroupChip {
+    gap: var(--primitive-length-0-55rem);
+    border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-08);
+    border-radius: var(--primitive-length-0-48rem);
+    padding: var(--space-xs) var(--primitive-length-0-4rem);
+    background: var(--primitive-color-rgb-21-17-14-alpha-0-9);
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--primitive-length-8px));
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @include below-desktop {
+    .sidebar {
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+  }
+
+  @include mobile {
+    .sidebar {
+      order: 3;
+    }
+  }
+}

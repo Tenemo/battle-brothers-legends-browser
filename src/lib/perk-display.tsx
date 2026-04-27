@@ -51,7 +51,17 @@ export function getSearchMatchPriority(text: string, normalizedSearchPhrase: str
   return 2
 }
 
-export function renderHighlightedText(text: string, query: string, keyPrefix: string): ReactNode {
+export function renderHighlightedText({
+  highlightClassName,
+  keyPrefix,
+  query,
+  text,
+}: {
+  highlightClassName: string
+  keyPrefix: string
+  query: string
+  text: string
+}): ReactNode {
   const trimmedQuery = query.trim()
   const normalizedSearchPhrase = normalizeSearchPhrase(trimmedQuery)
 
@@ -75,7 +85,11 @@ export function renderHighlightedText(text: string, query: string, keyPrefix: st
 
     const matchEndIndex = matchIndex + trimmedQuery.length
     highlightedNodes.push(
-      <mark className="search-highlight" key={`${keyPrefix}-${matchIndex}`}>
+      <mark
+        className={highlightClassName}
+        data-search-highlight="true"
+        key={`${keyPrefix}-${matchIndex}`}
+      >
         {text.slice(matchIndex, matchEndIndex)}
       </mark>,
     )
@@ -314,32 +328,6 @@ export function formatBackgroundFitGuaranteedPerksLabel(
   return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
 }
 
-export function getPerkRowClassName({
-  isHighlighted,
-  isPicked,
-  isSelected,
-}: {
-  isHighlighted: boolean
-  isPicked: boolean
-  isSelected: boolean
-}): string {
-  const classNames = ['perk-row']
-
-  if (isPicked) {
-    classNames.push('is-picked')
-  }
-
-  if (isSelected) {
-    classNames.push('is-selected')
-  }
-
-  if (isHighlighted) {
-    classNames.push('is-highlighted')
-  }
-
-  return classNames.join(' ')
-}
-
 export function getPerkGroupHoverKey({ categoryName, perkGroupId }: PerkGroupHoverTarget): string {
   return `${categoryName}::${perkGroupId}`
 }
@@ -352,18 +340,36 @@ export function renderGameIcon({
   className,
   iconPath,
   label,
+  testId,
 }: {
   className: string
   iconPath: string | null
   label: string
+  testId?: string
 }) {
   const iconUrl = getGameIconUrl(iconPath)
 
   if (!iconUrl) {
-    return <div aria-hidden="true" className={`${className} is-placeholder`} />
+    return (
+      <div
+        aria-hidden="true"
+        className={className}
+        data-placeholder="true"
+        data-testid={testId}
+      />
+    )
   }
 
-  return <img alt={label} className={className} decoding="async" loading="lazy" src={iconUrl} />
+  return (
+    <img
+      alt={label}
+      className={className}
+      data-testid={testId}
+      decoding="async"
+      loading="lazy"
+      src={iconUrl}
+    />
+  )
 }
 
 export function getAnchoredTooltipStyle(anchorRectangle: TooltipAnchorRectangle): CSSProperties {

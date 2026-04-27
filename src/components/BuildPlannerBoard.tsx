@@ -1,4 +1,5 @@
 import { useId, type RefObject } from 'react'
+import { cx } from '../lib/class-names'
 import type {
   BuildPlannerGroupedPerkGroup,
   BuildPlannerPerkGroupRequirementOption,
@@ -13,6 +14,8 @@ import type { LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import { PlannerSectionChevron } from './SharedControls'
 import type { PlannerPerkGroupSelection } from './build-planner-types'
+import sharedStyles from './SharedControls.module.scss'
+import styles from './BuildPlanner.module.scss'
 
 function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirementOption[]): string {
   return [
@@ -91,35 +94,18 @@ function getHighlightedBuildPerkIdsForEmphasis({
   return highlightedBuildPerkIds
 }
 
-function getPlannerSlotPerkClassName({
-  isHighlighted,
-  isTooltipIndicatorActive,
-}: {
-  isHighlighted: boolean
-  isTooltipIndicatorActive: boolean
-}): string {
-  return [
-    'planner-slot',
-    'planner-slot-perk',
-    isHighlighted ? 'is-highlighted' : '',
-    isTooltipIndicatorActive ? 'is-tooltip-pending' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-}
-
 function PlannerSectionToggle({
   buttonId,
-  className,
   controlledSectionId,
   isExpanded,
+  isCollapsedChip = false,
   label,
   onToggle,
 }: {
   buttonId: string
-  className?: string
   controlledSectionId: string
   isExpanded: boolean
+  isCollapsedChip?: boolean
   label: string
   onToggle: () => void
 }) {
@@ -128,14 +114,16 @@ function PlannerSectionToggle({
       aria-controls={controlledSectionId}
       aria-expanded={isExpanded}
       aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
-      className={['planner-row-label planner-section-toggle', className].filter(Boolean).join(' ')}
+      className={cx(styles.plannerRowLabel, styles.plannerSectionToggle)}
+      data-collapsed-chip={isCollapsedChip}
+      data-testid="planner-section-toggle"
       id={buttonId}
       onClick={onToggle}
       title={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
       type="button"
     >
-      <PlannerSectionChevron isExpanded={isExpanded} />
-      <span className="planner-section-toggle-label">{label}</span>
+      <PlannerSectionChevron className={styles.plannerSectionChevron} isExpanded={isExpanded} />
+      <span className={styles.plannerSectionToggleLabel}>{label}</span>
     </button>
   )
 }
@@ -274,27 +262,39 @@ export function BuildPlannerBoard({
 
   return (
     <div
-      className="planner-board app-scrollbar"
+      className={cx(styles.plannerBoard, 'app-scrollbar')}
+      data-planner-board="true"
+      data-scroll-container="true"
+      data-testid="planner-board"
       onScrollCapture={() => {
         clearPendingBuildPerkTooltip()
         onCloseBuildPerkTooltip()
       }}
       ref={plannerBoardRef}
     >
-      <div className="planner-row">
-        <span className="planner-row-label">Perks</span>
-        <div className="planner-track-scroll">
-          <div className="planner-track planner-track-perks" data-testid="build-perks-bar">
+      <div className={styles.plannerRow} data-testid="planner-row">
+        <span className={styles.plannerRowLabel}>Perks</span>
+        <div className={styles.plannerTrackScroll}>
+          <div
+            className={cx(styles.plannerTrack, styles.plannerTrackPerks)}
+            data-planner-collection="picked-perks"
+            data-testid="build-perks-bar"
+          >
             {hasPickedPerks ? (
-              pickedPerks.map((pickedPerk) => (
+              pickedPerks.map((pickedPerk) => {
+                const isHighlighted =
+                  hoveredPerkId === pickedPerk.id ||
+                  highlightedBuildPerkIdsForEmphasis.has(pickedPerk.id)
+                const isTooltipIndicatorActive =
+                  activeBuildPerkTooltipIndicatorPerkId === pickedPerk.id
+
+                return (
                 <div
-                  className={getPlannerSlotPerkClassName({
-                    isHighlighted:
-                      hoveredPerkId === pickedPerk.id ||
-                      highlightedBuildPerkIdsForEmphasis.has(pickedPerk.id),
-                    isTooltipIndicatorActive:
-                      activeBuildPerkTooltipIndicatorPerkId === pickedPerk.id,
-                  })}
+                  className={cx(styles.plannerSlot, styles.plannerSlotPerk)}
+                  data-highlighted={isHighlighted}
+                  data-planner-item="picked-perk"
+                  data-testid="planner-slot-perk"
+                  data-tooltip-pending={isTooltipIndicatorActive}
                   key={pickedPerk.id}
                   onBlurCapture={(event) => {
                     if (
@@ -324,7 +324,7 @@ export function BuildPlannerBoard({
                       hoveredBuildPerkId === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
                     }
                     aria-label={`View ${pickedPerk.perkName} from build planner`}
-                    className="planner-slot-perk-inspect"
+                    className={styles.plannerSlotPerkInspect}
                     onClick={() => {
                       clearPendingBuildPerkTooltip()
                       onCloseBuildPerkTooltip()
@@ -334,27 +334,38 @@ export function BuildPlannerBoard({
                     type="button"
                   >
                     {renderGameIcon({
-                      className: 'perk-icon perk-icon-tiny',
+                      className: cx(sharedStyles.perkIcon, sharedStyles.perkIconTiny),
                       iconPath: getPerkDisplayIconPath(pickedPerk),
                       label: `${pickedPerk.perkName} build icon`,
+                      testId: 'planner-picked-perk-icon',
                     })}
-                    <strong className="planner-picked-perk-name">{pickedPerk.perkName}</strong>
+                    <strong
+                      className={styles.plannerPickedPerkName}
+                      data-testid="planner-picked-perk-name"
+                    >
+                      {pickedPerk.perkName}
+                    </strong>
                   </button>
                   <button
                     aria-label={`Remove ${pickedPerk.perkName} from build`}
-                    className="search-clear-button planner-slot-remove-button"
+                    className={cx(sharedStyles.searchClearButton, styles.plannerSlotRemoveButton)}
+                    data-testid="planner-slot-remove-button"
                     onClick={() => onRemovePickedPerk(pickedPerk.id)}
                     type="button"
                   >
-                    <span aria-hidden="true" className="search-clear-icon" />
+                    <span aria-hidden="true" className={sharedStyles.searchClearIcon} />
                   </button>
                 </div>
-              ))
+                )
+              })
             ) : (
-              <div className="planner-slot planner-slot-placeholder is-placeholder">
-                <div className="planner-slot-copy">
-                  <strong className="planner-slot-name">Pick a perk to start</strong>
-                  <p className="planner-slot-meta">
+              <div
+                className={cx(styles.plannerSlot, styles.plannerSlotPlaceholder)}
+                data-placeholder="true"
+              >
+                <div className={styles.plannerSlotCopy}>
+                  <strong className={styles.plannerSlotName}>Pick a perk to start</strong>
+                  <p className={styles.plannerSlotMeta} data-testid="planner-slot-meta">
                     Use the star in the detail panel or the search results list.
                   </p>
                 </div>
@@ -365,13 +376,17 @@ export function BuildPlannerBoard({
       </div>
 
       {hasCollapsedPerkGroupSections ? (
-        <div aria-label="Collapsed perk group sections" className="planner-collapsed-sections">
+        <div
+          aria-label="Collapsed perk group sections"
+          className={styles.plannerCollapsedSections}
+          data-testid="planner-collapsed-sections"
+        >
           {!isSharedPerkGroupsSectionExpanded ? (
             <PlannerSectionToggle
               buttonId={sharedPerkGroupsToggleId}
-              className="is-collapsed-chip"
               controlledSectionId={sharedPerkGroupsSectionId}
               isExpanded={isSharedPerkGroupsSectionExpanded}
+              isCollapsedChip
               label="Perk groups for 2+ perks"
               onToggle={onToggleSharedPerkGroupsSection}
             />
@@ -379,9 +394,9 @@ export function BuildPlannerBoard({
           {!isIndividualPerkGroupsSectionExpanded ? (
             <PlannerSectionToggle
               buttonId={individualPerkGroupsToggleId}
-              className="is-collapsed-chip"
               controlledSectionId={individualPerkGroupsSectionId}
               isExpanded={isIndividualPerkGroupsSectionExpanded}
+              isCollapsedChip
               label="Perk groups for individual perks"
               onToggle={onToggleIndividualPerkGroupsSection}
             />
@@ -390,7 +405,7 @@ export function BuildPlannerBoard({
       ) : null}
 
       {isSharedPerkGroupsSectionExpanded ? (
-        <div className="planner-row">
+        <div className={styles.plannerRow} data-testid="planner-row">
           <PlannerSectionToggle
             buttonId={sharedPerkGroupsToggleId}
             controlledSectionId={sharedPerkGroupsSectionId}
@@ -400,13 +415,13 @@ export function BuildPlannerBoard({
           />
           <div
             aria-label="Perk groups for 2+ perks"
-            className="planner-section"
+            className={styles.plannerSection}
             data-testid="build-shared-groups-list"
             id={sharedPerkGroupsSectionId}
             role="region"
           >
             {sharedPerkGroups.length > 0 ? (
-              <div className="planner-group-list">
+              <div className={styles.plannerGroupList} data-planner-collection="shared-groups">
                 {sharedPerkGroups.map((sharedPerkGroup) =>
                   renderPlannerGroupCard({
                     emphasizedCategoryNames,
@@ -428,11 +443,11 @@ export function BuildPlannerBoard({
                 )}
               </div>
             ) : (
-              <div className="planner-section-placeholder">
-                <strong className="planner-slot-name">
+              <div className={styles.plannerSectionPlaceholder}>
+                <strong className={styles.plannerSlotName}>
                   Perk groups covering 2 or more picked perks will appear here
                 </strong>
-                <p className="planner-slot-meta">
+                <p className={styles.plannerSlotMeta} data-testid="planner-slot-meta">
                   When multiple picked perks share a perk group, it will show up here with every
                   covered perk listed on the card.
                 </p>
@@ -442,7 +457,7 @@ export function BuildPlannerBoard({
         </div>
       ) : (
         <div
-          className="planner-section"
+          className={styles.plannerSection}
           data-testid="build-shared-groups-list"
           hidden
           id={sharedPerkGroupsSectionId}
@@ -450,7 +465,7 @@ export function BuildPlannerBoard({
       )}
 
       {isIndividualPerkGroupsSectionExpanded ? (
-        <div className="planner-row">
+        <div className={styles.plannerRow} data-testid="planner-row">
           <PlannerSectionToggle
             buttonId={individualPerkGroupsToggleId}
             controlledSectionId={individualPerkGroupsSectionId}
@@ -460,14 +475,17 @@ export function BuildPlannerBoard({
           />
           <div
             aria-label="Perk groups for individual perks"
-            className="planner-section"
+            className={styles.plannerSection}
             data-testid="build-individual-groups-list"
             id={individualPerkGroupsSectionId}
             role="region"
           >
             {hasPickedPerks ? (
               hasIndividualPerkGroups ? (
-                <div className="planner-group-list">
+                <div
+                  className={styles.plannerGroupList}
+                  data-planner-collection="individual-groups"
+                >
                   {individualPerkGroups.map((individualPerkGroup) =>
                     renderPlannerGroupCard({
                       emphasizedCategoryNames,
@@ -489,22 +507,22 @@ export function BuildPlannerBoard({
                   )}
                 </div>
               ) : (
-                <div className="planner-section-placeholder">
-                  <strong className="planner-slot-name">
+                <div className={styles.plannerSectionPlaceholder}>
+                  <strong className={styles.plannerSlotName}>
                     This build has no individual-only perk groups
                   </strong>
-                  <p className="planner-slot-meta">
+                  <p className={styles.plannerSlotMeta} data-testid="planner-slot-meta">
                     Every available perk group for the current build already covers two or more
                     picked perks.
                   </p>
                 </div>
               )
             ) : (
-              <div className="planner-section-placeholder">
-                <strong className="planner-slot-name">
+              <div className={styles.plannerSectionPlaceholder}>
+                <strong className={styles.plannerSlotName}>
                   Individual perk groups will appear here
                 </strong>
-                <p className="planner-slot-meta">
+                <p className={styles.plannerSlotMeta} data-testid="planner-slot-meta">
                   Perk groups that only match one picked perk are merged by perk and shown here.
                 </p>
               </div>
@@ -513,7 +531,7 @@ export function BuildPlannerBoard({
         </div>
       ) : (
         <div
-          className="planner-section"
+          className={styles.plannerSection}
           data-testid="build-individual-groups-list"
           hidden
           id={individualPerkGroupsSectionId}

@@ -25,16 +25,16 @@ function getVisualRowCount(elements: HTMLElement[]): number {
 function hasPlannerContentPastVisibleRows(plannerBoard: HTMLElement): boolean {
   const plannerCollections = [
     {
-      itemSelector: '.planner-slot-perk',
-      listSelector: '.planner-track-perks',
+      itemSelector: '[data-planner-item="picked-perk"]',
+      listSelector: '[data-planner-collection="picked-perks"]',
     },
     {
-      itemSelector: '.planner-group-card',
-      listSelector: '[data-testid="build-shared-groups-list"] .planner-group-list',
+      itemSelector: '[data-planner-item="group-card"]',
+      listSelector: '[data-planner-collection="shared-groups"]',
     },
     {
-      itemSelector: '.planner-group-card',
-      listSelector: '[data-testid="build-individual-groups-list"] .planner-group-list',
+      itemSelector: '[data-planner-item="group-card"]',
+      listSelector: '[data-planner-collection="individual-groups"]',
     },
   ]
 
@@ -103,7 +103,7 @@ export function usePlannerScrollConstraint({
     if (plannerBoard !== null) {
       plannerResizeObserver?.observe(plannerBoard)
       plannerBoard
-        .querySelectorAll('.planner-track-perks, .planner-group-list')
+        .querySelectorAll('[data-planner-collection]')
         .forEach((plannerCollection) => plannerResizeObserver?.observe(plannerCollection))
     }
 

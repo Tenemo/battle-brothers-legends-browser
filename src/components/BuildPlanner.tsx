@@ -1,5 +1,6 @@
 import { useId, useRef, useState } from 'react'
 import { Check, CircleAlert, Copy, FolderOpen, RotateCcw, Save } from 'lucide-react'
+import { cx } from '../lib/class-names'
 import type { BuildPlannerGroupedPerkGroup } from '../lib/build-planner'
 import { getAnchoredTooltipStyle } from '../lib/perk-display'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
@@ -16,7 +17,7 @@ import type {
   SavedBuildOperationStatus,
 } from './build-planner-types'
 import { usePlannerScrollConstraint } from './use-planner-scroll-constraint'
-import './BuildPlanner.css'
+import styles from './BuildPlanner.module.scss'
 
 export type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
 
@@ -29,7 +30,7 @@ function BuildPlannerInfoButton() {
 
   return (
     <span
-      className="build-planner-info"
+      className={styles.buildPlannerInfo}
       onBlurCapture={(event) => {
         if (
           event.relatedTarget instanceof Node &&
@@ -53,7 +54,7 @@ function BuildPlannerInfoButton() {
         aria-describedby={isOpen ? tooltipId : undefined}
         aria-expanded={isOpen}
         aria-label="Show build planner guidance"
-        className="build-planner-info-button"
+        className={styles.buildPlannerInfoButton}
         onClick={() => setIsOpen((currentIsOpen) => !currentIsOpen)}
         onFocus={() => setIsOpen(true)}
         type="button"
@@ -61,7 +62,12 @@ function BuildPlannerInfoButton() {
         i
       </button>
       {isOpen ? (
-        <span className="build-planner-info-tooltip" id={tooltipId} role="tooltip">
+        <span
+          className={styles.buildPlannerInfoTooltip}
+          data-testid="build-planner-info-tooltip"
+          id={tooltipId}
+          role="tooltip"
+        >
           {buildPlannerGuidance}
         </span>
       ) : null}
@@ -161,15 +167,6 @@ export function BuildPlanner({
     onOpenHover: onOpenBuildPerkHover,
     onOpenTooltip: onOpenBuildPerkTooltip,
   })
-  const buildPlannerClassName = [
-    'build-planner',
-    hasPickedPerks ? 'has-picked-perks' : '',
-    isPlannerScrollConstrained ? 'is-scroll-constrained' : '',
-    hasActiveBackgroundFitSearch ? 'is-background-fit-search-active' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-
   function handleCloseClearBuildDialog() {
     setIsClearBuildDialogOpen(false)
     window.setTimeout(() => {
@@ -199,48 +196,49 @@ export function BuildPlanner({
 
   return (
     <>
-      <section aria-label="Build planner" className={buildPlannerClassName}>
-        <div className="build-planner-header">
-          <div className="build-planner-title-row">
-            <div className="build-planner-title">
+      <section
+        aria-label="Build planner"
+        className={styles.buildPlanner}
+        data-background-fit-search-active={hasActiveBackgroundFitSearch}
+        data-has-picked-perks={hasPickedPerks}
+        data-scroll-constrained={isPlannerScrollConstrained}
+      >
+        <div className={styles.buildPlannerHeader} data-testid="build-planner-header">
+          <div className={styles.buildPlannerTitleRow}>
+            <div className={styles.buildPlannerTitle}>
               <h2>Build planner</h2>
               {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
             </div>
           </div>
-          <div className="build-planner-actions">
-            <p className="build-planner-count">
+          <div className={styles.buildPlannerActions}>
+            <p className={styles.buildPlannerCount} data-testid="build-planner-count">
               {!hasPickedPerks
                 ? 'No perks picked yet.'
                 : `${pickedPerks.length} perk${pickedPerks.length === 1 ? '' : 's'} picked.`}
             </p>
             <button
               aria-label="Save current build"
-              className="planner-action-button saved-build-action-button"
+              className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
               disabled={!hasPickedPerks}
               onClick={() => setIsSavedBuildsDialogOpen(true)}
               type="button"
             >
-              <Save aria-hidden="true" className="planner-button-icon" />
+              <Save aria-hidden="true" className={styles.plannerButtonIcon} />
               Save build
             </button>
             <button
               aria-label="Open saved builds"
-              className="planner-action-button saved-build-action-button"
+              className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
               onClick={() => setIsSavedBuildsDialogOpen(true)}
               type="button"
             >
-              <FolderOpen aria-hidden="true" className="planner-button-icon" />
+              <FolderOpen aria-hidden="true" className={styles.plannerButtonIcon} />
               Saved builds
             </button>
             <button
               aria-label="Copy build link"
-              className={
-                shareBuildStatus === 'copied'
-                  ? 'planner-action-button share-build-button is-confirmed'
-                  : shareBuildStatus === 'error'
-                    ? 'planner-action-button share-build-button is-error'
-                    : 'planner-action-button share-build-button'
-              }
+              className={cx(styles.plannerActionButton, styles.shareBuildButton)}
+              data-status={shareBuildStatus === 'idle' ? undefined : shareBuildStatus}
               disabled={pickedPerks.length === 0}
               onClick={() => {
                 void onShareBuild()
@@ -248,11 +246,11 @@ export function BuildPlanner({
               type="button"
             >
               {shareBuildStatus === 'copied' ? (
-                <Check aria-hidden="true" className="planner-button-icon" />
+                <Check aria-hidden="true" className={styles.plannerButtonIcon} />
               ) : shareBuildStatus === 'error' ? (
-                <CircleAlert aria-hidden="true" className="planner-button-icon" />
+                <CircleAlert aria-hidden="true" className={styles.plannerButtonIcon} />
               ) : (
-                <Copy aria-hidden="true" className="planner-button-icon" />
+                <Copy aria-hidden="true" className={styles.plannerButtonIcon} />
               )}
               {shareBuildStatus === 'copied'
                 ? 'Copied'
@@ -262,13 +260,14 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Clear build"
-              className="planner-action-button clear-build-action-button"
+              className={cx(styles.plannerActionButton, styles.clearBuildActionButton)}
+              data-testid="clear-build-button"
               disabled={pickedPerks.length === 0}
               onClick={() => setIsClearBuildDialogOpen(true)}
               ref={clearBuildButtonRef}
               type="button"
             >
-              <RotateCcw aria-hidden="true" className="planner-button-icon" />
+              <RotateCcw aria-hidden="true" className={styles.plannerButtonIcon} />
               Clear build
             </button>
           </div>
@@ -330,7 +329,9 @@ export function BuildPlanner({
 
       {hoveredBuildPerk !== null && hoveredBuildPerkTooltip !== null ? (
         <div
-          className="build-perk-tooltip"
+          className={styles.buildPerkTooltip}
+          data-build-perk-tooltip="true"
+          data-testid="build-perk-tooltip"
           id={hoveredBuildPerkTooltipId}
           onMouseEnter={clearTooltipCloseTimer}
           onMouseLeave={() => {
@@ -341,7 +342,7 @@ export function BuildPlanner({
           role="tooltip"
           style={getAnchoredTooltipStyle(hoveredBuildPerkTooltip.anchorRectangle)}
         >
-          <div className="build-perk-tooltip-copy">
+          <div className={styles.buildPerkTooltipCopy}>
             {getPerkPreviewParagraphs(hoveredBuildPerk).map(
               (previewParagraph, previewParagraphIndex) => (
                 <p key={`${hoveredBuildPerk.id}-tooltip-${previewParagraphIndex}`}>

@@ -16,11 +16,11 @@ const denseSmallDesktopBuildUrl =
   '/?build=Axe+Mastery,Mace+Mastery,Sword+Mastery,Recover,Berserk,Nimble,Dodge,Underdog,Battle+Flow,Killing+Frenzy,Rotation,Colossus'
 
 const desktopScrollbarTargets = [
-  '.background-fit-results-scroll',
-  '.sidebar',
-  '.results-list',
-  '.detail-panel-body',
-  '.planner-board',
+  '[data-testid="background-fit-panel-body"]',
+  '[data-testid="category-sidebar"]',
+  '[data-testid="results-list"]',
+  '[data-testid="perk-detail-panel-body"]',
+  '[data-testid="planner-board"]',
 ]
 
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
@@ -48,7 +48,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+        const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
 
         return plannerBoard === null
           ? Number.POSITIVE_INFINITY
@@ -94,9 +94,9 @@ test('keeps dense picked builds usable on small desktop viewports', async ({ pag
   await expectNoWorkspaceHorizontalClip(page)
 
   const smallDesktopMetrics = await page.evaluate(() => {
-    const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
-    const resultsList = document.querySelector('.results-list') as HTMLElement | null
-    const workspace = document.querySelector('.workspace') as HTMLElement | null
+    const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
+    const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+    const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
 
     return {
       plannerBoardOverflow:
@@ -140,7 +140,7 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
           const thumbStyle = window.getComputedStyle(element, '::-webkit-scrollbar-thumb')
 
           return {
-            hasAppScrollbarClass: element.classList.contains('app-scrollbar'),
+            hasScrollContainerAttribute: element.dataset.scrollContainer === 'true',
             scrollbarGutter: computedStyle.scrollbarGutter,
             scrollbarWidth: supportsWebKitScrollbars
               ? scrollbarStyle.width
@@ -160,7 +160,7 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
   expect(standardDesktopMeasurements).toEqual(largeDesktopMeasurements)
   for (const scrollbarMeasurement of standardDesktopMeasurements) {
     expect(scrollbarMeasurement).not.toBeNull()
-    expect(scrollbarMeasurement!.hasAppScrollbarClass).toBe(true)
+    expect(scrollbarMeasurement!.hasScrollContainerAttribute).toBe(true)
     expect(scrollbarMeasurement!.scrollbarGutter).toBe('auto')
     expect(scrollbarMeasurement!.scrollbarWidth).not.toBe('auto')
     expect(scrollbarMeasurement!.thumbBackground).not.toBe('rgba(0, 0, 0, 0)')
@@ -204,9 +204,9 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
     return {
       backgroundFit: getElementTop('[data-testid="background-fit-panel"]'),
       buildPlanner: getElementTop('[aria-label="Build planner"]'),
-      filters: getElementTop('.sidebar'),
+      filters: getElementTop('[data-testid="category-sidebar"]'),
       perkDetails: getElementTop('[data-testid="perk-detail-panel"]'),
-      results: getElementTop('.results-panel'),
+      results: getElementTop('[data-testid="results-panel"]'),
     }
   })
 

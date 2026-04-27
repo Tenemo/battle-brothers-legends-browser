@@ -146,23 +146,23 @@ async function getPlannerWrapMetrics(page: Page) {
       return visualRowTops.length
     }
 
-    const buildPlanner = document.querySelector('.build-planner') as HTMLElement | null
-    const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+    const buildPlanner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
+    const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
 
     return {
       boardOverflow:
         plannerBoard === null
           ? Number.POSITIVE_INFINITY
           : plannerBoard.scrollHeight - plannerBoard.clientHeight,
-      className: buildPlanner?.className ?? '',
+      isScrollConstrained: buildPlanner?.dataset.scrollConstrained === 'true',
       individualRows: getVisualRowCount(
-        '[data-testid="build-individual-groups-list"] .planner-group-list',
-        '.planner-group-card',
+        '[data-testid="build-individual-groups-list"]',
+        '[data-testid="planner-group-card"]',
       ),
-      perkRows: getVisualRowCount('.planner-track-perks', '.planner-slot-perk'),
+      perkRows: getVisualRowCount('[data-testid="build-perks-bar"]', '[data-testid="planner-slot-perk"]'),
       sharedRows: getVisualRowCount(
-        '[data-testid="build-shared-groups-list"] .planner-group-list',
-        '.planner-group-card',
+        '[data-testid="build-shared-groups-list"]',
+        '[data-testid="planner-group-card"]',
       ),
     }
   })
@@ -174,60 +174,60 @@ test('build planner splits shared and individual perk groups without layout drif
   await gotoPerksBrowser(page, { height: 768, width: 1366 })
 
   const initialHeaderHeight = await page
-    .locator('.build-planner-header')
+    .getByTestId('build-planner-header')
     .evaluate((element) => element.getBoundingClientRect().height)
   const headerHeightSubpixelTolerance = 2
 
   await expect(page.getByRole('heading', { level: 2, name: 'Build planner' })).toBeVisible()
-  await expect(page.locator('.build-planner-summary')).toHaveCount(0)
+  await expect(page.getByTestId('build-planner-summary')).toHaveCount(0)
   expect(initialHeaderHeight).toBeLessThanOrEqual(40)
 
   await searchPerks(page, 'Clarity')
   await inspectPerkFromResults(page, 'Clarity')
 
   const resultsRowHeightBeforePicking = await page
-    .locator('.results-list .perk-row')
+    .getByTestId('results-list').getByTestId('perk-row')
     .evaluate((element) => element.getBoundingClientRect().height)
   const plannerBoardHeightBeforePicking = await page
-    .locator('.planner-board')
+    .getByTestId('planner-board')
     .evaluate((element) => element.getBoundingClientRect().height)
   const plannerRowTopsBeforePicking = await page
-    .locator('.planner-row')
+    .getByTestId('planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
 
   await addPerkToBuildFromResults(page, 'Clarity')
   await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
-  await expect(page.locator('.build-planner-summary')).toHaveCount(0)
+  await expect(page.getByTestId('build-planner-summary')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Show build planner guidance' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Copy build link' })).toBeVisible()
   await expect
     .poll(async () =>
       page
-        .locator('.build-planner-header')
+        .getByTestId('build-planner-header')
         .evaluate((element) => element.getBoundingClientRect().height),
     )
     .toBeLessThanOrEqual(initialHeaderHeight + 8)
   await expect
     .poll(async () =>
       page
-        .locator('.build-planner-header')
+        .getByTestId('build-planner-header')
         .evaluate((element) => element.getBoundingClientRect().height),
     )
     .toBeGreaterThanOrEqual(initialHeaderHeight - headerHeightSubpixelTolerance)
   await expect
     .poll(async () =>
       page
-        .locator('.planner-board')
+        .getByTestId('planner-board')
         .evaluate((element) => element.scrollHeight - element.clientHeight),
     )
     .toBeLessThanOrEqual(1)
   await expect
     .poll(async () =>
-      page.locator('.planner-board').evaluate((element) => element.getBoundingClientRect().height),
+      page.getByTestId('planner-board').evaluate((element) => element.getBoundingClientRect().height),
     )
     .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - 8)
   const plannerRowTopsAfterPicking = await page
-    .locator('.planner-row')
+    .getByTestId('planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
 
   expect(plannerRowTopsAfterPicking).toHaveLength(plannerRowTopsBeforePicking.length)
@@ -245,6 +245,37 @@ test('build planner splits shared and individual perk groups without layout drif
   await expect(
     getBuildIndividualGroupsList(page).getByText('Clarity', { exact: true }),
   ).toBeVisible()
+  const plannerSectionToggleTypography = await page
+    .getByTestId('planner-section-toggle')
+    .evaluateAll((toggles) => {
+      const fontSizeProbe = document.createElement('span')
+      fontSizeProbe.style.fontSize = 'var(--font-size-xs)'
+      document.body.append(fontSizeProbe)
+      const bodyFontFamily = window.getComputedStyle(document.body).fontFamily
+      const expectedFontSize = window.getComputedStyle(fontSizeProbe).fontSize
+      fontSizeProbe.remove()
+
+      return toggles.map((toggle) => {
+        const computedStyle = window.getComputedStyle(toggle)
+
+        return {
+          bodyFontFamily,
+          expectedFontSize,
+          fontFamily: computedStyle.fontFamily,
+          fontSize: computedStyle.fontSize,
+          fontWeight: computedStyle.fontWeight,
+          textTransform: computedStyle.textTransform,
+        }
+      })
+    })
+
+  expect(plannerSectionToggleTypography).toHaveLength(2)
+  for (const toggleTypography of plannerSectionToggleTypography) {
+    expect(toggleTypography.fontFamily).toBe(toggleTypography.bodyFontFamily)
+    expect(toggleTypography.fontSize).toBe(toggleTypography.expectedFontSize)
+    expect(Number(toggleTypography.fontWeight)).toBeGreaterThanOrEqual(600)
+    expect(toggleTypography.textTransform).toBe('uppercase')
+  }
 
   const infoButton = page.getByRole('button', { name: 'Show build planner guidance' })
   const infoButtonText = await infoButton.textContent()
@@ -264,7 +295,7 @@ test('build planner splits shared and individual perk groups without layout drif
 
   await infoButton.hover()
   const infoTooltipLeft = await page
-    .locator('.build-planner-info-tooltip')
+    .getByTestId('build-planner-info-tooltip')
     .evaluate((element) => element.getBoundingClientRect().left)
 
   expect(infoTooltipLeft).toBeGreaterThanOrEqual(0)
@@ -272,20 +303,20 @@ test('build planner splits shared and individual perk groups without layout drif
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 
   const resultsRowHeightAfterPicking = await page
-    .locator('.results-list .perk-row')
+    .getByTestId('results-list').getByTestId('perk-row')
     .evaluate((element) => element.getBoundingClientRect().height)
 
   expect(
     Math.abs(resultsRowHeightAfterPicking - resultsRowHeightBeforePicking),
   ).toBeLessThanOrEqual(1)
 
-  const pickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk').first()
+  const pickedPerkTile = getBuildPerksBar(page).getByTestId('planner-slot-perk').first()
   const activePlannerSurfaceColor = await getResolvedCssBackgroundColor(
     page,
     'var(--surface-result-active)',
   )
   const activePlannerBorderColor = await getResolvedCssBorderColor(page, 'var(--border-strong)')
-  const plannerGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card').first()
+  const plannerGroupCard = getBuildIndividualGroupsList(page).getByTestId('planner-group-card').first()
 
   await plannerGroupCard.hover()
   await expect
@@ -306,7 +337,7 @@ test('build planner splits shared and individual perk groups without layout drif
     }
   })
   await page.mouse.move(1, 1)
-  await expect(pickedPerkTile).not.toHaveClass(/is-highlighted/)
+  await expect(pickedPerkTile).toHaveAttribute('data-highlighted', 'false')
 
   const hoverMetricsBefore = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
@@ -322,7 +353,7 @@ test('build planner splits shared and individual perk groups without layout drif
     }
   })
 
-  const pickedPerkRemoveControl = pickedPerkTile.locator('.planner-slot-remove-button')
+  const pickedPerkRemoveControl = pickedPerkTile.getByTestId('planner-slot-remove-button')
   await expect(pickedPerkRemoveControl).toBeHidden()
 
   await pickedPerkTile.hover()
@@ -330,9 +361,9 @@ test('build planner splits shared and individual perk groups without layout drif
     name: 'Remove Clarity from build',
   })
 
-  await expect(pickedPerkTile).not.toHaveClass(/is-tooltip-pending/)
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(page.getByRole('tooltip')).toHaveCount(0)
-  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/, { timeout: 500 })
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 500 })
   const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -389,13 +420,13 @@ test('build planner splits shared and individual perk groups without layout drif
   const buildPerkTooltip = page.getByRole('tooltip')
 
   await expect(buildPerkTooltip).toBeVisible({ timeout: 1200 })
-  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/)
-  await expect(buildPerkTooltip.locator('.build-perk-tooltip-title')).toHaveCount(0)
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true')
+  await expect(buildPerkTooltip.getByTestId('build-perk-tooltip-title')).toHaveCount(0)
   await expect(buildPerkTooltip).not.toContainText('Clarity')
   await expect(buildPerkTooltip).toContainText(/An additional \+10% of any damage ignores armor/i)
   const tooltipTouchGap = await page.evaluate(() => {
-    const tooltip = document.querySelector('.build-perk-tooltip')
-    const activeTrigger = document.querySelector('.planner-slot-perk.is-tooltip-pending')
+    const tooltip = document.querySelector('[data-testid="build-perk-tooltip"]')
+    const activeTrigger = document.querySelector('[data-testid="planner-slot-perk"][data-tooltip-pending="true"]')
 
     if (!(tooltip instanceof HTMLElement) || !(activeTrigger instanceof HTMLElement)) {
       return Number.POSITIVE_INFINITY
@@ -407,7 +438,7 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(Math.abs(tooltipTouchGap)).toBeLessThanOrEqual(1)
   await buildPerkTooltip.hover()
   await expect(buildPerkTooltip).toBeVisible()
-  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/)
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true')
   await page.mouse.move(1, 1)
   await expect(buildPerkTooltip).toHaveCount(0)
 
@@ -415,16 +446,14 @@ test('build planner splits shared and individual perk groups without layout drif
     '/?build=Clarity,Peaceable,Perfect+Focus,Berserk,Killing+Frenzy,Fearsome,Colossus',
   )
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
-  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(7)
-  await expect(page.getByRole('region', { name: 'Build planner' })).not.toHaveClass(
-    /is-scroll-constrained/,
-  )
+  await expect(getBuildPerksBar(page).getByTestId('planner-slot-perk')).toHaveCount(7)
+  await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute('data-scroll-constrained', 'false')
   expect(
-    await getBuildSharedGroupsList(page).locator('.planner-group-card').count(),
+    await getBuildSharedGroupsList(page).getByTestId('planner-group-card').count(),
   ).toBeGreaterThan(0)
   expect(
     await page.evaluate(() => {
-      const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+      const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
 
       return plannerBoard === null
         ? Number.NEGATIVE_INFINITY
@@ -433,13 +462,11 @@ test('build planner splits shared and individual perk groups without layout drif
   ).toBeLessThanOrEqual(1)
 
   await page.setViewportSize({ height: 768, width: 1280 })
-  await expect(page.getByRole('region', { name: 'Build planner' })).not.toHaveClass(
-    /is-scroll-constrained/,
-  )
+  await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute('data-scroll-constrained', 'false')
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+        const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
 
         return plannerBoard === null
           ? Number.NEGATIVE_INFINITY
@@ -461,7 +488,7 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(perksBarHorizontalOverflow).toBeLessThanOrEqual(1)
 
   const wrappedPerkTilePositions = await getBuildPerksBar(page)
-    .locator('.planner-slot-perk')
+    .getByTestId('planner-slot-perk')
     .evaluateAll((elements) =>
       elements.map((element) => {
         const rectangle = element.getBoundingClientRect()
@@ -493,7 +520,7 @@ test('scrolls the planner below wide desktop only after content wraps past two r
 
   const twoRowPlannerMetrics = await getPlannerWrapMetrics(page)
 
-  expect(twoRowPlannerMetrics.className).not.toContain('is-scroll-constrained')
+  expect(twoRowPlannerMetrics.isScrollConstrained).toBe(false)
   expect(twoRowPlannerMetrics.boardOverflow).toBeLessThanOrEqual(1)
   expect(
     Math.max(
@@ -505,9 +532,7 @@ test('scrolls the planner below wide desktop only after content wraps past two r
 
   await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 12)))
   await expect(page.getByText('12 perks picked.')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Build planner' })).toHaveClass(
-    /is-scroll-constrained/,
-  )
+  await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute('data-scroll-constrained', 'true')
 
   const overflowingPlannerMetrics = await getPlannerWrapMetrics(page)
 
@@ -523,9 +548,7 @@ test('scrolls the planner below wide desktop only after content wraps past two r
   await page.setViewportSize({ width: 2560, height: 900 })
   await page.goto(createBuildUrl(manyPickedPerkNames))
   await expect(page.getByText('27 perks picked.')).toBeVisible()
-  await expect(page.getByRole('region', { name: 'Build planner' })).not.toHaveClass(
-    /is-scroll-constrained/,
-  )
+  await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute('data-scroll-constrained', 'false')
 
   const wideDesktopPlannerMetrics = await getPlannerWrapMetrics(page)
 
@@ -546,12 +569,12 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
   await expect(buildSharedGroupsList).toContainText('Battle Forged')
   await expect(buildSharedGroupsList).toContainText('Immovable Object')
   await expect(buildSharedGroupsList).toContainText('Steadfast')
-  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
+  await expect(buildSharedGroupsList.getByTestId('planner-group-card')).toHaveCount(2)
   await expect(
     buildIndividualGroupsList.getByText('Sturdy / Swordmasters', { exact: true }),
   ).toBeVisible()
   await expect(buildIndividualGroupsList.getByText('Steadfast', { exact: true })).toBeVisible()
-  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+  await expect(buildIndividualGroupsList.getByTestId('planner-group-card')).toHaveCount(1)
 })
 
 test('collapses and restores build planner perk group sections independently', async ({ page }) => {
@@ -572,8 +595,8 @@ test('collapses and restores build planner perk group sections independently', a
   await expect(sharedCollapseToggle).toHaveAttribute('aria-expanded', 'true')
   await expect(individualCollapseToggle).toBeVisible()
   await expect(individualCollapseToggle).toHaveAttribute('aria-expanded', 'true')
-  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
-  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+  await expect(buildSharedGroupsList.getByTestId('planner-group-card')).toHaveCount(2)
+  await expect(buildIndividualGroupsList.getByTestId('planner-group-card')).toHaveCount(1)
 
   const sharedControlsId = await sharedCollapseToggle.getAttribute('aria-controls')
   const individualControlsId = await individualCollapseToggle.getAttribute('aria-controls')
@@ -586,7 +609,7 @@ test('collapses and restores build planner perk group sections independently', a
   await expect(buildIndividualGroupsList).toHaveAttribute('id', individualControlsId)
 
   const expandedPlannerBoardHeight = await page
-    .locator('.planner-board')
+    .getByTestId('planner-board')
     .evaluate((plannerBoard) => plannerBoard.getBoundingClientRect().height)
   const expandedSharedSectionHeight = await buildSharedGroupsList.evaluate(
     (plannerSection) => plannerSection.getBoundingClientRect().height,
@@ -604,16 +627,16 @@ test('collapses and restores build planner perk group sections independently', a
   ).toHaveAttribute('aria-expanded', 'false')
   await expect(buildSharedGroupsList).toBeHidden()
   await expect(buildIndividualGroupsList).toBeVisible()
-  await expect(page.locator('.planner-collapsed-sections')).toBeVisible()
+  await expect(page.getByTestId('planner-collapsed-sections')).toBeVisible()
 
   const sharedCollapsedPlannerBoardHeight = await page
-    .locator('.planner-board')
+    .getByTestId('planner-board')
     .evaluate((plannerBoard) => plannerBoard.getBoundingClientRect().height)
   const sharedCollapsedSectionHeight = await buildSharedGroupsList.evaluate(
     (plannerSection) => plannerSection.getBoundingClientRect().height,
   )
   const sharedCollapsedTrayHeight = await page
-    .locator('.planner-collapsed-sections')
+    .getByTestId('planner-collapsed-sections')
     .evaluate((collapsedSections) => collapsedSections.getBoundingClientRect().height)
 
   expect(sharedCollapsedSectionHeight).toBeLessThanOrEqual(1)
@@ -621,7 +644,7 @@ test('collapses and restores build planner perk group sections independently', a
   expect(sharedCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
 
   await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
-  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
+  await expect(buildSharedGroupsList.getByTestId('planner-group-card')).toHaveCount(2)
   await expect(buildSharedGroupsList).toBeVisible()
 
   await individualCollapseToggle.click()
@@ -632,7 +655,7 @@ test('collapses and restores build planner perk group sections independently', a
   await expect(buildIndividualGroupsList).toBeHidden()
 
   const individualCollapsedPlannerBoardHeight = await page
-    .locator('.planner-board')
+    .getByTestId('planner-board')
     .evaluate((plannerBoard) => plannerBoard.getBoundingClientRect().height)
   const individualCollapsedSectionHeight = await buildIndividualGroupsList.evaluate(
     (plannerSection) => plannerSection.getBoundingClientRect().height,
@@ -642,7 +665,7 @@ test('collapses and restores build planner perk group sections independently', a
   expect(individualCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
 
   await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()
-  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+  await expect(buildIndividualGroupsList.getByTestId('planner-group-card')).toHaveCount(1)
   await expect(buildIndividualGroupsList).toBeVisible()
 })
 
@@ -667,9 +690,8 @@ test('keeps collapsible planner group labels compact on mobile', async ({ page }
   await expect(buildIndividualGroupsList).toBeVisible()
 
   const toggleMetrics = await page.evaluate(() => {
-    const toggles = [...document.querySelectorAll<HTMLElement>('.planner-section-toggle')].map(
-      (toggle) => toggle.getBoundingClientRect(),
-    )
+    const toggles = [...document.querySelectorAll<HTMLElement>('[data-testid="planner-section-toggle"]')]
+      .map((toggle) => toggle.getBoundingClientRect())
 
     return toggles.map((toggleRectangle) => ({
       height: toggleRectangle.height,
@@ -690,7 +712,7 @@ test('keeps collapsible planner group labels compact on mobile', async ({ page }
   await expectNoDocumentHorizontalOverflow(page)
 
   const collapsedTrayMetrics = await page
-    .locator('.planner-collapsed-sections')
+    .getByTestId('planner-collapsed-sections')
     .evaluate((tray) => {
       const trayRectangle = tray.getBoundingClientRect()
 
@@ -705,8 +727,8 @@ test('keeps collapsible planner group labels compact on mobile', async ({ page }
 
   await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
   await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()
-  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
-  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+  await expect(buildSharedGroupsList.getByTestId('planner-group-card')).toHaveCount(2)
+  await expect(buildIndividualGroupsList.getByTestId('planner-group-card')).toHaveCount(1)
   await expectNoDocumentHorizontalOverflow(page)
 })
 
@@ -717,9 +739,9 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await searchPerks(page, 'temporary search')
 
-  const heavyArmorGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
-    hasText: 'Heavy Armor',
-  })
+  const heavyArmorGroupCard = getBuildSharedGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Heavy Armor' })
 
   await heavyArmorGroupCard.click({
     position: {
@@ -730,10 +752,10 @@ test('selects build planner perk groups from their group tiles', async ({ page }
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Defense' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Heavy Armor')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Heavy Armor')).toHaveAttribute('aria-pressed', 'true')
 
   const emptyPillListPosition = await heavyArmorGroupCard.evaluate((card) => {
-    const pillList = card.querySelector('.planner-pill-list')
+    const pillList = card.querySelector('[data-testid="planner-pill-list"]')
 
     if (!(pillList instanceof HTMLElement)) {
       return null
@@ -741,7 +763,7 @@ test('selects build planner perk groups from their group tiles', async ({ page }
 
     const cardRectangle = card.getBoundingClientRect()
     const pillListRectangle = pillList.getBoundingClientRect()
-    const pillRectangles = [...pillList.querySelectorAll('.planner-pill')].map((pill) =>
+    const pillRectangles = [...pillList.querySelectorAll('[data-testid="planner-pill"]')].map((pill) =>
       pill.getBoundingClientRect(),
     )
     const sampleStep = 8
@@ -786,7 +808,7 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   })
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
-  await expect(getSidebarPerkGroupButton(page, 'Heavy Armor')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Heavy Armor')).toHaveAttribute('aria-pressed', 'true')
 
   await searchPerks(page, 'temporary search')
   await heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' }).click()
@@ -802,14 +824,14 @@ test('filters multi-option planner group icons individually', async ({ page }) =
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const activePlannerBorderColor = await getResolvedCssBorderColor(page, 'var(--border-strong)')
-  const multiOptionGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card', {
-    hasText: 'Heavy Armor / Sturdy / Swordmasters',
-  })
-  const iconButtons = multiOptionGroupCard.locator('.planner-group-option-button')
+  const multiOptionGroupCard = getBuildIndividualGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Heavy Armor / Sturdy / Swordmasters' })
+  const iconButtons = multiOptionGroupCard.getByTestId('planner-group-option-button')
   const sturdyIconButton = multiOptionGroupCard.getByRole('button', {
     name: 'Select perk group Sturdy',
   })
-  const sturdyIcon = sturdyIconButton.locator('.planner-group-option-icon')
+  const sturdyIcon = sturdyIconButton.getByTestId('planner-group-option-icon')
   const swordmastersIconButton = multiOptionGroupCard.getByRole('button', {
     name: 'Select perk group Swordmasters',
   })
@@ -837,14 +859,14 @@ test('filters multi-option planner group icons individually', async ({ page }) =
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Sturdy')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Sturdy')).toHaveAttribute('aria-pressed', 'true')
 
   await searchPerks(page, 'temporary search')
   await swordmastersIconButton.click()
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Swordmasters')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Swordmasters')).toHaveAttribute('aria-pressed', 'true')
 })
 
 test('separates planner group card hover from icon and perk pill hover states', async ({
@@ -859,20 +881,20 @@ test('separates planner group card hover from icon and perk pill hover states', 
     page,
     'var(--surface-result-active)',
   )
-  const heavyArmorGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
-    hasText: 'Heavy Armor',
-  })
-  const heavyArmorIcon = heavyArmorGroupCard.locator('.planner-group-option-icon').first()
+  const heavyArmorGroupCard = getBuildSharedGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Heavy Armor' })
+  const heavyArmorIcon = heavyArmorGroupCard.getByTestId('planner-group-option-icon').first()
   const battleForgedPill = heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' })
-  const battleForgedPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
-    hasText: 'Battle Forged',
-  })
-  const immovableObjectPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
-    hasText: 'Immovable Object',
-  })
-  const steadfastPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
-    hasText: 'Steadfast',
-  })
+  const battleForgedPickedPerkTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Battle Forged' })
+  const immovableObjectPickedPerkTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Immovable Object' })
+  const steadfastPickedPerkTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Steadfast' })
   const cardBackgroundBeforeHover = await heavyArmorGroupCard.evaluate(
     (element) => window.getComputedStyle(element).backgroundColor,
   )
@@ -880,8 +902,8 @@ test('separates planner group card hover from icon and perk pill hover states', 
     (element) => window.getComputedStyle(element).borderTopColor,
   )
   const groupNameIconCenterOffset = await heavyArmorGroupCard.evaluate((card) => {
-    const icon = card.querySelector('.planner-group-option-icon')
-    const groupName = card.querySelector('.planner-slot-name')
+    const icon = card.querySelector('[data-testid="planner-group-option-icon"]')
+    const groupName = card.querySelector('[data-testid="planner-slot-name"]')
 
     if (!(icon instanceof HTMLElement) || !(groupName instanceof HTMLElement)) {
       return Number.POSITIVE_INFINITY
@@ -898,23 +920,34 @@ test('separates planner group card hover from icon and perk pill hover states', 
   })
 
   expect(groupNameIconCenterOffset).toBeLessThanOrEqual(2)
-  await expect(heavyArmorGroupCard.locator('.planner-group-option-button')).toHaveCount(0)
-  await expect(heavyArmorGroupCard.locator('.planner-card-icon-stack-item')).toHaveCount(1)
+  await expect(heavyArmorGroupCard.getByTestId('planner-group-option-button')).toHaveCount(0)
+  await expect(heavyArmorGroupCard.getByTestId('planner-card-icon-stack-item')).toHaveCount(1)
 
-  await heavyArmorGroupCard.hover({
-    position: {
-      x: 96,
-      y: 38,
-    },
+  const cardHeaderHoverPoint = await heavyArmorGroupCard.evaluate((card) => {
+    const groupName = card.querySelector('[data-testid="planner-slot-name"]')
+
+    if (!(groupName instanceof HTMLElement)) {
+      return null
+    }
+
+    const groupNameRectangle = groupName.getBoundingClientRect()
+
+    return {
+      x: groupNameRectangle.left + groupNameRectangle.width / 2,
+      y: groupNameRectangle.top + groupNameRectangle.height / 2,
+    }
   })
+
+  expect(cardHeaderHoverPoint).not.toBeNull()
+  await page.mouse.move(cardHeaderHoverPoint!.x, cardHeaderHoverPoint!.y)
   await expect
     .poll(() =>
       heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
     )
     .toBe(activePlannerSurfaceColor)
-  await expect(battleForgedPickedPerkTile).toHaveClass(/is-highlighted/)
-  await expect(immovableObjectPickedPerkTile).toHaveClass(/is-highlighted/)
-  await expect(steadfastPickedPerkTile).toHaveClass(/is-highlighted/)
+  await expect(battleForgedPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+  await expect(immovableObjectPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+  await expect(steadfastPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
   const iconBorderAfterCardHover = await heavyArmorIcon.evaluate(
     (element) => window.getComputedStyle(element).borderTopColor,
   )
@@ -922,8 +955,8 @@ test('separates planner group card hover from icon and perk pill hover states', 
   expectCssRgbColorsToMatch(iconBorderAfterCardHover, iconBorderBeforeCardHover)
 
   await battleForgedPill.hover()
-  await expect(battleForgedPill).not.toHaveClass(/is-tooltip-pending/)
-  await expect(battleForgedPill).toHaveClass(/is-tooltip-pending/, { timeout: 500 })
+  await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'false')
+  await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 500 })
   const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -939,10 +972,10 @@ test('separates planner group card hover from icon and perk pill hover states', 
     height: '2px',
     opacity: '1',
   })
-  await expect(heavyArmorGroupCard).toHaveClass(/has-highlighted-perk/)
-  await expect(battleForgedPickedPerkTile).toHaveClass(/is-highlighted/)
-  await expect(immovableObjectPickedPerkTile).not.toHaveClass(/is-highlighted/)
-  await expect(steadfastPickedPerkTile).not.toHaveClass(/is-highlighted/)
+  await expect(heavyArmorGroupCard).toHaveAttribute('data-has-highlighted-perk', 'true')
+  await expect(battleForgedPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+  await expect(immovableObjectPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect(steadfastPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
   await expect
     .poll(() =>
       heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
@@ -959,8 +992,8 @@ test('separates planner group card hover from icon and perk pill hover states', 
 
   expectCssRgbColorsToMatch(iconBorderAfterPerkHover, iconBorderBeforeCardHover)
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 1200 })
-  await expect(battleForgedPill).toHaveClass(/is-tooltip-pending/)
-  await expect(battleForgedPickedPerkTile).not.toHaveClass(/is-tooltip-pending/)
+  await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true')
+  await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(page.getByRole('tooltip')).not.toContainText('Battle Forged')
   await expect(page.getByRole('tooltip')).toContainText(/Armor damage taken is reduced/i)
   await page.mouse.move(1, 1)
@@ -973,16 +1006,16 @@ test('keeps long planner group names compact without category text', async ({ pa
   await page.goto('/?build=Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
-  const plannerGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card', {
-    hasText: 'Heavy Armor / Sturdy / Swordmasters',
-  })
+  const plannerGroupCard = getBuildIndividualGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Heavy Armor / Sturdy / Swordmasters' })
 
   await expect(plannerGroupCard).toBeVisible()
   await expect(plannerGroupCard.getByText('Steadfast', { exact: true })).toBeVisible()
-  await expect(plannerGroupCard.locator('.planner-slot-category')).toHaveCount(0)
+  await expect(plannerGroupCard.getByTestId('planner-slot-category')).toHaveCount(0)
 
   const plannerGroupCardMetrics = await plannerGroupCard.evaluate((card) => {
-    const groupName = card.querySelector('.planner-slot-name')
+    const groupName = card.querySelector('[data-testid="planner-slot-name"]')
 
     if (!(groupName instanceof HTMLElement)) {
       return null
@@ -1023,15 +1056,15 @@ test('keeps picked perk tiles fixed while avoiding default early truncation', as
   await page.goto(createBuildUrl(['Immovable Object', 'Clarity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
-  const immovableObjectPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
-    hasText: 'Immovable Object',
-  })
+  const immovableObjectPickedPerkTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Immovable Object' })
 
   await expect(immovableObjectPickedPerkTile).toBeVisible()
 
   const pickedPerkMetrics = await immovableObjectPickedPerkTile.evaluate((pickedPerkTile) => {
-    const pickedPerkName = pickedPerkTile.querySelector('.planner-picked-perk-name')
-    const buildPlanner = pickedPerkTile.closest('.build-planner')
+    const pickedPerkName = pickedPerkTile.querySelector('[data-testid="planner-picked-perk-name"]')
+    const buildPlanner = pickedPerkTile.closest('[aria-label="Build planner"]')
 
     if (!(pickedPerkName instanceof HTMLElement) || !(buildPlanner instanceof HTMLElement)) {
       return null
@@ -1054,7 +1087,7 @@ test('keeps picked perk tiles fixed while avoiding default early truncation', as
     }
   })
   const pickedPerkTileWidths = await getBuildPerksBar(page)
-    .locator('.planner-slot-perk')
+    .getByTestId('planner-slot-perk')
     .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().width))
 
   expect(pickedPerkMetrics).not.toBeNull()
@@ -1082,32 +1115,33 @@ test('links search result hover highlighting with matching build planner perks',
   const perfectFocusResultsButton = page
     .getByTestId('results-list')
     .getByRole('button', { name: 'Inspect Perfect Focus' })
-  const perfectFocusResultsRow = page.getByTestId('results-list').locator('.perk-row', {
-    hasText: 'Perfect Focus',
-  })
+  const perfectFocusResultsRow = page
+    .getByTestId('results-list')
+    .getByTestId('perk-row')
+    .filter({ hasText: 'Perfect Focus' })
   const sharedPerfectFocusButton = getBuildSharedGroupsList(page).getByRole('button', {
     name: 'Perfect Focus',
   })
   const individualPerfectFocusButton = getBuildIndividualGroupsList(page).getByRole('button', {
     name: 'Perfect Focus',
   })
-  const pickedPerfectFocusTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
-    hasText: 'Perfect Focus',
-  })
+  const pickedPerfectFocusTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Perfect Focus' })
 
   await perfectFocusResultsButton.hover()
 
-  await expect(perfectFocusResultsRow).toHaveClass(/is-highlighted/)
-  await expect(sharedPerfectFocusButton).toHaveClass(/is-highlighted/)
-  await expect(individualPerfectFocusButton).toHaveClass(/is-highlighted/)
-  await expect(pickedPerfectFocusTile).toHaveClass(/is-highlighted/)
+  await expect(perfectFocusResultsRow).toHaveAttribute('data-highlighted', 'true')
+  await expect(sharedPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(individualPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(pickedPerfectFocusTile).toHaveAttribute('data-highlighted', 'true')
 
   await sharedPerfectFocusButton.hover()
 
-  await expect(perfectFocusResultsRow).toHaveClass(/is-highlighted/)
-  await expect(sharedPerfectFocusButton).toHaveClass(/is-highlighted/)
-  await expect(individualPerfectFocusButton).toHaveClass(/is-highlighted/)
-  await expect(pickedPerfectFocusTile).toHaveClass(/is-highlighted/)
+  await expect(perfectFocusResultsRow).toHaveAttribute('data-highlighted', 'true')
+  await expect(sharedPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(individualPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(pickedPerfectFocusTile).toHaveAttribute('data-highlighted', 'true')
   await expect(perfectFocusResultsRow).toHaveCSS('transform', 'none')
   await expect(sharedPerfectFocusButton).toHaveCSS('transform', 'none')
   await expect(individualPerfectFocusButton).toHaveCSS('transform', 'none')
@@ -1119,27 +1153,27 @@ test('keeps sidebar perk group selection emphasized in the build planner', async
   await page.goto(createBuildUrl(['Colossus', 'Muscularity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
-  const sharedLargeGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
-    hasText: 'Large',
-  })
-  const colossusPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
-    hasText: 'Colossus',
-  })
-  const muscularityPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
-    hasText: 'Muscularity',
-  })
+  const sharedLargeGroupCard = getBuildSharedGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Large' })
+  const colossusPickedPerkTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Colossus' })
+  const muscularityPickedPerkTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Muscularity' })
 
   await expect(sharedLargeGroupCard).toBeVisible()
-  await expect(colossusPickedPerkTile).not.toHaveClass(/is-highlighted/)
-  await expect(muscularityPickedPerkTile).not.toHaveClass(/is-highlighted/)
+  await expect(colossusPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect(muscularityPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await getSidebarPerkGroupButton(page, 'Large').click()
 
-  await expect(getSidebarPerkGroupButton(page, 'Large')).toHaveClass(/is-active/)
-  await expect(sharedLargeGroupCard).toHaveClass(/is-highlighted/)
-  await expect(colossusPickedPerkTile).toHaveClass(/is-highlighted/)
-  await expect(muscularityPickedPerkTile).toHaveClass(/is-highlighted/)
+  await expect(getSidebarPerkGroupButton(page, 'Large')).toHaveAttribute('aria-pressed', 'true')
+  await expect(sharedLargeGroupCard).toHaveAttribute('data-highlighted', 'true')
+  await expect(colossusPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+  await expect(muscularityPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
 })
 
 test('inspects picked perk tiles without removing them', async ({ page }) => {
@@ -1159,7 +1193,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await expect(page.getByText('1 perk picked.')).toBeVisible()
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
   await expect(page.getByRole('button', { name: 'Inspect Clarity' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
   await expect(page.getByText(/Build slot \d+|Not in build/)).toHaveCount(0)
@@ -1214,10 +1248,8 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
     ),
   ).toBeVisible()
   const placeholderMetrics = await getBuildPerksBar(page).evaluate((buildPerksBar) => {
-    const placeholder = buildPerksBar.querySelector(
-      '.planner-slot-placeholder',
-    ) as HTMLElement | null
-    const placeholderMeta = buildPerksBar.querySelector('.planner-slot-meta') as HTMLElement | null
+    const placeholder = buildPerksBar.querySelector('[data-placeholder="true"]') as HTMLElement | null
+    const placeholderMeta = buildPerksBar.querySelector('[data-testid="planner-slot-meta"]') as HTMLElement | null
 
     if (!placeholder || !placeholderMeta) {
       return null
@@ -1253,10 +1285,8 @@ test('keeps the picked count and clear action aligned for dense builds', async (
   await expect(page.getByRole('button', { name: 'Clear build' })).toBeEnabled()
 
   const actionMetrics = await page.evaluate(() => {
-    const count = document.querySelector('.build-planner-count') as HTMLElement | null
-    const clearButton = document.querySelector(
-      '.planner-action-button[aria-label="Clear build"]',
-    ) as HTMLElement | null
+    const count = document.querySelector('[data-testid="build-planner-count"]') as HTMLElement | null
+    const clearButton = document.querySelector('[data-testid="clear-build-button"]') as HTMLElement | null
 
     if (!count || !clearButton) {
       return null

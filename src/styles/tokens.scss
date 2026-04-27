@@ -1,0 +1,256 @@
+$primitive-lengths: (
+  'negative-0-02rem': -0.02rem, 'negative-0-05rem': -0.05rem, 'negative-0-08rem': -0.08rem,
+  'negative-0-9rem': -0.9rem, 'negative-0-15rem': -0.15rem, 'negative-0-16rem': -0.16rem,
+  'negative-0-45rem': -0.45rem, 'negative-1px': -1px, 'negative-2px': -2px,
+  '0-02em': 0.02em, '0-2rem': 0.2rem, '0-3rem': 0.3rem,
+  '0-04rem': 0.04rem, '0-4rem': 0.4rem, '0-5rem': 0.5rem,
+  '0-05rem': 0.05rem, '0-6rem': 0.6rem, '0-06rem': 0.06rem,
+  '0-7rem': 0.7rem, '0-08em': 0.08em, '0-08rem': 0.08rem,
+  '0-8rem': 0.8rem, '0-9rem': 0.9rem, '0-12em': 0.12em,
+  '0-12rem': 0.12rem, '0-13rem': 0.13rem, '0-14rem': 0.14rem,
+  '0-16em': 0.16em, '0-16rem': 0.16rem, '0-18rem': 0.18rem,
+  '0-24rem': 0.24rem, '0-26rem': 0.26rem, '0-28rem': 0.28rem,
+  '0-32rem': 0.32rem, '0-34rem': 0.34rem, '0-36rem': 0.36rem,
+  '0-38rem': 0.38rem, '0-42rem': 0.42rem, '0-44rem': 0.44rem,
+  '0-45rem': 0.45rem, '0-46rem': 0.46rem, '0-48rem': 0.48rem,
+  '0-52rem': 0.52rem, '0-54rem': 0.54rem, '0-55rem': 0.55rem,
+  '0-56rem': 0.56rem, '0-58rem': 0.58rem, '0-62rem': 0.62rem,
+  '0-64rem': 0.64rem, '0-65rem': 0.65rem, '0-66rem': 0.66rem,
+  '0-68rem': 0.68rem, '0-72rem': 0.72rem, '0-74rem': 0.74rem,
+  '0-75rem': 0.75rem, '0-76rem': 0.76rem, '0-78rem': 0.78rem,
+  '0-82rem': 0.82rem, '0-83rem': 0.83rem, '0-84rem': 0.84rem,
+  '0-85rem': 0.85rem, '0-92rem': 0.92rem, '0-94rem': 0.94rem,
+  '0-95rem': 0.95rem, '0-98rem': 0.98rem, '1-2rem': 1.2rem,
+  '1-3rem': 1.3rem, '1-05rem': 1.05rem, '1-8rem': 1.8rem,
+  '1-9rem': 1.9rem, '1-12rem': 1.12rem, '1-26rem': 1.26rem,
+  '1-35rem': 1.35rem, '1-42rem': 1.42rem, '1-45rem': 1.45rem,
+  '1-68rem': 1.68rem, '1-72rem': 1.72rem, '1-75rem': 1.75rem,
+  '1-95rem': 1.95rem, '1px': 1px, '1rem': 1rem,
+  '2-2rem': 2.2rem, '2-3rem': 2.3rem, '2-4rem': 2.4rem,
+  '2-6vw': 2.6vw, '2-7rem': 2.7rem, '2-8vw': 2.8vw,
+  '2-15rem': 2.15rem, '2-17rem': 2.17rem, '2-34rem': 2.34rem,
+  '2-35rem': 2.35rem, '2-72rem': 2.72rem, '2px': 2px,
+  '2rem': 2rem, '3-7rem': 3.7rem, '3-25rem': 3.25rem,
+  '3-45rem': 3.45rem, '4-7rem': 4.7rem, '4-84rem': 4.84rem,
+  '4rem': 4rem, '5-8rem': 5.8rem, '5-9rem': 5.9rem,
+  '6-7rem': 6.7rem, '8px': 8px, '10-4rem': 10.4rem,
+  '10-5rem': 10.5rem, '10px': 10px, '10rem': 10rem,
+  '11-875rem': 11.875rem, '12-2rem': 12.2rem, '12px': 12px,
+  '12rem': 12rem, '14rem': 14rem, '15rem': 15rem,
+  '16px': 16px, '16rem': 16rem, '17px': 17px,
+  '18px': 18px, '18rem': 18rem, '20-625rem': 20.625rem,
+  '20rem': 20rem, '22-5rem': 22.5rem, '24px': 24px,
+  '24rem': 24rem, '30rem': 30rem, '32-4rem': 32.4rem,
+  '36px': 36px, '36rem': 36rem, '38vh': 38vh,
+  '40rem': 40rem, '42rem': 42rem, '58px': 58px,
+  '68vh': 68vh, '70vh': 70vh, '80px': 80px,
+  '100vh': 100vh, '100vw': 100vw, '320px': 320px,
+  '999px': 999px,
+);
+$primitive-durations: (
+  '1ms': 1ms, '120ms': 120ms, '160ms': 160ms, '180ms': 180ms,
+  '220ms': 220ms, '240ms': 240ms, '500ms': 500ms,
+);
+$primitive-colors: (
+  '0c0908': #0c0908, '9f9078': #9f9078, 'bda98f': #bda98f, 'c68a49': #c68a49,
+  'd3c7b3': #d3c7b3, 'ddb07b': #ddb07b, 'f5efe1': #f5efe1,
+);
+$primitive-rgb-colors: (
+  '0-0-0-alpha-0-16': rgb(0 0 0 / 0.16), '0-0-0-alpha-0-24': rgb(0 0 0 / 0.24),
+  '0-0-0-alpha-0-32': rgb(0 0 0 / 0.32), '0-0-0-alpha-0-34': rgb(0 0 0 / 0.34),
+  '0-0-0-alpha-0-48': rgb(0 0 0 / 0.48), '0-0-0-alpha-0-62': rgb(0 0 0 / 0.62),
+  '13-11-10-alpha-0-2': rgb(13 11 10 / 0.2), '13-11-10-alpha-0-72': rgb(13 11 10 / 0.72),
+  '14-11-10-alpha-0-88': rgb(14 11 10 / 0.88), '15-12-10-alpha-0-99': rgb(15 12 10 / 0.99),
+  '15-12-10': rgb(15 12 10), '16-13-11-alpha-0-24': rgb(16 13 11 / 0.24),
+  '16-13-11-alpha-0-85': rgb(16 13 11 / 0.85), '17-13-10-alpha-0-98': rgb(17 13 10 / 0.98),
+  '17-13-11-alpha-0-98': rgb(17 13 11 / 0.98), '18-15-13-alpha-0-58': rgb(18 15 13 / 0.58),
+  '18-15-13-alpha-0-76': rgb(18 15 13 / 0.76), '18-15-13-alpha-0-86': rgb(18 15 13 / 0.86),
+  '18-15-13-alpha-0-88': rgb(18 15 13 / 0.88), '18-15-13-alpha-0-92': rgb(18 15 13 / 0.92),
+  '18-15-13-alpha-0-95': rgb(18 15 13 / 0.95), '20-17-14-alpha-0-8': rgb(20 17 14 / 0.8),
+  '20-17-14-alpha-0-58': rgb(20 17 14 / 0.58), '20-17-14-alpha-0-78': rgb(20 17 14 / 0.78),
+  '20-17-14-alpha-0-92': rgb(20 17 14 / 0.92), '20-17-14-alpha-0-98': rgb(20 17 14 / 0.98),
+  '21-17-14-alpha-0-9': rgb(21 17 14 / 0.9), '25-20-17-alpha-0-88': rgb(25 20 17 / 0.88),
+  '26-21-17-alpha-0-98': rgb(26 21 17 / 0.98), '27-21-18-alpha-0-82': rgb(27 21 18 / 0.82),
+  '28-23-20-alpha-0-9': rgb(28 23 20 / 0.9), '28-23-20-alpha-0-36': rgb(28 23 20 / 0.36),
+  '28-23-20-alpha-0-42': rgb(28 23 20 / 0.42), '28-23-20-alpha-0-82': rgb(28 23 20 / 0.82),
+  '28-23-20-alpha-0-95': rgb(28 23 20 / 0.95), '28-23-20-alpha-0-96': rgb(28 23 20 / 0.96),
+  '28-23-20-alpha-0-98': rgb(28 23 20 / 0.98), '31-25-20-alpha-0-96': rgb(31 25 20 / 0.96),
+  '33-55-31-alpha-0-72': rgb(33 55 31 / 0.72), '37-29-25-alpha-0-82': rgb(37 29 25 / 0.82),
+  '53-39-30-alpha-0-95': rgb(53 39 30 / 0.95), '74-31-25-alpha-0-72': rgb(74 31 25 / 0.72),
+  '106-40-31-alpha-0-88': rgb(106 40 31 / 0.88), '116-168-105-alpha-0-54': rgb(116 168 105 / 0.54),
+  '120-72-43-alpha-0-18': rgb(120 72 43 / 0.18), '120-76-36-alpha-0-58': rgb(120 76 36 / 0.58),
+  '154-96-45-alpha-0-72': rgb(154 96 45 / 0.72), '181-128-73-alpha-0-1': rgb(181 128 73 / 0.1),
+  '181-128-73-alpha-0-07': rgb(181 128 73 / 0.07), '181-128-73-alpha-0-14': rgb(181 128 73 / 0.14),
+  '181-128-73-alpha-0-16': rgb(181 128 73 / 0.16), '190-80-64-alpha-0-54': rgb(190 80 64 / 0.54),
+  '198-138-73-alpha-0-18': rgb(198 138 73 / 0.18), '204-155-84-alpha-0-2': rgb(204 155 84 / 0.2),
+  '204-155-84-alpha-0-08': rgb(204 155 84 / 0.08), '204-155-84-alpha-0-11': rgb(204 155 84 / 0.11),
+  '204-155-84-alpha-0-12': rgb(204 155 84 / 0.12), '204-155-84-alpha-0-14': rgb(204 155 84 / 0.14),
+  '204-155-84-alpha-0-18': rgb(204 155 84 / 0.18), '204-155-84-alpha-0-22': rgb(204 155 84 / 0.22),
+  '204-155-84-alpha-0-24': rgb(204 155 84 / 0.24), '204-155-84-alpha-0-28': rgb(204 155 84 / 0.28),
+  '211-237-199': rgb(211 237 199), '221-176-123-alpha-0-9': rgb(221 176 123 / 0.9),
+  '221-176-123-alpha-0-15': rgb(221 176 123 / 0.15), '221-176-123-alpha-0-18': rgb(221 176 123 / 0.18),
+  '221-176-123-alpha-0-26': rgb(221 176 123 / 0.26), '221-176-123-alpha-0-32': rgb(221 176 123 / 0.32),
+  '229-106-85-alpha-0-74': rgb(229 106 85 / 0.74), '244-205-197': rgb(244 205 197),
+  '255-255-255-alpha-0-02': rgb(255 255 255 / 0.02), '255-255-255-alpha-0-04': rgb(255 255 255 / 0.04),
+  '255-255-255-alpha-0-05': rgb(255 255 255 / 0.05), '255-255-255-alpha-0-06': rgb(255 255 255 / 0.06),
+);
+
+@layer tokens {
+  :root {
+    color-scheme: dark;
+    font-family: var(--body-font-family);
+    line-height: 1.5;
+    font-weight: 400;
+    font-synthesis: none;
+    text-rendering: optimizelegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+
+    --body-font-family: 'Source Sans 3', serif;
+    --heading-font-family: 'Cinzel', serif;
+    --font-weight-regular: 400;
+    --background-color: #0c0908;
+    --surface-panel: rgb(27 21 18 / 0.82);
+    --surface-panel-muted: rgb(18 15 13 / 0.95);
+    --surface-control: rgb(37 29 25 / 0.82);
+    --surface-control-active: rgb(53 39 30 / 0.95);
+    --panel-background: var(--surface-panel);
+    --button-background: var(--surface-control);
+    --button-background-active: var(--surface-control-active);
+    --input-background: rgb(18 15 13 / 0.95);
+    --text-primary: #f5efe1;
+    --text-secondary: #d3c7b3;
+    --text-muted: #9f9078;
+    --text-soft: #bda98f;
+    --accent-color: #c68a49;
+    --accent-soft: #ddb07b;
+    --border-color: rgb(198 138 73 / 0.18);
+    --focus-ring: rgb(221 176 123 / 0.9);
+    --shadow-panel: 0 24px 80px rgb(0 0 0 / 0.32);
+    --panel-shadow: var(--shadow-panel);
+    --target-size: 2.3rem;
+    --target-size-compact: 1.2rem;
+    --space-3xs: 0.08rem;
+    --space-2xs: 0.16rem;
+    --space-xs: 0.24rem;
+    --space-sm: 0.32rem;
+    --space-md: 0.42rem;
+    --space-lg: 0.56rem;
+    --space-xl: 0.72rem;
+    --space-2xl: 0.8rem;
+    --space-3xl: 1rem;
+    --space-control-inline: 0.68rem;
+    --space-rail-padding-block: 0.78rem;
+    --space-rail-block: 0.62rem;
+    --space-rail-inline: 0.32rem;
+    --space-rail-button-gap: 0.56rem;
+    --space-icon-gap: 0.58rem;
+    --radius-xs: 0.24rem;
+    --radius-sm: 0.42rem;
+    --radius-md: 0.52rem;
+    --radius-lg: 0.62rem;
+    --radius-xl: 0.72rem;
+    --radius-2xl: 0.8rem;
+    --radius-control: 0.56rem;
+    --radius-result: 0.74rem;
+    --radius-icon: 0.78rem;
+    --radius-pill: 999px;
+    --font-size-3xs: 0.58rem;
+    --font-size-2xs: 0.62rem;
+    --font-size-xs: 0.68rem;
+    --font-size-sm: 0.74rem;
+    --font-size-md: 0.78rem;
+    --font-size-lg: 0.82rem;
+    --font-size-xl: 0.9rem;
+    --font-size-2xl: 0.98rem;
+    --font-size-base: 0.8rem;
+    --surface-result: rgb(18 15 13 / 0.86);
+    --surface-result-hover: rgb(28 23 20 / 0.9);
+    --surface-result-active: var(--surface-control-active);
+    --surface-result-muted: rgb(18 15 13 / 0.58);
+    --surface-card: rgb(18 15 13 / 0.88);
+    --surface-card-background:
+      linear-gradient(180deg, rgb(181 128 73 / 0.07), transparent 65%), var(--surface-card);
+    --surface-overlay: rgb(17 13 11 / 0.98);
+    --surface-overlay-raised:
+      linear-gradient(180deg, rgb(26 21 17 / 0.98), rgb(15 12 10 / 0.99)), rgb(15 12 10);
+    --surface-danger: rgb(74 31 25 / 0.72);
+    --surface-danger-hover: rgb(106 40 31 / 0.88);
+    --surface-success: rgb(33 55 31 / 0.72);
+    --border-subtle: rgb(204 155 84 / 0.12);
+    --border-muted: rgb(204 155 84 / 0.14);
+    --border-strong: var(--accent-color);
+    --border-overlay: rgb(204 155 84 / 0.18);
+    --border-danger: rgb(190 80 64 / 0.54);
+    --border-danger-hover: rgb(229 106 85 / 0.74);
+    --border-success: rgb(116 168 105 / 0.54);
+    --text-danger: rgb(244 205 197);
+    --text-success: rgb(211 237 199);
+    --shadow-low: 0 10px 24px rgb(0 0 0 / 0.24);
+    --shadow-medium: 0 18px 36px rgb(0 0 0 / 0.34);
+    --shadow-high: 0 24px 58px rgb(0 0 0 / 0.48);
+    --shadow-color-low: rgb(0 0 0 / 0.24);
+    --shadow-color-medium: rgb(0 0 0 / 0.34);
+    --shadow-color-high: rgb(0 0 0 / 0.48);
+    --shadow-inner-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
+    --shadow-search-highlight: 0 0 0 0.08em rgb(204 155 84 / 0.14);
+    --shadow-perk-icon: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 10px 24px rgb(0 0 0 / 0.24);
+    --shadow-filter-popover: 0 18px 36px rgb(0 0 0 / 0.34);
+    --shadow-checkbox: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 0 0 1px rgb(0 0 0 / 0.16);
+    --shadow-checkbox-hover:
+      inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 0 1px rgb(204 155 84 / 0.12);
+    --shadow-tooltip-indicator: 0 0 10px rgb(221 176 123 / 0.32);
+    --shadow-selected-ring: inset 0 0 0 1px rgb(204 155 84 / 0.12);
+    --shadow-planner-option: 0 0 0 1px rgb(221 176 123 / 0.18), 0 0 12px rgb(221 176 123 / 0.26);
+    --highlight-white-subtle: rgb(255 255 255 / 0.04);
+    --control-height-sm: 1.9rem;
+    --control-height-md: 2rem;
+    --control-height-lg: 2.35rem;
+    --icon-size-2xs: 0.78rem;
+    --icon-size-xs: 0.82rem;
+    --icon-size-sm: 0.9rem;
+    --icon-size-md: 1rem;
+    --icon-size-lg: 1.05rem;
+    --icon-size-xl: 1.3rem;
+    --motion-fast: 160ms ease;
+    --motion-medium: 180ms ease;
+    --motion-panel: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+    --motion-fast-duration: 160ms;
+    --motion-medium-duration: 180ms;
+    --motion-panel-duration: 220ms;
+    --motion-tooltip-duration: 120ms;
+    --motion-slow-duration: 240ms;
+    --motion-entry-duration: 500ms;
+    --app-scrollbar-size: 0.62rem;
+    --app-scrollbar-track: rgb(14 11 10 / 0.88);
+    --app-scrollbar-thumb: rgb(120 76 36 / 0.58);
+    --app-scrollbar-thumb-hover: rgb(154 96 45 / 0.72);
+    --app-scrollbar-thumb-border: rgb(14 11 10 / 0.88);
+
+    /* Primitive values are the raw-value boundary for app CSS. */
+    @each $primitive-name, $primitive-value in $primitive-lengths {
+      --primitive-length-#{$primitive-name}: #{$primitive-value};
+    }
+
+    @each $primitive-name, $primitive-value in $primitive-durations {
+      --primitive-duration-#{$primitive-name}: #{$primitive-value};
+    }
+
+    @each $primitive-name, $primitive-value in $primitive-colors {
+      --primitive-color-#{$primitive-name}: #{$primitive-value};
+    }
+
+    @each $primitive-name, $primitive-value in $primitive-rgb-colors {
+      --primitive-color-rgb-#{$primitive-name}: #{$primitive-value};
+    }
+
+    --z-index-underlay: 0;
+    --z-index-base: 1;
+    --z-index-raised: 2;
+    --z-index-interactive: 3;
+    --z-index-indicator: 4;
+    --z-index-popover: 10;
+    --z-index-tooltip: 12;
+    --z-index-modal: 30;
+  }
+}

@@ -51,7 +51,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
 
   const savedBuild = page
     .getByTestId('saved-builds-list')
-    .locator('.saved-build-card')
+    .getByTestId('saved-build-card')
     .filter({ hasText: 'Calm focus' })
 
   await expect(savedBuild).toContainText('2 perks.')

@@ -33,7 +33,7 @@ test('copies a canonical build-only link from an active filtered workspace', asy
   await searchPerks(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
 
-  await expect(getBuildPerksBar(page).locator('.planner-slot-perk')).toHaveCount(2)
+  await expect(getBuildPerksBar(page).getByTestId('planner-slot-perk')).toHaveCount(2)
   await expect(page.getByLabel('Search perks')).toHaveValue('Clarity')
   await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
 

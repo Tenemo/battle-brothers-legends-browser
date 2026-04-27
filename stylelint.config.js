@@ -4,7 +4,7 @@ const shadowTokenValuePattern = 'var\\(--shadow-[a-zA-Z0-9_-]+\\)'
 const nonTokenShadowPattern = `/^(?!none$)(?!${shadowTokenValuePattern}(?:,\\s*${shadowTokenValuePattern})*$).+/`
 
 export default {
-  extends: ['stylelint-config-standard'],
+  extends: ['stylelint-config-standard-scss'],
   ignoreFiles: ['dist/**', 'node_modules/**', 'test-results/**', 'coverage/**', '.netlify/**'],
   rules: {
     'alpha-value-notation': 'number',
@@ -23,7 +23,7 @@ export default {
   },
   overrides: [
     {
-      files: ['src/styles/tokens.css'],
+      files: ['src/styles/tokens.scss'],
       rules: {
         'declaration-property-value-disallowed-list': null,
         'function-disallowed-list': null,
