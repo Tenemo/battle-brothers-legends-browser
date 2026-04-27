@@ -194,7 +194,7 @@ export function formatBackgroundFitProbabilityLabel(probability: number): string
   return `${Number.isInteger(percentage) ? percentage.toFixed(0) : percentage.toFixed(1)}%`
 }
 
-export function formatBackgroundFitScoreLabel(score: number): string {
+function formatBackgroundFitScoreLabel(score: number): string {
   const roundedScore = Math.round(score * 10) / 10
 
   return Number.isInteger(roundedScore) ? roundedScore.toFixed(0) : roundedScore.toFixed(1)

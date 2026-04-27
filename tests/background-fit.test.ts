@@ -652,10 +652,8 @@ describe('background fit', () => {
       backgroundFitBackgrounds: [trainedBackground],
       perks: [...samplePerks, tacticalManeuversPerk, agileOnlyPerk],
     })
-    const trainedRollsFit = engine.getBackgroundFitView([
-      tacticalManeuversPerk,
-      agileOnlyPerk,
-    ]).rankedBackgroundFits[0]
+    const trainedRollsFit = engine.getBackgroundFitView([tacticalManeuversPerk, agileOnlyPerk])
+      .rankedBackgroundFits[0]
     const matchesByPerkGroupId = new Map(
       trainedRollsFit.matches.map((match) => [match.perkGroupId, match]),
     )

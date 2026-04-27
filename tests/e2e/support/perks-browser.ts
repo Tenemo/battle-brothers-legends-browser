@@ -39,7 +39,7 @@ export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
 }
 
-export function getSidebar(page: Page): Locator {
+function getSidebar(page: Page): Locator {
   return page.locator('.sidebar')
 }
 

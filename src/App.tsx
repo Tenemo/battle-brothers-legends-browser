@@ -113,17 +113,23 @@ export default function App() {
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
   })
-  const normalizedPerkSearchPhrase = normalizeSearchPhrase(query)
-  const visiblePerks = filterAndSortPerks(allPerks, {
-    query,
-    selectedCategoryNames,
-    selectedPerkGroupIdsByCategory,
-  })
+  const normalizedPerkSearchPhrase = useMemo(() => normalizeSearchPhrase(query), [query])
+  const visiblePerks = useMemo(
+    () =>
+      filterAndSortPerks(allPerks, {
+        query,
+        selectedCategoryNames,
+        selectedPerkGroupIdsByCategory,
+      }),
+    [query, selectedCategoryNames, selectedPerkGroupIdsByCategory],
+  )
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(
     () => visiblePerks[0]?.id ?? null,
   )
-  const selectedPerk =
-    visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null
+  const selectedPerk = useMemo(
+    () => visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null,
+    [selectedPerkId, visiblePerks],
+  )
   const pickedPerks = useMemo(
     () =>
       pickedPerkIds.flatMap((pickedPerkId) => {
@@ -224,24 +230,42 @@ export default function App() {
       ),
     [displayedCategoryNames, normalizedPerkSearchPhrase, visiblePerkCountsByCategoryPerkGroup],
   )
-  const pickedPerkCountsByCategory = getPickedPerkCountsByCategory(pickedPerks)
-  const pickedPerkCountsByPerkGroup = getPickedPerkCountsByPerkGroup(pickedPerks)
-  const pickedPerkOrderById = new Map(
-    pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
+  const pickedPerkCountsByCategory = useMemo(
+    () => getPickedPerkCountsByCategory(pickedPerks),
+    [pickedPerks],
+  )
+  const pickedPerkCountsByPerkGroup = useMemo(
+    () => getPickedPerkCountsByPerkGroup(pickedPerks),
+    [pickedPerks],
+  )
+  const pickedPerkOrderById = useMemo(
+    () =>
+      new Map(
+        pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
+      ),
+    [pickedPerkIds],
   )
   const isSelectedPerkPicked = selectedPerk ? pickedPerkOrderById.has(selectedPerk.id) : false
-  const groupedBackgroundSources = selectedPerk
-    ? groupBackgroundSources(selectedPerk.backgroundSources, (backgroundSource) =>
-        backgroundFitEngine.getBackgroundPerkGroupProbability(
-          backgroundSource.backgroundId,
-          backgroundSource.perkGroupId,
-        ),
-      )
-    : []
+  const groupedBackgroundSources = useMemo(
+    () =>
+      selectedPerk
+        ? groupBackgroundSources(selectedPerk.backgroundSources, (backgroundSource) =>
+            backgroundFitEngine.getBackgroundPerkGroupProbability(
+              backgroundSource.backgroundId,
+              backgroundSource.perkGroupId,
+            ),
+          )
+        : [],
+    [selectedPerk],
+  )
   const selectedCategoryCount = selectedCategoryNames.length
-  const selectedPerkGroupCount = Object.values(selectedPerkGroupIdsByCategory).reduce(
-    (perkGroupCount, selectedPerkGroupIds) => perkGroupCount + selectedPerkGroupIds.length,
-    0,
+  const selectedPerkGroupCount = useMemo(
+    () =>
+      Object.values(selectedPerkGroupIdsByCategory).reduce(
+        (perkGroupCount, selectedPerkGroupIds) => perkGroupCount + selectedPerkGroupIds.length,
+        0,
+      ),
+    [selectedPerkGroupIdsByCategory],
   )
   const workspaceClassName = [
     'workspace',

@@ -9,7 +9,7 @@ export type BuildPerkGroupTileOption = {
   perkGroupLabel: string
 }
 
-export type BuildPerkGroupTilePerk = {
+type BuildPerkGroupTilePerk = {
   perkId: string | null
   perkName: string
 }
