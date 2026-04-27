@@ -18,6 +18,7 @@ export function useInitialPerkBrowserUrlState(
 export function usePerkBrowserUrlSync(
   urlState: PerkBrowserUrlState,
   options: PerkBrowserUrlStateWriteOptions,
+  onUrlStateChange?: (urlState: PerkBrowserUrlState) => void,
 ): void {
   const { availableCategoryNames, perkGroupOptionsByCategory, perksById } = options
   const {
@@ -67,4 +68,28 @@ export function usePerkBrowserUrlSync(
     selectedPerkGroupIdsByCategory,
     shouldIncludeOriginBackgrounds,
   ])
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !onUrlStateChange) {
+      return
+    }
+
+    const handleUrlStateChange = onUrlStateChange
+
+    function handlePopState() {
+      handleUrlStateChange(
+        readPerkBrowserUrlStateFromLocation({
+          availableCategoryNames,
+          perks: [...perksById.values()],
+          perkGroupOptionsByCategory,
+        }),
+      )
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [availableCategoryNames, onUrlStateChange, perkGroupOptionsByCategory, perksById])
 }

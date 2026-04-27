@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
@@ -146,5 +146,27 @@ describe('app', () => {
     ).not.toBeInTheDocument()
     expect(container.querySelector('.background-fit-panel .search-highlight')).toBeNull()
     expect(backgroundSearchInput).toHaveFocus()
+  })
+
+  test('updates visible state when browser history restores a shared url', async () => {
+    render(<App />)
+
+    expect(screen.getByLabelText('Search perks')).toHaveValue('')
+    expect(screen.getByText('No perks picked yet.')).toBeInTheDocument()
+
+    act(() => {
+      window.history.pushState({}, '', '/?search=Berserk&build=Berserk')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('Search perks')).toHaveValue('Berserk')
+    })
+    expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('build-perks-bar')).getByRole('button', {
+        name: 'View Berserk from build planner',
+      }),
+    ).toBeInTheDocument()
   })
 })

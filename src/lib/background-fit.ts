@@ -396,6 +396,19 @@ function hasEveryPerkGroup(
   return true
 }
 
+function getExplicitOnlyCategoryRequiredProbability(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  requiredPerkGroupIds: Set<string>,
+): number {
+  if (requiredPerkGroupIds.size === 0) {
+    return 1
+  }
+
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+
+  return hasEveryPerkGroup(explicitPerkGroupIdSet, requiredPerkGroupIds) ? 1 : 0
+}
+
 function getDeterministicCategoryRequiredProbability(
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   poolPerkGroupIds: string[],
@@ -750,17 +763,28 @@ function getRequirementSubsetProbability({
     const categoryDefinition = getCategoryDefinition(backgroundDefinition, categoryName)
     const poolPerkGroupIds = context.perkGroupIdsByCategory.get(categoryName) ?? []
 
-    probability *= deterministicDynamicBackgroundCategoryNameSet.has(categoryName)
-      ? getDeterministicCategoryRequiredProbability(
-          categoryDefinition,
-          poolPerkGroupIds,
-          requiredPerkGroupIds,
-        )
-      : getChanceCategoryRequiredProbability(
-          categoryDefinition,
-          poolPerkGroupIds,
-          requiredPerkGroupIds,
-        )
+    if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
+      probability *= getDeterministicCategoryRequiredProbability(
+        categoryDefinition,
+        poolPerkGroupIds,
+        requiredPerkGroupIds,
+      )
+      continue
+    }
+
+    if (chanceDynamicBackgroundCategoryNameSet.has(categoryName)) {
+      probability *= getChanceCategoryRequiredProbability(
+        categoryDefinition,
+        poolPerkGroupIds,
+        requiredPerkGroupIds,
+      )
+      continue
+    }
+
+    probability *= getExplicitOnlyCategoryRequiredProbability(
+      categoryDefinition,
+      requiredPerkGroupIds,
+    )
   }
 
   return probability
@@ -1114,7 +1138,10 @@ export function calculateBackgroundPerkGroupProbabilities(
         context.perkGroupIdsByCategory.get('Weapon') ?? [],
         context.classWeaponDependencyByClassPerkGroupId,
       )
+      continue
     }
+
+    addExplicitPerkGroupProbabilities(probabilitiesByPerkGroupId, categoryDefinition.perkGroupIds)
   }
 
   return probabilitiesByPerkGroupId

@@ -21,7 +21,6 @@ export const deterministicDynamicBackgroundCategoryNames = [
 export const chanceDynamicBackgroundCategoryNames = [
   'Enemy',
   'Profession',
-  'Magic',
 ] as const satisfies LegendsDynamicBackgroundCategoryName[]
 
 export const dynamicBackgroundCategoryMinimumKeys = {

@@ -1,4 +1,4 @@
-import { startTransition, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
@@ -243,6 +243,21 @@ export default function App() {
   ]
     .filter(Boolean)
     .join(' ')
+  const handleUrlStateChange = useCallback(
+    (urlState: typeof initialUrlState) => {
+      startTransition(() => {
+        setQuery(urlState.query)
+        setPickedPerkIds(urlState.pickedPerkIds)
+        setSelectedCategoryNames(urlState.selectedCategoryNames)
+        setExpandedCategoryNames(urlState.selectedCategoryNames)
+        setSelectedPerkGroupIdsByCategory(urlState.selectedPerkGroupIdsByCategory)
+        setShouldIncludeOriginBackgrounds(urlState.shouldIncludeOriginBackgrounds)
+        clearAllHover()
+        resetShareBuildStatus()
+      })
+    },
+    [clearAllHover, resetShareBuildStatus],
+  )
 
   usePerkBrowserUrlSync(
     {
@@ -257,6 +272,7 @@ export default function App() {
       perksById: allPerksById,
       perkGroupOptionsByCategory: perkGroupOptionsByCategory,
     },
+    handleUrlStateChange,
   )
 
   useEffect(() => {

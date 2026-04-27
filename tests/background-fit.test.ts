@@ -555,6 +555,66 @@ describe('background fit', () => {
     )
   })
 
+  test('only treats explicit Magic perk groups as background-fit matches', () => {
+    const magicPerk = createPerk({
+      id: 'perk.magic.rune',
+      perkConstName: 'LegendRune',
+      perkName: 'Rune lesson',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'RuneMagicTree',
+          perkGroupName: 'Rune magic',
+        }),
+      ],
+    })
+    const randomMagicBackground = createBackgroundDefinition({
+      backgroundId: 'background.random_magic',
+      backgroundName: 'Random magic',
+      overrides: {
+        Magic: { chance: 1, minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const explicitMagicBackground = createBackgroundDefinition({
+      backgroundId: 'background.explicit_magic',
+      backgroundName: 'Explicit magic',
+      overrides: {
+        Magic: { chance: 0, minimumPerkGroups: 1, perkGroupIds: ['RuneMagicTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [randomMagicBackground, explicitMagicBackground],
+      perks: [...samplePerks, magicPerk],
+    })
+    const backgroundFitsById = new Map(
+      engine
+        .getBackgroundFitView([magicPerk])
+        .rankedBackgroundFits.map((backgroundFit) => [backgroundFit.backgroundId, backgroundFit]),
+    )
+
+    expect(backgroundFitsById.get('background.random_magic')).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 0,
+        matches: [],
+        maximumTotalPerkGroupCount: 0,
+      }),
+    )
+    expect(backgroundFitsById.get('background.explicit_magic')).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 1,
+        matches: [
+          expect.objectContaining({
+            isGuaranteed: true,
+            perkGroupId: 'RuneMagicTree',
+            probability: 1,
+          }),
+        ],
+        maximumTotalPerkGroupCount: 1,
+      }),
+    )
+  })
+
   test('ranks backgrounds by guaranteed covered picked perks first and disambiguates duplicate names', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([
