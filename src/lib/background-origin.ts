@@ -74,7 +74,7 @@ function getOriginBackgroundPillLabelForSourceLabel(label: string): string | nul
   }
 
   if (isCommanderOriginBackgroundSourceLabel(sourceLabel)) {
-    return 'Origin commander'
+    return 'Origin: Commander'
   }
 
   return null
@@ -108,6 +108,6 @@ export function isOriginBackgroundFit(backgroundFit: RankedBackgroundFit): boole
   const candidateLabels = getBackgroundFitOriginCandidateLabels(backgroundFit)
 
   // The imported background model has no explicit origin flag, so this mirrors the source names
-  // that already drive origin disambiguator labels such as "Origin melee" and "Origin commander".
+  // that already drive origin disambiguator labels such as "Origin: Melee" and "Origin: Commander".
   return candidateLabels.some((candidateLabel) => isOriginBackgroundSourceLabel(candidateLabel))
 }

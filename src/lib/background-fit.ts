@@ -1273,6 +1273,49 @@ function compareBackgroundFitMatches(
   )
 }
 
+function normalizeBackgroundFitMatches(matches: BackgroundFitMatch[]): BackgroundFitMatch[] {
+  const guaranteedPickedPerkIdSet = new Set(
+    matches.filter((match) => match.isGuaranteed).flatMap((match) => match.pickedPerkIds),
+  )
+
+  if (guaranteedPickedPerkIdSet.size === 0) {
+    return matches
+  }
+
+  return matches
+    .flatMap((match) => {
+      if (match.isGuaranteed) {
+        return [match]
+      }
+
+      const pickedPerkIds: string[] = []
+      const pickedPerkNames: string[] = []
+
+      for (const [pickedPerkIndex, pickedPerkId] of match.pickedPerkIds.entries()) {
+        if (guaranteedPickedPerkIdSet.has(pickedPerkId)) {
+          continue
+        }
+
+        pickedPerkIds.push(pickedPerkId)
+        pickedPerkNames.push(match.pickedPerkNames[pickedPerkIndex] ?? pickedPerkId)
+      }
+
+      if (pickedPerkIds.length === 0) {
+        return []
+      }
+
+      return [
+        {
+          ...match,
+          pickedPerkCount: pickedPerkIds.length,
+          pickedPerkIds,
+          pickedPerkNames,
+        },
+      ]
+    })
+    .toSorted(compareBackgroundFitMatches)
+}
+
 export function getCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
   return new Set(matches.flatMap((match) => match.pickedPerkIds)).size
 }
@@ -1395,24 +1438,26 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         rankedBackgroundFits: backgroundProbabilityRecords
           .map(
             ({ backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupId }) => {
-              const matches = supportedBuildTargetPerkGroups
-                .flatMap((buildTargetPerkGroup) => {
-                  const probability =
-                    probabilitiesByPerkGroupId.get(buildTargetPerkGroup.perkGroupId) ?? 0
+              const matches = normalizeBackgroundFitMatches(
+                supportedBuildTargetPerkGroups
+                  .flatMap((buildTargetPerkGroup) => {
+                    const probability =
+                      probabilitiesByPerkGroupId.get(buildTargetPerkGroup.perkGroupId) ?? 0
 
-                  if (probability <= 0) {
-                    return []
-                  }
+                    if (probability <= 0) {
+                      return []
+                    }
 
-                  return [
-                    {
-                      ...buildTargetPerkGroup,
-                      isGuaranteed: probability >= 1,
-                      probability: Math.min(1, probability),
-                    },
-                  ]
-                })
-                .toSorted(compareBackgroundFitMatches)
+                    return [
+                      {
+                        ...buildTargetPerkGroup,
+                        isGuaranteed: probability >= 1,
+                        probability: Math.min(1, probability),
+                      },
+                    ]
+                  })
+                  .toSorted(compareBackgroundFitMatches),
+              )
 
               return {
                 backgroundId: backgroundDefinition.backgroundId,

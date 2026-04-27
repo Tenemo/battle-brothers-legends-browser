@@ -405,13 +405,6 @@
   padding: 0.56rem 0.68rem 0.68rem;
 }
 
-.background-fit-score-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.32rem;
-  min-width: 0;
-}
-
 .background-fit-match-section {
   display: grid;
   gap: 0.32rem;
@@ -649,9 +642,5 @@
   .background-fit-card-heading,
   .background-fit-card-header-main {
     width: 100%;
-  }
-
-  .background-fit-score-row {
-    align-items: flex-start;
   }
 }

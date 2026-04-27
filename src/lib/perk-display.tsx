@@ -207,31 +207,37 @@ function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
 
   if (companionMatch) {
     return companionMatch[1] === '1h'
-      ? 'Starting shield'
+      ? 'Starting: Shield'
       : companionMatch[1] === '2h'
-        ? 'Starting two-handed'
-        : 'Starting ranged'
+        ? 'Starting: Two-handed'
+        : 'Starting: Ranged'
   }
 
   if (originCompanionMatch) {
-    return originCompanionMatch[1] === 'melee' ? 'Origin melee' : 'Origin ranged'
+    return originCompanionMatch[1] === 'melee' ? 'Origin: Melee' : 'Origin: Ranged'
   }
 
   if (
     /^legend_.+_commander(?:_op)?$/.test(sourceLabel) ||
     /^.+_legend_.+_commander$/.test(sourceLabel)
   ) {
-    return 'Origin commander'
+    return 'Origin: Commander'
   }
 
-  return sourceLabel
+  const variantLabel = sourceLabel
     .replace(/^legend_legion_/, 'legion_')
     .replace(/^legend_/, '')
     .replaceAll('_', ' ')
+
+  return `Variant: ${variantLabel.charAt(0).toUpperCase()}${variantLabel.slice(1)}`
 }
 
 function normalizeBackgroundLabelForComparison(label: string): string {
   return label.trim().toLowerCase()
+}
+
+function getComparableBackgroundDisambiguatorLabel(disambiguatorLabel: string): string {
+  return disambiguatorLabel.replace(/^Variant:\s*/u, '')
 }
 
 function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundFit): string | null {
@@ -241,8 +247,9 @@ function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundF
 
   const disambiguatorLabel = formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)
 
-  return normalizeBackgroundLabelForComparison(disambiguatorLabel) ===
-    normalizeBackgroundLabelForComparison(backgroundFit.backgroundName)
+  return normalizeBackgroundLabelForComparison(
+    getComparableBackgroundDisambiguatorLabel(disambiguatorLabel),
+  ) === normalizeBackgroundLabelForComparison(backgroundFit.backgroundName)
     ? null
     : disambiguatorLabel
 }
@@ -305,15 +312,6 @@ export function formatBackgroundFitGuaranteedPerksLabel(
   pickedPerkCount: number,
 ): string {
   return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
-}
-
-export function formatBackgroundFitMatchedPerkGroupsLabel(
-  matchedPerkGroupCount: number,
-  supportedBuildTargetPerkGroupCount: number,
-): string {
-  return `${matchedPerkGroupCount}/${supportedBuildTargetPerkGroupCount} matched perk group${
-    supportedBuildTargetPerkGroupCount === 1 ? '' : 's'
-  }`
 }
 
 export function getPerkRowClassName({

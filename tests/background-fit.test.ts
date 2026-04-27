@@ -449,7 +449,7 @@ describe('background fit', () => {
     )
   })
 
-  test('calculates expected covered picked perks without double-counting alternate placements', () => {
+  test('does not show lower-probability matches for guaranteed alternate placements', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const alternateCoveragePerk = createPerk({
       id: 'perk.traits.calm_or_bold',
@@ -474,8 +474,14 @@ describe('background fit', () => {
         (backgroundFit) => backgroundFit.backgroundId === 'background.traits_fill',
       )
 
-    expect(balancedScholarFit?.expectedMatchedPerkGroupCount).toBe(1.5)
+    expect(balancedScholarFit?.expectedMatchedPerkGroupCount).toBe(1)
     expect(balancedScholarFit?.expectedCoveredPickedPerkCount).toBe(1)
+    expect(balancedScholarFit?.matches).toEqual([
+      expect.objectContaining({
+        isGuaranteed: true,
+        perkGroupId: 'CalmTree',
+      }),
+    ])
   })
 
   test('calculates expected covered picked perks across deterministic fills and class dependencies', () => {
@@ -595,6 +601,94 @@ describe('background fit', () => {
     )
     expect(
       engine.getBackgroundPerkGroupProbability('background.class_roll', 'ArcherClassTree'),
+    ).toBe(0.5)
+  })
+
+  test('removes guaranteed picked perks from lower-probability background fit matches', () => {
+    const tacticalManeuversPerk = createPerk({
+      id: 'perk.traits.tactical_maneuvers',
+      perkConstName: 'LegendTacticalManeuvers',
+      perkName: 'Tactical maneuvers',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'AgileTree',
+          perkGroupName: 'Agile',
+        }),
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'TrainedTree',
+          perkGroupName: 'Trained',
+        }),
+        createPlacement({
+          categoryName: 'Class',
+          perkGroupId: 'JugglerClassTree',
+          perkGroupName: 'Juggler',
+        }),
+      ],
+    })
+    const agileOnlyPerk = createPerk({
+      id: 'perk.traits.agile_only',
+      perkConstName: 'LegendAgileOnly',
+      perkName: 'Agile footwork',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'AgileTree',
+          perkGroupName: 'Agile',
+        }),
+      ],
+    })
+    const trainedBackground = createBackgroundDefinition({
+      backgroundId: 'background.trained_rolls',
+      backgroundName: 'Trained rolls',
+      overrides: {
+        Class: { chance: 0.5, minimumPerkGroups: 0, perkGroupIds: [] },
+        Traits: { minimumPerkGroups: 2, perkGroupIds: ['TrainedTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [trainedBackground],
+      perks: [...samplePerks, tacticalManeuversPerk, agileOnlyPerk],
+    })
+    const trainedRollsFit = engine.getBackgroundFitView([
+      tacticalManeuversPerk,
+      agileOnlyPerk,
+    ]).rankedBackgroundFits[0]
+    const matchesByPerkGroupId = new Map(
+      trainedRollsFit.matches.map((match) => [match.perkGroupId, match]),
+    )
+
+    expect(matchesByPerkGroupId.get('TrainedTree')).toEqual(
+      expect.objectContaining({
+        isGuaranteed: true,
+        pickedPerkCount: 1,
+        pickedPerkIds: ['perk.traits.tactical_maneuvers'],
+        pickedPerkNames: ['Tactical maneuvers'],
+        probability: 1,
+      }),
+    )
+    expect(matchesByPerkGroupId.get('AgileTree')).toEqual(
+      expect.objectContaining({
+        isGuaranteed: false,
+        pickedPerkCount: 1,
+        pickedPerkIds: ['perk.traits.agile_only'],
+        pickedPerkNames: ['Agile footwork'],
+      }),
+    )
+    expect(matchesByPerkGroupId.has('JugglerClassTree')).toBe(false)
+    expect(trainedRollsFit.expectedMatchedPerkGroupCount).toBe(
+      trainedRollsFit.matches.reduce(
+        (expectedPerkGroupCount, match) => expectedPerkGroupCount + match.probability,
+        0,
+      ),
+    )
+    expect(engine.getBackgroundPerkGroupProbability('background.trained_rolls', 'AgileTree')).toBe(
+      0.25,
+    )
+    expect(
+      engine.getBackgroundPerkGroupProbability('background.trained_rolls', 'JugglerClassTree'),
     ).toBe(0.5)
   })
 

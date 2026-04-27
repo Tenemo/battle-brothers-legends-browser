@@ -259,12 +259,12 @@ describe('background origin detection', () => {
       originBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)),
     ).toEqual([
       'Origin: Berserker',
-      'Origin commander',
-      'Origin commander',
-      'Origin commander',
-      'Origin commander',
-      'Origin commander',
-      'Origin commander',
+      'Origin: Commander',
+      'Origin: Commander',
+      'Origin: Commander',
+      'Origin: Commander',
+      'Origin: Commander',
+      'Origin: Commander',
     ])
   })
 
@@ -469,5 +469,38 @@ describe('background origin detection', () => {
       }))
 
     expect(originBackgroundFitsWithoutVisiblePills).toEqual([])
+  })
+
+  test('uses consistent category prefixes for every imported visible background pill', () => {
+    const visibleBackgroundPillLabels = [
+      ...new Set(
+        getImportedBackgroundFits()
+          .map((backgroundFit) => getVisibleBackgroundPillLabel(backgroundFit))
+          .filter((pillLabel): pillLabel is string => pillLabel !== null),
+      ),
+    ].toSorted((leftPillLabel, rightPillLabel) => leftPillLabel.localeCompare(rightPillLabel))
+
+    expect(visibleBackgroundPillLabels).toEqual([
+      'Origin: Assassin',
+      'Origin: Beast slayers',
+      'Origin: Berserker',
+      'Origin: Commander',
+      'Origin: Crusader',
+      'Origin: Crusader/Inquisition',
+      'Origin: Davkul',
+      'Origin: Legion',
+      'Origin: Lone wolf',
+      'Origin: Melee',
+      'Origin: Necromancer',
+      'Origin: Nomad',
+      'Origin: Peasant militia',
+      'Origin: Ranged',
+      'Origin: Sisterhood',
+      'Starting: Ranged',
+      'Starting: Shield',
+      'Starting: Two-handed',
+      'Variant: Converted cultist',
+      'Variant: Necro',
+    ])
   })
 })

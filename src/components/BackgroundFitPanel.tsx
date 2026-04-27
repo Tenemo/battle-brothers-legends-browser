@@ -318,9 +318,6 @@ export function BackgroundFitPanel({
                         rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
                         backgroundFitIndex
                       }
-                      supportedBuildTargetPerkGroupCount={
-                        backgroundFitView.supportedBuildTargetPerkGroups.length
-                      }
                     />
                   </li>
                 ))}

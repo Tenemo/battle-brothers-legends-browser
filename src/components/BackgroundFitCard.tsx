@@ -8,10 +8,8 @@ import {
 import {
   formatBackgroundFitExpectedBuildPerksLabel,
   formatBackgroundFitGuaranteedPerksLabel,
-  formatBackgroundFitMatchedPerkGroupsLabel,
   formatBackgroundFitPickablePerksLabel,
   formatBackgroundFitProbabilityLabel,
-  formatBackgroundFitScoreLabel,
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
   getVisibleBackgroundPillLabel,
@@ -35,13 +33,6 @@ function getBackgroundFitGuaranteedPerksSummaryCopy(
   return `Guaranteed picked-perk coverage: ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} picked perks are covered before optional rolls.`
 }
 
-function getBackgroundFitMatchedPerkGroupsSummaryCopy(
-  matchedPerkGroupCount: number,
-  supportedBuildTargetPerkGroupCount: number,
-): string {
-  return `Matched build perk groups: this background can roll ${matchedPerkGroupCount} of ${supportedBuildTargetPerkGroupCount} supported build perk groups.`
-}
-
 function getBackgroundFitExpectedBuildPerksSummaryCopy(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
@@ -50,20 +41,6 @@ function getBackgroundFitExpectedBuildPerksSummaryCopy(
     expectedCoveredPickedPerkCount,
     pickedPerkCount,
   )} after dynamic perk group rolls.`
-}
-
-function getBackgroundFitGuaranteedPerkGroupsSummaryCopy(
-  guaranteedMatchedPerkGroupCount: number,
-): string {
-  return `Guaranteed matched perk groups: ${guaranteedMatchedPerkGroupCount} build perk groups are always present.`
-}
-
-function getBackgroundFitExpectedPerkGroupsSummaryCopy(
-  expectedMatchedPerkGroupCount: number,
-): string {
-  return `Expected matched perk groups: ${formatBackgroundFitScoreLabel(
-    expectedMatchedPerkGroupCount,
-  )} build perk groups are expected after dynamic rolls.`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -209,7 +186,6 @@ export function BackgroundFitCard({
   pickedPerkCount,
   query,
   rank,
-  supportedBuildTargetPerkGroupCount,
 }: {
   backgroundFit: RankedBackgroundFit
   emphasizedCategoryNames: ReadonlySet<string>
@@ -234,7 +210,6 @@ export function BackgroundFitCard({
   pickedPerkCount: number
   query: string
   rank: number
-  supportedBuildTargetPerkGroupCount: number
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
@@ -358,33 +333,6 @@ export function BackgroundFitCard({
       >
         <div className="background-fit-card-panel-inner">
           <div className="background-fit-card-content">
-            <div className="background-fit-score-row">
-              <BackgroundFitMetricBadge
-                label={formatBackgroundFitMatchedPerkGroupsLabel(
-                  backgroundFit.matches.length,
-                  supportedBuildTargetPerkGroupCount,
-                )}
-                tooltip={getBackgroundFitMatchedPerkGroupsSummaryCopy(
-                  backgroundFit.matches.length,
-                  supportedBuildTargetPerkGroupCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                label={`Guaranteed perk groups ${backgroundFit.guaranteedMatchedPerkGroupCount}`}
-                tooltip={getBackgroundFitGuaranteedPerkGroupsSummaryCopy(
-                  backgroundFit.guaranteedMatchedPerkGroupCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                label={`Expected perk groups ${formatBackgroundFitScoreLabel(
-                  backgroundFit.expectedMatchedPerkGroupCount,
-                )}`}
-                tooltip={getBackgroundFitExpectedPerkGroupsSummaryCopy(
-                  backgroundFit.expectedMatchedPerkGroupCount,
-                )}
-              />
-            </div>
-
             {guaranteedMatches.length > 0 ? (
               <div className="background-fit-match-section">
                 <p className="background-fit-section-label">Guaranteed</p>
