@@ -1,0 +1,265 @@
+:is(.hero-meta, .build-planner, .background-fit-panel, .sidebar, .results-panel, .detail-panel) {
+  border: 1px solid var(--border-color);
+  background: var(--panel-background);
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(10px);
+}
+
+:is(.build-planner, .background-fit-panel, .sidebar, .results-panel, .detail-panel) {
+  border-radius: var(--radius-2xl);
+}
+
+:is(.sidebar, .results-panel, .detail-panel-body) {
+  padding: var(--space-xl);
+}
+
+:is(.background-fit-panel-body) {
+  padding: var(--space-xl) var(--space-xl) var(--space-xl) var(--space-2xl);
+}
+
+:is(.background-fit-rail-button, .detail-panel-rail-button) {
+  flex-basis: var(--control-height-lg);
+  gap: var(--space-lg);
+  border-color: var(--border-muted);
+  background:
+    linear-gradient(180deg, rgb(181 128 73 / 0.1), transparent 38%), var(--surface-control);
+  color: inherit;
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    color var(--motion-fast);
+}
+
+:is(
+  .background-fit-rail-button:hover,
+  .background-fit-rail-button:focus-visible,
+  .detail-panel-rail-button:hover,
+  .detail-panel-rail-button:focus-visible
+) {
+  border-color: var(--border-strong);
+  background:
+    linear-gradient(180deg, rgb(181 128 73 / 0.14), transparent 38%), var(--surface-result-hover);
+}
+
+:is(.perk-row, .background-fit-card) {
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-2xl);
+  background: var(--surface-result);
+  box-shadow: none;
+  color: var(--text-primary);
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    box-shadow var(--motion-fast),
+    color var(--motion-fast);
+}
+
+:is(.perk-row:hover:not(.is-selected), .background-fit-card:hover) {
+  border-color: rgb(204 155 84 / 0.22);
+  background: var(--surface-result-hover);
+}
+
+:is(.perk-row.is-selected, .background-fit-card.is-expanded) {
+  background: var(--surface-result-active);
+}
+
+:is(.perk-row.is-picked, .perk-row:hover, .perk-row.is-highlighted.is-picked) {
+  border-color: var(--border-strong);
+}
+
+:is(.background-fit-card.is-empty) {
+  opacity: 0.76;
+}
+
+:is(.background-fit-accordion-trigger) {
+  border-radius: inherit;
+}
+
+:is(.background-fit-accordion-trigger:hover, .background-fit-accordion-trigger:focus-visible) {
+  background: rgb(28 23 20 / 0.36);
+}
+
+:is(
+  .background-fit-target,
+  .background-fit-match,
+  .planner-slot,
+  .planner-group-card,
+  .planner-section-placeholder,
+  .saved-build-card
+) {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--surface-result);
+}
+
+:is(.planner-slot.is-placeholder, .planner-section-placeholder, .saved-builds-empty) {
+  border-color: var(--border-overlay);
+  background: var(--surface-result-muted);
+}
+
+:is(
+  .background-fit-match:hover,
+  .background-fit-match:focus-visible,
+  .background-fit-match.is-highlighted,
+  .planner-group-card:hover,
+  .planner-group-card.is-highlighted,
+  .category-chip:hover,
+  .category-chip.is-highlighted,
+  .category-chip.is-active,
+  .perk-group-chip:hover,
+  .perk-group-chip.is-highlighted,
+  .perk-group-chip.is-active
+) {
+  border-color: var(--border-strong);
+  background: var(--surface-result-active);
+  color: var(--text-primary);
+}
+
+:is(
+  .category-chip,
+  .perk-group-chip,
+  .perk-placement-chip,
+  .planner-pill,
+  .planner-action-button,
+  .build-planner-info-button
+) {
+  border: 1px solid var(--border-muted);
+  background: var(--surface-control);
+  color: var(--text-secondary);
+  transition:
+    border-color var(--motion-fast),
+    background-color var(--motion-fast),
+    color var(--motion-fast),
+    opacity var(--motion-fast);
+}
+
+:is(.category-chip, .perk-group-chip, .planner-action-button) {
+  border-radius: var(--radius-lg);
+}
+
+:is(.perk-placement-chip, .planner-pill, .build-planner-info-button) {
+  border-radius: var(--radius-pill);
+}
+
+:is(
+  .planner-action-button:hover:not(:disabled),
+  .planner-action-button.is-active,
+  .planner-pill:hover,
+  .planner-pill:focus-visible,
+  .planner-pill.is-highlighted,
+  .perk-placement-chip:hover,
+  .perk-placement-chip:focus-visible,
+  .perk-placement-chip.is-highlighted
+) {
+  border-color: var(--border-strong);
+  background: var(--surface-result-active);
+  color: var(--text-primary);
+}
+
+:is(
+  .tier-badge,
+  .detail-badge,
+  .background-fit-metric-badge,
+  .background-fit-disambiguator,
+  .background-fit-rank
+) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius-pill);
+  background: rgb(20 17 14 / 0.8);
+  color: var(--accent-soft);
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+}
+
+:is(.background-fit-metric-badge, .tier-badge) {
+  padding: 0.14rem 0.42rem;
+}
+
+:is(.detail-badge) {
+  padding: 0.12rem 0.42rem;
+}
+
+:is(.search-field input, .saved-build-form input) {
+  min-height: var(--control-height-lg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-xl);
+  background: var(--input-background);
+  color: var(--text-primary);
+}
+
+:is(.search-clear-button, .background-fit-filter-button, .hero-repository-link) {
+  border-radius: var(--radius-pill);
+  color: #bda98f;
+  transition:
+    background-color var(--motion-fast),
+    color var(--motion-fast);
+}
+
+:is(
+  .search-clear-button:hover,
+  .search-clear-button:focus-visible,
+  .background-fit-filter-button:hover,
+  .background-fit-filter-button:focus-visible,
+  .background-fit-filter-button.has-active-filter,
+  .hero-repository-link:hover,
+  .hero-repository-link:focus-visible
+) {
+  background: rgb(204 155 84 / 0.18);
+  color: var(--text-primary);
+}
+
+:is(.saved-builds-dialog, .clear-build-dialog) {
+  border: 1px solid var(--border-overlay);
+  border-radius: var(--radius-xl);
+  background: var(--surface-overlay-raised);
+  box-shadow: var(--shadow-high), var(--shadow-inner-highlight);
+}
+
+:is(.background-fit-filter-popover, .build-planner-info-tooltip, .build-perk-tooltip) {
+  border: 1px solid var(--border-overlay);
+  border-radius: var(--radius-lg);
+  background: var(--surface-overlay);
+  box-shadow: var(--shadow-medium);
+}
+
+:is(.saved-builds-dialog-backdrop, .clear-build-dialog-backdrop) {
+  background: rgb(0 0 0 / 0.62);
+}
+
+:is(.share-build-button.is-confirmed, .saved-builds-status-message) {
+  border-color: var(--border-success);
+  background: var(--surface-success);
+  color: var(--text-success);
+}
+
+:is(
+  .share-build-button.is-error,
+  .saved-builds-status-message.is-error,
+  .clear-build-confirm-button,
+  .clear-build-action-button:hover:not(:disabled),
+  .clear-build-action-button:focus-visible:not(:disabled),
+  .saved-build-delete-button:hover:not(:disabled),
+  .saved-build-delete-button:focus-visible:not(:disabled)
+) {
+  border-color: var(--border-danger);
+  background: var(--surface-danger);
+  color: var(--text-danger);
+}
+
+:is(
+  .clear-build-confirm-button:hover:not(:disabled),
+  .clear-build-confirm-button:focus-visible:not(:disabled)
+) {
+  border-color: var(--border-danger-hover);
+  background: var(--surface-danger-hover);
+}
+
+:is(.perk-icon) {
+  border-color: rgb(204 155 84 / 0.22);
+  background:
+    linear-gradient(180deg, rgb(31 25 20 / 0.96), rgb(17 13 10 / 0.98)), var(--panel-background);
+  box-shadow: var(--shadow-inner-highlight), var(--shadow-low);
+}

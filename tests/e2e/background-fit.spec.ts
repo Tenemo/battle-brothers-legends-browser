@@ -73,10 +73,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .locator('.background-fit-summary-badge')
     .filter({ hasText: 'Expected 1/1 perks pickable' })
 
-  await expect(expectedBuildPerksBadge).toHaveAttribute(
-    'title',
-    /Expected picked-perk coverage/i,
-  )
+  await expect(expectedBuildPerksBadge).toHaveAttribute('title', /Expected picked-perk coverage/i)
   await expect(expectedBuildPerksBadge).toHaveAttribute(
     'aria-label',
     /Expected picked-perk coverage/i,

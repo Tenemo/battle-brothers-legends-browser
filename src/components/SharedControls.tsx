@@ -1,4 +1,5 @@
 import { type ReactNode, useRef } from 'react'
+import { ChevronRight, Funnel, Star } from 'lucide-react'
 
 export function ClearableSearchField({
   className = '',
@@ -76,57 +77,33 @@ export function GitHubIcon({ className }: { className: string }) {
 
 export function CategoryChevron({ isExpanded }: { isExpanded: boolean }) {
   return (
-    <svg
+    <ChevronRight
       aria-hidden="true"
       className={isExpanded ? 'category-chevron is-expanded' : 'category-chevron'}
-      viewBox="0 0 12 12"
-    >
-      <path
-        d="M4 2.5 7.5 6 4 9.5"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.4"
-      />
-    </svg>
+      strokeWidth={1.8}
+    />
   )
 }
 
 export function BackgroundFitRailChevron({ isExpanded }: { isExpanded: boolean }) {
   return (
-    <svg
+    <ChevronRight
       aria-hidden="true"
       className={
         isExpanded ? 'background-fit-rail-chevron is-expanded' : 'background-fit-rail-chevron'
       }
-      viewBox="0 0 12 12"
-    >
-      <path
-        d="M4 2.5 7.5 6 4 9.5"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.4"
-      />
-    </svg>
+      strokeWidth={1.8}
+    />
   )
 }
 
 export function DetailPanelRailChevron({ isExpanded }: { isExpanded: boolean }) {
   return (
-    <svg
+    <ChevronRight
       aria-hidden="true"
       className={isExpanded ? 'detail-panel-rail-chevron is-expanded' : 'detail-panel-rail-chevron'}
-      viewBox="0 0 12 12"
-    >
-      <path
-        d="M4 2.5 7.5 6 4 9.5"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.4"
-      />
-    </svg>
+      strokeWidth={1.8}
+    />
   )
 }
 
@@ -138,58 +115,39 @@ export function FunnelIcon({
   isFilled?: boolean
 }) {
   return (
-    <svg
+    <Funnel
       aria-hidden="true"
       className={className}
       fill={isFilled ? 'currentColor' : 'none'}
       stroke="currentColor"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="1.6"
-      viewBox="0 0 24 24"
-    >
-      <path d="M4 5h16l-6.1 7.1v5.1l-3.8 1.8v-6.9L4 5Z" />
-    </svg>
+      strokeWidth={1.8}
+    />
   )
 }
 
 export function BackgroundFitAccordionChevron({ isExpanded }: { isExpanded: boolean }) {
   return (
-    <svg
+    <ChevronRight
       aria-hidden="true"
       className={
         isExpanded
           ? 'background-fit-accordion-chevron is-expanded'
           : 'background-fit-accordion-chevron'
       }
-      viewBox="0 0 12 12"
-    >
-      <path
-        d="M4 2.5 7.5 6 4 9.5"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeWidth="1.4"
-      />
-    </svg>
+      strokeWidth={1.8}
+    />
   )
 }
 
 export function BuildStar({ isPicked }: { isPicked: boolean }) {
   return (
-    <svg
+    <Star
       aria-hidden="true"
       className={isPicked ? 'build-star is-picked' : 'build-star'}
-      viewBox="0 0 24 24"
-    >
-      <path
-        d="m12 3.45 2.67 5.41 5.97.87-4.32 4.21 1.02 5.95L12 17.07 6.66 19.89l1.02-5.95-4.32-4.21 5.97-.87L12 3.45Z"
-        fill={isPicked ? 'currentColor' : 'none'}
-        stroke="currentColor"
-        strokeLinejoin="round"
-        strokeWidth="1.6"
-      />
-    </svg>
+      fill={isPicked ? 'currentColor' : 'none'}
+      stroke="currentColor"
+      strokeWidth={1.8}
+    />
   )
 }
 
