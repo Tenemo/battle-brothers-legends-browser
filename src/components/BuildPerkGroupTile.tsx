@@ -205,18 +205,18 @@ export function BuildPerkGroupTile({
           )}
         </div>
         <div className="planner-group-card-copy">
-          {metaLabel ? (
-            <div className="planner-slot-topline">
+          <div className="planner-slot-topline">
+            <strong className="planner-slot-name" title={groupLabel}>
+              {groupLabel}
+            </strong>
+            {metaLabel ? (
               <span
                 className={['planner-slot-group-count', metaClassName].filter(Boolean).join(' ')}
               >
                 {metaLabel}
               </span>
-            </div>
-          ) : null}
-          <strong className="planner-slot-name" title={groupLabel}>
-            {groupLabel}
-          </strong>
+            ) : null}
+          </div>
         </div>
       </div>
       <div className="planner-pill-list">

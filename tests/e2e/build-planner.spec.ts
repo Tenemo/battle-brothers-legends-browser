@@ -671,6 +671,25 @@ test('separates planner group card hover from icon and perk pill hover states', 
   const iconBorderBeforeCardHover = await heavyArmorIcon.evaluate(
     (element) => window.getComputedStyle(element).borderTopColor,
   )
+  const groupNameIconCenterOffset = await heavyArmorGroupCard.evaluate((card) => {
+    const icon = card.querySelector('.planner-group-option-icon')
+    const groupName = card.querySelector('.planner-slot-name')
+
+    if (!(icon instanceof HTMLElement) || !(groupName instanceof HTMLElement)) {
+      return Number.POSITIVE_INFINITY
+    }
+
+    const iconRectangle = icon.getBoundingClientRect()
+    const groupNameRectangle = groupName.getBoundingClientRect()
+
+    return Math.abs(
+      iconRectangle.top +
+        iconRectangle.height / 2 -
+        (groupNameRectangle.top + groupNameRectangle.height / 2),
+    )
+  })
+
+  expect(groupNameIconCenterOffset).toBeLessThanOrEqual(2)
 
   await heavyArmorGroupCard.hover({
     position: {

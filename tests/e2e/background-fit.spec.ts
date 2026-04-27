@@ -166,6 +166,28 @@ test('shows the background fit panel for a picked build and keeps the shell view
 
   await expect(axeMatchRow).toHaveClass(/planner-group-card/)
   await expect(axeMatchRow.getByRole('img', { name: 'Axe perk group icon' })).toBeVisible()
+  const backgroundMatchIconSize = await axeMatchRow
+    .getByRole('img', { name: 'Axe perk group icon' })
+    .evaluate((element) => {
+      const rectangle = element.getBoundingClientRect()
+
+      return {
+        height: rectangle.height,
+        width: rectangle.width,
+      }
+    })
+  const resultsPerkGroupIconSize = await axeResultGroupButton
+    .getByRole('img', { name: 'Axe perk group icon' })
+    .evaluate((element) => {
+      const rectangle = element.getBoundingClientRect()
+
+      return {
+        height: rectangle.height,
+        width: rectangle.width,
+      }
+    })
+
+  expect(backgroundMatchIconSize).toEqual(resultsPerkGroupIconSize)
   await expect(axeMatchRow.locator('.background-fit-category-badge')).toHaveCount(0)
   await expect(axeMatchRow.locator('.planner-slot-category')).toHaveCount(0)
   await expect(axeMatchRow.locator('.background-fit-match-probability-badge')).toHaveText(

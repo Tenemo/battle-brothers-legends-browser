@@ -197,6 +197,12 @@
   color: var(--accent-soft);
 }
 
+.background-fit-match.planner-group-card .planner-group-option-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 0.34rem;
+}
+
 .background-fit-perk-group-main {
   display: flex;
   align-items: flex-start;

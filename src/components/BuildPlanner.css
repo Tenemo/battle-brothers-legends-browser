@@ -604,7 +604,7 @@
 
 .planner-slot-topline {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: var(--space-md);
   align-items: center;
   min-width: 0;
@@ -693,7 +693,7 @@
   display: grid;
   grid-template-columns: minmax(0, max-content) minmax(0, 1fr);
   gap: var(--space-md);
-  align-items: start;
+  align-items: center;
   pointer-events: none;
 }
 
@@ -702,7 +702,8 @@
 }
 
 .planner-group-card .planner-slot-name {
-  margin-top: var(--space-3xs);
+  flex: 1 1 auto;
+  margin-top: 0;
   font-size: var(--font-size-md);
   -webkit-line-clamp: 1;
 }
