@@ -158,32 +158,36 @@
 
 .background-fit-target,
 .background-fit-match {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.72rem;
-  align-items: flex-start;
   width: 100%;
-  padding: 0.46rem 0.52rem;
   border: 1px solid rgb(204 155 84 / 0.11);
   border-radius: 0.62rem;
   background: rgb(18 15 13 / 0.76);
 }
 
+.background-fit-target {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.72rem;
+  align-items: flex-start;
+  padding: 0.46rem 0.52rem;
+}
+
 .background-fit-match {
-  appearance: none;
+  display: grid;
+  gap: 0.42rem;
+  padding: 0.46rem 0.52rem;
   color: inherit;
   font: inherit;
   text-align: left;
-  cursor: pointer;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
     color 160ms ease;
 }
 
-.background-fit-match:hover,
-.background-fit-match:focus-visible,
-.background-fit-match.is-highlighted {
+.background-fit-match:hover:not(.has-highlighted-perk),
+.background-fit-match:focus-within:not(.has-highlighted-perk),
+.background-fit-match.is-highlighted:not(.has-highlighted-perk) {
   border-color: var(--accent-color);
   background: var(--button-background-active);
   color: var(--text-primary);
@@ -206,10 +210,64 @@
 }
 
 .background-fit-target > div,
-.background-fit-match > div,
+.background-fit-match-group-button,
 .background-fit-card-heading > div {
   min-width: 0;
   flex: 1 1 auto;
+}
+
+.background-fit-match-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.64rem;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.background-fit-match-group-button {
+  appearance: none;
+  display: flex;
+  border: 0;
+  border-radius: var(--radius-sm);
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.background-fit-match-group-button:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.background-fit-match-badges {
+  display: flex;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  max-width: 48%;
+}
+
+.background-fit-category-badge,
+.background-fit-match-probability-badge {
+  border: 1px solid rgb(204 155 84 / 0.14);
+  border-radius: 999px;
+  padding: 0.13rem 0.4rem;
+  background: rgb(20 17 14 / 0.72);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.background-fit-category-badge {
+  color: var(--text-secondary);
+}
+
+.background-fit-match-perk-list {
+  margin-top: 0;
 }
 
 .background-fit-perk-group-main {

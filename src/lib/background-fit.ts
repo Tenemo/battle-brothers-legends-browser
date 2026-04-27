@@ -44,6 +44,7 @@ type PerkGroupRequirement = {
 export type BuildTargetPerkGroup = {
   categoryName: string
   pickedPerkCount: number
+  pickedPerkIds: string[]
   pickedPerkNames: string[]
   perkGroupIconPath: string | null
   perkGroupId: string
@@ -1147,6 +1148,7 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
           categoryName: placement.categoryName,
           pickedPerkCount: 0,
           pickedPerkIdSet: new Set<string>(),
+          pickedPerkIds: [],
           pickedPerkNames: [],
           perkGroupIconPath: placement.perkGroupIconPath,
           perkGroupId: placement.perkGroupId,
@@ -1161,6 +1163,7 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
       }
 
       buildTargetPerkGroup.pickedPerkIdSet.add(pickedPerk.id)
+      buildTargetPerkGroup.pickedPerkIds.push(pickedPerk.id)
       buildTargetPerkGroup.pickedPerkNames.push(pickedPerk.perkName)
       buildTargetPerkGroup.pickedPerkCount += 1
     }
@@ -1200,7 +1203,7 @@ function compareBackgroundFitMatches(
 }
 
 export function getCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
-  return new Set(matches.flatMap((match) => match.pickedPerkNames)).size
+  return new Set(matches.flatMap((match) => match.pickedPerkIds)).size
 }
 
 export function getGuaranteedCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {

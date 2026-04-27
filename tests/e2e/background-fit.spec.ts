@@ -4,6 +4,7 @@ import {
   enableCategory,
   expectViewportLocked,
   getBackgroundFitPanel,
+  getBuildPerksBar,
   getBuildIndividualGroupsList,
   getResultsList,
   getSidebarPerkGroupButton,
@@ -142,6 +143,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .toBe('0s')
 
   const axeMatchButton = apprenticeCard.getByRole('button', { name: 'Select perk group Axe' })
+  const axeMatchRow = axeMatchButton.locator(
+    'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " background-fit-match ")][1]',
+  )
+  const axePerkPill = apprenticeCard.getByRole('button', { name: 'Axe Mastery' })
   const axeResultRow = getResultsList(page)
     .getByRole('button', { name: 'Inspect Axe Mastery' })
     .locator(
@@ -155,12 +160,26 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .locator(
       'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " planner-group-card ")][1]',
     )
+  const pickedAxePerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Axe Mastery',
+  })
 
   await expect(axeMatchButton.getByRole('img', { name: 'Axe perk group icon' })).toBeVisible()
+  await expect(axeMatchRow.locator('.background-fit-category-badge')).toHaveText('Weapon')
+  await expect(axeMatchRow.locator('.background-fit-match-probability-badge')).toHaveText(
+    'Guaranteed',
+  )
+  await expect(axeMatchRow).not.toContainText(/\/\s*\d+\s+perks?\s*\//)
+  await expect(axePerkPill).toBeVisible()
+  await axePerkPill.hover()
+  await expect(axePerkPill).toHaveClass(/is-tooltip-pending/)
+  await expect(pickedAxePerkTile).toHaveClass(/is-highlighted/)
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 1500 })
+  await expect(page.getByRole('tooltip')).toContainText('Axe Mastery')
   await expect(axeResultGroupButton).toBeVisible()
   await axeResultGroupButton.hover()
   await expect(axeResultGroupButton).toHaveClass(/is-highlighted/)
-  await expect(axeMatchButton).toHaveClass(/is-highlighted/)
+  await expect(axeMatchRow).toHaveClass(/is-highlighted/)
   await expect(plannerAxeGroupCard).toHaveClass(/is-highlighted/)
 
   await enableCategory(page, 'Traits')
@@ -457,11 +476,18 @@ test('shows probabilistic background fit matches with percentage badges', async 
   const barterMatchButton = apprenticeCard.getByRole('button', {
     name: 'Select perk group Barter',
   })
+  const barterMatchRow = barterMatchButton.locator(
+    'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " background-fit-match ")][1]',
+  )
 
   await expect(apprenticeCard.getByText('Possible', { exact: true })).toBeVisible()
   await expect(apprenticeCard.getByText(/Expected perk groups \d+(\.\d)?/)).toBeVisible()
   await expect(barterMatchButton).toBeVisible()
-  await expect(barterMatchButton.locator('.detail-badge')).toHaveText(/\d+(\.\d)?%/)
+  await expect(barterMatchRow.locator('.background-fit-category-badge')).toHaveText('Profession')
+  await expect(barterMatchRow.locator('.background-fit-match-probability-badge')).toHaveText(
+    /\d+(\.\d)?%/,
+  )
+  await expect(barterMatchRow).not.toContainText(/\/\s*\d+\s+perks?\s*\//)
   await barterMatchButton.click()
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Profession' })).toBeVisible()

@@ -555,11 +555,19 @@ export default function App() {
       <main className={workspaceClassName}>
         <BackgroundFitPanel
           backgroundFitView={backgroundFitView}
+          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
+          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
           hoveredPerkGroupKey={hoveredPerkGroupKey}
+          hoveredPerkId={hoveredPerkId}
           isExpanded={isBackgroundFitPanelExpanded}
+          onCloseBuildPerkHover={closeBuildPerkHover}
+          onCloseBuildPerkTooltip={closeBuildPerkTooltip}
           onClearPerkGroupHover={clearPerkGroupHover}
           onClosePerkGroupHover={closePerkGroupHover}
           onInspectPerkGroup={handleInspectPerkGroup}
+          onInspectPlannerPerk={handleInspectPlannerPerk}
+          onOpenBuildPerkHover={openBuildPerkHover}
+          onOpenBuildPerkTooltip={openBuildPerkTooltip}
           onOpenPerkGroupHover={openPerkGroupHover}
           onOriginBackgroundsChange={setShouldIncludeOriginBackgrounds}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}

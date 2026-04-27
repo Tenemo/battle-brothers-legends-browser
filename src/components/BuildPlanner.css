@@ -501,7 +501,8 @@
   transition: var(--planner-surface-transition);
 }
 
-.planner-slot-perk::after {
+.planner-slot-perk::after,
+.planner-pill::after {
   content: '';
   position: absolute;
   right: 0;
@@ -517,7 +518,8 @@
   transform-origin: left center;
 }
 
-.planner-slot-perk.is-tooltip-pending::after {
+.planner-slot-perk.is-tooltip-pending::after,
+.planner-pill.is-tooltip-pending::after {
   animation: build-perk-tooltip-timer 500ms linear forwards;
   opacity: 1;
 }

@@ -350,6 +350,7 @@ describe('background fit', () => {
         {
           categoryName: 'Weapon',
           pickedPerkCount: 2,
+          pickedPerkIds: ['perk.weapon.axe_one', 'perk.weapon.axe_two'],
           pickedPerkNames: ['Axe drill', 'Axe finish'],
           perkGroupIconPath: null,
           perkGroupId: 'AxeTree',
@@ -360,6 +361,7 @@ describe('background fit', () => {
         {
           categoryName: 'Other',
           pickedPerkCount: 1,
+          pickedPerkIds: ['perk.other.forceful'],
           pickedPerkNames: ['Forceful stance'],
           perkGroupIconPath: null,
           perkGroupId: 'ForcefulTree',

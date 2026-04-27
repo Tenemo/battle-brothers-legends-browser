@@ -349,6 +349,7 @@ test('build planner splits shared and individual perk groups without layout drif
   await expect(pickedPerkTile).toHaveCSS('transform', 'none')
   await expect(pickedPerkRemoveControl).toBeVisible()
   await expect(pickedPerkRemoveButton).toBeVisible()
+  await pickedPerkRemoveButton.hover()
   await expect
     .poll(() =>
       pickedPerkTile.evaluate((element) => window.getComputedStyle(element).backgroundColor),
@@ -681,6 +682,22 @@ test('separates planner group card hover from icon and perk pill hover states', 
   expectCssRgbColorsToMatch(iconBorderAfterDirectHover, iconBorderBeforeCardHover)
 
   await battleForgedPill.hover()
+  await expect(battleForgedPill).toHaveClass(/is-tooltip-pending/)
+  const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element, '::after')
+
+    return {
+      animationDuration: computedStyle.animationDuration,
+      height: computedStyle.height,
+      opacity: computedStyle.opacity,
+    }
+  })
+
+  expect(pillTooltipTimerStyle).toEqual({
+    animationDuration: '0.5s',
+    height: '2px',
+    opacity: '1',
+  })
   await expect(heavyArmorGroupCard).toHaveClass(/has-highlighted-perk/)
   await expect(battleForgedPickedPerkTile).toHaveClass(/is-highlighted/)
   await expect(immovableObjectPickedPerkTile).not.toHaveClass(/is-highlighted/)
@@ -700,6 +717,10 @@ test('separates planner group card hover from icon and perk pill hover states', 
   )
 
   expectCssRgbColorsToMatch(iconBorderAfterPerkHover, iconBorderBeforeCardHover)
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 800 })
+  await expect(page.getByRole('tooltip')).toContainText('Battle Forged')
+  await page.mouse.move(1, 1)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
 
 test('truncates long planner group categories without growing the card', async ({ page }) => {

@@ -8,11 +8,19 @@ import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './Sh
 
 export function BackgroundFitPanel({
   backgroundFitView,
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
   hoveredPerkGroupKey,
+  hoveredPerkId,
   isExpanded,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
   onClearPerkGroupHover,
   onClosePerkGroupHover,
   onInspectPerkGroup,
+  onInspectPlannerPerk,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
   onOriginBackgroundsChange,
   onSearchActivityChange,
@@ -21,11 +29,22 @@ export function BackgroundFitPanel({
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView
+  hoveredBuildPerkId: string | null
+  hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkGroupKey: string | null
+  hoveredPerkId: string | null
   isExpanded: boolean
+  onCloseBuildPerkHover: (perkId: string) => void
+  onCloseBuildPerkTooltip: () => void
   onClearPerkGroupHover: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onInspectPlannerPerk: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkHover: (perkId: string) => void
+  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
@@ -88,6 +107,15 @@ export function BackgroundFitPanel({
     backgroundFitAccordionState.rankedBackgroundFitKeySignature === rankedBackgroundFitKeySignature
       ? backgroundFitAccordionState.expandedBackgroundFitKey
       : null
+
+  function clearBackgroundFitInteractiveHover() {
+    onClearPerkGroupHover()
+    onCloseBuildPerkTooltip()
+
+    if (hoveredPerkId !== null) {
+      onCloseBuildPerkHover(hoveredPerkId)
+    }
+  }
 
   useEffect(() => {
     onSearchActivityChange(hasActiveBackgroundFitSearch)
@@ -153,7 +181,7 @@ export function BackgroundFitPanel({
             inputId="background-fit-search"
             label="Search backgrounds"
             onValueChange={(nextValue) => {
-              onClearPerkGroupHover()
+              clearBackgroundFitInteractiveHover()
               setBackgroundFitInputValue(nextValue)
             }}
             placeholder="Search backgrounds"
@@ -179,7 +207,7 @@ export function BackgroundFitPanel({
                   aria-label="Filter backgrounds"
                   className="background-fit-filter-button has-active-filter"
                   onClick={() => {
-                    onClearPerkGroupHover()
+                    clearBackgroundFitInteractiveHover()
                     setIsBackgroundFilterMenuOpen(
                       (wasBackgroundFilterMenuOpen) => !wasBackgroundFilterMenuOpen,
                     )
@@ -199,7 +227,7 @@ export function BackgroundFitPanel({
                       <input
                         checked={shouldIncludeOriginBackgrounds}
                         onChange={(event) => {
-                          onClearPerkGroupHover()
+                          clearBackgroundFitInteractiveHover()
                           onOriginBackgroundsChange(event.target.checked)
                         }}
                         type="checkbox"
@@ -249,7 +277,7 @@ export function BackgroundFitPanel({
             className="background-fit-results-scroll app-scrollbar"
             data-testid="background-fit-panel-body"
             onScrollCapture={() => {
-              onClearPerkGroupHover()
+              clearBackgroundFitInteractiveHover()
             }}
             ref={backgroundFitResultsScrollRef}
           >
@@ -260,13 +288,21 @@ export function BackgroundFitPanel({
                     <BackgroundFitCard
                       backgroundFit={backgroundFit}
                       expandedBackgroundFitKey={expandedBackgroundFitKey}
+                      hoveredBuildPerkId={hoveredBuildPerkId}
+                      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
                       hoveredPerkGroupKey={hoveredPerkGroupKey}
+                      hoveredPerkId={hoveredPerkId}
+                      onCloseBuildPerkHover={onCloseBuildPerkHover}
+                      onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
                       onClearPerkGroupHover={onClearPerkGroupHover}
                       onClosePerkGroupHover={onClosePerkGroupHover}
                       onInspectPerkGroup={onInspectPerkGroup}
+                      onInspectPlannerPerk={onInspectPlannerPerk}
+                      onOpenBuildPerkHover={onOpenBuildPerkHover}
+                      onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
                       onOpenPerkGroupHover={onOpenPerkGroupHover}
                       onToggle={(backgroundFitKey: string) => {
-                        onClearPerkGroupHover()
+                        clearBackgroundFitInteractiveHover()
                         setBackgroundFitAccordionState({
                           expandedBackgroundFitKey:
                             expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
@@ -304,7 +340,7 @@ export function BackgroundFitPanel({
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background fit`}
           className="background-fit-rail-button"
           onClick={() => {
-            onClearPerkGroupHover()
+            clearBackgroundFitInteractiveHover()
             onToggleExpanded()
           }}
           type="button"
