@@ -31,8 +31,22 @@ export function getBackgroundFitPanel(page: Page): Locator {
   return page.getByTestId('background-fit-panel')
 }
 
+export function getPerkDetailPanel(page: Page): Locator {
+  return page.getByTestId('perk-detail-panel')
+}
+
 export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
+}
+
+export function getSidebar(page: Page): Locator {
+  return page.locator('.sidebar')
+}
+
+export function getSidebarPerkGroupButton(page: Page, perkGroupName: string): Locator {
+  return getSidebar(page).getByRole('button', {
+    name: `Select perk group ${perkGroupName}`,
+  })
 }
 
 export async function gotoPerksBrowser(
@@ -52,12 +66,12 @@ export async function expectViewportLocked(page: Page): Promise<void> {
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const detailPanel = document.querySelector('.detail-panel') as HTMLElement | null
+        const detailPanelBody = document.querySelector('.detail-panel-body') as HTMLElement | null
         const resultsList = document.querySelector('.results-list') as HTMLElement | null
 
         return {
           detailPanelIsScrollable:
-            detailPanel !== null && detailPanel.scrollHeight > detailPanel.clientHeight,
+            detailPanelBody !== null && detailPanelBody.scrollHeight > detailPanelBody.clientHeight,
           documentScrollHeight: document.documentElement.scrollHeight,
           resultsListIsScrollable:
             resultsList !== null && resultsList.scrollHeight > resultsList.clientHeight,
@@ -89,6 +103,34 @@ export async function expectNoDocumentHorizontalOverflow(page: Page): Promise<vo
     .toBeLessThanOrEqual(1)
 }
 
+export async function expectNoWorkspaceHorizontalClip(page: Page): Promise<void> {
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const workspace = document.querySelector('.workspace') as HTMLElement | null
+
+        if (workspace === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        const workspaceRight = workspace.getBoundingClientRect().right
+        const workspaceColumnRights = [
+          '.background-fit-panel',
+          '.sidebar',
+          '.results-panel',
+          '.detail-panel',
+        ].flatMap((selector) => {
+          const element = document.querySelector(selector)
+
+          return element instanceof HTMLElement ? [element.getBoundingClientRect().right] : []
+        })
+
+        return Math.max(0, Math.max(...workspaceColumnRights) - workspaceRight)
+      }),
+    )
+    .toBeLessThanOrEqual(1)
+}
+
 export async function searchPerks(page: Page, query: string): Promise<void> {
   await page.getByLabel('Search perks').fill(query)
 }
@@ -106,8 +148,8 @@ export async function disableCategory(page: Page, categoryName: string): Promise
   await page.getByRole('button', { name: `Disable category ${categoryName}` }).click()
 }
 
-export async function togglePerkGroup(page: Page, perkGroupName: string): Promise<void> {
-  await page.getByRole('button', { name: `Toggle perk group ${perkGroupName}` }).click()
+export async function selectPerkGroup(page: Page, perkGroupName: string): Promise<void> {
+  await getSidebarPerkGroupButton(page, perkGroupName).click()
 }
 
 export async function inspectPerkFromResults(page: Page, perkName: string): Promise<void> {

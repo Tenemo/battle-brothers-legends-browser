@@ -8,11 +8,20 @@ import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './Sh
 
 export function BackgroundFitPanel({
   backgroundFitView,
-  hoveredPerkGroupKey,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
+  hoveredPerkId,
   isExpanded,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
   onClearPerkGroupHover,
   onClosePerkGroupHover,
   onInspectPerkGroup,
+  onInspectPlannerPerk,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
   onOriginBackgroundsChange,
   onSearchActivityChange,
@@ -21,11 +30,23 @@ export function BackgroundFitPanel({
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView
-  hoveredPerkGroupKey: string | null
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  hoveredBuildPerkId: string | null
+  hoveredBuildPerkTooltipId: string | undefined
+  hoveredPerkId: string | null
   isExpanded: boolean
+  onCloseBuildPerkHover: (perkId: string) => void
+  onCloseBuildPerkTooltip: () => void
   onClearPerkGroupHover: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onInspectPlannerPerk: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkHover: (perkId: string) => void
+  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
@@ -44,7 +65,7 @@ export function BackgroundFitPanel({
     expandedBackgroundFitKey: null,
     rankedBackgroundFitKeySignature: '',
   })
-  const backgroundFitPanelBodyRef = useRef<HTMLDivElement | null>(null)
+  const backgroundFitResultsScrollRef = useRef<HTMLDivElement | null>(null)
   const backgroundFitFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const hasPickedPerks = pickedPerkCount > 0
   const hasSupportedBackgroundFitTargets =
@@ -89,6 +110,15 @@ export function BackgroundFitPanel({
       ? backgroundFitAccordionState.expandedBackgroundFitKey
       : null
 
+  function clearBackgroundFitInteractiveHover() {
+    onClearPerkGroupHover()
+    onCloseBuildPerkTooltip()
+
+    if (hoveredPerkId !== null) {
+      onCloseBuildPerkHover(hoveredPerkId)
+    }
+  }
+
   useEffect(() => {
     onSearchActivityChange(hasActiveBackgroundFitSearch)
   }, [hasActiveBackgroundFitSearch, onSearchActivityChange])
@@ -98,20 +128,20 @@ export function BackgroundFitPanel({
       return
     }
 
-    const backgroundFitPanelBody = backgroundFitPanelBodyRef.current
+    const backgroundFitResultsScroll = backgroundFitResultsScrollRef.current
 
-    if (backgroundFitPanelBody === null) {
+    if (backgroundFitResultsScroll === null) {
       return
     }
 
-    if (typeof backgroundFitPanelBody.scrollTo === 'function') {
-      backgroundFitPanelBody.scrollTo({
+    if (typeof backgroundFitResultsScroll.scrollTo === 'function') {
+      backgroundFitResultsScroll.scrollTo({
         top: 0,
       })
       return
     }
 
-    backgroundFitPanelBody.scrollTop = 0
+    backgroundFitResultsScroll.scrollTop = 0
   }, [isExpanded, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds])
 
   useEffect(() => {
@@ -146,23 +176,14 @@ export function BackgroundFitPanel({
         }
         data-testid="background-fit-panel"
       >
-        <div
-          aria-hidden={!isExpanded}
-          className="background-fit-panel-body"
-          data-testid="background-fit-panel-body"
-          hidden={!isExpanded}
-          onScrollCapture={() => {
-            onClearPerkGroupHover()
-          }}
-          ref={backgroundFitPanelBodyRef}
-        >
+        <div aria-hidden={!isExpanded} className="background-fit-panel-body" hidden={!isExpanded}>
           <ClearableSearchField
             className="background-fit-search-field"
             clearLabel="Clear background search"
             inputId="background-fit-search"
             label="Search backgrounds"
             onValueChange={(nextValue) => {
-              onClearPerkGroupHover()
+              clearBackgroundFitInteractiveHover()
               setBackgroundFitInputValue(nextValue)
             }}
             placeholder="Search backgrounds"
@@ -188,7 +209,7 @@ export function BackgroundFitPanel({
                   aria-label="Filter backgrounds"
                   className="background-fit-filter-button has-active-filter"
                   onClick={() => {
-                    onClearPerkGroupHover()
+                    clearBackgroundFitInteractiveHover()
                     setIsBackgroundFilterMenuOpen(
                       (wasBackgroundFilterMenuOpen) => !wasBackgroundFilterMenuOpen,
                     )
@@ -208,7 +229,7 @@ export function BackgroundFitPanel({
                       <input
                         checked={shouldIncludeOriginBackgrounds}
                         onChange={(event) => {
-                          onClearPerkGroupHover()
+                          clearBackgroundFitInteractiveHover()
                           onOriginBackgroundsChange(event.target.checked)
                         }}
                         type="checkbox"
@@ -223,7 +244,7 @@ export function BackgroundFitPanel({
           />
           {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (
             <p className="background-fit-ranking-summary">
-              Ranked by guaranteed perks pickable first, then total perks pickable.
+              Ranked by guaranteed perks pickable first, then expected perks pickable.
             </p>
           ) : (
             <div className="background-fit-empty-state">
@@ -253,49 +274,68 @@ export function BackgroundFitPanel({
               ) : null}
             </div>
           )}
-          {visibleRankedBackgroundFits.length > 0 ? (
-            <ol className="background-fit-ranking" data-testid="background-fit-ranking">
-              {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
-                <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
-                  <BackgroundFitCard
-                    backgroundFit={backgroundFit}
-                    expandedBackgroundFitKey={expandedBackgroundFitKey}
-                    hoveredPerkGroupKey={hoveredPerkGroupKey}
-                    onClearPerkGroupHover={onClearPerkGroupHover}
-                    onClosePerkGroupHover={onClosePerkGroupHover}
-                    onInspectPerkGroup={onInspectPerkGroup}
-                    onOpenPerkGroupHover={onOpenPerkGroupHover}
-                    onToggle={(backgroundFitKey: string) => {
-                      onClearPerkGroupHover()
-                      setBackgroundFitAccordionState({
-                        expandedBackgroundFitKey:
-                          expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
-                        rankedBackgroundFitKeySignature,
-                      })
-                    }}
-                    pickedPerkCount={pickedPerkCount}
-                    query={deferredBackgroundFitQuery}
-                    rank={
-                      rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
-                      backgroundFitIndex
-                    }
-                    supportedBuildTargetPerkGroupCount={
-                      backgroundFitView.supportedBuildTargetPerkGroups.length
-                    }
-                  />
-                </li>
-              ))}
-            </ol>
-          ) : (
-            <div className="background-fit-empty-state">
-              <p className="background-fit-summary-copy">
-                No backgrounds match "{deferredBackgroundFitQuery.trim()}".
-              </p>
-              <p className="background-fit-summary-copy">
-                Try a different background name or clear the search.
-              </p>
-            </div>
-          )}
+          <div
+            aria-hidden={!isExpanded}
+            className="background-fit-results-scroll app-scrollbar"
+            data-testid="background-fit-panel-body"
+            onScrollCapture={() => {
+              clearBackgroundFitInteractiveHover()
+            }}
+            ref={backgroundFitResultsScrollRef}
+          >
+            {visibleRankedBackgroundFits.length > 0 ? (
+              <ol className="background-fit-ranking" data-testid="background-fit-ranking">
+                {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
+                  <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
+                    <BackgroundFitCard
+                      backgroundFit={backgroundFit}
+                      expandedBackgroundFitKey={expandedBackgroundFitKey}
+                      emphasizedCategoryNames={emphasizedCategoryNames}
+                      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                      hoveredBuildPerkId={hoveredBuildPerkId}
+                      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+                      hoveredPerkId={hoveredPerkId}
+                      onCloseBuildPerkHover={onCloseBuildPerkHover}
+                      onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+                      onClearPerkGroupHover={onClearPerkGroupHover}
+                      onClosePerkGroupHover={onClosePerkGroupHover}
+                      onInspectPerkGroup={onInspectPerkGroup}
+                      onInspectPlannerPerk={onInspectPlannerPerk}
+                      onOpenBuildPerkHover={onOpenBuildPerkHover}
+                      onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+                      onOpenPerkGroupHover={onOpenPerkGroupHover}
+                      onToggle={(backgroundFitKey: string) => {
+                        clearBackgroundFitInteractiveHover()
+                        setBackgroundFitAccordionState({
+                          expandedBackgroundFitKey:
+                            expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
+                          rankedBackgroundFitKeySignature,
+                        })
+                      }}
+                      pickedPerkCount={pickedPerkCount}
+                      query={deferredBackgroundFitQuery}
+                      rank={
+                        rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
+                        backgroundFitIndex
+                      }
+                      supportedBuildTargetPerkGroupCount={
+                        backgroundFitView.supportedBuildTargetPerkGroups.length
+                      }
+                    />
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className="background-fit-empty-state">
+                <p className="background-fit-summary-copy">
+                  No backgrounds match "{deferredBackgroundFitQuery.trim()}".
+                </p>
+                <p className="background-fit-summary-copy">
+                  Try a different background name or clear the search.
+                </p>
+              </div>
+            )}
+          </div>
         </div>
 
         <button
@@ -303,7 +343,7 @@ export function BackgroundFitPanel({
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background fit`}
           className="background-fit-rail-button"
           onClick={() => {
-            onClearPerkGroupHover()
+            clearBackgroundFitInteractiveHover()
             onToggleExpanded()
           }}
           type="button"
@@ -311,11 +351,9 @@ export function BackgroundFitPanel({
           <span aria-hidden="true" className="background-fit-rail-button-icon">
             <BackgroundFitRailChevron isExpanded={isExpanded} />
           </span>
-          {!isExpanded ? (
-            <span aria-hidden="true" className="background-fit-rail-button-label">
-              Background fit
-            </span>
-          ) : null}
+          <span aria-hidden="true" className="background-fit-rail-button-label">
+            Background fit
+          </span>
         </button>
       </aside>
     </>

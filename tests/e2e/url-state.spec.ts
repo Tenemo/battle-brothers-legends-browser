@@ -4,9 +4,11 @@ import {
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
+  getSidebarPerkGroupButton,
   gotoPerksBrowser,
   inspectPerkFromResults,
   searchPerks,
+  selectPerkGroup,
 } from './support/perks-browser'
 
 test('stores readable filters and build state in the url and restores them on a shared link', async ({
@@ -15,9 +17,8 @@ test('stores readable filters and build state in the url and restores them on a 
   await gotoPerksBrowser(page)
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
+  await selectPerkGroup(page, 'Calm')
   await page.getByRole('button', { name: 'Enable category Magic' }).click()
-  await page.getByRole('button', { name: 'Toggle perk group Calm' }).click()
-  await page.getByRole('button', { name: 'Toggle perk group Deadeye' }).click()
   await searchPerks(page, 'Perfect Focus')
   await inspectPerkFromResults(page, 'Perfect Focus')
   await addPerkToBuildFromResults(page, 'Perfect Focus')
@@ -35,7 +36,7 @@ test('stores readable filters and build state in the url and restores them on a 
   expect(savedUrl).not.toContain('tier=')
   expect(savedUrl).toContain('category=Traits,Magic')
   expect(savedUrl).toContain('group-traits=Calm')
-  expect(savedUrl).toContain('group-magic=Deadeye')
+  expect(savedUrl).not.toContain('group-magic')
   expect(savedUrl).toContain('build=Perfect+Focus,Clarity')
   expect(savedUrl).toContain('origin-backgrounds=true')
   expect(new URL(savedUrl).searchParams.getAll('category')).toEqual(['Traits,Magic'])
@@ -52,12 +53,8 @@ test('stores readable filters and build state in the url and restores them on a 
     await expect(sharedPage.getByLabel('Filter by tier')).toHaveCount(0)
     await expect(sharedPage.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
-    await expect(sharedPage.getByRole('button', { name: 'Toggle perk group Calm' })).toHaveClass(
-      /is-active/,
-    )
-    await expect(sharedPage.getByRole('button', { name: 'Toggle perk group Deadeye' })).toHaveClass(
-      /is-active/,
-    )
+    await expect(getSidebarPerkGroupButton(sharedPage, 'Calm')).toHaveClass(/is-active/)
+    await expect(getSidebarPerkGroupButton(sharedPage, 'Deadeye')).not.toHaveClass(/is-active/)
     await expect(getBuildPerksBar(sharedPage).getByText('Perfect Focus')).toBeVisible()
     await expect(getBuildPerksBar(sharedPage).getByText('Clarity')).toBeVisible()
     await expect(
@@ -89,7 +86,9 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
   await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
   await expect(page.getByText('2 perks picked.')).toBeVisible()
   await expect(
-    getBuildPerksBar(page).getByRole('button', { name: 'Remove Chain Lightning from build' }),
+    getBuildPerksBar(page).getByRole('button', {
+      name: 'View Chain Lightning from build planner',
+    }),
   ).toHaveCount(2)
   expect(new URL(page.url()).searchParams.get('build')).toBe(
     'Chain Lightning--perk.legend_chain_lightning,Chain Lightning--perk.legend_magic_chain_lightning',

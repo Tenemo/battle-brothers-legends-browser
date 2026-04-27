@@ -1,18 +1,113 @@
 import {
-  getPerkContextLabel,
   getPerkDisplayIconPath,
+  getPerkGroupHoverKey,
   getPerkRowClassName,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
 import './PerkResults.css'
-import { getPerkPreviewParagraphs, getTierLabel } from '../lib/perk-search'
-import type { LegendsPerkRecord } from '../types/legends-perks'
+import { getPerkPreviewParagraphs } from '../lib/perk-search'
+import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 import { BuildToggleButton, ClearableSearchField } from './SharedControls'
 
+function renderPerkPlacementChip({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
+  keyPrefix,
+  perk,
+  onClosePerkGroupHover,
+  onInspectPerkGroup,
+  onOpenPerkGroupHover,
+  placement,
+  query,
+}: {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  keyPrefix: string
+  perk: LegendsPerkRecord
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  placement: LegendsPerkPlacement
+  query: string
+}) {
+  const perkGroupKey = getPerkGroupHoverKey(placement)
+  const className =
+    emphasizedPerkGroupKeys.has(perkGroupKey) || emphasizedCategoryNames.has(placement.categoryName)
+      ? 'perk-placement-chip is-highlighted'
+      : 'perk-placement-chip'
+
+  return (
+    <button
+      aria-label={`Select perk group ${placement.perkGroupName}`}
+      className={className}
+      key={keyPrefix}
+      onBlur={() => onClosePerkGroupHover(perkGroupKey)}
+      onClick={() => onInspectPerkGroup(placement.categoryName, placement.perkGroupId)}
+      onFocus={() => onOpenPerkGroupHover(placement.categoryName, placement.perkGroupId)}
+      onMouseEnter={(event) => {
+        event.stopPropagation()
+        onOpenPerkGroupHover(placement.categoryName, placement.perkGroupId)
+      }}
+      onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
+      type="button"
+    >
+      {renderGameIcon({
+        className: 'perk-icon perk-icon-group perk-placement-icon',
+        iconPath: placement.perkGroupIconPath ?? getPerkDisplayIconPath(perk),
+        label: `${placement.perkGroupName} perk group icon`,
+      })}
+      <span className="perk-placement-label">
+        {renderHighlightedText(placement.perkGroupName, query, `${keyPrefix}-group`)}
+      </span>
+    </button>
+  )
+}
+
+function renderPerkPlacements({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
+  onClosePerkGroupHover,
+  onInspectPerkGroup,
+  onOpenPerkGroupHover,
+  perk,
+  query,
+}: {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  perk: LegendsPerkRecord
+  query: string
+}) {
+  if (perk.placements.length === 0) {
+    return <span className="perk-placement-empty">No perk group placement</span>
+  }
+
+  return perk.placements.map((placement, placementIndex) =>
+    renderPerkPlacementChip({
+      emphasizedCategoryNames,
+      emphasizedPerkGroupKeys,
+      keyPrefix: `${perk.id}-placement-${placementIndex}`,
+      onClosePerkGroupHover,
+      onInspectPerkGroup,
+      onOpenPerkGroupHover,
+      perk,
+      placement,
+      query,
+    }),
+  )
+}
+
 export function PerkResults({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   onCloseResultsPerkHover,
+  onClosePerkGroupHover,
+  onInspectPerkGroup,
   onOpenResultsPerkHover,
+  onOpenPerkGroupHover,
   onSelectPerk,
   onTogglePerkPicked,
   pickedPerkOrderById,
@@ -24,8 +119,13 @@ export function PerkResults({
   visiblePerks,
   hoveredPerkId,
 }: {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   hoveredPerkId: string | null
+  onClosePerkGroupHover: (perkGroupKey: string) => void
   onCloseResultsPerkHover: (perkId: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOpenResultsPerkHover: (perkId: string) => void
   onSelectPerk: (perkId: string) => void
   onTogglePerkPicked: (perkId: string) => void
@@ -64,7 +164,7 @@ export function PerkResults({
         </p>
       </div>
 
-      <ul className="results-list" data-testid="results-list">
+      <ul className="results-list app-scrollbar" data-testid="results-list">
         {visiblePerks.length === 0 ? (
           <li className="empty-state">
             <h2>No perks found</h2>
@@ -73,8 +173,7 @@ export function PerkResults({
         ) : (
           visiblePerks.map((perk) => {
             const isSelected = perk.id === selectedPerk?.id
-            const pickedPerkOrder = pickedPerkOrderById.get(perk.id) ?? null
-            const isPicked = pickedPerkOrder !== null
+            const isPicked = pickedPerkOrderById.has(perk.id)
             const isHighlighted = hoveredPerkId === perk.id
             const previewParagraphs = getPerkPreviewParagraphs(perk)
 
@@ -101,48 +200,45 @@ export function PerkResults({
                   className="perk-row-select"
                   onClick={() => onSelectPerk(perk.id)}
                   type="button"
-                >
-                  <div className="perk-row-layout">
-                    {renderGameIcon({
-                      className: 'perk-icon perk-icon-small',
-                      iconPath: getPerkDisplayIconPath(perk),
-                      label: `${perk.perkName} icon`,
-                    })}
-                    <div className="perk-row-copy">
-                      <div className="perk-row-topline">
-                        <span className="perk-name">
-                          {renderHighlightedText(perk.perkName, query, `${perk.id}-name`)}
-                        </span>
-                        <div className="perk-row-badges">
-                          <span className="tier-badge">
-                            {getTierLabel(perk.placements[0]?.tier ?? null)}
-                          </span>
-                          {pickedPerkOrder !== null ? (
-                            <span className="build-slot-badge">Build {pickedPerkOrder}</span>
-                          ) : null}
-                        </div>
-                      </div>
-                      <p className="perk-context">
-                        {renderHighlightedText(
-                          getPerkContextLabel(perk),
-                          query,
-                          `${perk.id}-context`,
-                        )}
-                      </p>
-                      <div className="perk-preview">
-                        {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
-                          <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
-                            {renderHighlightedText(
-                              previewParagraph,
-                              query,
-                              `${perk.id}-preview-${previewParagraphIndex}`,
-                            )}
-                          </p>
-                        ))}
-                      </div>
+                />
+                <div className="perk-row-layout">
+                  {renderGameIcon({
+                    className: 'perk-icon perk-icon-small perk-row-icon',
+                    iconPath: getPerkDisplayIconPath(perk),
+                    label: `${perk.perkName} icon`,
+                  })}
+                  <div className="perk-row-copy">
+                    <div className="perk-row-topline">
+                      <span className="perk-name">
+                        {renderHighlightedText(perk.perkName, query, `${perk.id}-name`)}
+                      </span>
                     </div>
                   </div>
-                </button>
+                  <div className="perk-row-context-slot">
+                    <div className="perk-context perk-placement-list">
+                      {renderPerkPlacements({
+                        emphasizedCategoryNames,
+                        emphasizedPerkGroupKeys,
+                        onClosePerkGroupHover,
+                        onInspectPerkGroup,
+                        onOpenPerkGroupHover,
+                        perk,
+                        query,
+                      })}
+                    </div>
+                    <div className="perk-preview">
+                      {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
+                        <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
+                          {renderHighlightedText(
+                            previewParagraph,
+                            query,
+                            `${perk.id}-preview-${previewParagraphIndex}`,
+                          )}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
                 <BuildToggleButton
                   isCompact
                   isPicked={isPicked}

@@ -124,7 +124,7 @@ const duplicateNamePerks: LegendsPerkRecord[] = [
 const duplicateNamePerksById = new Map(duplicateNamePerks.map((perk) => [perk.id, perk]))
 
 describe('perk browser url state', () => {
-  test('serializes filters and build into grouped readable query params', () => {
+  test('serializes only one perk group with filters and build query params', () => {
     const search = buildPerkBrowserUrlSearch(
       {
         pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
@@ -132,7 +132,7 @@ describe('perk browser url state', () => {
         selectedCategoryNames: ['Magic', 'Traits'],
         selectedPerkGroupIdsByCategory: {
           Magic: ['DeadeyeTree'],
-          Traits: ['CalmTree'],
+          Traits: ['CalmTree', 'ViciousTree'],
         },
         shouldIncludeOriginBackgrounds: true,
       },
@@ -144,11 +144,11 @@ describe('perk browser url state', () => {
     )
 
     expect(search).toBe(
-      '?search=Perfect+Focus&origin-backgrounds=true&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
+      '?search=Perfect+Focus&origin-backgrounds=true&category=Traits,Magic&group-traits=Calm&build=Clarity,Perfect+Focus',
     )
   })
 
-  test('parses the grouped readable query params', () => {
+  test('parses only one grouped readable perk group param', () => {
     expect(
       readPerkBrowserUrlState(
         '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
@@ -163,7 +163,6 @@ describe('perk browser url state', () => {
       query: 'Perfect Focus',
       selectedCategoryNames: ['Traits', 'Magic'],
       selectedPerkGroupIdsByCategory: {
-        Magic: ['DeadeyeTree'],
         Traits: ['CalmTree'],
       },
       shouldIncludeOriginBackgrounds: true,
@@ -183,10 +182,9 @@ describe('perk browser url state', () => {
     ).toEqual({
       pickedPerkIds: ['perk.legend_perfect_focus', 'perk.legend_peaceable', 'perk.legend_clarity'],
       query: 'Perfect Focus',
-      selectedCategoryNames: ['Traits', 'Magic'],
+      selectedCategoryNames: ['Traits'],
       selectedPerkGroupIdsByCategory: {
         Traits: ['CalmTree'],
-        Magic: ['DeadeyeTree'],
       },
       shouldIncludeOriginBackgrounds: true,
     })

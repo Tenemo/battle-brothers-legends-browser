@@ -119,6 +119,22 @@
 .hero-brand {
   flex: 0 0 auto;
   margin: 0;
+  color: var(--accent-soft);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hero-brand:visited,
+.hero-brand:hover,
+.hero-brand:focus-visible {
+  color: var(--accent-soft);
+  text-decoration: none;
+}
+
+.hero-brand:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .hero h1,
@@ -182,12 +198,14 @@
 }
 
 .workspace {
+  --workspace-background-fit-column: minmax(24rem, 0.96fr);
+  --workspace-detail-column: minmax(22.5rem, 1.02fr);
   flex: 1;
   min-height: 0;
   display: grid;
   grid-template-columns:
-    minmax(24rem, 0.96fr) minmax(12rem, 0.56fr) minmax(20.625rem, 0.96fr)
-    minmax(22.5rem, 1.02fr);
+    var(--workspace-background-fit-column) minmax(12rem, 0.56fr)
+    minmax(20.625rem, 0.96fr) var(--workspace-detail-column);
   gap: 0.7rem;
   align-items: stretch;
   overflow: hidden;
@@ -198,9 +216,11 @@
 }
 
 .workspace.is-background-fit-collapsed {
-  grid-template-columns:
-    auto minmax(12rem, 0.56fr) minmax(20.625rem, 0.96fr)
-    minmax(22.5rem, 1.02fr);
+  --workspace-background-fit-column: auto;
+}
+
+.workspace.is-detail-collapsed {
+  --workspace-detail-column: auto;
 }
 
 .background-fit-panel,
@@ -237,27 +257,22 @@
 .perk-preview,
 .detail-section p,
 .detail-meta,
-.detail-header-build-status,
 .planner-slot-meta,
 .results-note {
   color: var(--text-secondary);
 }
 
-.planner-slot-category,
-.build-slot-badge {
-  color: var(--accent-soft);
-  font-size: 0.7rem;
-}
-
 .build-toggle-button:focus-visible,
 .planner-action-button:focus-visible,
 .build-planner-info-button:focus-visible,
-.planner-slot-perk:focus-visible,
+.planner-slot-perk-inspect:focus-visible,
 .perk-row-select:focus-visible,
+.perk-placement-chip:focus-visible,
 .planner-pill:focus-visible,
 .background-fit-accordion-trigger:focus-visible,
 .background-fit-match:focus-visible,
 .background-fit-filter-button:focus-visible,
+.detail-panel-rail-button:focus-visible,
 .category-chip:focus-visible,
 .perk-group-chip:focus-visible {
   outline: 2px solid var(--focus-ring);
@@ -537,21 +552,6 @@
   transform: translateY(-50%);
 }
 
-.tier-badge,
-.build-slot-badge {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  border: 1px solid rgb(204 155 84 / 0.25);
-  border-radius: 999px;
-  padding: 0.12rem 0.42rem;
-  font-size: 0.7rem;
-}
-
-.build-slot-badge {
-  background: rgb(204 155 84 / 0.08);
-}
-
 .perk-context,
 .perk-preview,
 .detail-meta,
@@ -684,11 +684,45 @@
   }
 }
 
+@media (min-width: 1280px) and (max-width: 1439px) {
+  .app-shell {
+    gap: 0.6rem;
+    padding: 0.65rem;
+  }
+
+  .workspace {
+    --workspace-background-fit-column: minmax(18rem, 0.8fr);
+    --workspace-detail-column: minmax(18rem, 1fr);
+    grid-template-columns:
+      var(--workspace-background-fit-column) minmax(10.5rem, 0.52fr) minmax(18rem, 1fr)
+      var(--workspace-detail-column);
+    gap: 0.55rem;
+  }
+
+  .workspace.is-background-fit-collapsed {
+    --workspace-background-fit-column: auto;
+  }
+
+  .workspace.is-detail-collapsed {
+    --workspace-detail-column: auto;
+  }
+}
+
 @media (min-width: 1440px) {
   .workspace {
+    --workspace-background-fit-column: minmax(0, 32.4rem);
+    --workspace-detail-column: minmax(20rem, 1.02fr);
     grid-template-columns:
-      minmax(0, 32.4rem) minmax(11.875rem, 0.56fr) minmax(20.625rem, 0.96fr)
-      minmax(20rem, 1.02fr);
+      var(--workspace-background-fit-column) minmax(11.875rem, 0.56fr)
+      minmax(20.625rem, 0.96fr) var(--workspace-detail-column);
+  }
+
+  .workspace.is-background-fit-collapsed {
+    --workspace-background-fit-column: auto;
+  }
+
+  .workspace.is-detail-collapsed {
+    --workspace-detail-column: auto;
   }
 
   .workspace .background-fit-panel {
@@ -698,7 +732,7 @@
 
 @media (max-width: 760px) {
   .workspace {
-    order: 1;
+    order: 2;
   }
 
   .results-panel {
@@ -718,7 +752,7 @@
   }
 
   .build-planner {
-    order: 2;
+    order: 1;
   }
 
   .hero-top-bar,

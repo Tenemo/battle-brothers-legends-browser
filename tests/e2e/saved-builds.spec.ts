@@ -1,0 +1,117 @@
+import { expect, type Page, test } from '@playwright/test'
+import {
+  addPerkToBuildFromResults,
+  expectNoDocumentHorizontalOverflow,
+  getBuildPerksBar,
+  gotoPerksBrowser,
+  searchPerks,
+} from './support/perks-browser'
+
+async function clearBuildWithConfirmation(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Clear build' }).click()
+
+  const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
+
+  await expect(clearBuildDialog).toBeVisible()
+  await clearBuildDialog.getByRole('button', { name: 'Clear build' }).click()
+}
+
+test('saves a build locally, copies its link, and loads it after a reload', async ({ page }) => {
+  await page.addInitScript(() => {
+    Object.defineProperty(navigator, 'clipboard', {
+      configurable: true,
+      value: {
+        writeText: async (text: string) => {
+          const writableWindow = window as Window & { copiedSavedBuildLink?: string }
+          writableWindow.copiedSavedBuildLink = text
+        },
+      },
+    })
+  })
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Perfect Focus')
+  await addPerkToBuildFromResults(page, 'Perfect Focus')
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByLabel('Build name').fill('Calm focus')
+  await page.getByRole('button', { exact: true, name: 'Save current' }).click()
+
+  await expect(page.getByRole('status')).toHaveText('Saved build')
+  await expect(page.getByTestId('saved-builds-list')).toContainText('Calm focus')
+  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await clearBuildWithConfirmation(page)
+  await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
+
+  await page.goto('/')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await page.getByRole('button', { name: 'Open saved builds' }).click()
+
+  const savedBuild = page
+    .getByTestId('saved-builds-list')
+    .locator('.saved-build-card')
+    .filter({ hasText: 'Calm focus' })
+
+  await expect(savedBuild).toContainText('2 perks.')
+  await savedBuild.getByRole('button', { name: 'Copy saved build Calm focus link' }).click()
+  await expect(page.getByRole('status')).toHaveText('Copied link')
+
+  const copiedSavedBuildLink = await page.evaluate(
+    () => (window as Window & { copiedSavedBuildLink?: string }).copiedSavedBuildLink ?? null,
+  )
+
+  expect(copiedSavedBuildLink).not.toBeNull()
+  expect(new URL(copiedSavedBuildLink ?? '').searchParams.get('build')).toBe(
+    'Perfect Focus,Clarity',
+  )
+
+  await savedBuild.getByRole('button', { name: 'Load saved build Calm focus' }).click()
+  await expect(getBuildPerksBar(page).getByText('Perfect Focus')).toBeVisible()
+  await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
+})
+
+test('keeps local save and load controls usable on mobile', async ({ page }) => {
+  await gotoPerksBrowser(page, { width: 390, height: 760 })
+
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+  await expectNoDocumentHorizontalOverflow(page)
+
+  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByLabel('Build name').fill('Mobile axe')
+  await page.getByRole('button', { exact: true, name: 'Save current' }).click()
+  await expect(page.getByRole('status')).toHaveText('Saved build')
+
+  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await page.getByRole('button', { name: 'Clear build' }).click()
+  const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
+
+  await expect(clearBuildDialog).toBeVisible()
+  await expectNoDocumentHorizontalOverflow(page)
+  await clearBuildDialog.getByRole('button', { name: 'Clear build' }).click()
+  await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
+
+  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByRole('button', { name: 'Load saved build Mobile axe' }).click()
+  await expect(getBuildPerksBar(page).getByText('Axe Mastery')).toBeVisible()
+  await expectNoDocumentHorizontalOverflow(page)
+})
+
+test('deletes saved builds from local storage', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByLabel('Build name').fill('Temporary clarity')
+  await page.getByRole('button', { exact: true, name: 'Save current' }).click()
+  await expect(page.getByTestId('saved-builds-list')).toContainText('Temporary clarity')
+
+  await page.getByRole('button', { name: 'Delete saved build Temporary clarity' }).click()
+  await expect(page.getByRole('status')).toHaveText('Deleted build')
+  await expect(page.getByTestId('saved-builds-list')).not.toContainText('Temporary clarity')
+  await expect(page.getByTestId('saved-builds-list')).toContainText('No saved builds yet.')
+})

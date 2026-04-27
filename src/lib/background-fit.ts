@@ -11,8 +11,9 @@ import {
   chanceDynamicBackgroundCategoryNames,
   deterministicDynamicBackgroundCategoryNames,
   dynamicBackgroundCategoryNames,
+  getCategoryPriority,
+  isDynamicBackgroundCategoryName,
 } from './dynamic-background-categories'
-import { getCategoryPriority, isDynamicBackgroundCategoryName } from './perk-categories'
 
 const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
   deterministicDynamicBackgroundCategoryNames,
@@ -35,10 +36,17 @@ type BackgroundProbabilityContext = {
   perkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, string[]>
 }
 
+type PerkGroupRequirement = {
+  categoryName: LegendsDynamicBackgroundCategoryName
+  perkGroupId: string
+}
+
 export type BuildTargetPerkGroup = {
   categoryName: string
   pickedPerkCount: number
+  pickedPerkIds: string[]
   pickedPerkNames: string[]
+  perkGroupIconPath: string | null
   perkGroupId: string
   perkGroupName: string
 }
@@ -52,6 +60,7 @@ export type RankedBackgroundFit = {
   backgroundId: string
   backgroundName: string
   disambiguator: string | null
+  expectedCoveredPickedPerkCount: number
   expectedMatchedPerkGroupCount: number
   guaranteedMatchedPerkGroupCount: number
   iconPath: string | null
@@ -361,6 +370,505 @@ function countCombinations(itemCount: number, subsetSize: number): number {
   return combinationCount
 }
 
+function getCategoryDefinition(
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
+  categoryName: LegendsDynamicBackgroundCategoryName,
+): LegendsBackgroundFitCategoryDefinition {
+  return (
+    backgroundDefinition.categories[categoryName] ?? {
+      chance: null,
+      minimumPerkGroups: 0,
+      perkGroupIds: [],
+    }
+  )
+}
+
+function hasEveryPerkGroup(
+  perkGroupIdSet: Set<string>,
+  requiredPerkGroupIds: Set<string>,
+): boolean {
+  for (const requiredPerkGroupId of requiredPerkGroupIds) {
+    if (!perkGroupIdSet.has(requiredPerkGroupId)) {
+      return false
+    }
+  }
+
+  return true
+}
+
+function getExplicitOnlyCategoryRequiredProbability(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  requiredPerkGroupIds: Set<string>,
+): number {
+  if (requiredPerkGroupIds.size === 0) {
+    return 1
+  }
+
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+
+  return hasEveryPerkGroup(explicitPerkGroupIdSet, requiredPerkGroupIds) ? 1 : 0
+}
+
+function getDeterministicCategoryRequiredProbability(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  poolPerkGroupIds: string[],
+  requiredPerkGroupIds: Set<string>,
+): number {
+  if (requiredPerkGroupIds.size === 0) {
+    return 1
+  }
+
+  const poolPerkGroupIdSet = new Set(poolPerkGroupIds)
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const randomRequiredPerkGroupIds = new Set<string>()
+
+  for (const requiredPerkGroupId of requiredPerkGroupIds) {
+    if (explicitPerkGroupIdSet.has(requiredPerkGroupId)) {
+      continue
+    }
+
+    if (!poolPerkGroupIdSet.has(requiredPerkGroupId)) {
+      return 0
+    }
+
+    randomRequiredPerkGroupIds.add(requiredPerkGroupId)
+  }
+
+  if (randomRequiredPerkGroupIds.size === 0) {
+    return 1
+  }
+
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const randomPerkGroupCount = getAdditionalRandomPerkGroupCount(
+    categoryDefinition,
+    remainingPerkGroupIds.length,
+  )
+
+  if (randomRequiredPerkGroupIds.size > randomPerkGroupCount) {
+    return 0
+  }
+
+  const totalCombinationCount = countCombinations(
+    remainingPerkGroupIds.length,
+    randomPerkGroupCount,
+  )
+
+  if (totalCombinationCount === 0) {
+    return 0
+  }
+
+  return (
+    countCombinations(
+      remainingPerkGroupIds.length - randomRequiredPerkGroupIds.size,
+      randomPerkGroupCount - randomRequiredPerkGroupIds.size,
+    ) / totalCombinationCount
+  )
+}
+
+function getChanceSelectedCountDistribution(
+  attemptCount: number,
+  successProbability: number,
+  availablePerkGroupCount: number,
+): Map<number, number> {
+  const selectedCountDistribution = new Map<number, number>()
+
+  if (attemptCount <= 0 || successProbability <= 0 || availablePerkGroupCount <= 0) {
+    selectedCountDistribution.set(0, 1)
+    return selectedCountDistribution
+  }
+
+  const successCountDistribution = new Array<number>(attemptCount + 1).fill(0)
+  successCountDistribution[0] = 1
+
+  for (let attemptIndex = 0; attemptIndex < attemptCount; attemptIndex += 1) {
+    const nextSuccessCountDistribution = new Array<number>(attemptCount + 1).fill(0)
+
+    for (
+      let successCountIndex = 0;
+      successCountIndex < successCountDistribution.length;
+      successCountIndex += 1
+    ) {
+      const currentProbability = successCountDistribution[successCountIndex]
+
+      if (currentProbability === 0) {
+        continue
+      }
+
+      nextSuccessCountDistribution[successCountIndex] +=
+        currentProbability * (1 - successProbability)
+      nextSuccessCountDistribution[successCountIndex + 1] += currentProbability * successProbability
+    }
+
+    for (
+      let successCountIndex = 0;
+      successCountIndex < nextSuccessCountDistribution.length;
+      successCountIndex += 1
+    ) {
+      successCountDistribution[successCountIndex] = nextSuccessCountDistribution[successCountIndex]
+    }
+  }
+
+  for (const [successCount, successCountProbability] of successCountDistribution.entries()) {
+    const selectedCount = Math.min(successCount, availablePerkGroupCount)
+
+    selectedCountDistribution.set(
+      selectedCount,
+      (selectedCountDistribution.get(selectedCount) ?? 0) + successCountProbability,
+    )
+  }
+
+  return selectedCountDistribution
+}
+
+function getChanceRequiredPerkGroupsFromAvailableProbability({
+  attemptCount,
+  availablePerkGroupIds,
+  requiredPerkGroupIds,
+  successProbability,
+}: {
+  attemptCount: number
+  availablePerkGroupIds: string[]
+  requiredPerkGroupIds: Set<string>
+  successProbability: number
+}): number {
+  if (requiredPerkGroupIds.size === 0) {
+    return 1
+  }
+
+  const availablePerkGroupIdSet = new Set(availablePerkGroupIds)
+
+  for (const requiredPerkGroupId of requiredPerkGroupIds) {
+    if (!availablePerkGroupIdSet.has(requiredPerkGroupId)) {
+      return 0
+    }
+  }
+
+  if (attemptCount <= 0 || successProbability <= 0) {
+    return 0
+  }
+
+  const availablePerkGroupCount = availablePerkGroupIds.length
+  const requiredPerkGroupCount = requiredPerkGroupIds.size
+  const selectedCountDistribution = getChanceSelectedCountDistribution(
+    attemptCount,
+    successProbability,
+    availablePerkGroupCount,
+  )
+
+  let probability = 0
+
+  for (const [selectedCount, selectedCountProbability] of selectedCountDistribution) {
+    if (selectedCount < requiredPerkGroupCount) {
+      continue
+    }
+
+    probability +=
+      selectedCountProbability *
+      (countCombinations(
+        availablePerkGroupCount - requiredPerkGroupCount,
+        selectedCount - requiredPerkGroupCount,
+      ) /
+        countCombinations(availablePerkGroupCount, selectedCount))
+  }
+
+  return probability
+}
+
+function getChanceCategoryRequiredProbability(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  poolPerkGroupIds: string[],
+  requiredPerkGroupIds: Set<string>,
+): number {
+  if (requiredPerkGroupIds.size === 0) {
+    return 1
+  }
+
+  const poolPerkGroupIdSet = new Set(poolPerkGroupIds)
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const randomRequiredPerkGroupIds = new Set<string>()
+
+  for (const requiredPerkGroupId of requiredPerkGroupIds) {
+    if (explicitPerkGroupIdSet.has(requiredPerkGroupId)) {
+      continue
+    }
+
+    if (!poolPerkGroupIdSet.has(requiredPerkGroupId)) {
+      return 0
+    }
+
+    randomRequiredPerkGroupIds.add(requiredPerkGroupId)
+  }
+
+  if (randomRequiredPerkGroupIds.size === 0) {
+    return 1
+  }
+
+  return getChanceRequiredPerkGroupsFromAvailableProbability({
+    attemptCount: getChanceAttemptCount(categoryDefinition),
+    availablePerkGroupIds: getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet),
+    requiredPerkGroupIds: randomRequiredPerkGroupIds,
+    successProbability: clampProbability(categoryDefinition.chance ?? 0),
+  })
+}
+
+function forEachDeterministicCategoryOutcome(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  poolPerkGroupIds: string[],
+  callback: (perkGroupIdSet: Set<string>, probability: number) => void,
+): void {
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const randomPerkGroupCount = getAdditionalRandomPerkGroupCount(
+    categoryDefinition,
+    remainingPerkGroupIds.length,
+  )
+  const totalCombinationCount = countCombinations(
+    remainingPerkGroupIds.length,
+    randomPerkGroupCount,
+  )
+
+  if (totalCombinationCount === 0) {
+    return
+  }
+
+  forEachSubsetOfSize(remainingPerkGroupIds, randomPerkGroupCount, (perkGroupSubset) => {
+    callback(new Set([...explicitPerkGroupIdSet, ...perkGroupSubset]), 1 / totalCombinationCount)
+  })
+}
+
+function getClassAndWeaponRequiredProbability({
+  backgroundDefinition,
+  classRequiredPerkGroupIds,
+  context,
+  weaponRequiredPerkGroupIds,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  classRequiredPerkGroupIds: Set<string>
+  context: BackgroundProbabilityContext
+  weaponRequiredPerkGroupIds: Set<string>
+}): number {
+  const weaponCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Weapon')
+  const weaponPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Weapon') ?? []
+  const classCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Class')
+  const classPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Class') ?? []
+  const classPoolPerkGroupIdSet = new Set(classPoolPerkGroupIds)
+  const explicitClassPerkGroupIdSet = new Set(classCategoryDefinition.perkGroupIds)
+  const randomRequiredClassPerkGroupIds = new Set<string>()
+
+  for (const requiredClassPerkGroupId of classRequiredPerkGroupIds) {
+    if (explicitClassPerkGroupIdSet.has(requiredClassPerkGroupId)) {
+      continue
+    }
+
+    if (!classPoolPerkGroupIdSet.has(requiredClassPerkGroupId)) {
+      return 0
+    }
+
+    randomRequiredClassPerkGroupIds.add(requiredClassPerkGroupId)
+  }
+
+  if (randomRequiredClassPerkGroupIds.size === 0) {
+    return getDeterministicCategoryRequiredProbability(
+      weaponCategoryDefinition,
+      weaponPoolPerkGroupIds,
+      weaponRequiredPerkGroupIds,
+    )
+  }
+
+  const classAttemptCount = getChanceAttemptCount(classCategoryDefinition)
+  const classSuccessProbability = clampProbability(classCategoryDefinition.chance ?? 0)
+
+  if (classAttemptCount <= 0 || classSuccessProbability <= 0) {
+    return 0
+  }
+
+  let probability = 0
+
+  forEachDeterministicCategoryOutcome(
+    weaponCategoryDefinition,
+    weaponPoolPerkGroupIds,
+    (weaponPerkGroupIdSet, weaponProbability) => {
+      if (!hasEveryPerkGroup(weaponPerkGroupIdSet, weaponRequiredPerkGroupIds)) {
+        return
+      }
+
+      probability +=
+        weaponProbability *
+        getChanceRequiredPerkGroupsFromAvailableProbability({
+          attemptCount: classAttemptCount,
+          availablePerkGroupIds: getEligibleRemainingClassPerkGroupIds(
+            classPoolPerkGroupIds,
+            explicitClassPerkGroupIdSet,
+            weaponPerkGroupIdSet,
+            context.classWeaponDependencyByClassPerkGroupId,
+          ),
+          requiredPerkGroupIds: randomRequiredClassPerkGroupIds,
+          successProbability: classSuccessProbability,
+        })
+    },
+  )
+
+  return probability
+}
+
+function getRequirementSubsetProbability({
+  backgroundDefinition,
+  context,
+  requirements,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  context: BackgroundProbabilityContext
+  requirements: PerkGroupRequirement[]
+}): number {
+  const requiredPerkGroupIdsByCategory = new Map<
+    LegendsDynamicBackgroundCategoryName,
+    Set<string>
+  >()
+
+  for (const requirement of requirements) {
+    if (!requiredPerkGroupIdsByCategory.has(requirement.categoryName)) {
+      requiredPerkGroupIdsByCategory.set(requirement.categoryName, new Set())
+    }
+
+    requiredPerkGroupIdsByCategory.get(requirement.categoryName)?.add(requirement.perkGroupId)
+  }
+
+  const classRequiredPerkGroupIds = requiredPerkGroupIdsByCategory.get('Class') ?? new Set<string>()
+  let probability = 1
+
+  if (classRequiredPerkGroupIds.size > 0) {
+    probability *= getClassAndWeaponRequiredProbability({
+      backgroundDefinition,
+      classRequiredPerkGroupIds,
+      context,
+      weaponRequiredPerkGroupIds: requiredPerkGroupIdsByCategory.get('Weapon') ?? new Set<string>(),
+    })
+  }
+
+  for (const categoryName of dynamicBackgroundCategoryNames) {
+    if (categoryName === 'Class') {
+      continue
+    }
+
+    if (categoryName === 'Weapon' && classRequiredPerkGroupIds.size > 0) {
+      continue
+    }
+
+    const requiredPerkGroupIds = requiredPerkGroupIdsByCategory.get(categoryName)
+
+    if (!requiredPerkGroupIds || requiredPerkGroupIds.size === 0) {
+      continue
+    }
+
+    const categoryDefinition = getCategoryDefinition(backgroundDefinition, categoryName)
+    const poolPerkGroupIds = context.perkGroupIdsByCategory.get(categoryName) ?? []
+
+    if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
+      probability *= getDeterministicCategoryRequiredProbability(
+        categoryDefinition,
+        poolPerkGroupIds,
+        requiredPerkGroupIds,
+      )
+      continue
+    }
+
+    if (chanceDynamicBackgroundCategoryNameSet.has(categoryName)) {
+      probability *= getChanceCategoryRequiredProbability(
+        categoryDefinition,
+        poolPerkGroupIds,
+        requiredPerkGroupIds,
+      )
+      continue
+    }
+
+    probability *= getExplicitOnlyCategoryRequiredProbability(
+      categoryDefinition,
+      requiredPerkGroupIds,
+    )
+  }
+
+  return probability
+}
+
+function getSupportedPerkGroupRequirements(pickedPerk: LegendsPerkRecord): PerkGroupRequirement[] {
+  const seenRequirementKeys = new Set<string>()
+  const requirements: PerkGroupRequirement[] = []
+
+  for (const placement of pickedPerk.placements) {
+    if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
+      continue
+    }
+
+    const requirementKey = getPlacementGroupRequirementKey(placement)
+
+    if (seenRequirementKeys.has(requirementKey)) {
+      continue
+    }
+
+    seenRequirementKeys.add(requirementKey)
+    requirements.push({
+      categoryName: placement.categoryName,
+      perkGroupId: placement.perkGroupId,
+    })
+  }
+
+  return requirements
+}
+
+function getPerkCoverageProbability({
+  backgroundDefinition,
+  context,
+  requirements,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  context: BackgroundProbabilityContext
+  requirements: PerkGroupRequirement[]
+}): number {
+  if (requirements.length === 0) {
+    return 0
+  }
+
+  let coverageProbability = 0
+
+  for (let requirementMask = 1; requirementMask < 1 << requirements.length; requirementMask += 1) {
+    const requirementSubset: PerkGroupRequirement[] = []
+
+    for (let requirementIndex = 0; requirementIndex < requirements.length; requirementIndex += 1) {
+      if ((requirementMask & (1 << requirementIndex)) !== 0) {
+        requirementSubset.push(requirements[requirementIndex])
+      }
+    }
+
+    const subsetProbability = getRequirementSubsetProbability({
+      backgroundDefinition,
+      context,
+      requirements: requirementSubset,
+    })
+
+    coverageProbability +=
+      requirementSubset.length % 2 === 1 ? subsetProbability : -subsetProbability
+  }
+
+  return clampProbability(coverageProbability)
+}
+
+function calculateExpectedCoveredPickedPerkCount(
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
+  pickedPerks: LegendsPerkRecord[],
+  context: BackgroundProbabilityContext,
+): number {
+  return pickedPerks.reduce(
+    (expectedCoveredPickedPerkCount, pickedPerk) =>
+      expectedCoveredPickedPerkCount +
+      getPerkCoverageProbability({
+        backgroundDefinition,
+        context,
+        requirements: getSupportedPerkGroupRequirements(pickedPerk),
+      }),
+    0,
+  )
+}
+
 function addClassCategoryProbabilities(
   probabilitiesByPerkGroupId: Map<string, number>,
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
@@ -630,7 +1138,10 @@ export function calculateBackgroundPerkGroupProbabilities(
         context.perkGroupIdsByCategory.get('Weapon') ?? [],
         context.classWeaponDependencyByClassPerkGroupId,
       )
+      continue
     }
+
+    addExplicitPerkGroupProbabilities(probabilitiesByPerkGroupId, categoryDefinition.perkGroupIds)
   }
 
   return probabilitiesByPerkGroupId
@@ -664,7 +1175,9 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
           categoryName: placement.categoryName,
           pickedPerkCount: 0,
           pickedPerkIdSet: new Set<string>(),
+          pickedPerkIds: [],
           pickedPerkNames: [],
+          perkGroupIconPath: placement.perkGroupIconPath,
           perkGroupId: placement.perkGroupId,
           perkGroupName: placement.perkGroupName,
         })
@@ -677,6 +1190,7 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
       }
 
       buildTargetPerkGroup.pickedPerkIdSet.add(pickedPerk.id)
+      buildTargetPerkGroup.pickedPerkIds.push(pickedPerk.id)
       buildTargetPerkGroup.pickedPerkNames.push(pickedPerk.perkName)
       buildTargetPerkGroup.pickedPerkCount += 1
     }
@@ -716,7 +1230,7 @@ function compareBackgroundFitMatches(
 }
 
 export function getCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
-  return new Set(matches.flatMap((match) => match.pickedPerkNames)).size
+  return new Set(matches.flatMap((match) => match.pickedPerkIds)).size
 }
 
 export function getGuaranteedCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
@@ -738,6 +1252,8 @@ function compareRankedBackgroundFits(
 
   return (
     rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
+    rightBackgroundFit.expectedCoveredPickedPerkCount -
+      leftBackgroundFit.expectedCoveredPickedPerkCount ||
     rightCoveredPickedPerkCount - leftCoveredPickedPerkCount ||
     leftBackgroundFit.backgroundName.localeCompare(rightBackgroundFit.backgroundName) ||
     leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId) ||
@@ -821,6 +1337,11 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                     0) > 1
                     ? getBackgroundDisambiguator(backgroundDefinition)
                     : null,
+                expectedCoveredPickedPerkCount: calculateExpectedCoveredPickedPerkCount(
+                  backgroundDefinition,
+                  pickedPerks,
+                  backgroundProbabilityContext,
+                ),
                 expectedMatchedPerkGroupCount: matches.reduce(
                   (expectedPerkGroupCount, match) => expectedPerkGroupCount + match.probability,
                   0,

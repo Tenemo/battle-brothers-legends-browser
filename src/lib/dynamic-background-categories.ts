@@ -21,7 +21,6 @@ export const deterministicDynamicBackgroundCategoryNames = [
 export const chanceDynamicBackgroundCategoryNames = [
   'Enemy',
   'Profession',
-  'Magic',
 ] as const satisfies LegendsDynamicBackgroundCategoryName[]
 
 export const dynamicBackgroundCategoryMinimumKeys = {
@@ -40,3 +39,28 @@ export const dynamicBackgroundCategoryChanceKeys = {
   Magic: 'MagicChance',
   Profession: 'ProfessionChance',
 } as const satisfies Partial<Record<LegendsDynamicBackgroundCategoryName, string>>
+
+const dynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
+  dynamicBackgroundCategoryNames,
+)
+
+export function isDynamicBackgroundCategoryName(
+  categoryName: string,
+): categoryName is LegendsDynamicBackgroundCategoryName {
+  return dynamicBackgroundCategoryNameSet.has(categoryName as LegendsDynamicBackgroundCategoryName)
+}
+
+export function getCategoryPriority(categoryName: string): number {
+  const priority = dynamicBackgroundCategoryOrder.indexOf(
+    categoryName as (typeof dynamicBackgroundCategoryOrder)[number],
+  )
+
+  return priority === -1 ? Number.POSITIVE_INFINITY : priority
+}
+
+export function compareCategoryNames(leftCategoryName: string, rightCategoryName: string): number {
+  return (
+    getCategoryPriority(leftCategoryName) - getCategoryPriority(rightCategoryName) ||
+    leftCategoryName.localeCompare(rightCategoryName)
+  )
+}

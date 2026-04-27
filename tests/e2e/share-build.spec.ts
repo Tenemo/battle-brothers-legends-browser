@@ -5,7 +5,7 @@ import {
   getBuildPerksBar,
   gotoPerksBrowser,
   searchPerks,
-  togglePerkGroup,
+  selectPerkGroup,
 } from './support/perks-browser'
 
 test('copies a canonical build-only link from an active filtered workspace', async ({ page }) => {
@@ -27,7 +27,7 @@ test('copies a canonical build-only link from an active filtered workspace', asy
   await expect(copyBuildLinkButton).toBeDisabled()
 
   await enableCategory(page, 'Traits')
-  await togglePerkGroup(page, 'Calm')
+  await selectPerkGroup(page, 'Calm')
   await searchPerks(page, 'Perfect Focus')
   await addPerkToBuildFromResults(page, 'Perfect Focus')
   await searchPerks(page, 'Clarity')

@@ -21,8 +21,8 @@
     "check:netlify-manifest": "node ./scripts/assert-netlify-edge-manifest.mjs",
     "format": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown",
-    "knip": "knip --config knip.json",
-    "knip:production": "knip --production --config knip.production.json",
+    "knip": "knip --config knip.config.js",
+    "knip:production": "knip --production --config knip.config.js",
     "netlify:build": "pnpm --package=netlify-cli@25.6.0 dlx netlify build --offline",
     "preview": "vite preview",
     "smoke:deployed-seo": "node ./scripts/smoke-deployed-seo.mjs",
@@ -41,6 +41,7 @@
     "@fontsource/cinzel": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",
     "@resvg/resvg-js": "^2.6.2",
+    "lucide-react": "^1.11.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5"
   },

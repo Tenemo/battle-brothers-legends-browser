@@ -6,13 +6,15 @@ type CategorySidebarProps = {
   allPerkCount: number
   displayedCategoryNames: string[]
   displayedPerkGroupOptionsByCategory: Map<string, CategoryPerkGroupOption[]>
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   expandedCategoryNames: string[]
   categoryCounts: Map<string, number>
   hoveredPerkGroupKey: string | null
   onCategoryToggle: (categoryName: string) => void
   onResetCategoryPerkGroups: (categoryName: string) => void
   onResetCategories: () => void
-  onPerkGroupToggle: (categoryName: string, perkGroupId: string) => void
+  onPerkGroupSelect: (categoryName: string, perkGroupId: string) => void
   pickedPerkCountsByCategory: Map<string, number>
   pickedPerkCountsByPerkGroup: Map<string, number>
   query: string
@@ -38,13 +40,15 @@ export function CategorySidebar({
   allPerkCount,
   displayedCategoryNames,
   displayedPerkGroupOptionsByCategory,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   expandedCategoryNames,
   categoryCounts,
   hoveredPerkGroupKey,
   onCategoryToggle,
   onResetCategoryPerkGroups,
   onResetCategories,
-  onPerkGroupToggle,
+  onPerkGroupSelect,
   pickedPerkCountsByCategory,
   pickedPerkCountsByPerkGroup,
   query,
@@ -52,10 +56,10 @@ export function CategorySidebar({
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
   return (
-    <aside className="sidebar" aria-label="Perk categories">
+    <aside className="sidebar app-scrollbar" aria-label="Perk categories">
       <div className="panel-heading">
         <h2>Categories</h2>
-        <p>Enable one or more categories, then narrow each one to the perk groups you want.</p>
+        <p>Enable categories, then choose one perk group to focus the results.</p>
       </div>
       <button
         aria-label="Reset all category filters"
@@ -89,7 +93,8 @@ export function CategorySidebar({
               }),
           )
         const shouldHighlightCategory =
-          isHoveredCategory && (!isExpanded || !hasVisibleHoveredPerkGroup)
+          emphasizedCategoryNames.has(availableCategoryName) ||
+          (isHoveredCategory && (!isExpanded || !hasVisibleHoveredPerkGroup))
         const categoryChipClassName = [
           'category-chip',
           isActive ? 'is-active' : '',
@@ -149,12 +154,13 @@ export function CategorySidebar({
                 {activePerkGroupOptions.map((perkGroupOption) => {
                   const pickedPerkCountInPerkGroup =
                     pickedPerkCountsByPerkGroup.get(perkGroupOption.perkGroupId) ?? 0
+                  const perkGroupKey = getPerkGroupHoverKey({
+                    categoryName: availableCategoryName,
+                    perkGroupId: perkGroupOption.perkGroupId,
+                  })
                   const isPerkGroupHighlighted =
-                    hoveredPerkGroupKey ===
-                    getPerkGroupHoverKey({
-                      categoryName: availableCategoryName,
-                      perkGroupId: perkGroupOption.perkGroupId,
-                    })
+                    emphasizedPerkGroupKeys.has(perkGroupKey) ||
+                    emphasizedCategoryNames.has(availableCategoryName)
                   const perkGroupChipClassName = [
                     'perk-group-chip',
                     selectedPerkGroupIds.includes(perkGroupOption.perkGroupId) ? 'is-active' : '',
@@ -165,12 +171,12 @@ export function CategorySidebar({
 
                   return (
                     <button
-                      aria-label={`Toggle perk group ${perkGroupOption.perkGroupName}`}
+                      aria-label={`Select perk group ${perkGroupOption.perkGroupName}`}
                       aria-pressed={selectedPerkGroupIds.includes(perkGroupOption.perkGroupId)}
                       className={perkGroupChipClassName}
                       key={perkGroupOption.perkGroupId}
                       onClick={() =>
-                        onPerkGroupToggle(availableCategoryName, perkGroupOption.perkGroupId)
+                        onPerkGroupSelect(availableCategoryName, perkGroupOption.perkGroupId)
                       }
                       type="button"
                     >

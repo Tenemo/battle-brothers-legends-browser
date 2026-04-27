@@ -22,10 +22,8 @@
   gap: 0.72rem;
   min-height: 0;
   min-width: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   padding: 0.72rem 0.68rem 0.72rem 0.76rem;
-  scrollbar-gutter: stable;
   opacity: 1;
   transform: translateX(0);
   transition:
@@ -69,7 +67,7 @@
   background: linear-gradient(180deg, rgb(181 128 73 / 0.1), transparent 38%), rgb(20 17 14 / 0.92);
   color: inherit;
   font: inherit;
-  cursor: help;
+  cursor: pointer;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,
@@ -158,48 +156,67 @@
   min-width: 0;
 }
 
-.background-fit-target,
-.background-fit-match {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.72rem;
-  align-items: flex-start;
+.background-fit-target {
   width: 100%;
-  padding: 0.46rem 0.52rem;
   border: 1px solid rgb(204 155 84 / 0.11);
   border-radius: 0.62rem;
   background: rgb(18 15 13 / 0.76);
 }
 
-.background-fit-match {
-  appearance: none;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-  transition:
-    border-color 160ms ease,
-    background-color 160ms ease,
-    color 160ms ease;
-}
-
-.background-fit-match:hover,
-.background-fit-match:focus-visible,
-.background-fit-match.is-highlighted {
-  border-color: var(--accent-color);
-  background: var(--button-background-active);
-  color: var(--text-primary);
+.background-fit-target {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.72rem;
+  align-items: flex-start;
+  padding: 0.46rem 0.52rem;
 }
 
 .background-fit-target-list.is-unsupported .background-fit-target {
   border-style: dashed;
 }
 
+.background-fit-results-scroll {
+  display: grid;
+  flex: 1 1 auto;
+  align-content: start;
+  gap: 0.42rem;
+  min-height: 0;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 0.18rem;
+}
+
 .background-fit-target > div,
-.background-fit-match > div,
 .background-fit-card-heading > div {
   min-width: 0;
   flex: 1 1 auto;
+}
+
+.background-fit-match-probability-badge {
+  color: var(--accent-soft);
+}
+
+.background-fit-match.planner-group-card .planner-group-option-icon {
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 0.34rem;
+}
+
+.background-fit-perk-group-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.42rem;
+}
+
+.background-fit-perk-group-main > div {
+  min-width: 0;
+}
+
+.background-fit-perk-group-icon {
+  width: 1.42rem;
+  height: 1.42rem;
+  border-radius: 0.36rem;
 }
 
 .background-fit-card {
@@ -330,14 +347,14 @@
   min-width: 0;
 }
 
-.background-fit-accordion-summary .detail-badge,
-.background-fit-score-row .detail-badge {
+.background-fit-metric-badge {
   padding: 0.14rem 0.42rem;
   border: 1px solid rgb(204 155 84 / 0.14);
   border-radius: 999px;
   background: rgb(20 17 14 / 0.8);
   color: var(--accent-soft);
   overflow-wrap: anywhere;
+  cursor: help;
 }
 
 .background-fit-accordion-chevron-frame {
@@ -385,7 +402,7 @@
   display: grid;
   gap: 0.56rem;
   min-width: 0;
-  padding: 0 0.68rem 0.68rem;
+  padding: 0.56rem 0.68rem 0.68rem;
 }
 
 .background-fit-score-row {
@@ -564,33 +581,63 @@
   display: none;
 }
 
+@media (min-width: 1280px) {
+  .background-fit-card-heading h3 {
+    min-width: 5.8rem;
+  }
+}
+
 @media (max-width: 1279px) {
   .background-fit-panel {
+    flex-direction: column;
     width: 100%;
     min-height: 3.25rem;
+  }
+
+  .background-fit-panel.is-collapsed {
+    width: 100%;
   }
 
   .background-fit-panel.is-expanded {
     min-height: 12rem;
   }
 
+  .background-fit-rail-button {
+    flex: 0 0 auto;
+    flex-direction: row;
+    justify-content: flex-start;
+    order: 0;
+    min-height: 3.25rem;
+    border-left: 0;
+    border-bottom: 1px solid rgb(204 155 84 / 0.14);
+    padding: 0.62rem 0.8rem;
+  }
+
   .background-fit-panel-body {
+    order: 1;
     max-height: min(36rem, 70vh);
+    transform: translateY(0);
   }
 
   .background-fit-panel.is-collapsed .background-fit-rail-button {
     flex: 1 1 auto;
-    flex-direction: row;
-    justify-content: flex-start;
-    min-height: 3.25rem;
-    border-left: 0;
-    border-top: 1px solid rgb(204 155 84 / 0.14);
-    padding: 0.62rem 0.8rem;
   }
 
-  .background-fit-panel.is-collapsed .background-fit-rail-button-label {
+  .background-fit-panel.is-collapsed .background-fit-panel-body {
+    transform: translateY(-0.45rem);
+  }
+
+  .background-fit-rail-button-label,
+  .background-fit-panel.is-expanded .background-fit-rail-button-label {
+    max-height: none;
+    overflow: visible;
+    opacity: 1;
     writing-mode: horizontal-tb;
     transform: none;
+  }
+
+  .background-fit-rail-chevron.is-expanded {
+    transform: rotate(90deg);
   }
 }
 

@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { RankedBackgroundFit } from './background-fit'
 import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
-import { getTierLabel } from './perk-search'
 import type {
   LegendsPerkBackgroundSource,
   LegendsPerkRecord,
@@ -120,21 +119,6 @@ export function groupBackgroundSources(
   }
 
   return [...groupedBackgroundSources.values()]
-}
-
-export function getPerkContextLabel(perk: LegendsPerkRecord): string {
-  const primaryPlacement = perk.placements[0]
-
-  if (!primaryPlacement) {
-    return `${perk.primaryCategoryName} / No perk group placement`
-  }
-
-  const additionalPlacementsCount = Math.max(0, perk.placements.length - 1)
-  const tierLabel = getTierLabel(primaryPlacement.tier)
-  const placementLabel =
-    additionalPlacementsCount > 0 ? `${tierLabel} + ${additionalPlacementsCount} more` : tierLabel
-
-  return `${perk.primaryCategoryName} / ${primaryPlacement.perkGroupName} / ${placementLabel}`
 }
 
 export function getPerkDisplayIconPath(perk: LegendsPerkRecord): string | null {
@@ -272,6 +256,15 @@ export function formatBackgroundFitPickablePerksLabel(
   return `Up to ${coveredPickedPerkCount}/${pickedPerkCount} perks pickable`
 }
 
+export function formatBackgroundFitExpectedBuildPerksLabel(
+  expectedCoveredPickedPerkCount: number,
+  pickedPerkCount: number,
+): string {
+  return `Expected ${formatBackgroundFitScoreLabel(
+    expectedCoveredPickedPerkCount,
+  )}/${pickedPerkCount} perks pickable`
+}
+
 export function formatBackgroundFitGuaranteedPerksLabel(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
@@ -286,12 +279,6 @@ export function formatBackgroundFitMatchedPerkGroupsLabel(
   return `${matchedPerkGroupCount}/${supportedBuildTargetPerkGroupCount} matched perk group${
     supportedBuildTargetPerkGroupCount === 1 ? '' : 's'
   }`
-}
-
-export function formatBackgroundFitMaximumTotalPerkGroupsLabel(
-  maximumTotalPerkGroupCount: number,
-): string {
-  return `Maximum ${maximumTotalPerkGroupCount} total perk groups`
 }
 
 export function getPerkRowClassName({
@@ -361,6 +348,6 @@ export function getAnchoredTooltipStyle(anchorRectangle: TooltipAnchorRectangle)
   return {
     left: `${left}px`,
     maxWidth: `${tooltipMaximumWidth}px`,
-    top: `${anchorRectangle.bottom + 8}px`,
+    top: `${anchorRectangle.bottom}px`,
   }
 }

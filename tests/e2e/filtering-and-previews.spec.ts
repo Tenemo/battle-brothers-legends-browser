@@ -4,10 +4,11 @@ import {
   disableCategory,
   enableCategory,
   getResultsList,
+  getSidebarPerkGroupButton,
   gotoPerksBrowser,
   inspectPerkFromResults,
   searchPerks,
-  togglePerkGroup,
+  selectPerkGroup,
 } from './support/perks-browser'
 
 test('filters by multiple categories and scoped perk groups, then clears everything cleanly', async ({
@@ -21,7 +22,7 @@ test('filters by multiple categories and scoped perk groups, then clears everyth
   await expect(page.locator('.perk-group-heading')).toHaveCount(0)
 
   await enableCategory(page, 'Traits')
-  await togglePerkGroup(page, 'Calm')
+  await selectPerkGroup(page, 'Calm')
   await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
 
   await enableCategory(page, 'Enemy')
@@ -39,6 +40,30 @@ test('filters by multiple categories and scoped perk groups, then clears everyth
   await expect(page.getByRole('button', { name: 'Clear all filters' })).toHaveCount(0)
   await expect(page.getByText(/Ranked by exact perk names first/i)).toBeVisible()
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+})
+
+test('keeps only one selected perk group when another group is selected', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await enableCategory(page, 'Traits')
+  await selectPerkGroup(page, 'Calm')
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveClass(/is-active/)
+
+  await enableCategory(page, 'Magic')
+  await selectPerkGroup(page, 'Deadeye')
+
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveClass(/is-active/)
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
+  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
+
+  await selectPerkGroup(page, 'Deadeye')
+
+  await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveClass(/is-active/)
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
 })
 
 test('shows real effect previews for hooked perk descriptions instead of perk group text', async ({
@@ -81,6 +106,7 @@ test('shows normalized mastery labels in the result list', async ({ page }) => {
     getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
   ).toBeVisible()
   await expect(getResultsList(page).getByText('Spec Axe', { exact: true })).toHaveCount(0)
+  await expect(getResultsList(page).locator('.tier-badge')).toHaveCount(0)
 })
 
 test('reorders categories and perk groups around the active perk search query and highlights the match', async ({
@@ -97,10 +123,10 @@ test('reorders categories and perk groups around the active perk search query an
   await enableCategory(page, 'Other')
 
   const perkGroupButtons = page.locator(
-    '.sidebar .perk-group-panel button[aria-label^="Toggle perk group "]',
+    '.sidebar .perk-group-panel button[aria-label^="Select perk group "]',
   )
 
-  await expect(perkGroupButtons.first()).toHaveAttribute('aria-label', 'Toggle perk group Shady')
+  await expect(perkGroupButtons.first()).toHaveAttribute('aria-label', 'Select perk group Shady')
   await expect(page.locator('.sidebar .search-highlight')).toContainText(['Shady'])
 })
 
@@ -110,6 +136,58 @@ test('highlights the searched perk phrase in the visible perk results', async ({
   await searchPerks(page, 'Axe')
 
   await expect(getResultsList(page).locator('.search-highlight')).toContainText(['Axe'])
+  await expect(getResultsList(page).locator('.tier-badge')).toHaveCount(0)
+})
+
+test('shows every matching perk group placement in the result list', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'ranger')
+
+  const poisonMasteryResultRow = getResultsList(page)
+    .getByRole('button', { name: 'Inspect Poison Mastery' })
+    .locator(
+      'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
+    )
+  const placementChips = poisonMasteryResultRow.locator('.perk-placement-chip')
+
+  await expect(placementChips).toContainText(['Poison', 'Ranger'])
+  await expect(poisonMasteryResultRow.locator('.perk-placement-list')).not.toContainText(
+    /Class|Magic/,
+  )
+  await expect(poisonMasteryResultRow.locator('.perk-placement-list')).not.toContainText(/Tier/i)
+  await expect(poisonMasteryResultRow.locator('.tier-badge')).toHaveCount(0)
+  await expect(poisonMasteryResultRow).not.toContainText(/\+\s*\d+\s*more/i)
+  await expect(
+    poisonMasteryResultRow.locator('.perk-placement-label .search-highlight'),
+  ).toContainText(['Ranger'])
+  const [perkNameBox, placementListBox] = await Promise.all([
+    poisonMasteryResultRow.locator('.perk-name').boundingBox(),
+    poisonMasteryResultRow.locator('.perk-placement-list').boundingBox(),
+  ])
+
+  expect(perkNameBox).not.toBeNull()
+  expect(placementListBox).not.toBeNull()
+  expect(placementListBox!.y - (perkNameBox!.y + perkNameBox!.height)).toBeLessThanOrEqual(8)
+  await expect(
+    poisonMasteryResultRow.getByRole('img', { name: 'Poison perk group icon' }),
+  ).toBeVisible()
+  await expect(
+    poisonMasteryResultRow.getByRole('img', { name: 'Ranger perk group icon' }),
+  ).toBeVisible()
+
+  await searchPerks(page, '')
+  await enableCategory(page, 'Class')
+  await selectPerkGroup(page, 'Poison')
+  await searchPerks(page, 'ranger')
+
+  await poisonMasteryResultRow.getByRole('button', { name: 'Select perk group Ranger' }).click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Enable category Class' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Ranger')).toHaveClass(/is-active/)
+  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
 })
 
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {
@@ -122,9 +200,15 @@ test('keeps search result and repository hover states fixed in place', async ({ 
 
   await searchPerks(page, 'Perfect')
 
+  const perfectFitInspectButton = getResultsList(page).getByRole('button', {
+    name: 'Inspect Perfect Fit',
+  })
   const perfectFocusInspectButton = getResultsList(page).getByRole('button', {
     name: 'Inspect Perfect Focus',
   })
+  const perfectFitResultRow = perfectFitInspectButton.locator(
+    'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
+  )
   const perfectFocusResultRow = perfectFocusInspectButton.locator(
     'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
   )
@@ -133,6 +217,8 @@ test('keeps search result and repository hover states fixed in place', async ({ 
   )
 
   await expect(perfectFocusResultRow).toBeVisible()
+  await perfectFitInspectButton.click()
+  await expect(page.getByRole('heading', { level: 2, name: 'Perfect Fit' })).toBeVisible()
   await perfectFocusInspectButton.scrollIntoViewIfNeeded()
 
   const resultRowBeforeHover = await perfectFocusResultRow.evaluate((element) => {
@@ -146,6 +232,9 @@ test('keeps search result and repository hover states fixed in place', async ({ 
       width: rectangle.width,
     }
   })
+  const selectedResultRowBackgroundColor = await perfectFitResultRow.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
 
   await perfectFocusInspectButton.hover()
 
@@ -163,10 +252,26 @@ test('keeps search result and repository hover states fixed in place', async ({ 
     }
   })
 
-  expect(resultRowAfterHover.backgroundColor).toBe(resultRowBeforeHover.backgroundColor)
+  expect(resultRowAfterHover.backgroundColor).not.toBe(resultRowBeforeHover.backgroundColor)
+  expect(resultRowAfterHover.backgroundColor).not.toBe(selectedResultRowBackgroundColor)
   expect(Math.abs(resultRowAfterHover.top - resultRowBeforeHover.top)).toBeLessThanOrEqual(1)
   expect(Math.abs(resultRowAfterHover.height - resultRowBeforeHover.height)).toBeLessThanOrEqual(1)
   expect(Math.abs(resultRowAfterHover.width - resultRowBeforeHover.width)).toBeLessThanOrEqual(1)
+
+  const [previewBox, resultRowBox] = await Promise.all([
+    perfectFocusResultRow.locator('.perk-preview').boundingBox(),
+    perfectFocusResultRow.boundingBox(),
+  ])
+
+  expect(previewBox).not.toBeNull()
+  expect(resultRowBox).not.toBeNull()
+  await perfectFocusResultRow.click({
+    position: {
+      x: previewBox!.x - resultRowBox!.x + 8,
+      y: previewBox!.y - resultRowBox!.y + 8,
+    },
+  })
+  await expect(page.getByRole('heading', { level: 2, name: 'Perfect Focus' })).toBeVisible()
 
   const repositoryLinkBeforeHover = await repositoryLink.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()
@@ -266,14 +371,10 @@ test('shows picked categories and perk groups with stars and keeps picked result
   await enableCategory(page, 'Magic')
 
   await expect(
-    page
-      .getByRole('button', { name: 'Toggle perk group Calm' })
-      .locator('.category-chip-picked-stars .build-star'),
+    getSidebarPerkGroupButton(page, 'Calm').locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(2)
   await expect(
-    page
-      .getByRole('button', { name: 'Toggle perk group Deadeye' })
-      .locator('.category-chip-picked-stars .build-star'),
+    getSidebarPerkGroupButton(page, 'Deadeye').locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(1)
 
   await disableCategory(page, 'Traits')

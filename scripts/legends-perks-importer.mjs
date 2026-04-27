@@ -893,21 +893,25 @@ function applyBackgroundCreateBody({
   sourceFilePath,
 }) {
   const diagnosticContext = { diagnostics, sourceFilePath }
+  const uncommentedCreateBody = stripSquirrelComments(createBody)
   const explicitBackgroundIdentifier = stringValue(
-    extractAssignedValue(createBody, 'this.m.ID', diagnosticContext),
+    extractAssignedValue(uncommentedCreateBody, 'this.m.ID', diagnosticContext),
   )
   const backgroundName =
-    stringValue(extractAssignedValue(createBody, 'this.m.Name', diagnosticContext)) ??
+    stringValue(extractAssignedValue(uncommentedCreateBody, 'this.m.Name', diagnosticContext)) ??
     baseBackgroundDefinition.backgroundName
   const iconPath =
-    stringValue(extractAssignedValue(createBody, 'this.m.Icon', diagnosticContext)) ??
+    stringValue(extractAssignedValue(uncommentedCreateBody, 'this.m.Icon', diagnosticContext)) ??
     baseBackgroundDefinition.iconPath
   const dynamicTreeValue =
-    extractAssignedValue(createBody, 'this.m.PerkTreeDynamic', diagnosticContext) ??
+    extractAssignedValue(uncommentedCreateBody, 'this.m.PerkTreeDynamic', diagnosticContext) ??
     baseBackgroundDefinition.dynamicTreeValue
   const minimums = cloneMinimums(baseBackgroundDefinition.minimums)
 
-  for (const operation of extractNumericOperations(createBody, 'this.m.PerkTreeDynamicMins.')) {
+  for (const operation of extractNumericOperations(
+    uncommentedCreateBody,
+    'this.m.PerkTreeDynamicMins.',
+  )) {
     if (!(operation.key in minimums)) {
       minimums[operation.key] = 0
     }
@@ -1112,8 +1116,9 @@ function parseBackgroundFitRulesFile(fileSource, perkGroupDefinitions, diagnosti
     }
   }
 
+  const uncommentedDynamicPerkTreeBody = stripSquirrelComments(dynamicPerkTreeAssignment.value.body)
   const localAssignments = extractLocalAssignments(
-    dynamicPerkTreeAssignment.value.body,
+    uncommentedDynamicPerkTreeBody,
     diagnosticContext,
   )
   const weaponClassMapValue = localAssignments.get('weaponClassMap')
@@ -1394,11 +1399,12 @@ function parseScenarioHookFile(fileSource, sourceFilePath, diagnostics) {
 
   const createFunctionLiteral = readFunctionAssignmentBody(wrapperStatements, 'o.create')
   const createBody = createFunctionLiteral?.body ?? ''
+  const uncommentedCreateBody = stripSquirrelComments(createBody)
   const scenarioIdentifier = stringValue(
-    extractAssignedValue(createBody, 'this.m.ID', diagnosticContext),
+    extractAssignedValue(uncommentedCreateBody, 'this.m.ID', diagnosticContext),
   )
   const scenarioName = stringValue(
-    extractAssignedValue(createBody, 'this.m.Name', diagnosticContext),
+    extractAssignedValue(uncommentedCreateBody, 'this.m.Name', diagnosticContext),
   )
 
   if (scenarioIdentifier === null || scenarioName === null) {
@@ -1421,8 +1427,12 @@ function parseScenarioHookFile(fileSource, sourceFilePath, diagnostics) {
 
     const methodName = getLastPathSegment(statement.target)
     const functionBody = statement.value.body
+    const uncommentedFunctionBody = stripSquirrelComments(functionBody)
 
-    for (const argumentList of extractCallArgumentLists(functionBody, '::Legends.Perks.grant')) {
+    for (const argumentList of extractCallArgumentLists(
+      uncommentedFunctionBody,
+      '::Legends.Perks.grant',
+    )) {
       const perkReferenceSource = argumentList[1]
 
       if (!perkReferenceSource) {
@@ -1451,9 +1461,12 @@ function parseScenarioHookFile(fileSource, sourceFilePath, diagnostics) {
       continue
     }
 
-    const localAssignments = extractLocalAssignments(functionBody, diagnosticContext)
+    const localAssignments = extractLocalAssignments(uncommentedFunctionBody, diagnosticContext)
 
-    for (const argumentList of extractCallArgumentLists(functionBody, 'this.addScenarioPerk')) {
+    for (const argumentList of extractCallArgumentLists(
+      uncommentedFunctionBody,
+      'this.addScenarioPerk',
+    )) {
       const perkArgumentSource = argumentList[1]
 
       if (!perkArgumentSource) {
@@ -1863,13 +1876,16 @@ export async function createDataset(
     throw new Error('Unable to read character background defaults from the reference directory.')
   }
 
-  const baseMinimumsValue = extractAssignedValue(
+  const uncommentedCharacterBackgroundBody = stripSquirrelComments(
     characterBackgroundWrapperFunction.body,
+  )
+  const baseMinimumsValue = extractAssignedValue(
+    uncommentedCharacterBackgroundBody,
     'o.m.PerkTreeDynamicMins',
     { diagnostics, sourceFilePath: toPosixRelativePath(characterBackgroundFilePath) },
   )
   const baseDynamicTreeValue = extractAssignedValue(
-    characterBackgroundWrapperFunction.body,
+    uncommentedCharacterBackgroundBody,
     'o.m.PerkTreeDynamicBase',
     { diagnostics, sourceFilePath: toPosixRelativePath(characterBackgroundFilePath) },
   )

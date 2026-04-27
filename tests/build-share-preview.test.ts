@@ -70,14 +70,25 @@ describe('build share preview', () => {
     expect(payload.status).toBe('found')
     expect(payload.topBackgroundFits.length).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].backgroundName).toBeTruthy()
+    expect(payload.topBackgroundFits[0].expectedCoveredPickedPerkCount).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].guaranteedCoveredPickedPerkCount).toBeGreaterThan(0)
     expect(
-      payload.topBackgroundFits.every(
-        (backgroundFit, backgroundFitIndex, backgroundFits) =>
-          backgroundFitIndex === 0 ||
-          backgroundFit.guaranteedCoveredPickedPerkCount <=
-            backgroundFits[backgroundFitIndex - 1].guaranteedCoveredPickedPerkCount,
-      ),
+      payload.topBackgroundFits.every((backgroundFit, backgroundFitIndex, backgroundFits) => {
+        if (backgroundFitIndex === 0) {
+          return true
+        }
+
+        const previousBackgroundFit = backgroundFits[backgroundFitIndex - 1]
+
+        return (
+          backgroundFit.guaranteedCoveredPickedPerkCount <
+            previousBackgroundFit.guaranteedCoveredPickedPerkCount ||
+          (backgroundFit.guaranteedCoveredPickedPerkCount ===
+            previousBackgroundFit.guaranteedCoveredPickedPerkCount &&
+            backgroundFit.expectedCoveredPickedPerkCount <=
+              previousBackgroundFit.expectedCoveredPickedPerkCount)
+        )
+      }),
     ).toBe(true)
   })
 

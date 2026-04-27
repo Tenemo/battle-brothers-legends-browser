@@ -39,6 +39,10 @@ async function copyTextToClipboard(text: string): Promise<void> {
   }
 }
 
+export async function copyBuildShareUrl(buildShareSearch: string): Promise<void> {
+  await copyTextToClipboard(getBuildShareUrl(buildShareSearch))
+}
+
 export function useBuildShareLink({
   buildShareSearch,
   hasPickedPerks,
@@ -58,7 +62,7 @@ export function useBuildShareLink({
     }
 
     try {
-      await copyTextToClipboard(getBuildShareUrl(buildShareSearch))
+      await copyBuildShareUrl(buildShareSearch)
       setShareBuildStatus('copied')
     } catch {
       setShareBuildStatus('error')

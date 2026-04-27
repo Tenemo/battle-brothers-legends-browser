@@ -25,6 +25,14 @@ const maxVisibleIcons = 20
 const maxVisiblePerkNames = 10
 const ellipsis = '...'
 
+function formatExpectedBuildPerkCount(expectedBuildPerkCount: number): string {
+  const roundedExpectedBuildPerkCount = Math.round(expectedBuildPerkCount * 10) / 10
+
+  return Number.isInteger(roundedExpectedBuildPerkCount)
+    ? roundedExpectedBuildPerkCount.toFixed(0)
+    : roundedExpectedBuildPerkCount.toFixed(1)
+}
+
 function estimateCharacterWidth(character: string): number {
   if (character === ' ') {
     return 0.42
@@ -286,18 +294,21 @@ function renderBackgroundFits(
   return payload.topBackgroundFits
     .map((backgroundFit, backgroundFitIndex) => {
       const rowY = 446 + backgroundFitIndex * 52
-      const guaranteedCoverageRatio =
+      const expectedCoverageRatio =
         payload.pickedPerkCount === 0
           ? 0
-          : backgroundFit.guaranteedCoveredPickedPerkCount / payload.pickedPerkCount
+          : backgroundFit.expectedCoveredPickedPerkCount / payload.pickedPerkCount
       const scoreWidth = Math.max(
-        backgroundFit.guaranteedCoveredPickedPerkCount === 0 ? 0 : 28,
+        backgroundFit.expectedCoveredPickedPerkCount === 0 ? 0 : 28,
         Math.min(
           160,
-          backgroundFit.guaranteedCoveredPickedPerkCount === 0 ? 0 : guaranteedCoverageRatio * 160,
+          backgroundFit.expectedCoveredPickedPerkCount === 0 ? 0 : expectedCoverageRatio * 160,
         ),
       )
       const name = truncateLineByVisualWidth(backgroundFit.backgroundName, 16)
+      const expectedBuildPerkCount = formatExpectedBuildPerkCount(
+        backgroundFit.expectedCoveredPickedPerkCount,
+      )
 
       return `<g transform="translate(664 ${rowY})">
         ${renderBackgroundIcon({
@@ -312,7 +323,7 @@ function renderBackgroundFits(
         )}</text>
         <rect x="270" y="-24" width="160" height="11" rx="5.5" fill="#2a211b" />
         <rect x="270" y="-24" width="${scoreWidth.toFixed(1)}" height="11" rx="5.5" fill="#c89d66" />
-        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${backgroundFit.guaranteedCoveredPickedPerkCount}/${payload.pickedPerkCount} guaranteed perks</text>
+        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${expectedBuildPerkCount}/${payload.pickedPerkCount} expected perks</text>
       </g>`
     })
     .join('')

@@ -4,6 +4,7 @@ import {
   createBackgroundFitEngine,
   getBuildTargetPerkGroups,
 } from '../src/lib/background-fit'
+import { formatBackgroundFitExpectedBuildPerksLabel } from '../src/lib/perk-display'
 import type {
   LegendsBackgroundFitBackgroundDefinition,
   LegendsBackgroundFitCategoryDefinition,
@@ -333,13 +334,25 @@ const sampleDataset: LegendsPerksDataset = {
 }
 
 describe('background fit', () => {
+  test('formats expected picked perk coverage with one decimal when needed', () => {
+    expect(formatBackgroundFitExpectedBuildPerksLabel(10 / 3, 4)).toBe(
+      'Expected 3.3/4 perks pickable',
+    )
+    expect(formatBackgroundFitExpectedBuildPerksLabel(3, 4)).toBe('Expected 3/4 perks pickable')
+    expect(formatBackgroundFitExpectedBuildPerksLabel(0.25, 1)).toBe(
+      'Expected 0.3/1 perks pickable',
+    )
+  })
+
   test('derives shared supported targets and separates unsupported categories', () => {
     expect(getBuildTargetPerkGroups([samplePerks[0], samplePerks[1], samplePerks[14]])).toEqual({
       supportedBuildTargetPerkGroups: [
         {
           categoryName: 'Weapon',
           pickedPerkCount: 2,
+          pickedPerkIds: ['perk.weapon.axe_one', 'perk.weapon.axe_two'],
           pickedPerkNames: ['Axe drill', 'Axe finish'],
+          perkGroupIconPath: null,
           perkGroupId: 'AxeTree',
           perkGroupName: 'Axe',
         },
@@ -348,7 +361,9 @@ describe('background fit', () => {
         {
           categoryName: 'Other',
           pickedPerkCount: 1,
+          pickedPerkIds: ['perk.other.forceful'],
           pickedPerkNames: ['Forceful stance'],
+          perkGroupIconPath: null,
           perkGroupId: 'ForcefulTree',
           perkGroupName: 'Forceful',
         },
@@ -413,6 +428,7 @@ describe('background fit', () => {
 
     expect(probabilitiesByPerkGroupId.get('AxeTree')).toBe(1)
     expect(probabilitiesByPerkGroupId.get('BowTree')).toBe(1)
+    expect(duplicateExplicitFit.expectedCoveredPickedPerkCount).toBe(2)
     expect(duplicateExplicitFit.maximumTotalPerkGroupCount).toBe(2)
     expect(duplicateExplicitFit.matches).toEqual(
       expect.arrayContaining([
@@ -420,6 +436,52 @@ describe('background fit', () => {
         expect.objectContaining({ perkGroupId: 'BowTree' }),
       ]),
     )
+  })
+
+  test('calculates expected covered picked perks without double-counting alternate placements', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const alternateCoveragePerk = createPerk({
+      id: 'perk.traits.calm_or_bold',
+      perkConstName: 'LegendCalmOrBold',
+      perkName: 'Calm or bold',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'CalmTree',
+          perkGroupName: 'Calm',
+        }),
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'BoldTree',
+          perkGroupName: 'Bold',
+        }),
+      ],
+    })
+    const balancedScholarFit = engine
+      .getBackgroundFitView([alternateCoveragePerk])
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.traits_fill',
+      )
+
+    expect(balancedScholarFit?.expectedMatchedPerkGroupCount).toBe(1.5)
+    expect(balancedScholarFit?.expectedCoveredPickedPerkCount).toBe(1)
+  })
+
+  test('calculates expected covered picked perks across deterministic fills and class dependencies', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const balancedScholarFit = engine
+      .getBackgroundFitView([samplePerks[4], samplePerks[5], samplePerks[6]])
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.traits_fill',
+      )
+    const classRollFit = engine
+      .getBackgroundFitView([samplePerks[10], samplePerks[11]])
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.class_roll',
+      )
+
+    expect(balancedScholarFit?.expectedCoveredPickedPerkCount).toBe(2)
+    expect(classRollFit?.expectedCoveredPickedPerkCount).toBe(1)
   })
 
   test('uses exact fill-to-minimum probabilities for deterministic categories', () => {
@@ -490,6 +552,66 @@ describe('background fit', () => {
         expect.objectContaining({ probability: 0.5, perkGroupId: 'ArcherClassTree' }),
         expect.objectContaining({ probability: 0.5, perkGroupId: 'MilitiaClassTree' }),
       ]),
+    )
+  })
+
+  test('only treats explicit Magic perk groups as background-fit matches', () => {
+    const magicPerk = createPerk({
+      id: 'perk.magic.rune',
+      perkConstName: 'LegendRune',
+      perkName: 'Rune lesson',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'RuneMagicTree',
+          perkGroupName: 'Rune magic',
+        }),
+      ],
+    })
+    const randomMagicBackground = createBackgroundDefinition({
+      backgroundId: 'background.random_magic',
+      backgroundName: 'Random magic',
+      overrides: {
+        Magic: { chance: 1, minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const explicitMagicBackground = createBackgroundDefinition({
+      backgroundId: 'background.explicit_magic',
+      backgroundName: 'Explicit magic',
+      overrides: {
+        Magic: { chance: 0, minimumPerkGroups: 1, perkGroupIds: ['RuneMagicTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [randomMagicBackground, explicitMagicBackground],
+      perks: [...samplePerks, magicPerk],
+    })
+    const backgroundFitsById = new Map(
+      engine
+        .getBackgroundFitView([magicPerk])
+        .rankedBackgroundFits.map((backgroundFit) => [backgroundFit.backgroundId, backgroundFit]),
+    )
+
+    expect(backgroundFitsById.get('background.random_magic')).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 0,
+        matches: [],
+        maximumTotalPerkGroupCount: 0,
+      }),
+    )
+    expect(backgroundFitsById.get('background.explicit_magic')).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 1,
+        matches: [
+          expect.objectContaining({
+            isGuaranteed: true,
+            perkGroupId: 'RuneMagicTree',
+            probability: 1,
+          }),
+        ],
+        maximumTotalPerkGroupCount: 1,
+      }),
     )
   })
 

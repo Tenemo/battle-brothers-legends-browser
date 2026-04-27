@@ -288,6 +288,139 @@ describe('legends perks importer', () => {
     ).toBe(false)
   })
 
+  test('ignores commented-out assignments and calls in scanned Squirrel bodies', async () => {
+    const temporaryRootDirectoryPath = path.join(
+      process.cwd(),
+      'node_modules',
+      '.tmp',
+      'legends-importer-comment-safety',
+    )
+
+    await mkdir(temporaryRootDirectoryPath, { recursive: true })
+
+    const temporaryFixtureDirectoryPath = await mkdtemp(
+      path.join(temporaryRootDirectoryPath, 'reference-'),
+    )
+
+    try {
+      const temporaryReferenceDirectoryPath = path.join(
+        temporaryFixtureDirectoryPath,
+        'legends-reference',
+      )
+
+      await cp(path.dirname(fixtureReferenceRootDirectoryPath), temporaryReferenceDirectoryPath, {
+        recursive: true,
+      })
+
+      const beastHunterBackgroundFilePath = path.join(
+        temporaryReferenceDirectoryPath,
+        'mod_legends',
+        'hooks',
+        'skills',
+        'backgrounds',
+        'beast_hunter_background.nut',
+      )
+      const traderScenarioFilePath = path.join(
+        temporaryReferenceDirectoryPath,
+        'mod_legends',
+        'hooks',
+        'scenarios',
+        'world',
+        'trader_scenario.nut',
+      )
+      const beastHunterBackgroundSource = await readFile(beastHunterBackgroundFilePath, 'utf8')
+      const traderScenarioSource = await readFile(traderScenarioFilePath, 'utf8')
+
+      await writeFile(
+        beastHunterBackgroundFilePath,
+        beastHunterBackgroundSource.replace(
+          '  {\n    this.character_background.create();',
+          [
+            '  {',
+            '    // this.m.ID = "background.commented_out";',
+            '    // this.m.Name = "Commented out background";',
+            '    // this.m.PerkTreeDynamicMins.Enemy = 99;',
+            '    /*',
+            '    this.m.PerkTreeDynamic = {',
+            '      Weapon = [::Const.Perks.AxeTree],',
+            '      Defense = [],',
+            '      Traits = [],',
+            '      Enemy = [],',
+            '      Class = [],',
+            '      Profession = [],',
+            '      Magic = []',
+            '    };',
+            '    */',
+            '    this.character_background.create();',
+          ].join('\n'),
+        ),
+        'utf8',
+      )
+      await writeFile(
+        traderScenarioFilePath,
+        traderScenarioSource.replace(
+          '    this.addScenarioPerk(_background, ::Const.Perks.PerkDefs.LegendPeaceful, 0, true);',
+          [
+            '    // this.addScenarioPerk(_background, ::Const.Perks.PerkDefs.LegendFavouredEnemyBeast, 0, true);',
+            '    this.addScenarioPerk(_background, ::Const.Perks.PerkDefs.LegendPeaceful, 0, true);',
+          ].join('\n'),
+        ),
+        'utf8',
+      )
+
+      const datasetWithCommentedSource = await createDataset(
+        path.join(temporaryReferenceDirectoryPath, 'mod_legends'),
+      )
+      const beastSlayerBackground = datasetWithCommentedSource.backgroundFitBackgrounds.find(
+        (background) => background.backgroundId === 'background.beast_slayer',
+      )
+      const favouredEnemyBeast = datasetWithCommentedSource.perks.find(
+        (perk) => perk.perkConstName === 'LegendFavouredEnemyBeast',
+      )
+      const peaceful = datasetWithCommentedSource.perks.find(
+        (perk) => perk.perkConstName === 'LegendPeaceful',
+      )
+
+      expect(beastSlayerBackground).toEqual(
+        expect.objectContaining({
+          backgroundId: 'background.beast_slayer',
+          backgroundName: 'Beast Slayer',
+          categories: expect.objectContaining({
+            Enemy: expect.objectContaining({
+              minimumPerkGroups: 2,
+              perkGroupIds: ['BeastTree'],
+            }),
+            Weapon: expect.objectContaining({
+              perkGroupIds: [],
+            }),
+          }),
+        }),
+      )
+      expect(
+        datasetWithCommentedSource.backgroundFitBackgrounds.some(
+          (background) => background.backgroundId === 'background.commented_out',
+        ),
+      ).toBe(false)
+      expect(favouredEnemyBeast?.scenarioSources).not.toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            scenarioId: 'scenario.trader',
+          }),
+        ]),
+      )
+      expect(peaceful?.scenarioSources).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            scenarioId: 'scenario.trader',
+            scenarioName: 'Trader',
+          }),
+        ]),
+      )
+    } finally {
+      await rm(temporaryFixtureDirectoryPath, { force: true, recursive: true })
+    }
+  })
+
   test('reports skipped parser failures without dropping other scenario data', async () => {
     const temporaryRootDirectoryPath = path.join(
       process.cwd(),
