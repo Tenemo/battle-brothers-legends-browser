@@ -86,7 +86,7 @@ test('keeps dense picked builds usable on small desktop viewports', async ({ pag
   await page.setViewportSize({ height: 720, width: 1280 })
   await page.goto(denseSmallDesktopBuildUrl)
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expect(page.getByLabel('Search perks')).toBeVisible()
   await expect(
     getBackgroundFitPanel(page).getByRole('button', { name: 'Expand background fit' }),
@@ -122,7 +122,7 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
   ]) {
     await page.setViewportSize(viewportSize)
     await page.goto('/')
-    await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+    await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
     scrollbarMeasurements.push(
       await page.evaluate((selectors) => {

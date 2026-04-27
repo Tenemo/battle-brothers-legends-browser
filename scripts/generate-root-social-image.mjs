@@ -44,13 +44,13 @@ export async function createRootSocialImageSvg({
   referenceVersion = fallbackLegendsReferenceVersion,
 } = {}) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${socialImageWidth}" height="${socialImageHeight}" viewBox="0 0 ${socialImageWidth} ${socialImageHeight}" role="img" aria-label="${escapeXml(
-    'Battle Brothers Legends perks browser social preview.',
+    'Battle Brothers Legends build planner social preview.',
   )}">
   ${renderSocialImageDefinitions({ includePanelLight: true })}
   ${renderSocialImageBackground()}
   <rect x="65" y="65" width="1070" height="502" fill="#16100d" stroke="#6f4f27" stroke-width="2" />
   <rect x="65" y="65" width="1070" height="502" fill="url(#panel-light)" />
-  <text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>
+  <text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Build planner</text>
   ${renderSocialImageBrand({
     fontSize: 26,
     x: 99,

@@ -203,6 +203,10 @@
     align-items: flex-start;
   }
 
+  .detail-background-source-names {
+    font-weight: var(--font-weight-regular);
+  }
+
   .detail-support {
     margin: var(--primitive-length-0-18rem) 0 0;
     color: var(--text-muted);

@@ -55,7 +55,7 @@ export async function gotoPerksBrowser(
 ): Promise<void> {
   await page.setViewportSize(viewport)
   await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expect(page.getByLabel('Search perks')).toBeVisible()
   await expect(getBuildPerksBar(page)).toBeVisible()
   await expect(getBuildSharedGroupsList(page)).toBeVisible()

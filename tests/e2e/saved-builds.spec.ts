@@ -46,7 +46,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 
   await page.goto('/')
-  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await page.getByRole('button', { name: 'Open saved builds' }).click()
 
   const savedBuild = page

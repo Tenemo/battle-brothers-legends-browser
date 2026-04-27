@@ -216,7 +216,7 @@ test('keeps search result and repository hover states fixed in place', async ({ 
     'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
   )
   const repositoryLink = page.getByLabel(
-    'Open the battle-brothers-legends-browser repository on GitHub',
+    'Open the build planner repository on GitHub',
   )
 
   await expect(perfectFocusResultRow).toBeVisible()

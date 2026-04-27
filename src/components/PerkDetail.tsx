@@ -38,7 +38,9 @@ function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
   return (
     <>
       <div>
-        <strong>{backgroundSource.backgroundNames.join(', ')}</strong>
+        <span className="detail-background-source-names">
+          {backgroundSource.backgroundNames.join(', ')}
+        </span>
         <p className="detail-support">
           {backgroundSource.categoryName} / {backgroundSource.perkGroupName}
         </p>

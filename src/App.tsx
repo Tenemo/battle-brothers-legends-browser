@@ -40,6 +40,8 @@ import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
 
+declare const __PLANNER_VERSION__: string
+
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
 const allPerks = legendsPerksDataset.perks.map((perk) => ({
@@ -50,6 +52,7 @@ const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
+const plannerVersion = __PLANNER_VERSION__
 
 const categoryCounts = getCategoryCounts(allPerks)
 const perkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
@@ -516,7 +519,7 @@ export default function App() {
       <div className="background-runes" aria-hidden="true" />
       <header className="hero">
         <div className="hero-copy">
-          <h1>Perks browser</h1>
+          <h1>Build planner</h1>
           <a
             aria-label="Open the Battle Brothers Legends mod repository on GitHub"
             className="eyebrow hero-brand"
@@ -539,12 +542,16 @@ export default function App() {
                 <dd>{legendsPerksDataset.perkGroupCount}</dd>
               </div>
               <div>
-                <dt>Reference</dt>
+                <dt>Mod version</dt>
                 <dd>{legendsPerksDataset.referenceVersion.replace(/^reference-mod_/, '')}</dd>
+              </div>
+              <div>
+                <dt>Planner version</dt>
+                <dd>{plannerVersion}</dd>
               </div>
             </dl>
             <a
-              aria-label="Open the battle-brothers-legends-browser repository on GitHub"
+              aria-label="Open the build planner repository on GitHub"
               className="hero-repository-link"
               href={repositoryUrl}
               rel="noopener noreferrer"

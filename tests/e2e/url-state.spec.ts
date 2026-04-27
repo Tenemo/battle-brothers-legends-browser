@@ -83,7 +83,7 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
     '/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
   )
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expect(page.getByText('2 perks picked.')).toBeVisible()
   await expect(
     getBuildPerksBar(page).getByRole('button', {

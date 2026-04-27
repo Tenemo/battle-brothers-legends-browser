@@ -25,18 +25,18 @@ export type SeoMetadata = {
 const siteOrigin = 'https://battlebrothers.academy'
 const sitePath = '/'
 const socialImagePath = '/seo/og-image-v2.png'
-const rootTitle = 'Battle Brothers Legends perks browser'
+const rootTitle = 'Battle Brothers Legends build planner'
 const rootDescription =
   'Browse the Battle Brothers Legends perk catalog with exact in-mod labels, real game icons, build planning, and shareable filter URLs.'
 const rootKeywords =
-  'Battle Brothers, Legends mod, perks browser, perk groups, build planner, Battle Brothers Legends'
-const rootShortName = 'Legends perks'
+  'Battle Brothers, Legends mod, build planner, perk groups, perks, Battle Brothers Legends'
+const rootShortName = 'Legends planner'
 const rootThemeColor = '#0c0908'
 const rootColorScheme = 'dark'
 const rootLocale = 'en_US'
 const rootRobots = 'index, follow, max-image-preview:large'
 const rootSocialImageAlt =
-  'Student icon and build planner preview for the Battle Brothers Legends perks browser.'
+  'Student icon and build planner preview for the Battle Brothers Legends build planner.'
 
 const createAbsoluteUrl = (pathname: string, origin: string = siteOrigin): string =>
   new URL(pathname, origin).toString()

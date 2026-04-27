@@ -53,7 +53,7 @@ describe('app', () => {
       name: 'Open the Battle Brothers Legends mod repository on GitHub',
     })
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Build planner' })).toBeInTheDocument()
     expect(legendsModRepositoryLink).toHaveAttribute(
       'href',
       'https://github.com/Battle-Brothers-Legends/Legends-public',
@@ -62,11 +62,13 @@ describe('app', () => {
     expect(brandEmphasis).not.toBeNull()
     expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
-    expect(within(hero).getByText('Reference')).toBeInTheDocument()
-    expect(within(hero).getByText(/\d+\.\d+\.\d+/)).toBeInTheDocument()
+    expect(within(hero).getByText('Mod version')).toBeInTheDocument()
+    expect(within(hero).getByText('19.3.17')).toBeInTheDocument()
+    expect(within(hero).getByText('Planner version')).toBeInTheDocument()
+    expect(within(hero).getByText('0.1.0')).toBeInTheDocument()
     expect(
       screen.getByRole('link', {
-        name: 'Open the battle-brothers-legends-browser repository on GitHub',
+        name: 'Open the build planner repository on GitHub',
       }),
     ).toHaveAttribute('href', 'https://github.com/Tenemo/battle-brothers-legends-browser')
     expect(screen.getByLabelText('Search perks')).toBeInTheDocument()

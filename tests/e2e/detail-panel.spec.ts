@@ -36,12 +36,18 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
   await expect(page.getByRole('heading', { level: 2, name: 'Perfect Focus' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 3, name: 'Background sources' })).toBeVisible()
   await expect(
-    backgroundSourcesSection.locator('strong').getByText(/Anatomist.*Beast Slayer.*Youngblood/i),
+    backgroundSourcesSection
+      .locator('.detail-background-source-names')
+      .getByText(/Anatomist.*Beast Slayer.*Youngblood/i),
   ).toBeVisible()
   const groupedBackgroundSourceRow = backgroundSourcesSection.locator('li').filter({
     hasText: /Anatomist.*Beast Slayer.*Youngblood/i,
   })
+  const backgroundSourceNamesFontWeight = await groupedBackgroundSourceRow
+    .locator('.detail-background-source-names')
+    .evaluate((element) => window.getComputedStyle(element).fontWeight)
 
+  expect(Number(backgroundSourceNamesFontWeight)).toBeLessThan(600)
   await expect(groupedBackgroundSourceRow.getByText('Guaranteed')).toBeVisible()
 })
 

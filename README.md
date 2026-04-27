@@ -1,6 +1,6 @@
-# Battle Brothers Legends perks browser
+# Battle Brothers Legends build planner
 
-Battle Brothers Legends perks browser is a Vite + React application for exploring the Legends mod perk catalog from a committed local snapshot. The repository contains both the browser itself and the scripts that build its data from Legends source files and Battle Brothers game archives.
+Battle Brothers Legends build planner is a Vite + React application for exploring the Legends mod perk catalog from a committed local snapshot. The repository contains both the planner itself and the scripts that build its data from Legends source files and Battle Brothers game archives.
 
 At runtime the app is fully static. It reads JSON from `src/data`, images from `public/game-icons`, and does not call GitHub or inspect the local game install while the browser is running. Network access and archive extraction happen only in the sync scripts.
 
