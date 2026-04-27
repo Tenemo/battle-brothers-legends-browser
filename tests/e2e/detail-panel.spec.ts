@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  getSidebarPerkGroupButton,
   getResultsList,
   gotoPerksBrowser,
   inspectPerkFromResults,
@@ -116,7 +117,27 @@ test('keeps raw perk group flavour strings out of perk details', async ({ page }
   const perkGroupPlacementSection = page
     .locator('.detail-section')
     .filter({ has: page.getByRole('heading', { level: 3, name: 'Perk group placement' }) })
+  const civilizationPlacementTile = perkGroupPlacementSection.locator('.planner-group-card', {
+    hasText: 'Civilization',
+  })
 
-  await expect(perkGroupPlacementSection.getByText('Enemy / Civilization')).toBeVisible()
+  await expect(civilizationPlacementTile).toHaveClass(/detail-placement-tile/)
+  await expect(
+    civilizationPlacementTile.getByRole('img', { name: 'Civilization perk group icon' }),
+  ).toBeVisible()
+  await expect(civilizationPlacementTile.locator('.detail-placement-tier-badge')).toHaveText(
+    'Tier 5',
+  )
+  await expect(
+    civilizationPlacementTile.getByRole('button', { name: 'Favoured Enemy - Civilization' }),
+  ).toBeVisible()
   await expect(perkGroupPlacementSection.getByText('law-abiding fools')).toHaveCount(0)
+
+  await civilizationPlacementTile
+    .getByRole('button', { name: 'Select perk group Civilization' })
+    .click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Civilization')).toHaveClass(/is-active/)
 })

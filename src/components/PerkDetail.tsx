@@ -7,21 +7,31 @@ import {
 } from '../lib/perk-display'
 import './PerkDetail.css'
 import { getTierLabel } from '../lib/perk-search'
-import type {
-  LegendsFavouredEnemyTarget,
-  LegendsPerkPlacement,
-  LegendsPerkRecord,
-} from '../types/legends-perks'
+import type { LegendsFavouredEnemyTarget, LegendsPerkRecord } from '../types/legends-perks'
+import { BuildPerkGroupTile } from './BuildPerkGroupTile'
+import type { BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton, DetailPanelRailChevron } from './SharedControls'
 
-function renderPlacementDescription(placement: LegendsPerkPlacement) {
-  return (
-    <>
-      {placement.perkGroupAttributes.length > 0 ? (
-        <p className="detail-support">{placement.perkGroupAttributes.join(' / ')}</p>
-      ) : null}
-    </>
-  )
+type PerkDetailProps = {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  groupedBackgroundSources: GroupedBackgroundSource[]
+  hoveredBuildPerkId: string | null
+  hoveredBuildPerkTooltipId: string | undefined
+  hoveredPerkId: string | null
+  isExpanded: boolean
+  isSelectedPerkPicked: boolean
+  onCloseBuildPerkHover: (perkId: string) => void
+  onCloseBuildPerkTooltip: () => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenBuildPerkHover: (perkId: string) => void
+  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onToggleExpanded: () => void
+  onTogglePerkPicked: (perkId: string) => void
+  selectedPerk: LegendsPerkRecord | null
 }
 
 function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
@@ -56,20 +66,26 @@ function renderFavouredEnemyTarget(favouredEnemyTarget: LegendsFavouredEnemyTarg
 }
 
 export function PerkDetail({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   groupedBackgroundSources,
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
+  hoveredPerkId,
   isExpanded,
   isSelectedPerkPicked,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
+  onClosePerkGroupHover,
+  onInspectPerk,
+  onInspectPerkGroup,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
+  onOpenPerkGroupHover,
   onToggleExpanded,
   onTogglePerkPicked,
   selectedPerk,
-}: {
-  groupedBackgroundSources: GroupedBackgroundSource[]
-  isExpanded: boolean
-  isSelectedPerkPicked: boolean
-  onToggleExpanded: () => void
-  onTogglePerkPicked: (perkId: string) => void
-  selectedPerk: LegendsPerkRecord | null
-}) {
+}: PerkDetailProps) {
   return (
     <aside
       aria-label="Perk details"
@@ -142,26 +158,46 @@ export function PerkDetail({
             <div className="detail-section">
               <h3>Perk group placement</h3>
               {selectedPerk.placements.length > 0 ? (
-                <ul className="detail-list">
+                <ul className="detail-placement-list">
                   {selectedPerk.placements.map((placement) => (
                     <li
                       key={`${placement.categoryName}-${placement.perkGroupId}-${placement.tier ?? 'none'}`}
                     >
-                      <div className="detail-item-main">
-                        {renderGameIcon({
-                          className: 'perk-icon perk-icon-tiny',
-                          iconPath:
-                            placement.perkGroupIconPath ?? getPerkDisplayIconPath(selectedPerk),
-                          label: `${placement.perkGroupName} perk group icon`,
-                        })}
-                        <div>
-                          <strong>
-                            {placement.categoryName} / {placement.perkGroupName}
-                          </strong>
-                          {renderPlacementDescription(placement)}
-                        </div>
-                      </div>
-                      <span className="detail-badge">{getTierLabel(placement.tier)}</span>
+                      <BuildPerkGroupTile
+                        className="detail-placement-tile"
+                        emphasizedCategoryNames={emphasizedCategoryNames}
+                        emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                        groupLabel={placement.perkGroupName}
+                        groupOptions={[
+                          {
+                            categoryName: placement.categoryName,
+                            perkGroupIconPath:
+                              placement.perkGroupIconPath ?? getPerkDisplayIconPath(selectedPerk),
+                            perkGroupId: placement.perkGroupId,
+                            perkGroupLabel: placement.perkGroupName,
+                          },
+                        ]}
+                        hoveredBuildPerkId={hoveredBuildPerkId}
+                        hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+                        hoveredPerkId={hoveredPerkId}
+                        isWide
+                        metaClassName="detail-placement-tier-badge"
+                        metaLabel={getTierLabel(placement.tier)}
+                        onCloseBuildPerkHover={onCloseBuildPerkHover}
+                        onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+                        onClosePerkGroupHover={onClosePerkGroupHover}
+                        onInspectPerk={onInspectPerk}
+                        onInspectPerkGroup={onInspectPerkGroup}
+                        onOpenBuildPerkHover={onOpenBuildPerkHover}
+                        onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+                        onOpenPerkGroupHover={onOpenPerkGroupHover}
+                        perks={[
+                          {
+                            perkId: selectedPerk.id,
+                            perkName: selectedPerk.perkName,
+                          },
+                        ]}
+                      />
                     </li>
                   ))}
                 </ul>

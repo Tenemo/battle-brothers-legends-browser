@@ -163,6 +163,27 @@
   padding-left: 1rem;
 }
 
+.detail-placement-list {
+  display: grid;
+  gap: 0.42rem;
+  min-width: 0;
+  margin: 0.32rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-placement-list li {
+  min-width: 0;
+}
+
+.detail-placement-tile.planner-group-card {
+  width: 100%;
+}
+
+.detail-placement-tier-badge {
+  color: var(--accent-soft);
+}
+
 .detail-list li {
   display: flex;
   justify-content: space-between;

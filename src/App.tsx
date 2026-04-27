@@ -632,9 +632,22 @@ export default function App() {
         />
 
         <PerkDetail
+          emphasizedCategoryNames={emphasizedCategoryNames}
+          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           groupedBackgroundSources={groupedBackgroundSources}
+          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
+          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+          hoveredPerkId={hoveredPerkId}
           isSelectedPerkPicked={isSelectedPerkPicked}
           isExpanded={isPerkDetailPanelExpanded}
+          onCloseBuildPerkHover={closeBuildPerkHover}
+          onCloseBuildPerkTooltip={closeBuildPerkTooltip}
+          onClosePerkGroupHover={closePerkGroupHover}
+          onInspectPerk={handleInspectPlannerPerk}
+          onInspectPerkGroup={handleInspectPerkGroup}
+          onOpenBuildPerkHover={openBuildPerkHover}
+          onOpenBuildPerkTooltip={openBuildPerkTooltip}
+          onOpenPerkGroupHover={openPerkGroupHover}
           onToggleExpanded={() => setIsPerkDetailPanelExpanded((isExpanded) => !isExpanded)}
           onTogglePerkPicked={handleTogglePerkPicked}
           selectedPerk={selectedPerk}
