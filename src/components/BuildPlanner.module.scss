@@ -487,9 +487,26 @@
     grid-template-columns: var(--planner-row-label-width) minmax(0, 1fr);
     gap: var(--space-lg);
     align-items: start;
+  }
 
-    &[data-collapsed='true'] {
-      align-items: center;
+  .plannerRowLabelStack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+    align-items: start;
+    min-width: 0;
+
+    &[data-has-collapsed-section='true'] {
+      align-self: stretch;
+
+      .plannerSectionToggle[data-collapsed-chip='true'] {
+        margin-top: auto;
+      }
+
+      .plannerSectionToggle[data-collapsed-chip='true']
+        + .plannerSectionToggle[data-collapsed-chip='true'] {
+        margin-top: 0;
+      }
     }
   }
 

@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useId, useRef, useState } from 'react'
+import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { Copy, Download, Save, Trash2, X } from 'lucide-react'
 import { cx } from '../lib/class-names'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
@@ -71,6 +71,55 @@ function getSavedBuildOperationStatusLabel(
   }
 }
 
+function getFocusableSavedBuildsDialogElements(dialogElement: HTMLElement): HTMLElement[] {
+  return [
+    ...dialogElement.querySelectorAll<HTMLElement>(
+      [
+        'button:not(:disabled)',
+        'input:not(:disabled)',
+        'select:not(:disabled)',
+        'textarea:not(:disabled)',
+        'a[href]',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(', '),
+    ),
+  ].filter((element) => element.getAttribute('aria-hidden') !== 'true')
+}
+
+function keepKeyboardFocusInsideSavedBuildsDialog(event: KeyboardEvent<HTMLElement>) {
+  if (event.key !== 'Tab') {
+    return
+  }
+
+  const focusableElements = getFocusableSavedBuildsDialogElements(event.currentTarget)
+
+  if (focusableElements.length === 0) {
+    event.preventDefault()
+    return
+  }
+
+  const firstFocusableElement = focusableElements[0]
+  const lastFocusableElement = focusableElements.at(-1) ?? firstFocusableElement
+  const activeElement = document.activeElement
+
+  if (!event.currentTarget.contains(activeElement)) {
+    event.preventDefault()
+    firstFocusableElement.focus()
+    return
+  }
+
+  if (event.shiftKey && activeElement === firstFocusableElement) {
+    event.preventDefault()
+    lastFocusableElement.focus()
+    return
+  }
+
+  if (!event.shiftKey && activeElement === lastFocusableElement) {
+    event.preventDefault()
+    firstFocusableElement.focus()
+  }
+}
+
 export function SavedBuildsDialog({
   isSavedBuildsLoading,
   onClose,
@@ -98,6 +147,7 @@ export function SavedBuildsDialog({
 }) {
   const titleId = useId()
   const nameInputId = useId()
+  const dialogBackdropRef = useRef<HTMLDivElement | null>(null)
   const nameInputRef = useRef<HTMLInputElement | null>(null)
   const [buildName, setBuildName] = useState('')
   const [isSaving, setIsSaving] = useState(false)
@@ -109,7 +159,16 @@ export function SavedBuildsDialog({
     : getSavedBuildOperationStatusLabel(savedBuildOperationStatus)
 
   useEffect(() => {
-    nameInputRef.current?.focus()
+    if (nameInputRef.current && !nameInputRef.current.disabled) {
+      nameInputRef.current.focus()
+      return
+    }
+
+    const firstFocusableElement = dialogBackdropRef.current
+      ? getFocusableSavedBuildsDialogElements(dialogBackdropRef.current)[0]
+      : null
+
+    firstFocusableElement?.focus()
   }, [])
 
   async function handleSaveCurrentBuild(event: FormEvent<HTMLFormElement>) {
@@ -158,13 +217,17 @@ export function SavedBuildsDialog({
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
           onClose()
+          return
         }
+
+        keepKeyboardFocusInsideSavedBuildsDialog(event)
       }}
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose()
         }
       }}
+      ref={dialogBackdropRef}
     >
       <section
         aria-labelledby={titleId}

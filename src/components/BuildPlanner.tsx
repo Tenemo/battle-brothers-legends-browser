@@ -1,4 +1,4 @@
-import { useId, useRef, useState } from 'react'
+import { type MouseEvent, useId, useRef, useState } from 'react'
 import { Check, CircleAlert, Copy, FolderOpen, RotateCcw, Save } from 'lucide-react'
 import { cx } from '../lib/class-names'
 import type { BuildPlannerGroupedPerkGroup } from '../lib/build-planner'
@@ -142,6 +142,7 @@ export function BuildPlanner({
 }) {
   const hasPickedPerks = pickedPerks.length > 0
   const clearBuildButtonRef = useRef<HTMLButtonElement | null>(null)
+  const savedBuildsDialogReturnFocusElementRef = useRef<HTMLButtonElement | null>(null)
   const [isSharedPerkGroupsSectionExpanded, setIsSharedPerkGroupsSectionExpanded] = useState(true)
   const [isIndividualPerkGroupsSectionExpanded, setIsIndividualPerkGroupsSectionExpanded] =
     useState(true)
@@ -182,6 +183,18 @@ export function BuildPlanner({
     }
   }
 
+  function handleOpenSavedBuildsDialog(event: MouseEvent<HTMLButtonElement>) {
+    savedBuildsDialogReturnFocusElementRef.current = event.currentTarget
+    setIsSavedBuildsDialogOpen(true)
+  }
+
+  function handleCloseSavedBuildsDialog() {
+    setIsSavedBuildsDialogOpen(false)
+    window.setTimeout(() => {
+      savedBuildsDialogReturnFocusElementRef.current?.focus()
+    }, 0)
+  }
+
   function handleToggleSharedPerkGroupsSection() {
     clearPendingTooltip()
     onCloseBuildPerkTooltip()
@@ -220,7 +233,7 @@ export function BuildPlanner({
               aria-label="Save current build"
               className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
               disabled={!hasPickedPerks}
-              onClick={() => setIsSavedBuildsDialogOpen(true)}
+              onClick={handleOpenSavedBuildsDialog}
               type="button"
             >
               <Save aria-hidden="true" className={styles.plannerButtonIcon} />
@@ -229,7 +242,7 @@ export function BuildPlanner({
             <button
               aria-label="Open saved builds"
               className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
-              onClick={() => setIsSavedBuildsDialogOpen(true)}
+              onClick={handleOpenSavedBuildsDialog}
               type="button"
             >
               <FolderOpen aria-hidden="true" className={styles.plannerButtonIcon} />
@@ -306,7 +319,7 @@ export function BuildPlanner({
       {isSavedBuildsDialogOpen ? (
         <SavedBuildsDialog
           isSavedBuildsLoading={isSavedBuildsLoading}
-          onClose={() => setIsSavedBuildsDialogOpen(false)}
+          onClose={handleCloseSavedBuildsDialog}
           onCopySavedBuildLink={onCopySavedBuildLink}
           onDeleteSavedBuild={onDeleteSavedBuild}
           onLoadSavedBuild={onLoadSavedBuild}

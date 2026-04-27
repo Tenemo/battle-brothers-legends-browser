@@ -99,6 +99,43 @@ test('keeps local save and load controls usable on mobile', async ({ page }) => 
   await expectNoDocumentHorizontalOverflow(page)
 })
 
+test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  const openSavedBuildsButton = page.getByRole('button', { name: 'Open saved builds' })
+
+  await openSavedBuildsButton.click()
+
+  const savedBuildsDialog = page.getByRole('dialog', { name: 'Saved builds' })
+  const buildNameInput = page.getByLabel('Build name')
+  const closeSavedBuildsButton = savedBuildsDialog.getByRole('button', {
+    name: 'Close saved builds',
+  })
+  const saveCurrentButton = savedBuildsDialog.getByRole('button', {
+    exact: true,
+    name: 'Save current',
+  })
+
+  await expect(savedBuildsDialog).toBeVisible()
+  await expect(buildNameInput).toBeFocused()
+
+  await page.keyboard.press('Shift+Tab')
+  await expect(closeSavedBuildsButton).toBeFocused()
+
+  await page.keyboard.press('Shift+Tab')
+  await expect(saveCurrentButton).toBeFocused()
+
+  await page.keyboard.press('Tab')
+  await expect(closeSavedBuildsButton).toBeFocused()
+
+  await closeSavedBuildsButton.click()
+  await expect(savedBuildsDialog).toHaveCount(0)
+  await expect(openSavedBuildsButton).toBeFocused()
+})
+
 test('deletes saved builds from local storage', async ({ page }) => {
   await gotoPerksBrowser(page)
 

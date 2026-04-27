@@ -641,13 +641,25 @@ test('collapses and restores build planner perk group sections independently', a
     const toggleRectangle = toggle.getBoundingClientRect()
 
     return {
+      bottom: toggleRectangle.bottom,
       height: toggleRectangle.height,
       top: toggleRectangle.top,
     }
   })
+  const sharedCollapsedToggleRow = sharedExpandToggle.locator(
+    'xpath=ancestor::*[@data-testid="planner-row"][1]',
+  )
+  const sharedCollapsedToggleRowBottom = await sharedCollapsedToggleRow.evaluate(
+    (row) => row.getBoundingClientRect().bottom,
+  )
 
   expect(sharedCollapsedSectionHeight).toBeLessThanOrEqual(1)
-  expect(Math.abs(sharedCollapsedToggleMetrics.top - expandedSharedToggleTop)).toBeLessThanOrEqual(1)
+  await expect(sharedCollapsedToggleRow).toContainText('Perks')
+  expect(await page.getByTestId('planner-row').count()).toBe(2)
+  expect(sharedCollapsedToggleMetrics.top).toBeLessThan(expandedSharedToggleTop - 1)
+  expect(
+    Math.abs(sharedCollapsedToggleRowBottom - sharedCollapsedToggleMetrics.bottom),
+  ).toBeLessThanOrEqual(1)
   expect(sharedCollapsedToggleMetrics.height).toBeLessThan(36)
   expect(sharedCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
 
@@ -676,14 +688,24 @@ test('collapses and restores build planner perk group sections independently', a
     const toggleRectangle = toggle.getBoundingClientRect()
 
     return {
+      bottom: toggleRectangle.bottom,
       height: toggleRectangle.height,
       top: toggleRectangle.top,
     }
   })
+  const individualCollapsedToggleRow = individualExpandToggle.locator(
+    'xpath=ancestor::*[@data-testid="planner-row"][1]',
+  )
+  const individualCollapsedToggleRowBottom = await individualCollapsedToggleRow.evaluate(
+    (row) => row.getBoundingClientRect().bottom,
+  )
 
   expect(individualCollapsedSectionHeight).toBeLessThanOrEqual(1)
+  await expect(individualCollapsedToggleRow).toContainText('Perk groups for 2+ perks')
+  expect(await page.getByTestId('planner-row').count()).toBe(2)
+  expect(individualCollapsedToggleMetrics.top).toBeLessThan(expandedIndividualToggleTop - 1)
   expect(
-    Math.abs(individualCollapsedToggleMetrics.top - expandedIndividualToggleTop),
+    Math.abs(individualCollapsedToggleRowBottom - individualCollapsedToggleMetrics.bottom),
   ).toBeLessThanOrEqual(1)
   expect(individualCollapsedToggleMetrics.height).toBeLessThan(36)
   expect(individualCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
