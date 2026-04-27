@@ -5,15 +5,6 @@
     box-sizing: border-box;
   }
 
-  @supports (scrollbar-color: auto) and (not selector(::-webkit-scrollbar)) {
-    html,
-    body,
-    .app-scrollbar {
-      scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
-      scrollbar-width: auto;
-    }
-  }
-
   @supports selector(::-webkit-scrollbar) {
     html::-webkit-scrollbar,
     body::-webkit-scrollbar,
@@ -121,8 +112,13 @@
 }
 
 @layer utilities {
-  .app-scrollbar {
-    scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+  @supports (scrollbar-color: auto) and (not selector(::-webkit-scrollbar)) {
+    html,
+    body,
+    .app-scrollbar {
+      scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+      scrollbar-width: auto;
+    }
   }
 
   .visually-hidden {

@@ -141,11 +141,13 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
 
           return {
             hasScrollContainerAttribute: element.dataset.scrollContainer === 'true',
+            standardScrollbarColor: computedStyle.scrollbarColor,
             scrollbarGutter: computedStyle.scrollbarGutter,
             scrollbarWidth: supportsWebKitScrollbars
               ? scrollbarStyle.width
               : computedStyle.scrollbarWidth,
             selector,
+            supportsWebKitScrollbars,
             thumbBackground: supportsWebKitScrollbars
               ? thumbStyle.backgroundColor
               : computedStyle.scrollbarColor,
@@ -164,6 +166,11 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
     expect(scrollbarMeasurement!.scrollbarGutter).toBe('auto')
     expect(scrollbarMeasurement!.scrollbarWidth).not.toBe('auto')
     expect(scrollbarMeasurement!.thumbBackground).not.toBe('rgba(0, 0, 0, 0)')
+    if (scrollbarMeasurement!.supportsWebKitScrollbars) {
+      expect(scrollbarMeasurement!.standardScrollbarColor).toBe('auto')
+    } else {
+      expect(scrollbarMeasurement!.standardScrollbarColor).not.toBe('auto')
+    }
   }
 })
 
