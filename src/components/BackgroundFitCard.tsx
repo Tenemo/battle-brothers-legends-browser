@@ -46,9 +46,10 @@ function getBackgroundFitExpectedBuildPerksSummaryCopy(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Expected picked-perk coverage: ${formatBackgroundFitScoreLabel(
+  return `Expected picked-perk coverage: ${formatBackgroundFitExpectedBuildPerksLabel(
     expectedCoveredPickedPerkCount,
-  )} of ${pickedPerkCount} picked perks are expected to be covered after dynamic perk group rolls.`
+    pickedPerkCount,
+  )} after dynamic perk group rolls.`
 }
 
 function getBackgroundFitGuaranteedPerkGroupsSummaryCopy(

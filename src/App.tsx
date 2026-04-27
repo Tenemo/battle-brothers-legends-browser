@@ -44,6 +44,7 @@ const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
+const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
 
@@ -219,9 +220,7 @@ export default function App() {
   const pickedPerkOrderById = new Map(
     pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
   )
-  const selectedPerkBuildSlot = selectedPerk
-    ? (pickedPerkOrderById.get(selectedPerk.id) ?? null)
-    : null
+  const isSelectedPerkPicked = selectedPerk ? pickedPerkOrderById.has(selectedPerk.id) : false
   const groupedBackgroundSources = selectedPerk
     ? groupBackgroundSources(selectedPerk.backgroundSources)
     : []
@@ -481,9 +480,15 @@ export default function App() {
       <header className="hero">
         <div className="hero-copy">
           <h1>Perks browser</h1>
-          <p className="eyebrow hero-brand">
+          <a
+            aria-label="Open the Battle Brothers Legends mod repository on GitHub"
+            className="eyebrow hero-brand"
+            href={legendsModRepositoryUrl}
+            rel="noopener noreferrer"
+            target="_blank"
+          >
             Battle Brothers <span className="hero-brand-emphasis">Legends</span>
-          </p>
+          </a>
         </div>
         <div className="hero-top-bar">
           <div className="hero-top-actions">
@@ -602,11 +607,11 @@ export default function App() {
 
         <PerkDetail
           groupedBackgroundSources={groupedBackgroundSources}
+          isSelectedPerkPicked={isSelectedPerkPicked}
           isExpanded={isPerkDetailPanelExpanded}
           onToggleExpanded={() => setIsPerkDetailPanelExpanded((isExpanded) => !isExpanded)}
           onTogglePerkPicked={handleTogglePerkPicked}
           selectedPerk={selectedPerk}
-          selectedPerkBuildSlot={selectedPerkBuildSlot}
         />
       </main>
     </div>

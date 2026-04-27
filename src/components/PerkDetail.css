@@ -155,12 +155,6 @@
   flex-shrink: 0;
 }
 
-.detail-header-build-status {
-  margin: 0;
-  font-size: 0.78rem;
-  text-align: right;
-}
-
 .detail-section {
   animation: fade-in 240ms ease-out;
 }
@@ -257,9 +251,5 @@
 
   .detail-header-actions {
     align-items: flex-start;
-  }
-
-  .detail-header-build-status {
-    text-align: left;
   }
 }

@@ -792,7 +792,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveClass(/is-active/)
   await expect(page.getByRole('button', { name: 'Inspect Clarity' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
-  await expect(page.getByText('Build slot 1')).toBeVisible()
+  await expect(page.getByText(/Build slot \d+|Not in build/)).toHaveCount(0)
 })
 
 test('clears the build and restores planner placeholders', async ({ page }) => {

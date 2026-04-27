@@ -19,7 +19,7 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
 
   await expect(getBuildPerksBar(page).getByText('Axe Mastery')).toBeVisible()
   await expect(page.getByText('1 perk picked.')).toBeVisible()
-  await expect(page.getByText('Build slot 1')).toBeVisible()
+  await expect(page.getByText(/Build slot \d+|Not in build/)).toHaveCount(0)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const perkDetailPanel = getPerkDetailPanel(page)

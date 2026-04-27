@@ -4,6 +4,7 @@ import {
   createBackgroundFitEngine,
   getBuildTargetPerkGroups,
 } from '../src/lib/background-fit'
+import { formatBackgroundFitExpectedBuildPerksLabel } from '../src/lib/perk-display'
 import type {
   LegendsBackgroundFitBackgroundDefinition,
   LegendsBackgroundFitCategoryDefinition,
@@ -333,6 +334,16 @@ const sampleDataset: LegendsPerksDataset = {
 }
 
 describe('background fit', () => {
+  test('formats expected picked perk coverage with one decimal when needed', () => {
+    expect(formatBackgroundFitExpectedBuildPerksLabel(10 / 3, 4)).toBe(
+      'Expected 3.3/4 perks pickable',
+    )
+    expect(formatBackgroundFitExpectedBuildPerksLabel(3, 4)).toBe('Expected 3/4 perks pickable')
+    expect(formatBackgroundFitExpectedBuildPerksLabel(0.25, 1)).toBe(
+      'Expected 0.3/1 perks pickable',
+    )
+  })
+
   test('derives shared supported targets and separates unsupported categories', () => {
     expect(getBuildTargetPerkGroups([samplePerks[0], samplePerks[1], samplePerks[14]])).toEqual({
       supportedBuildTargetPerkGroups: [

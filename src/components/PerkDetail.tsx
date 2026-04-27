@@ -63,17 +63,17 @@ function renderFavouredEnemyTarget(favouredEnemyTarget: LegendsFavouredEnemyTarg
 export function PerkDetail({
   groupedBackgroundSources,
   isExpanded,
+  isSelectedPerkPicked,
   onToggleExpanded,
   onTogglePerkPicked,
   selectedPerk,
-  selectedPerkBuildSlot,
 }: {
   groupedBackgroundSources: GroupedBackgroundSource[]
   isExpanded: boolean
+  isSelectedPerkPicked: boolean
   onToggleExpanded: () => void
   onTogglePerkPicked: (perkId: string) => void
   selectedPerk: LegendsPerkRecord | null
-  selectedPerkBuildSlot: number | null
 }) {
   return (
     <aside
@@ -124,13 +124,8 @@ export function PerkDetail({
                 </div>
               </div>
               <div className="detail-header-actions">
-                <p className="detail-header-build-status">
-                  {selectedPerkBuildSlot === null
-                    ? 'Not in build'
-                    : `Build slot ${selectedPerkBuildSlot}`}
-                </p>
                 <BuildToggleButton
-                  isPicked={selectedPerkBuildSlot !== null}
+                  isPicked={isSelectedPerkPicked}
                   onClick={() => onTogglePerkPicked(selectedPerk.id)}
                   perkName={selectedPerk.perkName}
                   source="detail"

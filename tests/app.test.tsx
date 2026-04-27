@@ -49,8 +49,16 @@ describe('app', () => {
     const { container } = render(<App />)
     const hero = screen.getByRole('banner')
     const brandEmphasis = container.querySelector('.hero-brand-emphasis')
+    const legendsModRepositoryLink = within(hero).getByRole('link', {
+      name: 'Open the Battle Brothers Legends mod repository on GitHub',
+    })
 
     expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
+    expect(legendsModRepositoryLink).toHaveAttribute(
+      'href',
+      'https://github.com/Battle-Brothers-Legends/Legends-public',
+    )
+    expect(legendsModRepositoryLink).toHaveClass('eyebrow', 'hero-brand')
     expect(brandEmphasis).not.toBeNull()
     expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()

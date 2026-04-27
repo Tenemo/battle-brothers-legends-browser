@@ -79,9 +79,14 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .filter({ hasText: 'Expected 1/1 perks pickable' })
 
   await expect(expectedBuildPerksBadge).toHaveAttribute('title', /Expected picked-perk coverage/i)
+  await expect(expectedBuildPerksBadge).toHaveAttribute('title', /Expected 1\/1 perks pickable/i)
   await expect(expectedBuildPerksBadge).toHaveAttribute(
     'aria-label',
     /Expected picked-perk coverage/i,
+  )
+  await expect(expectedBuildPerksBadge).toHaveAttribute(
+    'aria-label',
+    /Expected 1\/1 perks pickable/i,
   )
   await expect(apprenticeCard.locator('.background-fit-card-panel')).toHaveAttribute(
     'aria-hidden',
@@ -197,6 +202,18 @@ test('filters the background fit list with the background search field', async (
 
   await expect(backgroundSearchInput).toBeVisible()
   await expect(oathtakerCard.getByText('Expected 0.3/1 perks pickable')).toBeVisible()
+  const oathtakerExpectedBuildPerksBadge = oathtakerCard
+    .locator('.background-fit-summary-badge')
+    .filter({ hasText: 'Expected 0.3/1 perks pickable' })
+
+  await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
+    'title',
+    /Expected 0\.3\/1 perks pickable/i,
+  )
+  await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
+    'aria-label',
+    /Expected 0\.3\/1 perks pickable/i,
+  )
   const oathtakerRankBeforeFiltering = await page.evaluate(() => {
     const oathtakerCard = [...document.querySelectorAll('.background-fit-card')].find(
       (backgroundFitCard) =>

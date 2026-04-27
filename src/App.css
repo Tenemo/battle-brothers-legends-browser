@@ -119,6 +119,22 @@
 .hero-brand {
   flex: 0 0 auto;
   margin: 0;
+  color: var(--accent-soft);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.hero-brand:visited,
+.hero-brand:hover,
+.hero-brand:focus-visible {
+  color: var(--accent-soft);
+  text-decoration: none;
+}
+
+.hero-brand:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
 }
 
 .hero h1,
@@ -241,7 +257,6 @@
 .perk-preview,
 .detail-section p,
 .detail-meta,
-.detail-header-build-status,
 .planner-slot-meta,
 .results-note {
   color: var(--text-secondary);
