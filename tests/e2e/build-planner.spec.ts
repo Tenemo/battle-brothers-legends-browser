@@ -638,6 +638,58 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   await expect(page.getByRole('heading', { level: 2, name: 'Battle Forged' })).toBeVisible()
 })
 
+test('filters multi-option planner group icons individually', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await page.goto('/?build=Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const activePlannerBorderColor = await getResolvedCssBorderColor(page, 'var(--border-strong)')
+  const multiOptionGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card', {
+    hasText: 'Heavy Armor / Sturdy / Swordmasters',
+  })
+  const iconButtons = multiOptionGroupCard.locator('.planner-group-option-button')
+  const sturdyIconButton = multiOptionGroupCard.getByRole('button', {
+    name: 'Select perk group Sturdy',
+  })
+  const sturdyIcon = sturdyIconButton.locator('.planner-group-option-icon')
+  const swordmastersIconButton = multiOptionGroupCard.getByRole('button', {
+    name: 'Select perk group Swordmasters',
+  })
+
+  await expect(multiOptionGroupCard).toBeVisible()
+  await expect(iconButtons).toHaveCount(3)
+
+  const sturdyIconBorderBeforeHover = await sturdyIcon.evaluate(
+    (element) => window.getComputedStyle(element).borderTopColor,
+  )
+
+  await sturdyIconButton.hover()
+  await waitForCssRgbColor(
+    () => sturdyIcon.evaluate((element) => window.getComputedStyle(element).borderTopColor),
+    activePlannerBorderColor,
+  )
+  await page.mouse.move(1, 1)
+  await waitForCssRgbColor(
+    () => sturdyIcon.evaluate((element) => window.getComputedStyle(element).borderTopColor),
+    sturdyIconBorderBeforeHover,
+  )
+
+  await searchPerks(page, 'temporary search')
+  await sturdyIconButton.click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Sturdy')).toHaveClass(/is-active/)
+
+  await searchPerks(page, 'temporary search')
+  await swordmastersIconButton.click()
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Swordmasters')).toHaveClass(/is-active/)
+})
+
 test('separates planner group card hover from icon and perk pill hover states', async ({
   page,
 }) => {
@@ -653,7 +705,6 @@ test('separates planner group card hover from icon and perk pill hover states', 
   const heavyArmorGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
     hasText: 'Heavy Armor',
   })
-  const heavyArmorIconButton = heavyArmorGroupCard.locator('.planner-group-option-button').first()
   const heavyArmorIcon = heavyArmorGroupCard.locator('.planner-group-option-icon').first()
   const battleForgedPill = heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' })
   const battleForgedPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
@@ -690,6 +741,8 @@ test('separates planner group card hover from icon and perk pill hover states', 
   })
 
   expect(groupNameIconCenterOffset).toBeLessThanOrEqual(2)
+  await expect(heavyArmorGroupCard.locator('.planner-group-option-button')).toHaveCount(0)
+  await expect(heavyArmorGroupCard.locator('.planner-card-icon-stack-item')).toHaveCount(1)
 
   await heavyArmorGroupCard.hover({
     position: {
@@ -710,13 +763,6 @@ test('separates planner group card hover from icon and perk pill hover states', 
   )
 
   expectCssRgbColorsToMatch(iconBorderAfterCardHover, iconBorderBeforeCardHover)
-
-  await heavyArmorIconButton.hover()
-  const iconBorderAfterDirectHover = await heavyArmorIcon.evaluate(
-    (element) => window.getComputedStyle(element).borderTopColor,
-  )
-
-  expectCssRgbColorsToMatch(iconBorderAfterDirectHover, iconBorderBeforeCardHover)
 
   await battleForgedPill.hover()
   await expect(battleForgedPill).not.toHaveClass(/is-tooltip-pending/)

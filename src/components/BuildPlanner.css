@@ -772,6 +772,15 @@
     box-shadow var(--motion-fast);
 }
 
+.planner-group-option-button:hover .planner-group-option-icon,
+.planner-group-option-button:focus-visible .planner-group-option-icon,
+.planner-group-option-button.is-highlighted .planner-group-option-icon {
+  border-color: var(--border-strong);
+  box-shadow:
+    0 0 0 1px rgb(221 176 123 / 0.18),
+    0 0 12px rgb(221 176 123 / 0.26);
+}
+
 .planner-pill-list {
   position: relative;
   z-index: 3;

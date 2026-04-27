@@ -159,7 +159,10 @@ export function BuildPerkGroupTile({
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   perks: BuildPerkGroupTilePerk[]
 }) {
-  const primaryPerkGroupOption = groupOptions.find(isSelectablePerkGroupOption)
+  const selectablePerkGroupOptions = groupOptions.filter(isSelectablePerkGroupOption)
+  const primaryPerkGroupOption = selectablePerkGroupOptions[0]
+  const areOptionIconsInteractive =
+    arePerkGroupOptionsInteractive && selectablePerkGroupOptions.length > 1
   const isHighlighted = groupOptions.some((perkGroupOption) =>
     isPerkGroupOptionEmphasized({
       emphasizedCategoryNames,
@@ -216,7 +219,7 @@ export function BuildPerkGroupTile({
         <div className="planner-card-icon-stack">
           {groupOptions.map((perkGroupOption) =>
             renderPerkGroupOptionIcon({
-              arePerkGroupOptionsInteractive,
+              arePerkGroupOptionsInteractive: areOptionIconsInteractive,
               isOptionHighlighted: isPerkGroupOptionEmphasized({
                 emphasizedCategoryNames,
                 emphasizedPerkGroupKeys,
