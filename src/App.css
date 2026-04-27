@@ -557,16 +557,6 @@
   transform: translateY(-50%);
 }
 
-.tier-badge {
-  display: inline-flex;
-  flex-shrink: 0;
-  align-items: center;
-  border: 1px solid rgb(204 155 84 / 0.25);
-  border-radius: 999px;
-  padding: 0.12rem 0.42rem;
-  font-size: 0.7rem;
-}
-
 .perk-context,
 .perk-preview,
 .detail-meta,

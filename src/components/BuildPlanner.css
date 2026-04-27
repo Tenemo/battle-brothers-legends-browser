@@ -501,6 +501,27 @@
   transition: var(--planner-surface-transition);
 }
 
+.planner-slot-perk::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 4;
+  height: 2px;
+  background: linear-gradient(90deg, rgb(221 176 123 / 0.15), var(--accent-soft));
+  box-shadow: 0 0 10px rgb(221 176 123 / 0.32);
+  opacity: 0;
+  pointer-events: none;
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+.planner-slot-perk.is-tooltip-pending::after {
+  animation: build-perk-tooltip-timer 500ms linear forwards;
+  opacity: 1;
+}
+
 .planner-slot-perk:hover,
 .planner-slot-perk:focus-within,
 .planner-slot-perk.is-highlighted,
@@ -827,6 +848,16 @@
   color: var(--text-secondary);
   font-size: var(--font-size-md);
   line-height: 1.28;
+}
+
+@keyframes build-perk-tooltip-timer {
+  from {
+    transform: scaleX(0);
+  }
+
+  to {
+    transform: scaleX(1);
+  }
 }
 
 .build-toggle-button {

@@ -26,10 +26,10 @@ function getPrimitiveStyleSnapshot() {
     backgroundFitMetricBadge: getElementStyle('.background-fit-metric-badge'),
     backgroundFitPanel: getElementStyle('.background-fit-panel'),
     detailPanel: getElementStyle('.detail-panel'),
+    detailBadge: getElementStyle('.detail-panel .detail-badge'),
     perkPlacementChip: getElementStyle('.perk-placement-chip'),
     perkRow: getElementStyle('.perk-row:not(.is-picked):not(.is-selected)'),
     plannerPill: getElementStyle('.planner-pill'),
-    tierBadge: getElementStyle('.tier-badge'),
   }
 }
 
@@ -43,7 +43,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
 
   expect(styles.perkRow).not.toBeNull()
   expect(styles.backgroundFitCard).not.toBeNull()
-  expect(styles.tierBadge).not.toBeNull()
+  expect(styles.detailBadge).not.toBeNull()
   expect(styles.backgroundFitMetricBadge).not.toBeNull()
   expect(styles.perkPlacementChip).not.toBeNull()
   expect(styles.plannerPill).not.toBeNull()
@@ -57,7 +57,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
     borderRadius: styles.backgroundFitCard?.borderRadius,
     boxShadow: styles.backgroundFitCard?.boxShadow,
   })
-  expect(styles.tierBadge).toMatchObject({
+  expect(styles.detailBadge).toMatchObject({
     backgroundColor: styles.backgroundFitMetricBadge?.backgroundColor,
     borderColor: styles.backgroundFitMetricBadge?.borderColor,
     borderRadius: styles.backgroundFitMetricBadge?.borderRadius,

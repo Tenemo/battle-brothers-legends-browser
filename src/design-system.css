@@ -162,7 +162,6 @@
 }
 
 :is(
-  .tier-badge,
   .detail-badge,
   .background-fit-metric-badge,
   .background-fit-disambiguator,
@@ -179,7 +178,7 @@
   line-height: 1.2;
 }
 
-:is(.background-fit-metric-badge, .tier-badge) {
+:is(.background-fit-metric-badge) {
   padding: 0.14rem 0.42rem;
 }
 

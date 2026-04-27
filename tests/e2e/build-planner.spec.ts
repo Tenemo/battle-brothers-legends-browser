@@ -305,6 +305,7 @@ test('build planner splits shared and individual perk groups without layout drif
     }
   })
   await page.mouse.move(1, 1)
+  await expect(pickedPerkTile).not.toHaveClass(/is-highlighted/)
 
   const hoverMetricsBefore = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
@@ -328,7 +329,23 @@ test('build planner splits shared and individual perk groups without layout drif
     name: 'Remove Clarity from build',
   })
 
+  await expect(pickedPerkTile).toHaveClass(/is-tooltip-pending/)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
+  const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element, '::after')
+
+    return {
+      animationDuration: computedStyle.animationDuration,
+      height: computedStyle.height,
+      opacity: computedStyle.opacity,
+    }
+  })
+
+  expect(tooltipTimerStyle).toEqual({
+    animationDuration: '0.5s',
+    height: '2px',
+    opacity: '1',
+  })
   await expect(pickedPerkTile).toHaveCSS('transform', 'none')
   await expect(pickedPerkRemoveControl).toBeVisible()
   await expect(pickedPerkRemoveButton).toBeVisible()
@@ -356,7 +373,6 @@ test('build planner splits shared and individual perk groups without layout drif
     }
   })
 
-  expect(hoverMetricsAfter.backgroundColor).not.toBe(hoverMetricsBefore.backgroundColor)
   expect(hoverMetricsAfter.backgroundColor).toBe(activePlannerSurfaceColor)
   expect(hoverMetricsAfter.backgroundColor).toBe(hoveredGroupCardStyle.backgroundColor)
   expectCssRgbColorsToMatch(hoverMetricsAfter.borderColor, hoveredGroupCardStyle.borderColor)
@@ -367,12 +383,12 @@ test('build planner splits shared and individual perk groups without layout drif
     Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right),
   ).toBeLessThanOrEqual(1)
 
-  await pickedPerkTile.getByRole('button', { name: 'View Clarity from build planner' }).focus()
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 200 })
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 800 })
+  await expect(pickedPerkTile).not.toHaveClass(/is-tooltip-pending/)
   await expect(page.getByRole('tooltip')).toContainText(
     /An additional \+10% of any damage ignores armor/i,
   )
-  await page.keyboard.press('Escape')
+  await page.mouse.move(1, 1)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 
   await page.goto(
@@ -621,6 +637,15 @@ test('separates planner group card hover from icon and perk pill hover states', 
   const heavyArmorIconButton = heavyArmorGroupCard.locator('.planner-group-option-button').first()
   const heavyArmorIcon = heavyArmorGroupCard.locator('.planner-group-option-icon').first()
   const battleForgedPill = heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' })
+  const battleForgedPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Battle Forged',
+  })
+  const immovableObjectPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Immovable Object',
+  })
+  const steadfastPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Steadfast',
+  })
   const cardBackgroundBeforeHover = await heavyArmorGroupCard.evaluate(
     (element) => window.getComputedStyle(element).backgroundColor,
   )
@@ -639,6 +664,9 @@ test('separates planner group card hover from icon and perk pill hover states', 
       heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
     )
     .toBe(activePlannerSurfaceColor)
+  await expect(battleForgedPickedPerkTile).toHaveClass(/is-highlighted/)
+  await expect(immovableObjectPickedPerkTile).toHaveClass(/is-highlighted/)
+  await expect(steadfastPickedPerkTile).toHaveClass(/is-highlighted/)
   const iconBorderAfterCardHover = await heavyArmorIcon.evaluate(
     (element) => window.getComputedStyle(element).borderTopColor,
   )
@@ -654,6 +682,9 @@ test('separates planner group card hover from icon and perk pill hover states', 
 
   await battleForgedPill.hover()
   await expect(heavyArmorGroupCard).toHaveClass(/has-highlighted-perk/)
+  await expect(battleForgedPickedPerkTile).toHaveClass(/is-highlighted/)
+  await expect(immovableObjectPickedPerkTile).not.toHaveClass(/is-highlighted/)
+  await expect(steadfastPickedPerkTile).not.toHaveClass(/is-highlighted/)
   await expect
     .poll(() =>
       heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
@@ -793,6 +824,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Inspect Clarity' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
   await expect(page.getByText(/Build slot \d+|Not in build/)).toHaveCount(0)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
 
 test('clears the build and restores planner placeholders', async ({ page }) => {

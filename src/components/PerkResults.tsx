@@ -6,7 +6,7 @@ import {
   renderHighlightedText,
 } from '../lib/perk-display'
 import './PerkResults.css'
-import { getPerkPreviewParagraphs, getTierLabel } from '../lib/perk-search'
+import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 import { BuildToggleButton, ClearableSearchField } from './SharedControls'
 
@@ -205,11 +205,6 @@ export function PerkResults({
                       <span className="perk-name">
                         {renderHighlightedText(perk.perkName, query, `${perk.id}-name`)}
                       </span>
-                      <div className="perk-row-badges">
-                        <span className="tier-badge">
-                          {getTierLabel(perk.placements[0]?.tier ?? null)}
-                        </span>
-                      </div>
                     </div>
                   </div>
                   <div className="perk-row-context-slot">

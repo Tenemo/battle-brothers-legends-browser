@@ -48,7 +48,7 @@ export function usePerkHoverState(allPerksById: Map<string, LegendsPerkRecord>) 
     setHoveredBuildPerkTooltip(null)
   }
 
-  function openBuildPerkTooltip(perkId: string, currentTarget: HTMLButtonElement) {
+  function openBuildPerkTooltip(perkId: string, currentTarget: HTMLElement) {
     const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
 
     setHoveredPerkId(perkId)

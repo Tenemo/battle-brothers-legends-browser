@@ -106,6 +106,7 @@ test('shows normalized mastery labels in the result list', async ({ page }) => {
     getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
   ).toBeVisible()
   await expect(getResultsList(page).getByText('Spec Axe', { exact: true })).toHaveCount(0)
+  await expect(getResultsList(page).locator('.tier-badge')).toHaveCount(0)
 })
 
 test('reorders categories and perk groups around the active perk search query and highlights the match', async ({
@@ -135,6 +136,7 @@ test('highlights the searched perk phrase in the visible perk results', async ({
   await searchPerks(page, 'Axe')
 
   await expect(getResultsList(page).locator('.search-highlight')).toContainText(['Axe'])
+  await expect(getResultsList(page).locator('.tier-badge')).toHaveCount(0)
 })
 
 test('shows every matching perk group placement in the result list', async ({ page }) => {
@@ -154,6 +156,7 @@ test('shows every matching perk group placement in the result list', async ({ pa
     /Class|Magic/,
   )
   await expect(poisonMasteryResultRow.locator('.perk-placement-list')).not.toContainText(/Tier/i)
+  await expect(poisonMasteryResultRow.locator('.tier-badge')).toHaveCount(0)
   await expect(poisonMasteryResultRow).not.toContainText(/\+\s*\d+\s*more/i)
   await expect(
     poisonMasteryResultRow.locator('.perk-placement-label .search-highlight'),
