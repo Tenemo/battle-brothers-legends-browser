@@ -732,7 +732,7 @@
 
 @media (max-width: 760px) {
   .workspace {
-    order: 1;
+    order: 2;
   }
 
   .results-panel {
@@ -752,7 +752,7 @@
   }
 
   .build-planner {
-    order: 2;
+    order: 1;
   }
 
   .hero-top-bar,

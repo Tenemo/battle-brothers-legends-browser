@@ -190,14 +190,31 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
   )
   expect(scrollableDocumentHeight).toBeGreaterThan(600)
 
-  const mobileSearchTop = await page
-    .getByLabel('Search perks')
-    .evaluate((element) => element.getBoundingClientRect().top)
-  const buildPlannerTop = await page
-    .getByLabel('Build planner')
-    .evaluate((element) => element.getBoundingClientRect().top)
-  expect(mobileSearchTop).toBeLessThan(buildPlannerTop)
-  expect(mobileSearchTop).toBeLessThan(300)
+  const mobileSectionTops = await page.evaluate(() => {
+    function getElementTop(selector: string) {
+      const element = document.querySelector(selector)
+
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing mobile section for selector ${selector}.`)
+      }
+
+      return element.getBoundingClientRect().top
+    }
+
+    return {
+      backgroundFit: getElementTop('[data-testid="background-fit-panel"]'),
+      buildPlanner: getElementTop('[aria-label="Build planner"]'),
+      filters: getElementTop('.sidebar'),
+      perkDetails: getElementTop('[data-testid="perk-detail-panel"]'),
+      results: getElementTop('.results-panel'),
+    }
+  })
+
+  expect(mobileSectionTops.buildPlanner).toBeLessThan(mobileSectionTops.results)
+  expect(mobileSectionTops.results).toBeLessThan(mobileSectionTops.perkDetails)
+  expect(mobileSectionTops.perkDetails).toBeLessThan(mobileSectionTops.filters)
+  expect(mobileSectionTops.filters).toBeLessThan(mobileSectionTops.backgroundFit)
+  expect(mobileSectionTops.buildPlanner).toBeLessThan(300)
 
   await page.evaluate(() => window.scrollTo(0, 640))
   await expect.poll(async () => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
