@@ -745,7 +745,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
 
-test('truncates long planner group categories without growing the card', async ({ page }) => {
+test('keeps long planner group names compact without category text', async ({ page }) => {
   await gotoPerksBrowser(page)
 
   await page.goto('/?build=Steadfast')
@@ -757,43 +757,39 @@ test('truncates long planner group categories without growing the card', async (
 
   await expect(plannerGroupCard).toBeVisible()
   await expect(plannerGroupCard.getByText('Steadfast', { exact: true })).toBeVisible()
+  await expect(plannerGroupCard.locator('.planner-slot-category')).toHaveCount(0)
 
   const plannerGroupCardMetrics = await plannerGroupCard.evaluate((card) => {
-    const category = card.querySelector('.planner-slot-category')
+    const groupName = card.querySelector('.planner-slot-name')
 
-    if (!(category instanceof HTMLElement)) {
+    if (!(groupName instanceof HTMLElement)) {
       return null
     }
 
     const cardRectangle = card.getBoundingClientRect()
-    const categoryRectangle = category.getBoundingClientRect()
-    const categoryStyle = window.getComputedStyle(category)
-    const categoryLineHeight = Number.parseFloat(categoryStyle.lineHeight)
-    const fallbackCategoryLineHeight = Number.parseFloat(categoryStyle.fontSize) * 1.2
+    const groupNameRectangle = groupName.getBoundingClientRect()
+    const groupNameStyle = window.getComputedStyle(groupName)
+    const groupNameLineHeight = Number.parseFloat(groupNameStyle.lineHeight)
+    const fallbackGroupNameLineHeight = Number.parseFloat(groupNameStyle.fontSize) * 1.2
     const cardMinimumHeight = Number.parseFloat(window.getComputedStyle(card).minHeight)
 
     return {
       cardHeight: cardRectangle.height,
       cardMinimumHeight,
-      categoryClientWidth: category.clientWidth,
-      categoryHeight: categoryRectangle.height,
-      categoryLineHeight: Number.isFinite(categoryLineHeight)
-        ? categoryLineHeight
-        : fallbackCategoryLineHeight,
-      categoryOverflow: category.scrollWidth - category.clientWidth,
-      categoryText: category.textContent,
-      categoryTextOverflow: categoryStyle.textOverflow,
-      categoryWhiteSpace: categoryStyle.whiteSpace,
+      groupNameHeight: groupNameRectangle.height,
+      groupNameLineClamp: groupNameStyle.webkitLineClamp,
+      groupNameLineHeight: Number.isFinite(groupNameLineHeight)
+        ? groupNameLineHeight
+        : fallbackGroupNameLineHeight,
+      groupNameText: groupName.textContent,
     }
   })
 
   expect(plannerGroupCardMetrics).not.toBeNull()
-  expect(plannerGroupCardMetrics!.categoryText).toBe('Defense / Traits / Enemy')
-  expect(plannerGroupCardMetrics!.categoryWhiteSpace).toBe('nowrap')
-  expect(plannerGroupCardMetrics!.categoryTextOverflow).toBe('ellipsis')
-  expect(plannerGroupCardMetrics!.categoryOverflow).toBeGreaterThan(0)
-  expect(plannerGroupCardMetrics!.categoryHeight).toBeLessThanOrEqual(
-    plannerGroupCardMetrics!.categoryLineHeight + 1,
+  expect(plannerGroupCardMetrics!.groupNameText).toBe('Heavy Armor / Sturdy / Swordmasters')
+  expect(plannerGroupCardMetrics!.groupNameLineClamp).toBe('1')
+  expect(plannerGroupCardMetrics!.groupNameHeight).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.groupNameLineHeight + 1,
   )
   expect(plannerGroupCardMetrics!.cardHeight).toBeLessThanOrEqual(
     plannerGroupCardMetrics!.cardMinimumHeight + 1,

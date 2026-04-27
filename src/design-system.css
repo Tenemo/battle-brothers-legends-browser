@@ -99,9 +99,6 @@
 }
 
 :is(
-  .background-fit-match:hover,
-  .background-fit-match:focus-visible,
-  .background-fit-match.is-highlighted,
   .planner-slot-perk:hover,
   .planner-slot-perk:focus-within,
   .planner-slot-perk.is-highlighted,
@@ -192,6 +189,17 @@
   border-radius: var(--radius-xl);
   background: var(--input-background);
   color: var(--text-primary);
+}
+
+:is(
+  .search-field input:hover,
+  .search-field input:focus-visible,
+  .saved-build-form input:hover,
+  .saved-build-form input:focus-visible
+) {
+  border-color: var(--border-strong);
+  background: var(--surface-control-active);
+  outline: 0;
 }
 
 :is(.search-clear-button, .background-fit-filter-button, .hero-repository-link) {

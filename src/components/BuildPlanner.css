@@ -604,19 +604,11 @@
 
 .planner-slot-topline {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: var(--space-md);
   align-items: center;
   min-width: 0;
   width: 100%;
-}
-
-.planner-slot-category {
-  flex: 1 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .planner-slot-group-count {
@@ -671,6 +663,11 @@
   flex: 0 0 min(var(--planner-tile-width), 100%);
   overflow: hidden;
   transition: var(--planner-surface-transition);
+}
+
+.planner-group-card.is-wide {
+  flex: 1 1 100%;
+  width: 100%;
 }
 
 .planner-group-card-inspect {

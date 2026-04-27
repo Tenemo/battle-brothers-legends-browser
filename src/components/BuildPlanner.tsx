@@ -35,7 +35,8 @@ import {
 } from '../lib/perk-display'
 import type { HoveredBuildPerkTooltip } from '../lib/use-perk-hover-state'
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import { BuildPerkPill, type BuildPerkPillSelection } from './BuildPerkPill'
+import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
+import type { BuildPerkPillSelection } from './BuildPerkPill'
 
 export type BuildPlannerSavedBuild = {
   availablePerkIds: string[]
@@ -191,14 +192,6 @@ function getSavedBuildOperationStatusLabel(
   }
 }
 
-function getPlannerGroupCategoryLabel(
-  perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],
-): string {
-  return [...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.categoryName))].join(
-    ' / ',
-  )
-}
-
 function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirementOption[]): string {
   return [
     ...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.perkGroupLabel)),
@@ -209,6 +202,18 @@ function isSelectablePlannerPerkGroupOption(
   perkGroupOption: BuildPlannerPerkGroupRequirementOption,
 ): boolean {
   return perkGroupOption.categoryName !== 'No perk group'
+}
+
+function getPlannerGroupTileOptions(
+  perkGroupOptions: BuildPlannerPerkGroupRequirementOption[],
+): BuildPerkGroupTileOption[] {
+  return perkGroupOptions.map((perkGroupOption) => ({
+    categoryName: perkGroupOption.categoryName,
+    isSelectable: isSelectablePlannerPerkGroupOption(perkGroupOption),
+    perkGroupIconPath: perkGroupOption.perkGroupIconPath,
+    perkGroupId: perkGroupOption.perkGroupId,
+    perkGroupLabel: perkGroupOption.perkGroupLabel,
+  }))
 }
 
 function getHighlightedBuildPerkIdsForPerkGroup({
@@ -675,162 +680,30 @@ function renderPlannerGroupCard({
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
-  const primaryPerkGroupOption = groupedPerkGroup.perkGroupOptions.find(
-    isSelectablePlannerPerkGroupOption,
-  )
-  const isHighlighted = groupedPerkGroup.perkGroupOptions.some(
-    (perkGroupOption) =>
-      hoveredPerkGroupKey ===
-      getPerkGroupHoverKey({
-        categoryName: perkGroupOption.categoryName,
-        perkGroupId: perkGroupOption.perkGroupId,
-      }),
-  )
-  const hasHighlightedPerk =
-    hoveredPerkId !== null && groupedPerkGroup.perkIds.includes(hoveredPerkId)
-  const plannerGroupCardClassName = [
-    'planner-group-card',
-    isHighlighted ? 'is-highlighted' : '',
-    hasHighlightedPerk ? 'has-highlighted-perk' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
 
   return (
-    <article
-      className={plannerGroupCardClassName}
+    <BuildPerkGroupTile
+      groupLabel={plannerGroupLabel}
+      groupOptions={getPlannerGroupTileOptions(groupedPerkGroup.perkGroupOptions)}
+      hoveredBuildPerkId={hoveredBuildPerkId}
+      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+      hoveredPerkGroupKey={hoveredPerkGroupKey}
+      hoveredPerkId={hoveredPerkId}
       key={`${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`}
-    >
-      {primaryPerkGroupOption ? (
-        <button
-          aria-label={`Select perk group ${plannerGroupLabel}`}
-          className="planner-group-card-inspect"
-          onBlur={() => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption))}
-          onClick={() =>
-            onInspectPerkGroup(
-              primaryPerkGroupOption.categoryName,
-              primaryPerkGroupOption.perkGroupId,
-            )
-          }
-          onFocus={() =>
-            onOpenPerkGroupHover(
-              primaryPerkGroupOption.categoryName,
-              primaryPerkGroupOption.perkGroupId,
-            )
-          }
-          onMouseEnter={() =>
-            onOpenPerkGroupHover(
-              primaryPerkGroupOption.categoryName,
-              primaryPerkGroupOption.perkGroupId,
-            )
-          }
-          onMouseLeave={() => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption))}
-          title={`Select ${plannerGroupLabel} perk group`}
-          type="button"
-        />
-      ) : null}
-      <div className="planner-group-card-header">
-        <div className="planner-card-icon-stack">
-          {groupedPerkGroup.perkGroupOptions.map((perkGroupOption) => {
-            const perkGroupKey = getPerkGroupHoverKey(perkGroupOption)
-            const isOptionHighlighted = hoveredPerkGroupKey === perkGroupKey
-
-            if (!isSelectablePlannerPerkGroupOption(perkGroupOption)) {
-              return (
-                <span
-                  className="planner-card-icon-stack-item"
-                  key={`${perkGroupOption.categoryName}-${perkGroupOption.perkGroupId}`}
-                >
-                  {renderGameIcon({
-                    className: 'perk-icon perk-icon-group planner-group-option-icon',
-                    iconPath: perkGroupOption.perkGroupIconPath,
-                    label: `${perkGroupOption.perkGroupLabel} perk group icon`,
-                  })}
-                </span>
-              )
-            }
-
-            return (
-              <button
-                aria-label={`Select perk group ${perkGroupOption.perkGroupLabel}`}
-                className={
-                  isOptionHighlighted
-                    ? 'planner-group-option-button is-highlighted'
-                    : 'planner-group-option-button'
-                }
-                key={`${perkGroupOption.categoryName}-${perkGroupOption.perkGroupId}`}
-                onBlur={() => onClosePerkGroupHover(perkGroupKey)}
-                onClick={() =>
-                  onInspectPerkGroup(perkGroupOption.categoryName, perkGroupOption.perkGroupId)
-                }
-                onFocus={() =>
-                  onOpenPerkGroupHover(perkGroupOption.categoryName, perkGroupOption.perkGroupId)
-                }
-                onMouseEnter={() =>
-                  onOpenPerkGroupHover(perkGroupOption.categoryName, perkGroupOption.perkGroupId)
-                }
-                onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
-                title={`Select ${perkGroupOption.perkGroupLabel} perk group`}
-                type="button"
-              >
-                {renderGameIcon({
-                  className: 'perk-icon perk-icon-group planner-group-option-icon',
-                  iconPath: perkGroupOption.perkGroupIconPath,
-                  label: `${perkGroupOption.perkGroupLabel} perk group icon`,
-                })}
-              </button>
-            )
-          })}
-        </div>
-        <div className="planner-group-card-copy">
-          <div className="planner-slot-topline">
-            <span className="planner-slot-category">
-              {getPlannerGroupCategoryLabel(groupedPerkGroup.perkGroupOptions)}
-            </span>
-            <span className="planner-slot-group-count">
-              {formatPickedPerkCountLabel(groupedPerkGroup.perkNames.length)}
-            </span>
-          </div>
-          <strong className="planner-slot-name" title={plannerGroupLabel}>
-            {plannerGroupLabel}
-          </strong>
-        </div>
-      </div>
-      <div className="planner-pill-list">
-        {groupedPerkGroup.perkNames.map((perkName, perkIndex) => {
-          const perkId = groupedPerkGroup.perkIds[perkIndex]
-          const perkGroupSelection = groupedPerkGroup.perkGroupOptions[0]
-
-          return perkId ? (
-            <BuildPerkPill
-              hoveredBuildPerkId={hoveredBuildPerkId}
-              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-              hoveredPerkId={hoveredPerkId}
-              key={`${plannerGroupLabel}-${perkId}`}
-              onCloseHover={onCloseHover}
-              onCloseTooltip={onCloseTooltip}
-              onInspectPerk={onInspectPerk}
-              onOpenHover={onOpenHover}
-              onOpenTooltip={onOpenTooltip}
-              perkGroupSelection={
-                perkGroupSelection
-                  ? {
-                      categoryName: perkGroupSelection.categoryName,
-                      perkGroupId: perkGroupSelection.perkGroupId,
-                    }
-                  : undefined
-              }
-              perkId={perkId}
-              perkName={perkName}
-            />
-          ) : (
-            <span className="planner-pill" key={`${plannerGroupLabel}-${perkName}`}>
-              {perkName}
-            </span>
-          )
-        })}
-      </div>
-    </article>
+      metaLabel={formatPickedPerkCountLabel(groupedPerkGroup.perkNames.length)}
+      onCloseBuildPerkHover={onCloseHover}
+      onCloseBuildPerkTooltip={onCloseTooltip}
+      onClosePerkGroupHover={onClosePerkGroupHover}
+      onInspectPerk={onInspectPerk}
+      onInspectPerkGroup={onInspectPerkGroup}
+      onOpenBuildPerkHover={onOpenHover}
+      onOpenBuildPerkTooltip={onOpenTooltip}
+      onOpenPerkGroupHover={onOpenPerkGroupHover}
+      perks={groupedPerkGroup.perkNames.map((perkName, perkIndex) => ({
+        perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
+        perkName,
+      }))}
+    />
   )
 }
 

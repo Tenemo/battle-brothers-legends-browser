@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { addPerkToBuildFromResults, gotoPerksBrowser, searchPerks } from './support/perks-browser'
 
 function getPrimitiveStyleSnapshot() {
@@ -31,6 +31,19 @@ function getPrimitiveStyleSnapshot() {
     perkRow: getElementStyle('.perk-row:not(.is-picked):not(.is-selected)'),
     plannerPill: getElementStyle('.planner-pill'),
   }
+}
+
+async function getResolvedCssBorderColor(page: Page, cssBorderColorValue: string) {
+  return page.evaluate((borderColorValue) => {
+    const colorProbe = document.createElement('div')
+    colorProbe.style.borderColor = borderColorValue
+    document.body.append(colorProbe)
+    const resolvedColor = window.getComputedStyle(colorProbe).borderTopColor
+
+    colorProbe.remove()
+
+    return resolvedColor
+  }, cssBorderColorValue)
 }
 
 test('keeps repeated surfaces aligned through shared design primitives', async ({ page }) => {
@@ -69,5 +82,26 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   expect(styles.backgroundFitPanel).toMatchObject({
     borderRadius: styles.detailPanel?.borderRadius,
     boxShadow: styles.detailPanel?.boxShadow,
+  })
+
+  const strongBorderColor = await getResolvedCssBorderColor(page, 'var(--border-strong)')
+  const perkSearchInput = page.getByLabel('Search perks')
+
+  await perkSearchInput.focus()
+
+  const focusedSearchInputStyle = await perkSearchInput.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element)
+
+    return {
+      borderColor: computedStyle.borderTopColor,
+      outlineStyle: computedStyle.outlineStyle,
+      outlineWidth: computedStyle.outlineWidth,
+    }
+  })
+
+  expect(focusedSearchInputStyle).toEqual({
+    borderColor: strongBorderColor,
+    outlineStyle: 'none',
+    outlineWidth: '0px',
   })
 })

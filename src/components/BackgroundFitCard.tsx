@@ -14,12 +14,11 @@ import {
   formatBackgroundFitScoreLabel,
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
-  getPerkGroupHoverKey,
   getVisibleBackgroundPillLabel,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
-import { BuildPerkPill } from './BuildPerkPill'
+import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import { BackgroundFitAccordionChevron } from './SharedControls'
 
 function getBackgroundFitPickablePerksSummaryCopy(
@@ -126,85 +125,42 @@ function BackgroundFitMatchRow({
   onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
 }) {
-  const perkGroupKey = getPerkGroupHoverKey(match)
-  const hasHighlightedPerk = hoveredPerkId !== null && match.pickedPerkIds.includes(hoveredPerkId)
-  const className = [
-    'background-fit-match',
-    hoveredPerkGroupKey === perkGroupKey ? 'is-highlighted' : '',
-    hasHighlightedPerk ? 'has-highlighted-perk' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
-
   return (
     <li>
-      <article
-        className={className}
-        onMouseEnter={() => onOpenPerkGroupHover(match.categoryName, match.perkGroupId)}
-        onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
-      >
-        <div className="background-fit-match-topline">
-          <button
-            aria-label={`Select perk group ${match.perkGroupName}`}
-            className="background-fit-match-group-button"
-            onBlur={() => onClosePerkGroupHover(perkGroupKey)}
-            onClick={() => onInspectPerkGroup(match.categoryName, match.perkGroupId)}
-            onFocus={() => onOpenPerkGroupHover(match.categoryName, match.perkGroupId)}
-            type="button"
-          >
-            <div className="background-fit-perk-group-main">
-              {renderGameIcon({
-                className: 'perk-icon perk-icon-group background-fit-perk-group-icon',
-                iconPath: match.perkGroupIconPath,
-                label: `${match.perkGroupName} perk group icon`,
-              })}
-              <div>
-                <strong>{match.perkGroupName}</strong>
-              </div>
-            </div>
-          </button>
-          <div className="background-fit-match-badges">
-            <span className="detail-badge background-fit-category-badge">{match.categoryName}</span>
-            <span className="detail-badge background-fit-match-probability-badge">
-              {match.isGuaranteed
-                ? 'Guaranteed'
-                : formatBackgroundFitProbabilityLabel(match.probability)}
-            </span>
-          </div>
-        </div>
-        <div className="planner-pill-list background-fit-match-perk-list">
-          {match.pickedPerkNames.map((perkName, perkIndex) => {
-            const perkId = match.pickedPerkIds[perkIndex]
-
-            return perkId ? (
-              <BuildPerkPill
-                hoveredBuildPerkId={hoveredBuildPerkId}
-                hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                hoveredPerkId={hoveredPerkId}
-                key={`${match.categoryName}-${match.perkGroupId}-${perkId}`}
-                onCloseHover={onCloseBuildPerkHover}
-                onCloseTooltip={onCloseBuildPerkTooltip}
-                onInspectPerk={onInspectPlannerPerk}
-                onOpenHover={onOpenBuildPerkHover}
-                onOpenTooltip={onOpenBuildPerkTooltip}
-                perkGroupSelection={{
-                  categoryName: match.categoryName,
-                  perkGroupId: match.perkGroupId,
-                }}
-                perkId={perkId}
-                perkName={perkName}
-              />
-            ) : (
-              <span
-                className="planner-pill"
-                key={`${match.categoryName}-${match.perkGroupId}-${perkName}`}
-              >
-                {perkName}
-              </span>
-            )
-          })}
-        </div>
-      </article>
+      <BuildPerkGroupTile
+        arePerkGroupOptionsInteractive={false}
+        className="background-fit-match"
+        groupLabel={match.perkGroupName}
+        groupOptions={[
+          {
+            categoryName: match.categoryName,
+            perkGroupIconPath: match.perkGroupIconPath,
+            perkGroupId: match.perkGroupId,
+            perkGroupLabel: match.perkGroupName,
+          },
+        ]}
+        hoveredBuildPerkId={hoveredBuildPerkId}
+        hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+        hoveredPerkGroupKey={hoveredPerkGroupKey}
+        hoveredPerkId={hoveredPerkId}
+        isWide
+        metaClassName="background-fit-match-probability-badge"
+        metaLabel={
+          match.isGuaranteed ? 'Guaranteed' : formatBackgroundFitProbabilityLabel(match.probability)
+        }
+        onCloseBuildPerkHover={onCloseBuildPerkHover}
+        onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+        onClosePerkGroupHover={onClosePerkGroupHover}
+        onInspectPerk={onInspectPlannerPerk}
+        onInspectPerkGroup={onInspectPerkGroup}
+        onOpenBuildPerkHover={onOpenBuildPerkHover}
+        onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+        onOpenPerkGroupHover={onOpenPerkGroupHover}
+        perks={match.pickedPerkNames.map((perkName, perkIndex) => ({
+          perkId: match.pickedPerkIds[perkIndex] ?? null,
+          perkName,
+        }))}
+      />
     </li>
   )
 }

@@ -262,11 +262,6 @@
   color: var(--text-secondary);
 }
 
-.planner-slot-category {
-  color: var(--accent-soft);
-  font-size: 0.7rem;
-}
-
 .build-toggle-button:focus-visible,
 .planner-action-button:focus-visible,
 .build-planner-info-button:focus-visible,

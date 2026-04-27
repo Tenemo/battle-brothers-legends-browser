@@ -164,11 +164,33 @@ test('shows the background fit panel for a picked build and keeps the shell view
     hasText: 'Axe Mastery',
   })
 
-  await expect(axeMatchButton.getByRole('img', { name: 'Axe perk group icon' })).toBeVisible()
-  await expect(axeMatchRow.locator('.background-fit-category-badge')).toHaveText('Weapon')
+  await expect(axeMatchRow).toHaveClass(/planner-group-card/)
+  await expect(axeMatchRow.getByRole('img', { name: 'Axe perk group icon' })).toBeVisible()
+  await expect(axeMatchRow.locator('.background-fit-category-badge')).toHaveCount(0)
+  await expect(axeMatchRow.locator('.planner-slot-category')).toHaveCount(0)
   await expect(axeMatchRow.locator('.background-fit-match-probability-badge')).toHaveText(
     'Guaranteed',
   )
+  const backgroundMatchTileStyle = await axeMatchRow.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderColor: computedStyle.borderTopColor,
+      borderRadius: computedStyle.borderTopLeftRadius,
+    }
+  })
+  const plannerGroupTileStyle = await plannerAxeGroupCard.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderColor: computedStyle.borderTopColor,
+      borderRadius: computedStyle.borderTopLeftRadius,
+    }
+  })
+
+  expect(backgroundMatchTileStyle).toEqual(plannerGroupTileStyle)
   await expect(axeMatchRow).not.toContainText(/\/\s*\d+\s+perks?\s*\//)
   await expect(axePerkPill).toBeVisible()
   await axePerkPill.hover()
@@ -488,7 +510,9 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await expect(apprenticeCard.getByText('Possible', { exact: true })).toBeVisible()
   await expect(apprenticeCard.getByText(/Expected perk groups \d+(\.\d)?/)).toBeVisible()
   await expect(barterMatchButton).toBeVisible()
-  await expect(barterMatchRow.locator('.background-fit-category-badge')).toHaveText('Profession')
+  await expect(barterMatchRow).toHaveClass(/planner-group-card/)
+  await expect(barterMatchRow.locator('.background-fit-category-badge')).toHaveCount(0)
+  await expect(barterMatchRow.locator('.planner-slot-category')).toHaveCount(0)
   await expect(barterMatchRow.locator('.background-fit-match-probability-badge')).toHaveText(
     /\d+(\.\d)?%/,
   )
