@@ -746,14 +746,6 @@
     box-shadow var(--motion-fast);
 }
 
-.planner-group-option-button:hover .planner-group-option-icon,
-.planner-group-option-button:focus-visible .planner-group-option-icon {
-  border-color: var(--border-strong);
-  box-shadow:
-    inset 0 0 0 1px var(--border-subtle),
-    var(--shadow-low);
-}
-
 .planner-pill-list {
   position: relative;
   z-index: 3;

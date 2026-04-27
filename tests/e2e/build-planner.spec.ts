@@ -618,6 +618,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
   const heavyArmorGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
     hasText: 'Heavy Armor',
   })
+  const heavyArmorIconButton = heavyArmorGroupCard.locator('.planner-group-option-button').first()
   const heavyArmorIcon = heavyArmorGroupCard.locator('.planner-group-option-icon').first()
   const battleForgedPill = heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' })
   const cardBackgroundBeforeHover = await heavyArmorGroupCard.evaluate(
@@ -643,6 +644,13 @@ test('separates planner group card hover from icon and perk pill hover states', 
   )
 
   expectCssRgbColorsToMatch(iconBorderAfterCardHover, iconBorderBeforeCardHover)
+
+  await heavyArmorIconButton.hover()
+  const iconBorderAfterDirectHover = await heavyArmorIcon.evaluate(
+    (element) => window.getComputedStyle(element).borderTopColor,
+  )
+
+  expectCssRgbColorsToMatch(iconBorderAfterDirectHover, iconBorderBeforeCardHover)
 
   await battleForgedPill.hover()
   await expect(heavyArmorGroupCard).toHaveClass(/has-highlighted-perk/)

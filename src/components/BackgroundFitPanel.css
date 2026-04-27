@@ -67,7 +67,7 @@
   background: linear-gradient(180deg, rgb(181 128 73 / 0.1), transparent 38%), rgb(20 17 14 / 0.92);
   color: inherit;
   font: inherit;
-  cursor: help;
+  cursor: pointer;
   transition:
     border-color 160ms ease,
     background-color 160ms ease,

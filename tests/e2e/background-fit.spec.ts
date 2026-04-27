@@ -32,10 +32,15 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .first()
 
   await expect(backgroundFitPanel).toBeVisible()
-  await expect(
-    backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }),
-  ).toHaveAttribute('aria-expanded', 'false')
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  const backgroundFitRailButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+  const detailPanelRailButton = page.getByRole('button', { name: 'Collapse perk details' })
+
+  await expect(backgroundFitRailButton).toHaveAttribute('aria-expanded', 'false')
+  await expect(backgroundFitRailButton).toHaveCSS('cursor', 'pointer')
+  await expect(detailPanelRailButton).toHaveCSS('cursor', 'pointer')
+  await backgroundFitRailButton.click()
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
