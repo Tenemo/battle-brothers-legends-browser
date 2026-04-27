@@ -121,7 +121,7 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
     { height: 1440, width: 2560 },
   ]) {
     await page.setViewportSize(viewportSize)
-    await page.goto('/?origin-backgrounds=true')
+    await page.goto('/')
     await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
 
     scrollbarMeasurements.push(

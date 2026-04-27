@@ -260,12 +260,8 @@ export function buildPerkBrowserUrlSearch(
     appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
   }
 
-  if (shouldWriteOriginBackgroundsParam) {
-    appendScalarQueryEntry(
-      entries,
-      originBackgroundsParamName,
-      urlState.shouldIncludeOriginBackgrounds ? 'true' : 'false',
-    )
+  if (shouldWriteOriginBackgroundsParam && !urlState.shouldIncludeOriginBackgrounds) {
+    appendScalarQueryEntry(entries, originBackgroundsParamName, 'false')
   }
 
   appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedCategoryNames)

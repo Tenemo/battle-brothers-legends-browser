@@ -110,7 +110,17 @@ const samplePerks: LegendsPerkRecord[] = [
       'Favoured Enemy - Beasts Enemy Beasts beasts bear beast slayer Beast Slayers random-pool',
   },
   {
-    backgroundSources: [],
+    backgroundSources: [
+      {
+        backgroundId: 'background.hedge_knight',
+        backgroundName: 'Hedge Knight',
+        categoryName: 'Traits',
+        chance: null,
+        minimumPerkGroups: 7,
+        perkGroupId: 'CalmTree',
+        perkGroupName: 'Calm',
+      },
+    ],
     descriptionParagraphs: ['Remain calm and ignore armor more effectively.'],
     categoryNames: ['Traits'],
     iconPath: null,
@@ -169,6 +179,16 @@ describe('perk search', () => {
 
     expect(treeResults.map((perk) => perk.perkName)).toEqual(['Heightened Senses'])
     expect(backgroundResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
+  })
+
+  test('matches background source names even when generated search text omits them', () => {
+    const results = filterAndSortPerks(samplePerks, {
+      query: 'Hedge Knight',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
+    })
+
+    expect(results.map((perk) => perk.perkName)).toEqual(['Clarity'])
   })
 
   test('matches scenario names and favoured enemy targets', () => {

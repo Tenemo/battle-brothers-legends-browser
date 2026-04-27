@@ -41,9 +41,12 @@ import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const allPerks = legendsPerksDataset.perks
-const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
+const allPerks = legendsPerksDataset.perks.map((perk) => ({
+  ...perk,
+  backgroundSources: backgroundFitEngine.getPerkBackgroundSources(perk),
+}))
+const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
@@ -228,7 +231,12 @@ export default function App() {
   )
   const isSelectedPerkPicked = selectedPerk ? pickedPerkOrderById.has(selectedPerk.id) : false
   const groupedBackgroundSources = selectedPerk
-    ? groupBackgroundSources(selectedPerk.backgroundSources)
+    ? groupBackgroundSources(selectedPerk.backgroundSources, (backgroundSource) =>
+        backgroundFitEngine.getBackgroundPerkGroupProbability(
+          backgroundSource.backgroundId,
+          backgroundSource.perkGroupId,
+        ),
+      )
     : []
   const selectedCategoryCount = selectedCategoryNames.length
   const selectedPerkGroupCount = Object.values(selectedPerkGroupIdsByCategory).reduce(
@@ -438,32 +446,15 @@ export default function App() {
       const isSelected = selectedCategoryNames.includes(nextCategoryName)
 
       if (isSelected) {
-        setExpandedCategoryNames((currentExpandedCategoryNames) =>
-          currentExpandedCategoryNames.filter((categoryName) => categoryName !== nextCategoryName),
-        )
-        setSelectedCategoryNames((currentSelectedCategoryNames) =>
-          currentSelectedCategoryNames.filter((categoryName) => categoryName !== nextCategoryName),
-        )
-        setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => {
-          const remainingSelectedPerkGroupIdsByCategory = {
-            ...currentSelectedPerkGroupIdsByCategory,
-          }
-          delete remainingSelectedPerkGroupIdsByCategory[nextCategoryName]
-
-          return remainingSelectedPerkGroupIdsByCategory
-        })
+        setExpandedCategoryNames([])
+        setSelectedCategoryNames([])
+        setSelectedPerkGroupIdsByCategory({})
         return
       }
 
-      setExpandedCategoryNames((currentExpandedCategoryNames) =>
-        currentExpandedCategoryNames.includes(nextCategoryName)
-          ? currentExpandedCategoryNames
-          : [...currentExpandedCategoryNames, nextCategoryName],
-      )
-      setSelectedCategoryNames((currentSelectedCategoryNames) => [
-        ...currentSelectedCategoryNames,
-        nextCategoryName,
-      ])
+      setExpandedCategoryNames([nextCategoryName])
+      setSelectedCategoryNames([nextCategoryName])
+      setSelectedPerkGroupIdsByCategory({})
     })
   }
 

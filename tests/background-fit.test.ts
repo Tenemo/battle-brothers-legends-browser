@@ -4,7 +4,10 @@ import {
   createBackgroundFitEngine,
   getBuildTargetPerkGroups,
 } from '../src/lib/background-fit'
-import { formatBackgroundFitExpectedBuildPerksLabel } from '../src/lib/perk-display'
+import {
+  formatBackgroundFitExpectedBuildPerksLabel,
+  formatBackgroundSourceProbabilityLabel,
+} from '../src/lib/perk-display'
 import type {
   LegendsBackgroundFitBackgroundDefinition,
   LegendsBackgroundFitCategoryDefinition,
@@ -344,6 +347,15 @@ describe('background fit', () => {
     )
   })
 
+  test('formats background source probabilities without internal minimum labels', () => {
+    expect(formatBackgroundSourceProbabilityLabel(1)).toBe('Guaranteed')
+    expect(formatBackgroundSourceProbabilityLabel(0.5)).toBe('50% chance')
+    expect(formatBackgroundSourceProbabilityLabel(1 / 3)).toBe('33.3% chance')
+    expect(formatBackgroundSourceProbabilityLabel(0.0075)).toBe('0.75% chance')
+    expect(formatBackgroundSourceProbabilityLabel(0.0000001)).toBe('<0.01% chance')
+    expect(formatBackgroundSourceProbabilityLabel(0.9999)).toBe('99.99% chance')
+  })
+
   test('derives shared supported targets and separates unsupported categories', () => {
     expect(getBuildTargetPerkGroups([samplePerks[0], samplePerks[1], samplePerks[14]])).toEqual({
       supportedBuildTargetPerkGroups: [
@@ -537,6 +549,35 @@ describe('background fit', () => {
         expect.objectContaining({ probability: 0.5, perkGroupId: 'ScholarProfessionTree' }),
       ]),
     )
+    expect(engine.getBackgroundPerkGroupProbability('background.enemy_roll', 'BeastTree')).toBe(
+      1 / 3,
+    )
+    expect(
+      engine.getBackgroundPerkGroupProbability(
+        'background.profession_roll',
+        'BlacksmithProfessionTree',
+      ),
+    ).toBe(0.5)
+  })
+
+  test('derives perk background sources from exact background probabilities', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const boldTraitSources = engine.getPerkBackgroundSources(samplePerks[5])
+
+    expect(samplePerks[5].backgroundSources).toEqual([])
+    expect(boldTraitSources).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          backgroundId: 'background.traits_fill',
+          backgroundName: 'Balanced scholar',
+          categoryName: 'Traits',
+          minimumPerkGroups: 2,
+          perkGroupId: 'BoldTree',
+          perkGroupName: 'Bold',
+        }),
+      ]),
+    )
+    expect(engine.getBackgroundPerkGroupProbability('background.traits_fill', 'BoldTree')).toBe(0.5)
   })
 
   test('changes class probabilities based on the exact weapon perk groups a background can produce', () => {
@@ -553,6 +594,9 @@ describe('background fit', () => {
         expect.objectContaining({ probability: 0.5, perkGroupId: 'MilitiaClassTree' }),
       ]),
     )
+    expect(
+      engine.getBackgroundPerkGroupProbability('background.class_roll', 'ArcherClassTree'),
+    ).toBe(0.5)
   })
 
   test('only treats explicit Magic perk groups as background-fit matches', () => {
@@ -613,6 +657,12 @@ describe('background fit', () => {
         maximumTotalPerkGroupCount: 1,
       }),
     )
+    expect(
+      engine.getBackgroundPerkGroupProbability('background.random_magic', 'RuneMagicTree'),
+    ).toBe(0)
+    expect(
+      engine.getBackgroundPerkGroupProbability('background.explicit_magic', 'RuneMagicTree'),
+    ).toBe(1)
   })
 
   test('ranks backgrounds by guaranteed covered picked perks first and disambiguates duplicate names', () => {

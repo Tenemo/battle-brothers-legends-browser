@@ -50,7 +50,7 @@ The detail panel can show:
 
 - perk descriptions from Legends strings
 - perk group placements and tiers
-- perk group descriptions and attribute ranges
+- perk group placements and attribute ranges
 - favoured enemy targets and their kill scaling values
 - dynamic background perk group sources
 - scenario-based grants and random pools

@@ -545,7 +545,7 @@
   min-height: calc(var(--planner-perk-row-min-height) - 2px);
   border: 0;
   border-radius: inherit;
-  padding: 0.38rem 2.34rem 0.38rem 0.46rem;
+  padding: 0.38rem 0.46rem;
   background: transparent;
   color: inherit;
   font: inherit;
@@ -556,6 +556,11 @@
 .planner-slot-perk-inspect:focus-visible {
   outline: 2px solid var(--focus-ring);
   outline-offset: -2px;
+}
+
+.planner-slot-perk:hover .planner-slot-perk-inspect,
+.planner-slot-perk:focus-within .planner-slot-perk-inspect {
+  padding-right: 2.34rem;
 }
 
 .planner-slot-remove-button {

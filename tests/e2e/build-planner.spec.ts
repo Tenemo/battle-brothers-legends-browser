@@ -815,6 +815,56 @@ test('keeps long planner group names compact without category text', async ({ pa
   )
 })
 
+test('keeps picked perk tiles fixed while avoiding default early truncation', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await page.goto(createBuildUrl(['Immovable Object', 'Clarity']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const immovableObjectPickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk', {
+    hasText: 'Immovable Object',
+  })
+
+  await expect(immovableObjectPickedPerkTile).toBeVisible()
+
+  const pickedPerkMetrics = await immovableObjectPickedPerkTile.evaluate((pickedPerkTile) => {
+    const pickedPerkName = pickedPerkTile.querySelector('.planner-picked-perk-name')
+    const buildPlanner = pickedPerkTile.closest('.build-planner')
+
+    if (!(pickedPerkName instanceof HTMLElement) || !(buildPlanner instanceof HTMLElement)) {
+      return null
+    }
+
+    const pickedPerkTileRectangle = pickedPerkTile.getBoundingClientRect()
+    const computedStyle = window.getComputedStyle(pickedPerkTile)
+    const plannerSlotWidth = Number.parseFloat(
+      window.getComputedStyle(buildPlanner).getPropertyValue('--planner-slot-width'),
+    )
+    const rootFontSize = Number.parseFloat(
+      window.getComputedStyle(document.documentElement).fontSize,
+    )
+
+    return {
+      nameOverflow: pickedPerkName.scrollWidth - pickedPerkName.clientWidth,
+      slotWidth: plannerSlotWidth * rootFontSize,
+      tileWidth: pickedPerkTileRectangle.width,
+      widthStyle: computedStyle.width,
+    }
+  })
+  const pickedPerkTileWidths = await getBuildPerksBar(page)
+    .locator('.planner-slot-perk')
+    .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().width))
+
+  expect(pickedPerkMetrics).not.toBeNull()
+  expect(pickedPerkMetrics!.nameOverflow).toBeLessThanOrEqual(1)
+  expect(Math.abs(pickedPerkMetrics!.tileWidth - pickedPerkMetrics!.slotWidth)).toBeLessThanOrEqual(
+    1,
+  )
+  expect(pickedPerkMetrics!.widthStyle).not.toBe('auto')
+  expect(Math.max(...pickedPerkTileWidths) - Math.min(...pickedPerkTileWidths)).toBeLessThanOrEqual(
+    1,
+  )
+})
+
 test('links search result hover highlighting with matching build planner perks', async ({
   page,
 }) => {

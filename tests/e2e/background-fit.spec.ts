@@ -403,7 +403,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
     'fill',
     'currentColor',
   )
-  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
   await backgroundSearchInput.fill('origin crusader')
 
   const clearBackgroundSearchButton = backgroundFitPanel.getByRole('button', {
@@ -489,7 +489,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
   await originBackgroundsLabel.click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
   await expect(originBackgroundsCheckbox).toBeChecked()
-  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
   await expect(backgroundFitPanel.getByText('origin crusader').first()).toBeVisible()
 
   await page.getByLabel('Search perks').click()

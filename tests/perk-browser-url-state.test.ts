@@ -144,7 +144,7 @@ describe('perk browser url state', () => {
     )
 
     expect(search).toBe(
-      '?search=Perfect+Focus&origin-backgrounds=true&category=Traits,Magic&group-traits=Calm&build=Clarity,Perfect+Focus',
+      '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&build=Clarity,Perfect+Focus',
     )
   })
 
@@ -233,7 +233,7 @@ describe('perk browser url state', () => {
     )
 
     expect(search).toBe(
-      '?origin-backgrounds=true&build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+      '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
     expect(
       readPerkBrowserUrlState(search, {
@@ -244,7 +244,7 @@ describe('perk browser url state', () => {
     ).toEqual(['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'])
   })
 
-  test('omits the query string entirely when nothing needs to be shared', () => {
+  test('omits the query string entirely when only default state needs to be shared', () => {
     expect(
       buildPerkBrowserUrlSearch(
         {
@@ -260,6 +260,6 @@ describe('perk browser url state', () => {
           perkGroupOptionsByCategory,
         },
       ),
-    ).toBe('?origin-backgrounds=true')
+    ).toBe('')
   })
 })

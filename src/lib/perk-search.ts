@@ -28,16 +28,27 @@ function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSe
     return cachedSearchIndex
   }
 
+  const backgroundNames = perk.backgroundSources.map((backgroundSource) =>
+    backgroundSource.backgroundName.toLowerCase(),
+  )
+  const backgroundSourceSearchText = perk.backgroundSources
+    .map((backgroundSource) =>
+      [
+        backgroundSource.backgroundName,
+        backgroundSource.categoryName,
+        backgroundSource.perkGroupName,
+      ].join(' '),
+    )
+    .join(' ')
+
   const normalizedSearchIndex = {
-    backgroundNames: perk.backgroundSources.map((backgroundSource) =>
-      backgroundSource.backgroundName.toLowerCase(),
-    ),
+    backgroundNames,
     categoryNames: perk.categoryNames.map((categoryName) => categoryName.toLowerCase()),
     perkName: perk.perkName.toLowerCase(),
     scenarioNames: perk.scenarioSources.map((scenarioSource) =>
       scenarioSource.scenarioName.toLowerCase(),
     ),
-    searchText: perk.searchText.toLowerCase(),
+    searchText: `${perk.searchText} ${backgroundSourceSearchText}`.toLowerCase(),
     perkGroupNames: perk.placements.map((placement) => placement.perkGroupName.toLowerCase()),
   }
 

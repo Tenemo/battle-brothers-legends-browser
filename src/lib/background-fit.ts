@@ -3,6 +3,7 @@ import type {
   LegendsBackgroundFitCategoryDefinition,
   LegendsBackgroundFitClassWeaponDependency,
   LegendsDynamicBackgroundCategoryName,
+  LegendsPerkBackgroundSource,
   LegendsPerkPlacement,
   LegendsPerkRecord,
   LegendsPerksDataset,
@@ -41,6 +42,10 @@ type PerkGroupRequirement = {
   perkGroupId: string
 }
 
+type DynamicPerkPlacement = LegendsPerkPlacement & {
+  categoryName: LegendsDynamicBackgroundCategoryName
+}
+
 export type BuildTargetPerkGroup = {
   categoryName: string
   pickedPerkCount: number
@@ -76,7 +81,9 @@ export type BackgroundFitView = {
 }
 
 type BackgroundFitEngine = {
+  getBackgroundPerkGroupProbability: (backgroundId: string, perkGroupId: string) => number
   getBackgroundFitView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitView
+  getPerkBackgroundSources: (perk: LegendsPerkRecord) => LegendsPerkBackgroundSource[]
 }
 
 function compareBuildTargetPerkGroups(
@@ -89,6 +96,19 @@ function compareBuildTargetPerkGroups(
       getCategoryPriority(rightPerkGroup.categoryName) ||
     leftPerkGroup.perkGroupName.localeCompare(rightPerkGroup.perkGroupName) ||
     leftPerkGroup.perkGroupId.localeCompare(rightPerkGroup.perkGroupId)
+  )
+}
+
+function comparePerkBackgroundSources(
+  leftSource: LegendsPerkBackgroundSource,
+  rightSource: LegendsPerkBackgroundSource,
+): number {
+  return (
+    leftSource.backgroundName.localeCompare(rightSource.backgroundName) ||
+    getCategoryPriority(leftSource.categoryName) - getCategoryPriority(rightSource.categoryName) ||
+    leftSource.perkGroupName.localeCompare(rightSource.perkGroupName) ||
+    leftSource.backgroundId.localeCompare(rightSource.backgroundId) ||
+    leftSource.perkGroupId.localeCompare(rightSource.perkGroupId)
   )
 }
 
@@ -1215,6 +1235,30 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
   }
 }
 
+function getUniqueDynamicPerkPlacements(perk: LegendsPerkRecord): DynamicPerkPlacement[] {
+  const seenPlacementKeys = new Set<string>()
+  const dynamicPlacements: DynamicPerkPlacement[] = []
+
+  for (const placement of perk.placements) {
+    const placementKey = getPlacementGroupRequirementKey(placement)
+
+    if (
+      !isDynamicBackgroundCategoryName(placement.categoryName) ||
+      seenPlacementKeys.has(placementKey)
+    ) {
+      continue
+    }
+
+    seenPlacementKeys.add(placementKey)
+    dynamicPlacements.push({
+      ...placement,
+      categoryName: placement.categoryName,
+    })
+  }
+
+  return dynamicPlacements
+}
+
 function compareBackgroundFitMatches(
   leftMatch: BackgroundFitMatch,
   rightMatch: BackgroundFitMatch,
@@ -1300,8 +1344,49 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         backgroundProbabilityContext,
       ),
     }))
+  const probabilityRecordByBackgroundId = new Map(
+    backgroundProbabilityRecords.map((backgroundProbabilityRecord) => [
+      backgroundProbabilityRecord.backgroundDefinition.backgroundId,
+      backgroundProbabilityRecord,
+    ]),
+  )
 
   return {
+    getBackgroundPerkGroupProbability(backgroundId, perkGroupId) {
+      return (
+        probabilityRecordByBackgroundId
+          .get(backgroundId)
+          ?.probabilitiesByPerkGroupId.get(perkGroupId) ?? 0
+      )
+    },
+    getPerkBackgroundSources(perk) {
+      const dynamicPlacements = getUniqueDynamicPerkPlacements(perk)
+
+      return backgroundProbabilityRecords
+        .flatMap(({ backgroundDefinition, probabilitiesByPerkGroupId }) =>
+          dynamicPlacements.flatMap((placement) => {
+            const categoryDefinition = backgroundDefinition.categories[placement.categoryName]
+            const probability = probabilitiesByPerkGroupId.get(placement.perkGroupId) ?? 0
+
+            if (!categoryDefinition || probability <= 0) {
+              return []
+            }
+
+            return [
+              {
+                backgroundId: backgroundDefinition.backgroundId,
+                backgroundName: backgroundDefinition.backgroundName,
+                categoryName: placement.categoryName,
+                chance: categoryDefinition.chance ?? null,
+                minimumPerkGroups: categoryDefinition.minimumPerkGroups ?? null,
+                perkGroupId: placement.perkGroupId,
+                perkGroupName: placement.perkGroupName,
+              },
+            ]
+          }),
+        )
+        .toSorted(comparePerkBackgroundSources)
+    },
     getBackgroundFitView(pickedPerks) {
       const { supportedBuildTargetPerkGroups, unsupportedBuildTargetPerkGroups } =
         getBuildTargetPerkGroups(pickedPerks)

@@ -1,6 +1,5 @@
 import {
-  formatChanceLabel,
-  formatMinimumPerkGroupsLabel,
+  formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
   getPerkDisplayIconPath,
   renderGameIcon,
@@ -18,9 +17,6 @@ import { BuildToggleButton, DetailPanelRailChevron } from './SharedControls'
 function renderPlacementDescription(placement: LegendsPerkPlacement) {
   return (
     <>
-      {placement.perkGroupDescriptions.length > 0 ? (
-        <p className="detail-support">{placement.perkGroupDescriptions.join(' / ')}</p>
-      ) : null}
       {placement.perkGroupAttributes.length > 0 ? (
         <p className="detail-support">{placement.perkGroupAttributes.join(' / ')}</p>
       ) : null}
@@ -38,8 +34,7 @@ function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
         </p>
       </div>
       <span className="detail-badge">
-        {formatMinimumPerkGroupsLabel(backgroundSource.minimumPerkGroups)} /{' '}
-        {formatChanceLabel(backgroundSource.chance)}
+        {formatBackgroundSourceProbabilityLabel(backgroundSource.probability)}
       </span>
     </>
   )
@@ -195,8 +190,8 @@ export function PerkDetail({
                   {groupedBackgroundSources.map((backgroundSource) => (
                     <li
                       key={`${backgroundSource.categoryName}-${backgroundSource.perkGroupId}-${
-                        backgroundSource.minimumPerkGroups ?? 'none'
-                      }-${backgroundSource.chance ?? 'none'}`}
+                        backgroundSource.probability
+                      }-${backgroundSource.backgroundNames.join('::')}`}
                     >
                       {renderBackgroundSource(backgroundSource)}
                     </li>

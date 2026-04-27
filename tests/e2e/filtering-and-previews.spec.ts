@@ -11,7 +11,7 @@ import {
   selectPerkGroup,
 } from './support/perks-browser'
 
-test('filters by multiple categories and scoped perk groups, then clears everything cleanly', async ({
+test('switches active categories and scoped perk groups, then clears everything cleanly', async ({
   page,
 }) => {
   await gotoPerksBrowser(page)
@@ -26,7 +26,10 @@ test('filters by multiple categories and scoped perk groups, then clears everyth
   await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
 
   await enableCategory(page, 'Enemy')
-  await expect(page.getByText('Filtered to 2 categories and 1 perk group.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
+  await expect(page.getByText('Filtered to 1 category.')).toBeVisible()
   await expect(
     getResultsList(page).getByRole('button', {
       name: 'Inspect Favoured Enemy - Beasts',
@@ -368,16 +371,18 @@ test('shows picked categories and perk groups with stars and keeps picked result
   ).toHaveCount(1)
 
   await enableCategory(page, 'Traits')
-  await enableCategory(page, 'Magic')
 
   await expect(
     getSidebarPerkGroupButton(page, 'Calm').locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(2)
+
+  await enableCategory(page, 'Magic')
+
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
   await expect(
     getSidebarPerkGroupButton(page, 'Deadeye').locator('.category-chip-picked-stars .build-star'),
   ).toHaveCount(1)
 
-  await disableCategory(page, 'Traits')
   await disableCategory(page, 'Magic')
 
   await searchPerks(page, 'Perfect')

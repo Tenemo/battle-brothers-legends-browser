@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { RankedBackgroundFit } from './background-fit'
 import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
+import { getCategoryPriority } from './dynamic-background-categories'
 import type {
   LegendsPerkBackgroundSource,
   LegendsPerkRecord,
@@ -10,8 +11,7 @@ import type {
 export type GroupedBackgroundSource = {
   backgroundNames: string[]
   categoryName: string
-  chance: number | null
-  minimumPerkGroups: number | null
+  probability: number
   perkGroupId: string
   perkGroupName: string
 }
@@ -92,24 +92,25 @@ export function renderHighlightedText(text: string, query: string, keyPrefix: st
 
 export function groupBackgroundSources(
   backgroundSources: LegendsPerkBackgroundSource[],
+  getBackgroundSourceProbability: (backgroundSource: LegendsPerkBackgroundSource) => number = () =>
+    1,
 ): GroupedBackgroundSource[] {
   const groupedBackgroundSources = new Map<string, GroupedBackgroundSource>()
 
   for (const backgroundSource of backgroundSources) {
+    const probability = clampProbability(getBackgroundSourceProbability(backgroundSource))
     const key = [
       backgroundSource.categoryName,
       backgroundSource.perkGroupId,
       backgroundSource.perkGroupName,
-      backgroundSource.minimumPerkGroups ?? 'none',
-      backgroundSource.chance ?? 'none',
+      probability,
     ].join('::')
 
     if (!groupedBackgroundSources.has(key)) {
       groupedBackgroundSources.set(key, {
         backgroundNames: [],
         categoryName: backgroundSource.categoryName,
-        chance: backgroundSource.chance,
-        minimumPerkGroups: backgroundSource.minimumPerkGroups,
+        probability,
         perkGroupId: backgroundSource.perkGroupId,
         perkGroupName: backgroundSource.perkGroupName,
       })
@@ -118,27 +119,61 @@ export function groupBackgroundSources(
     groupedBackgroundSources.get(key)?.backgroundNames.push(backgroundSource.backgroundName)
   }
 
-  return [...groupedBackgroundSources.values()]
+  return [...groupedBackgroundSources.values()].toSorted(compareGroupedBackgroundSources)
+}
+
+function compareGroupedBackgroundSources(
+  leftSource: GroupedBackgroundSource,
+  rightSource: GroupedBackgroundSource,
+): number {
+  return (
+    rightSource.probability - leftSource.probability ||
+    getCategoryPriority(leftSource.categoryName) - getCategoryPriority(rightSource.categoryName) ||
+    leftSource.perkGroupName.localeCompare(rightSource.perkGroupName) ||
+    leftSource.backgroundNames.join(', ').localeCompare(rightSource.backgroundNames.join(', ')) ||
+    leftSource.perkGroupId.localeCompare(rightSource.perkGroupId)
+  )
 }
 
 export function getPerkDisplayIconPath(perk: LegendsPerkRecord): string | null {
   return perk.iconPath ?? perk.placements[0]?.perkGroupIconPath ?? null
 }
 
-export function formatChanceLabel(chance: number | null): string {
-  if (chance === null) {
-    return 'No chance override'
-  }
-
-  return `${Math.round(chance * 100)}% chance`
+function clampProbability(probability: number): number {
+  return Math.max(0, Math.min(1, probability))
 }
 
-export function formatMinimumPerkGroupsLabel(minimumPerkGroups: number | null): string {
-  if (minimumPerkGroups === null) {
-    return 'No minimum override'
+function formatProbabilityPercent(probability: number): string {
+  const clampedProbability = clampProbability(probability)
+  const percentage = clampedProbability * 100
+
+  if (percentage === 0) {
+    return '0%'
   }
 
-  return `Minimum ${minimumPerkGroups}`
+  if (percentage > 0 && percentage < 0.01) {
+    return '<0.01%'
+  }
+
+  const decimalPlaceOptions = percentage < 1 ? [2, 3, 4] : [1, 2, 3, 4]
+
+  for (const decimalPlaces of decimalPlaceOptions) {
+    const fixedPercentage = percentage.toFixed(decimalPlaces)
+
+    if (clampedProbability >= 1 || Number(fixedPercentage) < 100) {
+      return `${fixedPercentage.replace(/\.?0+$/u, '')}%`
+    }
+  }
+
+  return '<100%'
+}
+
+export function formatBackgroundSourceProbabilityLabel(probability: number): string {
+  if (probability >= 1) {
+    return 'Guaranteed'
+  }
+
+  return `${formatProbabilityPercent(probability)} chance`
 }
 
 export function formatScenarioGrantLabel(scenarioSource: LegendsPerkScenarioSource): string {
