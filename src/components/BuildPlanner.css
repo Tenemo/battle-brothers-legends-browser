@@ -504,9 +504,9 @@
 .planner-slot-perk:hover,
 .planner-slot-perk:focus-within,
 .planner-slot-perk.is-highlighted,
-.planner-group-card:hover,
-.planner-group-card:focus-within,
-.planner-group-card.is-highlighted {
+.planner-group-card:not(.has-highlighted-perk):hover,
+.planner-group-card:not(.has-highlighted-perk):focus-within,
+.planner-group-card.is-highlighted:not(.has-highlighted-perk) {
   border-color: var(--border-strong);
   background: var(--surface-result-active);
   color: var(--text-primary);
@@ -747,8 +747,7 @@
 }
 
 .planner-group-option-button:hover .planner-group-option-icon,
-.planner-group-option-button:focus-visible .planner-group-option-icon,
-.planner-group-option-button.is-highlighted .planner-group-option-icon {
+.planner-group-option-button:focus-visible .planner-group-option-icon {
   border-color: var(--border-strong);
   box-shadow:
     inset 0 0 0 1px var(--border-subtle),

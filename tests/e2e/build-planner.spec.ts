@@ -65,8 +65,53 @@ function getParsedCssRgbColor(cssColor: string) {
   }
 }
 
+function doCssRgbColorsMatch(actualColor: string, expectedColor: string) {
+  const actual = getParsedCssRgbColor(actualColor)
+  const expectedColorParts = getParsedCssRgbColor(expectedColor)
+
+  return (
+    actual.red === expectedColorParts.red &&
+    actual.green === expectedColorParts.green &&
+    actual.blue === expectedColorParts.blue &&
+    Math.abs(actual.alpha - expectedColorParts.alpha) <= 0.001
+  )
+}
+
 function expectCssRgbColorsToMatch(actualColor: string, expectedColor: string) {
-  expect(getParsedCssRgbColor(actualColor)).toEqual(getParsedCssRgbColor(expectedColor))
+  expect(doCssRgbColorsMatch(actualColor, expectedColor)).toBe(true)
+}
+
+async function waitForCssRgbColor(
+  getCssColor: () => Promise<string>,
+  expectedColor: string,
+): Promise<void> {
+  await expect.poll(async () => doCssRgbColorsMatch(await getCssColor(), expectedColor)).toBe(true)
+}
+
+async function getResolvedCssBackgroundColor(page: Page, cssBackgroundValue: string) {
+  return page.evaluate((backgroundValue) => {
+    const colorProbe = document.createElement('div')
+    colorProbe.style.background = backgroundValue
+    document.body.append(colorProbe)
+    const resolvedColor = window.getComputedStyle(colorProbe).backgroundColor
+
+    colorProbe.remove()
+
+    return resolvedColor
+  }, cssBackgroundValue)
+}
+
+async function getResolvedCssBorderColor(page: Page, cssBorderColorValue: string) {
+  return page.evaluate((borderColorValue) => {
+    const colorProbe = document.createElement('div')
+    colorProbe.style.borderTopColor = borderColorValue
+    document.body.append(colorProbe)
+    const resolvedColor = window.getComputedStyle(colorProbe).borderTopColor
+
+    colorProbe.remove()
+
+    return resolvedColor
+  }, cssBorderColorValue)
 }
 
 async function getPlannerWrapMetrics(page: Page) {
@@ -234,16 +279,11 @@ test('build planner splits shared and individual perk groups without layout drif
   ).toBeLessThanOrEqual(1)
 
   const pickedPerkTile = getBuildPerksBar(page).locator('.planner-slot-perk').first()
-  const activePlannerSurfaceColor = await page.evaluate(() => {
-    const colorProbe = document.createElement('div')
-    colorProbe.style.background = 'var(--surface-result-active)'
-    document.body.append(colorProbe)
-    const resolvedColor = window.getComputedStyle(colorProbe).backgroundColor
-
-    colorProbe.remove()
-
-    return resolvedColor
-  })
+  const activePlannerSurfaceColor = await getResolvedCssBackgroundColor(
+    page,
+    'var(--surface-result-active)',
+  )
+  const activePlannerBorderColor = await getResolvedCssBorderColor(page, 'var(--border-strong)')
   const plannerGroupCard = getBuildIndividualGroupsList(page).locator('.planner-group-card').first()
 
   await plannerGroupCard.hover()
@@ -252,6 +292,10 @@ test('build planner splits shared and individual perk groups without layout drif
       plannerGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
     )
     .toBe(activePlannerSurfaceColor)
+  await waitForCssRgbColor(
+    () => plannerGroupCard.evaluate((element) => window.getComputedStyle(element).borderTopColor),
+    activePlannerBorderColor,
+  )
   const hoveredGroupCardStyle = await plannerGroupCard.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
 
@@ -293,6 +337,10 @@ test('build planner splits shared and individual perk groups without layout drif
       pickedPerkTile.evaluate((element) => window.getComputedStyle(element).backgroundColor),
     )
     .toBe(activePlannerSurfaceColor)
+  await waitForCssRgbColor(
+    () => pickedPerkTile.evaluate((element) => window.getComputedStyle(element).borderTopColor),
+    activePlannerBorderColor,
+  )
 
   const hoverMetricsAfter = await pickedPerkTile.evaluate((element) => {
     const tileRectangle = element.getBoundingClientRect()
@@ -553,6 +601,66 @@ test('selects build planner perk groups from their group tiles', async ({ page }
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('heading', { level: 2, name: 'Battle Forged' })).toBeVisible()
+})
+
+test('separates planner group card hover from icon and perk pill hover states', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page)
+
+  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const activePlannerSurfaceColor = await getResolvedCssBackgroundColor(
+    page,
+    'var(--surface-result-active)',
+  )
+  const heavyArmorGroupCard = getBuildSharedGroupsList(page).locator('.planner-group-card', {
+    hasText: 'Heavy Armor',
+  })
+  const heavyArmorIcon = heavyArmorGroupCard.locator('.planner-group-option-icon').first()
+  const battleForgedPill = heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' })
+  const cardBackgroundBeforeHover = await heavyArmorGroupCard.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
+  const iconBorderBeforeCardHover = await heavyArmorIcon.evaluate(
+    (element) => window.getComputedStyle(element).borderTopColor,
+  )
+
+  await heavyArmorGroupCard.hover({
+    position: {
+      x: 96,
+      y: 38,
+    },
+  })
+  await expect
+    .poll(() =>
+      heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .toBe(activePlannerSurfaceColor)
+  const iconBorderAfterCardHover = await heavyArmorIcon.evaluate(
+    (element) => window.getComputedStyle(element).borderTopColor,
+  )
+
+  expectCssRgbColorsToMatch(iconBorderAfterCardHover, iconBorderBeforeCardHover)
+
+  await battleForgedPill.hover()
+  await expect(heavyArmorGroupCard).toHaveClass(/has-highlighted-perk/)
+  await expect
+    .poll(() =>
+      heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .toBe(cardBackgroundBeforeHover)
+  await expect
+    .poll(() =>
+      battleForgedPill.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .toBe(activePlannerSurfaceColor)
+  const iconBorderAfterPerkHover = await heavyArmorIcon.evaluate(
+    (element) => window.getComputedStyle(element).borderTopColor,
+  )
+
+  expectCssRgbColorsToMatch(iconBorderAfterPerkHover, iconBorderBeforeCardHover)
 })
 
 test('truncates long planner group categories without growing the card', async ({ page }) => {

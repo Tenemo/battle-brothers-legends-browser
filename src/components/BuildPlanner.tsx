@@ -623,10 +623,19 @@ function renderPlannerGroupCard({
         perkGroupId: perkGroupOption.perkGroupId,
       }),
   )
+  const hasHighlightedPerk =
+    hoveredPerkId !== null && groupedPerkGroup.perkIds.includes(hoveredPerkId)
+  const plannerGroupCardClassName = [
+    'planner-group-card',
+    isHighlighted ? 'is-highlighted' : '',
+    hasHighlightedPerk ? 'has-highlighted-perk' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
 
   return (
     <article
-      className={isHighlighted ? 'planner-group-card is-highlighted' : 'planner-group-card'}
+      className={plannerGroupCardClassName}
       key={`${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`}
     >
       {primaryPerkGroupOption ? (
