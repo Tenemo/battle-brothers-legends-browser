@@ -251,8 +251,6 @@ export function BuildPlannerBoard({
   const individualPerkGroupsSectionId = useId()
   const hasPickedPerks = pickedPerks.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
-  const hasCollapsedPerkGroupSections =
-    !isSharedPerkGroupsSectionExpanded || !isIndividualPerkGroupsSectionExpanded
   const highlightedBuildPerkIdsForEmphasis = getHighlightedBuildPerkIdsForEmphasis({
     emphasizedCategoryNames,
     emphasizedPerkGroupKeys,
@@ -375,52 +373,29 @@ export function BuildPlannerBoard({
         </div>
       </div>
 
-      {hasCollapsedPerkGroupSections ? (
+      <div
+        className={styles.plannerRow}
+        data-collapsed={!isSharedPerkGroupsSectionExpanded}
+        data-testid="planner-row"
+      >
+        <PlannerSectionToggle
+          buttonId={sharedPerkGroupsToggleId}
+          controlledSectionId={sharedPerkGroupsSectionId}
+          isCollapsedChip={!isSharedPerkGroupsSectionExpanded}
+          isExpanded={isSharedPerkGroupsSectionExpanded}
+          label="Perk groups for 2+ perks"
+          onToggle={onToggleSharedPerkGroupsSection}
+        />
         <div
-          aria-label="Collapsed perk group sections"
-          className={styles.plannerCollapsedSections}
-          data-testid="planner-collapsed-sections"
+          aria-label="Perk groups for 2+ perks"
+          className={styles.plannerSection}
+          data-testid="build-shared-groups-list"
+          hidden={!isSharedPerkGroupsSectionExpanded}
+          id={sharedPerkGroupsSectionId}
+          role="region"
         >
-          {!isSharedPerkGroupsSectionExpanded ? (
-            <PlannerSectionToggle
-              buttonId={sharedPerkGroupsToggleId}
-              controlledSectionId={sharedPerkGroupsSectionId}
-              isExpanded={isSharedPerkGroupsSectionExpanded}
-              isCollapsedChip
-              label="Perk groups for 2+ perks"
-              onToggle={onToggleSharedPerkGroupsSection}
-            />
-          ) : null}
-          {!isIndividualPerkGroupsSectionExpanded ? (
-            <PlannerSectionToggle
-              buttonId={individualPerkGroupsToggleId}
-              controlledSectionId={individualPerkGroupsSectionId}
-              isExpanded={isIndividualPerkGroupsSectionExpanded}
-              isCollapsedChip
-              label="Perk groups for individual perks"
-              onToggle={onToggleIndividualPerkGroupsSection}
-            />
-          ) : null}
-        </div>
-      ) : null}
-
-      {isSharedPerkGroupsSectionExpanded ? (
-        <div className={styles.plannerRow} data-testid="planner-row">
-          <PlannerSectionToggle
-            buttonId={sharedPerkGroupsToggleId}
-            controlledSectionId={sharedPerkGroupsSectionId}
-            isExpanded={isSharedPerkGroupsSectionExpanded}
-            label="Perk groups for 2+ perks"
-            onToggle={onToggleSharedPerkGroupsSection}
-          />
-          <div
-            aria-label="Perk groups for 2+ perks"
-            className={styles.plannerSection}
-            data-testid="build-shared-groups-list"
-            id={sharedPerkGroupsSectionId}
-            role="region"
-          >
-            {sharedPerkGroups.length > 0 ? (
+          {isSharedPerkGroupsSectionExpanded ? (
+            sharedPerkGroups.length > 0 ? (
               <div className={styles.plannerGroupList} data-planner-collection="shared-groups">
                 {sharedPerkGroups.map((sharedPerkGroup) =>
                   renderPlannerGroupCard({
@@ -452,35 +427,34 @@ export function BuildPlannerBoard({
                   covered perk listed on the card.
                 </p>
               </div>
-            )}
-          </div>
+            )
+          ) : null}
         </div>
-      ) : (
-        <div
-          className={styles.plannerSection}
-          data-testid="build-shared-groups-list"
-          hidden
-          id={sharedPerkGroupsSectionId}
-        />
-      )}
+      </div>
 
-      {isIndividualPerkGroupsSectionExpanded ? (
-        <div className={styles.plannerRow} data-testid="planner-row">
-          <PlannerSectionToggle
-            buttonId={individualPerkGroupsToggleId}
-            controlledSectionId={individualPerkGroupsSectionId}
-            isExpanded={isIndividualPerkGroupsSectionExpanded}
-            label="Perk groups for individual perks"
-            onToggle={onToggleIndividualPerkGroupsSection}
-          />
-          <div
-            aria-label="Perk groups for individual perks"
-            className={styles.plannerSection}
-            data-testid="build-individual-groups-list"
-            id={individualPerkGroupsSectionId}
-            role="region"
-          >
-            {hasPickedPerks ? (
+      <div
+        className={styles.plannerRow}
+        data-collapsed={!isIndividualPerkGroupsSectionExpanded}
+        data-testid="planner-row"
+      >
+        <PlannerSectionToggle
+          buttonId={individualPerkGroupsToggleId}
+          controlledSectionId={individualPerkGroupsSectionId}
+          isCollapsedChip={!isIndividualPerkGroupsSectionExpanded}
+          isExpanded={isIndividualPerkGroupsSectionExpanded}
+          label="Perk groups for individual perks"
+          onToggle={onToggleIndividualPerkGroupsSection}
+        />
+        <div
+          aria-label="Perk groups for individual perks"
+          className={styles.plannerSection}
+          data-testid="build-individual-groups-list"
+          hidden={!isIndividualPerkGroupsSectionExpanded}
+          id={individualPerkGroupsSectionId}
+          role="region"
+        >
+          {isIndividualPerkGroupsSectionExpanded ? (
+            hasPickedPerks ? (
               hasIndividualPerkGroups ? (
                 <div
                   className={styles.plannerGroupList}
@@ -526,17 +500,10 @@ export function BuildPlannerBoard({
                   Perk groups that only match one picked perk are merged by perk and shown here.
                 </p>
               </div>
-            )}
-          </div>
+            )
+          ) : null}
         </div>
-      ) : (
-        <div
-          className={styles.plannerSection}
-          data-testid="build-individual-groups-list"
-          hidden
-          id={individualPerkGroupsSectionId}
-        />
-      )}
+      </div>
     </div>
   )
 }
