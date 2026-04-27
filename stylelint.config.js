@@ -1,6 +1,7 @@
 const rawColorPattern = '/#[0-9a-fA-F]{3,8}|\\brgba?\\(|\\bhsla?\\(/'
 const rawStylisticLengthPattern = '/(?<![\\w-])-?(?:\\d*\\.\\d+|\\d+)(?:px|rem|em|vh|vw|ms)\\b/'
-const nonTokenShadowPattern = '/^(?!none$)(?!var\\(--shadow-).+/'
+const shadowTokenValuePattern = 'var\\(--shadow-[a-zA-Z0-9_-]+\\)'
+const nonTokenShadowPattern = `/^(?!none$)(?!${shadowTokenValuePattern}(?:,\\s*${shadowTokenValuePattern})*$).+/`
 
 export default {
   extends: ['stylelint-config-standard'],

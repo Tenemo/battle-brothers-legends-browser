@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import packageJson from '../package.json'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoisted(() => ({
@@ -65,7 +66,7 @@ describe('app', () => {
     expect(within(hero).getByText('Mod version')).toBeInTheDocument()
     expect(within(hero).getByText('19.3.17')).toBeInTheDocument()
     expect(within(hero).getByText('Planner version')).toBeInTheDocument()
-    expect(within(hero).getByText('0.1.0')).toBeInTheDocument()
+    expect(within(hero).getByText(packageJson.version)).toBeInTheDocument()
     expect(
       screen.getByRole('link', {
         name: 'Open the build planner repository on GitHub',

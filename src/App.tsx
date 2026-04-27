@@ -479,6 +479,7 @@ export default function App() {
         return
       }
 
+      // Category chips are a drilldown control, so opening one category replaces the previous category and nested perk group filters.
       setExpandedCategoryNames([nextCategoryName])
       setSelectedCategoryNames([nextCategoryName])
       setSelectedPerkGroupIdsByCategory({})

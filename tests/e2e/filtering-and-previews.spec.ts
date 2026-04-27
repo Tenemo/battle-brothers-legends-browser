@@ -215,9 +215,7 @@ test('keeps search result and repository hover states fixed in place', async ({ 
   const perfectFocusResultRow = perfectFocusInspectButton.locator(
     'xpath=ancestor::*[contains(concat(" ", normalize-space(@class), " "), " perk-row ")][1]',
   )
-  const repositoryLink = page.getByLabel(
-    'Open the build planner repository on GitHub',
-  )
+  const repositoryLink = page.getByLabel('Open the build planner repository on GitHub')
 
   await expect(perfectFocusResultRow).toBeVisible()
   await perfectFitInspectButton.click()

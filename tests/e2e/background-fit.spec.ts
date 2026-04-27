@@ -47,7 +47,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   ).toHaveAttribute('aria-expanded', 'true')
   await expect(
     backgroundFitPanel.getByText(
-      /Ranked by guaranteed perks pickable first, then expected perks pickable/i,
+      /Ranked by expected perks pickable first, then guaranteed perks, then best-case coverage/i,
     ),
   ).toBeVisible()
   await expect(
@@ -560,7 +560,7 @@ test('keeps the background search enabled without any picked perks', async ({ pa
   await expect(backgroundFitPanel.locator('.search-highlight')).toContainText(['Oath'])
   await expect(
     backgroundFitPanel.getByText(
-      /Ranked by guaranteed perks pickable first, then expected perks pickable/i,
+      /Ranked by expected perks pickable first, then guaranteed perks, then best-case coverage/i,
     ),
   ).toHaveCount(0)
 })
@@ -634,7 +634,7 @@ test('keeps dense background names readable from a shared build url and starts c
   ).toHaveAttribute('aria-expanded', 'true')
   await expect(
     backgroundFitPanel.getByText(
-      /Ranked by guaranteed perks pickable first, then expected perks pickable/i,
+      /Ranked by expected perks pickable first, then guaranteed perks, then best-case coverage/i,
     ),
   ).toBeVisible()
 

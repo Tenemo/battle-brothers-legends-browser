@@ -1338,9 +1338,9 @@ function compareRankedBackgroundFits(
   const rightCoveredPickedPerkCount = getCoveredPickedPerkCount(rightBackgroundFit.matches)
 
   return (
-    rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
     rightBackgroundFit.expectedCoveredPickedPerkCount -
       leftBackgroundFit.expectedCoveredPickedPerkCount ||
+    rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
     rightCoveredPickedPerkCount - leftCoveredPickedPerkCount ||
     leftBackgroundFit.backgroundName.localeCompare(rightBackgroundFit.backgroundName) ||
     leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId) ||

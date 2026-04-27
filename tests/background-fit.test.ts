@@ -756,7 +756,7 @@ describe('background fit', () => {
     ).toBe(1)
   })
 
-  test('ranks backgrounds by guaranteed covered picked perks first and disambiguates duplicate names', () => {
+  test('ranks backgrounds by expected covered picked perks first and disambiguates duplicate names', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([
       samplePerks[0],
@@ -764,35 +764,143 @@ describe('background fit', () => {
       samplePerks[2],
     ])
 
-    expect(backgroundFitView.rankedBackgroundFits.slice(0, 2)).toEqual([
-      expect.objectContaining({
-        backgroundId: 'background.high_weight',
-        backgroundName: 'Champion',
-        disambiguator: 'background.high_weight',
-        matches: [expect.objectContaining({ pickedPerkCount: 2, perkGroupId: 'AxeTree' })],
-      }),
-      expect.objectContaining({
-        backgroundId: 'background.low_weight',
-        backgroundName: 'Champion',
-        disambiguator: 'background.low_weight',
-        matches: [expect.objectContaining({ pickedPerkCount: 1, perkGroupId: 'BowTree' })],
-      }),
-    ])
-  })
-
-  test('breaks ties on guaranteed covered picked perks by total covered picked perks', () => {
-    const engine = createBackgroundFitEngine(sampleDataset)
-    const backgroundFitView = engine.getBackgroundFitView([
-      samplePerks[3],
-      samplePerks[4],
-      samplePerks[5],
-    ])
     const orderedBackgroundIds = backgroundFitView.rankedBackgroundFits.map(
       (backgroundFit) => backgroundFit.backgroundId,
     )
 
-    expect(orderedBackgroundIds.indexOf('background.traits_fill')).toBeLessThan(
-      orderedBackgroundIds.indexOf('background.explicit_heavy'),
+    expect(backgroundFitView.rankedBackgroundFits[0]).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.high_weight',
+        matches: [expect.objectContaining({ pickedPerkCount: 2, perkGroupId: 'AxeTree' })],
+      }),
+    )
+    expect(orderedBackgroundIds.indexOf('background.class_roll')).toBeLessThan(
+      orderedBackgroundIds.indexOf('background.low_weight'),
+    )
+    expect(orderedBackgroundIds.indexOf('background.high_weight')).toBeLessThan(
+      orderedBackgroundIds.indexOf('background.low_weight'),
+    )
+    expect(
+      backgroundFitView.rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.high_weight',
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        backgroundName: 'Champion',
+        disambiguator: 'background.high_weight',
+      }),
+    )
+    expect(
+      backgroundFitView.rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.low_weight',
+      ),
+    ).toEqual(
+      expect.objectContaining({
+        backgroundName: 'Champion',
+        disambiguator: 'background.low_weight',
+      }),
+    )
+  })
+
+  test('breaks ties on expected covered picked perks by guaranteed coverage', () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const backgroundFitView = engine.getBackgroundFitView([samplePerks[0], samplePerks[2]])
+    const orderedBackgroundIds = backgroundFitView.rankedBackgroundFits.map(
+      (backgroundFit) => backgroundFit.backgroundId,
+    )
+
+    expect(orderedBackgroundIds.indexOf('background.high_weight')).toBeLessThan(
+      orderedBackgroundIds.indexOf('background.class_roll'),
+    )
+  })
+
+  test('breaks ties on expected and guaranteed coverage by total covered picked perks', () => {
+    const singleProfessionPerk = createPerk({
+      id: 'perk.profession.single',
+      perkConstName: 'LegendSingleProfession',
+      perkName: 'Single profession craft',
+      placements: [
+        createPlacement({
+          categoryName: 'Profession',
+          perkGroupId: 'SingleProfessionTree',
+          perkGroupName: 'Single profession',
+        }),
+      ],
+    })
+    const firstEnemyPerk = createPerk({
+      id: 'perk.enemy.first',
+      perkConstName: 'LegendEnemyFirst',
+      perkName: 'Favoured Enemy - First',
+      placements: [
+        createPlacement({
+          categoryName: 'Enemy',
+          perkGroupId: 'FirstEnemyTree',
+          perkGroupName: 'First enemy',
+        }),
+      ],
+    })
+    const secondEnemyPerk = createPerk({
+      id: 'perk.enemy.second',
+      perkConstName: 'LegendEnemySecond',
+      perkName: 'Favoured Enemy - Second',
+      placements: [
+        createPlacement({
+          categoryName: 'Enemy',
+          perkGroupId: 'SecondEnemyTree',
+          perkGroupName: 'Second enemy',
+        }),
+      ],
+    })
+    const onePossibleProfessionBackground = createBackgroundDefinition({
+      backgroundId: 'background.one_possible_profession',
+      backgroundName: 'One possible profession',
+      overrides: {
+        Profession: { chance: 0.5, minimumPerkGroups: 0, perkGroupIds: [] },
+      },
+    })
+    const twoPossibleEnemyBackground = createBackgroundDefinition({
+      backgroundId: 'background.two_possible_enemy',
+      backgroundName: 'Two possible enemy',
+      overrides: {
+        Enemy: { chance: 0.5, minimumPerkGroups: 0, perkGroupIds: [] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [onePossibleProfessionBackground, twoPossibleEnemyBackground],
+      perkCount: 3,
+      perkGroupCount: 3,
+      perks: [singleProfessionPerk, firstEnemyPerk, secondEnemyPerk],
+    })
+    const backgroundFitView = engine.getBackgroundFitView([
+      singleProfessionPerk,
+      firstEnemyPerk,
+      secondEnemyPerk,
+    ])
+    const orderedBackgroundIds = backgroundFitView.rankedBackgroundFits.map(
+      (backgroundFit) => backgroundFit.backgroundId,
+    )
+    const backgroundFitsById = new Map(
+      backgroundFitView.rankedBackgroundFits.map((backgroundFit) => [
+        backgroundFit.backgroundId,
+        backgroundFit,
+      ]),
+    )
+
+    expect(backgroundFitsById.get('background.one_possible_profession')).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 0.5,
+        guaranteedMatchedPerkGroupCount: 0,
+      }),
+    )
+    expect(backgroundFitsById.get('background.two_possible_enemy')).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 0.5,
+        guaranteedMatchedPerkGroupCount: 0,
+      }),
+    )
+    expect(orderedBackgroundIds.indexOf('background.two_possible_enemy')).toBeLessThan(
+      orderedBackgroundIds.indexOf('background.one_possible_profession'),
     )
   })
 
