@@ -110,13 +110,13 @@ test('sorts background sources from guaranteed to lowest chance', async ({ page 
 test('keeps raw perk group flavour strings out of perk details', async ({ page }) => {
   await gotoPerksBrowser(page)
 
-  await searchPerks(page, 'Steadfast')
-  await inspectPerkFromResults(page, 'Steadfast')
+  await searchPerks(page, 'Favoured Enemy - Civilization')
+  await inspectPerkFromResults(page, 'Favoured Enemy - Civilization')
 
   const perkGroupPlacementSection = page
     .locator('.detail-section')
     .filter({ has: page.getByRole('heading', { level: 3, name: 'Perk group placement' }) })
 
-  await expect(perkGroupPlacementSection.getByText('Traits / Sturdy')).toBeVisible()
-  await expect(perkGroupPlacementSection.getByText(/is sturdy.*is built to last/i)).toHaveCount(0)
+  await expect(perkGroupPlacementSection.getByText('Enemy / Civilization')).toBeVisible()
+  await expect(perkGroupPlacementSection.getByText('law-abiding fools')).toHaveCount(0)
 })

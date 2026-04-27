@@ -100,11 +100,11 @@ describe('background origin detection', () => {
     expect(
       originBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)),
     ).toEqual([
-      'origin sisterhood',
-      'origin lone wolf',
-      'origin necromancer',
-      'origin necromancer',
-      'origin necromancer',
+      'Origin: Sisterhood',
+      'Origin: Lone wolf',
+      'Origin: Necromancer',
+      'Origin: Necromancer',
+      'Origin: Necromancer',
     ])
   })
 
@@ -116,7 +116,7 @@ describe('background origin detection', () => {
           backgroundName: 'Husk',
           sourceFileName: 'legend_husk_background.nut',
         }),
-        pillLabel: 'origin davkul',
+        pillLabel: 'Origin: Davkul',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -124,7 +124,7 @@ describe('background origin detection', () => {
           backgroundName: 'Lurker',
           sourceFileName: 'legend_lurker_background.nut',
         }),
-        pillLabel: 'origin davkul',
+        pillLabel: 'Origin: Davkul',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -132,7 +132,7 @@ describe('background origin detection', () => {
           backgroundName: 'Magister',
           sourceFileName: 'legend_magister_background.nut',
         }),
-        pillLabel: 'origin davkul',
+        pillLabel: 'Origin: Davkul',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -140,7 +140,7 @@ describe('background origin detection', () => {
           backgroundName: 'Guild Master',
           sourceFileName: 'legend_guildmaster_background.nut',
         }),
-        pillLabel: 'origin beast slayers',
+        pillLabel: 'Origin: Beast slayers',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -148,7 +148,7 @@ describe('background origin detection', () => {
           backgroundName: 'Bounty Hunter',
           sourceFileName: 'legend_bounty_hunter_background.nut',
         }),
-        pillLabel: 'origin assassin',
+        pillLabel: 'Origin: Assassin',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -156,7 +156,7 @@ describe('background origin detection', () => {
           backgroundName: 'Bladedancer',
           sourceFileName: 'legend_bladedancer_background.nut',
         }),
-        pillLabel: 'origin nomad',
+        pillLabel: 'Origin: Nomad',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -164,7 +164,7 @@ describe('background origin detection', () => {
           backgroundName: 'Youngblood',
           sourceFileName: 'legend_youngblood_background.nut',
         }),
-        pillLabel: 'origin crusader/inquisition',
+        pillLabel: 'Origin: Crusader/Inquisition',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -172,7 +172,7 @@ describe('background origin detection', () => {
           backgroundName: 'Crusader',
           sourceFileName: 'crusader_background.nut',
         }),
-        pillLabel: 'origin crusader/inquisition',
+        pillLabel: 'Origin: Crusader/Inquisition',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -180,7 +180,7 @@ describe('background origin detection', () => {
           backgroundName: 'Pilgrim',
           sourceFileName: 'legend_pilgrim_background.nut',
         }),
-        pillLabel: 'origin crusader',
+        pillLabel: 'Origin: Crusader',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -188,7 +188,7 @@ describe('background origin detection', () => {
           backgroundName: 'Leech Peddler',
           sourceFileName: 'legend_leech_peddler_background.nut',
         }),
-        pillLabel: 'origin peasant militia',
+        pillLabel: 'Origin: Peasant militia',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -196,7 +196,7 @@ describe('background origin detection', () => {
           backgroundName: 'Night Watch',
           sourceFileName: 'legend_nightwatch_background.nut',
         }),
-        pillLabel: 'origin peasant militia',
+        pillLabel: 'Origin: Peasant militia',
       },
       {
         backgroundFit: createBackgroundFit({
@@ -204,7 +204,7 @@ describe('background origin detection', () => {
           backgroundName: 'Man-At-Arms',
           sourceFileName: 'legend_man_at_arms_background.nut',
         }),
-        pillLabel: 'origin peasant militia',
+        pillLabel: 'Origin: Peasant militia',
       },
     ]
 
@@ -258,13 +258,13 @@ describe('background origin detection', () => {
     expect(
       originBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)),
     ).toEqual([
-      'origin berserker',
-      'origin commander',
-      'origin commander',
-      'origin commander',
-      'origin commander',
-      'origin commander',
-      'origin commander',
+      'Origin: Berserker',
+      'Origin commander',
+      'Origin commander',
+      'Origin commander',
+      'Origin commander',
+      'Origin commander',
+      'Origin commander',
     ])
   })
 
@@ -291,7 +291,7 @@ describe('background origin detection', () => {
     ).toBe(true)
     expect(
       legionBackgroundFits.map((backgroundFit) => getOriginBackgroundPillLabel(backgroundFit)),
-    ).toEqual(legionBackgroundFits.map(() => 'origin legion'))
+    ).toEqual(legionBackgroundFits.map(() => 'Origin: Legion'))
   })
 
   test('does not classify Puppet as origin-only because it is also recruitable elsewhere', () => {

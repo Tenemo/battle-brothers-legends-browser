@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
+  expectNoDocumentHorizontalOverflow,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
@@ -551,6 +552,162 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
   ).toBeVisible()
   await expect(buildIndividualGroupsList.getByText('Steadfast', { exact: true })).toBeVisible()
   await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+})
+
+test('collapses and restores build planner perk group sections independently', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+
+  const buildSharedGroupsList = getBuildSharedGroupsList(page)
+  const buildIndividualGroupsList = getBuildIndividualGroupsList(page)
+  const sharedCollapseToggle = page.getByRole('button', {
+    name: 'Collapse perk groups for 2+ perks',
+  })
+  const individualCollapseToggle = page.getByRole('button', {
+    name: 'Collapse perk groups for individual perks',
+  })
+
+  await expect(sharedCollapseToggle).toBeVisible()
+  await expect(sharedCollapseToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(individualCollapseToggle).toBeVisible()
+  await expect(individualCollapseToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
+  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+
+  const sharedControlsId = await sharedCollapseToggle.getAttribute('aria-controls')
+  const individualControlsId = await individualCollapseToggle.getAttribute('aria-controls')
+
+  if (sharedControlsId === null || individualControlsId === null) {
+    throw new Error('Planner group section toggles must control their section bodies.')
+  }
+
+  await expect(buildSharedGroupsList).toHaveAttribute('id', sharedControlsId)
+  await expect(buildIndividualGroupsList).toHaveAttribute('id', individualControlsId)
+
+  const expandedPlannerBoardHeight = await page
+    .locator('.planner-board')
+    .evaluate((plannerBoard) => plannerBoard.getBoundingClientRect().height)
+  const expandedSharedSectionHeight = await buildSharedGroupsList.evaluate(
+    (plannerSection) => plannerSection.getBoundingClientRect().height,
+  )
+  const expandedIndividualSectionHeight = await buildIndividualGroupsList.evaluate(
+    (plannerSection) => plannerSection.getBoundingClientRect().height,
+  )
+
+  expect(expandedSharedSectionHeight).toBeGreaterThan(40)
+  expect(expandedIndividualSectionHeight).toBeGreaterThan(40)
+
+  await sharedCollapseToggle.click()
+  await expect(
+    page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }),
+  ).toHaveAttribute('aria-expanded', 'false')
+  await expect(buildSharedGroupsList).toBeHidden()
+  await expect(buildIndividualGroupsList).toBeVisible()
+  await expect(page.locator('.planner-collapsed-sections')).toBeVisible()
+
+  const sharedCollapsedPlannerBoardHeight = await page
+    .locator('.planner-board')
+    .evaluate((plannerBoard) => plannerBoard.getBoundingClientRect().height)
+  const sharedCollapsedSectionHeight = await buildSharedGroupsList.evaluate(
+    (plannerSection) => plannerSection.getBoundingClientRect().height,
+  )
+  const sharedCollapsedTrayHeight = await page
+    .locator('.planner-collapsed-sections')
+    .evaluate((collapsedSections) => collapsedSections.getBoundingClientRect().height)
+
+  expect(sharedCollapsedSectionHeight).toBeLessThanOrEqual(1)
+  expect(sharedCollapsedTrayHeight).toBeLessThan(36)
+  expect(sharedCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
+
+  await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
+  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
+  await expect(buildSharedGroupsList).toBeVisible()
+
+  await individualCollapseToggle.click()
+  await expect(
+    page.getByRole('button', { name: 'Expand perk groups for individual perks' }),
+  ).toHaveAttribute('aria-expanded', 'false')
+  await expect(buildSharedGroupsList).toBeVisible()
+  await expect(buildIndividualGroupsList).toBeHidden()
+
+  const individualCollapsedPlannerBoardHeight = await page
+    .locator('.planner-board')
+    .evaluate((plannerBoard) => plannerBoard.getBoundingClientRect().height)
+  const individualCollapsedSectionHeight = await buildIndividualGroupsList.evaluate(
+    (plannerSection) => plannerSection.getBoundingClientRect().height,
+  )
+
+  expect(individualCollapsedSectionHeight).toBeLessThanOrEqual(1)
+  expect(individualCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
+
+  await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()
+  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+  await expect(buildIndividualGroupsList).toBeVisible()
+})
+
+test('keeps collapsible planner group labels compact on mobile', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expectNoDocumentHorizontalOverflow(page)
+
+  const buildSharedGroupsList = getBuildSharedGroupsList(page)
+  const buildIndividualGroupsList = getBuildIndividualGroupsList(page)
+  const sharedCollapseToggle = page.getByRole('button', {
+    name: 'Collapse perk groups for 2+ perks',
+  })
+  const individualCollapseToggle = page.getByRole('button', {
+    name: 'Collapse perk groups for individual perks',
+  })
+
+  await expect(sharedCollapseToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(individualCollapseToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(buildSharedGroupsList).toBeVisible()
+  await expect(buildIndividualGroupsList).toBeVisible()
+
+  const toggleMetrics = await page.evaluate(() => {
+    const toggles = [...document.querySelectorAll<HTMLElement>('.planner-section-toggle')].map(
+      (toggle) => toggle.getBoundingClientRect(),
+    )
+
+    return toggles.map((toggleRectangle) => ({
+      height: toggleRectangle.height,
+      width: toggleRectangle.width,
+    }))
+  })
+
+  expect(toggleMetrics).toHaveLength(2)
+  for (const toggleMetric of toggleMetrics) {
+    expect(toggleMetric.height).toBeLessThanOrEqual(48)
+    expect(toggleMetric.width).toBeLessThan(260)
+  }
+
+  await sharedCollapseToggle.click()
+  await individualCollapseToggle.click()
+  await expect(buildSharedGroupsList).toBeHidden()
+  await expect(buildIndividualGroupsList).toBeHidden()
+  await expectNoDocumentHorizontalOverflow(page)
+
+  const collapsedTrayMetrics = await page
+    .locator('.planner-collapsed-sections')
+    .evaluate((tray) => {
+      const trayRectangle = tray.getBoundingClientRect()
+
+      return {
+        height: trayRectangle.height,
+        width: trayRectangle.width,
+      }
+    })
+
+  expect(collapsedTrayMetrics.height).toBeLessThan(60)
+  expect(collapsedTrayMetrics.width).toBeLessThanOrEqual(390)
+
+  await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
+  await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()
+  await expect(buildSharedGroupsList.locator('.planner-group-card')).toHaveCount(2)
+  await expect(buildIndividualGroupsList.locator('.planner-group-card')).toHaveCount(1)
+  await expectNoDocumentHorizontalOverflow(page)
 })
 
 test('selects build planner perk groups from their group tiles', async ({ page }) => {

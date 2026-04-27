@@ -1579,7 +1579,6 @@ function buildSearchText(perkRecord) {
     .flatMap((placement) => [
       placement.categoryName,
       placement.perkGroupName,
-      placement.perkGroupDescriptions.join(' '),
       placement.perkGroupAttributes.join(' '),
     ])
     .join(' ')
@@ -2000,7 +1999,6 @@ export async function createDataset(
           categoryName: perkGroupDefinition.categoryName ?? 'Other',
           tier,
           perkGroupAttributes: perkGroupDefinition.attributeLines,
-          perkGroupDescriptions: perkGroupDefinition.descriptionLines,
           perkGroupIconPath: perkGroupDefinition.iconPath ?? null,
           perkGroupId: perkGroupDefinition.id,
           perkGroupName: perkGroupDefinition.name,

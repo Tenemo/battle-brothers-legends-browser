@@ -1,7 +1,7 @@
 .build-planner {
   --planner-group-row-min-height: 4.7rem;
   --planner-perk-row-min-height: 3.45rem;
-  --planner-row-label-width: 6.4rem;
+  --planner-row-label-width: 10.4rem;
   --planner-slot-width: 10.4rem;
   --planner-track-gap: var(--space-md);
   --planner-tile-width: 14rem;
@@ -44,6 +44,7 @@
 .build-planner-info-button,
 .clear-build-dialog-icon,
 .planner-pill,
+.planner-section-toggle,
 .build-toggle-button {
   display: inline-flex;
   align-items: center;
@@ -463,6 +464,71 @@
   text-transform: uppercase;
 }
 
+.planner-section-toggle {
+  appearance: none;
+  gap: var(--space-xs);
+  align-self: start;
+  justify-self: start;
+  max-width: min(100%, 15rem);
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2xs) var(--space-xs);
+  background: transparent;
+  line-height: 1.12;
+  text-align: left;
+  cursor: pointer;
+  transition: var(--planner-control-transition);
+}
+
+.planner-section-toggle:hover,
+.planner-section-toggle:focus-visible {
+  border-color: var(--border-subtle);
+  background: rgb(204 155 84 / 0.08);
+  color: var(--text-primary);
+}
+
+.planner-section-toggle:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}
+
+.planner-section-toggle-label {
+  min-width: 0;
+}
+
+.planner-section-chevron {
+  flex: 0 0 auto;
+  width: 0.78rem;
+  height: 0.78rem;
+  color: var(--text-muted);
+  transition:
+    color var(--motion-fast),
+    transform var(--motion-fast);
+}
+
+.planner-section-chevron.is-expanded {
+  color: var(--accent-soft);
+  transform: rotate(90deg);
+}
+
+.planner-collapsed-sections {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  align-items: center;
+  min-width: 0;
+  margin-top: calc(-1 * var(--space-2xs));
+  margin-left: calc(var(--planner-row-label-width) + var(--space-lg));
+}
+
+.planner-section-toggle.is-collapsed-chip {
+  max-width: min(100%, 14rem);
+  border-color: var(--border-muted);
+  padding: var(--space-3xs) var(--space-xs);
+  background: var(--surface-control);
+}
+
 .planner-track-scroll {
   min-width: 0;
   width: 100%;
@@ -647,6 +713,10 @@
 .planner-section {
   min-width: 0;
   min-height: var(--planner-group-row-min-height);
+}
+
+.planner-section[hidden] {
+  display: none;
 }
 
 .planner-group-list {
@@ -978,6 +1048,11 @@
 
   .planner-row-label {
     padding-top: 0;
+  }
+
+  .planner-collapsed-sections {
+    margin-top: calc(-1 * var(--space-md));
+    margin-left: 0;
   }
 
   .planner-board {

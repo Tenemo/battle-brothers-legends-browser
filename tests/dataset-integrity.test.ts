@@ -192,6 +192,18 @@ describe('generated dataset integrity', () => {
     ).toEqual(expectedPerksWithoutPlacements)
   })
 
+  test('keeps raw perk group descriptions out of generated app data', () => {
+    const placementsWithRawDescriptions = legendsPerksDataset.perks.flatMap((perk) =>
+      perk.placements.filter((placement) => Object.hasOwn(placement, 'perkGroupDescriptions')),
+    )
+    const perksWithCivilizationFlavourText = legendsPerksDataset.perks.filter((perk) =>
+      perk.searchText.includes('law-abiding fools'),
+    )
+
+    expect(placementsWithRawDescriptions).toEqual([])
+    expect(perksWithCivilizationFlavourText).toEqual([])
+  })
+
   test('only references game icons that exist in the served asset directory', () => {
     const missingIconPaths = getReferencedGameIconPaths(legendsPerksDataset).filter(
       (iconPath) => !existsSync(path.join(process.cwd(), 'public', 'game-icons', iconPath)),

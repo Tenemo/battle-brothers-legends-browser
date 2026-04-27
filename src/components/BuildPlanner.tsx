@@ -37,6 +37,7 @@ import type { HoveredBuildPerkTooltip } from '../lib/use-perk-interaction-state'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
+import { PlannerSectionChevron } from './SharedControls'
 
 export type BuildPlannerSavedBuild = {
   availablePerkIds: string[]
@@ -357,6 +358,38 @@ function BuildPlannerInfoButton() {
         </span>
       ) : null}
     </span>
+  )
+}
+
+function PlannerSectionToggle({
+  buttonId,
+  className,
+  controlledSectionId,
+  isExpanded,
+  label,
+  onToggle,
+}: {
+  buttonId: string
+  className?: string
+  controlledSectionId: string
+  isExpanded: boolean
+  label: string
+  onToggle: () => void
+}) {
+  return (
+    <button
+      aria-controls={controlledSectionId}
+      aria-expanded={isExpanded}
+      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
+      className={['planner-row-label planner-section-toggle', className].filter(Boolean).join(' ')}
+      id={buttonId}
+      onClick={onToggle}
+      title={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
+      type="button"
+    >
+      <PlannerSectionChevron isExpanded={isExpanded} />
+      <span className="planner-section-toggle-label">{label}</span>
+    </button>
   )
 }
 
@@ -798,9 +831,18 @@ export function BuildPlanner({
 }) {
   const hasPickedPerks = pickedPerks.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
+  const sharedPerkGroupsToggleId = useId()
+  const sharedPerkGroupsSectionId = useId()
+  const individualPerkGroupsToggleId = useId()
+  const individualPerkGroupsSectionId = useId()
   const plannerBoardRef = useRef<HTMLDivElement | null>(null)
   const clearBuildButtonRef = useRef<HTMLButtonElement | null>(null)
   const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(false)
+  const [isSharedPerkGroupsSectionExpanded, setIsSharedPerkGroupsSectionExpanded] = useState(true)
+  const [isIndividualPerkGroupsSectionExpanded, setIsIndividualPerkGroupsSectionExpanded] =
+    useState(true)
+  const hasCollapsedPerkGroupSections =
+    !isSharedPerkGroupsSectionExpanded || !isIndividualPerkGroupsSectionExpanded
   const [isClearBuildDialogOpen, setIsClearBuildDialogOpen] = useState(false)
   const [isSavedBuildsDialogOpen, setIsSavedBuildsDialogOpen] = useState(false)
   const [activeBuildPerkTooltipIndicatorPerkId, setActiveBuildPerkTooltipIndicatorPerkId] =
@@ -968,6 +1010,8 @@ export function BuildPlanner({
     }
   }, [
     individualPerkGroups.length,
+    isIndividualPerkGroupsSectionExpanded,
+    isSharedPerkGroupsSectionExpanded,
     pickedPerks.length,
     sharedPerkGroups.length,
     updatePlannerScrollConstraint,
@@ -993,6 +1037,18 @@ export function BuildPlanner({
     if (hasPickedPerks) {
       onClearBuild()
     }
+  }
+
+  function handleToggleSharedPerkGroupsSection() {
+    clearPendingBuildPerkTooltip()
+    onCloseBuildPerkTooltip()
+    setIsSharedPerkGroupsSectionExpanded((isExpanded) => !isExpanded)
+  }
+
+  function handleToggleIndividualPerkGroupsSection() {
+    clearPendingBuildPerkTooltip()
+    onCloseBuildPerkTooltip()
+    setIsIndividualPerkGroupsSectionExpanded((isExpanded) => !isExpanded)
   }
 
   return (
@@ -1165,60 +1221,58 @@ export function BuildPlanner({
             </div>
           </div>
 
-          <div className="planner-row">
-            <span className="planner-row-label">Perk groups for 2+ perks</span>
-            <div className="planner-section" data-testid="build-shared-groups-list">
-              {sharedPerkGroups.length > 0 ? (
-                <div className="planner-group-list">
-                  {sharedPerkGroups.map((sharedPerkGroup) =>
-                    renderPlannerGroupCard({
-                      emphasizedCategoryNames,
-                      emphasizedPerkGroupKeys,
-                      groupedPerkGroup: sharedPerkGroup,
-                      hoveredBuildPerkId: hoveredBuildPerk?.id ?? null,
-                      hoveredBuildPerkTooltipId,
-                      hoveredPerkId,
-                      keyPrefix: 'shared',
-                      onCloseHover: onCloseBuildPerkHover,
-                      onClosePerkGroupHover,
-                      onCloseTooltip: onCloseBuildPerkTooltip,
-                      onInspectPerkGroup,
-                      onInspectPerk: onInspectPlannerPerk,
-                      onOpenHover: onOpenBuildPerkHover,
-                      onOpenTooltip: onOpenBuildPerkTooltip,
-                      onOpenPerkGroupHover,
-                    }),
-                  )}
-                </div>
-              ) : (
-                <div className="planner-section-placeholder">
-                  <strong className="planner-slot-name">
-                    Perk groups covering 2 or more picked perks will appear here
-                  </strong>
-                  <p className="planner-slot-meta">
-                    When multiple picked perks share a perk group, it will show up here with every
-                    covered perk listed on the card.
-                  </p>
-                </div>
-              )}
+          {hasCollapsedPerkGroupSections ? (
+            <div aria-label="Collapsed perk group sections" className="planner-collapsed-sections">
+              {!isSharedPerkGroupsSectionExpanded ? (
+                <PlannerSectionToggle
+                  buttonId={sharedPerkGroupsToggleId}
+                  className="is-collapsed-chip"
+                  controlledSectionId={sharedPerkGroupsSectionId}
+                  isExpanded={isSharedPerkGroupsSectionExpanded}
+                  label="Perk groups for 2+ perks"
+                  onToggle={handleToggleSharedPerkGroupsSection}
+                />
+              ) : null}
+              {!isIndividualPerkGroupsSectionExpanded ? (
+                <PlannerSectionToggle
+                  buttonId={individualPerkGroupsToggleId}
+                  className="is-collapsed-chip"
+                  controlledSectionId={individualPerkGroupsSectionId}
+                  isExpanded={isIndividualPerkGroupsSectionExpanded}
+                  label="Perk groups for individual perks"
+                  onToggle={handleToggleIndividualPerkGroupsSection}
+                />
+              ) : null}
             </div>
-          </div>
+          ) : null}
 
-          <div className="planner-row">
-            <span className="planner-row-label">Perk groups for individual perks</span>
-            <div className="planner-section" data-testid="build-individual-groups-list">
-              {hasPickedPerks ? (
-                hasIndividualPerkGroups ? (
+          {isSharedPerkGroupsSectionExpanded ? (
+            <div className="planner-row">
+              <PlannerSectionToggle
+                buttonId={sharedPerkGroupsToggleId}
+                controlledSectionId={sharedPerkGroupsSectionId}
+                isExpanded={isSharedPerkGroupsSectionExpanded}
+                label="Perk groups for 2+ perks"
+                onToggle={handleToggleSharedPerkGroupsSection}
+              />
+              <div
+                aria-label="Perk groups for 2+ perks"
+                className="planner-section"
+                data-testid="build-shared-groups-list"
+                id={sharedPerkGroupsSectionId}
+                role="region"
+              >
+                {sharedPerkGroups.length > 0 ? (
                   <div className="planner-group-list">
-                    {individualPerkGroups.map((individualPerkGroup) =>
+                    {sharedPerkGroups.map((sharedPerkGroup) =>
                       renderPlannerGroupCard({
                         emphasizedCategoryNames,
                         emphasizedPerkGroupKeys,
-                        groupedPerkGroup: individualPerkGroup,
+                        groupedPerkGroup: sharedPerkGroup,
                         hoveredBuildPerkId: hoveredBuildPerk?.id ?? null,
                         hoveredBuildPerkTooltipId,
                         hoveredPerkId,
-                        keyPrefix: 'individual',
+                        keyPrefix: 'shared',
                         onCloseHover: onCloseBuildPerkHover,
                         onClosePerkGroupHover,
                         onCloseTooltip: onCloseBuildPerkTooltip,
@@ -1233,26 +1287,95 @@ export function BuildPlanner({
                 ) : (
                   <div className="planner-section-placeholder">
                     <strong className="planner-slot-name">
-                      This build has no individual-only perk groups
+                      Perk groups covering 2 or more picked perks will appear here
                     </strong>
                     <p className="planner-slot-meta">
-                      Every available perk group for the current build already covers two or more
-                      picked perks.
+                      When multiple picked perks share a perk group, it will show up here with every
+                      covered perk listed on the card.
                     </p>
                   </div>
-                )
-              ) : (
-                <div className="planner-section-placeholder">
-                  <strong className="planner-slot-name">
-                    Individual perk groups will appear here
-                  </strong>
-                  <p className="planner-slot-meta">
-                    Perk groups that only match one picked perk are merged by perk and shown here.
-                  </p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div
+              className="planner-section"
+              data-testid="build-shared-groups-list"
+              hidden
+              id={sharedPerkGroupsSectionId}
+            />
+          )}
+
+          {isIndividualPerkGroupsSectionExpanded ? (
+            <div className="planner-row">
+              <PlannerSectionToggle
+                buttonId={individualPerkGroupsToggleId}
+                controlledSectionId={individualPerkGroupsSectionId}
+                isExpanded={isIndividualPerkGroupsSectionExpanded}
+                label="Perk groups for individual perks"
+                onToggle={handleToggleIndividualPerkGroupsSection}
+              />
+              <div
+                aria-label="Perk groups for individual perks"
+                className="planner-section"
+                data-testid="build-individual-groups-list"
+                id={individualPerkGroupsSectionId}
+                role="region"
+              >
+                {hasPickedPerks ? (
+                  hasIndividualPerkGroups ? (
+                    <div className="planner-group-list">
+                      {individualPerkGroups.map((individualPerkGroup) =>
+                        renderPlannerGroupCard({
+                          emphasizedCategoryNames,
+                          emphasizedPerkGroupKeys,
+                          groupedPerkGroup: individualPerkGroup,
+                          hoveredBuildPerkId: hoveredBuildPerk?.id ?? null,
+                          hoveredBuildPerkTooltipId,
+                          hoveredPerkId,
+                          keyPrefix: 'individual',
+                          onCloseHover: onCloseBuildPerkHover,
+                          onClosePerkGroupHover,
+                          onCloseTooltip: onCloseBuildPerkTooltip,
+                          onInspectPerkGroup,
+                          onInspectPerk: onInspectPlannerPerk,
+                          onOpenHover: onOpenBuildPerkHover,
+                          onOpenTooltip: onOpenBuildPerkTooltip,
+                          onOpenPerkGroupHover,
+                        }),
+                      )}
+                    </div>
+                  ) : (
+                    <div className="planner-section-placeholder">
+                      <strong className="planner-slot-name">
+                        This build has no individual-only perk groups
+                      </strong>
+                      <p className="planner-slot-meta">
+                        Every available perk group for the current build already covers two or more
+                        picked perks.
+                      </p>
+                    </div>
+                  )
+                ) : (
+                  <div className="planner-section-placeholder">
+                    <strong className="planner-slot-name">
+                      Individual perk groups will appear here
+                    </strong>
+                    <p className="planner-slot-meta">
+                      Perk groups that only match one picked perk are merged by perk and shown here.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div
+              className="planner-section"
+              data-testid="build-individual-groups-list"
+              hidden
+              id={individualPerkGroupsSectionId}
+            />
+          )}
         </div>
       </section>
 

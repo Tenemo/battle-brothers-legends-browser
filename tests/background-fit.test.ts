@@ -30,7 +30,6 @@ function createPlacement({
     categoryName,
     tier: 1,
     perkGroupAttributes: [],
-    perkGroupDescriptions: [perkGroupName.toLowerCase()],
     perkGroupIconPath: null,
     perkGroupId,
     perkGroupName,

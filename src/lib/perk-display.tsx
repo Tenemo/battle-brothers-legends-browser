@@ -207,21 +207,21 @@ function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
 
   if (companionMatch) {
     return companionMatch[1] === '1h'
-      ? 'starting shield'
+      ? 'Starting shield'
       : companionMatch[1] === '2h'
-        ? 'starting two-handed'
-        : 'starting ranged'
+        ? 'Starting two-handed'
+        : 'Starting ranged'
   }
 
   if (originCompanionMatch) {
-    return originCompanionMatch[1] === 'melee' ? 'origin melee' : 'origin ranged'
+    return originCompanionMatch[1] === 'melee' ? 'Origin melee' : 'Origin ranged'
   }
 
   if (
     /^legend_.+_commander(?:_op)?$/.test(sourceLabel) ||
     /^.+_legend_.+_commander$/.test(sourceLabel)
   ) {
-    return 'origin commander'
+    return 'Origin commander'
   }
 
   return sourceLabel

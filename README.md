@@ -13,7 +13,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Ranks parsed Legends backgrounds against the current build by exact perk-perk-group fit, separating guaranteed matches from probabilistic matches and showing exact marginal probabilities for non-guaranteed perk groups.
 - Persists the current filters and picked build in grouped readable query params so the current setup can be shared or reloaded directly from the URL.
 - Serves a centralized static SEO metadata contract for the root app URL, including canonical tags, an Open Graph preview image, JSON-LD, `robots.txt`, and a one-page sitemap.
-- Shows exact perk group placement, perk group descriptions, attribute ranges, dynamic background pool sources, scenario grants, and favoured enemy metadata for the selected perk.
+- Shows exact perk group placement, attribute ranges, dynamic background pool sources, scenario grants, and favoured enemy metadata for the selected perk.
 - Uses the actual game icons extracted from a local Battle Brothers install instead of placeholder artwork when the icon sync has been run.
 - Keeps the runtime deterministic by committing the generated data snapshot instead of fetching live data in the app.
 

@@ -85,6 +85,16 @@ export function CategoryChevron({ isExpanded }: { isExpanded: boolean }) {
   )
 }
 
+export function PlannerSectionChevron({ isExpanded }: { isExpanded: boolean }) {
+  return (
+    <ChevronRight
+      aria-hidden="true"
+      className={isExpanded ? 'planner-section-chevron is-expanded' : 'planner-section-chevron'}
+      strokeWidth={1.8}
+    />
+  )
+}
+
 export function BackgroundFitRailChevron({ isExpanded }: { isExpanded: boolean }) {
   return (
     <ChevronRight

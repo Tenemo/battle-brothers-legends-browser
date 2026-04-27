@@ -16,7 +16,6 @@ export type LegendsPerkPlacement = {
   categoryName: string
   tier: number | null
   perkGroupAttributes: string[]
-  perkGroupDescriptions: string[]
   perkGroupIconPath: string | null
   perkGroupId: string
   perkGroupName: string

@@ -127,10 +127,6 @@ export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
     return [primaryPlacement.perkGroupAttributes[0]]
   }
 
-  if (primaryPlacement?.perkGroupDescriptions[0]) {
-    return [primaryPlacement.perkGroupDescriptions[0]]
-  }
-
   if (favouredEnemyTarget) {
     return [
       `${favouredEnemyTarget.entityName} (${favouredEnemyTarget.killsPerPercentBonus ?? 'varies'})`,
