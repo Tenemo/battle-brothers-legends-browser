@@ -183,7 +183,7 @@
       flex-direction: column;
       width: 100%;
       height: auto;
-      min-height: var(--primitive-length-3-25rem);
+      min-height: var(--rail-button-mobile-min-height);
 
       &[data-expanded='false'] {
         width: 100%;

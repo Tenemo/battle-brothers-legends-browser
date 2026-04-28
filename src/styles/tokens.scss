@@ -23,24 +23,26 @@ $primitive-lengths: (
   '0-95rem': 0.95rem, '0-98rem': 0.98rem, '1-2rem': 1.2rem,
   '1-3rem': 1.3rem, '1-05rem': 1.05rem, '1-8rem': 1.8rem,
   '1-9rem': 1.9rem, '1-12rem': 1.12rem, '1-26rem': 1.26rem,
-  '1-35rem': 1.35rem, '1-42rem': 1.42rem, '1-45rem': 1.45rem,
-  '1-68rem': 1.68rem, '1-72rem': 1.72rem, '1-75rem': 1.75rem,
+  '1-35rem': 1.35rem, '1-4rem': 1.4rem, '1-42rem': 1.42rem,
+  '1-45rem': 1.45rem, '1-65rem': 1.65rem, '1-68rem': 1.68rem,
+  '1-72rem': 1.72rem, '1-75rem': 1.75rem,
   '1-95rem': 1.95rem, '1px': 1px, '1rem': 1rem,
   '2-2rem': 2.2rem, '2-3rem': 2.3rem, '2-4rem': 2.4rem,
   '2-6vw': 2.6vw, '2-7rem': 2.7rem, '2-8vw': 2.8vw,
   '2-15rem': 2.15rem, '2-17rem': 2.17rem, '2-34rem': 2.34rem,
-  '2-35rem': 2.35rem, '2-72rem': 2.72rem, '2px': 2px,
+  '2-28rem': 2.28rem, '2-35rem': 2.35rem, '2-72rem': 2.72rem, '2px': 2px,
   '2rem': 2rem, '3-7rem': 3.7rem, '3-25rem': 3.25rem,
   '3-45rem': 3.45rem, '4-7rem': 4.7rem, '4-84rem': 4.84rem,
   '4rem': 4rem, '5-8rem': 5.8rem, '5-9rem': 5.9rem,
-  '6-7rem': 6.7rem, '8px': 8px, '8-6rem': 8.6rem, '10-4rem': 10.4rem,
+  '6-7rem': 6.7rem, '8px': 8px, '8-04rem': 8.04rem, '8-4rem': 8.4rem,
+  '8-7rem': 8.7rem, '10-4rem': 10.4rem,
   '10-5rem': 10.5rem, '10px': 10px, '10rem': 10rem,
-  '11-875rem': 11.875rem, '12-2rem': 12.2rem, '12px': 12px,
+  '11-4rem': 11.4rem, '11-875rem': 11.875rem, '12-2rem': 12.2rem, '12px': 12px,
   '12rem': 12rem, '14rem': 14rem, '15rem': 15rem,
   '16px': 16px, '16rem': 16rem, '17px': 17px,
   '18px': 18px, '18rem': 18rem, '20-625rem': 20.625rem,
   '20rem': 20rem, '22-5rem': 22.5rem, '24px': 24px,
-  '24rem': 24rem, '30rem': 30rem, '32-4rem': 32.4rem,
+  '24rem': 24rem, '26rem': 26rem, '30rem': 30rem, '32-4rem': 32.4rem,
   '36px': 36px, '36rem': 36rem, '38vh': 38vh,
   '40rem': 40rem, '42rem': 42rem, '58px': 58px,
   '68vh': 68vh, '70vh': 70vh, '80px': 80px,
@@ -145,6 +147,11 @@ $primitive-rgb-colors: (
     --space-rail-inline: 0.32rem;
     --space-rail-button-gap: 0.56rem;
     --space-icon-gap: 0.58rem;
+    --rail-button-thickness: 1.65rem;
+    --rail-button-mobile-min-height: 2.28rem;
+    --rail-button-inline-padding: 0.16rem;
+    --rail-button-mobile-padding-block: 0.44rem;
+    --rail-chevron-size: 1.05rem;
     --radius-xs: 0.24rem;
     --radius-sm: 0.42rem;
     --radius-md: 0.52rem;

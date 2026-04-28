@@ -3,6 +3,22 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 const buildPlannerScrollConstraintMinimumWidth = 1280
 const buildPlannerScrollConstraintMaximumWidth = 2560
 const maximumVisiblePlannerContentRows = 2
+const maximumVisibleCompactPlannerContentRows = 4
+
+const plannerCollections = [
+  {
+    itemSelector: '[data-planner-item="picked-perk"]',
+    listSelector: '[data-planner-collection="picked-perks"]',
+  },
+  {
+    itemSelector: '[data-planner-item="group-card"]',
+    listSelector: '[data-planner-collection="shared-groups"]',
+  },
+  {
+    itemSelector: '[data-planner-item="group-card"]',
+    listSelector: '[data-planner-collection="individual-groups"]',
+  },
+]
 
 function getVisualRowCount(elements: HTMLElement[]): number {
   const rowTops: number[] = []
@@ -22,35 +38,36 @@ function getVisualRowCount(elements: HTMLElement[]): number {
   return rowTops.length
 }
 
-function hasPlannerContentPastVisibleRows(plannerBoard: HTMLElement): boolean {
-  const plannerCollections = [
-    {
-      itemSelector: '[data-planner-item="picked-perk"]',
-      listSelector: '[data-planner-collection="picked-perks"]',
-    },
-    {
-      itemSelector: '[data-planner-item="group-card"]',
-      listSelector: '[data-planner-collection="shared-groups"]',
-    },
-    {
-      itemSelector: '[data-planner-item="group-card"]',
-      listSelector: '[data-planner-collection="individual-groups"]',
-    },
-  ]
-
-  return plannerCollections.some(({ itemSelector, listSelector }) => {
+function getPlannerContentRowCounts(plannerBoard: HTMLElement): number[] {
+  return plannerCollections.map(({ itemSelector, listSelector }) => {
     const plannerCollection = plannerBoard.querySelector(listSelector)
 
     if (!(plannerCollection instanceof HTMLElement)) {
-      return false
+      return 0
     }
 
     const plannerItems = [...plannerCollection.querySelectorAll(itemSelector)].filter(
       (element): element is HTMLElement => element instanceof HTMLElement,
     )
 
-    return getVisualRowCount(plannerItems) > maximumVisiblePlannerContentRows
+    return getVisualRowCount(plannerItems)
   })
+}
+
+function hasPlannerContentPastVisibleRows(plannerContentRowCounts: number[]): boolean {
+  return plannerContentRowCounts.some(
+    (plannerContentRowCount) => plannerContentRowCount > maximumVisiblePlannerContentRows,
+  )
+}
+
+function hasPlannerContentPastCompactBudget(plannerContentRowCounts: number[]): boolean {
+  return (
+    plannerContentRowCounts.reduce(
+      (totalPlannerContentRowCount, plannerContentRowCount) =>
+        totalPlannerContentRowCount + plannerContentRowCount,
+      0,
+    ) > maximumVisibleCompactPlannerContentRows
+  )
 }
 
 export function usePlannerScrollConstraint({
@@ -70,11 +87,14 @@ export function usePlannerScrollConstraint({
   const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(false)
   const updatePlannerScrollConstraint = useCallback(() => {
     const plannerBoard = plannerBoardRef.current
+    const plannerContentRowCounts =
+      plannerBoard === null ? [] : getPlannerContentRowCounts(plannerBoard)
     const shouldConstrainPlanner =
       plannerBoard !== null &&
       window.innerWidth >= buildPlannerScrollConstraintMinimumWidth &&
       window.innerWidth < buildPlannerScrollConstraintMaximumWidth &&
-      hasPlannerContentPastVisibleRows(plannerBoard)
+      (hasPlannerContentPastVisibleRows(plannerContentRowCounts) ||
+        hasPlannerContentPastCompactBudget(plannerContentRowCounts))
 
     setIsPlannerScrollConstrained((currentShouldConstrainPlanner) =>
       currentShouldConstrainPlanner === shouldConstrainPlanner

@@ -35,6 +35,9 @@ function getPrimitiveStyleSnapshot() {
     perkRow: getElementStyle(
       '[data-testid="perk-row"][data-picked="false"][data-selected="false"]',
     ),
+    backgroundFitRailChevron: getElementStyle(
+      '[aria-label="Expand background fit"] svg, [aria-label="Collapse background fit"] svg',
+    ),
     plannerActionButton: getElementStyle('[data-testid="clear-build-button"]'),
     plannerButtonIcon: getElementStyle('[data-testid="clear-build-button"] svg'),
     plannerPill: getElementStyle('[data-testid="planner-pill"]'),
@@ -72,6 +75,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   expect(styles.detailPanel).not.toBeNull()
   expect(styles.buildPlannerInfoButton).not.toBeNull()
   expect(styles.plannerActionButton).not.toBeNull()
+  expect(styles.backgroundFitRailChevron).not.toBeNull()
   expect(styles.detailPanelRailChevron).not.toBeNull()
   expect(styles.plannerButtonIcon).not.toBeNull()
 
@@ -95,10 +99,13 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
     backgroundColor: styles.plannerActionButton?.backgroundColor,
     borderColor: styles.plannerActionButton?.borderColor,
   })
-  expect(styles.plannerButtonIcon).toMatchObject({
+  expect(styles.backgroundFitRailChevron).toMatchObject({
     height: styles.detailPanelRailChevron?.height,
     width: styles.detailPanelRailChevron?.width,
   })
+  expect(Number.parseFloat(styles.detailPanelRailChevron!.width)).toBeGreaterThan(
+    Number.parseFloat(styles.plannerButtonIcon!.width),
+  )
   expect(styles.backgroundFitPanel).toMatchObject({
     borderRadius: styles.detailPanel?.borderRadius,
     boxShadow: styles.detailPanel?.boxShadow,

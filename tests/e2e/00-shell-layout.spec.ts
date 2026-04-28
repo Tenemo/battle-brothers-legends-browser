@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   expectNoDocumentHorizontalOverflow,
@@ -12,8 +12,62 @@ import {
   searchPerks,
 } from './support/perks-browser'
 
-const denseSmallDesktopBuildUrl =
+const denseDesktopBuildUrl =
   '/?build=Axe+Mastery,Mace+Mastery,Sword+Mastery,Recover,Berserk,Nimble,Dodge,Underdog,Battle+Flow,Killing+Frenzy,Rotation,Colossus'
+
+type DenseDesktopViewportExpectation = {
+  isBackgroundFitExpandedByDefault: boolean
+  maximumBackgroundFitPanelWidth: number
+  maximumPlannerHeight: number
+  minimumCategorySidebarWidth: number
+  minimumPlannerBoardOverflow: number
+  minimumResultsListHeight: number
+  minimumWorkspaceHeight: number
+  viewportSize: { height: number; width: number }
+}
+
+const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
+  {
+    isBackgroundFitExpandedByDefault: true,
+    maximumBackgroundFitPanelWidth: 430,
+    maximumPlannerHeight: 280,
+    minimumCategorySidebarWidth: 340,
+    minimumPlannerBoardOverflow: 0,
+    minimumResultsListHeight: 600,
+    minimumWorkspaceHeight: 720,
+    viewportSize: { height: 1080, width: 1920 },
+  },
+  {
+    isBackgroundFitExpandedByDefault: true,
+    maximumBackgroundFitPanelWidth: 430,
+    maximumPlannerHeight: 300,
+    minimumCategorySidebarWidth: 250,
+    minimumPlannerBoardOverflow: 40,
+    minimumResultsListHeight: 380,
+    minimumWorkspaceHeight: 520,
+    viewportSize: { height: 900, width: 1440 },
+  },
+  {
+    isBackgroundFitExpandedByDefault: false,
+    maximumBackgroundFitPanelWidth: 40,
+    maximumPlannerHeight: 250,
+    minimumCategorySidebarWidth: 230,
+    minimumPlannerBoardOverflow: 80,
+    minimumResultsListHeight: 320,
+    minimumWorkspaceHeight: 430,
+    viewportSize: { height: 768, width: 1366 },
+  },
+  {
+    isBackgroundFitExpandedByDefault: false,
+    maximumBackgroundFitPanelWidth: 40,
+    maximumPlannerHeight: 235,
+    minimumCategorySidebarWidth: 230,
+    minimumPlannerBoardOverflow: 100,
+    minimumResultsListHeight: 300,
+    minimumWorkspaceHeight: 400,
+    viewportSize: { height: 720, width: 1280 },
+  },
+]
 
 const desktopScrollbarTargets = [
   '[data-testid="background-fit-panel-body"]',
@@ -22,6 +76,88 @@ const desktopScrollbarTargets = [
   '[data-testid="perk-detail-panel-body"]',
   '[data-testid="planner-board"]',
 ]
+
+async function readDenseDesktopLayoutMetrics(page: Page) {
+  return page.evaluate(() => {
+    const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
+    const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
+    const backgroundFitPanel = document.querySelector(
+      '[data-testid="background-fit-panel"]',
+    ) as HTMLElement | null
+    const categorySidebar = document.querySelector(
+      '[data-testid="category-sidebar"]',
+    ) as HTMLElement | null
+    const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+    const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
+
+    return {
+      backgroundFitPanelWidth: backgroundFitPanel?.getBoundingClientRect().width ?? 0,
+      categorySidebarWidth: categorySidebar?.getBoundingClientRect().width ?? 0,
+      plannerBoardOverflow:
+        plannerBoard === null
+          ? Number.POSITIVE_INFINITY
+          : plannerBoard.scrollHeight - plannerBoard.clientHeight,
+      plannerHeight: planner?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY,
+      resultsListHeight: resultsList?.clientHeight ?? 0,
+      workspaceHeight: workspace?.clientHeight ?? 0,
+    }
+  })
+}
+
+async function readRailControlMetrics(page: Page) {
+  return page.evaluate(() => {
+    function readInheritedLengthInPixels(element: HTMLElement, customPropertyName: string) {
+      const probe = document.createElement('div')
+      probe.style.position = 'fixed'
+      probe.style.visibility = 'hidden'
+      probe.style.pointerEvents = 'none'
+      probe.style.width = `var(${customPropertyName})`
+      probe.style.height = '0'
+      element.append(probe)
+
+      const lengthInPixels = probe.getBoundingClientRect().width
+      probe.remove()
+
+      return lengthInPixels
+    }
+
+    function readButtonMetric(accessibleNameText: string) {
+      const button = Array.from(document.querySelectorAll('button')).find((candidateButton) =>
+        candidateButton.getAttribute('aria-label')?.includes(accessibleNameText),
+      )
+
+      if (!(button instanceof HTMLButtonElement)) {
+        throw new Error(`Missing rail button containing "${accessibleNameText}".`)
+      }
+
+      const chevron = button.querySelector('svg')
+
+      if (!(chevron instanceof SVGElement)) {
+        throw new Error(`Missing rail chevron for "${accessibleNameText}".`)
+      }
+
+      const buttonBounds = button.getBoundingClientRect()
+      const chevronBounds = chevron.getBoundingClientRect()
+
+      return {
+        buttonHeight: buttonBounds.height,
+        buttonWidth: buttonBounds.width,
+        chevronStrokeWidth: Number(chevron.getAttribute('stroke-width')),
+        chevronWidth: chevronBounds.width,
+        originalDesktopRailThickness: readInheritedLengthInPixels(button, '--control-height-lg'),
+        originalMobileRailHeight: readInheritedLengthInPixels(
+          button,
+          '--primitive-length-3-25rem',
+        ),
+      }
+    }
+
+    return {
+      backgroundFit: readButtonMetric('background fit'),
+      perkDetails: readButtonMetric('perk details'),
+    }
+  })
+}
 
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
   page,
@@ -82,35 +218,75 @@ test('uses normal page scrolling on tablet widths instead of cramped viewport ro
   expect(scrollableDocumentHeight).toBeGreaterThan(200)
 })
 
-test('keeps dense picked builds usable on small desktop viewports', async ({ page }) => {
-  await page.setViewportSize({ height: 720, width: 1280 })
-  await page.goto(denseSmallDesktopBuildUrl)
+test('keeps dense picked builds compact across desktop viewport sizes', async ({ page }) => {
+  for (const expectation of denseDesktopViewportExpectations) {
+    await page.setViewportSize(expectation.viewportSize)
+    await page.goto(denseDesktopBuildUrl)
 
+    await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+    await expect(page.getByLabel('Search perks')).toBeVisible()
+    await expectViewportLocked(page)
+    await expectNoDocumentHorizontalOverflow(page)
+    await expectNoWorkspaceHorizontalClip(page)
+
+    await expect(
+      getBackgroundFitPanel(page).getByRole('button', {
+        name: `${expectation.isBackgroundFitExpandedByDefault ? 'Collapse' : 'Expand'} background fit`,
+      }),
+    ).toHaveAttribute('aria-expanded', String(expectation.isBackgroundFitExpandedByDefault))
+
+    const desktopMetrics = await readDenseDesktopLayoutMetrics(page)
+
+    expect(desktopMetrics.backgroundFitPanelWidth).toBeLessThanOrEqual(
+      expectation.maximumBackgroundFitPanelWidth,
+    )
+    expect(desktopMetrics.categorySidebarWidth).toBeGreaterThanOrEqual(
+      expectation.minimumCategorySidebarWidth,
+    )
+    expect(desktopMetrics.plannerHeight).toBeLessThanOrEqual(expectation.maximumPlannerHeight)
+    expect(desktopMetrics.plannerBoardOverflow).toBeGreaterThanOrEqual(
+      expectation.minimumPlannerBoardOverflow,
+    )
+    expect(desktopMetrics.resultsListHeight).toBeGreaterThanOrEqual(
+      expectation.minimumResultsListHeight,
+    )
+    expect(desktopMetrics.workspaceHeight).toBeGreaterThanOrEqual(
+      expectation.minimumWorkspaceHeight,
+    )
+  }
+})
+
+test('keeps side rail controls thin with stronger chevrons', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
-  await expect(page.getByLabel('Search perks')).toBeVisible()
-  await expect(
-    getBackgroundFitPanel(page).getByRole('button', { name: 'Expand background fit' }),
-  ).toHaveAttribute('aria-expanded', 'false')
-  await expectNoWorkspaceHorizontalClip(page)
 
-  const smallDesktopMetrics = await page.evaluate(() => {
-    const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
-    const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
-    const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
+  const desktopRailMetrics = await readRailControlMetrics(page)
 
-    return {
-      plannerBoardOverflow:
-        plannerBoard === null
-          ? Number.POSITIVE_INFINITY
-          : plannerBoard.scrollHeight - plannerBoard.clientHeight,
-      resultsListHeight: resultsList?.clientHeight ?? 0,
-      workspaceHeight: workspace?.clientHeight ?? 0,
-    }
-  })
+  expect(desktopRailMetrics.backgroundFit.buttonWidth).toBeLessThanOrEqual(
+    desktopRailMetrics.backgroundFit.originalDesktopRailThickness * 0.72,
+  )
+  expect(desktopRailMetrics.perkDetails.buttonWidth).toBeLessThanOrEqual(
+    desktopRailMetrics.perkDetails.originalDesktopRailThickness * 0.72,
+  )
+  expect(desktopRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(desktopRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(desktopRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(desktopRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 
-  expect(smallDesktopMetrics.plannerBoardOverflow).toBeGreaterThan(20)
-  expect(smallDesktopMetrics.resultsListHeight).toBeGreaterThanOrEqual(160)
-  expect(smallDesktopMetrics.workspaceHeight).toBeGreaterThanOrEqual(340)
+  await gotoPerksBrowser(page, { height: 844, width: 390 })
+
+  const mobileRailMetrics = await readRailControlMetrics(page)
+
+  expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeLessThanOrEqual(
+    mobileRailMetrics.backgroundFit.originalMobileRailHeight * 0.72,
+  )
+  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeLessThanOrEqual(
+    mobileRailMetrics.perkDetails.originalMobileRailHeight * 0.72,
+  )
+  expect(mobileRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(mobileRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(mobileRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(mobileRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 })
 
 test('uses one app scrollbar style across desktop viewport sizes', async ({ page }) => {

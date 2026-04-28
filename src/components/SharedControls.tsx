@@ -3,6 +3,8 @@ import { ChevronRight, Funnel, Star } from 'lucide-react'
 import { cx } from '../lib/class-names'
 import styles from './SharedControls.module.scss'
 
+const railChevronStrokeWidth = 2.6
+
 export function ClearableSearchField({
   className = '',
   clearLabel,
@@ -117,7 +119,7 @@ export function BackgroundFitRailChevron({
       aria-hidden="true"
       className={className}
       data-expanded={isExpanded}
-      strokeWidth={1.8}
+      strokeWidth={railChevronStrokeWidth}
     />
   )
 }
@@ -134,7 +136,7 @@ export function DetailPanelRailChevron({
       aria-hidden="true"
       className={className}
       data-expanded={isExpanded}
-      strokeWidth={1.8}
+      strokeWidth={railChevronStrokeWidth}
     />
   )
 }

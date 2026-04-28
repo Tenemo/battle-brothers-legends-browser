@@ -102,7 +102,7 @@
   @include rounded-panel;
 
   &[data-expanded='false'] {
-    width: var(--control-height-lg);
+    width: var(--rail-button-thickness);
 
     #{$body-selector} {
       pointer-events: none;
@@ -153,8 +153,8 @@
 }
 
 @mixin rail-chevron {
-  width: var(--icon-size-sm);
-  height: var(--icon-size-sm);
+  width: var(--rail-chevron-size);
+  height: var(--rail-chevron-size);
   transition:
     transform var(--motion-medium-duration) ease,
     color var(--motion-medium-duration) ease;
@@ -163,14 +163,17 @@
 @mixin rail-button {
   appearance: none;
   display: flex;
-  flex: 0 0 var(--control-height-lg);
+  flex: 0 0 var(--rail-button-thickness);
   flex-direction: column;
   justify-content: center;
   align-items: center;
   gap: var(--space-lg);
   align-self: stretch;
+  width: var(--rail-button-thickness);
+  min-width: var(--rail-button-thickness);
+  max-width: var(--rail-button-thickness);
   border: 0;
-  padding: var(--space-rail-padding-block) var(--space-sm);
+  padding: var(--space-rail-padding-block) var(--rail-button-inline-padding);
   background:
     linear-gradient(180deg, var(--primitive-color-rgb-181-128-73-alpha-0-1), transparent 38%),
     var(--primitive-color-rgb-20-17-14-alpha-0-92);
@@ -200,6 +203,7 @@
   font-family: var(--heading-font-family);
   font-size: var(--font-size-base);
   letter-spacing: var(--primitive-length-0-08em);
+  line-height: 1;
   writing-mode: vertical-rl;
   transition:
     opacity var(--motion-fast-duration) ease,
@@ -211,9 +215,12 @@
   flex-direction: row;
   justify-content: flex-start;
   order: 0;
-  min-height: var(--primitive-length-3-25rem);
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  min-height: var(--rail-button-mobile-min-height);
   border-bottom: var(--primitive-length-1px) solid var(--border-muted);
-  padding: var(--space-rail-block) var(--space-2xl);
+  padding: var(--rail-button-mobile-padding-block) var(--space-2xl);
 }
 
 @mixin icon-frame {
@@ -254,6 +261,12 @@
 
 @mixin medium-desktop {
   @media (min-width: 1280px) and (max-width: 1439px) {
+    @content;
+  }
+}
+
+@mixin compact-desktop {
+  @media (min-width: 1280px) and (max-width: 1919px), (min-width: 1920px) and (max-height: 1200px) {
     @content;
   }
 }

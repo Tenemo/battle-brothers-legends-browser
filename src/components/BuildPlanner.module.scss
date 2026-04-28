@@ -4,8 +4,7 @@
   .buildPlanner {
     --planner-group-row-min-height: var(--primitive-length-4-7rem);
     --planner-perk-row-min-height: var(--primitive-length-3-45rem);
-    --planner-picked-perk-row-min-height: var(--primitive-length-2-72rem);
-    --planner-picked-perk-slot-width: var(--primitive-length-8-6rem);
+    --planner-picked-perk-slot-width: var(--primitive-length-8-04rem);
     --planner-row-label-width: var(--primitive-length-10-4rem);
     --planner-slot-width: var(--primitive-length-10-4rem);
     --planner-track-gap: var(--space-md);
@@ -616,10 +615,6 @@
       min-height: var(--planner-perk-row-min-height);
     }
 
-    .plannerSlotPerk {
-      min-height: var(--planner-picked-perk-row-min-height);
-    }
-
     .plannerSlotPlaceholder {
       flex: 1 1 100%;
       width: 100%;
@@ -638,6 +633,7 @@
     display: flex;
     align-items: stretch;
     width: min(var(--planner-picked-perk-slot-width), 100%);
+    height: var(--planner-perk-row-min-height);
     padding: 0;
     color: inherit;
     isolation: isolate;
@@ -683,7 +679,7 @@
     &:hover,
     &:focus-within {
       .plannerSlotPerkInspect {
-        padding-right: var(--primitive-length-2-15rem);
+        padding-right: var(--primitive-length-2-34rem);
       }
 
       .plannerSlotRemoveButton {
@@ -697,13 +693,13 @@
   .plannerSlotPerkInspect {
     appearance: none;
     display: flex;
-    gap: var(--space-sm);
+    gap: var(--space-md);
     align-items: center;
     width: 100%;
-    min-height: calc(var(--planner-picked-perk-row-min-height) - var(--primitive-length-2px));
+    min-height: calc(var(--planner-perk-row-min-height) - var(--primitive-length-2px));
     border: 0;
     border-radius: inherit;
-    padding: var(--primitive-length-0-28rem) var(--primitive-length-0-36rem);
+    padding: var(--primitive-length-0-38rem) var(--primitive-length-0-46rem);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -988,6 +984,7 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     overflow-wrap: break-word;
+    text-overflow: ellipsis;
     font-size: var(--font-size-md);
     font-weight: 600;
     line-height: 1.05;
@@ -1018,6 +1015,68 @@
 
     to {
       transform: scaleX(1);
+    }
+  }
+
+  @include compact-desktop {
+    .buildPlanner {
+      --planner-group-row-min-height: var(--primitive-length-3-7rem);
+      --planner-perk-row-min-height: var(--primitive-length-2-72rem);
+      --planner-picked-perk-row-min-height: var(--primitive-length-2-4rem);
+      --planner-row-label-width: var(--primitive-length-8-4rem);
+      --planner-slot-width: var(--primitive-length-8-7rem);
+      --planner-track-gap: var(--primitive-length-0-34rem);
+      --planner-tile-width: var(--primitive-length-11-4rem);
+      --planner-placeholder-width: var(--primitive-length-12rem);
+      --planner-icon-frame-size: var(--primitive-length-1-45rem);
+
+      gap: var(--space-sm);
+      padding: var(--space-md);
+    }
+
+    .buildPlannerHeader {
+      min-height: var(--control-height-lg);
+    }
+
+    .buildPlanner[data-scroll-constrained='true'] {
+      max-height: min(var(--primitive-length-15rem), calc(100dvh * 0.32));
+    }
+
+    .plannerActionButton {
+      padding: var(--space-xs) var(--space-md);
+    }
+
+    .plannerBoard {
+      flex: 1 1 auto;
+      overflow: auto;
+      padding-right: var(--space-2xs);
+    }
+
+    .plannerRow {
+      gap: var(--space-md);
+    }
+
+    .plannerSlot,
+    .plannerGroupCard,
+    .plannerSectionPlaceholder {
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .plannerSlotPerk {
+      padding: 0;
+    }
+
+    .plannerSlotPerkInspect {
+      gap: var(--space-sm);
+      padding: var(--space-xs) var(--space-sm);
+    }
+
+    .plannerGroupCardHeader {
+      gap: var(--space-sm);
+    }
+
+    .plannerPillList {
+      margin-top: var(--space-sm);
     }
   }
 

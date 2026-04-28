@@ -203,13 +203,16 @@
 
   .workspace {
     --workspace-background-fit-column: minmax(var(--primitive-length-24rem), 0.96fr);
+    --workspace-category-column: minmax(var(--primitive-length-12rem), 0.56fr);
     --workspace-detail-column: minmax(var(--primitive-length-22-5rem), 1.02fr);
 
     display: grid;
     flex: 1;
     grid-template-columns:
-      var(--workspace-background-fit-column) minmax(var(--primitive-length-12rem), 0.56fr)
-      minmax(var(--primitive-length-20-625rem), 0.96fr) var(--workspace-detail-column);
+      var(--workspace-background-fit-column) var(--workspace-category-column) minmax(
+        var(--primitive-length-20-625rem),
+        0.96fr
+      ) var(--workspace-detail-column);
     gap: var(--primitive-length-0-7rem);
     align-items: stretch;
     min-height: 0;
@@ -265,11 +268,14 @@
 
     .workspace {
       --workspace-background-fit-column: minmax(var(--primitive-length-18rem), 0.8fr);
+      --workspace-category-column: minmax(var(--primitive-length-10-5rem), 0.52fr);
       --workspace-detail-column: minmax(var(--primitive-length-18rem), 1fr);
 
       grid-template-columns:
-        var(--workspace-background-fit-column) minmax(var(--primitive-length-10-5rem), 0.52fr)
-        minmax(var(--primitive-length-18rem), 1fr) var(--workspace-detail-column);
+        var(--workspace-background-fit-column) var(--workspace-category-column) minmax(
+          var(--primitive-length-18rem),
+          1fr
+        ) var(--workspace-detail-column);
       gap: var(--primitive-length-0-55rem);
     }
   }
@@ -277,11 +283,48 @@
   @media (min-width: 1440px) {
     .workspace {
       --workspace-background-fit-column: minmax(0, var(--primitive-length-32-4rem));
+      --workspace-category-column: minmax(var(--primitive-length-11-875rem), 0.56fr);
       --workspace-detail-column: minmax(var(--primitive-length-20rem), 1.02fr);
 
       grid-template-columns:
-        var(--workspace-background-fit-column) minmax(var(--primitive-length-11-875rem), 0.56fr)
-        minmax(var(--primitive-length-20-625rem), 0.96fr) var(--workspace-detail-column);
+        var(--workspace-background-fit-column) var(--workspace-category-column) minmax(
+          var(--primitive-length-20-625rem),
+          0.96fr
+        ) var(--workspace-detail-column);
+    }
+  }
+
+  @include compact-desktop {
+    .appShell {
+      --space-md: var(--primitive-length-0-32rem);
+      --space-lg: var(--primitive-length-0-44rem);
+      --space-xl: var(--primitive-length-0-56rem);
+      --space-2xl: var(--primitive-length-0-62rem);
+      --space-3xl: var(--primitive-length-0-84rem);
+      --space-control-inline: var(--primitive-length-0-52rem);
+      --space-rail-padding-block: var(--primitive-length-0-56rem);
+      --space-rail-block: var(--primitive-length-0-48rem);
+      --space-icon-gap: var(--primitive-length-0-44rem);
+      --control-height-sm: var(--primitive-length-1-68rem);
+      --control-height-md: var(--primitive-length-1-8rem);
+      --control-height-lg: var(--primitive-length-2rem);
+      --target-size: var(--primitive-length-2rem);
+      --target-size-compact: var(--primitive-length-1-05rem);
+      --rail-button-thickness: var(--primitive-length-1-4rem);
+
+      gap: var(--primitive-length-0-5rem);
+      padding: var(--primitive-length-0-5rem);
+    }
+
+    .hero {
+      padding-bottom: var(--space-sm);
+    }
+
+    .workspace {
+      --workspace-background-fit-column: minmax(0, var(--primitive-length-26rem));
+      --workspace-category-column: minmax(var(--primitive-length-15rem), 0.72fr);
+
+      gap: var(--space-md);
     }
   }
 

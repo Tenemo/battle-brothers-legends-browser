@@ -164,6 +164,16 @@ async function getPlannerWrapMetrics(page: Page) {
         '[data-testid="build-shared-groups-list"]',
         '[data-testid="planner-group-card"]',
       ),
+      totalContentRows:
+        getVisualRowCount('[data-testid="build-perks-bar"]', '[data-testid="planner-slot-perk"]') +
+        getVisualRowCount(
+          '[data-testid="build-shared-groups-list"]',
+          '[data-testid="planner-group-card"]',
+        ) +
+        getVisualRowCount(
+          '[data-testid="build-individual-groups-list"]',
+          '[data-testid="planner-group-card"]',
+        ),
     }
   })
 }
@@ -191,22 +201,6 @@ test('build planner splits shared and individual perk groups without layout drif
   const plannerBoardHeightBeforePicking = await page
     .getByTestId('planner-board')
     .evaluate((element) => element.getBoundingClientRect().height)
-  const compactPickedPerkTileHeightAllowance = await page
-    .getByRole('region', { name: 'Build planner' })
-    .evaluate((buildPlanner) => {
-      const computedStyle = window.getComputedStyle(buildPlanner)
-      const rootFontSize = Number.parseFloat(
-        window.getComputedStyle(document.documentElement).fontSize,
-      )
-      const placeholderPerkRowMinHeight = Number.parseFloat(
-        computedStyle.getPropertyValue('--planner-perk-row-min-height'),
-      )
-      const pickedPerkRowMinHeight = Number.parseFloat(
-        computedStyle.getPropertyValue('--planner-picked-perk-row-min-height'),
-      )
-
-      return Math.max(8, (placeholderPerkRowMinHeight - pickedPerkRowMinHeight) * rootFontSize + 2)
-    })
   const plannerRowTopsBeforePicking = await page
     .getByTestId('planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
@@ -241,7 +235,7 @@ test('build planner splits shared and individual perk groups without layout drif
     .poll(async () =>
       page.getByTestId('planner-board').evaluate((element) => element.getBoundingClientRect().height),
     )
-    .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - compactPickedPerkTileHeightAllowance)
+    .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - 8)
   const plannerRowTopsAfterPicking = await page
     .getByTestId('planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
@@ -250,7 +244,7 @@ test('build planner splits shared and individual perk groups without layout drif
   for (const [rowIndex, plannerRowTopBeforePicking] of plannerRowTopsBeforePicking.entries()) {
     expect(
       Math.abs(plannerRowTopsAfterPicking[rowIndex] - plannerRowTopBeforePicking),
-    ).toBeLessThanOrEqual(compactPickedPerkTileHeightAllowance)
+    ).toBeLessThanOrEqual(8)
   }
   await expect(
     getBuildSharedGroupsList(page).getByText(
@@ -530,7 +524,7 @@ test('build planner splits shared and individual perk groups without layout drif
   }
 })
 
-test('scrolls the planner below wide desktop only after content wraps past two rows', async ({
+test('scrolls the planner below wide desktop only after compact content exceeds its budget', async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
@@ -548,21 +542,16 @@ test('scrolls the planner below wide desktop only after content wraps past two r
       twoRowPlannerMetrics.individualRows,
     ),
   ).toBeLessThanOrEqual(2)
+  expect(twoRowPlannerMetrics.totalContentRows).toBeLessThanOrEqual(4)
 
-  await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 12)))
-  await expect(page.getByText('12 perks picked.')).toBeVisible()
+  await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 18)))
+  await expect(page.getByText('18 perks picked.')).toBeVisible()
   await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute('data-scroll-constrained', 'true')
 
   const overflowingPlannerMetrics = await getPlannerWrapMetrics(page)
 
   expect(overflowingPlannerMetrics.boardOverflow).toBeGreaterThan(20)
-  expect(
-    Math.max(
-      overflowingPlannerMetrics.perkRows,
-      overflowingPlannerMetrics.sharedRows,
-      overflowingPlannerMetrics.individualRows,
-    ),
-  ).toBeGreaterThan(2)
+  expect(overflowingPlannerMetrics.totalContentRows).toBeGreaterThan(4)
 
   await page.setViewportSize({ width: 2560, height: 900 })
   await page.goto(createBuildUrl(manyPickedPerkNames))
@@ -1122,16 +1111,16 @@ test('keeps long planner group names compact without category text', async ({ pa
 
 test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
   await gotoPerksBrowser(page, { height: 768, width: 1366 })
-  await page.goto(createBuildUrl(['Immovable Object', 'Clarity']))
+  await page.goto(createBuildUrl(['Anatomical Studies', 'Clarity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
-  const immovableObjectPickedPerkTile = getBuildPerksBar(page)
+  const anatomicalStudiesPickedPerkTile = getBuildPerksBar(page)
     .getByTestId('planner-slot-perk')
-    .filter({ hasText: 'Immovable Object' })
+    .filter({ hasText: 'Anatomical Studies' })
 
-  await expect(immovableObjectPickedPerkTile).toBeVisible()
+  await expect(anatomicalStudiesPickedPerkTile).toBeVisible()
 
-  const pickedPerkMetrics = await immovableObjectPickedPerkTile.evaluate((pickedPerkTile) => {
+  const pickedPerkMetrics = await anatomicalStudiesPickedPerkTile.evaluate((pickedPerkTile) => {
     const pickedPerkName = pickedPerkTile.querySelector('[data-testid="planner-picked-perk-name"]')
     const buildPlanner = pickedPerkTile.closest('[aria-label="Build planner"]')
 
@@ -1156,12 +1145,14 @@ test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
     )
 
     return {
-      nameOverflow: pickedPerkName.scrollWidth - pickedPerkName.clientWidth,
       nameHeight: pickedPerkNameRectangle.height,
+      nameHorizontalOverflow: pickedPerkName.scrollWidth - pickedPerkName.clientWidth,
       nameLineClamp: pickedPerkNameStyle.webkitLineClamp,
       nameLineHeight: Number.isFinite(pickedPerkNameLineHeight)
         ? pickedPerkNameLineHeight
         : fallbackPickedPerkNameLineHeight,
+      nameTextOverflow: pickedPerkNameStyle.textOverflow,
+      nameVerticalOverflow: pickedPerkName.scrollHeight - pickedPerkName.clientHeight,
       nameWhiteSpace: pickedPerkNameStyle.whiteSpace,
       pickedPerkSlotWidth: plannerPickedPerkSlotWidth * rootFontSize,
       slotWidth: plannerSlotWidth * rootFontSize,
@@ -1205,8 +1196,10 @@ test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
     .evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().width))
 
   expect(pickedPerkMetrics).not.toBeNull()
-  expect(pickedPerkMetrics!.nameOverflow).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.nameHorizontalOverflow).toBeLessThanOrEqual(1)
   expect(pickedPerkMetrics!.nameLineClamp).toBe('2')
+  expect(pickedPerkMetrics!.nameTextOverflow).toBe('ellipsis')
+  expect(pickedPerkMetrics!.nameVerticalOverflow).toBeGreaterThan(1)
   expect(pickedPerkMetrics!.nameWhiteSpace).toBe('normal')
   expect(pickedPerkMetrics!.nameHeight).toBeGreaterThan(pickedPerkMetrics!.nameLineHeight + 1)
   expect(pickedPerkMetrics!.nameHeight).toBeLessThanOrEqual(

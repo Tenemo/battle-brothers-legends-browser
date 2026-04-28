@@ -526,12 +526,18 @@
     }
   }
 
+  @include compact-desktop {
+    .backgroundFitPanel {
+      width: min(100%, var(--primitive-length-26rem));
+    }
+  }
+
   @include below-desktop {
     .backgroundFitPanel {
       flex-direction: column;
       width: 100%;
       height: auto;
-      min-height: var(--primitive-length-3-25rem);
+      min-height: var(--rail-button-mobile-min-height);
 
       &[data-expanded='false'] {
         width: 100%;
