@@ -18,7 +18,14 @@ const denseDesktopBuildUrl =
 type DenseDesktopViewportExpectation = {
   isBackgroundFitExpandedByDefault: boolean
   maximumBackgroundFitPanelWidth: number
+  maximumDetailPanelBodyGap: number
+  maximumDetailPanelBodyPaddingTop: number
+  maximumDetailParagraphMarginTop: number
+  maximumPerkPlacementIconWidth: number
+  maximumPerkRowIconWidth: number
+  maximumPerkRowPaddingBlock: number
   maximumPlannerHeight: number
+  maximumResultsListGap: number
   minimumCategorySidebarWidth: number
   minimumPlannerBoardOverflow: number
   minimumResultsListHeight: number
@@ -26,8 +33,19 @@ type DenseDesktopViewportExpectation = {
   viewportSize: { height: number; width: number }
 }
 
+const compactDesktopDensityExpectation = {
+  maximumDetailPanelBodyGap: 8,
+  maximumDetailPanelBodyPaddingTop: 8,
+  maximumDetailParagraphMarginTop: 4.5,
+  maximumPerkPlacementIconWidth: 22,
+  maximumPerkRowIconWidth: 38,
+  maximumPerkRowPaddingBlock: 36,
+  maximumResultsListGap: 6,
+}
+
 const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
   {
+    ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: true,
     maximumBackgroundFitPanelWidth: 430,
     maximumPlannerHeight: 280,
@@ -38,6 +56,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
     viewportSize: { height: 1080, width: 1920 },
   },
   {
+    ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: true,
     maximumBackgroundFitPanelWidth: 430,
     maximumPlannerHeight: 300,
@@ -48,6 +67,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
     viewportSize: { height: 900, width: 1440 },
   },
   {
+    ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: false,
     maximumBackgroundFitPanelWidth: 40,
     maximumPlannerHeight: 250,
@@ -58,6 +78,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
     viewportSize: { height: 768, width: 1366 },
   },
   {
+    ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: false,
     maximumBackgroundFitPanelWidth: 40,
     maximumPlannerHeight: 235,
@@ -79,6 +100,12 @@ const desktopScrollbarTargets = [
 
 async function readDenseDesktopLayoutMetrics(page: Page) {
   return page.evaluate(() => {
+    function parsePixelValue(value: string) {
+      const parsedValue = Number.parseFloat(value)
+
+      return Number.isFinite(parsedValue) ? parsedValue : Number.POSITIVE_INFINITY
+    }
+
     const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
     const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
     const backgroundFitPanel = document.querySelector(
@@ -87,18 +114,60 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     const categorySidebar = document.querySelector(
       '[data-testid="category-sidebar"]',
     ) as HTMLElement | null
+    const detailPanelBody = document.querySelector(
+      '[data-testid="perk-detail-panel-body"]',
+    ) as HTMLElement | null
+    const detailParagraph = document.querySelector(
+      '[data-testid="detail-section"] p',
+    ) as HTMLElement | null
+    const firstPerkPlacementIcon = document.querySelector(
+      '[data-testid="perk-placement-icon"]',
+    ) as HTMLElement | null
+    const firstPerkRow = document.querySelector('[data-testid="perk-row"]') as HTMLElement | null
+    const firstPerkRowIcon = document.querySelector(
+      '[data-testid="perk-row-icon"]',
+    ) as HTMLElement | null
     const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
     const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
+    const detailPanelBodyStyle =
+      detailPanelBody === null ? null : window.getComputedStyle(detailPanelBody)
+    const detailParagraphStyle =
+      detailParagraph === null ? null : window.getComputedStyle(detailParagraph)
+    const firstPerkRowStyle = firstPerkRow === null ? null : window.getComputedStyle(firstPerkRow)
+    const resultsListStyle = resultsList === null ? null : window.getComputedStyle(resultsList)
 
     return {
       backgroundFitPanelWidth: backgroundFitPanel?.getBoundingClientRect().width ?? 0,
       categorySidebarWidth: categorySidebar?.getBoundingClientRect().width ?? 0,
+      detailPanelBodyGap:
+        detailPanelBodyStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(detailPanelBodyStyle.rowGap),
+      detailPanelBodyPaddingTop:
+        detailPanelBodyStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(detailPanelBodyStyle.paddingTop),
+      detailParagraphMarginTop:
+        detailParagraphStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(detailParagraphStyle.marginTop),
+      perkPlacementIconWidth: firstPerkPlacementIcon?.getBoundingClientRect().width ?? 0,
+      perkRowIconWidth: firstPerkRowIcon?.getBoundingClientRect().width ?? 0,
+      perkRowPaddingBlock:
+        firstPerkRowStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(firstPerkRowStyle.paddingTop) +
+            parsePixelValue(firstPerkRowStyle.paddingBottom),
       plannerBoardOverflow:
         plannerBoard === null
           ? Number.POSITIVE_INFINITY
           : plannerBoard.scrollHeight - plannerBoard.clientHeight,
       plannerHeight: planner?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY,
       resultsListHeight: resultsList?.clientHeight ?? 0,
+      resultsListGap:
+        resultsListStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(resultsListStyle.rowGap),
       workspaceHeight: workspace?.clientHeight ?? 0,
     }
   })
@@ -242,6 +311,25 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     )
     expect(desktopMetrics.categorySidebarWidth).toBeGreaterThanOrEqual(
       expectation.minimumCategorySidebarWidth,
+    )
+    expect(desktopMetrics.resultsListGap).toBeLessThanOrEqual(expectation.maximumResultsListGap)
+    expect(desktopMetrics.perkRowPaddingBlock).toBeLessThanOrEqual(
+      expectation.maximumPerkRowPaddingBlock,
+    )
+    expect(desktopMetrics.perkRowIconWidth).toBeLessThanOrEqual(
+      expectation.maximumPerkRowIconWidth,
+    )
+    expect(desktopMetrics.perkPlacementIconWidth).toBeLessThanOrEqual(
+      expectation.maximumPerkPlacementIconWidth,
+    )
+    expect(desktopMetrics.detailPanelBodyGap).toBeLessThanOrEqual(
+      expectation.maximumDetailPanelBodyGap,
+    )
+    expect(desktopMetrics.detailPanelBodyPaddingTop).toBeLessThanOrEqual(
+      expectation.maximumDetailPanelBodyPaddingTop,
+    )
+    expect(desktopMetrics.detailParagraphMarginTop).toBeLessThanOrEqual(
+      expectation.maximumDetailParagraphMarginTop,
     )
     expect(desktopMetrics.plannerHeight).toBeLessThanOrEqual(expectation.maximumPlannerHeight)
     expect(desktopMetrics.plannerBoardOverflow).toBeGreaterThanOrEqual(

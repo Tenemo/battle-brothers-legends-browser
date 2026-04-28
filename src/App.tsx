@@ -297,15 +297,6 @@ export default function App() {
         : [],
     [selectedPerk],
   )
-  const selectedCategoryCount = selectedCategoryNames.length
-  const selectedPerkGroupCount = useMemo(
-    () =>
-      Object.values(selectedPerkGroupIdsByCategory).reduce(
-        (perkGroupCount, selectedPerkGroupIds) => perkGroupCount + selectedPerkGroupIds.length,
-        0,
-      ),
-    [selectedPerkGroupIdsByCategory],
-  )
   const handleUrlStateChange = useCallback(
     (urlState: typeof initialUrlState) => {
       startTransition(() => {
@@ -723,9 +714,7 @@ export default function App() {
           onTogglePerkPicked={handleTogglePerkPicked}
           pickedPerkOrderById={pickedPerkOrderById}
           query={query}
-          selectedCategoryCount={selectedCategoryCount}
           selectedPerk={selectedPerk}
-          selectedPerkGroupCount={selectedPerkGroupCount}
           setQuery={setQuery}
           shouldIncludeOriginAndAncientScrollPerkGroups={
             shouldIncludeOriginAndAncientScrollPerkGroups

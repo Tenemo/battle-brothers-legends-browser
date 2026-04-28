@@ -24,24 +24,6 @@
     align-items: stretch;
   }
 
-  .resultsSummary {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2xl);
-    align-items: baseline;
-    padding: var(--primitive-length-0-12rem) 0 var(--primitive-length-0-06rem);
-    color: var(--text-secondary);
-    font-size: var(--primitive-length-0-83rem);
-
-    p {
-      margin: 0;
-    }
-  }
-
-  .resultsNote {
-    color: var(--text-secondary);
-  }
-
   .resultsList {
     display: flex;
     flex: 1 1 auto;
@@ -230,6 +212,61 @@
     pointer-events: auto;
   }
 
+  @include compact-desktop {
+    .resultsPanel {
+      gap: var(--space-sm);
+      padding: var(--space-lg);
+    }
+
+    .resultsList {
+      gap: var(--space-sm);
+      padding-top: var(--space-xs);
+    }
+
+    .perkRow {
+      padding: var(--space-sm) var(--primitive-length-2-72rem)
+        var(--primitive-length-1-72rem) var(--space-md);
+    }
+
+    .perkRowLayout {
+      grid-template-columns: var(--primitive-length-2-35rem) minmax(0, 1fr);
+      gap: var(--primitive-length-0-12rem) var(--space-md);
+    }
+
+    .perkRowIcon {
+      @include size(var(--primitive-length-2-35rem));
+
+      border-radius: var(--radius-sm);
+    }
+
+    .perkRowTopline {
+      gap: var(--space-md);
+    }
+
+    .perkContext,
+    .perkPreview {
+      margin-top: var(--space-2xs);
+    }
+
+    .perkPreview {
+      gap: var(--space-2xs);
+    }
+
+    .perkPlacementList {
+      gap: var(--space-2xs) var(--space-xs);
+    }
+
+    .perkPlacementChip {
+      gap: var(--space-2xs);
+      padding: var(--space-3xs) var(--space-xs) var(--space-3xs) var(--space-2xs);
+    }
+
+    .buildToggleButtonInRow {
+      right: var(--space-md);
+      bottom: var(--space-md);
+    }
+  }
+
   @include below-desktop {
     .resultsPanel {
       height: auto;
@@ -251,7 +288,6 @@
       order: 1;
     }
 
-    .resultsSummary,
     .perkRowTopline {
       flex-direction: column;
       align-items: flex-start;

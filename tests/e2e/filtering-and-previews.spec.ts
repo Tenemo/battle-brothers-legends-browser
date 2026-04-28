@@ -23,13 +23,12 @@ test('switches active categories and scoped perk groups, then clears everything 
 
   await enableCategory(page, 'Traits')
   await selectPerkGroup(page, 'Calm')
-  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
+  await expect(page.getByText(/Filtered to /i)).toHaveCount(0)
 
   await enableCategory(page, 'Enemy')
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
-  await expect(page.getByText('Filtered to 1 category.')).toBeVisible()
   await expect(
     getResultsList(page).getByRole('button', {
       name: 'Inspect Favoured Enemy - Beasts',
@@ -41,7 +40,7 @@ test('switches active categories and scoped perk groups, then clears everything 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByLabel('Filter by tier')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Clear all filters' })).toHaveCount(0)
-  await expect(page.getByText(/Ranked by exact perk names first/i)).toBeVisible()
+  await expect(page.getByText(/Ranked by exact perk names first/i)).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
 })
 
@@ -59,7 +58,7 @@ test('keeps only one selected perk group when another group is selected', async 
   await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'true')
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
-  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
+  await expect(page.getByText(/Filtered to /i)).toHaveCount(0)
   await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
 
@@ -297,7 +296,7 @@ test('shows every matching perk group placement in the result list', async ({ pa
   await expect(page.getByRole('button', { name: 'Enable category Class' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Ranger')).toHaveAttribute('aria-pressed', 'true')
-  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
+  await expect(page.getByText(/Filtered to /i)).toHaveCount(0)
 })
 
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {

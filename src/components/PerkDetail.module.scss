@@ -178,6 +178,51 @@
     }
   }
 
+  @include compact-desktop {
+    .detailPanelBody {
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+    }
+
+    .detailHeader {
+      gap: var(--space-lg);
+      padding-bottom: var(--space-md);
+    }
+
+    .detailHeaderMain {
+      grid-template-columns: var(--primitive-length-3-45rem) minmax(0, 1fr);
+      gap: var(--space-lg);
+    }
+
+    .detailSection p,
+    .detailList,
+    .detailPlacementList {
+      margin-top: var(--space-xs);
+    }
+
+    .detailList {
+      padding-left: var(--space-xl);
+
+      li {
+        gap: var(--space-md);
+        margin-top: var(--space-xs);
+
+        + li {
+          padding-top: var(--space-sm);
+        }
+      }
+    }
+
+    .detailItemMain,
+    .detailPlacementList {
+      gap: var(--space-sm);
+    }
+
+    .detailSupport {
+      margin-top: var(--space-2xs);
+    }
+  }
+
   @include below-desktop {
     .detailPanel {
       flex-direction: column;

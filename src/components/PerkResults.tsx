@@ -126,9 +126,7 @@ export function PerkResults({
   onTogglePerkPicked,
   pickedPerkOrderById,
   query,
-  selectedCategoryCount,
   selectedPerk,
-  selectedPerkGroupCount,
   setQuery,
   shouldIncludeOriginAndAncientScrollPerkGroups,
   visiblePerks,
@@ -149,9 +147,7 @@ export function PerkResults({
   onTogglePerkPicked: (perkId: string) => void
   pickedPerkOrderById: Map<string, number>
   query: string
-  selectedCategoryCount: number
   selectedPerk: LegendsPerkRecord | null
-  selectedPerkGroupCount: number
   setQuery: (query: string) => void
   shouldIncludeOriginAndAncientScrollPerkGroups: boolean
   visiblePerks: LegendsPerkRecord[]
@@ -249,20 +245,6 @@ export function PerkResults({
           }
           value={query}
         />
-      </div>
-
-      <div className={styles.resultsSummary}>
-        <p>
-          Showing <strong>{visiblePerks.length}</strong> perk
-          {visiblePerks.length === 1 ? '' : 's'}
-        </p>
-        <p className={styles.resultsNote}>
-          {selectedPerkGroupCount > 0
-            ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'} and ${selectedPerkGroupCount} perk group${selectedPerkGroupCount === 1 ? '' : 's'}.`
-            : selectedCategoryCount > 0
-              ? `Filtered to ${selectedCategoryCount} categor${selectedCategoryCount === 1 ? 'y' : 'ies'}.`
-              : 'Ranked by exact perk names first, then perk group and category matches, then background, scenario, and full text.'}
-        </p>
       </div>
 
       <ul

@@ -3,6 +3,7 @@ import {
   addPerkToBuildFromResults,
   enableCategory,
   getBuildPerksBar,
+  getSidebarPerkGroupButton,
   gotoPerksBrowser,
   searchPerks,
   selectPerkGroup,
@@ -35,7 +36,9 @@ test('copies a canonical build-only link from an active filtered workspace', asy
 
   await expect(getBuildPerksBar(page).getByTestId('planner-slot-perk')).toHaveCount(2)
   await expect(page.getByLabel('Search perks')).toHaveValue('Clarity')
-  await expect(page.getByText('Filtered to 1 category and 1 perk group.')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByText(/Filtered to /i)).toHaveCount(0)
 
   await copyBuildLinkButton.click()
 
