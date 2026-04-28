@@ -718,6 +718,28 @@ test('collapses and restores build planner perk group sections independently', a
   expect(individualCollapsedToggleMetrics.height).toBeLessThan(36)
   expect(individualCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
 
+  await sharedCollapseToggle.click()
+
+  const collapsedToggleGap = await page.evaluate(() => {
+    const collapsedToggleRectangles = [
+      ...document.querySelectorAll<HTMLElement>(
+        '[data-testid="planner-section-toggle"][aria-expanded="false"]',
+      ),
+    ]
+      .map((toggle) => toggle.getBoundingClientRect())
+      .toSorted((leftRectangle, rightRectangle) => leftRectangle.top - rightRectangle.top)
+
+    if (collapsedToggleRectangles.length !== 2) {
+      return null
+    }
+
+    return collapsedToggleRectangles[1]!.top - collapsedToggleRectangles[0]!.bottom
+  })
+
+  expect(collapsedToggleGap).not.toBeNull()
+  expect(collapsedToggleGap!).toBeGreaterThanOrEqual(6)
+
+  await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
   await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()
   await expect(buildIndividualGroupsList.getByTestId('planner-group-card')).toHaveCount(1)
   await expect(buildIndividualGroupsList).toBeVisible()

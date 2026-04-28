@@ -506,7 +506,7 @@
 
       .plannerSectionToggle[data-collapsed-chip='true']
         + .plannerSectionToggle[data-collapsed-chip='true'] {
-        margin-top: 0;
+        margin-top: var(--space-xs);
       }
     }
   }
