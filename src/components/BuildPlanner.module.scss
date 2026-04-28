@@ -4,6 +4,8 @@
   .buildPlanner {
     --planner-group-row-min-height: var(--primitive-length-4-7rem);
     --planner-perk-row-min-height: var(--primitive-length-3-45rem);
+    --planner-picked-perk-row-min-height: var(--primitive-length-2-72rem);
+    --planner-picked-perk-slot-width: var(--primitive-length-8-6rem);
     --planner-row-label-width: var(--primitive-length-10-4rem);
     --planner-slot-width: var(--primitive-length-10-4rem);
     --planner-track-gap: var(--space-md);
@@ -614,6 +616,10 @@
       min-height: var(--planner-perk-row-min-height);
     }
 
+    .plannerSlotPerk {
+      min-height: var(--planner-picked-perk-row-min-height);
+    }
+
     .plannerSlotPlaceholder {
       flex: 1 1 100%;
       width: 100%;
@@ -631,7 +637,7 @@
     position: relative;
     display: flex;
     align-items: stretch;
-    width: min(var(--planner-slot-width), 100%);
+    width: min(var(--planner-picked-perk-slot-width), 100%);
     padding: 0;
     color: inherit;
     isolation: isolate;
@@ -677,7 +683,7 @@
     &:hover,
     &:focus-within {
       .plannerSlotPerkInspect {
-        padding-right: var(--primitive-length-2-34rem);
+        padding-right: var(--primitive-length-2-15rem);
       }
 
       .plannerSlotRemoveButton {
@@ -691,13 +697,13 @@
   .plannerSlotPerkInspect {
     appearance: none;
     display: flex;
-    gap: var(--space-md);
+    gap: var(--space-sm);
     align-items: center;
     width: 100%;
-    min-height: calc(var(--planner-perk-row-min-height) - var(--primitive-length-2px));
+    min-height: calc(var(--planner-picked-perk-row-min-height) - var(--primitive-length-2px));
     border: 0;
     border-radius: inherit;
-    padding: var(--primitive-length-0-38rem) var(--primitive-length-0-46rem);
+    padding: var(--primitive-length-0-28rem) var(--primitive-length-0-36rem);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -976,13 +982,15 @@
   }
 
   .plannerPickedPerkName {
-    display: block;
+    display: -webkit-box;
     min-width: 0;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow-wrap: break-word;
     font-size: var(--font-size-md);
     font-weight: 600;
-    line-height: 1.08;
-
-    @include truncate;
+    line-height: 1.05;
   }
 
   .buildPerkTooltip {

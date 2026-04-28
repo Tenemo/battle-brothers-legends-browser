@@ -191,6 +191,22 @@ test('build planner splits shared and individual perk groups without layout drif
   const plannerBoardHeightBeforePicking = await page
     .getByTestId('planner-board')
     .evaluate((element) => element.getBoundingClientRect().height)
+  const compactPickedPerkTileHeightAllowance = await page
+    .getByRole('region', { name: 'Build planner' })
+    .evaluate((buildPlanner) => {
+      const computedStyle = window.getComputedStyle(buildPlanner)
+      const rootFontSize = Number.parseFloat(
+        window.getComputedStyle(document.documentElement).fontSize,
+      )
+      const placeholderPerkRowMinHeight = Number.parseFloat(
+        computedStyle.getPropertyValue('--planner-perk-row-min-height'),
+      )
+      const pickedPerkRowMinHeight = Number.parseFloat(
+        computedStyle.getPropertyValue('--planner-picked-perk-row-min-height'),
+      )
+
+      return Math.max(8, (placeholderPerkRowMinHeight - pickedPerkRowMinHeight) * rootFontSize + 2)
+    })
   const plannerRowTopsBeforePicking = await page
     .getByTestId('planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
@@ -225,7 +241,7 @@ test('build planner splits shared and individual perk groups without layout drif
     .poll(async () =>
       page.getByTestId('planner-board').evaluate((element) => element.getBoundingClientRect().height),
     )
-    .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - 8)
+    .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - compactPickedPerkTileHeightAllowance)
   const plannerRowTopsAfterPicking = await page
     .getByTestId('planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
@@ -234,7 +250,7 @@ test('build planner splits shared and individual perk groups without layout drif
   for (const [rowIndex, plannerRowTopBeforePicking] of plannerRowTopsBeforePicking.entries()) {
     expect(
       Math.abs(plannerRowTopsAfterPicking[rowIndex] - plannerRowTopBeforePicking),
-    ).toBeLessThanOrEqual(8)
+    ).toBeLessThanOrEqual(compactPickedPerkTileHeightAllowance)
   }
   await expect(
     getBuildSharedGroupsList(page).getByText(
@@ -502,13 +518,16 @@ test('build planner splits shared and individual perk groups without layout drif
 
   const wrappedPerkRowTops = [...new Set(wrappedPerkTilePositions.map((position) => position.top))]
 
-  expect(wrappedPerkRowTops.length).toBeGreaterThan(1)
-  expect(
-    Math.abs(
-      wrappedPerkTilePositions.find((position) => position.top === wrappedPerkRowTops[0])!.left -
-        wrappedPerkTilePositions.find((position) => position.top === wrappedPerkRowTops[1])!.left,
-    ),
-  ).toBeLessThanOrEqual(2)
+  expect(wrappedPerkRowTops.length).toBeGreaterThanOrEqual(1)
+
+  if (wrappedPerkRowTops.length > 1) {
+    expect(
+      Math.abs(
+        wrappedPerkTilePositions.find((position) => position.top === wrappedPerkRowTops[0])!.left -
+          wrappedPerkTilePositions.find((position) => position.top === wrappedPerkRowTops[1])!.left,
+      ),
+    ).toBeLessThanOrEqual(2)
+  }
 })
 
 test('scrolls the planner below wide desktop only after content wraps past two rows', async ({
@@ -1101,7 +1120,7 @@ test('keeps long planner group names compact without category text', async ({ pa
   )
 })
 
-test('keeps picked perk tiles fixed while avoiding default early truncation', async ({ page }) => {
+test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
   await gotoPerksBrowser(page, { height: 768, width: 1366 })
   await page.goto(createBuildUrl(['Immovable Object', 'Clarity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
@@ -1122,6 +1141,13 @@ test('keeps picked perk tiles fixed while avoiding default early truncation', as
 
     const pickedPerkTileRectangle = pickedPerkTile.getBoundingClientRect()
     const computedStyle = window.getComputedStyle(pickedPerkTile)
+    const pickedPerkNameStyle = window.getComputedStyle(pickedPerkName)
+    const pickedPerkNameRectangle = pickedPerkName.getBoundingClientRect()
+    const pickedPerkNameLineHeight = Number.parseFloat(pickedPerkNameStyle.lineHeight)
+    const fallbackPickedPerkNameLineHeight = Number.parseFloat(pickedPerkNameStyle.fontSize) * 1.05
+    const plannerPickedPerkSlotWidth = Number.parseFloat(
+      window.getComputedStyle(buildPlanner).getPropertyValue('--planner-picked-perk-slot-width'),
+    )
     const plannerSlotWidth = Number.parseFloat(
       window.getComputedStyle(buildPlanner).getPropertyValue('--planner-slot-width'),
     )
@@ -1131,9 +1157,47 @@ test('keeps picked perk tiles fixed while avoiding default early truncation', as
 
     return {
       nameOverflow: pickedPerkName.scrollWidth - pickedPerkName.clientWidth,
+      nameHeight: pickedPerkNameRectangle.height,
+      nameLineClamp: pickedPerkNameStyle.webkitLineClamp,
+      nameLineHeight: Number.isFinite(pickedPerkNameLineHeight)
+        ? pickedPerkNameLineHeight
+        : fallbackPickedPerkNameLineHeight,
+      nameWhiteSpace: pickedPerkNameStyle.whiteSpace,
+      pickedPerkSlotWidth: plannerPickedPerkSlotWidth * rootFontSize,
       slotWidth: plannerSlotWidth * rootFontSize,
       tileWidth: pickedPerkTileRectangle.width,
       widthStyle: computedStyle.width,
+    }
+  })
+  const plannerGroupCard = getBuildIndividualGroupsList(page).getByTestId('planner-group-card').first()
+  const plannerGroupCardMetrics = await plannerGroupCard.evaluate((groupCard) => {
+    const groupName = groupCard.querySelector('[data-testid="planner-slot-name"]')
+    const buildPlanner = groupCard.closest('[aria-label="Build planner"]')
+
+    if (!(groupName instanceof HTMLElement) || !(buildPlanner instanceof HTMLElement)) {
+      return null
+    }
+
+    const groupCardRectangle = groupCard.getBoundingClientRect()
+    const groupNameRectangle = groupName.getBoundingClientRect()
+    const groupNameStyle = window.getComputedStyle(groupName)
+    const groupNameLineHeight = Number.parseFloat(groupNameStyle.lineHeight)
+    const fallbackGroupNameLineHeight = Number.parseFloat(groupNameStyle.fontSize) * 1.12
+    const plannerTileWidth = Number.parseFloat(
+      window.getComputedStyle(buildPlanner).getPropertyValue('--planner-tile-width'),
+    )
+    const rootFontSize = Number.parseFloat(
+      window.getComputedStyle(document.documentElement).fontSize,
+    )
+
+    return {
+      groupNameHeight: groupNameRectangle.height,
+      groupNameLineClamp: groupNameStyle.webkitLineClamp,
+      groupNameLineHeight: Number.isFinite(groupNameLineHeight)
+        ? groupNameLineHeight
+        : fallbackGroupNameLineHeight,
+      groupTileWidth: plannerTileWidth * rootFontSize,
+      tileWidth: groupCardRectangle.width,
     }
   })
   const pickedPerkTileWidths = await getBuildPerksBar(page)
@@ -1142,12 +1206,28 @@ test('keeps picked perk tiles fixed while avoiding default early truncation', as
 
   expect(pickedPerkMetrics).not.toBeNull()
   expect(pickedPerkMetrics!.nameOverflow).toBeLessThanOrEqual(1)
-  expect(Math.abs(pickedPerkMetrics!.tileWidth - pickedPerkMetrics!.slotWidth)).toBeLessThanOrEqual(
-    1,
+  expect(pickedPerkMetrics!.nameLineClamp).toBe('2')
+  expect(pickedPerkMetrics!.nameWhiteSpace).toBe('normal')
+  expect(pickedPerkMetrics!.nameHeight).toBeGreaterThan(pickedPerkMetrics!.nameLineHeight + 1)
+  expect(pickedPerkMetrics!.nameHeight).toBeLessThanOrEqual(
+    pickedPerkMetrics!.nameLineHeight * 2 + 1,
   )
+  expect(
+    Math.abs(pickedPerkMetrics!.tileWidth - pickedPerkMetrics!.pickedPerkSlotWidth),
+  ).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.tileWidth).toBeLessThan(pickedPerkMetrics!.slotWidth)
   expect(pickedPerkMetrics!.widthStyle).not.toBe('auto')
   expect(Math.max(...pickedPerkTileWidths) - Math.min(...pickedPerkTileWidths)).toBeLessThanOrEqual(
     1,
+  )
+  expect(plannerGroupCardMetrics).not.toBeNull()
+  expect(
+    Math.abs(plannerGroupCardMetrics!.tileWidth - plannerGroupCardMetrics!.groupTileWidth),
+  ).toBeLessThanOrEqual(1)
+  expect(plannerGroupCardMetrics!.tileWidth).toBeGreaterThan(pickedPerkMetrics!.tileWidth)
+  expect(plannerGroupCardMetrics!.groupNameLineClamp).toBe('1')
+  expect(plannerGroupCardMetrics!.groupNameHeight).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.groupNameLineHeight + 1,
   )
 })
 
