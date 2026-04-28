@@ -89,8 +89,49 @@ test('shows inferred random-fill background sources with calculated chance', asy
   })
 
   await expect(page.getByRole('heading', { level: 2, name: 'Alert' })).toBeVisible()
-  await expect(hedgeKnightBackgroundSourceRow.getByText('Traits / Calm')).toBeVisible()
   await expect(hedgeKnightBackgroundSourceRow.getByText('12.5% chance')).toBeVisible()
+  await expect(backgroundSourcesSection.getByText('Traits / Calm')).toHaveCount(0)
+})
+
+test('merges background sources with the same probability across perk groups', async ({ page }) => {
+  await gotoPerksBrowser(page)
+
+  await searchPerks(page, 'Prayer of Hope')
+  await inspectPerkFromResults(page, 'Prayer of Hope')
+
+  const backgroundSourcesSection = page
+    .getByTestId('detail-section')
+    .filter({ has: page.getByRole('heading', { level: 3, name: 'Background sources' }) })
+  const guaranteedBackgroundSourceRows = backgroundSourcesSection
+    .locator('li')
+    .filter({ has: page.getByTestId('detail-badge').getByText('Guaranteed', { exact: true }) })
+  const daytalerBackgroundSourceRow = backgroundSourcesSection.locator('li').filter({
+    has: page.getByTestId('detail-background-source-names').getByText('Daytaler', { exact: true }),
+  })
+  const roundedChanceBackgroundSourceRows = backgroundSourcesSection.locator('li').filter({
+    has: page.getByTestId('detail-badge').getByText('0.1% chance', { exact: true }),
+  })
+
+  await expect(page.getByRole('heading', { level: 2, name: 'Prayer of Hope' })).toBeVisible()
+  await expect(guaranteedBackgroundSourceRows).toHaveCount(1)
+  await expect(
+    guaranteedBackgroundSourceRows
+      .getByTestId('detail-background-source-names')
+      .getByText(/Battle Sister.*Druid.*Youngblood/i),
+  ).toBeVisible()
+  await expect(daytalerBackgroundSourceRow.getByText('2.1% chance')).toBeVisible()
+  await expect(roundedChanceBackgroundSourceRows).toHaveCount(1)
+  await expect(
+    roundedChanceBackgroundSourceRows.getByTestId('detail-background-source-names'),
+  ).toContainText('Caravan Hand')
+  await expect(
+    roundedChanceBackgroundSourceRows.getByTestId('detail-background-source-names'),
+  ).toContainText('Indebted')
+  await expect(
+    roundedChanceBackgroundSourceRows.getByTestId('detail-background-source-names'),
+  ).toContainText('Retired Soldier')
+  await expect(backgroundSourcesSection.getByText('Class / Faith')).toHaveCount(0)
+  await expect(backgroundSourcesSection.getByText('Magic / Druidic Arts')).toHaveCount(0)
 })
 
 test('sorts background sources from guaranteed to lowest chance', async ({ page }) => {
@@ -145,5 +186,8 @@ test('keeps raw perk group flavour strings out of perk details', async ({ page }
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Civilization')).toHaveAttribute('aria-pressed', 'true')
+  await expect(getSidebarPerkGroupButton(page, 'Civilization')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
 })

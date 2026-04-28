@@ -34,7 +34,6 @@ const sampleDataset: LegendsPerksDataset = {
         {
           categoryName: 'Traits',
           tier: 2,
-          perkGroupAttributes: [],
           perkGroupIconPath: 'ui/perks/clarity_circle.png',
           perkGroupId: 'traits',
           perkGroupName: 'Traits',
@@ -56,7 +55,6 @@ const sampleDataset: LegendsPerksDataset = {
         {
           categoryName: 'Other',
           tier: 1,
-          perkGroupAttributes: [],
           perkGroupIconPath: 'skills/passive_03.png',
           perkGroupId: 'other',
           perkGroupName: 'Other',

@@ -15,19 +15,11 @@ type NormalizedPerkSearchIndex = {
   perkGroupNames: string[]
 }
 
-const normalizedPerkSearchIndexByPerkId = new Map<string, NormalizedPerkSearchIndex>()
-
 function normalizeSearchValue(value: string): string {
   return value.trim().toLowerCase()
 }
 
 function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSearchIndex {
-  const cachedSearchIndex = normalizedPerkSearchIndexByPerkId.get(perk.id)
-
-  if (cachedSearchIndex) {
-    return cachedSearchIndex
-  }
-
   const backgroundNames = perk.backgroundSources.map((backgroundSource) =>
     backgroundSource.backgroundName.toLowerCase(),
   )
@@ -52,7 +44,6 @@ function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSe
     perkGroupNames: perk.placements.map((placement) => placement.perkGroupName.toLowerCase()),
   }
 
-  normalizedPerkSearchIndexByPerkId.set(perk.id, normalizedSearchIndex)
   return normalizedSearchIndex
 }
 
@@ -113,7 +104,6 @@ function getPreviewDescriptionParagraphs(descriptionParagraphs: string[]): strin
 }
 
 export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
-  const primaryPlacement = getPrimaryPlacement(perk)
   const favouredEnemyTarget = perk.favouredEnemyTargets?.[0]
   const backgroundSource = perk.backgroundSources[0]
   const scenarioSource = perk.scenarioSources[0]
@@ -121,10 +111,6 @@ export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
 
   if (descriptionParagraphs !== null) {
     return descriptionParagraphs.map(formatPreviewParagraph)
-  }
-
-  if (primaryPlacement?.perkGroupAttributes[0]) {
-    return [primaryPlacement.perkGroupAttributes[0]]
   }
 
   if (favouredEnemyTarget) {

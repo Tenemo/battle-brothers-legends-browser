@@ -384,82 +384,6 @@ function referenceArrayValue(value, localValues = new Map()) {
     .filter((item) => item !== null)
 }
 
-function resolveNumericRange(value) {
-  const numericRange = arrayValues(value)
-    .map((entry) => numberValue(entry))
-    .filter((entry) => entry !== null)
-
-  return numericRange.length === 2 ? numericRange : null
-}
-
-function formatAttributeLabel(attributeName) {
-  const labelMap = {
-    Bravery: 'Resolve',
-    Hitpoints: 'Hitpoints',
-    Initiative: 'Initiative',
-    MeleeDefense: 'Melee defense',
-    MeleeSkill: 'Melee skill',
-    RangedDefense: 'Ranged defense',
-    RangedSkill: 'Ranged skill',
-    Stamina: 'Max fatigue',
-  }
-
-  return labelMap[attributeName] ?? prettifyIdentifier(attributeName)
-}
-
-function formatNumericModifier(value) {
-  if (value > 0) {
-    return `+${value}`
-  }
-
-  return String(value)
-}
-
-function formatAttributeRange(attributeName, numericRange) {
-  const [minimumValue, maximumValue] = numericRange
-  const label = formatAttributeLabel(attributeName)
-
-  if (minimumValue === 0 && maximumValue === 0) {
-    return null
-  }
-
-  if (minimumValue === maximumValue) {
-    return `${label}: ${formatNumericModifier(minimumValue)}`
-  }
-
-  return `${label}: ${formatNumericModifier(minimumValue)} to ${formatNumericModifier(maximumValue)}`
-}
-
-function flattenPerkGroupAttributes(attributesValue) {
-  const attributesTable = unwrapTable(attributesValue)
-
-  if (attributesTable === null) {
-    return []
-  }
-
-  const lines = []
-
-  for (const entry of attributesTable.entries) {
-    if (entry.type !== 'property') {
-      continue
-    }
-
-    const numericRange = resolveNumericRange(entry.value)
-
-    if (numericRange === null) {
-      continue
-    }
-
-    const line = formatAttributeRange(entry.key, numericRange)
-
-    if (line !== null) {
-      lines.push(line)
-    }
-  }
-
-  return lines
-}
-
 function resolveReferenceConstName(reference) {
   if (reference === null) {
     return null
@@ -714,7 +638,6 @@ function parsePerkGroupConfigFile(fileSource, sourceFilePath) {
     )
 
     perkGroupDefinitions.push({
-      attributeLines: flattenPerkGroupAttributes(tableEntries.get('Attributes')),
       categoryName: stringValue(tableEntries.get('Category'), localValues),
       constName,
       descriptionLines: stringArrayValue(tableEntries.get('Descriptions'), localValues).map(
@@ -1576,11 +1499,7 @@ function buildFavoriteEnemyTargets(
 
 function buildSearchText(perkRecord) {
   const placementText = perkRecord.placements
-    .flatMap((placement) => [
-      placement.categoryName,
-      placement.perkGroupName,
-      placement.perkGroupAttributes.join(' '),
-    ])
+    .flatMap((placement) => [placement.categoryName, placement.perkGroupName])
     .join(' ')
 
   const backgroundText = perkRecord.backgroundSources
@@ -1998,7 +1917,6 @@ export async function createDataset(
         placementsByPerkConstName.get(perkConstName).push({
           categoryName: perkGroupDefinition.categoryName ?? 'Other',
           tier,
-          perkGroupAttributes: perkGroupDefinition.attributeLines,
           perkGroupIconPath: perkGroupDefinition.iconPath ?? null,
           perkGroupId: perkGroupDefinition.id,
           perkGroupName: perkGroupDefinition.name,

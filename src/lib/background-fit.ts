@@ -27,7 +27,7 @@ const chanceDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundC
 type BackgroundProbabilityRecord = {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
   maximumTotalPerkGroupCount: number
-  probabilitiesByPerkGroupId: Map<string, number>
+  probabilitiesByPerkGroupKey: Map<string, number>
 }
 
 type ClassWeaponDependencyByClassPerkGroupId = Map<string, Set<string>>
@@ -81,7 +81,11 @@ export type BackgroundFitView = {
 }
 
 type BackgroundFitEngine = {
-  getBackgroundPerkGroupProbability: (backgroundId: string, perkGroupId: string) => number
+  getBackgroundPerkGroupProbability: (
+    backgroundId: string,
+    categoryName: string,
+    perkGroupId: string,
+  ) => number
   getBackgroundFitView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitView
   getPerkBackgroundSources: (perk: LegendsPerkRecord) => LegendsPerkBackgroundSource[]
 }
@@ -216,6 +220,10 @@ function buildPerkGroupIdsByCategory(
   )
 }
 
+function getPerkGroupProbabilityKey(categoryName: string, perkGroupId: string): string {
+  return `${categoryName}::${perkGroupId}`
+}
+
 function buildClassWeaponDependencyByClassPerkGroupId(
   classWeaponDependencies: LegendsBackgroundFitClassWeaponDependency[],
 ): ClassWeaponDependencyByClassPerkGroupId {
@@ -235,14 +243,15 @@ function buildClassWeaponDependencyByClassPerkGroupId(
 }
 
 function addExplicitPerkGroupProbabilities(
-  probabilitiesByPerkGroupId: Map<string, number>,
+  probabilitiesByPerkGroupKey: Map<string, number>,
+  categoryName: LegendsDynamicBackgroundCategoryName,
   explicitPerkGroupIds: string[],
 ): Set<string> {
   const explicitPerkGroupIdSet = new Set<string>()
 
   for (const perkGroupId of explicitPerkGroupIds) {
     explicitPerkGroupIdSet.add(perkGroupId)
-    probabilitiesByPerkGroupId.set(perkGroupId, 1)
+    probabilitiesByPerkGroupKey.set(getPerkGroupProbabilityKey(categoryName, perkGroupId), 1)
   }
 
   return explicitPerkGroupIdSet
@@ -293,12 +302,14 @@ function getEligibleRemainingClassPerkGroupIds(
 }
 
 function addDeterministicCategoryProbabilities(
-  probabilitiesByPerkGroupId: Map<string, number>,
+  probabilitiesByPerkGroupKey: Map<string, number>,
+  categoryName: LegendsDynamicBackgroundCategoryName,
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   poolPerkGroupIds: string[],
 ): void {
   const explicitPerkGroupIdSet = addExplicitPerkGroupProbabilities(
-    probabilitiesByPerkGroupId,
+    probabilitiesByPerkGroupKey,
+    categoryName,
     categoryDefinition.perkGroupIds,
   )
   const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
@@ -312,17 +323,22 @@ function addDeterministicCategoryProbabilities(
       : additionalRandomPerkGroupCount / remainingPerkGroupIds.length
 
   for (const perkGroupId of remainingPerkGroupIds) {
-    probabilitiesByPerkGroupId.set(perkGroupId, marginalProbability)
+    probabilitiesByPerkGroupKey.set(
+      getPerkGroupProbabilityKey(categoryName, perkGroupId),
+      marginalProbability,
+    )
   }
 }
 
 function addChanceCategoryProbabilities(
-  probabilitiesByPerkGroupId: Map<string, number>,
+  probabilitiesByPerkGroupKey: Map<string, number>,
+  categoryName: LegendsDynamicBackgroundCategoryName,
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   poolPerkGroupIds: string[],
 ): void {
   const explicitPerkGroupIdSet = addExplicitPerkGroupProbabilities(
-    probabilitiesByPerkGroupId,
+    probabilitiesByPerkGroupKey,
+    categoryName,
     categoryDefinition.perkGroupIds,
   )
   const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
@@ -336,7 +352,10 @@ function addChanceCategoryProbabilities(
         ) / remainingPerkGroupIds.length
 
   for (const perkGroupId of remainingPerkGroupIds) {
-    probabilitiesByPerkGroupId.set(perkGroupId, marginalProbability)
+    probabilitiesByPerkGroupKey.set(
+      getPerkGroupProbabilityKey(categoryName, perkGroupId),
+      marginalProbability,
+    )
   }
 }
 
@@ -890,7 +909,8 @@ function calculateExpectedCoveredPickedPerkCount(
 }
 
 function addClassCategoryProbabilities(
-  probabilitiesByPerkGroupId: Map<string, number>,
+  probabilitiesByPerkGroupKey: Map<string, number>,
+  categoryName: LegendsDynamicBackgroundCategoryName,
   categoryDefinition: LegendsBackgroundFitCategoryDefinition,
   poolPerkGroupIds: string[],
   weaponCategoryDefinition: LegendsBackgroundFitCategoryDefinition,
@@ -898,7 +918,8 @@ function addClassCategoryProbabilities(
   classWeaponDependencyByClassPerkGroupId: ClassWeaponDependencyByClassPerkGroupId,
 ): void {
   const explicitPerkGroupIdSet = addExplicitPerkGroupProbabilities(
-    probabilitiesByPerkGroupId,
+    probabilitiesByPerkGroupKey,
+    categoryName,
     categoryDefinition.perkGroupIds,
   )
   const explicitWeaponPerkGroupIdSet = new Set<string>(weaponCategoryDefinition.perkGroupIds)
@@ -938,7 +959,10 @@ function addClassCategoryProbabilities(
           ) / eligibleRemainingPerkGroupIds.length
 
     for (const perkGroupId of eligibleRemainingPerkGroupIds) {
-      probabilitiesByPerkGroupId.set(perkGroupId, marginalProbability)
+      probabilitiesByPerkGroupKey.set(
+        getPerkGroupProbabilityKey(categoryName, perkGroupId),
+        marginalProbability,
+      )
     }
 
     return
@@ -976,9 +1000,11 @@ function addClassCategoryProbabilities(
         subsetProbability
 
       for (const perkGroupId of eligibleRemainingPerkGroupIds) {
-        probabilitiesByPerkGroupId.set(
-          perkGroupId,
-          (probabilitiesByPerkGroupId.get(perkGroupId) ?? 0) + marginalProbability,
+        const probabilityKey = getPerkGroupProbabilityKey(categoryName, perkGroupId)
+
+        probabilitiesByPerkGroupKey.set(
+          probabilityKey,
+          (probabilitiesByPerkGroupKey.get(probabilityKey) ?? 0) + marginalProbability,
         )
       }
     },
@@ -1117,7 +1143,7 @@ export function calculateBackgroundPerkGroupProbabilities(
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
   context: BackgroundProbabilityContext,
 ): Map<string, number> {
-  const probabilitiesByPerkGroupId = new Map<string, number>()
+  const probabilitiesByPerkGroupKey = new Map<string, number>()
 
   for (const categoryName of dynamicBackgroundCategoryNames) {
     const categoryDefinition = backgroundDefinition.categories[categoryName]
@@ -1129,7 +1155,8 @@ export function calculateBackgroundPerkGroupProbabilities(
 
     if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
       addDeterministicCategoryProbabilities(
-        probabilitiesByPerkGroupId,
+        probabilitiesByPerkGroupKey,
+        categoryName,
         categoryDefinition,
         poolPerkGroupIds,
       )
@@ -1138,7 +1165,8 @@ export function calculateBackgroundPerkGroupProbabilities(
 
     if (chanceDynamicBackgroundCategoryNameSet.has(categoryName)) {
       addChanceCategoryProbabilities(
-        probabilitiesByPerkGroupId,
+        probabilitiesByPerkGroupKey,
+        categoryName,
         categoryDefinition,
         poolPerkGroupIds,
       )
@@ -1147,7 +1175,8 @@ export function calculateBackgroundPerkGroupProbabilities(
 
     if (categoryName === 'Class') {
       addClassCategoryProbabilities(
-        probabilitiesByPerkGroupId,
+        probabilitiesByPerkGroupKey,
+        categoryName,
         categoryDefinition,
         poolPerkGroupIds,
         backgroundDefinition.categories.Weapon ?? {
@@ -1161,10 +1190,14 @@ export function calculateBackgroundPerkGroupProbabilities(
       continue
     }
 
-    addExplicitPerkGroupProbabilities(probabilitiesByPerkGroupId, categoryDefinition.perkGroupIds)
+    addExplicitPerkGroupProbabilities(
+      probabilitiesByPerkGroupKey,
+      categoryName,
+      categoryDefinition.perkGroupIds,
+    )
   }
 
-  return probabilitiesByPerkGroupId
+  return probabilitiesByPerkGroupKey
 }
 
 export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
@@ -1382,7 +1415,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         backgroundDefinition,
         backgroundProbabilityContext,
       ),
-      probabilitiesByPerkGroupId: calculateBackgroundPerkGroupProbabilities(
+      probabilitiesByPerkGroupKey: calculateBackgroundPerkGroupProbabilities(
         backgroundDefinition,
         backgroundProbabilityContext,
       ),
@@ -1395,21 +1428,26 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   )
 
   return {
-    getBackgroundPerkGroupProbability(backgroundId, perkGroupId) {
+    getBackgroundPerkGroupProbability(backgroundId, categoryName, perkGroupId) {
       return (
         probabilityRecordByBackgroundId
           .get(backgroundId)
-          ?.probabilitiesByPerkGroupId.get(perkGroupId) ?? 0
+          ?.probabilitiesByPerkGroupKey.get(
+            getPerkGroupProbabilityKey(categoryName, perkGroupId),
+          ) ?? 0
       )
     },
     getPerkBackgroundSources(perk) {
       const dynamicPlacements = getUniqueDynamicPerkPlacements(perk)
 
       return backgroundProbabilityRecords
-        .flatMap(({ backgroundDefinition, probabilitiesByPerkGroupId }) =>
+        .flatMap(({ backgroundDefinition, probabilitiesByPerkGroupKey }) =>
           dynamicPlacements.flatMap((placement) => {
             const categoryDefinition = backgroundDefinition.categories[placement.categoryName]
-            const probability = probabilitiesByPerkGroupId.get(placement.perkGroupId) ?? 0
+            const probability =
+              probabilitiesByPerkGroupKey.get(
+                getPerkGroupProbabilityKey(placement.categoryName, placement.perkGroupId),
+              ) ?? 0
 
             if (!categoryDefinition || probability <= 0) {
               return []
@@ -1437,12 +1475,17 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       return {
         rankedBackgroundFits: backgroundProbabilityRecords
           .map(
-            ({ backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupId }) => {
+            ({ backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupKey }) => {
               const matches = normalizeBackgroundFitMatches(
                 supportedBuildTargetPerkGroups
                   .flatMap((buildTargetPerkGroup) => {
                     const probability =
-                      probabilitiesByPerkGroupId.get(buildTargetPerkGroup.perkGroupId) ?? 0
+                      probabilitiesByPerkGroupKey.get(
+                        getPerkGroupProbabilityKey(
+                          buildTargetPerkGroup.categoryName,
+                          buildTargetPerkGroup.perkGroupId,
+                        ),
+                      ) ?? 0
 
                     if (probability <= 0) {
                       return []
@@ -1494,5 +1537,5 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
 }
 
 function getPlacementGroupRequirementKey(placement: LegendsPerkPlacement): string {
-  return `${placement.categoryName}::${placement.perkGroupId}`
+  return getPerkGroupProbabilityKey(placement.categoryName, placement.perkGroupId)
 }

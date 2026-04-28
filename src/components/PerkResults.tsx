@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef, useState } from 'react'
 import {
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
@@ -7,7 +8,8 @@ import {
 import { cx } from '../lib/class-names'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
-import { BuildToggleButton, ClearableSearchField } from './SharedControls'
+import { BuildToggleButton, ClearableSearchField, FunnelIcon } from './SharedControls'
+import backgroundFitStyles from './BackgroundFitPanel.module.scss'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
 
@@ -117,6 +119,7 @@ export function PerkResults({
   onCloseResultsPerkHover,
   onClosePerkGroupHover,
   onInspectPerkGroup,
+  onOriginAndAncientScrollPerkGroupsChange,
   onOpenResultsPerkHover,
   onOpenPerkGroupHover,
   onSelectPerk,
@@ -127,6 +130,7 @@ export function PerkResults({
   selectedPerk,
   selectedPerkGroupCount,
   setQuery,
+  shouldIncludeOriginAndAncientScrollPerkGroups,
   visiblePerks,
   hoveredPerkId,
 }: {
@@ -136,6 +140,9 @@ export function PerkResults({
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onCloseResultsPerkHover: (perkId: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOriginAndAncientScrollPerkGroupsChange: (
+    shouldIncludeOriginAndAncientScrollPerkGroups: boolean,
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOpenResultsPerkHover: (perkId: string) => void
   onSelectPerk: (perkId: string) => void
@@ -146,8 +153,33 @@ export function PerkResults({
   selectedPerk: LegendsPerkRecord | null
   selectedPerkGroupCount: number
   setQuery: (query: string) => void
+  shouldIncludeOriginAndAncientScrollPerkGroups: boolean
   visiblePerks: LegendsPerkRecord[]
 }) {
+  const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
+  const perkFilterMenuId = useId()
+  const perkFilterMenuRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!isPerkFilterMenuOpen) {
+      return
+    }
+
+    function handleDocumentPointerDown(event: PointerEvent) {
+      if (event.target instanceof Node && perkFilterMenuRef.current?.contains(event.target)) {
+        return
+      }
+
+      setIsPerkFilterMenuOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handleDocumentPointerDown)
+
+    return () => {
+      document.removeEventListener('pointerdown', handleDocumentPointerDown)
+    }
+  }, [isPerkFilterMenuOpen])
+
   return (
     <section className={styles.resultsPanel} aria-label="Perk results" data-testid="results-panel">
       <div className={styles.toolbar}>
@@ -158,6 +190,63 @@ export function PerkResults({
           onValueChange={setQuery}
           placeholder="Search perks, perk groups, backgrounds, scenarios, or enemy targets"
           testId="perk-results-search-field"
+          trailingControl={
+            <div
+              className={backgroundFitStyles.backgroundFitFilterMenu}
+              onKeyDown={(event) => {
+                if (event.key !== 'Escape') {
+                  return
+                }
+
+                event.preventDefault()
+                setIsPerkFilterMenuOpen(false)
+                event.currentTarget
+                  .querySelector<HTMLButtonElement>('[data-perk-filter-button="true"]')
+                  ?.focus()
+              }}
+              ref={perkFilterMenuRef}
+            >
+              <button
+                aria-controls={perkFilterMenuId}
+                aria-expanded={isPerkFilterMenuOpen}
+                aria-label="Filter perks"
+                className={backgroundFitStyles.backgroundFitFilterButton}
+                data-active-filter={shouldIncludeOriginAndAncientScrollPerkGroups}
+                data-perk-filter-button="true"
+                data-testid="perk-filter-button"
+                onClick={() =>
+                  setIsPerkFilterMenuOpen((wasPerkFilterMenuOpen) => !wasPerkFilterMenuOpen)
+                }
+                type="button"
+              >
+                <FunnelIcon
+                  className={backgroundFitStyles.backgroundFitFilterIcon}
+                  isFilled={shouldIncludeOriginAndAncientScrollPerkGroups}
+                  testId="perk-filter-icon"
+                />
+              </button>
+              {isPerkFilterMenuOpen ? (
+                <div
+                  aria-label="Perk filters"
+                  className={backgroundFitStyles.backgroundFitFilterPopover}
+                  id={perkFilterMenuId}
+                  role="group"
+                >
+                  <label className={backgroundFitStyles.backgroundFitFilterOption}>
+                    <input
+                      checked={shouldIncludeOriginAndAncientScrollPerkGroups}
+                      data-testid="origin-scroll-perk-groups-checkbox"
+                      onChange={(event) =>
+                        onOriginAndAncientScrollPerkGroupsChange(event.target.checked)
+                      }
+                      type="checkbox"
+                    />
+                    <span>Origin and ancient scroll perk groups</span>
+                  </label>
+                </div>
+              ) : null}
+            </div>
+          }
           value={query}
         />
       </div>

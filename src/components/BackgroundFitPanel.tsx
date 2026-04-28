@@ -214,7 +214,7 @@ export function BackgroundFitPanel({
                   aria-expanded={isBackgroundFilterMenuOpen}
                   aria-label="Filter backgrounds"
                   className={styles.backgroundFitFilterButton}
-                  data-active-filter="true"
+                  data-active-filter={shouldIncludeOriginBackgrounds}
                   data-background-fit-filter-button="true"
                   data-testid="background-fit-filter-button"
                   onClick={() => {
@@ -227,7 +227,7 @@ export function BackgroundFitPanel({
                 >
                   <FunnelIcon
                     className={styles.backgroundFitFilterIcon}
-                    isFilled
+                    isFilled={shouldIncludeOriginBackgrounds}
                     testId="background-fit-filter-icon"
                   />
                 </button>

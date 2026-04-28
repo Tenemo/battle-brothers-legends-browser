@@ -69,6 +69,107 @@ test('keeps only one selected perk group when another group is selected', async 
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
 })
 
+test('excludes origin and ancient scroll perk groups from perk results by default', async ({
+  page,
+}) => {
+  await gotoPerksBrowser(page)
+
+  const resultsList = getResultsList(page)
+  const filterPerksButton = page.getByRole('button', { name: 'Filter perks' })
+
+  await expect(filterPerksButton).toBeVisible()
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('origin-scroll-perk-groups'))
+    .toBeNull()
+
+  await searchPerks(page, 'Magic Missile Focus')
+
+  await expect(
+    resultsList.getByRole('button', { name: 'Inspect Magic Missile Focus' }),
+  ).toHaveCount(0)
+  await expect(page.getByText('No perks found')).toBeVisible()
+
+  await searchPerks(page, 'Berserk')
+
+  const berserkResultRow = resultsList
+    .getByRole('button', { exact: true, name: 'Inspect Berserk' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+  const berserkPlacementList = berserkResultRow.getByTestId('perk-placement-list')
+
+  await expect(berserkResultRow).toBeVisible()
+  await expect(berserkPlacementList).toContainText('Vicious')
+  await expect(berserkPlacementList).toContainText('Aggressive')
+  await expect(berserkPlacementList).not.toContainText('Berserker')
+
+  await filterPerksButton.click()
+
+  const perkFiltersGroup = page.getByRole('group', { name: 'Perk filters' })
+  const restrictedPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
+    name: 'Origin and ancient scroll perk groups',
+  })
+  const restrictedPerkGroupsCheckboxControl = perkFiltersGroup.locator(
+    'input[data-testid="origin-scroll-perk-groups-checkbox"]',
+  )
+
+  await expect(restrictedPerkGroupsCheckbox).not.toBeChecked()
+  await expect
+    .poll(async () => {
+      const checkboxBox = await restrictedPerkGroupsCheckboxControl.boundingBox()
+
+      return checkboxBox === null
+        ? null
+        : {
+            height: Math.round(checkboxBox.height),
+            width: Math.round(checkboxBox.width),
+          }
+    })
+    .toEqual({
+      height: 16,
+      width: 16,
+    })
+
+  await restrictedPerkGroupsCheckbox.click()
+
+  await expect(restrictedPerkGroupsCheckbox).toBeChecked()
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('origin-scroll-perk-groups'))
+    .toBe('true')
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
+  await expect(berserkPlacementList).toContainText('Berserker')
+
+  await searchPerks(page, 'Magic Missile Focus')
+
+  await expect(
+    resultsList.getByRole('button', { name: 'Inspect Magic Missile Focus' }),
+  ).toBeVisible()
+
+  const savedUrl = page.url()
+  const sharedPage = await page.context().newPage()
+
+  try {
+    await sharedPage.setViewportSize({ width: 900, height: 720 })
+    await sharedPage.goto(savedUrl)
+
+    await expect(
+      getResultsList(sharedPage).getByRole('button', { name: 'Inspect Magic Missile Focus' }),
+    ).toBeVisible()
+    await sharedPage.getByRole('button', { name: 'Filter perks' }).click()
+    await expect(
+      sharedPage.getByRole('checkbox', {
+        name: 'Origin and ancient scroll perk groups',
+      }),
+    ).toBeChecked()
+  } finally {
+    await sharedPage.close()
+  }
+})
+
 test('shows real effect previews for hooked perk descriptions instead of perk group text', async ({
   page,
 }) => {
@@ -142,7 +243,9 @@ test('highlights the searched perk phrase in the visible perk results', async ({
 
   await searchPerks(page, 'Axe')
 
-  await expect(getResultsList(page).locator('[data-search-highlight="true"]')).toContainText(['Axe'])
+  await expect(getResultsList(page).locator('[data-search-highlight="true"]')).toContainText([
+    'Axe',
+  ])
   await expect(getResultsList(page).getByTestId('tier-badge')).toHaveCount(0)
 })
 
@@ -164,7 +267,9 @@ test('shows every matching perk group placement in the result list', async ({ pa
   await expect(poisonMasteryResultRow.getByTestId('tier-badge')).toHaveCount(0)
   await expect(poisonMasteryResultRow).not.toContainText(/\+\s*\d+\s*more/i)
   await expect(
-    poisonMasteryResultRow.getByTestId('perk-placement-label').locator('[data-search-highlight="true"]'),
+    poisonMasteryResultRow
+      .getByTestId('perk-placement-label')
+      .locator('[data-search-highlight="true"]'),
   ).toContainText(['Ranger'])
   const [perkNameBox, placementListBox] = await Promise.all([
     poisonMasteryResultRow.getByTestId('perk-name').boundingBox(),
@@ -244,9 +349,7 @@ test('keeps search result and repository hover states fixed in place', async ({ 
   await expect(perfectFocusResultRow).toHaveCSS('transform', 'none')
   await expect
     .poll(() =>
-      perfectFocusResultRow.evaluate(
-        (element) => window.getComputedStyle(element).backgroundColor,
-      ),
+      perfectFocusResultRow.evaluate((element) => window.getComputedStyle(element).backgroundColor),
     )
     .not.toBe(resultRowBeforeHover.backgroundColor)
 
@@ -372,9 +475,7 @@ test('shows picked categories and perk groups with stars and keeps picked result
       .getByTestId('category-picked-star'),
   ).toHaveCount(2)
   await expect(
-    page
-      .getByRole('button', { name: 'Enable category Magic' })
-      .getByTestId('category-picked-star'),
+    page.getByRole('button', { name: 'Enable category Magic' }).getByTestId('category-picked-star'),
   ).toHaveCount(1)
 
   await enableCategory(page, 'Traits')
@@ -403,7 +504,10 @@ test('shows picked categories and perk groups with stars and keeps picked result
           const inspectButton = document.querySelector(
             `button[aria-label="Inspect ${perkName}"]`,
           ) as HTMLButtonElement | null
-          const perkRow = inspectButton?.closest('[data-testid="perk-row"]') as HTMLElement | null | undefined
+          const perkRow = inspectButton?.closest('[data-testid="perk-row"]') as
+            | HTMLElement
+            | null
+            | undefined
 
           if (perkRow == null) {
             return null
@@ -435,7 +539,10 @@ test('shows picked categories and perk groups with stars and keeps picked result
       const inspectButton = document.querySelector(
         `button[aria-label="Inspect ${perkName}"]`,
       ) as HTMLButtonElement | null
-      const perkRow = inspectButton?.closest('[data-testid="perk-row"]') as HTMLElement | null | undefined
+      const perkRow = inspectButton?.closest('[data-testid="perk-row"]') as
+        | HTMLElement
+        | null
+        | undefined
 
       if (perkRow == null) {
         return null

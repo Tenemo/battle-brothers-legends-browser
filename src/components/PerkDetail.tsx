@@ -40,12 +40,12 @@ function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
   return (
     <>
       <div>
-        <span className={styles.detailBackgroundSourceNames} data-testid="detail-background-source-names">
+        <span
+          className={styles.detailBackgroundSourceNames}
+          data-testid="detail-background-source-names"
+        >
           {backgroundSource.backgroundNames.join(', ')}
         </span>
-        <p className={styles.detailSupport}>
-          {backgroundSource.categoryName} / {backgroundSource.perkGroupName}
-        </p>
       </div>
       <span className={styles.detailBadge} data-testid="detail-badge">
         {formatBackgroundSourceProbabilityLabel(backgroundSource.probability)}
@@ -105,7 +105,10 @@ export function PerkDetail({
         type="button"
       >
         <span aria-hidden="true" className={styles.detailPanelRailButtonIcon}>
-          <DetailPanelRailChevron className={styles.detailPanelRailChevron} isExpanded={isExpanded} />
+          <DetailPanelRailChevron
+            className={styles.detailPanelRailChevron}
+            isExpanded={isExpanded}
+          />
         </span>
         <span aria-hidden="true" className={styles.detailPanelRailButtonLabel}>
           Perk details
@@ -233,9 +236,7 @@ export function PerkDetail({
                 <ul className={styles.detailList}>
                   {groupedBackgroundSources.map((backgroundSource) => (
                     <li
-                      key={`${backgroundSource.categoryName}-${backgroundSource.perkGroupId}-${
-                        backgroundSource.probability
-                      }-${backgroundSource.backgroundNames.join('::')}`}
+                      key={`${backgroundSource.probability}-${backgroundSource.backgroundNames.join('::')}`}
                     >
                       {renderBackgroundSource(backgroundSource)}
                     </li>

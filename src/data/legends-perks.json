@@ -9911,7 +9911,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_lunge.png",
           "perkGroupId": "FastTree",
           "perkGroupName": "Fast"
@@ -9919,7 +9918,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -9945,7 +9943,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_34.png",
           "perkGroupId": "AlchemyMagicTree",
           "perkGroupName": "Alchemy"
@@ -10029,7 +10026,6 @@
         {
           "categoryName": "Profession",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/meal_prep_circle.png",
           "perkGroupId": "ChefProfessionTree",
           "perkGroupName": "Chef"
@@ -10480,7 +10476,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/clarity_circle.png",
           "perkGroupId": "CalmTree",
           "perkGroupName": "Calm"
@@ -10508,7 +10503,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/rebuild_skeleton_circle.png",
           "perkGroupId": "SkeletonMagicTree",
           "perkGroupName": "Skeleton"
@@ -10637,7 +10631,6 @@
         {
           "categoryName": "Weapon",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_mastery_circle.png",
           "perkGroupId": "FistsTree",
           "perkGroupName": "Unarmed"
@@ -10674,7 +10667,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/coordinated_volleys_circle.png",
           "perkGroupId": "ArcherCommandTree",
           "perkGroupName": "ArcherCommand"
@@ -10711,7 +10703,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/coordinated_volleys_circle.png",
           "perkGroupId": "ArcherCommandTree",
           "perkGroupName": "ArcherCommand"
@@ -10757,7 +10748,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_inventor_anatomy.png",
           "perkGroupId": "InventorMagicTree",
           "perkGroupName": "Inventor"
@@ -10957,7 +10947,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_49.png",
           "perkGroupId": "BowTree",
           "perkGroupName": "Bow"
@@ -11528,7 +11517,6 @@
         {
           "categoryName": "Traits",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_lunge.png",
           "perkGroupId": "FastTree",
           "perkGroupName": "Fast"
@@ -11536,7 +11524,6 @@
         {
           "categoryName": "Other",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerTree",
           "perkGroupName": "Ranger"
@@ -11544,7 +11531,6 @@
         {
           "categoryName": "Other",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/back_to_basics_circle.png",
           "perkGroupId": "SparringTree",
           "perkGroupName": "Sparring"
@@ -11572,7 +11558,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/rebuild_skeleton_circle.png",
           "perkGroupId": "SkeletonMagicTree",
           "perkGroupName": "Skeleton"
@@ -11657,7 +11642,6 @@
         {
           "categoryName": "Class",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_dagger.png",
           "perkGroupId": "KnifeClassTree",
           "perkGroupName": "Knives"
@@ -11665,7 +11649,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/assassinate_circle.png",
           "perkGroupId": "AssassinMagicTree",
           "perkGroupName": "Assassin"
@@ -12270,7 +12253,6 @@
         {
           "categoryName": "Traits",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_57.png",
           "perkGroupId": "ViciousTree",
           "perkGroupName": "Vicious"
@@ -13036,7 +13018,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_54.png",
           "perkGroupId": "FitTree",
           "perkGroupName": "Fit"
@@ -13373,7 +13354,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_44.png",
           "perkGroupId": "AxeTree",
           "perkGroupName": "Axe"
@@ -13819,7 +13799,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/back_to_basics_circle.png",
           "perkGroupId": "TrainedTree",
           "perkGroupName": "Trained"
@@ -13827,7 +13806,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_28.png",
           "perkGroupId": "CaptainMagicTree",
           "perkGroupName": "Leadership"
@@ -13835,7 +13813,6 @@
         {
           "categoryName": "Other",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/back_to_basics_circle.png",
           "perkGroupId": "SparringTree",
           "perkGroupName": "Sparring"
@@ -13908,7 +13885,6 @@
         {
           "categoryName": "Class",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/leap_circle.png",
           "perkGroupId": "JugglerClassTree",
           "perkGroupName": "Juggler"
@@ -14873,7 +14849,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_51.png",
           "perkGroupId": "DaggerTree",
           "perkGroupName": "Dagger"
@@ -14881,7 +14856,6 @@
         {
           "categoryName": "Traits",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_59.png",
           "perkGroupId": "DeviousTree",
           "perkGroupName": "Devious"
@@ -15630,7 +15604,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_46.png",
           "perkGroupId": "SwordTree",
           "perkGroupName": "Sword"
@@ -15921,7 +15894,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_20.png",
           "perkGroupId": "OrganisedTree",
           "perkGroupName": "Organized"
@@ -15929,7 +15901,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -15937,7 +15908,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/triplestrike56.png",
           "perkGroupId": "MasterArcherTree",
           "perkGroupName": "Deadeye"
@@ -16460,7 +16430,6 @@
         {
           "categoryName": "Defense",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lithe.png",
           "perkGroupId": "MediumArmorTree",
           "perkGroupName": "Medium Armor"
@@ -16878,7 +16847,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_48.png",
           "perkGroupId": "CrossbowTree",
           "perkGroupName": "Crossbow"
@@ -16886,7 +16854,6 @@
         {
           "categoryName": "Other",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerTree",
           "perkGroupName": "Ranger"
@@ -17006,7 +16973,6 @@
         {
           "categoryName": "Class",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/bandage_circle.png",
           "perkGroupId": "HealerClassTree",
           "perkGroupName": "Healing"
@@ -17703,7 +17669,6 @@
         {
           "categoryName": "Weapon",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_48.png",
           "perkGroupId": "CrossbowTree",
           "perkGroupName": "Crossbow"
@@ -17711,7 +17676,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_sling_mastery.png",
           "perkGroupId": "SlingTree",
           "perkGroupName": "Sling"
@@ -18052,7 +18016,6 @@
         {
           "categoryName": "Weapon",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_47.png",
           "perkGroupId": "FlailTree",
           "perkGroupName": "Flail"
@@ -18060,7 +18023,6 @@
         {
           "categoryName": "Enemy",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_swordmaster_01.png",
           "perkGroupId": "SwordmastersTree",
           "perkGroupName": "Swordmasters"
@@ -18433,7 +18395,6 @@
         {
           "categoryName": "Defense",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_03.png",
           "perkGroupId": "HeavyArmorTree",
           "perkGroupName": "Heavy Armor"
@@ -18441,7 +18402,6 @@
         {
           "categoryName": "Other",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/fullforce_circle.png",
           "perkGroupId": "ForcefulTree",
           "perkGroupName": "Forceful"
@@ -19059,7 +19019,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_42.png",
           "perkGroupId": "InspirationalTree",
           "perkGroupName": "Inspirational"
@@ -19067,7 +19026,6 @@
         {
           "categoryName": "Traits",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/vengeance_circle.png",
           "perkGroupId": "MartyrTree",
           "perkGroupName": "Martyr"
@@ -19114,7 +19072,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lionheart.png",
           "perkGroupId": "ImmortalMagicTree",
           "perkGroupName": "Immortal"
@@ -19140,7 +19097,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/bear2_circle.png",
           "perkGroupId": "DruidTransformTree",
           "perkGroupName": "Druidic transformation"
@@ -19178,7 +19134,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/cat_circle.png",
           "perkGroupId": "ConjurationMagicTree",
           "perkGroupName": "Conjuration"
@@ -19821,7 +19776,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_57.png",
           "perkGroupId": "ViciousTree",
           "perkGroupName": "Vicious"
@@ -19829,7 +19783,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -19837,7 +19790,6 @@
         {
           "categoryName": "Other",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_27.png",
           "perkGroupId": "AggressiveTree",
           "perkGroupName": "Aggressive"
@@ -19886,7 +19838,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -19943,7 +19894,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerHuntMagicTree",
           "perkGroupName": "Ranger"
@@ -19989,7 +19939,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_smith.png",
           "perkGroupId": "HammerClassTree",
           "perkGroupName": "Blacksmith"
@@ -20434,7 +20383,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_59.png",
           "perkGroupId": "DeviousTree",
           "perkGroupName": "Devious"
@@ -20442,7 +20390,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/triplestrike56.png",
           "perkGroupId": "MasterArcherTree",
           "perkGroupName": "Deadeye"
@@ -20886,7 +20833,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_52.png",
           "perkGroupId": "CleaverTree",
           "perkGroupName": "Cleaver"
@@ -20894,7 +20840,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/darkflight_circle.png",
           "perkGroupId": "VampireMagicTree",
           "perkGroupName": "Vampire"
@@ -21228,7 +21173,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_44.png",
           "perkGroupId": "AxeTree",
           "perkGroupName": "Axe"
@@ -21499,7 +21443,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_53.png",
           "perkGroupId": "HammerTree",
           "perkGroupName": "Hammer"
@@ -21807,7 +21750,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_05.png",
           "perkGroupId": "ShieldTree",
           "perkGroupName": "Shield"
@@ -22007,7 +21949,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_49.png",
           "perkGroupId": "BowTree",
           "perkGroupName": "Bow"
@@ -22397,7 +22338,6 @@
         {
           "categoryName": "Defense",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_03.png",
           "perkGroupId": "HeavyArmorTree",
           "perkGroupName": "Heavy Armor"
@@ -22405,7 +22345,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -22471,7 +22410,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_mace.png",
           "perkGroupId": "ClubClassTree",
           "perkGroupName": "Browbeater"
@@ -22717,7 +22655,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_49.png",
           "perkGroupId": "BowTree",
           "perkGroupName": "Bow"
@@ -22763,7 +22700,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_butcher.png",
           "perkGroupId": "ButcherClassTree",
           "perkGroupName": "Butcher"
@@ -22910,7 +22846,6 @@
         {
           "categoryName": "Profession",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/meal_prep_circle.png",
           "perkGroupId": "ChefProfessionTree",
           "perkGroupName": "Chef"
@@ -23373,7 +23308,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_52.png",
           "perkGroupId": "CleaverTree",
           "perkGroupName": "Cleaver"
@@ -23381,7 +23315,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/darkflight_circle.png",
           "perkGroupId": "VampireMagicTree",
           "perkGroupName": "Vampire"
@@ -23420,7 +23353,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/storm_circle.png",
           "perkGroupId": "EvocationMagicTree",
           "perkGroupName": "Evocation"
@@ -23428,7 +23360,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -23472,7 +23403,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/rebuild_skeleton_circle.png",
           "perkGroupId": "SkeletonMagicTree",
           "perkGroupName": "Skeleton"
@@ -23519,7 +23449,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_chanting_mastery.png",
           "perkGroupId": "ValaChantMagicTree",
           "perkGroupName": "Vala Chant"
@@ -23567,7 +23496,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -23610,7 +23538,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_34.png",
           "perkGroupId": "AlchemyMagicTree",
           "perkGroupName": "Alchemy"
@@ -24063,7 +23990,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/clarity_circle.png",
           "perkGroupId": "CalmTree",
           "perkGroupName": "Calm"
@@ -24498,7 +24424,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_52.png",
           "perkGroupId": "CleaverTree",
           "perkGroupName": "Cleaver"
@@ -25051,7 +24976,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "LargeTree",
           "perkGroupName": "Large"
@@ -25059,7 +24983,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -25067,7 +24990,6 @@
         {
           "categoryName": "Other",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "GiantTree",
           "perkGroupName": "Giant"
@@ -25112,7 +25034,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/rebuild_skeleton_circle.png",
           "perkGroupId": "SkeletonMagicTree",
           "perkGroupName": "Skeleton"
@@ -25138,7 +25059,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/true_form_circle.png",
           "perkGroupId": "TherianthropyMagicTree",
           "perkGroupName": "Therianthropy"
@@ -25222,7 +25142,6 @@
         {
           "categoryName": "Profession",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/BarterT1.png",
           "perkGroupId": "BarterProfessionTree",
           "perkGroupName": "Barter"
@@ -25260,7 +25179,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/coordinated_volleys_circle.png",
           "perkGroupId": "ArcherCommandTree",
           "perkGroupName": "ArcherCommand"
@@ -25939,7 +25857,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_58.png",
           "perkGroupId": "PolearmTree",
           "perkGroupName": "Polearm"
@@ -25947,7 +25864,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/triplestrike56.png",
           "perkGroupId": "MasterArcherTree",
           "perkGroupName": "Deadeye"
@@ -25955,7 +25871,6 @@
         {
           "categoryName": "Other",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/feint_circle.png",
           "perkGroupId": "ShadyTree",
           "perkGroupName": "Shady"
@@ -26560,7 +26475,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_57.png",
           "perkGroupId": "ViciousTree",
           "perkGroupName": "Vicious"
@@ -26977,7 +26891,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_48.png",
           "perkGroupId": "CrossbowTree",
           "perkGroupName": "Crossbow"
@@ -27574,7 +27487,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_51.png",
           "perkGroupId": "DaggerTree",
           "perkGroupName": "Dagger"
@@ -27659,7 +27571,6 @@
         {
           "categoryName": "Profession",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/BarterT1.png",
           "perkGroupId": "BarterProfessionTree",
           "perkGroupName": "Barter"
@@ -27697,7 +27608,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/darkflight_circle.png",
           "perkGroupId": "VampireMagicTree",
           "perkGroupName": "Vampire"
@@ -27747,7 +27657,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -27793,7 +27702,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_perk.png",
           "perkGroupId": "DivinationMagicTree",
           "perkGroupName": "Divination"
@@ -27801,7 +27709,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/entice_circle_56.png",
           "perkGroupId": "IllusionistMagicTree",
           "perkGroupName": "Illusion"
@@ -27831,7 +27738,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_longbow.png",
           "perkGroupId": "SharpshooterClassTree",
           "perkGroupName": "Sharpshooter"
@@ -28494,7 +28400,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_57.png",
           "perkGroupId": "ViciousTree",
           "perkGroupName": "Vicious"
@@ -28502,7 +28407,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/darkflight_circle.png",
           "perkGroupId": "VampireMagicTree",
           "perkGroupName": "Vampire"
@@ -28613,7 +28517,6 @@
         {
           "categoryName": "Class",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_cultist.png",
           "perkGroupId": "NinetailsClassTree",
           "perkGroupName": "Cat O' Nine Tails"
@@ -28747,7 +28650,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -28755,7 +28657,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -28763,7 +28664,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerHuntMagicTree",
           "perkGroupName": "Ranger"
@@ -28812,7 +28712,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_chanting_mastery.png",
           "perkGroupId": "ValaChantMagicTree",
           "perkGroupName": "Vala Chant"
@@ -28875,7 +28774,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_trance_circle.png",
           "perkGroupId": "PremonitionMagicTree",
           "perkGroupName": "Premonition"
@@ -29498,7 +29396,6 @@
         {
           "categoryName": "Defense",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_29.png",
           "perkGroupId": "LightArmorTree",
           "perkGroupName": "Light Armor"
@@ -29535,7 +29432,6 @@
         {
           "categoryName": "Profession",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_dogs.png",
           "perkGroupId": "DogBreederProfessionTree",
           "perkGroupName": "Dog Breeder"
@@ -29591,7 +29487,6 @@
         {
           "categoryName": "Class",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_hound.png",
           "perkGroupId": "HoundmasterClassTree",
           "perkGroupName": "Hound Master"
@@ -29648,7 +29543,6 @@
         {
           "categoryName": "Class",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_hound.png",
           "perkGroupId": "HoundmasterClassTree",
           "perkGroupName": "Hound Master"
@@ -29703,7 +29597,6 @@
         {
           "categoryName": "Class",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_hound.png",
           "perkGroupId": "HoundmasterClassTree",
           "perkGroupName": "Hound Master"
@@ -30300,7 +30193,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_51.png",
           "perkGroupId": "DaggerTree",
           "perkGroupName": "Dagger"
@@ -31067,7 +30959,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_46.png",
           "perkGroupId": "SwordTree",
           "perkGroupName": "Sword"
@@ -31357,7 +31248,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_20.png",
           "perkGroupId": "OrganisedTree",
           "perkGroupName": "Organized"
@@ -31365,7 +31255,6 @@
         {
           "categoryName": "Profession",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/wheel_maintenance.png",
           "perkGroupId": "CaravaneerProfessionTree",
           "perkGroupName": "Caravaneering"
@@ -31450,7 +31339,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -31458,7 +31346,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_perk.png",
           "perkGroupId": "DivinationMagicTree",
           "perkGroupName": "Divination"
@@ -31466,7 +31353,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/entice_circle_56.png",
           "perkGroupId": "IllusionistMagicTree",
           "perkGroupName": "Illusion"
@@ -31513,7 +31399,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -32355,7 +32240,6 @@
         {
           "categoryName": "Defense",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/himshaw.png",
           "perkGroupId": "ClothArmorTree",
           "perkGroupName": "Cloth Armor"
@@ -32363,7 +32247,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_59.png",
           "perkGroupId": "DeviousTree",
           "perkGroupName": "Devious"
@@ -32371,7 +32254,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/triplestrike56.png",
           "perkGroupId": "MasterArcherTree",
           "perkGroupName": "Deadeye"
@@ -32429,7 +32311,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/darkflight_circle.png",
           "perkGroupId": "VampireMagicTree",
           "perkGroupName": "Vampire"
@@ -32466,7 +32347,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/remake_man_circle.png",
           "perkGroupId": "ZombieMagicTree",
           "perkGroupName": "Zombie"
@@ -32505,7 +32385,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/remake_man_circle.png",
           "perkGroupId": "ZombieMagicTree",
           "perkGroupName": "Zombie"
@@ -32551,7 +32430,6 @@
         {
           "categoryName": "Class",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/fashionable.png",
           "perkGroupId": "TailorClassTree",
           "perkGroupName": "Trendy"
@@ -33120,7 +32998,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_lunge.png",
           "perkGroupId": "FastTree",
           "perkGroupName": "Fast"
@@ -33433,7 +33310,6 @@
         {
           "categoryName": "Enemy",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_direwolf_01.png",
           "perkGroupId": "BeastTree",
           "perkGroupName": "Beasts"
@@ -33954,7 +33830,6 @@
         {
           "categoryName": "Enemy",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_caravan_01.png",
           "perkGroupId": "CivilizationTree",
           "perkGroupName": "Civilization"
@@ -34149,7 +34024,6 @@
         {
           "categoryName": "Enemy",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_ork_01.png",
           "perkGroupId": "GreenskinTree",
           "perkGroupName": "Greenskins"
@@ -34383,7 +34257,6 @@
         {
           "categoryName": "Enemy",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_skeleton_01.png",
           "perkGroupId": "OccultTree",
           "perkGroupName": "Occult"
@@ -34771,7 +34644,6 @@
         {
           "categoryName": "Enemy",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_bandit_01.png",
           "perkGroupId": "OutlawTree",
           "perkGroupName": "Outlaws"
@@ -34779,7 +34651,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -34984,7 +34855,6 @@
         {
           "categoryName": "Enemy",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_swordmaster_01.png",
           "perkGroupId": "SwordmastersTree",
           "perkGroupName": "Swordmasters"
@@ -34992,7 +34862,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -35244,7 +35113,6 @@
         {
           "categoryName": "Enemy",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_zombie_01.png",
           "perkGroupId": "UndeadTree",
           "perkGroupName": "Undead"
@@ -35679,7 +35547,6 @@
         {
           "categoryName": "Weapon",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_52.png",
           "perkGroupId": "CleaverTree",
           "perkGroupName": "Cleaver"
@@ -35687,7 +35554,6 @@
         {
           "categoryName": "Other",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_27.png",
           "perkGroupId": "AggressiveTree",
           "perkGroupName": "Aggressive"
@@ -36437,7 +36303,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_46.png",
           "perkGroupId": "SwordTree",
           "perkGroupName": "Sword"
@@ -36445,7 +36310,6 @@
         {
           "categoryName": "Other",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/feint_circle.png",
           "perkGroupId": "ShadyTree",
           "perkGroupName": "Shady"
@@ -36538,7 +36402,6 @@
         {
           "categoryName": "Profession",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/MaxToolsT1.png",
           "perkGroupId": "RepairProfessionTree",
           "perkGroupName": "Repair"
@@ -36622,7 +36485,6 @@
         {
           "categoryName": "Profession",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/meal_prep_circle.png",
           "perkGroupId": "ChefProfessionTree",
           "perkGroupName": "Chef"
@@ -36742,7 +36604,6 @@
         {
           "categoryName": "Class",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/bandage_circle.png",
           "perkGroupId": "HealerClassTree",
           "perkGroupName": "Healing"
@@ -36781,7 +36642,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/storm_circle.png",
           "perkGroupId": "EvocationMagicTree",
           "perkGroupName": "Evocation"
@@ -36789,7 +36649,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -37573,7 +37432,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_50.png",
           "perkGroupId": "ThrowingTree",
           "perkGroupName": "Throwing"
@@ -37829,7 +37687,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_47.png",
           "perkGroupId": "FlailTree",
           "perkGroupName": "Flail"
@@ -38172,7 +38029,6 @@
         {
           "categoryName": "Traits",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/steadfast_circle.png",
           "perkGroupId": "SturdyTree",
           "perkGroupName": "Sturdy"
@@ -38607,7 +38463,6 @@
         {
           "categoryName": "Defense",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/himshaw.png",
           "perkGroupId": "ClothArmorTree",
           "perkGroupName": "Cloth Armor"
@@ -38657,7 +38512,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_chanting_mastery.png",
           "perkGroupId": "ValaChantMagicTree",
           "perkGroupName": "Vala Chant"
@@ -38768,7 +38622,6 @@
         {
           "categoryName": "Profession",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/herbs_circle.png",
           "perkGroupId": "HerbalistProfessionTree",
           "perkGroupName": "Herbalism"
@@ -38776,7 +38629,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/potion_circle.png",
           "perkGroupId": "TransmutationMagicTree",
           "perkGroupName": "Transmutation"
@@ -38784,7 +38636,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_trance_mastery.png",
           "perkGroupId": "ValaTranceMagicTree",
           "perkGroupName": "Vala Trance"
@@ -39235,7 +39086,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_21.png",
           "perkGroupId": "IntelligentTree",
           "perkGroupName": "Intelligent"
@@ -39368,7 +39218,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_mastery_circle.png",
           "perkGroupId": "FistsTree",
           "perkGroupName": "Unarmed"
@@ -39399,7 +39248,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_shovel.png",
           "perkGroupId": "ShovelClassTree",
           "perkGroupName": "Gravedigger"
@@ -39511,7 +39359,6 @@
         {
           "categoryName": "Profession",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/BarterT1.png",
           "perkGroupId": "BarterProfessionTree",
           "perkGroupName": "Barter"
@@ -39549,7 +39396,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/darkflight_circle.png",
           "perkGroupId": "VampireMagicTree",
           "perkGroupName": "Vampire"
@@ -39656,7 +39502,6 @@
         {
           "categoryName": "Class",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/leap_circle.png",
           "perkGroupId": "JugglerClassTree",
           "perkGroupName": "Juggler"
@@ -39931,7 +39776,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_53.png",
           "perkGroupId": "HammerTree",
           "perkGroupName": "Hammer"
@@ -39959,7 +39803,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_scythe.png",
           "perkGroupId": "ScytheClassTree",
           "perkGroupName": "Scythe"
@@ -39988,7 +39831,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_sickle.png",
           "perkGroupId": "SickleClassTree",
           "perkGroupName": "Herbalist"
@@ -40045,7 +39887,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_bitchfork.png",
           "perkGroupId": "PitchforkClassTree",
           "perkGroupName": "Farmer"
@@ -40327,7 +40168,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_47.png",
           "perkGroupId": "FlailTree",
           "perkGroupName": "Flail"
@@ -40759,7 +40599,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_48.png",
           "perkGroupId": "CrossbowTree",
           "perkGroupName": "Crossbow"
@@ -40808,7 +40647,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_chanting_mastery.png",
           "perkGroupId": "ValaChantMagicTree",
           "perkGroupName": "Vala Chant"
@@ -41072,7 +40910,6 @@
         {
           "categoryName": "Traits",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_20.png",
           "perkGroupId": "OrganisedTree",
           "perkGroupName": "Organized"
@@ -41173,7 +41010,6 @@
         {
           "categoryName": "Profession",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/herbs_circle.png",
           "perkGroupId": "HerbalistProfessionTree",
           "perkGroupName": "Herbalism"
@@ -41181,7 +41017,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_chanting_mastery.png",
           "perkGroupId": "ValaChantMagicTree",
           "perkGroupName": "Vala Chant"
@@ -41633,7 +41468,6 @@
         {
           "categoryName": "Defense",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/himshaw.png",
           "perkGroupId": "ClothArmorTree",
           "perkGroupName": "Cloth Armor"
@@ -41698,7 +41532,6 @@
         {
           "categoryName": "Profession",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/wheel_maintenance.png",
           "perkGroupId": "CaravaneerProfessionTree",
           "perkGroupName": "Caravaneering"
@@ -41706,7 +41539,6 @@
         {
           "categoryName": "Profession",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_dogs.png",
           "perkGroupId": "DogBreederProfessionTree",
           "perkGroupName": "Dog Breeder"
@@ -42171,7 +42003,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_30.png",
           "perkGroupId": "IndestructibleTree",
           "perkGroupName": "Tenacious"
@@ -42179,7 +42010,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -42187,7 +42017,6 @@
         {
           "categoryName": "Other",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "GiantTree",
           "perkGroupName": "Giant"
@@ -42234,7 +42063,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_28.png",
           "perkGroupId": "CaptainMagicTree",
           "perkGroupName": "Leadership"
@@ -42357,7 +42185,6 @@
         {
           "categoryName": "Class",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/prayer_purple.png",
           "perkGroupId": "FaithClassTree",
           "perkGroupName": "Faith"
@@ -42405,7 +42232,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/entice_circle_56.png",
           "perkGroupId": "IllusionistMagicTree",
           "perkGroupName": "Illusion"
@@ -42812,7 +42638,6 @@
         {
           "categoryName": "Defense",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_03.png",
           "perkGroupId": "HeavyArmorTree",
           "perkGroupName": "Heavy Armor"
@@ -42820,7 +42645,6 @@
         {
           "categoryName": "Other",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/fullforce_circle.png",
           "perkGroupId": "ForcefulTree",
           "perkGroupName": "Forceful"
@@ -43354,7 +43178,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_23.png",
           "perkGroupId": "AgileTree",
           "perkGroupName": "Agile"
@@ -43392,7 +43215,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/coordinated_volleys_circle.png",
           "perkGroupId": "ArcherCommandTree",
           "perkGroupName": "ArcherCommand"
@@ -43864,7 +43686,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_30.png",
           "perkGroupId": "IndestructibleTree",
           "perkGroupName": "Tenacious"
@@ -43872,7 +43693,6 @@
         {
           "categoryName": "Other",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "GiantTree",
           "perkGroupName": "Giant"
@@ -43938,7 +43758,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/roots_circle.png",
           "perkGroupId": "DruidMagicTree",
           "perkGroupName": "Druidic Arts"
@@ -43946,7 +43765,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/siphon_circle.png",
           "perkGroupId": "WarlockMagicTree",
           "perkGroupName": "Sorcery"
@@ -44300,7 +44118,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_42.png",
           "perkGroupId": "InspirationalTree",
           "perkGroupName": "Inspirational"
@@ -44308,7 +44125,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_28.png",
           "perkGroupId": "CaptainMagicTree",
           "perkGroupName": "Leadership"
@@ -44663,7 +44479,6 @@
         {
           "categoryName": "Traits",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_42.png",
           "perkGroupId": "InspirationalTree",
           "perkGroupName": "Inspirational"
@@ -44671,7 +44486,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_28.png",
           "perkGroupId": "CaptainMagicTree",
           "perkGroupName": "Leadership"
@@ -44763,7 +44577,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scholar_circle.png",
           "perkGroupId": "PhilosophyMagicTree",
           "perkGroupName": "Philosophy"
@@ -44794,7 +44607,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_firearm.png",
           "perkGroupId": "InventorClassTree",
           "perkGroupName": "Inventor"
@@ -45043,7 +44855,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_49.png",
           "perkGroupId": "BowTree",
           "perkGroupName": "Bow"
@@ -45407,7 +45218,6 @@
         {
           "categoryName": "Weapon",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_44.png",
           "perkGroupId": "AxeTree",
           "perkGroupName": "Axe"
@@ -45415,7 +45225,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -45423,7 +45232,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/triplestrike56.png",
           "perkGroupId": "MasterArcherTree",
           "perkGroupName": "Deadeye"
@@ -45431,7 +45239,6 @@
         {
           "categoryName": "Other",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_27.png",
           "perkGroupId": "AggressiveTree",
           "perkGroupName": "Aggressive"
@@ -45948,7 +45755,6 @@
         {
           "categoryName": "Weapon",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_52.png",
           "perkGroupId": "CleaverTree",
           "perkGroupName": "Cleaver"
@@ -45956,7 +45762,6 @@
         {
           "categoryName": "Class",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_cultist.png",
           "perkGroupId": "NinetailsClassTree",
           "perkGroupName": "Cat O' Nine Tails"
@@ -46264,7 +46069,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/vengeance_circle.png",
           "perkGroupId": "MartyrTree",
           "perkGroupName": "Martyr"
@@ -46356,7 +46160,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/leap_circle.png",
           "perkGroupId": "JugglerClassTree",
           "perkGroupName": "Juggler"
@@ -46411,7 +46214,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -46491,7 +46293,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lionheart.png",
           "perkGroupId": "ImmortalMagicTree",
           "perkGroupName": "Immortal"
@@ -47016,7 +46817,6 @@
         {
           "categoryName": "Defense",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lithe.png",
           "perkGroupId": "MediumArmorTree",
           "perkGroupName": "Medium Armor"
@@ -47323,7 +47123,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/vengeance_circle.png",
           "perkGroupId": "MartyrTree",
           "perkGroupName": "Martyr"
@@ -47651,7 +47450,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_sling_mastery.png",
           "perkGroupId": "SlingTree",
           "perkGroupName": "Sling"
@@ -47659,7 +47457,6 @@
         {
           "categoryName": "Other",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerTree",
           "perkGroupName": "Ranger"
@@ -47743,7 +47540,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/assassinate_circle.png",
           "perkGroupId": "AssassinMagicTree",
           "perkGroupName": "Assassin"
@@ -48268,7 +48064,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_43.png",
           "perkGroupId": "MaceTree",
           "perkGroupName": "Mace"
@@ -48304,7 +48099,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/storm_circle.png",
           "perkGroupId": "EvocationMagicTree",
           "perkGroupName": "Evocation"
@@ -48312,7 +48106,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -48348,7 +48141,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/storm_circle.png",
           "perkGroupId": "EvocationMagicTree",
           "perkGroupName": "Evocation"
@@ -48356,7 +48148,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -48392,7 +48183,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/storm_circle.png",
           "perkGroupId": "EvocationMagicTree",
           "perkGroupName": "Evocation"
@@ -48400,7 +48190,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -48556,7 +48345,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/staffmastery.png",
           "perkGroupId": "StavesMagicTree",
           "perkGroupName": "Staves"
@@ -48606,7 +48394,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_trance_mastery.png",
           "perkGroupId": "ValaTranceMagicTree",
           "perkGroupName": "Vala Trance"
@@ -48635,7 +48422,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_raider.png",
           "perkGroupId": "RaiderClassTree",
           "perkGroupName": "Raider"
@@ -48709,7 +48495,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/true_form_circle.png",
           "perkGroupId": "TherianthropyMagicTree",
           "perkGroupName": "Therianthropy"
@@ -48764,7 +48549,6 @@
         {
           "categoryName": "Profession",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_training_01.png",
           "perkGroupId": "FencingTeacherProfessionTree",
           "perkGroupName": "Master Trainer"
@@ -48847,7 +48631,6 @@
         {
           "categoryName": "Profession",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/meal_prep_circle.png",
           "perkGroupId": "ChefProfessionTree",
           "perkGroupName": "Chef"
@@ -48993,7 +48776,6 @@
         {
           "categoryName": "Profession",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/MaxMedsT2.png",
           "perkGroupId": "HealerProfessionTree",
           "perkGroupName": "Apothecary"
@@ -49138,7 +48920,6 @@
         {
           "categoryName": "Profession",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/MaxMedsT2.png",
           "perkGroupId": "HealerProfessionTree",
           "perkGroupName": "Apothecary"
@@ -49185,7 +48966,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -49224,7 +49004,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/siphon_circle.png",
           "perkGroupId": "WarlockMagicTree",
           "perkGroupName": "Sorcery"
@@ -49253,7 +49032,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_militia.png",
           "perkGroupId": "MilitiaClassTree",
           "perkGroupName": "Militia"
@@ -49733,7 +49511,6 @@
         {
           "categoryName": "Traits",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_21.png",
           "perkGroupId": "IntelligentTree",
           "perkGroupName": "Intelligent"
@@ -49763,7 +49540,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_pickaxe.png",
           "perkGroupId": "PickaxeClassTree",
           "perkGroupName": "Miner"
@@ -49838,7 +49614,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -49877,7 +49652,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/remake_man_circle.png",
           "perkGroupId": "ZombieMagicTree",
           "perkGroupName": "Zombie"
@@ -50411,7 +50185,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "LargeTree",
           "perkGroupName": "Large"
@@ -50419,7 +50192,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -50427,7 +50199,6 @@
         {
           "categoryName": "Other",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/fullforce_circle.png",
           "perkGroupId": "ForcefulTree",
           "perkGroupName": "Forceful"
@@ -50435,7 +50206,6 @@
         {
           "categoryName": "Other",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "GiantTree",
           "perkGroupName": "Giant"
@@ -50483,7 +50253,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -50665,7 +50434,6 @@
         {
           "categoryName": "Class",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/net_perk.png",
           "perkGroupId": "BeastClassTree",
           "perkGroupName": "Nets"
@@ -50849,7 +50617,6 @@
         {
           "categoryName": "Class",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/net_perk.png",
           "perkGroupId": "BeastClassTree",
           "perkGroupName": "Nets"
@@ -51032,7 +50799,6 @@
         {
           "categoryName": "Class",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/net_perk.png",
           "perkGroupId": "BeastClassTree",
           "perkGroupName": "Nets"
@@ -51116,7 +50882,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/assassinate_circle.png",
           "perkGroupId": "AssassinMagicTree",
           "perkGroupName": "Assassin"
@@ -51172,7 +50937,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerHuntMagicTree",
           "perkGroupName": "Ranger"
@@ -51198,7 +50962,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_34.png",
           "perkGroupId": "AlchemyMagicTree",
           "perkGroupName": "Alchemy"
@@ -51822,7 +51585,6 @@
         {
           "categoryName": "Defense",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_29.png",
           "perkGroupId": "LightArmorTree",
           "perkGroupName": "Light Armor"
@@ -52275,7 +52037,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_30.png",
           "perkGroupId": "IndestructibleTree",
           "perkGroupName": "Tenacious"
@@ -52321,7 +52082,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_35.png",
           "perkGroupId": "BerserkerMagicTree",
           "perkGroupName": "Berserker"
@@ -52405,7 +52165,6 @@
         {
           "categoryName": "Profession",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/BarterT1.png",
           "perkGroupId": "BarterProfessionTree",
           "perkGroupName": "Barter"
@@ -53399,7 +53158,6 @@
         {
           "categoryName": "Weapon",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_43.png",
           "perkGroupId": "MaceTree",
           "perkGroupName": "Mace"
@@ -53407,7 +53165,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "LargeTree",
           "perkGroupName": "Large"
@@ -53490,7 +53247,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/assassinate_circle.png",
           "perkGroupId": "AssassinMagicTree",
           "perkGroupName": "Assassin"
@@ -53527,7 +53283,6 @@
         {
           "categoryName": "Profession",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/pickaxe_02.png",
           "perkGroupId": "MinerProfessionTree",
           "perkGroupName": "Mining"
@@ -54295,7 +54050,6 @@
         {
           "categoryName": "Traits",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_54.png",
           "perkGroupId": "FitTree",
           "perkGroupName": "Fit"
@@ -54560,7 +54314,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_20.png",
           "perkGroupId": "OrganisedTree",
           "perkGroupName": "Organized"
@@ -54615,7 +54368,6 @@
         {
           "categoryName": "Class",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_hound.png",
           "perkGroupId": "HoundmasterClassTree",
           "perkGroupName": "Hound Master"
@@ -55178,7 +54930,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_23.png",
           "perkGroupId": "AgileTree",
           "perkGroupName": "Agile"
@@ -55186,7 +54937,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -55194,7 +54944,6 @@
         {
           "categoryName": "Other",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerTree",
           "perkGroupName": "Ranger"
@@ -55277,7 +55026,6 @@
         {
           "categoryName": "Profession",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/BarterT1.png",
           "perkGroupId": "BarterProfessionTree",
           "perkGroupName": "Barter"
@@ -55730,7 +55478,6 @@
         {
           "categoryName": "Traits",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/clarity_circle.png",
           "perkGroupId": "CalmTree",
           "perkGroupName": "Calm"
@@ -55851,7 +55598,6 @@
         {
           "categoryName": "Class",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_cultist.png",
           "perkGroupId": "NinetailsClassTree",
           "perkGroupName": "Cat O' Nine Tails"
@@ -56375,7 +56121,6 @@
         {
           "categoryName": "Defense",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lithe.png",
           "perkGroupId": "MediumArmorTree",
           "perkGroupName": "Medium Armor"
@@ -56846,7 +56591,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/clarity_circle.png",
           "perkGroupId": "CalmTree",
           "perkGroupName": "Calm"
@@ -56854,7 +56598,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/triplestrike56.png",
           "perkGroupId": "MasterArcherTree",
           "perkGroupName": "Deadeye"
@@ -56921,7 +56664,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_shortbow.png",
           "perkGroupId": "ShortbowClassTree",
           "perkGroupName": "Shortbow"
@@ -57735,7 +57477,6 @@
         {
           "categoryName": "Weapon",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_50.png",
           "perkGroupId": "ThrowingTree",
           "perkGroupName": "Throwing"
@@ -57841,7 +57582,6 @@
         {
           "categoryName": "Class",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/mastery_poison.png",
           "perkGroupId": "PoisonClassTree",
           "perkGroupName": "Poison"
@@ -57849,7 +57589,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerHuntMagicTree",
           "perkGroupName": "Ranger"
@@ -58526,7 +58265,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_58.png",
           "perkGroupId": "PolearmTree",
           "perkGroupName": "Polearm"
@@ -58572,7 +58310,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/rebuild_skeleton_circle.png",
           "perkGroupId": "SkeletonMagicTree",
           "perkGroupName": "Skeleton"
@@ -58684,7 +58421,6 @@
         {
           "categoryName": "Profession",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/herbs_circle.png",
           "perkGroupId": "HerbalistProfessionTree",
           "perkGroupName": "Herbalism"
@@ -58692,7 +58428,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/potion_circle.png",
           "perkGroupId": "TransmutationMagicTree",
           "perkGroupName": "Transmutation"
@@ -58700,7 +58435,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_chanting_mastery.png",
           "perkGroupId": "ValaChantMagicTree",
           "perkGroupName": "Vala Chant"
@@ -58822,7 +58556,6 @@
         {
           "categoryName": "Class",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/prayer_purple.png",
           "perkGroupId": "FaithClassTree",
           "perkGroupName": "Faith"
@@ -58954,7 +58687,6 @@
         {
           "categoryName": "Class",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/prayer_purple.png",
           "perkGroupId": "FaithClassTree",
           "perkGroupName": "Faith"
@@ -58962,7 +58694,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/roots_circle.png",
           "perkGroupId": "DruidMagicTree",
           "perkGroupName": "Druidic Arts"
@@ -59010,7 +58741,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_spiritual_bond.png",
           "perkGroupId": "ValaSpiritMagicTree",
           "perkGroupName": "Vala Spirits"
@@ -59111,7 +58841,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/assassinate_circle.png",
           "perkGroupId": "AssassinMagicTree",
           "perkGroupName": "Assassin"
@@ -59141,7 +58870,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_dagger.png",
           "perkGroupId": "KnifeClassTree",
           "perkGroupName": "Knives"
@@ -59620,7 +59348,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_21.png",
           "perkGroupId": "IntelligentTree",
           "perkGroupName": "Intelligent"
@@ -59646,7 +59373,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_perk.png",
           "perkGroupId": "DivinationMagicTree",
           "perkGroupName": "Divination"
@@ -59773,7 +59499,6 @@
         {
           "categoryName": "Weapon",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_mastery_circle.png",
           "perkGroupId": "FistsTree",
           "perkGroupName": "Unarmed"
@@ -59901,7 +59626,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_mastery_circle.png",
           "perkGroupId": "FistsTree",
           "perkGroupName": "Unarmed"
@@ -59950,7 +59674,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_28.png",
           "perkGroupId": "CaptainMagicTree",
           "perkGroupName": "Leadership"
@@ -61122,7 +60845,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_43.png",
           "perkGroupId": "MaceTree",
           "perkGroupName": "Mace"
@@ -61130,7 +60852,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_58.png",
           "perkGroupId": "PolearmTree",
           "perkGroupName": "Polearm"
@@ -61213,7 +60934,6 @@
         {
           "categoryName": "Profession",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/meal_prep_circle.png",
           "perkGroupId": "ChefProfessionTree",
           "perkGroupName": "Chef"
@@ -62152,7 +61872,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_50.png",
           "perkGroupId": "ThrowingTree",
           "perkGroupName": "Throwing"
@@ -62160,7 +61879,6 @@
         {
           "categoryName": "Class",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/net_perk.png",
           "perkGroupId": "BeastClassTree",
           "perkGroupName": "Nets"
@@ -62729,7 +62447,6 @@
         {
           "categoryName": "Traits",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_lunge.png",
           "perkGroupId": "FastTree",
           "perkGroupName": "Fast"
@@ -62767,7 +62484,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/raisedead2_circle.png",
           "perkGroupId": "BasicNecroMagicTree",
           "perkGroupName": "Necromancy"
@@ -63103,7 +62819,6 @@
         {
           "categoryName": "Traits",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_42.png",
           "perkGroupId": "InspirationalTree",
           "perkGroupName": "Inspirational"
@@ -63774,7 +63489,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_58.png",
           "perkGroupId": "PolearmTree",
           "perkGroupName": "Polearm"
@@ -63837,7 +63551,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_trance_circle.png",
           "perkGroupId": "PremonitionMagicTree",
           "perkGroupName": "Premonition"
@@ -64864,7 +64577,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_54.png",
           "perkGroupId": "FitTree",
           "perkGroupName": "Fit"
@@ -64872,7 +64584,6 @@
         {
           "categoryName": "Traits",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/steadfast_circle.png",
           "perkGroupId": "SturdyTree",
           "perkGroupName": "Sturdy"
@@ -64900,7 +64611,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/rebuild_skeleton_circle.png",
           "perkGroupId": "SkeletonMagicTree",
           "perkGroupName": "Skeleton"
@@ -64937,7 +64647,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/remake_man_circle.png",
           "perkGroupId": "ZombieMagicTree",
           "perkGroupName": "Zombie"
@@ -65703,7 +65412,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_54.png",
           "perkGroupId": "FitTree",
           "perkGroupName": "Fit"
@@ -66560,7 +66268,6 @@
         {
           "categoryName": "Defense",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/himshaw.png",
           "perkGroupId": "ClothArmorTree",
           "perkGroupName": "Cloth Armor"
@@ -66568,7 +66275,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_30.png",
           "perkGroupId": "IndestructibleTree",
           "perkGroupName": "Tenacious"
@@ -67212,7 +66918,6 @@
         {
           "categoryName": "Defense",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_29.png",
           "perkGroupId": "LightArmorTree",
           "perkGroupName": "Light Armor"
@@ -67250,7 +66955,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/remake_man_circle.png",
           "perkGroupId": "ZombieMagicTree",
           "perkGroupName": "Zombie"
@@ -67793,7 +67497,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_43.png",
           "perkGroupId": "MaceTree",
           "perkGroupName": "Mace"
@@ -67859,7 +67562,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_music_mastery.png",
           "perkGroupId": "BardMagicTree",
           "perkGroupName": "Bard"
@@ -67867,7 +67569,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_perk.png",
           "perkGroupId": "DivinationMagicTree",
           "perkGroupName": "Divination"
@@ -67875,7 +67576,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/entice_circle_56.png",
           "perkGroupId": "IllusionistMagicTree",
           "perkGroupName": "Illusion"
@@ -67924,7 +67624,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/roots_circle.png",
           "perkGroupId": "DruidMagicTree",
           "perkGroupName": "Druidic Arts"
@@ -67932,7 +67631,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/potion_circle.png",
           "perkGroupId": "TransmutationMagicTree",
           "perkGroupName": "Transmutation"
@@ -67990,7 +67688,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/siphon_circle.png",
           "perkGroupId": "WarlockMagicTree",
           "perkGroupName": "Sorcery"
@@ -68065,7 +67762,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scholar_circle.png",
           "perkGroupId": "PhilosophyMagicTree",
           "perkGroupName": "Philosophy"
@@ -68094,7 +67790,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_2hsword.png",
           "perkGroupId": "LongswordClassTree",
           "perkGroupName": "Swordsman"
@@ -68208,7 +67903,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_perk.png",
           "perkGroupId": "DivinationMagicTree",
           "perkGroupName": "Divination"
@@ -68216,7 +67910,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -68279,7 +67972,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_trance_circle.png",
           "perkGroupId": "PremonitionMagicTree",
           "perkGroupName": "Premonition"
@@ -68779,7 +68471,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_06.png",
           "perkGroupId": "LargeTree",
           "perkGroupName": "Large"
@@ -68808,7 +68499,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_sling.png",
           "perkGroupId": "SlingClassTree",
           "perkGroupName": "Sling"
@@ -69128,7 +68818,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_05.png",
           "perkGroupId": "ShieldTree",
           "perkGroupName": "Shield"
@@ -69421,7 +69110,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_05.png",
           "perkGroupId": "ShieldTree",
           "perkGroupName": "Shield"
@@ -69467,7 +69155,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_28.png",
           "perkGroupId": "CaptainMagicTree",
           "perkGroupName": "Leadership"
@@ -69508,7 +69195,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/siphon_circle.png",
           "perkGroupId": "WarlockMagicTree",
           "perkGroupName": "Sorcery"
@@ -69798,7 +69484,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_20.png",
           "perkGroupId": "OrganisedTree",
           "perkGroupName": "Organized"
@@ -69806,7 +69491,6 @@
         {
           "categoryName": "Profession",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/wheel_maintenance.png",
           "perkGroupId": "CaravaneerProfessionTree",
           "perkGroupName": "Caravaneering"
@@ -70142,7 +69826,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_44.png",
           "perkGroupId": "AxeTree",
           "perkGroupName": "Axe"
@@ -70197,7 +69880,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_perk.png",
           "perkGroupId": "DivinationMagicTree",
           "perkGroupName": "Divination"
@@ -70205,7 +69887,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/levitate.png",
           "perkGroupId": "SeerMagicTree",
           "perkGroupName": "Seer"
@@ -70260,7 +69941,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/sleight_of_hand.png",
           "perkGroupId": "ConArtistTree",
           "perkGroupName": "Con Artist"
@@ -70570,7 +70250,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_sling_mastery.png",
           "perkGroupId": "SlingTree",
           "perkGroupName": "Sling"
@@ -70916,7 +70595,6 @@
         {
           "categoryName": "Weapon",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_53.png",
           "perkGroupId": "HammerTree",
           "perkGroupName": "Hammer"
@@ -70924,7 +70602,6 @@
         {
           "categoryName": "Enemy",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_swordmaster_01.png",
           "perkGroupId": "SwordmastersTree",
           "perkGroupName": "Swordmasters"
@@ -70932,7 +70609,6 @@
         {
           "categoryName": "Class",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_smith.png",
           "perkGroupId": "HammerClassTree",
           "perkGroupName": "Blacksmith"
@@ -70940,7 +70616,6 @@
         {
           "categoryName": "Class",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_pickaxe.png",
           "perkGroupId": "PickaxeClassTree",
           "perkGroupName": "Miner"
@@ -71275,7 +70950,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_44.png",
           "perkGroupId": "AxeTree",
           "perkGroupName": "Axe"
@@ -71383,7 +71057,6 @@
         {
           "categoryName": "Profession",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/MaxToolsT1.png",
           "perkGroupId": "RepairProfessionTree",
           "perkGroupName": "Repair"
@@ -71873,7 +71546,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_45.png",
           "perkGroupId": "SpearTree",
           "perkGroupName": "Spear"
@@ -72362,7 +72034,6 @@
         {
           "categoryName": "Weapon",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_45.png",
           "perkGroupId": "SpearTree",
           "perkGroupName": "Spear"
@@ -72410,7 +72081,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_spiritual_bond.png",
           "perkGroupId": "ValaSpiritMagicTree",
           "perkGroupName": "Vala Spirits"
@@ -73106,7 +72776,6 @@
         {
           "categoryName": "Weapon",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_58.png",
           "perkGroupId": "PolearmTree",
           "perkGroupName": "Polearm"
@@ -73830,7 +73499,6 @@
         {
           "categoryName": "Defense",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_03.png",
           "perkGroupId": "HeavyArmorTree",
           "perkGroupName": "Heavy Armor"
@@ -73838,7 +73506,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/steadfast_circle.png",
           "perkGroupId": "SturdyTree",
           "perkGroupName": "Sturdy"
@@ -73846,7 +73513,6 @@
         {
           "categoryName": "Enemy",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/favoured_swordmaster_01.png",
           "perkGroupId": "SwordmastersTree",
           "perkGroupName": "Swordmasters"
@@ -74470,7 +74136,6 @@
         {
           "categoryName": "Defense",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_29.png",
           "perkGroupId": "LightArmorTree",
           "perkGroupName": "Light Armor"
@@ -74635,7 +74300,6 @@
         {
           "categoryName": "Class",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_staff.png",
           "perkGroupId": "StaffClassTree",
           "perkGroupName": "Staff Defense"
@@ -74643,7 +74307,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/staffmastery.png",
           "perkGroupId": "StavesMagicTree",
           "perkGroupName": "Staves"
@@ -75131,7 +74794,6 @@
         {
           "categoryName": "Weapon",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_45.png",
           "perkGroupId": "SpearTree",
           "perkGroupName": "Spear"
@@ -75139,7 +74801,6 @@
         {
           "categoryName": "Other",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/feint_circle.png",
           "perkGroupId": "ShadyTree",
           "perkGroupName": "Shady"
@@ -75610,7 +75271,6 @@
         {
           "categoryName": "Traits",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_21.png",
           "perkGroupId": "IntelligentTree",
           "perkGroupName": "Intelligent"
@@ -75657,7 +75317,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/entice_circle_56.png",
           "perkGroupId": "IllusionistMagicTree",
           "perkGroupName": "Illusion"
@@ -75740,7 +75399,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/cat_circle.png",
           "perkGroupId": "ConjurationMagicTree",
           "perkGroupName": "Conjuration"
@@ -75748,7 +75406,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerHuntMagicTree",
           "perkGroupName": "Ranger"
@@ -75786,7 +75443,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/cat_circle.png",
           "perkGroupId": "ConjurationMagicTree",
           "perkGroupName": "Conjuration"
@@ -75851,7 +75507,6 @@
         {
           "categoryName": "Magic",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/cat_circle.png",
           "perkGroupId": "ConjurationMagicTree",
           "perkGroupName": "Conjuration"
@@ -75859,7 +75514,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerHuntMagicTree",
           "perkGroupName": "Ranger"
@@ -75899,7 +75553,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/roots_circle.png",
           "perkGroupId": "DruidMagicTree",
           "perkGroupName": "Druidic Arts"
@@ -75964,7 +75617,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/cat_circle.png",
           "perkGroupId": "ConjurationMagicTree",
           "perkGroupName": "Conjuration"
@@ -75972,7 +75624,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lookout_circle.png",
           "perkGroupId": "RangerHuntMagicTree",
           "perkGroupName": "Ranger"
@@ -76016,7 +75667,6 @@
         {
           "categoryName": "Magic",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/true_form_circle.png",
           "perkGroupId": "TherianthropyMagicTree",
           "perkGroupName": "Therianthropy"
@@ -76540,7 +76190,6 @@
         {
           "categoryName": "Defense",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/lithe.png",
           "perkGroupId": "MediumArmorTree",
           "perkGroupName": "Medium Armor"
@@ -77292,7 +76941,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_46.png",
           "perkGroupId": "SwordTree",
           "perkGroupName": "Sword"
@@ -78251,7 +77899,6 @@
         {
           "categoryName": "Traits",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_23.png",
           "perkGroupId": "AgileTree",
           "perkGroupName": "Agile"
@@ -78259,7 +77906,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/back_to_basics_circle.png",
           "perkGroupId": "TrainedTree",
           "perkGroupName": "Trained"
@@ -78267,7 +77913,6 @@
         {
           "categoryName": "Class",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/leap_circle.png",
           "perkGroupId": "JugglerClassTree",
           "perkGroupName": "Juggler"
@@ -78275,7 +77920,6 @@
         {
           "categoryName": "Other",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/back_to_basics_circle.png",
           "perkGroupId": "SparringTree",
           "perkGroupName": "Sparring"
@@ -78349,7 +77993,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/potion_circle.png",
           "perkGroupId": "TransmutationMagicTree",
           "perkGroupName": "Transmutation"
@@ -78429,7 +78072,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/entice_circle_56.png",
           "perkGroupId": "IllusionistMagicTree",
           "perkGroupName": "Illusion"
@@ -78628,7 +78270,6 @@
         {
           "categoryName": "Weapon",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_49.png",
           "perkGroupId": "BowTree",
           "perkGroupName": "Bow"
@@ -78676,7 +78317,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_trance_mastery.png",
           "perkGroupId": "ValaTranceMagicTree",
           "perkGroupName": "Vala Trance"
@@ -79482,7 +79122,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_50.png",
           "perkGroupId": "ThrowingTree",
           "perkGroupName": "Throwing"
@@ -79970,7 +79609,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_45.png",
           "perkGroupId": "SpearTree",
           "perkGroupName": "Spear"
@@ -80000,7 +79638,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_javelin.png",
           "perkGroupId": "SpearfisherClassTree",
           "perkGroupName": "Spearfisher"
@@ -80119,7 +79756,6 @@
         {
           "categoryName": "Profession",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/MaxToolsT1.png",
           "perkGroupId": "RepairProfessionTree",
           "perkGroupName": "Repair"
@@ -80167,7 +79803,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_trance_mastery.png",
           "perkGroupId": "ValaTranceMagicTree",
           "perkGroupName": "Vala Trance"
@@ -80198,7 +79833,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_xbow.png",
           "perkGroupId": "InquisitionClassTree",
           "perkGroupName": "Inquisition"
@@ -80625,7 +80259,6 @@
         {
           "categoryName": "Traits",
           "tier": 2,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_59.png",
           "perkGroupId": "DeviousTree",
           "perkGroupName": "Devious"
@@ -80661,7 +80294,6 @@
         {
           "categoryName": "Magic",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/bear2_circle.png",
           "perkGroupId": "DruidTransformTree",
           "perkGroupName": "Druidic transformation"
@@ -80669,7 +80301,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/true_form_circle.png",
           "perkGroupId": "TherianthropyMagicTree",
           "perkGroupName": "Therianthropy"
@@ -80752,7 +80383,6 @@
         {
           "categoryName": "Profession",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/BarterT1.png",
           "perkGroupId": "BarterProfessionTree",
           "perkGroupName": "Barter"
@@ -80825,7 +80455,6 @@
         {
           "categoryName": "Class",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/leap_circle.png",
           "perkGroupId": "JugglerClassTree",
           "perkGroupName": "Juggler"
@@ -80898,7 +80527,6 @@
         {
           "categoryName": "Class",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/leap_circle.png",
           "perkGroupId": "JugglerClassTree",
           "perkGroupName": "Juggler"
@@ -81033,7 +80661,6 @@
         {
           "categoryName": "Weapon",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/unarmed_mastery_circle.png",
           "perkGroupId": "FistsTree",
           "perkGroupName": "Unarmed"
@@ -81459,7 +81086,6 @@
         {
           "categoryName": "Traits",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/back_to_basics_circle.png",
           "perkGroupId": "TrainedTree",
           "perkGroupName": "Trained"
@@ -81786,7 +81412,6 @@
         {
           "categoryName": "Traits",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/vengeance_circle.png",
           "perkGroupId": "MartyrTree",
           "perkGroupName": "Martyr"
@@ -82571,7 +82196,6 @@
         {
           "categoryName": "Weapon",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_50.png",
           "perkGroupId": "ThrowingTree",
           "perkGroupName": "Throwing"
@@ -82610,7 +82234,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/remake_man_circle.png",
           "perkGroupId": "ZombieMagicTree",
           "perkGroupName": "Zombie"
@@ -82658,7 +82281,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/legend_vala_spiritual_bond.png",
           "perkGroupId": "ValaSpiritMagicTree",
           "perkGroupName": "Vala Spirits"
@@ -82684,7 +82306,6 @@
         {
           "categoryName": "Magic",
           "tier": 5,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/scry_perk.png",
           "perkGroupId": "DivinationMagicTree",
           "perkGroupName": "Divination"
@@ -82739,7 +82360,6 @@
         {
           "categoryName": "Profession",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/wheel_maintenance.png",
           "perkGroupId": "CaravaneerProfessionTree",
           "perkGroupName": "Caravaneering"
@@ -82795,7 +82415,6 @@
         {
           "categoryName": "Profession",
           "tier": 7,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_training_01.png",
           "perkGroupId": "FencingTeacherProfessionTree",
           "perkGroupName": "Master Trainer"
@@ -83113,7 +82732,6 @@
         {
           "categoryName": "Weapon",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_sling_mastery.png",
           "perkGroupId": "SlingTree",
           "perkGroupName": "Sling"
@@ -83121,7 +82739,6 @@
         {
           "categoryName": "Magic",
           "tier": 6,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_04.png",
           "perkGroupId": "AssassinLeftoverTree",
           "perkGroupName": "Cutthroat"
@@ -83169,7 +82786,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/roots_circle.png",
           "perkGroupId": "DruidMagicTree",
           "perkGroupName": "Druidic Arts"
@@ -83177,7 +82793,6 @@
         {
           "categoryName": "Magic",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/siphon_circle.png",
           "perkGroupId": "WarlockMagicTree",
           "perkGroupName": "Sorcery"
@@ -83203,7 +82818,6 @@
         {
           "categoryName": "Magic",
           "tier": 4,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/bear2_circle.png",
           "perkGroupId": "DruidTransformTree",
           "perkGroupName": "Druidic transformation"
@@ -83234,7 +82848,6 @@
         {
           "categoryName": "Class",
           "tier": 1,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/perk_spec_woodsman.png",
           "perkGroupId": "WoodaxeClassTree",
           "perkGroupName": "Woodsman"
@@ -83309,7 +82922,6 @@
         {
           "categoryName": "Profession",
           "tier": 3,
-          "perkGroupAttributes": [],
           "perkGroupIconPath": "ui/perks/woodworking.png",
           "perkGroupId": "WoodworkingProfessionTree",
           "perkGroupName": "Woodworking"

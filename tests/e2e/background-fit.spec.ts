@@ -395,10 +395,10 @@ test('filters origin backgrounds from the background search menu', async ({ page
   })
 
   await expect(filterBackgroundsButton).toBeVisible()
-  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
-    'currentColor',
+    'none',
   )
   await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
   await backgroundSearchInput.fill('origin: crusader')
@@ -415,12 +415,8 @@ test('filters origin backgrounds from the background search menu', async ({ page
   expect(filterButtonBox).not.toBeNull()
   expect(clearButtonBox!.x).toBeLessThan(filterButtonBox!.x)
   await expect(
-    backgroundFitPanel.getByRole('heading', {
-      level: 3,
-      name: 'Holy Crusader',
-    }),
+    backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
   ).toBeVisible()
-  await expect(backgroundFitPanel.getByText('Origin: Crusader').first()).toBeVisible()
 
   await filterBackgroundsButton.click()
 
@@ -435,7 +431,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
   )
   const originBackgroundsLabel = backgroundFiltersGroup.getByText('Origin backgrounds')
 
-  await expect(originBackgroundsCheckbox).toBeChecked()
+  await expect(originBackgroundsCheckbox).not.toBeChecked()
   await expect
     .poll(async () => {
       const checkboxBox = await originBackgroundsCheckboxControl.boundingBox()
@@ -453,15 +449,24 @@ test('filters origin backgrounds from the background search menu', async ({ page
     })
   await backgroundFiltersGroup.click({ position: { x: 2, y: 2 } })
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
-  await expect(originBackgroundsCheckbox).toBeChecked()
+  await expect(originBackgroundsCheckbox).not.toBeChecked()
 
   await originBackgroundsLabel.click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
-  await expect(originBackgroundsCheckbox).not.toBeChecked()
-  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('false')
   await expect(
-    backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
+    backgroundFitPanel.getByRole('heading', {
+      level: 3,
+      name: 'Holy Crusader',
+    }),
   ).toBeVisible()
+  await expect(originBackgroundsCheckbox).toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
+  await expect(backgroundFitPanel.getByText('Origin: Crusader').first()).toBeVisible()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
 
   const savedUrl = page.url()
   const sharedPage = await page.context().newPage()
@@ -475,22 +480,29 @@ test('filters origin backgrounds from the background search menu', async ({ page
       name: 'Filter backgrounds',
     })
 
-    await expect(sharedBackgroundFitPanel.getByText('Origin: Crusader')).toHaveCount(0)
+    await expect(sharedBackgroundFitPanel.getByText('Origin: Crusader').first()).toBeVisible()
     await sharedFilterBackgroundsButton.click()
     await expect(
       sharedBackgroundFitPanel.getByRole('checkbox', {
         name: 'Origin backgrounds',
       }),
-    ).not.toBeChecked()
+    ).toBeChecked()
   } finally {
     await sharedPage.close()
   }
 
   await originBackgroundsLabel.click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'true')
-  await expect(originBackgroundsCheckbox).toBeChecked()
+  await expect(originBackgroundsCheckbox).not.toBeChecked()
   await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
-  await expect(backgroundFitPanel.getByText('Origin: Crusader').first()).toBeVisible()
+  await expect(
+    backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
+  ).toBeVisible()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
+  await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
+    'fill',
+    'none',
+  )
 
   await page.getByLabel('Search perks').click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'false')

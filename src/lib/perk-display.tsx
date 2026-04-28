@@ -1,7 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { RankedBackgroundFit } from './background-fit'
 import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
-import { getCategoryPriority } from './dynamic-background-categories'
 import type {
   LegendsPerkBackgroundSource,
   LegendsPerkRecord,
@@ -10,10 +9,7 @@ import type {
 
 export type GroupedBackgroundSource = {
   backgroundNames: string[]
-  categoryName: string
   probability: number
-  perkGroupId: string
-  perkGroupName: string
 }
 
 type PerkGroupHoverTarget = {
@@ -113,24 +109,24 @@ export function groupBackgroundSources(
 
   for (const backgroundSource of backgroundSources) {
     const probability = clampProbability(getBackgroundSourceProbability(backgroundSource))
-    const key = [
-      backgroundSource.categoryName,
-      backgroundSource.perkGroupId,
-      backgroundSource.perkGroupName,
-      probability,
-    ].join('::')
+    const key = formatBackgroundSourceProbabilityLabel(probability)
 
     if (!groupedBackgroundSources.has(key)) {
       groupedBackgroundSources.set(key, {
         backgroundNames: [],
-        categoryName: backgroundSource.categoryName,
         probability,
-        perkGroupId: backgroundSource.perkGroupId,
-        perkGroupName: backgroundSource.perkGroupName,
       })
     }
 
-    groupedBackgroundSources.get(key)?.backgroundNames.push(backgroundSource.backgroundName)
+    const groupedBackgroundSource = groupedBackgroundSources.get(key)
+
+    if (groupedBackgroundSource && probability > groupedBackgroundSource.probability) {
+      groupedBackgroundSource.probability = probability
+    }
+
+    if (!groupedBackgroundSource?.backgroundNames.includes(backgroundSource.backgroundName)) {
+      groupedBackgroundSource?.backgroundNames.push(backgroundSource.backgroundName)
+    }
   }
 
   return [...groupedBackgroundSources.values()].toSorted(compareGroupedBackgroundSources)
@@ -142,10 +138,7 @@ function compareGroupedBackgroundSources(
 ): number {
   return (
     rightSource.probability - leftSource.probability ||
-    getCategoryPriority(leftSource.categoryName) - getCategoryPriority(rightSource.categoryName) ||
-    leftSource.perkGroupName.localeCompare(rightSource.perkGroupName) ||
-    leftSource.backgroundNames.join(', ').localeCompare(rightSource.backgroundNames.join(', ')) ||
-    leftSource.perkGroupId.localeCompare(rightSource.perkGroupId)
+    leftSource.backgroundNames.join(', ').localeCompare(rightSource.backgroundNames.join(', '))
   )
 }
 
@@ -351,12 +344,7 @@ export function renderGameIcon({
 
   if (!iconUrl) {
     return (
-      <div
-        aria-hidden="true"
-        className={className}
-        data-placeholder="true"
-        data-testid={testId}
-      />
+      <div aria-hidden="true" className={className} data-placeholder="true" data-testid={testId} />
     )
   }
 

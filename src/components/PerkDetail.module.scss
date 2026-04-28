@@ -105,6 +105,11 @@
       gap: var(--space-xl);
       align-items: flex-start;
       margin-top: var(--primitive-length-0-3rem);
+
+      + li {
+        border-top: var(--primitive-length-1px) solid var(--border-muted);
+        padding-top: var(--primitive-length-0-45rem);
+      }
     }
   }
 

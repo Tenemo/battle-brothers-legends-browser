@@ -29,7 +29,6 @@ function createPlacement({
   return {
     categoryName,
     tier: 1,
-    perkGroupAttributes: [],
     perkGroupIconPath: null,
     perkGroupId,
     perkGroupName,
@@ -404,7 +403,7 @@ describe('background fit', () => {
       },
     )
 
-    expect(probabilitiesByPerkGroupId.get('HeavyDefenseTree')).toBe(1)
+    expect(probabilitiesByPerkGroupId.get('Defense::HeavyDefenseTree')).toBe(1)
   })
 
   test('treats duplicate explicit background perk groups as one unique perk group', () => {
@@ -437,8 +436,8 @@ describe('background fit', () => {
     const duplicateExplicitFit = engine.getBackgroundFitView([samplePerks[0], samplePerks[2]])
       .rankedBackgroundFits[0]
 
-    expect(probabilitiesByPerkGroupId.get('AxeTree')).toBe(1)
-    expect(probabilitiesByPerkGroupId.get('BowTree')).toBe(1)
+    expect(probabilitiesByPerkGroupId.get('Weapon::AxeTree')).toBe(1)
+    expect(probabilitiesByPerkGroupId.get('Weapon::BowTree')).toBe(1)
     expect(duplicateExplicitFit.expectedCoveredPickedPerkCount).toBe(2)
     expect(duplicateExplicitFit.maximumTotalPerkGroupCount).toBe(2)
     expect(duplicateExplicitFit.matches).toEqual(
@@ -554,12 +553,13 @@ describe('background fit', () => {
         expect.objectContaining({ probability: 0.5, perkGroupId: 'ScholarProfessionTree' }),
       ]),
     )
-    expect(engine.getBackgroundPerkGroupProbability('background.enemy_roll', 'BeastTree')).toBe(
-      1 / 3,
-    )
+    expect(
+      engine.getBackgroundPerkGroupProbability('background.enemy_roll', 'Enemy', 'BeastTree'),
+    ).toBe(1 / 3)
     expect(
       engine.getBackgroundPerkGroupProbability(
         'background.profession_roll',
+        'Profession',
         'BlacksmithProfessionTree',
       ),
     ).toBe(0.5)
@@ -582,7 +582,9 @@ describe('background fit', () => {
         }),
       ]),
     )
-    expect(engine.getBackgroundPerkGroupProbability('background.traits_fill', 'BoldTree')).toBe(0.5)
+    expect(
+      engine.getBackgroundPerkGroupProbability('background.traits_fill', 'Traits', 'BoldTree'),
+    ).toBe(0.5)
   })
 
   test('changes class probabilities based on the exact weapon perk groups a background can produce', () => {
@@ -600,7 +602,7 @@ describe('background fit', () => {
       ]),
     )
     expect(
-      engine.getBackgroundPerkGroupProbability('background.class_roll', 'ArcherClassTree'),
+      engine.getBackgroundPerkGroupProbability('background.class_roll', 'Class', 'ArcherClassTree'),
     ).toBe(0.5)
   })
 
@@ -682,11 +684,15 @@ describe('background fit', () => {
         0,
       ),
     )
-    expect(engine.getBackgroundPerkGroupProbability('background.trained_rolls', 'AgileTree')).toBe(
-      0.25,
-    )
     expect(
-      engine.getBackgroundPerkGroupProbability('background.trained_rolls', 'JugglerClassTree'),
+      engine.getBackgroundPerkGroupProbability('background.trained_rolls', 'Traits', 'AgileTree'),
+    ).toBe(0.25)
+    expect(
+      engine.getBackgroundPerkGroupProbability(
+        'background.trained_rolls',
+        'Class',
+        'JugglerClassTree',
+      ),
     ).toBe(0.5)
   })
 
@@ -749,11 +755,86 @@ describe('background fit', () => {
       }),
     )
     expect(
-      engine.getBackgroundPerkGroupProbability('background.random_magic', 'RuneMagicTree'),
+      engine.getBackgroundPerkGroupProbability('background.random_magic', 'Magic', 'RuneMagicTree'),
     ).toBe(0)
     expect(
-      engine.getBackgroundPerkGroupProbability('background.explicit_magic', 'RuneMagicTree'),
+      engine.getBackgroundPerkGroupProbability(
+        'background.explicit_magic',
+        'Magic',
+        'RuneMagicTree',
+      ),
     ).toBe(1)
+  })
+
+  test('keeps same-id perk group probabilities scoped to their categories', () => {
+    const classFaithPerk = createPerk({
+      id: 'perk.class.faith',
+      perkConstName: 'LegendClassFaith',
+      perkName: 'Class faith',
+      placements: [
+        createPlacement({
+          categoryName: 'Class',
+          perkGroupId: 'SharedFaithTree',
+          perkGroupName: 'Faith',
+        }),
+      ],
+    })
+    const magicFaithPerk = createPerk({
+      id: 'perk.magic.faith',
+      perkConstName: 'LegendMagicFaith',
+      perkName: 'Magic faith',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'SharedFaithTree',
+          perkGroupName: 'Faith',
+        }),
+      ],
+    })
+    const explicitMagicBackground = createBackgroundDefinition({
+      backgroundId: 'background.explicit_shared_faith',
+      backgroundName: 'Explicit shared faith',
+      overrides: {
+        Class: { chance: 0, minimumPerkGroups: 1, perkGroupIds: [] },
+        Magic: { chance: 0, minimumPerkGroups: 1, perkGroupIds: ['SharedFaithTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [explicitMagicBackground],
+      perks: [...samplePerks, classFaithPerk, magicFaithPerk],
+    })
+    const backgroundFit = engine.getBackgroundFitView([classFaithPerk, magicFaithPerk])
+      .rankedBackgroundFits[0]
+
+    expect(
+      engine.getBackgroundPerkGroupProbability(
+        'background.explicit_shared_faith',
+        'Class',
+        'SharedFaithTree',
+      ),
+    ).toBe(0)
+    expect(
+      engine.getBackgroundPerkGroupProbability(
+        'background.explicit_shared_faith',
+        'Magic',
+        'SharedFaithTree',
+      ),
+    ).toBe(1)
+    expect(engine.getPerkBackgroundSources(classFaithPerk)).toEqual([])
+    expect(engine.getPerkBackgroundSources(magicFaithPerk)).toEqual([
+      expect.objectContaining({
+        backgroundId: 'background.explicit_shared_faith',
+        categoryName: 'Magic',
+        perkGroupId: 'SharedFaithTree',
+      }),
+    ])
+    expect(backgroundFit.matches).toEqual([
+      expect.objectContaining({
+        categoryName: 'Magic',
+        perkGroupId: 'SharedFaithTree',
+      }),
+    ])
   })
 
   test('ranks backgrounds by expected covered picked perks first and disambiguates duplicate names', () => {

@@ -14,7 +14,6 @@ const samplePerk: LegendsPerkRecord = {
     {
       categoryName: 'Defense',
       tier: 2,
-      perkGroupAttributes: [],
       perkGroupIconPath: 'ui/perks/cloth_armor_tree.png',
       perkGroupId: 'ClothArmorTree',
       perkGroupName: 'Cloth Armor',
@@ -22,7 +21,6 @@ const samplePerk: LegendsPerkRecord = {
     {
       categoryName: 'Traits',
       tier: 1,
-      perkGroupAttributes: [],
       perkGroupIconPath: 'ui/perks/tenacious_tree.png',
       perkGroupId: 'TenaciousTree',
       perkGroupName: 'Tenacious',
@@ -30,7 +28,6 @@ const samplePerk: LegendsPerkRecord = {
     {
       categoryName: 'Defense',
       tier: 3,
-      perkGroupAttributes: [],
       perkGroupIconPath: 'ui/perks/cloth_armor_tree.png',
       perkGroupId: 'ClothArmorTree',
       perkGroupName: 'Cloth Armor',

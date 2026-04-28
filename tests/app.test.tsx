@@ -9,7 +9,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'apprentice_background.nut',
     'paladin_background.nut',
   ]),
-  perkNamesForAppTests: new Set(['Berserk']),
+  perkNamesForAppTests: new Set(['Berserk', 'Magic Missile']),
 }))
 
 vi.mock('../src/data/legends-perks.json', async () => {
@@ -103,6 +103,52 @@ describe('app', () => {
     expect(perkSearchInput).toHaveValue('')
     expect(screen.queryByRole('button', { name: 'Clear perk search' })).not.toBeInTheDocument()
     expect(perkSearchInput).toHaveFocus()
+  })
+
+  test('excludes origin and ancient scroll perk groups from perk results by default', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const perkSearchInput = screen.getByLabelText('Search perks')
+
+    await user.type(perkSearchInput, 'Berserk')
+
+    const berserkResultRow = within(screen.getByTestId('results-list'))
+      .getByRole('button', { name: 'Inspect Berserk' })
+      .closest('[data-testid="perk-row"]')
+
+    expect(berserkResultRow).not.toBeNull()
+    expect(
+      within(berserkResultRow as HTMLElement).getByTestId('perk-placement-list'),
+    ).toHaveTextContent('Vicious')
+    expect(
+      within(berserkResultRow as HTMLElement).getByTestId('perk-placement-list'),
+    ).not.toHaveTextContent('Berserker')
+
+    await user.clear(perkSearchInput)
+    await user.type(perkSearchInput, 'Magic Missile')
+
+    expect(screen.getByText('No perks found')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Filter perks' }))
+
+    const restrictedPerkGroupsCheckbox = screen.getByRole('checkbox', {
+      name: 'Origin and ancient scroll perk groups',
+    })
+
+    expect(restrictedPerkGroupsCheckbox).not.toBeChecked()
+
+    await user.click(restrictedPerkGroupsCheckbox)
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('results-list')).getByRole('button', {
+          name: 'Inspect Magic Missile',
+        }),
+      ).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(window.location.search).toContain('origin-scroll-perk-groups=true')
+    })
   })
 
   test('shows the background search clear button only while search has text', async () => {

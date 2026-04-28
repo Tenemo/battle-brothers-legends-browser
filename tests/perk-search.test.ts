@@ -25,7 +25,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Magic',
         tier: 3,
-        perkGroupAttributes: [],
         perkGroupIconPath: null,
         perkGroupId: 'ValaChantMagicTree',
         perkGroupName: 'Vala Chant',
@@ -47,7 +46,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Weapon',
         tier: 1,
-        perkGroupAttributes: ['Ranged skill: +2 to +4'],
         perkGroupIconPath: null,
         perkGroupId: 'BowTree',
         perkGroupName: 'Bows',
@@ -86,7 +84,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Enemy',
         tier: 3,
-        perkGroupAttributes: [],
         perkGroupIconPath: null,
         perkGroupId: 'BeastTree',
         perkGroupName: 'Beasts',
@@ -126,7 +123,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Traits',
         tier: 5,
-        perkGroupAttributes: [],
         perkGroupIconPath: null,
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',

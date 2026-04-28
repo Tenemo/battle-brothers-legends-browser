@@ -18,7 +18,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Traits',
         tier: 5,
-        perkGroupAttributes: [],
         perkGroupIconPath: null,
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
@@ -40,7 +39,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Traits',
         tier: 6,
-        perkGroupAttributes: [],
         perkGroupIconPath: null,
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
@@ -62,7 +60,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Traits',
         tier: 7,
-        perkGroupAttributes: [],
         perkGroupIconPath: null,
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
@@ -70,7 +67,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Magic',
         tier: 7,
-        perkGroupAttributes: [],
         perkGroupIconPath: null,
         perkGroupId: 'DeadeyeTree',
         perkGroupName: 'Deadeye',
@@ -130,7 +126,8 @@ describe('perk browser url state', () => {
           Magic: ['DeadeyeTree'],
           Traits: ['CalmTree', 'ViciousTree'],
         },
-        shouldIncludeOriginBackgrounds: true,
+        shouldIncludeOriginAndAncientScrollPerkGroups: false,
+        shouldIncludeOriginBackgrounds: false,
       },
       {
         availableCategoryNames,
@@ -161,7 +158,8 @@ describe('perk browser url state', () => {
       selectedPerkGroupIdsByCategory: {
         Traits: ['CalmTree'],
       },
-      shouldIncludeOriginBackgrounds: true,
+      shouldIncludeOriginAndAncientScrollPerkGroups: false,
+      shouldIncludeOriginBackgrounds: false,
     })
   })
 
@@ -182,7 +180,8 @@ describe('perk browser url state', () => {
       selectedPerkGroupIdsByCategory: {
         Traits: ['CalmTree'],
       },
-      shouldIncludeOriginBackgrounds: true,
+      shouldIncludeOriginAndAncientScrollPerkGroups: false,
+      shouldIncludeOriginBackgrounds: false,
     })
   })
 
@@ -193,6 +192,34 @@ describe('perk browser url state', () => {
         query: '',
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
+        shouldIncludeOriginAndAncientScrollPerkGroups: false,
+        shouldIncludeOriginBackgrounds: true,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?origin-backgrounds=true')
+    expect(
+      readPerkBrowserUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).shouldIncludeOriginBackgrounds,
+    ).toBe(true)
+  })
+
+  test('serializes and restores the non-default origin and ancient scroll perk group filter', () => {
+    const search = buildPerkBrowserUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        shouldIncludeOriginAndAncientScrollPerkGroups: true,
         shouldIncludeOriginBackgrounds: false,
       },
       {
@@ -202,14 +229,14 @@ describe('perk browser url state', () => {
       },
     )
 
-    expect(search).toBe('?origin-backgrounds=false')
+    expect(search).toBe('?origin-scroll-perk-groups=true')
     expect(
       readPerkBrowserUrlState(search, {
         availableCategoryNames,
         perks: samplePerks,
         perkGroupOptionsByCategory,
-      }).shouldIncludeOriginBackgrounds,
-    ).toBe(false)
+      }).shouldIncludeOriginAndAncientScrollPerkGroups,
+    ).toBe(true)
   })
 
   test('serializes duplicate-name build perks with readable stable ids and restores both ids', () => {
@@ -219,7 +246,8 @@ describe('perk browser url state', () => {
         query: '',
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
-        shouldIncludeOriginBackgrounds: true,
+        shouldIncludeOriginAndAncientScrollPerkGroups: false,
+        shouldIncludeOriginBackgrounds: false,
       },
       {
         availableCategoryNames,
@@ -248,7 +276,8 @@ describe('perk browser url state', () => {
           query: '',
           selectedCategoryNames: [],
           selectedPerkGroupIdsByCategory: {},
-          shouldIncludeOriginBackgrounds: true,
+          shouldIncludeOriginAndAncientScrollPerkGroups: false,
+          shouldIncludeOriginBackgrounds: false,
         },
         {
           availableCategoryNames,
