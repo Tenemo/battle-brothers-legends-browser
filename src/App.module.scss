@@ -256,6 +256,7 @@
       flex: 0 0 auto;
       flex-direction: column;
       min-height: 0;
+      order: 2;
       overflow: visible;
     }
   }
@@ -329,10 +330,6 @@
   }
 
   @include mobile {
-    .workspace {
-      order: 2;
-    }
-
     .hero {
       flex-direction: column;
       gap: var(--primitive-length-0-38rem);
@@ -355,6 +352,10 @@
 
     .heroMeta {
       justify-content: flex-start;
+    }
+
+    .heroRepositoryLink {
+      @include size(var(--primitive-length-2-72rem));
     }
   }
 }

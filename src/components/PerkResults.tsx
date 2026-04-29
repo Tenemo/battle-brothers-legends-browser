@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import {
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
@@ -12,6 +12,17 @@ import { BuildToggleButton, ClearableSearchField, FunnelIcon } from './SharedCon
 import backgroundFitStyles from './BackgroundFitPanel.module.scss'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
+
+const mobilePerkResultBatchSize = 12
+const mobilePerkResultMediaQuery = '(max-width: 760px)'
+
+function getIsMobilePerkResultViewport() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false
+  }
+
+  return window.matchMedia(mobilePerkResultMediaQuery).matches
+}
 
 function renderPerkPlacementChip({
   emphasizedCategoryNames,
@@ -153,8 +164,68 @@ export function PerkResults({
   visiblePerks: LegendsPerkRecord[]
 }) {
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
+  const [isMobilePerkResultViewport, setIsMobilePerkResultViewport] = useState(
+    getIsMobilePerkResultViewport,
+  )
+  const [mobilePerkResultWindow, setMobilePerkResultWindow] = useState({
+    resultSetKey: '',
+    visiblePerkCount: mobilePerkResultBatchSize,
+  })
   const perkFilterMenuId = useId()
   const perkFilterMenuRef = useRef<HTMLDivElement | null>(null)
+  const mobileResultSetKey = useMemo(
+    () => visiblePerks.map((perk) => perk.id).join('\u0000'),
+    [visiblePerks],
+  )
+  const effectiveMobileVisiblePerkCount =
+    mobilePerkResultWindow.resultSetKey === mobileResultSetKey
+      ? mobilePerkResultWindow.visiblePerkCount
+      : mobilePerkResultBatchSize
+  const displayedPerks = isMobilePerkResultViewport
+    ? visiblePerks.slice(0, effectiveMobileVisiblePerkCount)
+    : visiblePerks
+  const hiddenMobilePerkCount = isMobilePerkResultViewport
+    ? Math.max(visiblePerks.length - displayedPerks.length, 0)
+    : 0
+  const nextMobilePerkResultBatchSize = Math.min(
+    mobilePerkResultBatchSize,
+    hiddenMobilePerkCount,
+  )
+
+  function handleShowMoreMobilePerkResults() {
+    setMobilePerkResultWindow({
+      resultSetKey: mobileResultSetKey,
+      visiblePerkCount: Math.min(
+        effectiveMobileVisiblePerkCount + mobilePerkResultBatchSize,
+        visiblePerks.length,
+      ),
+    })
+  }
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return
+    }
+
+    const mobilePerkResultMediaQueryList = window.matchMedia(mobilePerkResultMediaQuery)
+
+    function handleMobilePerkResultMediaChange(event: { matches: boolean }) {
+      setIsMobilePerkResultViewport(event.matches)
+    }
+
+    handleMobilePerkResultMediaChange(mobilePerkResultMediaQueryList)
+    mobilePerkResultMediaQueryList.addEventListener(
+      'change',
+      handleMobilePerkResultMediaChange,
+    )
+
+    return () => {
+      mobilePerkResultMediaQueryList.removeEventListener(
+        'change',
+        handleMobilePerkResultMediaChange,
+      )
+    }
+  }, [])
 
   useEffect(() => {
     if (!isPerkFilterMenuOpen) {
@@ -258,103 +329,117 @@ export function PerkResults({
             <p>Try a broader search or switch the category filters.</p>
           </li>
         ) : (
-          visiblePerks.map((perk) => {
-            const isSelected = perk.id === selectedPerk?.id
-            const isPicked = pickedPerkOrderById.has(perk.id)
-            const isHighlighted = hoveredPerkId === perk.id
-            const previewParagraphs = getPerkPreviewParagraphs(perk)
+          <>
+            {displayedPerks.map((perk) => {
+              const isSelected = perk.id === selectedPerk?.id
+              const isPicked = pickedPerkOrderById.has(perk.id)
+              const isHighlighted = hoveredPerkId === perk.id
+              const previewParagraphs = getPerkPreviewParagraphs(perk)
 
-            return (
-              <li
-                className={styles.perkRow}
-                data-highlighted={isHighlighted}
-                data-picked={isPicked}
-                data-selected={isSelected}
-                data-testid="perk-row"
-                key={perk.id}
-                onBlurCapture={(event) => {
-                  if (
-                    event.relatedTarget instanceof Node &&
-                    event.currentTarget.contains(event.relatedTarget)
-                  ) {
-                    return
-                  }
+              return (
+                <li
+                  className={styles.perkRow}
+                  data-highlighted={isHighlighted}
+                  data-picked={isPicked}
+                  data-selected={isSelected}
+                  data-testid="perk-row"
+                  key={perk.id}
+                  onBlurCapture={(event) => {
+                    if (
+                      event.relatedTarget instanceof Node &&
+                      event.currentTarget.contains(event.relatedTarget)
+                    ) {
+                      return
+                    }
 
-                  onCloseResultsPerkHover(perk.id)
-                }}
-                onFocusCapture={() => onOpenResultsPerkHover(perk.id)}
-                onMouseEnter={() => onOpenResultsPerkHover(perk.id)}
-                onMouseLeave={() => onCloseResultsPerkHover(perk.id)}
-              >
-                <button
-                  aria-label={`Inspect ${perk.perkName}`}
-                  className={styles.perkRowSelect}
-                  onClick={() => onSelectPerk(perk.id)}
-                  type="button"
-                />
-                <div className={styles.perkRowLayout}>
-                  {renderGameIcon({
-                    className: cx(
-                      sharedStyles.perkIcon,
-                      sharedStyles.perkIconSmall,
-                      styles.perkRowIcon,
-                    ),
-                    iconPath: getPerkDisplayIconPath(perk),
-                    label: `${perk.perkName} icon`,
-                    testId: 'perk-row-icon',
-                  })}
-                  <div className={styles.perkRowCopy}>
-                    <div className={styles.perkRowTopline}>
-                      <span className={styles.perkName} data-testid="perk-name">
-                        {renderHighlightedText({
-                          highlightClassName: sharedStyles.searchHighlight,
-                          keyPrefix: `${perk.id}-name`,
-                          query,
-                          text: perk.perkName,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  <div className={styles.perkRowContextSlot}>
-                    <div
-                      className={cx(styles.perkContext, styles.perkPlacementList)}
-                      data-testid="perk-placement-list"
-                    >
-                      {renderPerkPlacements({
-                        emphasizedCategoryNames,
-                        emphasizedPerkGroupKeys,
-                        onClosePerkGroupHover,
-                        onInspectPerkGroup,
-                        onOpenPerkGroupHover,
-                        perk,
-                        query,
-                      })}
-                    </div>
-                    <div className={styles.perkPreview} data-testid="perk-preview">
-                      {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
-                        <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
+                    onCloseResultsPerkHover(perk.id)
+                  }}
+                  onFocusCapture={() => onOpenResultsPerkHover(perk.id)}
+                  onMouseEnter={() => onOpenResultsPerkHover(perk.id)}
+                  onMouseLeave={() => onCloseResultsPerkHover(perk.id)}
+                >
+                  <button
+                    aria-label={`Inspect ${perk.perkName}`}
+                    className={styles.perkRowSelect}
+                    onClick={() => onSelectPerk(perk.id)}
+                    type="button"
+                  />
+                  <div className={styles.perkRowLayout}>
+                    {renderGameIcon({
+                      className: cx(
+                        sharedStyles.perkIcon,
+                        sharedStyles.perkIconSmall,
+                        styles.perkRowIcon,
+                      ),
+                      iconPath: getPerkDisplayIconPath(perk),
+                      label: `${perk.perkName} icon`,
+                      testId: 'perk-row-icon',
+                    })}
+                    <div className={styles.perkRowCopy}>
+                      <div className={styles.perkRowTopline}>
+                        <span className={styles.perkName} data-testid="perk-name">
                           {renderHighlightedText({
                             highlightClassName: sharedStyles.searchHighlight,
-                            keyPrefix: `${perk.id}-preview-${previewParagraphIndex}`,
+                            keyPrefix: `${perk.id}-name`,
                             query,
-                            text: previewParagraph,
+                            text: perk.perkName,
                           })}
-                        </p>
-                      ))}
+                        </span>
+                      </div>
+                    </div>
+                    <div className={styles.perkRowContextSlot}>
+                      <div
+                        className={cx(styles.perkContext, styles.perkPlacementList)}
+                        data-testid="perk-placement-list"
+                      >
+                        {renderPerkPlacements({
+                          emphasizedCategoryNames,
+                          emphasizedPerkGroupKeys,
+                          onClosePerkGroupHover,
+                          onInspectPerkGroup,
+                          onOpenPerkGroupHover,
+                          perk,
+                          query,
+                        })}
+                      </div>
+                      <div className={styles.perkPreview} data-testid="perk-preview">
+                        {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
+                          <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
+                            {renderHighlightedText({
+                              highlightClassName: sharedStyles.searchHighlight,
+                              keyPrefix: `${perk.id}-preview-${previewParagraphIndex}`,
+                              query,
+                              text: previewParagraph,
+                            })}
+                          </p>
+                        ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <BuildToggleButton
-                  className={styles.buildToggleButtonInRow}
-                  isCompact
-                  isPicked={isPicked}
-                  onClick={() => onTogglePerkPicked(perk.id)}
-                  perkName={perk.perkName}
-                  source="results"
-                />
+                  <BuildToggleButton
+                    className={styles.buildToggleButtonInRow}
+                    isCompact
+                    isPicked={isPicked}
+                    onClick={() => onTogglePerkPicked(perk.id)}
+                    perkName={perk.perkName}
+                    source="results"
+                  />
+                </li>
+              )
+            })}
+            {hiddenMobilePerkCount > 0 ? (
+              <li className={styles.showMoreResultsItem}>
+                <button
+                  className={styles.showMoreResultsButton}
+                  data-testid="show-more-results-button"
+                  onClick={handleShowMoreMobilePerkResults}
+                  type="button"
+                >
+                  Show {nextMobilePerkResultBatchSize} more perks
+                </button>
               </li>
-            )
-          })
+            ) : null}
+          </>
         )}
       </ul>
     </section>

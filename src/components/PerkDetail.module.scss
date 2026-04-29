@@ -229,6 +229,7 @@
       width: 100%;
       height: auto;
       min-height: var(--rail-button-mobile-min-height);
+      order: 2;
 
       &[data-expanded='false'] {
         width: 100%;
@@ -274,12 +275,12 @@
   }
 
   @include mobile {
-    .detailPanel {
-      order: 2;
-    }
-
     .detailPanelBody {
       max-height: var(--primitive-length-24rem);
+    }
+
+    .detailPanelRailButton {
+      min-height: var(--primitive-length-2-72rem);
     }
 
     .detailHeader,

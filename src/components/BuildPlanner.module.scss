@@ -678,10 +678,6 @@
 
     &:hover,
     &:focus-within {
-      .plannerSlotPerkInspect {
-        padding-right: var(--primitive-length-2-34rem);
-      }
-
       .plannerSlotRemoveButton {
         opacity: 1;
         visibility: visible;
@@ -699,7 +695,9 @@
     min-height: calc(var(--planner-perk-row-min-height) - var(--primitive-length-2px));
     border: 0;
     border-radius: inherit;
-    padding: var(--primitive-length-0-38rem) var(--primitive-length-0-46rem);
+    padding:
+      var(--primitive-length-0-38rem) var(--primitive-length-2-34rem)
+      var(--primitive-length-0-38rem) var(--primitive-length-0-46rem);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -983,7 +981,6 @@
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    overflow-wrap: break-word;
     text-overflow: ellipsis;
     font-size: var(--font-size-md);
     font-weight: 600;
@@ -1068,7 +1065,7 @@
 
     .plannerSlotPerkInspect {
       gap: var(--space-sm);
-      padding: var(--space-xs) var(--space-sm);
+      padding: var(--space-xs) var(--primitive-length-2-34rem) var(--space-xs) var(--space-sm);
     }
 
     .plannerGroupCardHeader {
@@ -1083,6 +1080,7 @@
   @include below-desktop {
     .buildPlanner {
       flex: 0 0 auto;
+      order: 1;
       overflow: visible;
 
       &[data-background-fit-search-active='true'] {
@@ -1092,10 +1090,6 @@
   }
 
   @include mobile {
-    .buildPlanner {
-      order: 1;
-    }
-
     .buildPlannerHeader {
       align-items: flex-start;
       flex-direction: column;
@@ -1104,6 +1098,11 @@
     .buildPlannerActions {
       justify-content: flex-start;
       width: 100%;
+    }
+
+    .plannerActionButton {
+      min-height: var(--primitive-length-2-72rem);
+      padding: var(--space-xs) var(--space-md);
     }
 
     .dialogBackdrop {
@@ -1146,6 +1145,32 @@
 
     .plannerBoard {
       gap: var(--space-lg);
+    }
+
+    .buildPlanner[data-has-picked-perks='true'] {
+      .plannerBoard {
+        max-height: min(var(--primitive-length-24rem), var(--primitive-length-38vh));
+        overflow: auto;
+        padding-right: var(--space-2xs);
+      }
+    }
+
+    .plannerSectionToggle {
+      position: relative;
+      min-height: var(--primitive-length-2-72rem);
+      padding: var(--space-xs) var(--space-md);
+
+      &[data-collapsed-chip='true'] {
+        min-height: 0;
+        padding: var(--space-2xs) var(--space-xs);
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset: var(--primitive-length-negative-0-45rem) 0;
+          pointer-events: auto;
+        }
+      }
     }
   }
 }

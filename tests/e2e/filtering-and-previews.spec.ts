@@ -68,6 +68,34 @@ test('keeps only one selected perk group when another group is selected', async 
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
 })
 
+test('resets the category sidebar scroll when switching active categories', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+
+  const categorySidebar = page.getByTestId('category-sidebar')
+
+  await enableCategory(page, 'Weapon')
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
+  await expect
+    .poll(async () =>
+      categorySidebar.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeGreaterThan(100)
+
+  await categorySidebar.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await expect
+    .poll(async () => categorySidebar.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0)
+
+  await categorySidebar.getByRole('button', { name: 'Enable category Traits' }).click()
+
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toBeVisible()
+  await expect
+    .poll(async () => categorySidebar.evaluate((element) => element.scrollTop))
+    .toBeLessThanOrEqual(1)
+})
+
 test('excludes origin and ancient scroll perk groups from perk results by default', async ({
   page,
 }) => {

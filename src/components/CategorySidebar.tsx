@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
 import { cx } from '../lib/class-names'
@@ -63,12 +64,33 @@ export function CategorySidebar({
   selectedCategoryNames,
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
+  const sidebarRef = useRef<HTMLElement | null>(null)
+  const expandedCategoryNameSignature = expandedCategoryNames.join('\u0000')
+
+  useEffect(() => {
+    const sidebar = sidebarRef.current
+
+    if (sidebar === null) {
+      return
+    }
+
+    if (typeof sidebar.scrollTo === 'function') {
+      sidebar.scrollTo({
+        top: 0,
+      })
+      return
+    }
+
+    sidebar.scrollTop = 0
+  }, [expandedCategoryNameSignature])
+
   return (
     <aside
       className={cx(styles.sidebar, 'app-scrollbar')}
       aria-label="Perk categories"
       data-scroll-container="true"
       data-testid="category-sidebar"
+      ref={sidebarRef}
     >
       <div className={styles.panelHeading}>
         <h2>Categories</h2>

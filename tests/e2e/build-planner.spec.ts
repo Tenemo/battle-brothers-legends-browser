@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
@@ -113,6 +113,79 @@ async function getResolvedCssBorderColor(page: Page, cssBorderColorValue: string
 
     return resolvedColor
   }, cssBorderColorValue)
+}
+
+async function getPickedPerkNameLayoutMetrics(pickedPerkTile: Locator) {
+  return pickedPerkTile.evaluate((tileElement) => {
+    const pickedPerkName = tileElement.querySelector('[data-testid="planner-picked-perk-name"]')
+    const inspectButton = tileElement.querySelector('button[aria-label^="View "]')
+
+    if (!(pickedPerkName instanceof HTMLElement) || !(inspectButton instanceof HTMLElement)) {
+      throw new Error('Unable to find picked perk name layout elements.')
+    }
+
+    const pickedPerkNameStyle = window.getComputedStyle(pickedPerkName)
+    const inspectButtonStyle = window.getComputedStyle(inspectButton)
+    const pickedPerkNameRectangle = pickedPerkName.getBoundingClientRect()
+    const pickedPerkNameLineHeight = Number.parseFloat(pickedPerkNameStyle.lineHeight)
+    const fallbackPickedPerkNameLineHeight = Number.parseFloat(pickedPerkNameStyle.fontSize) * 1.05
+    const pickedPerkNameTextNode = pickedPerkName.firstChild
+
+    if (!(pickedPerkNameTextNode instanceof Text)) {
+      throw new Error('Unable to find picked perk name text node.')
+    }
+
+    const pickedPerkNameRange = document.createRange()
+    pickedPerkNameRange.selectNodeContents(pickedPerkName)
+    const textFragmentCount = [...pickedPerkNameRange.getClientRects()].filter(
+      (rectangle) => rectangle.width > 0 && rectangle.height > 0,
+    ).length
+    const characterLineTops: number[] = []
+
+    for (const [characterIndex] of [...(pickedPerkName.textContent ?? '')].entries()) {
+      const characterRange = document.createRange()
+      characterRange.setStart(pickedPerkNameTextNode, characterIndex)
+      characterRange.setEnd(pickedPerkNameTextNode, characterIndex + 1)
+
+      for (const characterRectangle of characterRange.getClientRects()) {
+        if (characterRectangle.width === 0 || characterRectangle.height === 0) {
+          continue
+        }
+
+        if (
+          !characterLineTops.some(
+            (lineTop) => Math.abs(lineTop - characterRectangle.top) <= 1,
+          )
+        ) {
+          characterLineTops.push(characterRectangle.top)
+        }
+      }
+    }
+
+    return {
+      characterLineTopCount: characterLineTops.length,
+      inspectPaddingRight: inspectButtonStyle.paddingRight,
+      nameHeight: pickedPerkNameRectangle.height,
+      nameHorizontalOverflow: pickedPerkName.scrollWidth - pickedPerkName.clientWidth,
+      nameHyphens: pickedPerkNameStyle.hyphens,
+      nameLineClamp: pickedPerkNameStyle.webkitLineClamp,
+      nameLineHeight: Number.isFinite(pickedPerkNameLineHeight)
+        ? pickedPerkNameLineHeight
+        : fallbackPickedPerkNameLineHeight,
+      nameOverflowWrap: pickedPerkNameStyle.overflowWrap,
+      nameRectangle: {
+        height: pickedPerkNameRectangle.height,
+        left: pickedPerkNameRectangle.left,
+        right: pickedPerkNameRectangle.right,
+        width: pickedPerkNameRectangle.width,
+      },
+      nameTextOverflow: pickedPerkNameStyle.textOverflow,
+      nameVerticalOverflow: pickedPerkName.scrollHeight - pickedPerkName.clientHeight,
+      nameWhiteSpace: pickedPerkNameStyle.whiteSpace,
+      nameWordBreak: pickedPerkNameStyle.wordBreak,
+      textFragmentCount,
+    }
+  })
 }
 
 async function getPlannerWrapMetrics(page: Page) {
@@ -805,6 +878,27 @@ test('keeps collapsible planner group labels compact on mobile', async ({ page }
     expect(collapsedToggleMetric.width).toBeLessThan(260)
   }
 
+  const firstCollapsedToggleHitZonePoint = await page.evaluate(() => {
+    const toggle = [...document.querySelectorAll<HTMLElement>('[data-testid="planner-section-toggle"]')]
+      .find((candidateToggle) => candidateToggle.getAttribute('aria-expanded') === 'false')
+
+    if (toggle === undefined) {
+      throw new Error('Missing collapsed planner section toggle.')
+    }
+
+    const toggleRectangle = toggle.getBoundingClientRect()
+
+    return {
+      x: toggleRectangle.left + toggleRectangle.width / 2,
+      y: toggleRectangle.top - 4,
+    }
+  })
+
+  await page.mouse.click(firstCollapsedToggleHitZonePoint.x, firstCollapsedToggleHitZonePoint.y)
+  await expect(buildSharedGroupsList).toBeVisible()
+  await sharedCollapseToggle.click()
+  await expect(buildSharedGroupsList).toBeHidden()
+
   await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
   await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()
   await expect(buildSharedGroupsList.getByTestId('planner-group-card')).toHaveCount(2)
@@ -1131,18 +1225,18 @@ test('keeps long planner group names compact without category text', async ({ pa
   )
 })
 
-test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
+test('wraps picked perk names at spaces inside compact fixed tiles', async ({ page }) => {
   await gotoPerksBrowser(page, { height: 768, width: 1366 })
-  await page.goto(createBuildUrl(['Anatomical Studies', 'Clarity']))
+  await page.goto(createBuildUrl(['Battle Flow', 'Clarity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
-  const anatomicalStudiesPickedPerkTile = getBuildPerksBar(page)
+  const battleFlowPickedPerkTile = getBuildPerksBar(page)
     .getByTestId('planner-slot-perk')
-    .filter({ hasText: 'Anatomical Studies' })
+    .filter({ hasText: 'Battle Flow' })
 
-  await expect(anatomicalStudiesPickedPerkTile).toBeVisible()
+  await expect(battleFlowPickedPerkTile).toBeVisible()
 
-  const pickedPerkMetrics = await anatomicalStudiesPickedPerkTile.evaluate((pickedPerkTile) => {
+  const pickedPerkMetrics = await battleFlowPickedPerkTile.evaluate((pickedPerkTile) => {
     const pickedPerkName = pickedPerkTile.querySelector('[data-testid="planner-picked-perk-name"]')
     const buildPlanner = pickedPerkTile.closest('[aria-label="Build planner"]')
 
@@ -1169,13 +1263,16 @@ test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
     return {
       nameHeight: pickedPerkNameRectangle.height,
       nameHorizontalOverflow: pickedPerkName.scrollWidth - pickedPerkName.clientWidth,
+      nameHyphens: pickedPerkNameStyle.hyphens,
       nameLineClamp: pickedPerkNameStyle.webkitLineClamp,
       nameLineHeight: Number.isFinite(pickedPerkNameLineHeight)
         ? pickedPerkNameLineHeight
         : fallbackPickedPerkNameLineHeight,
+      nameOverflowWrap: pickedPerkNameStyle.overflowWrap,
       nameTextOverflow: pickedPerkNameStyle.textOverflow,
       nameVerticalOverflow: pickedPerkName.scrollHeight - pickedPerkName.clientHeight,
       nameWhiteSpace: pickedPerkNameStyle.whiteSpace,
+      nameWordBreak: pickedPerkNameStyle.wordBreak,
       pickedPerkSlotWidth: plannerPickedPerkSlotWidth * rootFontSize,
       slotWidth: plannerSlotWidth * rootFontSize,
       tileWidth: pickedPerkTileRectangle.width,
@@ -1219,10 +1316,13 @@ test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
 
   expect(pickedPerkMetrics).not.toBeNull()
   expect(pickedPerkMetrics!.nameHorizontalOverflow).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.nameHyphens).toBe('none')
   expect(pickedPerkMetrics!.nameLineClamp).toBe('2')
+  expect(pickedPerkMetrics!.nameOverflowWrap).toBe('normal')
   expect(pickedPerkMetrics!.nameTextOverflow).toBe('ellipsis')
-  expect(pickedPerkMetrics!.nameVerticalOverflow).toBeGreaterThan(1)
+  expect(pickedPerkMetrics!.nameVerticalOverflow).toBeLessThanOrEqual(2)
   expect(pickedPerkMetrics!.nameWhiteSpace).toBe('normal')
+  expect(pickedPerkMetrics!.nameWordBreak).toBe('normal')
   expect(pickedPerkMetrics!.nameHeight).toBeGreaterThan(pickedPerkMetrics!.nameLineHeight + 1)
   expect(pickedPerkMetrics!.nameHeight).toBeLessThanOrEqual(
     pickedPerkMetrics!.nameLineHeight * 2 + 1,
@@ -1244,6 +1344,75 @@ test('wraps picked perk names inside compact fixed tiles', async ({ page }) => {
   expect(plannerGroupCardMetrics!.groupNameHeight).toBeLessThanOrEqual(
     plannerGroupCardMetrics!.groupNameLineHeight + 1,
   )
+})
+
+test('keeps picked perk word layout unchanged on hover', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await page.goto(createBuildUrl(['Anticipation', 'Clarity']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const anticipationPickedPerkTile = getBuildPerksBar(page)
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Anticipation' })
+
+  await expect(anticipationPickedPerkTile).toBeVisible()
+
+  const globalWordBreakStyles = await page.evaluate(() => {
+    return ['body', 'button', '[data-testid="planner-picked-perk-name"]'].map((selector) => {
+      const element = document.querySelector(selector)
+
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Unable to find text breaking style target: ${selector}`)
+      }
+
+      const computedStyle = window.getComputedStyle(element)
+
+      return {
+        hyphens: computedStyle.hyphens,
+        overflowWrap: computedStyle.overflowWrap,
+        selector,
+        wordBreak: computedStyle.wordBreak,
+      }
+    })
+  })
+  const layoutBeforeHover = await getPickedPerkNameLayoutMetrics(anticipationPickedPerkTile)
+
+  for (const style of globalWordBreakStyles) {
+    expect(style.hyphens).toBe('none')
+    expect(style.overflowWrap).toBe('normal')
+    expect(style.wordBreak).toBe('normal')
+  }
+
+  expect(layoutBeforeHover.nameHorizontalOverflow).toBeGreaterThan(1)
+  expect(layoutBeforeHover.nameHyphens).toBe('none')
+  expect(layoutBeforeHover.nameOverflowWrap).toBe('normal')
+  expect(layoutBeforeHover.nameWordBreak).toBe('normal')
+  expect(layoutBeforeHover.characterLineTopCount).toBe(1)
+  expect(layoutBeforeHover.nameHeight).toBeLessThanOrEqual(layoutBeforeHover.nameLineHeight + 1)
+
+  await anticipationPickedPerkTile.hover()
+  await expect(anticipationPickedPerkTile.getByTestId('planner-slot-remove-button')).toBeVisible()
+
+  const layoutAfterHover = await getPickedPerkNameLayoutMetrics(anticipationPickedPerkTile)
+
+  expect(layoutAfterHover.inspectPaddingRight).toBe(layoutBeforeHover.inspectPaddingRight)
+  expect(layoutAfterHover.characterLineTopCount).toBe(layoutBeforeHover.characterLineTopCount)
+  expect(layoutAfterHover.textFragmentCount).toBe(layoutBeforeHover.textFragmentCount)
+  expect(layoutAfterHover.nameHeight).toBe(layoutBeforeHover.nameHeight)
+  expect(layoutAfterHover.nameHorizontalOverflow).toBe(layoutBeforeHover.nameHorizontalOverflow)
+  expect(layoutAfterHover.nameHyphens).toBe('none')
+  expect(layoutAfterHover.nameOverflowWrap).toBe('normal')
+  expect(layoutAfterHover.nameWordBreak).toBe('normal')
+  expect(layoutAfterHover.nameRectangle.height).toBe(layoutBeforeHover.nameRectangle.height)
+
+  for (const rectangleSide of ['left', 'right', 'width'] as const) {
+    expect(
+      Math.abs(
+        layoutAfterHover.nameRectangle[rectangleSide] -
+          layoutBeforeHover.nameRectangle[rectangleSide],
+      ),
+    ).toBeLessThanOrEqual(1)
+  }
 })
 
 test('links search result hover highlighting with matching build planner perks', async ({

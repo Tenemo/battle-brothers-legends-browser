@@ -170,13 +170,15 @@
     .sidebar {
       height: auto;
       min-height: 0;
+      order: 3;
       overflow: visible;
     }
   }
 
   @include mobile {
-    .sidebar {
-      order: 3;
+    .categoryChip,
+    .perkGroupChip {
+      min-height: var(--primitive-length-2-72rem);
     }
   }
 }

@@ -199,4 +199,28 @@
   .buildStar {
     @include size(var(--primitive-length-1-05rem));
   }
+
+  @include mobile {
+    .searchField {
+      &[data-has-trailing-control='true'][data-has-clear-button='true']
+        .searchInputControl
+        > input {
+        padding-right: var(--primitive-length-6-7rem);
+      }
+
+      &[data-has-trailing-control='true'] .searchClearButton {
+        right: var(--primitive-length-3-45rem);
+      }
+    }
+
+    .searchClearButton,
+    .buildToggleButton,
+    .buildToggleButton[data-compact='true'] {
+      @include size(var(--primitive-length-2-72rem));
+    }
+
+    .buildToggleButton[data-compact='true'] .buildStar {
+      @include size(var(--primitive-length-1-05rem));
+    }
+  }
 }

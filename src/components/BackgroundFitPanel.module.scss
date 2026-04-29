@@ -158,7 +158,6 @@
 
   .backgroundFitMetricBadge {
     padding: var(--primitive-length-0-14rem) var(--space-md);
-    overflow-wrap: anywhere;
     cursor: help;
   }
 
@@ -256,7 +255,6 @@
 
     h3 {
       margin: 0;
-      overflow-wrap: break-word;
       font-family: var(--heading-font-family);
       font-size: var(--primitive-length-0-94rem);
       line-height: 1.08;
@@ -298,7 +296,6 @@
     font-size: var(--font-size-3xs);
     letter-spacing: 0;
     line-height: 1;
-    overflow-wrap: anywhere;
     white-space: nowrap;
   }
 
@@ -538,6 +535,7 @@
       width: 100%;
       height: auto;
       min-height: var(--rail-button-mobile-min-height);
+      order: 4;
 
       &[data-expanded='false'] {
         width: 100%;
@@ -583,12 +581,34 @@
   }
 
   @include mobile {
-    .backgroundFitPanel {
-      order: 4;
-    }
-
     .backgroundFitPanelBody {
       max-height: var(--primitive-length-24rem);
+    }
+
+    .backgroundFitRanking,
+    .backgroundFitMatchList {
+      gap: var(--space-sm);
+    }
+
+    .backgroundFitAccordionTrigger {
+      padding: var(--space-sm);
+    }
+
+    .backgroundFitCardHeader,
+    .backgroundFitAccordionSummary,
+    .backgroundFitAccordionSummaryRow {
+      gap: var(--space-sm);
+    }
+
+    .backgroundFitRailButton,
+    .backgroundFitFilterButton,
+    .backgroundFitAccordionChevronFrame {
+      min-height: var(--primitive-length-2-72rem);
+    }
+
+    .backgroundFitFilterButton,
+    .backgroundFitAccordionChevronFrame {
+      @include size(var(--primitive-length-2-72rem));
     }
 
     .backgroundFitCardHeading,
@@ -596,9 +616,21 @@
       width: 100%;
     }
 
-    .backgroundFitTarget,
-    .backgroundFitMatch,
+    .backgroundFitCardHeading {
+      flex: 1 1 auto;
+    }
+
     .backgroundFitCardHeaderMain {
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .backgroundFitMetricBadge {
+      padding: var(--space-2xs) var(--space-xs);
+    }
+
+    .backgroundFitTarget,
+    .backgroundFitMatch {
       flex-direction: column;
       align-items: flex-start;
     }
