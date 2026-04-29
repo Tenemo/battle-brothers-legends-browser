@@ -15,6 +15,12 @@ export type StudyReachabilityRequirement = {
   perkGroupId: string
 }
 
+export type StudyResourceCoverageProfile = {
+  canCoverBuild: (nativeCoveredPickedPerkMask: bigint) => boolean
+  getCoveredPickedPerkCount: (coveredPickedPerkMask: bigint) => number
+  getNativeCoveredPickedPerkMask: (nativeRequirementKeys: ReadonlySet<string>) => bigint
+}
+
 export const defaultBackgroundStudyResourceFilter = {
   shouldAllowBook: true,
   shouldAllowScroll: true,
@@ -194,12 +200,38 @@ function getPickedPerkRequirementOptions(
   )
 }
 
-function getRequirementMapKey(requirementMap: Map<string, StudyReachabilityRequirement>): string {
-  return [...requirementMap.keys()].toSorted().join(',')
+function getPickedPerkRequirementKeyOptions(pickedPerks: LegendsPerkRecord[]): string[][] {
+  const pickedPerkRequirementKeyOptions: string[][] = []
+
+  for (const pickedPerk of pickedPerks) {
+    const seenRequirementKeys = new Set<string>()
+    const requirementKeys: string[] = []
+
+    for (const placement of pickedPerk.placements) {
+      if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
+        continue
+      }
+
+      const requirementKey = createPerkGroupKey(placement.categoryName, placement.perkGroupId)
+
+      if (seenRequirementKeys.has(requirementKey)) {
+        continue
+      }
+
+      seenRequirementKeys.add(requirementKey)
+      requirementKeys.push(requirementKey)
+    }
+
+    if (requirementKeys.length > 0) {
+      pickedPerkRequirementKeyOptions.push(requirementKeys)
+    }
+  }
+
+  return pickedPerkRequirementKeyOptions
 }
 
-function getRequirementKey(requirement: StudyReachabilityRequirement): string {
-  return createPerkGroupKey(requirement.categoryName, requirement.perkGroupId)
+function getRequirementMapKey(requirementMap: Map<string, StudyReachabilityRequirement>): string {
+  return [...requirementMap.keys()].toSorted().join(',')
 }
 
 function getUniqueReachableRequirementKeys({
@@ -256,6 +288,124 @@ function getScrollRequirementKeySets(
   return scrollRequirementKeySets
 }
 
+function getPickedPerkMask(pickedPerkIndex: number): bigint {
+  return 1n << BigInt(pickedPerkIndex)
+}
+
+function getAllPickedPerksMask(pickedPerkCount: number): bigint {
+  let allPickedPerksMask = 0n
+
+  for (let pickedPerkIndex = 0; pickedPerkIndex < pickedPerkCount; pickedPerkIndex += 1) {
+    allPickedPerksMask |= getPickedPerkMask(pickedPerkIndex)
+  }
+
+  return allPickedPerksMask
+}
+
+function getCoveredPickedPerkMask({
+  pickedPerkRequirementKeyOptions,
+  requirementKeys,
+}: {
+  pickedPerkRequirementKeyOptions: string[][]
+  requirementKeys: ReadonlySet<string>
+}): bigint {
+  let coveredPickedPerkMask = 0n
+
+  for (const [pickedPerkIndex, requirementKeyOptions] of pickedPerkRequirementKeyOptions.entries()) {
+    if (requirementKeyOptions.some((requirementKey) => requirementKeys.has(requirementKey))) {
+      coveredPickedPerkMask |= getPickedPerkMask(pickedPerkIndex)
+    }
+  }
+
+  return coveredPickedPerkMask
+}
+
+function getCoveredPickedPerkCount(coveredPickedPerkMask: bigint): number {
+  let remainingPickedPerkMask = coveredPickedPerkMask
+  let coveredPickedPerkCount = 0
+
+  while (remainingPickedPerkMask > 0n) {
+    if ((remainingPickedPerkMask & 1n) === 1n) {
+      coveredPickedPerkCount += 1
+    }
+
+    remainingPickedPerkMask >>= 1n
+  }
+
+  return coveredPickedPerkCount
+}
+
+export function createStudyResourceCoverageProfile({
+  filter,
+  pickedPerks,
+}: {
+  filter: BackgroundStudyResourceFilter | null
+  pickedPerks: LegendsPerkRecord[]
+}): StudyResourceCoverageProfile {
+  const pickedPerkRequirementKeyOptions = getPickedPerkRequirementKeyOptions(pickedPerks)
+  const allPickedPerksMask = getAllPickedPerksMask(pickedPerkRequirementKeyOptions.length)
+  const pickedPerkRequirementOptions = getPickedPerkRequirementOptions(pickedPerks)
+  const bookRequirementKeys = filter?.shouldAllowBook
+    ? [
+        null,
+        ...getUniqueReachableRequirementKeys({
+          isReachableRequirement: isSkillBookReachableRequirement,
+          pickedPerkRequirementOptions,
+        }),
+      ]
+    : [null]
+  const scrollSlotCount = filter === null ? 0 : getScrollSlotCount(filter)
+  const scrollRequirementKeySets =
+    scrollSlotCount > 0
+      ? getScrollRequirementKeySets(
+          getUniqueReachableRequirementKeys({
+            isReachableRequirement: isAncientScrollReachableRequirement,
+            pickedPerkRequirementOptions,
+          }),
+          scrollSlotCount,
+        )
+      : [[]]
+  const studyCoveredPickedPerkMasks: bigint[] = []
+
+  for (const assignedBookRequirementKey of bookRequirementKeys) {
+    for (const assignedScrollRequirementKeys of scrollRequirementKeySets) {
+      studyCoveredPickedPerkMasks.push(
+        getCoveredPickedPerkMask({
+          pickedPerkRequirementKeyOptions,
+          requirementKeys: new Set([
+            ...(assignedBookRequirementKey === null ? [] : [assignedBookRequirementKey]),
+            ...assignedScrollRequirementKeys,
+          ]),
+        }),
+      )
+    }
+  }
+
+  return {
+    canCoverBuild(nativeCoveredPickedPerkMask) {
+      if (nativeCoveredPickedPerkMask === allPickedPerksMask) {
+        return true
+      }
+
+      if (filter === null) {
+        return false
+      }
+
+      return studyCoveredPickedPerkMasks.some(
+        (studyCoveredPickedPerkMask) =>
+          (nativeCoveredPickedPerkMask | studyCoveredPickedPerkMask) === allPickedPerksMask,
+      )
+    },
+    getCoveredPickedPerkCount,
+    getNativeCoveredPickedPerkMask(nativeRequirementKeys) {
+      return getCoveredPickedPerkMask({
+        pickedPerkRequirementKeyOptions,
+        requirementKeys: nativeRequirementKeys,
+      })
+    },
+  }
+}
+
 export function isBuildCoveredByNativeAndStudyResources({
   filter,
   nativeRequirementKeys,
@@ -265,63 +415,14 @@ export function isBuildCoveredByNativeAndStudyResources({
   nativeRequirementKeys: ReadonlySet<string>
   pickedPerks: LegendsPerkRecord[]
 }): boolean {
-  const pickedPerkRequirementOptions = getPickedPerkRequirementOptions(pickedPerks)
+  const studyResourceCoverageProfile = createStudyResourceCoverageProfile({
+    filter,
+    pickedPerks,
+  })
 
-  if (pickedPerkRequirementOptions.length === 0) {
-    return true
-  }
-
-  const uncoveredRequirementOptions = pickedPerkRequirementOptions.filter((requirementOptions) =>
-    requirementOptions.every(
-      (requirement) => !nativeRequirementKeys.has(getRequirementKey(requirement)),
-    ),
+  return studyResourceCoverageProfile.canCoverBuild(
+    studyResourceCoverageProfile.getNativeCoveredPickedPerkMask(nativeRequirementKeys),
   )
-
-  if (uncoveredRequirementOptions.length === 0) {
-    return true
-  }
-
-  const bookRequirementKeys = filter.shouldAllowBook
-    ? [
-        null,
-        ...getUniqueReachableRequirementKeys({
-          isReachableRequirement: isSkillBookReachableRequirement,
-          pickedPerkRequirementOptions: uncoveredRequirementOptions,
-        }),
-      ]
-    : [null]
-  const scrollSlotCount = getScrollSlotCount(filter)
-  const scrollRequirementKeySets =
-    scrollSlotCount > 0
-      ? getScrollRequirementKeySets(
-          getUniqueReachableRequirementKeys({
-            isReachableRequirement: isAncientScrollReachableRequirement,
-            pickedPerkRequirementOptions: uncoveredRequirementOptions,
-          }),
-          scrollSlotCount,
-        )
-      : [[]]
-
-  for (const assignedBookRequirementKey of bookRequirementKeys) {
-    for (const assignedScrollRequirementKeys of scrollRequirementKeySets) {
-      const studyRequirementKeys = new Set([
-        ...(assignedBookRequirementKey === null ? [] : [assignedBookRequirementKey]),
-        ...assignedScrollRequirementKeys,
-      ])
-
-      if (
-        uncoveredRequirementOptions.every((requirementOptions) =>
-          requirementOptions.some((requirement) =>
-            studyRequirementKeys.has(getRequirementKey(requirement)),
-          ),
-        )
-      ) {
-        return true
-      }
-    }
-  }
-
-  return false
 }
 
 export function isBuildReachableWithStudyResources({

@@ -289,6 +289,14 @@ test('filters the background fit list with the background search field', async (
 
   await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
     'title',
+    /average of 0\.3 of 1 picked perks/i,
+  )
+  await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
+    'title',
+    /Alternate perk-group placements count once per picked perk/i,
+  )
+  await expect(oathtakerExpectedBuildPerksBadge).not.toHaveAttribute(
+    'title',
     /Expected 0\.3\/1 perks pickable/i,
   )
   await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
