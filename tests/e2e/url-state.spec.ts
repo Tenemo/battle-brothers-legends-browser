@@ -18,7 +18,6 @@ test('stores readable filters and build state in the url and restores them on a 
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await selectPerkGroup(page, 'Calm')
-  await page.getByRole('button', { name: 'Enable category Magic' }).click()
   await searchPerks(page, 'Perfect Focus')
   await inspectPerkFromResults(page, 'Perfect Focus')
   await addPerkToBuildFromResults(page, 'Perfect Focus')
@@ -26,22 +25,23 @@ test('stores readable filters and build state in the url and restores them on a 
   await searchPerks(page, 'Clarity')
   await inspectPerkFromResults(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
+  await page.getByRole('button', { name: 'Enable category Magic' }).click()
   await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
   await expect.poll(() => page.url()).toContain('build=Perfect+Focus,Clarity')
-  await expect.poll(() => page.url()).toContain('category=Traits,Magic')
+  await expect.poll(() => page.url()).toContain('category=Magic')
 
   const savedUrl = page.url()
 
   expect(savedUrl).toContain('search=Clarity')
   expect(savedUrl).not.toContain('tier=')
-  expect(savedUrl).toContain('category=Traits,Magic')
-  expect(savedUrl).toContain('group-traits=Calm')
+  expect(savedUrl).toContain('category=Magic')
+  expect(savedUrl).not.toContain('group-traits')
   expect(savedUrl).not.toContain('group-magic')
   expect(savedUrl).toContain('build=Perfect+Focus,Clarity')
-  expect(savedUrl).toContain('origin-backgrounds=true')
-  expect(new URL(savedUrl).searchParams.getAll('category')).toEqual(['Traits,Magic'])
+  expect(savedUrl).not.toContain('origin-backgrounds')
+  expect(new URL(savedUrl).searchParams.getAll('category')).toEqual(['Magic'])
   expect(new URL(savedUrl).searchParams.getAll('build')).toEqual(['Perfect Focus,Clarity'])
-  expect(new URL(savedUrl).searchParams.get('origin-backgrounds')).toBe('true')
+  expect(new URL(savedUrl).searchParams.get('origin-backgrounds')).toBeNull()
 
   const sharedPage = await page.context().newPage()
 
@@ -51,10 +51,10 @@ test('stores readable filters and build state in the url and restores them on a 
 
     await expect(sharedPage.getByLabel('Search perks')).toHaveValue('Clarity')
     await expect(sharedPage.getByLabel('Filter by tier')).toHaveCount(0)
-    await expect(sharedPage.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+    await expect(sharedPage.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
-    await expect(getSidebarPerkGroupButton(sharedPage, 'Calm')).toHaveClass(/is-active/)
-    await expect(getSidebarPerkGroupButton(sharedPage, 'Deadeye')).not.toHaveClass(/is-active/)
+    await expect(getSidebarPerkGroupButton(sharedPage, 'Calm')).toHaveCount(0)
+    await expect(getSidebarPerkGroupButton(sharedPage, 'Deadeye')).toHaveAttribute('aria-pressed', 'false')
     await expect(getBuildPerksBar(sharedPage).getByText('Perfect Focus')).toBeVisible()
     await expect(getBuildPerksBar(sharedPage).getByText('Clarity')).toBeVisible()
     await expect(
@@ -83,7 +83,7 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
     '/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
   )
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expect(page.getByText('2 perks picked.')).toBeVisible()
   await expect(
     getBuildPerksBar(page).getByRole('button', {
@@ -93,5 +93,5 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
   expect(new URL(page.url()).searchParams.get('build')).toBe(
     'Chain Lightning--perk.legend_chain_lightning,Chain Lightning--perk.legend_magic_chain_lightning',
   )
-  expect(new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
+  expect(new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
 })

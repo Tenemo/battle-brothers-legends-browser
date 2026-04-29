@@ -1,6 +1,9 @@
 import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
+import { cx } from '../lib/class-names'
 import { BuildStar, CategoryChevron } from './SharedControls'
+import sharedStyles from './SharedControls.module.scss'
+import styles from './CategorySidebar.module.scss'
 
 type CategorySidebarProps = {
   allPerkCount: number
@@ -28,9 +31,14 @@ function renderPickedStars(keyPrefix: string, count: number) {
   }
 
   return (
-    <span aria-hidden="true" className="category-chip-picked-stars">
+    <span aria-hidden="true" className={styles.categoryChipPickedStars}>
       {Array.from({ length: count }, (_, pickedPerkIndex) => (
-        <BuildStar isPicked key={`${keyPrefix}-picked-${pickedPerkIndex}`} />
+        <BuildStar
+          className={styles.categoryChipPickedStar}
+          isPicked
+          key={`${keyPrefix}-picked-${pickedPerkIndex}`}
+          testId="category-picked-star"
+        />
       ))}
     </span>
   )
@@ -56,20 +64,25 @@ export function CategorySidebar({
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
   return (
-    <aside className="sidebar app-scrollbar" aria-label="Perk categories">
-      <div className="panel-heading">
+    <aside
+      className={cx(styles.sidebar, 'app-scrollbar')}
+      aria-label="Perk categories"
+      data-scroll-container="true"
+      data-testid="category-sidebar"
+    >
+      <div className={styles.panelHeading}>
         <h2>Categories</h2>
         <p>Enable categories, then choose one perk group to focus the results.</p>
       </div>
       <button
         aria-label="Reset all category filters"
         aria-pressed={selectedCategoryNames.length === 0}
-        className={selectedCategoryNames.length === 0 ? 'category-chip is-active' : 'category-chip'}
+        className={styles.categoryChip}
         onClick={onResetCategories}
         type="button"
       >
-        <span className="category-chip-start">
-          <span className="category-label">All categories</span>
+        <span className={styles.categoryChipStart}>
+          <span className={styles.categoryLabel}>All categories</span>
         </span>
         <span>{allPerkCount}</span>
       </button>
@@ -95,59 +108,48 @@ export function CategorySidebar({
         const shouldHighlightCategory =
           emphasizedCategoryNames.has(availableCategoryName) ||
           (isHoveredCategory && (!isExpanded || !hasVisibleHoveredPerkGroup))
-        const categoryChipClassName = [
-          'category-chip',
-          isActive ? 'is-active' : '',
-          shouldHighlightCategory ? 'is-highlighted' : '',
-        ]
-          .filter(Boolean)
-          .join(' ')
-
         return (
-          <div
-            className={isExpanded ? 'category-card is-active' : 'category-card'}
-            key={availableCategoryName}
-          >
+          <div className={styles.categoryCard} data-active={isExpanded} key={availableCategoryName}>
             <button
               aria-expanded={isExpanded}
               aria-label={`${isActive ? 'Disable' : 'Enable'} category ${availableCategoryName}`}
               aria-pressed={isActive}
-              className={categoryChipClassName}
+              className={styles.categoryChip}
+              data-highlighted={shouldHighlightCategory}
               onClick={() => onCategoryToggle(availableCategoryName)}
               type="button"
             >
-              <span className="category-chip-start">
-                <CategoryChevron isExpanded={isExpanded} />
-                <span className="category-label">
-                  {renderHighlightedText(
-                    availableCategoryName,
+              <span className={styles.categoryChipStart}>
+                <CategoryChevron className={styles.categoryChevron} isExpanded={isExpanded} />
+                <span className={styles.categoryLabel}>
+                  {renderHighlightedText({
+                    highlightClassName: sharedStyles.searchHighlight,
+                    keyPrefix: `${availableCategoryName}-group`,
                     query,
-                    `${availableCategoryName}-group`,
-                  )}
+                    text: availableCategoryName,
+                  })}
                 </span>
               </span>
-              <span className="category-chip-end">
+              <span className={styles.categoryChipEnd}>
                 {renderPickedStars(availableCategoryName, pickedPerkCountInCategory)}
                 <span>{categoryCounts.get(availableCategoryName)}</span>
               </span>
             </button>
 
             {isExpanded ? (
-              <div className="perk-group-panel">
-                <p className="perk-group-heading">Perk groups</p>
+              <div className={styles.perkGroupPanel}>
+                <p className={styles.perkGroupHeading} data-testid="perk-group-heading">
+                  Perk groups
+                </p>
                 <button
                   aria-label="Show all perk groups"
                   aria-pressed={selectedPerkGroupIds.length === 0}
-                  className={
-                    selectedPerkGroupIds.length === 0
-                      ? 'perk-group-chip is-active'
-                      : 'perk-group-chip'
-                  }
+                  className={styles.perkGroupChip}
                   onClick={() => onResetCategoryPerkGroups(availableCategoryName)}
                   type="button"
                 >
-                  <span className="perk-group-chip-start">All perk groups</span>
-                  <span className="perk-group-chip-end">
+                  <span className={styles.perkGroupChipStart}>All perk groups</span>
+                  <span className={styles.perkGroupChipEnd}>
                     {categoryCounts.get(availableCategoryName)}
                   </span>
                 </button>
@@ -161,33 +163,27 @@ export function CategorySidebar({
                   const isPerkGroupHighlighted =
                     emphasizedPerkGroupKeys.has(perkGroupKey) ||
                     emphasizedCategoryNames.has(availableCategoryName)
-                  const perkGroupChipClassName = [
-                    'perk-group-chip',
-                    selectedPerkGroupIds.includes(perkGroupOption.perkGroupId) ? 'is-active' : '',
-                    isPerkGroupHighlighted ? 'is-highlighted' : '',
-                  ]
-                    .filter(Boolean)
-                    .join(' ')
-
                   return (
                     <button
                       aria-label={`Select perk group ${perkGroupOption.perkGroupName}`}
                       aria-pressed={selectedPerkGroupIds.includes(perkGroupOption.perkGroupId)}
-                      className={perkGroupChipClassName}
+                      className={styles.perkGroupChip}
+                      data-highlighted={isPerkGroupHighlighted}
                       key={perkGroupOption.perkGroupId}
                       onClick={() =>
                         onPerkGroupSelect(availableCategoryName, perkGroupOption.perkGroupId)
                       }
                       type="button"
                     >
-                      <span className="perk-group-chip-start">
-                        {renderHighlightedText(
-                          perkGroupOption.perkGroupName,
+                      <span className={styles.perkGroupChipStart}>
+                        {renderHighlightedText({
+                          highlightClassName: sharedStyles.searchHighlight,
+                          keyPrefix: `${availableCategoryName}-${perkGroupOption.perkGroupId}-perk-group`,
                           query,
-                          `${availableCategoryName}-${perkGroupOption.perkGroupId}-perk-group`,
-                        )}
+                          text: perkGroupOption.perkGroupName,
+                        })}
                       </span>
-                      <span className="perk-group-chip-end">
+                      <span className={styles.perkGroupChipEnd}>
                         {renderPickedStars(perkGroupOption.perkGroupId, pickedPerkCountInPerkGroup)}
                         <span>{perkGroupOption.perkCount}</span>
                       </span>

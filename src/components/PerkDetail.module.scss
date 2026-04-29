@@ -1,0 +1,299 @@
+@use '../styles/mixins' as *;
+
+@layer components {
+  .detailPanel {
+    width: 100%;
+
+    @include rail-panel-shell(
+      '.detailPanelBody',
+      '.detailPanelRailButtonLabel',
+      translateX(var(--font-size-xl)),
+      translateY(var(--primitive-length-0-45rem))
+    );
+  }
+
+  .detailPanelBody {
+    @include rail-panel-body(var(--space-xl), auto);
+  }
+
+  .detailPanelRailButton {
+    border-right: var(--primitive-length-1px) solid var(--border-muted);
+
+    @include rail-button;
+  }
+
+  .detailPanelRailButtonIcon {
+    @include rail-button-icon;
+  }
+
+  .detailPanelRailChevron {
+    @include rail-chevron;
+  }
+
+  .detailPanel[data-expanded='false'] .detailPanelRailChevron {
+    transform: rotate(180deg);
+  }
+
+  .detailPanelRailButtonLabel {
+    @include rail-label;
+  }
+
+  .detailHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2xl);
+    align-items: flex-start;
+    border-bottom: var(--primitive-length-1px) solid var(--border-color);
+    padding-bottom: var(--space-rail-block);
+
+    h2 {
+      margin: 0;
+      font-family: var(--heading-font-family);
+      font-size: clamp(
+        var(--primitive-length-1-35rem),
+        var(--primitive-length-2-6vw),
+        var(--control-height-md)
+      );
+      font-weight: 700;
+      line-height: 0.98;
+      letter-spacing: var(--primitive-length-0-02em);
+    }
+  }
+
+  .detailHeaderMain {
+    display: grid;
+    grid-template-columns: var(--primitive-length-4rem) minmax(0, 1fr);
+    gap: var(--primitive-length-0-75rem);
+    align-items: start;
+  }
+
+  .detailMeta {
+    display: block;
+    margin: var(--space-sm) 0 0;
+    color: var(--text-secondary);
+  }
+
+  .detailHeaderActions {
+    display: flex;
+    flex-shrink: 0;
+    gap: var(--primitive-length-0-5rem);
+    align-items: flex-end;
+  }
+
+  .detailSection {
+    animation: fade-in var(--motion-slow-duration) ease-out;
+
+    h3 {
+      margin: 0;
+      font-family: var(--heading-font-family);
+      font-size: var(--font-size-2xl);
+    }
+
+    p {
+      margin: var(--space-sm) 0 0;
+      color: var(--text-secondary);
+    }
+  }
+
+  .detailList {
+    margin: var(--space-sm) 0 0;
+    padding-left: var(--space-3xl);
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-xl);
+      align-items: flex-start;
+      margin-top: var(--primitive-length-0-3rem);
+
+      + li {
+        border-top: var(--primitive-length-1px) solid var(--border-muted);
+        padding-top: var(--primitive-length-0-45rem);
+      }
+    }
+  }
+
+  .detailItemMain {
+    display: flex;
+    gap: var(--space-icon-gap);
+    align-items: flex-start;
+  }
+
+  .detailPlacementList {
+    display: grid;
+    gap: var(--space-md);
+    min-width: 0;
+    margin: var(--space-sm) 0 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      min-width: 0;
+    }
+  }
+
+  .detailPlacementTile {
+    width: 100%;
+  }
+
+  .detailPlacementTierBadge {
+    color: var(--accent-soft);
+  }
+
+  .detailBackgroundSourceNames {
+    font-weight: var(--font-weight-regular);
+  }
+
+  .detailSupport {
+    margin: var(--primitive-length-0-18rem) 0 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .detailBadge {
+    flex-shrink: 0;
+    padding: var(--primitive-length-0-12rem) var(--space-md);
+    text-align: right;
+
+    @include badge-surface;
+  }
+
+  .eyebrow {
+    margin: 0 0 var(--primitive-length-0-2rem);
+    color: var(--accent-soft);
+    font-size: var(--primitive-length-0-64rem);
+    letter-spacing: var(--primitive-length-0-16em);
+    text-transform: uppercase;
+  }
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--primitive-length-8px));
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @include compact-desktop {
+    .detailPanelBody {
+      gap: var(--space-lg);
+      padding: var(--space-lg);
+    }
+
+    .detailHeader {
+      gap: var(--space-lg);
+      padding-bottom: var(--space-md);
+    }
+
+    .detailHeaderMain {
+      grid-template-columns: var(--primitive-length-3-45rem) minmax(0, 1fr);
+      gap: var(--space-lg);
+    }
+
+    .detailSection p,
+    .detailList,
+    .detailPlacementList {
+      margin-top: var(--space-xs);
+    }
+
+    .detailList {
+      padding-left: var(--space-xl);
+
+      li {
+        gap: var(--space-md);
+        margin-top: var(--space-xs);
+
+        + li {
+          padding-top: var(--space-sm);
+        }
+      }
+    }
+
+    .detailItemMain,
+    .detailPlacementList {
+      gap: var(--space-sm);
+    }
+
+    .detailSupport {
+      margin-top: var(--space-2xs);
+    }
+  }
+
+  @include below-desktop {
+    .detailPanel {
+      flex-direction: column;
+      width: 100%;
+      height: auto;
+      min-height: var(--rail-button-mobile-min-height);
+
+      &[data-expanded='false'] {
+        width: 100%;
+
+        .detailPanelBody {
+          transform: translateY(var(--primitive-length-negative-0-45rem));
+        }
+
+        .detailPanelRailChevron {
+          transform: none;
+        }
+      }
+
+      &[data-expanded='true'] {
+        min-height: var(--primitive-length-12rem);
+      }
+    }
+
+    .detailPanelRailButton {
+      border-right: 0;
+
+      @include mobile-rail;
+    }
+
+    .detailPanelBody {
+      order: 1;
+      max-height: min(var(--primitive-length-36rem), var(--primitive-length-70vh));
+      transform: translateY(0);
+    }
+
+    .detailPanelRailButtonLabel,
+    .detailPanel[data-expanded='true'] .detailPanelRailButtonLabel {
+      max-height: none;
+      overflow: visible;
+      opacity: 1;
+      writing-mode: horizontal-tb;
+      transform: none;
+    }
+
+    .detailPanelRailChevron[data-expanded='true'] {
+      transform: rotate(90deg);
+    }
+  }
+
+  @include mobile {
+    .detailPanel {
+      order: 2;
+    }
+
+    .detailPanelBody {
+      max-height: var(--primitive-length-24rem);
+    }
+
+    .detailHeader,
+    .detailList li {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .detailHeaderMain {
+      grid-template-columns: 1fr;
+    }
+
+    .detailHeaderActions {
+      align-items: flex-start;
+    }
+  }
+}

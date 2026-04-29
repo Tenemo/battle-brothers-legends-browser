@@ -1,0 +1,308 @@
+@use '../styles/mixins' as *;
+
+@layer components {
+  .resultsPanel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: var(--space-xl);
+
+    @include rounded-panel;
+
+    h2 {
+      margin: 0;
+      font-family: var(--heading-font-family);
+      font-size: var(--font-size-2xl);
+    }
+  }
+
+  .toolbar {
+    display: flex;
+    align-items: stretch;
+  }
+
+  .resultsList {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: var(--space-md);
+    min-height: 0;
+    margin: 0;
+    overflow: hidden auto;
+    padding: var(--primitive-length-0-28rem) var(--primitive-length-0-18rem) 0 0;
+    list-style: none;
+    content-visibility: auto;
+  }
+
+  .perkRow {
+    position: relative;
+    width: 100%;
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-control-inline) var(--primitive-length-3-7rem) var(--control-height-lg)
+      var(--space-xl);
+    background: var(--surface-card-background);
+    color: var(--text-primary);
+
+    @include surface-transition;
+
+    &:hover {
+      border-color: var(--accent-color);
+    }
+
+    &:hover:not([data-selected='true']) {
+      background: var(--primitive-color-rgb-25-20-17-alpha-0-88);
+    }
+
+    &[data-picked='true'] {
+      border-color: var(--accent-color);
+    }
+
+    &[data-selected='true'] {
+      background: var(--button-background-active);
+
+      &:not([data-picked='true'], [data-highlighted='true']) {
+        border-color: transparent;
+      }
+    }
+
+    &[data-highlighted='true'][data-picked='true'] {
+      border-color: var(--accent-color);
+    }
+  }
+
+  .perkRowSelect {
+    position: absolute;
+    z-index: var(--z-index-underlay);
+    inset: 0;
+    appearance: none;
+    border: 0;
+    border-radius: inherit;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .perkRowLayout {
+    position: relative;
+    z-index: var(--z-index-base);
+    display: grid;
+    grid-template-columns: var(--primitive-length-2-7rem) minmax(0, 1fr);
+    gap: var(--primitive-length-0-18rem) var(--space-control-inline);
+    align-items: start;
+    pointer-events: none;
+  }
+
+  .perkRowIcon {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .perkRowCopy,
+  .perkRowContextSlot {
+    min-width: 0;
+  }
+
+  .perkRowContextSlot {
+    grid-column: 2;
+  }
+
+  .perkRowTopline {
+    display: flex;
+    gap: var(--space-2xl);
+    align-items: baseline;
+  }
+
+  .perkName {
+    font-size: var(--primitive-length-0-92rem);
+    font-weight: 600;
+  }
+
+  .perkContext,
+  .perkPreview {
+    margin: var(--space-sm) 0 0;
+    color: var(--text-secondary);
+  }
+
+  .perkPreview {
+    display: grid;
+    gap: var(--primitive-length-0-18rem);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .perkPlacementList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--primitive-length-0-28rem) var(--primitive-length-0-36rem);
+    align-items: center;
+    margin-top: 0;
+  }
+
+  .perkPlacementChip {
+    position: relative;
+    z-index: var(--z-index-raised);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--primitive-length-0-34rem);
+    max-width: 100%;
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-pill);
+    padding: var(--space-2xs) var(--primitive-length-0-48rem) var(--space-2xs)
+      var(--primitive-length-0-2rem);
+    background: var(--primitive-color-rgb-20-17-14-alpha-0-58);
+    color: var(--text-muted);
+    font: inherit;
+    vertical-align: middle;
+    cursor: pointer;
+    pointer-events: auto;
+
+    @include control-transition;
+
+    &:hover,
+    &:focus-visible,
+    &[data-highlighted='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+
+      .perkPlacementLabel {
+        color: var(--text-primary);
+      }
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .perkPlacementIcon {
+    @include size(var(--primitive-length-1-3rem));
+
+    border-radius: var(--primitive-length-0-34rem);
+  }
+
+  .perkPlacementLabel {
+    display: inline-flex;
+    align-items: baseline;
+    min-width: 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-md);
+    white-space: nowrap;
+  }
+
+  .perkPlacementEmpty {
+    color: var(--text-muted);
+  }
+
+  .buildToggleButtonInRow {
+    position: absolute;
+    z-index: var(--z-index-raised);
+    right: var(--primitive-length-0-65rem);
+    bottom: var(--space-icon-gap);
+    pointer-events: auto;
+  }
+
+  @include compact-desktop {
+    .resultsPanel {
+      gap: var(--space-sm);
+      padding: var(--space-lg);
+    }
+
+    .resultsList {
+      gap: var(--space-sm);
+      padding-top: var(--space-xs);
+    }
+
+    .perkRow {
+      padding: var(--space-sm) var(--primitive-length-2-72rem)
+        var(--primitive-length-1-72rem) var(--space-md);
+    }
+
+    .perkRowLayout {
+      grid-template-columns: var(--primitive-length-2-35rem) minmax(0, 1fr);
+      gap: var(--primitive-length-0-12rem) var(--space-md);
+    }
+
+    .perkRowIcon {
+      @include size(var(--primitive-length-2-35rem));
+
+      border-radius: var(--radius-sm);
+    }
+
+    .perkRowTopline {
+      gap: var(--space-md);
+    }
+
+    .perkContext,
+    .perkPreview {
+      margin-top: var(--space-2xs);
+    }
+
+    .perkPreview {
+      gap: var(--space-2xs);
+    }
+
+    .perkPlacementList {
+      gap: var(--space-2xs) var(--space-xs);
+    }
+
+    .perkPlacementChip {
+      gap: var(--space-2xs);
+      padding: var(--space-3xs) var(--space-xs) var(--space-3xs) var(--space-2xs);
+    }
+
+    .buildToggleButtonInRow {
+      right: var(--space-md);
+      bottom: var(--space-md);
+    }
+  }
+
+  @include below-desktop {
+    .resultsPanel {
+      height: auto;
+      min-height: 0;
+      overflow: visible;
+    }
+
+    .resultsList {
+      flex: 0 1 auto;
+      max-height: min(var(--primitive-length-42rem), var(--primitive-length-68vh));
+      min-height: var(--primitive-length-18rem);
+      overflow: hidden auto;
+      content-visibility: visible;
+    }
+  }
+
+  @include mobile {
+    .resultsPanel {
+      order: 1;
+    }
+
+    .perkRowTopline {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .perkRow {
+      padding-right: var(--space-xl);
+    }
+
+    .perkRowLayout {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .perkRowContextSlot {
+      grid-column: 1;
+    }
+  }
+}

@@ -5,7 +5,7 @@ function getPrimitiveStyleSnapshot() {
   function getElementStyle(selector: string) {
     const element = document.querySelector(selector)
 
-    if (!(element instanceof HTMLElement)) {
+    if (!(element instanceof Element)) {
       return null
     }
 
@@ -18,18 +18,29 @@ function getPrimitiveStyleSnapshot() {
       borderRadius: style.borderTopLeftRadius,
       boxShadow: style.boxShadow,
       color: style.color,
+      height: style.height,
+      width: style.width,
     }
   }
 
   return {
-    backgroundFitCard: getElementStyle('.background-fit-card'),
-    backgroundFitMetricBadge: getElementStyle('.background-fit-metric-badge'),
-    backgroundFitPanel: getElementStyle('.background-fit-panel'),
-    detailPanel: getElementStyle('.detail-panel'),
-    detailBadge: getElementStyle('.detail-panel .detail-badge'),
-    perkPlacementChip: getElementStyle('.perk-placement-chip'),
-    perkRow: getElementStyle('.perk-row:not(.is-picked):not(.is-selected)'),
-    plannerPill: getElementStyle('.planner-pill'),
+    backgroundFitCard: getElementStyle('[data-testid="background-fit-card"]'),
+    backgroundFitMetricBadge: getElementStyle('[data-testid="background-fit-summary-badge"]'),
+    backgroundFitPanel: getElementStyle('[data-testid="background-fit-panel"]'),
+    buildPlannerInfoButton: getElementStyle('[aria-label="Show build planner guidance"]'),
+    detailPanelRailChevron: getElementStyle('[aria-label="Collapse perk details"] svg'),
+    detailPanel: getElementStyle('[data-testid="perk-detail-panel"]'),
+    detailBadge: getElementStyle('[data-testid="detail-badge"]'),
+    perkPlacementChip: getElementStyle('[data-testid="perk-placement-chip"]'),
+    perkRow: getElementStyle(
+      '[data-testid="perk-row"][data-picked="false"][data-selected="false"]',
+    ),
+    backgroundFitRailChevron: getElementStyle(
+      '[aria-label="Expand background fit"] svg, [aria-label="Collapse background fit"] svg',
+    ),
+    plannerActionButton: getElementStyle('[data-testid="clear-build-button"]'),
+    plannerButtonIcon: getElementStyle('[data-testid="clear-build-button"] svg'),
+    plannerPill: getElementStyle('[data-testid="planner-pill"]'),
   }
 }
 
@@ -62,6 +73,11 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   expect(styles.plannerPill).not.toBeNull()
   expect(styles.backgroundFitPanel).not.toBeNull()
   expect(styles.detailPanel).not.toBeNull()
+  expect(styles.buildPlannerInfoButton).not.toBeNull()
+  expect(styles.plannerActionButton).not.toBeNull()
+  expect(styles.backgroundFitRailChevron).not.toBeNull()
+  expect(styles.detailPanelRailChevron).not.toBeNull()
+  expect(styles.plannerButtonIcon).not.toBeNull()
 
   expect(styles.perkRow).toMatchObject({
     backgroundColor: styles.backgroundFitCard?.backgroundColor,
@@ -79,6 +95,17 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   expect(styles.perkPlacementChip?.borderRadius).toBe(styles.plannerPill?.borderRadius)
   expect(styles.perkPlacementChip?.borderColor).not.toBe('rgba(0, 0, 0, 0)')
   expect(styles.plannerPill?.borderColor).not.toBe('rgba(0, 0, 0, 0)')
+  expect(styles.buildPlannerInfoButton).toMatchObject({
+    backgroundColor: styles.plannerActionButton?.backgroundColor,
+    borderColor: styles.plannerActionButton?.borderColor,
+  })
+  expect(styles.backgroundFitRailChevron).toMatchObject({
+    height: styles.detailPanelRailChevron?.height,
+    width: styles.detailPanelRailChevron?.width,
+  })
+  expect(Number.parseFloat(styles.detailPanelRailChevron!.width)).toBeGreaterThan(
+    Number.parseFloat(styles.plannerButtonIcon!.width),
+  )
   expect(styles.backgroundFitPanel).toMatchObject({
     borderRadius: styles.detailPanel?.borderRadius,
     boxShadow: styles.detailPanel?.boxShadow,

@@ -1,5 +1,9 @@
 import { type ReactNode, useRef } from 'react'
 import { ChevronRight, Funnel, Star } from 'lucide-react'
+import { cx } from '../lib/class-names'
+import styles from './SharedControls.module.scss'
+
+const railChevronStrokeWidth = 2.6
 
 export function ClearableSearchField({
   className = '',
@@ -8,6 +12,7 @@ export function ClearableSearchField({
   label,
   onValueChange,
   placeholder,
+  testId,
   trailingControl,
   value,
 }: {
@@ -17,26 +22,25 @@ export function ClearableSearchField({
   label: string
   onValueChange: (nextValue: string) => void
   placeholder: string
+  testId?: string
   trailingControl?: ReactNode
   value: string
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const hasSearchValue = value.length > 0
-  const searchFieldClassName = [
-    'search-field',
-    className,
-    trailingControl ? 'has-trailing-control' : '',
-    hasSearchValue ? 'has-clear-button' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
+  const searchFieldClassName = cx(styles.searchField, className)
 
   return (
-    <div className={searchFieldClassName}>
+    <div
+      className={searchFieldClassName}
+      data-has-clear-button={hasSearchValue}
+      data-has-trailing-control={Boolean(trailingControl)}
+      data-testid={testId}
+    >
       <label className="visually-hidden" htmlFor={inputId}>
         {label}
       </label>
-      <div className="search-input-control">
+      <div className={styles.searchInputControl} data-testid="search-input-control">
         <input
           aria-label={label}
           id={inputId}
@@ -49,18 +53,18 @@ export function ClearableSearchField({
         {hasSearchValue ? (
           <button
             aria-label={clearLabel}
-            className="search-clear-button"
+            className={styles.searchClearButton}
             onClick={() => {
               onValueChange('')
               inputRef.current?.focus()
             }}
             type="button"
           >
-            <span aria-hidden="true" className="search-clear-icon" />
+            <span aria-hidden="true" className={styles.searchClearIcon} />
           </button>
         ) : null}
         {trailingControl ? (
-          <span className="search-trailing-control">{trailingControl}</span>
+          <span className={styles.searchTrailingControl}>{trailingControl}</span>
         ) : null}
       </div>
     </div>
@@ -75,34 +79,64 @@ export function GitHubIcon({ className }: { className: string }) {
   )
 }
 
-export function CategoryChevron({ isExpanded }: { isExpanded: boolean }) {
+export function CategoryChevron({ className, isExpanded }: { className: string; isExpanded: boolean }) {
   return (
     <ChevronRight
       aria-hidden="true"
-      className={isExpanded ? 'category-chevron is-expanded' : 'category-chevron'}
+      className={className}
+      data-expanded={isExpanded}
       strokeWidth={1.8}
     />
   )
 }
 
-export function BackgroundFitRailChevron({ isExpanded }: { isExpanded: boolean }) {
+export function PlannerSectionChevron({
+  className,
+  isExpanded,
+}: {
+  className: string
+  isExpanded: boolean
+}) {
   return (
     <ChevronRight
       aria-hidden="true"
-      className={
-        isExpanded ? 'background-fit-rail-chevron is-expanded' : 'background-fit-rail-chevron'
-      }
+      className={className}
+      data-expanded={isExpanded}
       strokeWidth={1.8}
     />
   )
 }
 
-export function DetailPanelRailChevron({ isExpanded }: { isExpanded: boolean }) {
+export function BackgroundFitRailChevron({
+  className,
+  isExpanded,
+}: {
+  className: string
+  isExpanded: boolean
+}) {
   return (
     <ChevronRight
       aria-hidden="true"
-      className={isExpanded ? 'detail-panel-rail-chevron is-expanded' : 'detail-panel-rail-chevron'}
-      strokeWidth={1.8}
+      className={className}
+      data-expanded={isExpanded}
+      strokeWidth={railChevronStrokeWidth}
+    />
+  )
+}
+
+export function DetailPanelRailChevron({
+  className,
+  isExpanded,
+}: {
+  className: string
+  isExpanded: boolean
+}) {
+  return (
+    <ChevronRight
+      aria-hidden="true"
+      className={className}
+      data-expanded={isExpanded}
+      strokeWidth={railChevronStrokeWidth}
     />
   )
 }
@@ -110,14 +144,17 @@ export function DetailPanelRailChevron({ isExpanded }: { isExpanded: boolean }) 
 export function FunnelIcon({
   className,
   isFilled = false,
+  testId,
 }: {
   className: string
   isFilled?: boolean
+  testId?: string
 }) {
   return (
     <Funnel
       aria-hidden="true"
       className={className}
+      data-testid={testId}
       fill={isFilled ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth={1.8}
@@ -125,25 +162,38 @@ export function FunnelIcon({
   )
 }
 
-export function BackgroundFitAccordionChevron({ isExpanded }: { isExpanded: boolean }) {
+export function BackgroundFitAccordionChevron({
+  className,
+  isExpanded,
+}: {
+  className: string
+  isExpanded: boolean
+}) {
   return (
     <ChevronRight
       aria-hidden="true"
-      className={
-        isExpanded
-          ? 'background-fit-accordion-chevron is-expanded'
-          : 'background-fit-accordion-chevron'
-      }
+      className={className}
+      data-expanded={isExpanded}
       strokeWidth={1.8}
     />
   )
 }
 
-export function BuildStar({ isPicked }: { isPicked: boolean }) {
+export function BuildStar({
+  className,
+  isPicked,
+  testId,
+}: {
+  className?: string
+  isPicked: boolean
+  testId?: string
+}) {
   return (
     <Star
       aria-hidden="true"
-      className={isPicked ? 'build-star is-picked' : 'build-star'}
+      className={cx(styles.buildStar, className)}
+      data-picked={isPicked}
+      data-testid={testId}
       fill={isPicked ? 'currentColor' : 'none'}
       stroke="currentColor"
       strokeWidth={1.8}
@@ -152,12 +202,14 @@ export function BuildStar({ isPicked }: { isPicked: boolean }) {
 }
 
 export function BuildToggleButton({
+  className,
   isCompact = false,
   isPicked,
   onClick,
   perkName,
   source,
 }: {
+  className?: string
   isCompact?: boolean
   isPicked: boolean
   onClick: () => void
@@ -174,15 +226,8 @@ export function BuildToggleButton({
     <button
       aria-label={actionLabel}
       aria-pressed={isPicked}
-      className={
-        isCompact
-          ? isPicked
-            ? 'build-toggle-button is-compact is-picked'
-            : 'build-toggle-button is-compact'
-          : isPicked
-            ? 'build-toggle-button is-picked'
-            : 'build-toggle-button'
-      }
+      className={cx(styles.buildToggleButton, className)}
+      data-compact={isCompact}
       onClick={onClick}
       title={titleLabel}
       type="button"

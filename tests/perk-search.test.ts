@@ -25,8 +25,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Magic',
         tier: 3,
-        perkGroupAttributes: [],
-        perkGroupDescriptions: ['chants'],
         perkGroupIconPath: null,
         perkGroupId: 'ValaChantMagicTree',
         perkGroupName: 'Vala Chant',
@@ -34,8 +32,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryCategoryName: 'Magic',
     scenarioSources: [],
-    searchText:
-      'Heightened Senses Magic Vala Chant chants gain heightened senses nearby allies Vala',
+    searchText: 'Heightened Senses Magic Vala Chant gain heightened senses nearby allies Vala',
   },
   {
     backgroundSources: [],
@@ -49,8 +46,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Weapon',
         tier: 1,
-        perkGroupAttributes: ['Ranged skill: +2 to +4'],
-        perkGroupDescriptions: ['bows'],
         perkGroupIconPath: null,
         perkGroupId: 'BowTree',
         perkGroupName: 'Bows',
@@ -58,7 +53,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryCategoryName: 'Weapon',
     scenarioSources: [],
-    searchText: 'Lookout Weapon Bows bows ranged skill scouting accuracy',
+    searchText: 'Lookout Weapon Bows ranged skill scouting accuracy',
   },
   {
     backgroundSources: [
@@ -89,8 +84,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Enemy',
         tier: 3,
-        perkGroupAttributes: [],
-        perkGroupDescriptions: ['beasts'],
         perkGroupIconPath: null,
         perkGroupId: 'BeastTree',
         perkGroupName: 'Beasts',
@@ -106,11 +99,20 @@ const samplePerks: LegendsPerkRecord[] = [
         sourceMethodName: 'onBuildPerkTree',
       },
     ],
-    searchText:
-      'Favoured Enemy - Beasts Enemy Beasts beasts bear beast slayer Beast Slayers random-pool',
+    searchText: 'Favoured Enemy - Beasts Enemy Beasts bear beast slayer Beast Slayers random-pool',
   },
   {
-    backgroundSources: [],
+    backgroundSources: [
+      {
+        backgroundId: 'background.hedge_knight',
+        backgroundName: 'Hedge Knight',
+        categoryName: 'Traits',
+        chance: null,
+        minimumPerkGroups: 7,
+        perkGroupId: 'CalmTree',
+        perkGroupName: 'Calm',
+      },
+    ],
     descriptionParagraphs: ['Remain calm and ignore armor more effectively.'],
     categoryNames: ['Traits'],
     iconPath: null,
@@ -121,8 +123,6 @@ const samplePerks: LegendsPerkRecord[] = [
       {
         categoryName: 'Traits',
         tier: 5,
-        perkGroupAttributes: [],
-        perkGroupDescriptions: ['is calm'],
         perkGroupIconPath: null,
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
@@ -130,7 +130,7 @@ const samplePerks: LegendsPerkRecord[] = [
     ],
     primaryCategoryName: 'Traits',
     scenarioSources: [],
-    searchText: 'Clarity Traits Calm is calm ignore armor',
+    searchText: 'Clarity Traits Calm ignore armor',
   },
 ]
 
@@ -169,6 +169,16 @@ describe('perk search', () => {
 
     expect(treeResults.map((perk) => perk.perkName)).toEqual(['Heightened Senses'])
     expect(backgroundResults.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts'])
+  })
+
+  test('matches background source names even when generated search text omits them', () => {
+    const results = filterAndSortPerks(samplePerks, {
+      query: 'Hedge Knight',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
+    })
+
+    expect(results.map((perk) => perk.perkName)).toEqual(['Clarity'])
   })
 
   test('matches scenario names and favoured enemy targets', () => {

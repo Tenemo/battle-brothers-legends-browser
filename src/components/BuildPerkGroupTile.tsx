@@ -1,5 +1,8 @@
 import { getPerkGroupHoverKey, renderGameIcon } from '../lib/perk-display'
+import { cx } from '../lib/class-names'
 import { BuildPerkPill, type BuildPerkPillSelection } from './BuildPerkPill'
+import sharedStyles from './SharedControls.module.scss'
+import styles from './BuildPlanner.module.scss'
 
 export type BuildPerkGroupTileOption = {
   categoryName: string
@@ -9,35 +12,13 @@ export type BuildPerkGroupTileOption = {
   perkGroupLabel: string
 }
 
-export type BuildPerkGroupTilePerk = {
+type BuildPerkGroupTilePerk = {
   perkId: string | null
   perkName: string
 }
 
 function isSelectablePerkGroupOption(perkGroupOption: BuildPerkGroupTileOption): boolean {
   return perkGroupOption.isSelectable !== false
-}
-
-function getBuildPerkGroupTileClassName({
-  className,
-  hasHighlightedPerk,
-  isHighlighted,
-  isWide,
-}: {
-  className?: string
-  hasHighlightedPerk: boolean
-  isHighlighted: boolean
-  isWide: boolean
-}): string {
-  return [
-    'planner-group-card',
-    isWide ? 'is-wide' : '',
-    className,
-    isHighlighted ? 'is-highlighted' : '',
-    hasHighlightedPerk ? 'has-highlighted-perk' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
 }
 
 function isPerkGroupOptionEmphasized({
@@ -61,6 +42,7 @@ function renderPerkGroupOptionIcon({
   onClosePerkGroupHover,
   onInspectPerkGroup,
   onOpenPerkGroupHover,
+  optionIconClassName,
   perkGroupOption,
 }: {
   arePerkGroupOptionsInteractive: boolean
@@ -68,19 +50,27 @@ function renderPerkGroupOptionIcon({
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  optionIconClassName?: string
   perkGroupOption: BuildPerkGroupTileOption
 }) {
   const perkGroupKey = getPerkGroupHoverKey(perkGroupOption)
   const icon = renderGameIcon({
-    className: 'perk-icon perk-icon-group planner-group-option-icon',
+    className: cx(
+      sharedStyles.perkIcon,
+      sharedStyles.perkIconGroup,
+      styles.plannerGroupOptionIcon,
+      optionIconClassName,
+    ),
     iconPath: perkGroupOption.perkGroupIconPath,
     label: `${perkGroupOption.perkGroupLabel} perk group icon`,
+    testId: 'planner-group-option-icon',
   })
 
   if (!arePerkGroupOptionsInteractive || !isSelectablePerkGroupOption(perkGroupOption)) {
     return (
       <span
-        className="planner-card-icon-stack-item"
+        className={styles.plannerCardIconStackItem}
+        data-testid="planner-card-icon-stack-item"
         key={`${perkGroupOption.categoryName}-${perkGroupOption.perkGroupId}`}
       >
         {icon}
@@ -91,11 +81,9 @@ function renderPerkGroupOptionIcon({
   return (
     <button
       aria-label={`Select perk group ${perkGroupOption.perkGroupLabel}`}
-      className={
-        isOptionHighlighted
-          ? 'planner-group-option-button is-highlighted'
-          : 'planner-group-option-button'
-      }
+      className={styles.plannerGroupOptionButton}
+      data-highlighted={isOptionHighlighted}
+      data-testid="planner-group-option-button"
       key={`${perkGroupOption.categoryName}-${perkGroupOption.perkGroupId}`}
       onBlur={() => onClosePerkGroupHover(perkGroupKey)}
       onClick={() => onInspectPerkGroup(perkGroupOption.categoryName, perkGroupOption.perkGroupId)}
@@ -127,6 +115,7 @@ export function BuildPerkGroupTile({
   isWide = false,
   metaClassName,
   metaLabel,
+  metaTestId,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onClosePerkGroupHover,
@@ -135,6 +124,7 @@ export function BuildPerkGroupTile({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
+  optionIconClassName,
   perks,
 }: {
   arePerkGroupOptionsInteractive?: boolean
@@ -149,6 +139,7 @@ export function BuildPerkGroupTile({
   isWide?: boolean
   metaClassName?: string
   metaLabel?: string
+  metaTestId?: string
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
@@ -157,9 +148,13 @@ export function BuildPerkGroupTile({
   onOpenBuildPerkHover: (perkId: string) => void
   onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  optionIconClassName?: string
   perks: BuildPerkGroupTilePerk[]
 }) {
-  const primaryPerkGroupOption = groupOptions.find(isSelectablePerkGroupOption)
+  const selectablePerkGroupOptions = groupOptions.filter(isSelectablePerkGroupOption)
+  const primaryPerkGroupOption = selectablePerkGroupOptions[0]
+  const areOptionIconsInteractive =
+    arePerkGroupOptionsInteractive && selectablePerkGroupOptions.length > 1
   const isHighlighted = groupOptions.some((perkGroupOption) =>
     isPerkGroupOptionEmphasized({
       emphasizedCategoryNames,
@@ -169,12 +164,6 @@ export function BuildPerkGroupTile({
   )
   const hasHighlightedPerk =
     hoveredPerkId !== null && perks.some((perk) => perk.perkId === hoveredPerkId)
-  const classNames = getBuildPerkGroupTileClassName({
-    className,
-    hasHighlightedPerk,
-    isHighlighted,
-    isWide,
-  })
   const primaryPerkGroupSelection = primaryPerkGroupOption
     ? {
         categoryName: primaryPerkGroupOption.categoryName,
@@ -183,11 +172,18 @@ export function BuildPerkGroupTile({
     : undefined
 
   return (
-    <article className={classNames}>
+    <article
+      className={cx(styles.plannerGroupCard, className)}
+      data-has-highlighted-perk={hasHighlightedPerk}
+      data-highlighted={isHighlighted}
+      data-planner-item="group-card"
+      data-testid="planner-group-card"
+      data-wide={isWide}
+    >
       {primaryPerkGroupOption ? (
         <button
           aria-label={`Select perk group ${groupLabel}`}
-          className="planner-group-card-inspect"
+          className={styles.plannerGroupCardInspect}
           onBlur={() => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption))}
           onClick={() =>
             onInspectPerkGroup(
@@ -212,11 +208,11 @@ export function BuildPerkGroupTile({
           type="button"
         />
       ) : null}
-      <div className="planner-group-card-header">
-        <div className="planner-card-icon-stack">
+      <div className={styles.plannerGroupCardHeader}>
+        <div className={styles.plannerCardIconStack}>
           {groupOptions.map((perkGroupOption) =>
             renderPerkGroupOptionIcon({
-              arePerkGroupOptionsInteractive,
+              arePerkGroupOptionsInteractive: areOptionIconsInteractive,
               isOptionHighlighted: isPerkGroupOptionEmphasized({
                 emphasizedCategoryNames,
                 emphasizedPerkGroupKeys,
@@ -225,18 +221,20 @@ export function BuildPerkGroupTile({
               onClosePerkGroupHover,
               onInspectPerkGroup,
               onOpenPerkGroupHover,
+              optionIconClassName,
               perkGroupOption,
             }),
           )}
         </div>
-        <div className="planner-group-card-copy">
-          <div className="planner-slot-topline">
-            <strong className="planner-slot-name" title={groupLabel}>
+        <div className={styles.plannerGroupCardCopy}>
+          <div className={styles.plannerSlotTopline}>
+            <strong className={styles.plannerSlotName} data-testid="planner-slot-name" title={groupLabel}>
               {groupLabel}
             </strong>
             {metaLabel ? (
               <span
-                className={['planner-slot-group-count', metaClassName].filter(Boolean).join(' ')}
+                className={cx(styles.plannerSlotGroupCount, metaClassName)}
+                data-testid={metaTestId ?? 'planner-slot-group-count'}
               >
                 {metaLabel}
               </span>
@@ -244,7 +242,7 @@ export function BuildPerkGroupTile({
           </div>
         </div>
       </div>
-      <div className="planner-pill-list">
+      <div className={styles.plannerPillList} data-testid="planner-pill-list">
         {perks.map((perk) =>
           perk.perkId ? (
             <BuildPerkPill
@@ -262,7 +260,7 @@ export function BuildPerkGroupTile({
               perkName={perk.perkName}
             />
           ) : (
-            <span className="planner-pill" key={`${groupLabel}-${perk.perkName}`}>
+            <span className={styles.plannerPill} key={`${groupLabel}-${perk.perkName}`}>
               {perk.perkName}
             </span>
           ),

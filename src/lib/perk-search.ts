@@ -15,33 +15,35 @@ type NormalizedPerkSearchIndex = {
   perkGroupNames: string[]
 }
 
-const normalizedPerkSearchIndexByPerkId = new Map<string, NormalizedPerkSearchIndex>()
-
 function normalizeSearchValue(value: string): string {
   return value.trim().toLowerCase()
 }
 
 function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSearchIndex {
-  const cachedSearchIndex = normalizedPerkSearchIndexByPerkId.get(perk.id)
-
-  if (cachedSearchIndex) {
-    return cachedSearchIndex
-  }
+  const backgroundNames = perk.backgroundSources.map((backgroundSource) =>
+    backgroundSource.backgroundName.toLowerCase(),
+  )
+  const backgroundSourceSearchText = perk.backgroundSources
+    .map((backgroundSource) =>
+      [
+        backgroundSource.backgroundName,
+        backgroundSource.categoryName,
+        backgroundSource.perkGroupName,
+      ].join(' '),
+    )
+    .join(' ')
 
   const normalizedSearchIndex = {
-    backgroundNames: perk.backgroundSources.map((backgroundSource) =>
-      backgroundSource.backgroundName.toLowerCase(),
-    ),
+    backgroundNames,
     categoryNames: perk.categoryNames.map((categoryName) => categoryName.toLowerCase()),
     perkName: perk.perkName.toLowerCase(),
     scenarioNames: perk.scenarioSources.map((scenarioSource) =>
       scenarioSource.scenarioName.toLowerCase(),
     ),
-    searchText: perk.searchText.toLowerCase(),
+    searchText: `${perk.searchText} ${backgroundSourceSearchText}`.toLowerCase(),
     perkGroupNames: perk.placements.map((placement) => placement.perkGroupName.toLowerCase()),
   }
 
-  normalizedPerkSearchIndexByPerkId.set(perk.id, normalizedSearchIndex)
   return normalizedSearchIndex
 }
 
@@ -102,7 +104,6 @@ function getPreviewDescriptionParagraphs(descriptionParagraphs: string[]): strin
 }
 
 export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
-  const primaryPlacement = getPrimaryPlacement(perk)
   const favouredEnemyTarget = perk.favouredEnemyTargets?.[0]
   const backgroundSource = perk.backgroundSources[0]
   const scenarioSource = perk.scenarioSources[0]
@@ -110,14 +111,6 @@ export function getPerkPreviewParagraphs(perk: LegendsPerkRecord): string[] {
 
   if (descriptionParagraphs !== null) {
     return descriptionParagraphs.map(formatPreviewParagraph)
-  }
-
-  if (primaryPlacement?.perkGroupAttributes[0]) {
-    return [primaryPlacement.perkGroupAttributes[0]]
-  }
-
-  if (primaryPlacement?.perkGroupDescriptions[0]) {
-    return [primaryPlacement.perkGroupDescriptions[0]]
   }
 
   if (favouredEnemyTarget) {

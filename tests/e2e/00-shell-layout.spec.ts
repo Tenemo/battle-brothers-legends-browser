@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   expectNoDocumentHorizontalOverflow,
@@ -12,16 +12,221 @@ import {
   searchPerks,
 } from './support/perks-browser'
 
-const denseSmallDesktopBuildUrl =
+const denseDesktopBuildUrl =
   '/?build=Axe+Mastery,Mace+Mastery,Sword+Mastery,Recover,Berserk,Nimble,Dodge,Underdog,Battle+Flow,Killing+Frenzy,Rotation,Colossus'
 
-const desktopScrollbarTargets = [
-  '.background-fit-results-scroll',
-  '.sidebar',
-  '.results-list',
-  '.detail-panel-body',
-  '.planner-board',
+type DenseDesktopViewportExpectation = {
+  isBackgroundFitExpandedByDefault: boolean
+  maximumBackgroundFitPanelWidth: number
+  maximumDetailPanelBodyGap: number
+  maximumDetailPanelBodyPaddingTop: number
+  maximumDetailParagraphMarginTop: number
+  maximumPerkPlacementIconWidth: number
+  maximumPerkRowIconWidth: number
+  maximumPerkRowPaddingBlock: number
+  maximumPlannerHeight: number
+  maximumResultsListGap: number
+  minimumCategorySidebarWidth: number
+  minimumPlannerBoardOverflow: number
+  minimumResultsListHeight: number
+  minimumWorkspaceHeight: number
+  viewportSize: { height: number; width: number }
+}
+
+const compactDesktopDensityExpectation = {
+  maximumDetailPanelBodyGap: 8,
+  maximumDetailPanelBodyPaddingTop: 8,
+  maximumDetailParagraphMarginTop: 4.5,
+  maximumPerkPlacementIconWidth: 22,
+  maximumPerkRowIconWidth: 38,
+  maximumPerkRowPaddingBlock: 36,
+  maximumResultsListGap: 6,
+}
+
+const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
+  {
+    ...compactDesktopDensityExpectation,
+    isBackgroundFitExpandedByDefault: true,
+    maximumBackgroundFitPanelWidth: 430,
+    maximumPlannerHeight: 280,
+    minimumCategorySidebarWidth: 340,
+    minimumPlannerBoardOverflow: 0,
+    minimumResultsListHeight: 600,
+    minimumWorkspaceHeight: 720,
+    viewportSize: { height: 1080, width: 1920 },
+  },
+  {
+    ...compactDesktopDensityExpectation,
+    isBackgroundFitExpandedByDefault: true,
+    maximumBackgroundFitPanelWidth: 430,
+    maximumPlannerHeight: 300,
+    minimumCategorySidebarWidth: 250,
+    minimumPlannerBoardOverflow: 40,
+    minimumResultsListHeight: 380,
+    minimumWorkspaceHeight: 520,
+    viewportSize: { height: 900, width: 1440 },
+  },
+  {
+    ...compactDesktopDensityExpectation,
+    isBackgroundFitExpandedByDefault: false,
+    maximumBackgroundFitPanelWidth: 40,
+    maximumPlannerHeight: 250,
+    minimumCategorySidebarWidth: 230,
+    minimumPlannerBoardOverflow: 80,
+    minimumResultsListHeight: 320,
+    minimumWorkspaceHeight: 430,
+    viewportSize: { height: 768, width: 1366 },
+  },
+  {
+    ...compactDesktopDensityExpectation,
+    isBackgroundFitExpandedByDefault: false,
+    maximumBackgroundFitPanelWidth: 40,
+    maximumPlannerHeight: 235,
+    minimumCategorySidebarWidth: 230,
+    minimumPlannerBoardOverflow: 100,
+    minimumResultsListHeight: 300,
+    minimumWorkspaceHeight: 400,
+    viewportSize: { height: 720, width: 1280 },
+  },
 ]
+
+const desktopScrollbarTargets = [
+  '[data-testid="background-fit-panel-body"]',
+  '[data-testid="category-sidebar"]',
+  '[data-testid="results-list"]',
+  '[data-testid="perk-detail-panel-body"]',
+  '[data-testid="planner-board"]',
+]
+
+async function readDenseDesktopLayoutMetrics(page: Page) {
+  return page.evaluate(() => {
+    function parsePixelValue(value: string) {
+      const parsedValue = Number.parseFloat(value)
+
+      return Number.isFinite(parsedValue) ? parsedValue : Number.POSITIVE_INFINITY
+    }
+
+    const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
+    const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
+    const backgroundFitPanel = document.querySelector(
+      '[data-testid="background-fit-panel"]',
+    ) as HTMLElement | null
+    const categorySidebar = document.querySelector(
+      '[data-testid="category-sidebar"]',
+    ) as HTMLElement | null
+    const detailPanelBody = document.querySelector(
+      '[data-testid="perk-detail-panel-body"]',
+    ) as HTMLElement | null
+    const detailParagraph = document.querySelector(
+      '[data-testid="detail-section"] p',
+    ) as HTMLElement | null
+    const firstPerkPlacementIcon = document.querySelector(
+      '[data-testid="perk-placement-icon"]',
+    ) as HTMLElement | null
+    const firstPerkRow = document.querySelector('[data-testid="perk-row"]') as HTMLElement | null
+    const firstPerkRowIcon = document.querySelector(
+      '[data-testid="perk-row-icon"]',
+    ) as HTMLElement | null
+    const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+    const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
+    const detailPanelBodyStyle =
+      detailPanelBody === null ? null : window.getComputedStyle(detailPanelBody)
+    const detailParagraphStyle =
+      detailParagraph === null ? null : window.getComputedStyle(detailParagraph)
+    const firstPerkRowStyle = firstPerkRow === null ? null : window.getComputedStyle(firstPerkRow)
+    const resultsListStyle = resultsList === null ? null : window.getComputedStyle(resultsList)
+
+    return {
+      backgroundFitPanelWidth: backgroundFitPanel?.getBoundingClientRect().width ?? 0,
+      categorySidebarWidth: categorySidebar?.getBoundingClientRect().width ?? 0,
+      detailPanelBodyGap:
+        detailPanelBodyStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(detailPanelBodyStyle.rowGap),
+      detailPanelBodyPaddingTop:
+        detailPanelBodyStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(detailPanelBodyStyle.paddingTop),
+      detailParagraphMarginTop:
+        detailParagraphStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(detailParagraphStyle.marginTop),
+      perkPlacementIconWidth: firstPerkPlacementIcon?.getBoundingClientRect().width ?? 0,
+      perkRowIconWidth: firstPerkRowIcon?.getBoundingClientRect().width ?? 0,
+      perkRowPaddingBlock:
+        firstPerkRowStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(firstPerkRowStyle.paddingTop) +
+            parsePixelValue(firstPerkRowStyle.paddingBottom),
+      plannerBoardOverflow:
+        plannerBoard === null
+          ? Number.POSITIVE_INFINITY
+          : plannerBoard.scrollHeight - plannerBoard.clientHeight,
+      plannerHeight: planner?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY,
+      resultsListHeight: resultsList?.clientHeight ?? 0,
+      resultsListGap:
+        resultsListStyle === null
+          ? Number.POSITIVE_INFINITY
+          : parsePixelValue(resultsListStyle.rowGap),
+      workspaceHeight: workspace?.clientHeight ?? 0,
+    }
+  })
+}
+
+async function readRailControlMetrics(page: Page) {
+  return page.evaluate(() => {
+    function readInheritedLengthInPixels(element: HTMLElement, customPropertyName: string) {
+      const probe = document.createElement('div')
+      probe.style.position = 'fixed'
+      probe.style.visibility = 'hidden'
+      probe.style.pointerEvents = 'none'
+      probe.style.width = `var(${customPropertyName})`
+      probe.style.height = '0'
+      element.append(probe)
+
+      const lengthInPixels = probe.getBoundingClientRect().width
+      probe.remove()
+
+      return lengthInPixels
+    }
+
+    function readButtonMetric(accessibleNameText: string) {
+      const button = Array.from(document.querySelectorAll('button')).find((candidateButton) =>
+        candidateButton.getAttribute('aria-label')?.includes(accessibleNameText),
+      )
+
+      if (!(button instanceof HTMLButtonElement)) {
+        throw new Error(`Missing rail button containing "${accessibleNameText}".`)
+      }
+
+      const chevron = button.querySelector('svg')
+
+      if (!(chevron instanceof SVGElement)) {
+        throw new Error(`Missing rail chevron for "${accessibleNameText}".`)
+      }
+
+      const buttonBounds = button.getBoundingClientRect()
+      const chevronBounds = chevron.getBoundingClientRect()
+
+      return {
+        buttonHeight: buttonBounds.height,
+        buttonWidth: buttonBounds.width,
+        chevronStrokeWidth: Number(chevron.getAttribute('stroke-width')),
+        chevronWidth: chevronBounds.width,
+        originalDesktopRailThickness: readInheritedLengthInPixels(button, '--control-height-lg'),
+        originalMobileRailHeight: readInheritedLengthInPixels(
+          button,
+          '--primitive-length-3-25rem',
+        ),
+      }
+    }
+
+    return {
+      backgroundFit: readButtonMetric('background fit'),
+      perkDetails: readButtonMetric('perk details'),
+    }
+  })
+}
 
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
   page,
@@ -48,7 +253,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
+        const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
 
         return plannerBoard === null
           ? Number.POSITIVE_INFINITY
@@ -82,35 +287,94 @@ test('uses normal page scrolling on tablet widths instead of cramped viewport ro
   expect(scrollableDocumentHeight).toBeGreaterThan(200)
 })
 
-test('keeps dense picked builds usable on small desktop viewports', async ({ page }) => {
-  await page.setViewportSize({ height: 720, width: 1280 })
-  await page.goto(denseSmallDesktopBuildUrl)
+test('keeps dense picked builds compact across desktop viewport sizes', async ({ page }) => {
+  for (const expectation of denseDesktopViewportExpectations) {
+    await page.setViewportSize(expectation.viewportSize)
+    await page.goto(denseDesktopBuildUrl)
 
-  await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
-  await expect(page.getByLabel('Search perks')).toBeVisible()
-  await expect(
-    getBackgroundFitPanel(page).getByRole('button', { name: 'Expand background fit' }),
-  ).toHaveAttribute('aria-expanded', 'false')
-  await expectNoWorkspaceHorizontalClip(page)
+    await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+    await expect(page.getByLabel('Search perks')).toBeVisible()
+    await expectViewportLocked(page)
+    await expectNoDocumentHorizontalOverflow(page)
+    await expectNoWorkspaceHorizontalClip(page)
 
-  const smallDesktopMetrics = await page.evaluate(() => {
-    const plannerBoard = document.querySelector('.planner-board') as HTMLElement | null
-    const resultsList = document.querySelector('.results-list') as HTMLElement | null
-    const workspace = document.querySelector('.workspace') as HTMLElement | null
+    await expect(
+      getBackgroundFitPanel(page).getByRole('button', {
+        name: `${expectation.isBackgroundFitExpandedByDefault ? 'Collapse' : 'Expand'} background fit`,
+      }),
+    ).toHaveAttribute('aria-expanded', String(expectation.isBackgroundFitExpandedByDefault))
 
-    return {
-      plannerBoardOverflow:
-        plannerBoard === null
-          ? Number.POSITIVE_INFINITY
-          : plannerBoard.scrollHeight - plannerBoard.clientHeight,
-      resultsListHeight: resultsList?.clientHeight ?? 0,
-      workspaceHeight: workspace?.clientHeight ?? 0,
-    }
-  })
+    const desktopMetrics = await readDenseDesktopLayoutMetrics(page)
 
-  expect(smallDesktopMetrics.plannerBoardOverflow).toBeGreaterThan(20)
-  expect(smallDesktopMetrics.resultsListHeight).toBeGreaterThanOrEqual(160)
-  expect(smallDesktopMetrics.workspaceHeight).toBeGreaterThanOrEqual(340)
+    expect(desktopMetrics.backgroundFitPanelWidth).toBeLessThanOrEqual(
+      expectation.maximumBackgroundFitPanelWidth,
+    )
+    expect(desktopMetrics.categorySidebarWidth).toBeGreaterThanOrEqual(
+      expectation.minimumCategorySidebarWidth,
+    )
+    expect(desktopMetrics.resultsListGap).toBeLessThanOrEqual(expectation.maximumResultsListGap)
+    expect(desktopMetrics.perkRowPaddingBlock).toBeLessThanOrEqual(
+      expectation.maximumPerkRowPaddingBlock,
+    )
+    expect(desktopMetrics.perkRowIconWidth).toBeLessThanOrEqual(
+      expectation.maximumPerkRowIconWidth,
+    )
+    expect(desktopMetrics.perkPlacementIconWidth).toBeLessThanOrEqual(
+      expectation.maximumPerkPlacementIconWidth,
+    )
+    expect(desktopMetrics.detailPanelBodyGap).toBeLessThanOrEqual(
+      expectation.maximumDetailPanelBodyGap,
+    )
+    expect(desktopMetrics.detailPanelBodyPaddingTop).toBeLessThanOrEqual(
+      expectation.maximumDetailPanelBodyPaddingTop,
+    )
+    expect(desktopMetrics.detailParagraphMarginTop).toBeLessThanOrEqual(
+      expectation.maximumDetailParagraphMarginTop,
+    )
+    expect(desktopMetrics.plannerHeight).toBeLessThanOrEqual(expectation.maximumPlannerHeight)
+    expect(desktopMetrics.plannerBoardOverflow).toBeGreaterThanOrEqual(
+      expectation.minimumPlannerBoardOverflow,
+    )
+    expect(desktopMetrics.resultsListHeight).toBeGreaterThanOrEqual(
+      expectation.minimumResultsListHeight,
+    )
+    expect(desktopMetrics.workspaceHeight).toBeGreaterThanOrEqual(
+      expectation.minimumWorkspaceHeight,
+    )
+  }
+})
+
+test('keeps side rail controls thin with stronger chevrons', async ({ page }) => {
+  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const desktopRailMetrics = await readRailControlMetrics(page)
+
+  expect(desktopRailMetrics.backgroundFit.buttonWidth).toBeLessThanOrEqual(
+    desktopRailMetrics.backgroundFit.originalDesktopRailThickness * 0.72,
+  )
+  expect(desktopRailMetrics.perkDetails.buttonWidth).toBeLessThanOrEqual(
+    desktopRailMetrics.perkDetails.originalDesktopRailThickness * 0.72,
+  )
+  expect(desktopRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(desktopRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(desktopRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(desktopRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+
+  await gotoPerksBrowser(page, { height: 844, width: 390 })
+
+  const mobileRailMetrics = await readRailControlMetrics(page)
+
+  expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeLessThanOrEqual(
+    mobileRailMetrics.backgroundFit.originalMobileRailHeight * 0.72,
+  )
+  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeLessThanOrEqual(
+    mobileRailMetrics.perkDetails.originalMobileRailHeight * 0.72,
+  )
+  expect(mobileRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(mobileRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(mobileRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(mobileRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 })
 
 test('uses one app scrollbar style across desktop viewport sizes', async ({ page }) => {
@@ -121,8 +385,8 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
     { height: 1440, width: 2560 },
   ]) {
     await page.setViewportSize(viewportSize)
-    await page.goto('/?origin-backgrounds=true')
-    await expect(page.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeVisible()
+    await page.goto('/')
+    await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
     scrollbarMeasurements.push(
       await page.evaluate((selectors) => {
@@ -140,12 +404,14 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
           const thumbStyle = window.getComputedStyle(element, '::-webkit-scrollbar-thumb')
 
           return {
-            hasAppScrollbarClass: element.classList.contains('app-scrollbar'),
+            hasScrollContainerAttribute: element.dataset.scrollContainer === 'true',
+            standardScrollbarColor: computedStyle.scrollbarColor,
             scrollbarGutter: computedStyle.scrollbarGutter,
             scrollbarWidth: supportsWebKitScrollbars
               ? scrollbarStyle.width
               : computedStyle.scrollbarWidth,
             selector,
+            supportsWebKitScrollbars,
             thumbBackground: supportsWebKitScrollbars
               ? thumbStyle.backgroundColor
               : computedStyle.scrollbarColor,
@@ -160,10 +426,15 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
   expect(standardDesktopMeasurements).toEqual(largeDesktopMeasurements)
   for (const scrollbarMeasurement of standardDesktopMeasurements) {
     expect(scrollbarMeasurement).not.toBeNull()
-    expect(scrollbarMeasurement!.hasAppScrollbarClass).toBe(true)
+    expect(scrollbarMeasurement!.hasScrollContainerAttribute).toBe(true)
     expect(scrollbarMeasurement!.scrollbarGutter).toBe('auto')
     expect(scrollbarMeasurement!.scrollbarWidth).not.toBe('auto')
     expect(scrollbarMeasurement!.thumbBackground).not.toBe('rgba(0, 0, 0, 0)')
+    if (scrollbarMeasurement!.supportsWebKitScrollbars) {
+      expect(scrollbarMeasurement!.standardScrollbarColor).toBe('auto')
+    } else {
+      expect(scrollbarMeasurement!.standardScrollbarColor).not.toBe('auto')
+    }
   }
 })
 
@@ -204,9 +475,9 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
     return {
       backgroundFit: getElementTop('[data-testid="background-fit-panel"]'),
       buildPlanner: getElementTop('[aria-label="Build planner"]'),
-      filters: getElementTop('.sidebar'),
+      filters: getElementTop('[data-testid="category-sidebar"]'),
       perkDetails: getElementTop('[data-testid="perk-detail-panel"]'),
-      results: getElementTop('.results-panel'),
+      results: getElementTop('[data-testid="results-panel"]'),
     }
   })
 

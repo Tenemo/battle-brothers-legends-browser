@@ -9,11 +9,7 @@ import type {
 
 export type GroupedBackgroundSource = {
   backgroundNames: string[]
-  categoryName: string
-  chance: number | null
-  minimumPerkGroups: number | null
-  perkGroupId: string
-  perkGroupName: string
+  probability: number
 }
 
 type PerkGroupHoverTarget = {
@@ -51,7 +47,17 @@ export function getSearchMatchPriority(text: string, normalizedSearchPhrase: str
   return 2
 }
 
-export function renderHighlightedText(text: string, query: string, keyPrefix: string): ReactNode {
+export function renderHighlightedText({
+  highlightClassName,
+  keyPrefix,
+  query,
+  text,
+}: {
+  highlightClassName: string
+  keyPrefix: string
+  query: string
+  text: string
+}): ReactNode {
   const trimmedQuery = query.trim()
   const normalizedSearchPhrase = normalizeSearchPhrase(trimmedQuery)
 
@@ -75,7 +81,11 @@ export function renderHighlightedText(text: string, query: string, keyPrefix: st
 
     const matchEndIndex = matchIndex + trimmedQuery.length
     highlightedNodes.push(
-      <mark className="search-highlight" key={`${keyPrefix}-${matchIndex}`}>
+      <mark
+        className={highlightClassName}
+        data-search-highlight="true"
+        key={`${keyPrefix}-${matchIndex}`}
+      >
         {text.slice(matchIndex, matchEndIndex)}
       </mark>,
     )
@@ -92,53 +102,85 @@ export function renderHighlightedText(text: string, query: string, keyPrefix: st
 
 export function groupBackgroundSources(
   backgroundSources: LegendsPerkBackgroundSource[],
+  getBackgroundSourceProbability: (backgroundSource: LegendsPerkBackgroundSource) => number = () =>
+    1,
 ): GroupedBackgroundSource[] {
   const groupedBackgroundSources = new Map<string, GroupedBackgroundSource>()
 
   for (const backgroundSource of backgroundSources) {
-    const key = [
-      backgroundSource.categoryName,
-      backgroundSource.perkGroupId,
-      backgroundSource.perkGroupName,
-      backgroundSource.minimumPerkGroups ?? 'none',
-      backgroundSource.chance ?? 'none',
-    ].join('::')
+    const probability = clampProbability(getBackgroundSourceProbability(backgroundSource))
+    const key = formatBackgroundSourceProbabilityLabel(probability)
 
     if (!groupedBackgroundSources.has(key)) {
       groupedBackgroundSources.set(key, {
         backgroundNames: [],
-        categoryName: backgroundSource.categoryName,
-        chance: backgroundSource.chance,
-        minimumPerkGroups: backgroundSource.minimumPerkGroups,
-        perkGroupId: backgroundSource.perkGroupId,
-        perkGroupName: backgroundSource.perkGroupName,
+        probability,
       })
     }
 
-    groupedBackgroundSources.get(key)?.backgroundNames.push(backgroundSource.backgroundName)
+    const groupedBackgroundSource = groupedBackgroundSources.get(key)
+
+    if (groupedBackgroundSource && probability > groupedBackgroundSource.probability) {
+      groupedBackgroundSource.probability = probability
+    }
+
+    if (!groupedBackgroundSource?.backgroundNames.includes(backgroundSource.backgroundName)) {
+      groupedBackgroundSource?.backgroundNames.push(backgroundSource.backgroundName)
+    }
   }
 
-  return [...groupedBackgroundSources.values()]
+  return [...groupedBackgroundSources.values()].toSorted(compareGroupedBackgroundSources)
+}
+
+function compareGroupedBackgroundSources(
+  leftSource: GroupedBackgroundSource,
+  rightSource: GroupedBackgroundSource,
+): number {
+  return (
+    rightSource.probability - leftSource.probability ||
+    leftSource.backgroundNames.join(', ').localeCompare(rightSource.backgroundNames.join(', '))
+  )
 }
 
 export function getPerkDisplayIconPath(perk: LegendsPerkRecord): string | null {
   return perk.iconPath ?? perk.placements[0]?.perkGroupIconPath ?? null
 }
 
-export function formatChanceLabel(chance: number | null): string {
-  if (chance === null) {
-    return 'No chance override'
-  }
-
-  return `${Math.round(chance * 100)}% chance`
+function clampProbability(probability: number): number {
+  return Math.max(0, Math.min(1, probability))
 }
 
-export function formatMinimumPerkGroupsLabel(minimumPerkGroups: number | null): string {
-  if (minimumPerkGroups === null) {
-    return 'No minimum override'
+function formatProbabilityPercent(probability: number): string {
+  const clampedProbability = clampProbability(probability)
+  const percentage = clampedProbability * 100
+
+  if (percentage === 0) {
+    return '0%'
   }
 
-  return `Minimum ${minimumPerkGroups}`
+  if (percentage > 0 && percentage < 0.01) {
+    return '<0.01%'
+  }
+
+  const decimalPlaceOptions = percentage < 1 ? [2, 3, 4] : [1, 2, 3, 4]
+
+  for (const decimalPlaces of decimalPlaceOptions) {
+    const fixedPercentage = percentage.toFixed(decimalPlaces)
+
+    if (clampedProbability >= 1 || Number(fixedPercentage) < 100) {
+      return `${fixedPercentage.replace(/\.?0+$/u, '')}%`
+    }
+  }
+
+  return '<100%'
+}
+
+export function formatBackgroundSourceProbabilityLabel(probability: number): string {
+  if (probability >= 1) {
+    return 'Guaranteed'
+  }
+
+  return `${formatProbabilityPercent(probability)} chance`
 }
 
 export function formatScenarioGrantLabel(scenarioSource: LegendsPerkScenarioSource): string {
@@ -159,7 +201,7 @@ export function formatBackgroundFitProbabilityLabel(probability: number): string
   return `${Number.isInteger(percentage) ? percentage.toFixed(0) : percentage.toFixed(1)}%`
 }
 
-export function formatBackgroundFitScoreLabel(score: number): string {
+function formatBackgroundFitScoreLabel(score: number): string {
   const roundedScore = Math.round(score * 10) / 10
 
   return Number.isInteger(roundedScore) ? roundedScore.toFixed(0) : roundedScore.toFixed(1)
@@ -172,31 +214,37 @@ function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
 
   if (companionMatch) {
     return companionMatch[1] === '1h'
-      ? 'starting shield'
+      ? 'Starting: Shield'
       : companionMatch[1] === '2h'
-        ? 'starting two-handed'
-        : 'starting ranged'
+        ? 'Starting: Two-handed'
+        : 'Starting: Ranged'
   }
 
   if (originCompanionMatch) {
-    return originCompanionMatch[1] === 'melee' ? 'origin melee' : 'origin ranged'
+    return originCompanionMatch[1] === 'melee' ? 'Origin: Melee' : 'Origin: Ranged'
   }
 
   if (
     /^legend_.+_commander(?:_op)?$/.test(sourceLabel) ||
     /^.+_legend_.+_commander$/.test(sourceLabel)
   ) {
-    return 'origin commander'
+    return 'Origin: Commander'
   }
 
-  return sourceLabel
+  const variantLabel = sourceLabel
     .replace(/^legend_legion_/, 'legion_')
     .replace(/^legend_/, '')
     .replaceAll('_', ' ')
+
+  return `Variant: ${variantLabel.charAt(0).toUpperCase()}${variantLabel.slice(1)}`
 }
 
 function normalizeBackgroundLabelForComparison(label: string): string {
   return label.trim().toLowerCase()
+}
+
+function getComparableBackgroundDisambiguatorLabel(disambiguatorLabel: string): string {
+  return disambiguatorLabel.replace(/^Variant:\s*/u, '')
 }
 
 function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundFit): string | null {
@@ -206,8 +254,9 @@ function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundF
 
   const disambiguatorLabel = formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator)
 
-  return normalizeBackgroundLabelForComparison(disambiguatorLabel) ===
-    normalizeBackgroundLabelForComparison(backgroundFit.backgroundName)
+  return normalizeBackgroundLabelForComparison(
+    getComparableBackgroundDisambiguatorLabel(disambiguatorLabel),
+  ) === normalizeBackgroundLabelForComparison(backgroundFit.backgroundName)
     ? null
     : disambiguatorLabel
 }
@@ -272,41 +321,6 @@ export function formatBackgroundFitGuaranteedPerksLabel(
   return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
 }
 
-export function formatBackgroundFitMatchedPerkGroupsLabel(
-  matchedPerkGroupCount: number,
-  supportedBuildTargetPerkGroupCount: number,
-): string {
-  return `${matchedPerkGroupCount}/${supportedBuildTargetPerkGroupCount} matched perk group${
-    supportedBuildTargetPerkGroupCount === 1 ? '' : 's'
-  }`
-}
-
-export function getPerkRowClassName({
-  isHighlighted,
-  isPicked,
-  isSelected,
-}: {
-  isHighlighted: boolean
-  isPicked: boolean
-  isSelected: boolean
-}): string {
-  const classNames = ['perk-row']
-
-  if (isPicked) {
-    classNames.push('is-picked')
-  }
-
-  if (isSelected) {
-    classNames.push('is-selected')
-  }
-
-  if (isHighlighted) {
-    classNames.push('is-highlighted')
-  }
-
-  return classNames.join(' ')
-}
-
 export function getPerkGroupHoverKey({ categoryName, perkGroupId }: PerkGroupHoverTarget): string {
   return `${categoryName}::${perkGroupId}`
 }
@@ -319,18 +333,31 @@ export function renderGameIcon({
   className,
   iconPath,
   label,
+  testId,
 }: {
   className: string
   iconPath: string | null
   label: string
+  testId?: string
 }) {
   const iconUrl = getGameIconUrl(iconPath)
 
   if (!iconUrl) {
-    return <div aria-hidden="true" className={`${className} is-placeholder`} />
+    return (
+      <div aria-hidden="true" className={className} data-placeholder="true" data-testid={testId} />
+    )
   }
 
-  return <img alt={label} className={className} decoding="async" loading="lazy" src={iconUrl} />
+  return (
+    <img
+      alt={label}
+      className={className}
+      data-testid={testId}
+      decoding="async"
+      loading="lazy"
+      src={iconUrl}
+    />
+  )
 }
 
 export function getAnchoredTooltipStyle(anchorRectangle: TooltipAnchorRectangle): CSSProperties {

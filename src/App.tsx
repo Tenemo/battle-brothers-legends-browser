@@ -3,7 +3,7 @@ import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
 import '@fontsource/source-sans-3/700.css'
-import './App.css'
+import styles from './App.module.scss'
 import { BackgroundFitPanel } from './components/BackgroundFitPanel'
 import {
   BuildPlanner,
@@ -31,7 +31,12 @@ import { compareCategoryNames } from './lib/dynamic-background-categories'
 import { buildPerkBrowserBuildUrlSearch } from './lib/perk-browser-url-state'
 import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
+import {
+  getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
+  isOriginOrAncientScrollOnlyPerkGroupId,
+} from './lib/origin-and-ancient-scroll-perk-groups'
 import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
+import { cx } from './lib/class-names'
 import {
   usePerkBrowserUrlSync,
   useInitialPerkBrowserUrlState,
@@ -40,17 +45,23 @@ import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
 
+declare const __PLANNER_VERSION__: string
+
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const allPerks = legendsPerksDataset.perks
-const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
+const allPerks = legendsPerksDataset.perks.map((perk) => ({
+  ...perk,
+  backgroundSources: backgroundFitEngine.getPerkBackgroundSources(perk),
+}))
+const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
+const plannerVersion = __PLANNER_VERSION__
 
-const categoryCounts = getCategoryCounts(allPerks)
-const perkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
-const availableCategories = [...categoryCounts.keys()].toSorted(compareCategoryNames)
+const allCategoryCounts = getCategoryCounts(allPerks)
+const allPerkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
+const allAvailableCategories = [...allCategoryCounts.keys()].toSorted(compareCategoryNames)
 
 function getInitialBackgroundFitExpandedState() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -62,9 +73,9 @@ function getInitialBackgroundFitExpandedState() {
 
 export default function App() {
   const initialUrlState = useInitialPerkBrowserUrlState({
-    availableCategoryNames: availableCategories,
+    availableCategoryNames: allAvailableCategories,
     perks: allPerks,
-    perkGroupOptionsByCategory: perkGroupOptionsByCategory,
+    perkGroupOptionsByCategory: allPerkGroupOptionsByCategory,
   })
   const [query, setQuery] = useState(initialUrlState.query)
   const [pickedPerkIds, setPickedPerkIds] = useState<string[]>(initialUrlState.pickedPerkIds)
@@ -77,6 +88,10 @@ export default function App() {
   const [selectedPerkGroupIdsByCategory, setSelectedPerkGroupIdsByCategory] = useState<
     Record<string, string[]>
   >(initialUrlState.selectedPerkGroupIdsByCategory)
+  const [
+    shouldIncludeOriginAndAncientScrollPerkGroups,
+    setShouldIncludeOriginAndAncientScrollPerkGroups,
+  ] = useState(initialUrlState.shouldIncludeOriginAndAncientScrollPerkGroups)
   const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(
     initialUrlState.shouldIncludeOriginBackgrounds,
   )
@@ -110,17 +125,39 @@ export default function App() {
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
   })
-  const normalizedPerkSearchPhrase = normalizeSearchPhrase(query)
-  const visiblePerks = filterAndSortPerks(allPerks, {
-    query,
-    selectedCategoryNames,
-    selectedPerkGroupIdsByCategory,
-  })
+  const catalogPerks = useMemo(
+    () =>
+      shouldIncludeOriginAndAncientScrollPerkGroups
+        ? allPerks
+        : getPerksWithOriginAndAncientScrollPerkGroupsFiltered(allPerks),
+    [shouldIncludeOriginAndAncientScrollPerkGroups],
+  )
+  const categoryCounts = useMemo(() => getCategoryCounts(catalogPerks), [catalogPerks])
+  const perkGroupOptionsByCategory = useMemo(
+    () => getCategoryPerkGroupOptions(catalogPerks),
+    [catalogPerks],
+  )
+  const availableCategories = useMemo(
+    () => [...categoryCounts.keys()].toSorted(compareCategoryNames),
+    [categoryCounts],
+  )
+  const normalizedPerkSearchPhrase = useMemo(() => normalizeSearchPhrase(query), [query])
+  const visiblePerks = useMemo(
+    () =>
+      filterAndSortPerks(catalogPerks, {
+        query,
+        selectedCategoryNames,
+        selectedPerkGroupIdsByCategory,
+      }),
+    [catalogPerks, query, selectedCategoryNames, selectedPerkGroupIdsByCategory],
+  )
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(
     () => visiblePerks[0]?.id ?? null,
   )
-  const selectedPerk =
-    visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null
+  const selectedPerk = useMemo(
+    () => visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null,
+    [selectedPerkId, visiblePerks],
+  )
   const pickedPerks = useMemo(
     () =>
       pickedPerkIds.flatMap((pickedPerkId) => {
@@ -197,7 +234,12 @@ export default function App() {
           visiblePerkCountsByCategory,
         }),
       ),
-    [normalizedPerkSearchPhrase, visiblePerkCountsByCategory],
+    [
+      availableCategories,
+      normalizedPerkSearchPhrase,
+      perkGroupOptionsByCategory,
+      visiblePerkCountsByCategory,
+    ],
   )
   const displayedPerkGroupOptionsByCategory = useMemo(
     () =>
@@ -219,30 +261,42 @@ export default function App() {
           ] as const
         }),
       ),
-    [displayedCategoryNames, normalizedPerkSearchPhrase, visiblePerkCountsByCategoryPerkGroup],
+    [
+      displayedCategoryNames,
+      normalizedPerkSearchPhrase,
+      perkGroupOptionsByCategory,
+      visiblePerkCountsByCategoryPerkGroup,
+    ],
   )
-  const pickedPerkCountsByCategory = getPickedPerkCountsByCategory(pickedPerks)
-  const pickedPerkCountsByPerkGroup = getPickedPerkCountsByPerkGroup(pickedPerks)
-  const pickedPerkOrderById = new Map(
-    pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
+  const pickedPerkCountsByCategory = useMemo(
+    () => getPickedPerkCountsByCategory(pickedPerks),
+    [pickedPerks],
+  )
+  const pickedPerkCountsByPerkGroup = useMemo(
+    () => getPickedPerkCountsByPerkGroup(pickedPerks),
+    [pickedPerks],
+  )
+  const pickedPerkOrderById = useMemo(
+    () =>
+      new Map(
+        pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
+      ),
+    [pickedPerkIds],
   )
   const isSelectedPerkPicked = selectedPerk ? pickedPerkOrderById.has(selectedPerk.id) : false
-  const groupedBackgroundSources = selectedPerk
-    ? groupBackgroundSources(selectedPerk.backgroundSources)
-    : []
-  const selectedCategoryCount = selectedCategoryNames.length
-  const selectedPerkGroupCount = Object.values(selectedPerkGroupIdsByCategory).reduce(
-    (perkGroupCount, selectedPerkGroupIds) => perkGroupCount + selectedPerkGroupIds.length,
-    0,
+  const groupedBackgroundSources = useMemo(
+    () =>
+      selectedPerk
+        ? groupBackgroundSources(selectedPerk.backgroundSources, (backgroundSource) =>
+            backgroundFitEngine.getBackgroundPerkGroupProbability(
+              backgroundSource.backgroundId,
+              backgroundSource.categoryName,
+              backgroundSource.perkGroupId,
+            ),
+          )
+        : [],
+    [selectedPerk],
   )
-  const workspaceClassName = [
-    'workspace',
-    isBackgroundFitPanelExpanded ? 'is-background-fit-expanded' : 'is-background-fit-collapsed',
-    isPerkDetailPanelExpanded ? 'is-detail-expanded' : 'is-detail-collapsed',
-    hasActiveBackgroundFitSearch ? 'has-active-background-fit-search' : '',
-  ]
-    .filter(Boolean)
-    .join(' ')
   const handleUrlStateChange = useCallback(
     (urlState: typeof initialUrlState) => {
       startTransition(() => {
@@ -251,6 +305,9 @@ export default function App() {
         setSelectedCategoryNames(urlState.selectedCategoryNames)
         setExpandedCategoryNames(urlState.selectedCategoryNames)
         setSelectedPerkGroupIdsByCategory(urlState.selectedPerkGroupIdsByCategory)
+        setShouldIncludeOriginAndAncientScrollPerkGroups(
+          urlState.shouldIncludeOriginAndAncientScrollPerkGroups,
+        )
         setShouldIncludeOriginBackgrounds(urlState.shouldIncludeOriginBackgrounds)
         clearAllHover()
         resetShareBuildStatus()
@@ -265,12 +322,13 @@ export default function App() {
       query,
       selectedCategoryNames,
       selectedPerkGroupIdsByCategory,
+      shouldIncludeOriginAndAncientScrollPerkGroups,
       shouldIncludeOriginBackgrounds,
     },
     {
-      availableCategoryNames: availableCategories,
+      availableCategoryNames: allAvailableCategories,
       perksById: allPerksById,
-      perkGroupOptionsByCategory: perkGroupOptionsByCategory,
+      perkGroupOptionsByCategory: allPerkGroupOptionsByCategory,
     },
     handleUrlStateChange,
   )
@@ -313,6 +371,31 @@ export default function App() {
       setExpandedCategoryNames([])
       setSelectedCategoryNames([])
       setSelectedPerkGroupIdsByCategory({})
+    })
+  }
+
+  function handleOriginAndAncientScrollPerkGroupsChange(
+    shouldIncludeRestrictedPerkGroups: boolean,
+  ) {
+    startTransition(() => {
+      setShouldIncludeOriginAndAncientScrollPerkGroups(shouldIncludeRestrictedPerkGroups)
+
+      if (shouldIncludeRestrictedPerkGroups) {
+        return
+      }
+
+      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) =>
+        Object.fromEntries(
+          Object.entries(currentSelectedPerkGroupIdsByCategory)
+            .map(([categoryName, selectedPerkGroupIds]) => [
+              categoryName,
+              selectedPerkGroupIds.filter(
+                (perkGroupId) => !isOriginOrAncientScrollOnlyPerkGroupId(perkGroupId),
+              ),
+            ])
+            .filter(([, selectedPerkGroupIds]) => selectedPerkGroupIds.length > 0),
+        ),
+      )
     })
   }
 
@@ -438,32 +521,16 @@ export default function App() {
       const isSelected = selectedCategoryNames.includes(nextCategoryName)
 
       if (isSelected) {
-        setExpandedCategoryNames((currentExpandedCategoryNames) =>
-          currentExpandedCategoryNames.filter((categoryName) => categoryName !== nextCategoryName),
-        )
-        setSelectedCategoryNames((currentSelectedCategoryNames) =>
-          currentSelectedCategoryNames.filter((categoryName) => categoryName !== nextCategoryName),
-        )
-        setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => {
-          const remainingSelectedPerkGroupIdsByCategory = {
-            ...currentSelectedPerkGroupIdsByCategory,
-          }
-          delete remainingSelectedPerkGroupIdsByCategory[nextCategoryName]
-
-          return remainingSelectedPerkGroupIdsByCategory
-        })
+        setExpandedCategoryNames([])
+        setSelectedCategoryNames([])
+        setSelectedPerkGroupIdsByCategory({})
         return
       }
 
-      setExpandedCategoryNames((currentExpandedCategoryNames) =>
-        currentExpandedCategoryNames.includes(nextCategoryName)
-          ? currentExpandedCategoryNames
-          : [...currentExpandedCategoryNames, nextCategoryName],
-      )
-      setSelectedCategoryNames((currentSelectedCategoryNames) => [
-        ...currentSelectedCategoryNames,
-        nextCategoryName,
-      ])
+      // Category chips are a drilldown control, so opening one category replaces the previous category and nested perk group filters.
+      setExpandedCategoryNames([nextCategoryName])
+      setSelectedCategoryNames([nextCategoryName])
+      setSelectedPerkGroupIdsByCategory({})
     })
   }
 
@@ -497,24 +564,27 @@ export default function App() {
   }, [selectedPerkId, visiblePerks])
 
   return (
-    <div className="app-shell">
-      <div className="background-runes" aria-hidden="true" />
-      <header className="hero">
-        <div className="hero-copy">
-          <h1>Perks browser</h1>
+    <div className={styles.appShell} data-testid="app-shell">
+      <div className={styles.backgroundRunes} aria-hidden="true" />
+      <header className={styles.hero} data-testid="hero">
+        <div className={styles.heroCopy}>
+          <h1>Build planner</h1>
           <a
             aria-label="Open the Battle Brothers Legends mod repository on GitHub"
-            className="eyebrow hero-brand"
+            className={cx(styles.eyebrow, styles.heroBrand)}
             href={legendsModRepositoryUrl}
             rel="noopener noreferrer"
             target="_blank"
           >
-            Battle Brothers <span className="hero-brand-emphasis">Legends</span>
+            Battle Brothers{' '}
+            <span className={styles.heroBrandEmphasis} data-testid="hero-brand-emphasis">
+              Legends
+            </span>
           </a>
         </div>
-        <div className="hero-top-bar">
-          <div className="hero-top-actions">
-            <dl className="hero-meta" aria-label="Perk catalog summary">
+        <div className={styles.heroTopBar}>
+          <div className={styles.heroTopActions}>
+            <dl className={styles.heroMeta} aria-label="Perk catalog summary">
               <div>
                 <dt>Perks</dt>
                 <dd>{legendsPerksDataset.perkCount}</dd>
@@ -524,18 +594,22 @@ export default function App() {
                 <dd>{legendsPerksDataset.perkGroupCount}</dd>
               </div>
               <div>
-                <dt>Reference</dt>
+                <dt>Mod version</dt>
                 <dd>{legendsPerksDataset.referenceVersion.replace(/^reference-mod_/, '')}</dd>
+              </div>
+              <div>
+                <dt>Planner version</dt>
+                <dd>{plannerVersion}</dd>
               </div>
             </dl>
             <a
-              aria-label="Open the battle-brothers-legends-browser repository on GitHub"
-              className="hero-repository-link"
+              aria-label="Open the build planner repository on GitHub"
+              className={styles.heroRepositoryLink}
               href={repositoryUrl}
               rel="noopener noreferrer"
               target="_blank"
             >
-              <GitHubIcon className="hero-repository-link-icon" />
+              <GitHubIcon className={styles.heroRepositoryLinkIcon} />
             </a>
           </div>
         </div>
@@ -575,7 +649,13 @@ export default function App() {
         sharedPerkGroups={buildPlannerGroups.sharedPerkGroups}
       />
 
-      <main className={workspaceClassName}>
+      <main
+        className={styles.workspace}
+        data-background-fit-collapsed={!isBackgroundFitPanelExpanded}
+        data-background-fit-search-active={hasActiveBackgroundFitSearch}
+        data-detail-collapsed={!isPerkDetailPanelExpanded}
+        data-testid="workspace"
+      >
         <BackgroundFitPanel
           backgroundFitView={backgroundFitView}
           emphasizedCategoryNames={emphasizedCategoryNames}
@@ -601,7 +681,7 @@ export default function App() {
         />
 
         <CategorySidebar
-          allPerkCount={allPerks.length}
+          allPerkCount={catalogPerks.length}
           displayedCategoryNames={displayedCategoryNames}
           displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
           expandedCategoryNames={expandedCategoryNames}
@@ -626,6 +706,7 @@ export default function App() {
           hoveredPerkId={hoveredPerkId}
           onClosePerkGroupHover={closePerkGroupHover}
           onCloseResultsPerkHover={closeResultsPerkHover}
+          onOriginAndAncientScrollPerkGroupsChange={handleOriginAndAncientScrollPerkGroupsChange}
           onInspectPerkGroup={handleInspectPerkGroup}
           onOpenPerkGroupHover={openPerkGroupHover}
           onOpenResultsPerkHover={openResultsPerkHover}
@@ -633,17 +714,31 @@ export default function App() {
           onTogglePerkPicked={handleTogglePerkPicked}
           pickedPerkOrderById={pickedPerkOrderById}
           query={query}
-          selectedCategoryCount={selectedCategoryCount}
           selectedPerk={selectedPerk}
-          selectedPerkGroupCount={selectedPerkGroupCount}
           setQuery={setQuery}
+          shouldIncludeOriginAndAncientScrollPerkGroups={
+            shouldIncludeOriginAndAncientScrollPerkGroups
+          }
           visiblePerks={visiblePerks}
         />
 
         <PerkDetail
+          emphasizedCategoryNames={emphasizedCategoryNames}
+          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           groupedBackgroundSources={groupedBackgroundSources}
+          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
+          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+          hoveredPerkId={hoveredPerkId}
           isSelectedPerkPicked={isSelectedPerkPicked}
           isExpanded={isPerkDetailPanelExpanded}
+          onCloseBuildPerkHover={closeBuildPerkHover}
+          onCloseBuildPerkTooltip={closeBuildPerkTooltip}
+          onClosePerkGroupHover={closePerkGroupHover}
+          onInspectPerk={handleInspectPlannerPerk}
+          onInspectPerkGroup={handleInspectPerkGroup}
+          onOpenBuildPerkHover={openBuildPerkHover}
+          onOpenBuildPerkTooltip={openBuildPerkTooltip}
+          onOpenPerkGroupHover={openPerkGroupHover}
           onToggleExpanded={() => setIsPerkDetailPanelExpanded((isExpanded) => !isExpanded)}
           onTogglePerkPicked={handleTogglePerkPicked}
           selectedPerk={selectedPerk}

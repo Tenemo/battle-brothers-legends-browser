@@ -1,0 +1,373 @@
+import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
+import { Copy, Download, Save, Trash2, X } from 'lucide-react'
+import { cx } from '../lib/class-names'
+import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
+import type { LegendsPerkRecord } from '../types/legends-perks'
+import type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
+import styles from './BuildPlanner.module.scss'
+
+function getDefaultSavedBuildName(savedBuilds: BuildPlannerSavedBuild[]): string {
+  const savedBuildNames = new Set(savedBuilds.map((savedBuild) => savedBuild.name))
+
+  for (
+    let savedBuildNumber = 1;
+    savedBuildNumber <= savedBuilds.length + 2;
+    savedBuildNumber += 1
+  ) {
+    const savedBuildName = `Build ${savedBuildNumber}`
+
+    if (!savedBuildNames.has(savedBuildName)) {
+      return savedBuildName
+    }
+  }
+
+  return `Build ${savedBuilds.length + 1}`
+}
+
+function formatSavedBuildUpdatedAt(updatedAt: string): string {
+  const updatedAtDate = new Date(updatedAt)
+
+  if (!Number.isFinite(updatedAtDate.getTime())) {
+    return 'Unknown date'
+  }
+
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(updatedAtDate)
+}
+
+function getSavedBuildPersistenceLabel(
+  savedBuildPersistenceState: SavedBuildPersistenceState,
+): string {
+  switch (savedBuildPersistenceState) {
+    case 'persistent':
+      return 'Storage: protected'
+    case 'best-effort':
+      return 'Storage: best effort'
+    case 'unavailable':
+      return 'Storage: unavailable'
+    case 'unknown':
+      return 'Storage: checking'
+  }
+}
+
+function getSavedBuildOperationStatusLabel(
+  savedBuildOperationStatus: SavedBuildOperationStatus,
+): string | null {
+  switch (savedBuildOperationStatus) {
+    case 'saved':
+      return 'Saved build'
+    case 'deleted':
+      return 'Deleted build'
+    case 'loaded':
+      return 'Loaded build'
+    case 'copied':
+      return 'Copied link'
+    case 'copy-error':
+      return 'Copy failed'
+    case 'idle':
+      return null
+  }
+}
+
+function getFocusableSavedBuildsDialogElements(dialogElement: HTMLElement): HTMLElement[] {
+  return [
+    ...dialogElement.querySelectorAll<HTMLElement>(
+      [
+        'button:not(:disabled)',
+        'input:not(:disabled)',
+        'select:not(:disabled)',
+        'textarea:not(:disabled)',
+        'a[href]',
+        '[tabindex]:not([tabindex="-1"])',
+      ].join(', '),
+    ),
+  ].filter((element) => element.getAttribute('aria-hidden') !== 'true')
+}
+
+function keepKeyboardFocusInsideSavedBuildsDialog(event: KeyboardEvent<HTMLElement>) {
+  if (event.key !== 'Tab') {
+    return
+  }
+
+  const focusableElements = getFocusableSavedBuildsDialogElements(event.currentTarget)
+
+  if (focusableElements.length === 0) {
+    event.preventDefault()
+    return
+  }
+
+  const firstFocusableElement = focusableElements[0]
+  const lastFocusableElement = focusableElements.at(-1) ?? firstFocusableElement
+  const activeElement = document.activeElement
+
+  if (!event.currentTarget.contains(activeElement)) {
+    event.preventDefault()
+    firstFocusableElement.focus()
+    return
+  }
+
+  if (event.shiftKey && activeElement === firstFocusableElement) {
+    event.preventDefault()
+    lastFocusableElement.focus()
+    return
+  }
+
+  if (!event.shiftKey && activeElement === lastFocusableElement) {
+    event.preventDefault()
+    firstFocusableElement.focus()
+  }
+}
+
+export function SavedBuildsDialog({
+  isSavedBuildsLoading,
+  onClose,
+  onCopySavedBuildLink,
+  onDeleteSavedBuild,
+  onLoadSavedBuild,
+  onSaveCurrentBuild,
+  pickedPerks,
+  savedBuildOperationStatus,
+  savedBuildPersistenceState,
+  savedBuilds,
+  savedBuildsErrorMessage,
+}: {
+  isSavedBuildsLoading: boolean
+  onClose: () => void
+  onCopySavedBuildLink: (savedBuildId: string) => Promise<void>
+  onDeleteSavedBuild: (savedBuildId: string) => Promise<void>
+  onLoadSavedBuild: (savedBuildId: string) => void
+  onSaveCurrentBuild: (name: string) => Promise<void>
+  pickedPerks: LegendsPerkRecord[]
+  savedBuildOperationStatus: SavedBuildOperationStatus
+  savedBuildPersistenceState: SavedBuildPersistenceState
+  savedBuilds: BuildPlannerSavedBuild[]
+  savedBuildsErrorMessage: string | null
+}) {
+  const titleId = useId()
+  const nameInputId = useId()
+  const dialogBackdropRef = useRef<HTMLDivElement | null>(null)
+  const nameInputRef = useRef<HTMLInputElement | null>(null)
+  const [buildName, setBuildName] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [pendingSavedBuildId, setPendingSavedBuildId] = useState<string | null>(null)
+  const hasPickedPerks = pickedPerks.length > 0
+  const defaultSavedBuildName = getDefaultSavedBuildName(savedBuilds)
+  const statusLabel = savedBuildsErrorMessage
+    ? savedBuildsErrorMessage
+    : getSavedBuildOperationStatusLabel(savedBuildOperationStatus)
+
+  useEffect(() => {
+    if (nameInputRef.current && !nameInputRef.current.disabled) {
+      nameInputRef.current.focus()
+      return
+    }
+
+    const firstFocusableElement = dialogBackdropRef.current
+      ? getFocusableSavedBuildsDialogElements(dialogBackdropRef.current)[0]
+      : null
+
+    firstFocusableElement?.focus()
+  }, [])
+
+  async function handleSaveCurrentBuild(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+
+    if (!hasPickedPerks || isSaving) {
+      return
+    }
+
+    try {
+      setIsSaving(true)
+      await onSaveCurrentBuild(buildName.trim() || defaultSavedBuildName)
+      setBuildName('')
+    } catch {
+      // The storage hook exposes the error message in the dialog status area.
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleCopySavedBuildLink(savedBuildId: string) {
+    try {
+      setPendingSavedBuildId(savedBuildId)
+      await onCopySavedBuildLink(savedBuildId)
+    } catch {
+      // The copy handler exposes the failure state in the dialog status area.
+    } finally {
+      setPendingSavedBuildId(null)
+    }
+  }
+
+  async function handleDeleteSavedBuild(savedBuildId: string) {
+    try {
+      setPendingSavedBuildId(savedBuildId)
+      await onDeleteSavedBuild(savedBuildId)
+    } catch {
+      // The storage hook exposes the error message in the dialog status area.
+    } finally {
+      setPendingSavedBuildId(null)
+    }
+  }
+
+  return (
+    <div
+      className={styles.dialogBackdrop}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          onClose()
+          return
+        }
+
+        keepKeyboardFocusInsideSavedBuildsDialog(event)
+      }}
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose()
+        }
+      }}
+      ref={dialogBackdropRef}
+    >
+      <section
+        aria-labelledby={titleId}
+        aria-modal="true"
+        className={styles.savedBuildsDialog}
+        role="dialog"
+      >
+        <div className={styles.savedBuildsDialogHeader}>
+          <div>
+            <h2 id={titleId}>Saved builds</h2>
+            <p className={styles.savedBuildsStorageStatus}>
+              {getSavedBuildPersistenceLabel(savedBuildPersistenceState)}
+            </p>
+          </div>
+          <button
+            aria-label="Close saved builds"
+            className={cx(styles.plannerActionButton, styles.savedBuildsCloseButton)}
+            onClick={onClose}
+            type="button"
+          >
+            <X aria-hidden="true" className={styles.plannerButtonIcon} />
+            Close
+          </button>
+        </div>
+
+        <form className={styles.savedBuildForm} onSubmit={handleSaveCurrentBuild}>
+          <label htmlFor={nameInputId}>Build name</label>
+          <div className={styles.savedBuildFormRow}>
+            <input
+              disabled={!hasPickedPerks || isSaving}
+              id={nameInputId}
+              onChange={(event) => setBuildName(event.target.value)}
+              placeholder={defaultSavedBuildName}
+              ref={nameInputRef}
+              type="text"
+              value={buildName}
+            />
+            <button
+              className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
+              disabled={!hasPickedPerks || isSaving}
+              type="submit"
+            >
+              <Save aria-hidden="true" className={styles.plannerButtonIcon} />
+              {isSaving ? 'Saving' : 'Save current'}
+            </button>
+          </div>
+        </form>
+
+        {statusLabel ? (
+          <p
+            className={styles.savedBuildsStatusMessage}
+            data-status={savedBuildsErrorMessage ? 'error' : 'success'}
+            role={savedBuildsErrorMessage ? 'alert' : 'status'}
+          >
+            {statusLabel}
+          </p>
+        ) : null}
+
+        <div
+          className={cx(styles.savedBuildsList, 'app-scrollbar')}
+          data-scroll-container="true"
+          data-testid="saved-builds-list"
+        >
+          {isSavedBuildsLoading ? (
+            <p className={styles.savedBuildsEmpty}>Loading saved builds.</p>
+          ) : savedBuilds.length === 0 ? (
+            <p className={styles.savedBuildsEmpty}>No saved builds yet.</p>
+          ) : (
+            savedBuilds.map((savedBuild) => {
+              const visiblePerkNames = savedBuild.perkNames.slice(0, 4)
+              const remainingPerkNameCount = savedBuild.perkNames.length - visiblePerkNames.length
+              const perkSummary =
+                savedBuild.missingPerkCount > 0
+                  ? `${savedBuild.availablePerkIds.length} of ${savedBuild.pickedPerkCount} perks available. ${savedBuild.missingPerkCount} unavailable.`
+                  : `${savedBuild.pickedPerkCount} perk${savedBuild.pickedPerkCount === 1 ? '' : 's'}.`
+              const isPending = pendingSavedBuildId === savedBuild.id
+
+              return (
+                <article
+                  className={styles.savedBuildCard}
+                  data-testid="saved-build-card"
+                  key={savedBuild.id}
+                >
+                  <div className={styles.savedBuildCardCopy}>
+                    <strong className={styles.savedBuildCardName}>{savedBuild.name}</strong>
+                    <p className={styles.savedBuildCardMeta}>{perkSummary}</p>
+                    <p className={styles.savedBuildCardPreview}>
+                      {visiblePerkNames.length > 0
+                        ? `${visiblePerkNames.join(', ')}${remainingPerkNameCount > 0 ? `, +${remainingPerkNameCount}` : ''}`
+                        : 'No available perks'}
+                    </p>
+                    <p className={styles.savedBuildCardMeta}>
+                      Updated {formatSavedBuildUpdatedAt(savedBuild.updatedAt)}
+                    </p>
+                  </div>
+                  <div className={styles.savedBuildCardActions}>
+                    <button
+                      aria-label={`Load saved build ${savedBuild.name}`}
+                      className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
+                      disabled={savedBuild.availablePerkIds.length === 0 || isPending}
+                      onClick={() => {
+                        onLoadSavedBuild(savedBuild.id)
+                        onClose()
+                      }}
+                      type="button"
+                    >
+                      <Download aria-hidden="true" className={styles.plannerButtonIcon} />
+                      Load
+                    </button>
+                    <button
+                      aria-label={`Copy saved build ${savedBuild.name} link`}
+                      className={styles.plannerActionButton}
+                      disabled={savedBuild.availablePerkIds.length === 0 || isPending}
+                      onClick={() => {
+                        void handleCopySavedBuildLink(savedBuild.id)
+                      }}
+                      type="button"
+                    >
+                      <Copy aria-hidden="true" className={styles.plannerButtonIcon} />
+                      Copy link
+                    </button>
+                    <button
+                      aria-label={`Delete saved build ${savedBuild.name}`}
+                      className={cx(styles.plannerActionButton, styles.savedBuildDeleteButton)}
+                      disabled={isPending}
+                      onClick={() => {
+                        void handleDeleteSavedBuild(savedBuild.id)
+                      }}
+                      type="button"
+                    >
+                      <Trash2 aria-hidden="true" className={styles.plannerButtonIcon} />
+                      Delete
+                    </button>
+                  </div>
+                </article>
+              )
+            })
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}

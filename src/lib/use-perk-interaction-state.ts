@@ -7,12 +7,12 @@ export type HoveredBuildPerkTooltip = {
   perkId: string
 }
 
-export type PerkGroupReference = {
+type PerkGroupReference = {
   categoryName: string
   perkGroupId: string
 }
 
-export type SelectedPerkGroupIdsByCategory = Record<string, string[]>
+type SelectedPerkGroupIdsByCategory = Record<string, string[]>
 
 type PerkInteractionState = {
   hoveredBuildPerkTooltip: HoveredBuildPerkTooltip | null

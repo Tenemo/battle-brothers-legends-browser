@@ -19,9 +19,9 @@ describe('root social image generation', () => {
     )
     expect(svg).toContain('font-size="78"')
     expect(svg).toContain('font-size="41"')
-    expect(svg).toContain('Perks browser')
+    expect(svg).toContain('Build planner')
     expect(svg).toContain(
-      '<text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Perks browser</text>',
+      '<text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Build planner</text>',
     )
     expect(svg).toContain('Search perks, inspect perk groups')
     expect(svg).toContain('with exact in-mod labels')
@@ -40,7 +40,6 @@ describe('root social image generation', () => {
     expect(svg).toContain('font-size="24" font-weight="600" text-anchor="end"')
     expect(svg).toContain('Legends 19.3.17')
     expect(svg).not.toContain('<line x1="4" y1="626"')
-    expect(svg).not.toContain('PERKS BROWSER')
     expect(svg).not.toContain('width="172" height="8"')
   })
 

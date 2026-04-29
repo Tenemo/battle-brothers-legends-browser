@@ -22,12 +22,25 @@ function getBackgroundFitOriginCandidateLabels(backgroundFit: RankedBackgroundFi
 }
 
 const originBackgroundPillLabelsBySourceLabel = new Map<string, string>([
-  ['legend_battle_sister', 'origin sisterhood'],
-  ['legend_crusader', 'origin crusader'],
-  ['legend_lonewolf', 'origin lone wolf'],
-  ['legend_preserver', 'origin necromancer'],
-  ['legend_puppet_master', 'origin necromancer'],
-  ['legend_warlock_summoner', 'origin necromancer'],
+  ['crusader', 'Origin: Crusader/Inquisition'],
+  ['legend_battle_sister', 'Origin: Sisterhood'],
+  ['legend_berserker', 'Origin: Berserker'],
+  ['legend_bladedancer', 'Origin: Nomad'],
+  ['legend_bounty_hunter', 'Origin: Assassin'],
+  ['legend_crusader', 'Origin: Crusader'],
+  ['legend_guildmaster', 'Origin: Beast slayers'],
+  ['legend_husk', 'Origin: Davkul'],
+  ['legend_leech_peddler', 'Origin: Peasant militia'],
+  ['legend_lonewolf', 'Origin: Lone wolf'],
+  ['legend_lurker', 'Origin: Davkul'],
+  ['legend_magister', 'Origin: Davkul'],
+  ['legend_man_at_arms', 'Origin: Peasant militia'],
+  ['legend_nightwatch', 'Origin: Peasant militia'],
+  ['legend_pilgrim', 'Origin: Crusader'],
+  ['legend_preserver', 'Origin: Necromancer'],
+  ['legend_puppet_master', 'Origin: Necromancer'],
+  ['legend_warlock_summoner', 'Origin: Necromancer'],
+  ['legend_youngblood', 'Origin: Crusader/Inquisition'],
 ])
 
 const legionOriginBackgroundSourceLabels = new Set([
@@ -41,6 +54,13 @@ const legionOriginBackgroundSourceLabels = new Set([
   'legend_legion_slave',
 ])
 
+function isCommanderOriginBackgroundSourceLabel(sourceLabel: string): boolean {
+  return (
+    /^legend_.+_commander(?:_op)?$/u.test(sourceLabel) ||
+    /^.+_legend_.+_commander$/u.test(sourceLabel)
+  )
+}
+
 function getOriginBackgroundPillLabelForSourceLabel(label: string): string | null {
   const sourceLabel = getBackgroundSourceLabel(label)
   const pillLabel = originBackgroundPillLabelsBySourceLabel.get(sourceLabel)
@@ -50,7 +70,11 @@ function getOriginBackgroundPillLabelForSourceLabel(label: string): string | nul
   }
 
   if (legionOriginBackgroundSourceLabels.has(sourceLabel)) {
-    return 'origin legion'
+    return 'Origin: Legion'
+  }
+
+  if (isCommanderOriginBackgroundSourceLabel(sourceLabel)) {
+    return 'Origin: Commander'
   }
 
   return null
@@ -62,16 +86,9 @@ function isOriginBackgroundSourceLabel(label: string): boolean {
   return (
     /^companion_(1h|2h|ranged)$/.test(sourceLabel) ||
     /^legend_companion_(melee|ranged)$/.test(sourceLabel) ||
-    sourceLabel === 'legend_battle_sister' ||
-    sourceLabel === 'legend_berserker' ||
-    sourceLabel === 'legend_crusader' ||
-    sourceLabel === 'legend_lonewolf' ||
-    sourceLabel === 'legend_preserver' ||
-    sourceLabel === 'legend_puppet_master' ||
-    sourceLabel === 'legend_warlock_summoner' ||
+    originBackgroundPillLabelsBySourceLabel.has(sourceLabel) ||
     legionOriginBackgroundSourceLabels.has(sourceLabel) ||
-    /^legend_.+_commander(?:_op)?$/.test(sourceLabel) ||
-    /^.+_legend_.+_commander$/.test(sourceLabel)
+    isCommanderOriginBackgroundSourceLabel(sourceLabel)
   )
 }
 
@@ -91,6 +108,6 @@ export function isOriginBackgroundFit(backgroundFit: RankedBackgroundFit): boole
   const candidateLabels = getBackgroundFitOriginCandidateLabels(backgroundFit)
 
   // The imported background model has no explicit origin flag, so this mirrors the source names
-  // that already drive origin disambiguator labels such as "origin melee" and "origin commander".
+  // that already drive origin disambiguator labels such as "Origin: Melee" and "Origin: Commander".
   return candidateLabels.some((candidateLabel) => isOriginBackgroundSourceLabel(candidateLabel))
 }

@@ -100,7 +100,7 @@ describe('SEO metadata', () => {
     const html = injectSeoIntoHtml(baseHtml)
 
     expect(html).toContain('<meta name="battle-brothers-seo-start" content="1" />')
-    expect(html).toContain('<title>Battle Brothers Legends perks browser</title>')
+    expect(html).toContain('<title>Battle Brothers Legends build planner</title>')
     expect(html).toContain('<meta name="battle-brothers-seo-end" content="1" />')
   })
 

@@ -145,13 +145,13 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
     return {
       canonicalSearch: '',
       description: 'Browse the Battle Brothers Legends perk catalog and plan shareable builds.',
-      imageAlt: 'Battle Brothers Legends perks browser social preview.',
+      imageAlt: 'Battle Brothers Legends build planner social preview.',
       imagePath: '/seo/og-image-v2.png',
       pickedPerkCount: 0,
       pickedPerks: [],
       referenceVersion: legendsPerksDataset.referenceVersion,
       status: 'empty',
-      title: 'Battle Brothers Legends perks browser',
+      title: 'Battle Brothers Legends build planner',
       topBackgroundFits: [],
     }
   }

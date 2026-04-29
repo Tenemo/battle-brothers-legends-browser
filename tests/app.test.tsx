@@ -1,6 +1,7 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
+import packageJson from '../package.json'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoisted(() => ({
@@ -8,7 +9,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'apprentice_background.nut',
     'paladin_background.nut',
   ]),
-  perkNamesForAppTests: new Set(['Berserk']),
+  perkNamesForAppTests: new Set(['Berserk', 'Magic Missile']),
 }))
 
 vi.mock('../src/data/legends-perks.json', async () => {
@@ -46,27 +47,28 @@ afterEach(() => {
 
 describe('app', () => {
   test('renders the catalog shell without the old reference root footer', () => {
-    const { container } = render(<App />)
+    render(<App />)
     const hero = screen.getByRole('banner')
-    const brandEmphasis = container.querySelector('.hero-brand-emphasis')
+    const brandEmphasis = screen.getByTestId('hero-brand-emphasis')
     const legendsModRepositoryLink = within(hero).getByRole('link', {
       name: 'Open the Battle Brothers Legends mod repository on GitHub',
     })
 
-    expect(screen.getByRole('heading', { level: 1, name: 'Perks browser' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Build planner' })).toBeInTheDocument()
     expect(legendsModRepositoryLink).toHaveAttribute(
       'href',
       'https://github.com/Battle-Brothers-Legends/Legends-public',
     )
-    expect(legendsModRepositoryLink).toHaveClass('eyebrow', 'hero-brand')
     expect(brandEmphasis).not.toBeNull()
     expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
-    expect(within(hero).getByText('Reference')).toBeInTheDocument()
-    expect(within(hero).getByText(/\d+\.\d+\.\d+/)).toBeInTheDocument()
+    expect(within(hero).getByText('Mod version')).toBeInTheDocument()
+    expect(within(hero).getByText('19.3.17')).toBeInTheDocument()
+    expect(within(hero).getByText('Planner version')).toBeInTheDocument()
+    expect(within(hero).getByText(packageJson.version)).toBeInTheDocument()
     expect(
       screen.getByRole('link', {
-        name: 'Open the battle-brothers-legends-browser repository on GitHub',
+        name: 'Open the build planner repository on GitHub',
       }),
     ).toHaveAttribute('href', 'https://github.com/Tenemo/battle-brothers-legends-browser')
     expect(screen.getByLabelText('Search perks')).toBeInTheDocument()
@@ -103,15 +105,61 @@ describe('app', () => {
     expect(perkSearchInput).toHaveFocus()
   })
 
+  test('excludes origin and ancient scroll perk groups from perk results by default', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const perkSearchInput = screen.getByLabelText('Search perks')
+
+    await user.type(perkSearchInput, 'Berserk')
+
+    const berserkResultRow = within(screen.getByTestId('results-list'))
+      .getByRole('button', { name: 'Inspect Berserk' })
+      .closest('[data-testid="perk-row"]')
+
+    expect(berserkResultRow).not.toBeNull()
+    expect(
+      within(berserkResultRow as HTMLElement).getByTestId('perk-placement-list'),
+    ).toHaveTextContent('Vicious')
+    expect(
+      within(berserkResultRow as HTMLElement).getByTestId('perk-placement-list'),
+    ).not.toHaveTextContent('Berserker')
+
+    await user.clear(perkSearchInput)
+    await user.type(perkSearchInput, 'Magic Missile')
+
+    expect(screen.getByText('No perks found')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Filter perks' }))
+
+    const restrictedPerkGroupsCheckbox = screen.getByRole('checkbox', {
+      name: 'Origin and ancient scroll perk groups',
+    })
+
+    expect(restrictedPerkGroupsCheckbox).not.toBeChecked()
+
+    await user.click(restrictedPerkGroupsCheckbox)
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('results-list')).getByRole('button', {
+          name: 'Inspect Magic Missile',
+        }),
+      ).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(window.location.search).toContain('origin-scroll-perk-groups=true')
+    })
+  })
+
   test('shows the background search clear button only while search has text', async () => {
     const user = userEvent.setup()
-    const { container } = render(<App />)
+    render(<App />)
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
     const filterBackgroundsButton = within(backgroundFitPanel).getByRole('button', {
       name: 'Filter backgrounds',
     })
-    const searchInputControl = backgroundSearchInput.closest('.search-input-control')
+    const searchInputControl = backgroundSearchInput.closest('[data-testid="search-input-control"]')
 
     expect(
       within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
@@ -144,7 +192,7 @@ describe('app', () => {
     expect(
       within(backgroundFitPanel).queryByRole('button', { name: 'Clear background search' }),
     ).not.toBeInTheDocument()
-    expect(container.querySelector('.background-fit-panel .search-highlight')).toBeNull()
+    expect(backgroundFitPanel.querySelector('[data-search-highlight="true"]')).toBeNull()
     expect(backgroundSearchInput).toHaveFocus()
   })
 

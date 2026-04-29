@@ -1,10 +1,11 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
-import './BackgroundFitPanel.css'
+import { cx } from '../lib/class-names'
 import type { BackgroundFitView } from '../lib/background-fit'
 import { isOriginBackgroundFit } from '../lib/background-origin'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
+import styles from './BackgroundFitPanel.module.scss'
 
 export function BackgroundFitPanel({
   backgroundFitView,
@@ -171,14 +172,18 @@ export function BackgroundFitPanel({
     <>
       <aside
         aria-label="Background fit"
-        className={
-          isExpanded ? 'background-fit-panel is-expanded' : 'background-fit-panel is-collapsed'
-        }
+        className={styles.backgroundFitPanel}
+        data-expanded={isExpanded}
         data-testid="background-fit-panel"
       >
-        <div aria-hidden={!isExpanded} className="background-fit-panel-body" hidden={!isExpanded}>
+        <div
+          aria-hidden={!isExpanded}
+          className={styles.backgroundFitPanelBody}
+          data-testid="background-fit-panel-content"
+          hidden={!isExpanded}
+        >
           <ClearableSearchField
-            className="background-fit-search-field"
+            className={styles.backgroundFitSearchField}
             clearLabel="Clear background search"
             inputId="background-fit-search"
             label="Search backgrounds"
@@ -187,9 +192,10 @@ export function BackgroundFitPanel({
               setBackgroundFitInputValue(nextValue)
             }}
             placeholder="Search backgrounds"
+            testId="background-fit-search-field"
             trailingControl={
               <div
-                className="background-fit-filter-menu"
+                className={styles.backgroundFitFilterMenu}
                 onKeyDown={(event) => {
                   if (event.key !== 'Escape') {
                     return
@@ -198,7 +204,7 @@ export function BackgroundFitPanel({
                   event.preventDefault()
                   setIsBackgroundFilterMenuOpen(false)
                   event.currentTarget
-                    .querySelector<HTMLButtonElement>('.background-fit-filter-button')
+                    .querySelector<HTMLButtonElement>('[data-background-fit-filter-button="true"]')
                     ?.focus()
                 }}
                 ref={backgroundFitFilterMenuRef}
@@ -207,7 +213,10 @@ export function BackgroundFitPanel({
                   aria-controls={backgroundFitFilterMenuId}
                   aria-expanded={isBackgroundFilterMenuOpen}
                   aria-label="Filter backgrounds"
-                  className="background-fit-filter-button has-active-filter"
+                  className={styles.backgroundFitFilterButton}
+                  data-active-filter={shouldIncludeOriginBackgrounds}
+                  data-background-fit-filter-button="true"
+                  data-testid="background-fit-filter-button"
                   onClick={() => {
                     clearBackgroundFitInteractiveHover()
                     setIsBackgroundFilterMenuOpen(
@@ -216,18 +225,23 @@ export function BackgroundFitPanel({
                   }}
                   type="button"
                 >
-                  <FunnelIcon className="background-fit-filter-icon" isFilled />
+                  <FunnelIcon
+                    className={styles.backgroundFitFilterIcon}
+                    isFilled={shouldIncludeOriginBackgrounds}
+                    testId="background-fit-filter-icon"
+                  />
                 </button>
                 {isBackgroundFilterMenuOpen ? (
                   <div
                     aria-label="Background filters"
-                    className="background-fit-filter-popover"
+                    className={styles.backgroundFitFilterPopover}
                     id={backgroundFitFilterMenuId}
                     role="group"
                   >
-                    <label className="background-fit-filter-option">
+                    <label className={styles.backgroundFitFilterOption}>
                       <input
                         checked={shouldIncludeOriginBackgrounds}
+                        data-testid="origin-backgrounds-checkbox"
                         onChange={(event) => {
                           clearBackgroundFitInteractiveHover()
                           onOriginBackgroundsChange(event.target.checked)
@@ -243,24 +257,28 @@ export function BackgroundFitPanel({
             value={backgroundFitInputValue}
           />
           {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (
-            <p className="background-fit-ranking-summary">
-              Ranked by guaranteed perks pickable first, then expected perks pickable.
+            <p
+              className={styles.backgroundFitRankingSummary}
+              data-testid="background-fit-ranking-summary"
+              hidden={hasActiveBackgroundFitSearch}
+            >
+              Ranked by expected perks pickable first.
             </p>
           ) : (
-            <div className="background-fit-empty-state">
-              <p className="background-fit-summary-copy">
+            <div className={styles.backgroundFitEmptyState}>
+              <p className={styles.backgroundFitSummaryCopy}>
                 {hasUnsupportedBackgroundFitTargets
                   ? 'This build only contains unsupported categories for dynamic background perk groups.'
                   : 'Pick perks from Weapon, Defense, Traits, Enemy, Class, Profession, or Magic to rank backgrounds exactly.'}
               </p>
               {hasUnsupportedBackgroundFitTargets ? (
                 <>
-                  <p className="background-fit-section-label">Unsupported build perk groups</p>
-                  <p className="results-note">
+                  <p className={styles.backgroundFitSectionLabel}>Unsupported build perk groups</p>
+                  <p className={styles.backgroundFitSummaryCopy}>
                     Background dynamic perk groups only roll Weapon, Defense, Traits, Enemy, Class,
                     Profession, and Magic.
                   </p>
-                  <ul className="background-fit-target-list is-unsupported">
+                  <ul className={styles.backgroundFitTargetList} data-unsupported="true">
                     {backgroundFitView.unsupportedBuildTargetPerkGroups.map(
                       (buildTargetPerkGroup) => (
                         <BackgroundFitTargetPerkGroup
@@ -276,7 +294,8 @@ export function BackgroundFitPanel({
           )}
           <div
             aria-hidden={!isExpanded}
-            className="background-fit-results-scroll app-scrollbar"
+            className={cx(styles.backgroundFitResultsScroll, 'app-scrollbar')}
+            data-scroll-container="true"
             data-testid="background-fit-panel-body"
             onScrollCapture={() => {
               clearBackgroundFitInteractiveHover()
@@ -284,7 +303,7 @@ export function BackgroundFitPanel({
             ref={backgroundFitResultsScrollRef}
           >
             {visibleRankedBackgroundFits.length > 0 ? (
-              <ol className="background-fit-ranking" data-testid="background-fit-ranking">
+              <ol className={styles.backgroundFitRanking} data-testid="background-fit-ranking">
                 {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
                   <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
                     <BackgroundFitCard
@@ -318,19 +337,16 @@ export function BackgroundFitPanel({
                         rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
                         backgroundFitIndex
                       }
-                      supportedBuildTargetPerkGroupCount={
-                        backgroundFitView.supportedBuildTargetPerkGroups.length
-                      }
                     />
                   </li>
                 ))}
               </ol>
             ) : (
-              <div className="background-fit-empty-state">
-                <p className="background-fit-summary-copy">
+              <div className={styles.backgroundFitEmptyState}>
+                <p className={styles.backgroundFitSummaryCopy}>
                   No backgrounds match "{deferredBackgroundFitQuery.trim()}".
                 </p>
-                <p className="background-fit-summary-copy">
+                <p className={styles.backgroundFitSummaryCopy}>
                   Try a different background name or clear the search.
                 </p>
               </div>
@@ -341,17 +357,20 @@ export function BackgroundFitPanel({
         <button
           aria-expanded={isExpanded}
           aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background fit`}
-          className="background-fit-rail-button"
+          className={styles.backgroundFitRailButton}
           onClick={() => {
             clearBackgroundFitInteractiveHover()
             onToggleExpanded()
           }}
           type="button"
         >
-          <span aria-hidden="true" className="background-fit-rail-button-icon">
-            <BackgroundFitRailChevron isExpanded={isExpanded} />
+          <span aria-hidden="true" className={styles.backgroundFitRailButtonIcon}>
+            <BackgroundFitRailChevron
+              className={styles.backgroundFitRailChevron}
+              isExpanded={isExpanded}
+            />
           </span>
-          <span aria-hidden="true" className="background-fit-rail-button-label">
+          <span aria-hidden="true" className={styles.backgroundFitRailButtonLabel}>
             Background fit
           </span>
         </button>

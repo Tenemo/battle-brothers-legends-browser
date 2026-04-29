@@ -37,6 +37,10 @@ describe('legends perks importer', () => {
       ],
       primaryCategoryName: 'Traits',
     })
+    expect(
+      clarity?.placements.some((placement) => Object.hasOwn(placement, 'perkGroupDescriptions')),
+    ).toBe(false)
+    expect(clarity?.searchText).not.toContain('is calm')
 
     expect(clarity?.backgroundSources).toEqual(
       expect.arrayContaining([

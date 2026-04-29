@@ -26,6 +26,7 @@ export function usePerkBrowserUrlSync(
     query,
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
+    shouldIncludeOriginAndAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
   } = urlState
 
@@ -40,6 +41,7 @@ export function usePerkBrowserUrlSync(
         query,
         selectedCategoryNames,
         selectedPerkGroupIdsByCategory,
+        shouldIncludeOriginAndAncientScrollPerkGroups,
         shouldIncludeOriginBackgrounds,
       },
       {
@@ -66,6 +68,7 @@ export function usePerkBrowserUrlSync(
     query,
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
+    shouldIncludeOriginAndAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
   ])
 

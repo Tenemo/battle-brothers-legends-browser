@@ -8,18 +8,19 @@ import {
 import {
   formatBackgroundFitExpectedBuildPerksLabel,
   formatBackgroundFitGuaranteedPerksLabel,
-  formatBackgroundFitMatchedPerkGroupsLabel,
   formatBackgroundFitPickablePerksLabel,
   formatBackgroundFitProbabilityLabel,
-  formatBackgroundFitScoreLabel,
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
   getVisibleBackgroundPillLabel,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
+import { cx } from '../lib/class-names'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import { BackgroundFitAccordionChevron } from './SharedControls'
+import sharedStyles from './SharedControls.module.scss'
+import styles from './BackgroundFitPanel.module.scss'
 
 function getBackgroundFitPickablePerksSummaryCopy(
   coveredPickedPerkCount: number,
@@ -35,13 +36,6 @@ function getBackgroundFitGuaranteedPerksSummaryCopy(
   return `Guaranteed picked-perk coverage: ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} picked perks are covered before optional rolls.`
 }
 
-function getBackgroundFitMatchedPerkGroupsSummaryCopy(
-  matchedPerkGroupCount: number,
-  supportedBuildTargetPerkGroupCount: number,
-): string {
-  return `Matched build perk groups: this background can roll ${matchedPerkGroupCount} of ${supportedBuildTargetPerkGroupCount} supported build perk groups.`
-}
-
 function getBackgroundFitExpectedBuildPerksSummaryCopy(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
@@ -52,41 +46,32 @@ function getBackgroundFitExpectedBuildPerksSummaryCopy(
   )} after dynamic perk group rolls.`
 }
 
-function getBackgroundFitGuaranteedPerkGroupsSummaryCopy(
-  guaranteedMatchedPerkGroupCount: number,
-): string {
-  return `Guaranteed matched perk groups: ${guaranteedMatchedPerkGroupCount} build perk groups are always present.`
-}
-
-function getBackgroundFitExpectedPerkGroupsSummaryCopy(
-  expectedMatchedPerkGroupCount: number,
-): string {
-  return `Expected matched perk groups: ${formatBackgroundFitScoreLabel(
-    expectedMatchedPerkGroupCount,
-  )} build perk groups are expected after dynamic rolls.`
-}
-
 export function BackgroundFitTargetPerkGroup({
   buildTargetPerkGroup,
 }: {
   buildTargetPerkGroup: BuildTargetPerkGroup
 }) {
   return (
-    <li className="background-fit-target">
-      <div className="background-fit-perk-group-main">
+    <li className={styles.backgroundFitTarget}>
+      <div className={styles.backgroundFitPerkGroupMain}>
         {renderGameIcon({
-          className: 'perk-icon perk-icon-group background-fit-perk-group-icon',
+          className: cx(
+            sharedStyles.perkIcon,
+            sharedStyles.perkIconGroup,
+            styles.backgroundFitPerkGroupIcon,
+          ),
           iconPath: buildTargetPerkGroup.perkGroupIconPath,
           label: `${buildTargetPerkGroup.perkGroupName} perk group icon`,
+          testId: 'background-fit-perk-group-icon',
         })}
         <div>
           <strong>{buildTargetPerkGroup.perkGroupName}</strong>
-          <p className="detail-support">
+          <p className={styles.backgroundFitTargetSupport}>
             {buildTargetPerkGroup.categoryName} / {buildTargetPerkGroup.pickedPerkNames.join(', ')}
           </p>
         </div>
       </div>
-      <span className="detail-badge">
+      <span className={styles.backgroundFitTargetBadge} data-testid="background-fit-target-badge">
         {formatPickedPerkCountLabel(buildTargetPerkGroup.pickedPerkCount)}
       </span>
     </li>
@@ -131,7 +116,7 @@ function BackgroundFitMatchRow({
     <li>
       <BuildPerkGroupTile
         arePerkGroupOptionsInteractive={false}
-        className="background-fit-match"
+        className={styles.backgroundFitMatch}
         emphasizedCategoryNames={emphasizedCategoryNames}
         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
         groupLabel={match.perkGroupName}
@@ -147,10 +132,11 @@ function BackgroundFitMatchRow({
         hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
         hoveredPerkId={hoveredPerkId}
         isWide
-        metaClassName="background-fit-match-probability-badge"
+        metaClassName={styles.backgroundFitMatchProbabilityBadge}
         metaLabel={
           match.isGuaranteed ? 'Guaranteed' : formatBackgroundFitProbabilityLabel(match.probability)
         }
+        metaTestId="background-fit-match-probability-badge"
         onCloseBuildPerkHover={onCloseBuildPerkHover}
         onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
         onClosePerkGroupHover={onClosePerkGroupHover}
@@ -159,6 +145,7 @@ function BackgroundFitMatchRow({
         onOpenBuildPerkHover={onOpenBuildPerkHover}
         onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
         onOpenPerkGroupHover={onOpenPerkGroupHover}
+        optionIconClassName={styles.backgroundFitPerkGroupIcon}
         perks={match.pickedPerkNames.map((perkName, perkIndex) => ({
           perkId: match.pickedPerkIds[perkIndex] ?? null,
           perkName,
@@ -180,7 +167,8 @@ function BackgroundFitMetricBadge({
   return (
     <span
       aria-label={`${label}. ${tooltip}`}
-      className={['detail-badge background-fit-metric-badge', className].filter(Boolean).join(' ')}
+      className={cx(styles.backgroundFitMetricBadge, className)}
+      data-testid="background-fit-summary-badge"
       title={tooltip}
     >
       {label}
@@ -209,7 +197,6 @@ export function BackgroundFitCard({
   pickedPerkCount,
   query,
   rank,
-  supportedBuildTargetPerkGroupCount,
 }: {
   backgroundFit: RankedBackgroundFit
   emphasizedCategoryNames: ReadonlySet<string>
@@ -234,7 +221,6 @@ export function BackgroundFitCard({
   pickedPerkCount: number
   query: string
   rank: number
-  supportedBuildTargetPerkGroupCount: number
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
@@ -250,15 +236,10 @@ export function BackgroundFitCard({
 
   return (
     <article
-      className={
-        backgroundFit.matches.length === 0
-          ? isExpanded
-            ? 'background-fit-card is-empty is-expanded'
-            : 'background-fit-card is-empty'
-          : isExpanded
-            ? 'background-fit-card is-expanded'
-            : 'background-fit-card'
-      }
+      className={styles.backgroundFitCard}
+      data-empty={backgroundFit.matches.length === 0}
+      data-expanded={isExpanded}
+      data-testid="background-fit-card"
     >
       <button
         aria-controls={accordionPanelId}
@@ -266,7 +247,7 @@ export function BackgroundFitCard({
         aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background ${backgroundFit.backgroundName}${
           backgroundPillLabel ? ` (${backgroundPillLabel})` : ''
         }`}
-        className="background-fit-accordion-trigger"
+        className={styles.backgroundFitAccordionTrigger}
         id={accordionButtonId}
         onClick={() => {
           onClearPerkGroupHover()
@@ -274,44 +255,58 @@ export function BackgroundFitCard({
         }}
         type="button"
       >
-        <div className="background-fit-card-header">
-          <div className="background-fit-card-header-main">
-            <div className="background-fit-card-heading">
-              <span className="background-fit-rank">{rank + 1}</span>
+        <div className={styles.backgroundFitCardHeader}>
+          <div className={styles.backgroundFitCardHeaderMain}>
+            <div className={styles.backgroundFitCardHeading}>
+              <span className={styles.backgroundFitRank} data-testid="background-fit-rank">
+                {rank + 1}
+              </span>
               {renderGameIcon({
-                className: 'perk-icon background-fit-icon',
+                className: cx(sharedStyles.perkIcon, styles.backgroundFitIcon),
                 iconPath: backgroundFit.iconPath,
                 label: `${backgroundFit.backgroundName} background icon`,
+                testId: 'background-fit-icon',
               })}
-              <div className="background-fit-card-title-row">
+              <div className={styles.backgroundFitCardTitleRow}>
                 <h3>
-                  {renderHighlightedText(
-                    backgroundFit.backgroundName,
+                  {renderHighlightedText({
+                    highlightClassName: sharedStyles.searchHighlight,
+                    keyPrefix: `${backgroundFitKey}-name`,
                     query,
-                    `${backgroundFitKey}-name`,
-                  )}
+                    text: backgroundFit.backgroundName,
+                  })}
                 </h3>
                 {backgroundPillLabel ? (
-                  <span className="background-fit-disambiguator">
-                    {renderHighlightedText(
-                      backgroundPillLabel,
+                  <span
+                    className={styles.backgroundFitDisambiguator}
+                    data-testid="background-fit-disambiguator"
+                  >
+                    {renderHighlightedText({
+                      highlightClassName: sharedStyles.searchHighlight,
+                      keyPrefix: `${backgroundFitKey}-disambiguator`,
                       query,
-                      `${backgroundFitKey}-disambiguator`,
-                    )}
+                      text: backgroundPillLabel,
+                    })}
                   </span>
                 ) : null}
               </div>
             </div>
 
-            <span aria-hidden="true" className="background-fit-accordion-chevron-frame">
-              <BackgroundFitAccordionChevron isExpanded={isExpanded} />
+            <span aria-hidden="true" className={styles.backgroundFitAccordionChevronFrame}>
+              <BackgroundFitAccordionChevron
+                className={styles.backgroundFitAccordionChevron}
+                isExpanded={isExpanded}
+              />
             </span>
           </div>
 
-          <div className="background-fit-accordion-summary">
-            <div className="background-fit-accordion-summary-row">
+          <div className={styles.backgroundFitAccordionSummary}>
+            <div
+              className={styles.backgroundFitAccordionSummaryRow}
+              data-testid="background-fit-accordion-summary-row"
+            >
               <BackgroundFitMetricBadge
-                className="background-fit-summary-badge"
+                className={styles.backgroundFitSummaryBadge}
                 label={formatBackgroundFitExpectedBuildPerksLabel(
                   backgroundFit.expectedCoveredPickedPerkCount,
                   pickedPerkCount,
@@ -322,7 +317,7 @@ export function BackgroundFitCard({
                 )}
               />
               <BackgroundFitMetricBadge
-                className="background-fit-summary-badge"
+                className={styles.backgroundFitSummaryBadge}
                 label={formatBackgroundFitGuaranteedPerksLabel(
                   guaranteedCoveredPickedPerkCount,
                   pickedPerkCount,
@@ -333,7 +328,7 @@ export function BackgroundFitCard({
                 )}
               />
               <BackgroundFitMetricBadge
-                className="background-fit-summary-badge"
+                className={styles.backgroundFitSummaryBadge}
                 label={formatBackgroundFitPickablePerksLabel(
                   coveredPickedPerkCount,
                   pickedPerkCount,
@@ -351,44 +346,18 @@ export function BackgroundFitCard({
       <div
         aria-hidden={!isExpanded}
         aria-labelledby={accordionButtonId}
-        className="background-fit-card-panel"
+        className={styles.backgroundFitCardPanel}
+        data-testid="background-fit-card-panel"
         hidden={!isExpanded}
         id={accordionPanelId}
         role="region"
       >
-        <div className="background-fit-card-panel-inner">
-          <div className="background-fit-card-content">
-            <div className="background-fit-score-row">
-              <BackgroundFitMetricBadge
-                label={formatBackgroundFitMatchedPerkGroupsLabel(
-                  backgroundFit.matches.length,
-                  supportedBuildTargetPerkGroupCount,
-                )}
-                tooltip={getBackgroundFitMatchedPerkGroupsSummaryCopy(
-                  backgroundFit.matches.length,
-                  supportedBuildTargetPerkGroupCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                label={`Guaranteed perk groups ${backgroundFit.guaranteedMatchedPerkGroupCount}`}
-                tooltip={getBackgroundFitGuaranteedPerkGroupsSummaryCopy(
-                  backgroundFit.guaranteedMatchedPerkGroupCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                label={`Expected perk groups ${formatBackgroundFitScoreLabel(
-                  backgroundFit.expectedMatchedPerkGroupCount,
-                )}`}
-                tooltip={getBackgroundFitExpectedPerkGroupsSummaryCopy(
-                  backgroundFit.expectedMatchedPerkGroupCount,
-                )}
-              />
-            </div>
-
+        <div className={styles.backgroundFitCardPanelInner}>
+          <div className={styles.backgroundFitCardContent}>
             {guaranteedMatches.length > 0 ? (
-              <div className="background-fit-match-section">
-                <p className="background-fit-section-label">Guaranteed</p>
-                <ul className="background-fit-match-list">
+              <div className={styles.backgroundFitMatchSection}>
+                <p className={styles.backgroundFitSectionLabel}>Guaranteed</p>
+                <ul className={styles.backgroundFitMatchList}>
                   {guaranteedMatches.map((match) => (
                     <BackgroundFitMatchRow
                       emphasizedCategoryNames={emphasizedCategoryNames}
@@ -413,9 +382,9 @@ export function BackgroundFitCard({
             ) : null}
 
             {probabilisticMatches.length > 0 ? (
-              <div className="background-fit-match-section">
-                <p className="background-fit-section-label">Possible</p>
-                <ul className="background-fit-match-list">
+              <div className={styles.backgroundFitMatchSection}>
+                <p className={styles.backgroundFitSectionLabel}>Possible</p>
+                <ul className={styles.backgroundFitMatchList}>
                   {probabilisticMatches.map((match) => (
                     <BackgroundFitMatchRow
                       emphasizedCategoryNames={emphasizedCategoryNames}
@@ -440,7 +409,9 @@ export function BackgroundFitCard({
             ) : null}
 
             {backgroundFit.matches.length === 0 ? (
-              <p className="background-fit-empty-card">No supported build perk group overlap.</p>
+              <p className={styles.backgroundFitEmptyCard}>
+                No supported build perk group overlap.
+              </p>
             ) : null}
           </div>
         </div>

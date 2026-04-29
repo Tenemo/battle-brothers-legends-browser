@@ -152,7 +152,7 @@ assertNoPreviewProductionOrigin(rootHtml, 'root HTML', baseUrl)
 expectIncludes({
   label: 'root HTML',
   text: rootHtml,
-  value: '<title>Battle Brothers Legends perks browser</title>',
+  value: '<title>Battle Brothers Legends build planner</title>',
 })
 expectIncludes({
   label: 'root HTML',

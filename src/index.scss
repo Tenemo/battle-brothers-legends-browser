@@ -1,0 +1,146 @@
+@layer reset, tokens, primitives, layout, components, utilities;
+
+@layer reset {
+  * {
+    box-sizing: border-box;
+  }
+
+  @supports selector(::-webkit-scrollbar) {
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .app-scrollbar::-webkit-scrollbar {
+      width: var(--app-scrollbar-size);
+      height: var(--app-scrollbar-size);
+    }
+
+    html::-webkit-scrollbar-track,
+    body::-webkit-scrollbar-track,
+    .app-scrollbar::-webkit-scrollbar-track {
+      border-radius: var(--radius-pill);
+      background: var(--app-scrollbar-track);
+    }
+
+    html::-webkit-scrollbar-thumb,
+    body::-webkit-scrollbar-thumb,
+    .app-scrollbar::-webkit-scrollbar-thumb {
+      min-height: var(--primitive-length-2-4rem);
+      border: var(--primitive-length-0-13rem) solid var(--app-scrollbar-thumb-border);
+      border-radius: var(--radius-pill);
+      background: var(--app-scrollbar-thumb);
+      background-clip: padding-box;
+    }
+
+    html::-webkit-scrollbar-thumb:hover,
+    body::-webkit-scrollbar-thumb:hover,
+    .app-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: var(--app-scrollbar-thumb-hover);
+      background-clip: padding-box;
+    }
+
+    html::-webkit-scrollbar-button,
+    body::-webkit-scrollbar-button,
+    .app-scrollbar::-webkit-scrollbar-button {
+      display: none;
+      width: 0;
+      height: 0;
+    }
+
+    html::-webkit-scrollbar-corner,
+    body::-webkit-scrollbar-corner,
+    .app-scrollbar::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  }
+
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    min-width: var(--primitive-length-320px);
+    min-height: var(--primitive-length-100vh);
+    height: 100%;
+    margin: 0;
+    background: var(--background-color);
+    overflow: hidden;
+  }
+
+  body,
+  button,
+  input,
+  select,
+  textarea {
+    font-family: var(--body-font-family);
+  }
+
+  a {
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select {
+    font: inherit;
+  }
+
+  #root {
+    height: 100%;
+    min-height: var(--primitive-length-100vh);
+    overflow: hidden;
+  }
+
+  @media (max-width: 1279px) {
+    html {
+      height: auto;
+      min-height: 100%;
+      overflow: hidden auto;
+    }
+
+    body {
+      height: auto;
+      min-height: 100%;
+      overflow: hidden visible;
+    }
+
+    #root {
+      height: auto;
+      min-height: var(--primitive-length-100vh);
+      overflow: visible;
+    }
+  }
+}
+
+@layer utilities {
+  @supports (scrollbar-color: auto) and (not selector(::-webkit-scrollbar)) {
+    html,
+    body,
+    .app-scrollbar {
+      scrollbar-color: var(--app-scrollbar-thumb) var(--app-scrollbar-track);
+      scrollbar-width: auto;
+    }
+  }
+
+  .visually-hidden {
+    position: absolute;
+    width: var(--primitive-length-1px);
+    height: var(--primitive-length-1px);
+    padding: 0;
+    margin: var(--primitive-length-negative-1px);
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: var(--primitive-duration-1ms) !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: var(--primitive-duration-1ms) !important;
+    }
+  }
+}
