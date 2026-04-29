@@ -24,10 +24,16 @@ export function BackgroundFitPanel({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
+  onBackgroundStudyBookChange,
+  onBackgroundStudyScrollChange,
   onOriginBackgroundsChange,
   onSearchActivityChange,
+  onSecondBackgroundStudyScrollChange,
   onToggleExpanded,
   pickedPerkCount,
+  shouldAllowBackgroundStudyBook,
+  shouldAllowBackgroundStudyScroll,
+  shouldAllowSecondBackgroundStudyScroll,
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView
@@ -56,10 +62,18 @@ export function BackgroundFitPanel({
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onBackgroundStudyBookChange: (shouldAllowBackgroundStudyBook: boolean) => void
+  onBackgroundStudyScrollChange: (shouldAllowBackgroundStudyScroll: boolean) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
+  onSecondBackgroundStudyScrollChange: (
+    shouldAllowSecondBackgroundStudyScroll: boolean,
+  ) => void
   onToggleExpanded: () => void
   pickedPerkCount: number
+  shouldAllowBackgroundStudyBook: boolean
+  shouldAllowBackgroundStudyScroll: boolean
+  shouldAllowSecondBackgroundStudyScroll: boolean
   shouldIncludeOriginBackgrounds: boolean
 }) {
   const [backgroundFitInputValue, setBackgroundFitInputValue] = useState('')
@@ -80,8 +94,17 @@ export function BackgroundFitPanel({
     backgroundFitView.supportedBuildTargetPerkGroups.length > 0
   const hasUnsupportedBackgroundFitTargets =
     backgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
+  const hasActiveBackgroundFilter =
+    shouldIncludeOriginBackgrounds ||
+    !shouldAllowBackgroundStudyBook ||
+    !shouldAllowBackgroundStudyScroll ||
+    shouldAllowSecondBackgroundStudyScroll
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
+  const backgroundFitEmptyResultTarget =
+    normalizedBackgroundFitQuery.length > 0
+      ? `"${deferredBackgroundFitQuery.trim()}"`
+      : 'the selected filters'
   const visibleRankedBackgroundFits = useMemo(
     () =>
       backgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
@@ -221,7 +244,7 @@ export function BackgroundFitPanel({
                   aria-expanded={isBackgroundFilterMenuOpen}
                   aria-label="Filter backgrounds"
                   className={styles.backgroundFitFilterButton}
-                  data-active-filter={shouldIncludeOriginBackgrounds}
+                  data-active-filter={hasActiveBackgroundFilter}
                   data-background-fit-filter-button="true"
                   data-testid="background-fit-filter-button"
                   onClick={() => {
@@ -234,7 +257,7 @@ export function BackgroundFitPanel({
                 >
                   <FunnelIcon
                     className={styles.backgroundFitFilterIcon}
-                    isFilled={shouldIncludeOriginBackgrounds}
+                    isFilled={hasActiveBackgroundFilter}
                     testId="background-fit-filter-icon"
                   />
                 </button>
@@ -256,6 +279,46 @@ export function BackgroundFitPanel({
                         type="checkbox"
                       />
                       <span>Origin backgrounds</span>
+                    </label>
+                    <label className={styles.backgroundFitFilterOption}>
+                      <input
+                        checked={shouldAllowBackgroundStudyBook}
+                        data-testid="background-study-book-checkbox"
+                        onChange={(event) => {
+                          clearBackgroundFitInteractiveHover()
+                          onBackgroundStudyBookChange(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Allow a book</span>
+                    </label>
+                    <label className={styles.backgroundFitFilterOption}>
+                      <input
+                        checked={shouldAllowBackgroundStudyScroll}
+                        data-testid="background-study-scroll-checkbox"
+                        onChange={(event) => {
+                          clearBackgroundFitInteractiveHover()
+                          onBackgroundStudyScrollChange(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Allow a scroll</span>
+                    </label>
+                    <label className={styles.backgroundFitFilterOption}>
+                      <input
+                        checked={
+                          shouldAllowBackgroundStudyScroll &&
+                          shouldAllowSecondBackgroundStudyScroll
+                        }
+                        data-testid="background-study-second-scroll-checkbox"
+                        disabled={!shouldAllowBackgroundStudyScroll}
+                        onChange={(event) => {
+                          clearBackgroundFitInteractiveHover()
+                          onSecondBackgroundStudyScrollChange(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Allow two scrolls</span>
                     </label>
                   </div>
                 ) : null}
@@ -351,7 +414,7 @@ export function BackgroundFitPanel({
             ) : (
               <div className={styles.backgroundFitEmptyState}>
                 <p className={styles.backgroundFitSummaryCopy}>
-                  No backgrounds match "{deferredBackgroundFitQuery.trim()}".
+                  No backgrounds match {backgroundFitEmptyResultTarget}.
                 </p>
                 <p className={styles.backgroundFitSummaryCopy}>
                   Try a different background name or clear the search.

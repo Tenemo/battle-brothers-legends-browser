@@ -837,6 +837,69 @@ describe('background fit', () => {
     ])
   })
 
+  test('filters backgrounds that cannot reach the picked build with the selected study resources', () => {
+    const calmPerk = createPerk({
+      id: 'perk.traits.actual_calm',
+      perkConstName: 'LegendActualCalm',
+      perkName: 'Actual calm',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'CalmTree',
+          perkGroupName: 'Calm',
+        }),
+      ],
+    })
+    const berserkerPerk = createPerk({
+      id: 'perk.magic.actual_berserker',
+      perkConstName: 'LegendActualBerserker',
+      perkName: 'Actual berserker',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+          perkGroupName: 'Berserker',
+        }),
+      ],
+    })
+    const calmBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_native',
+      backgroundName: 'Calm native',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const emptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.empty_native',
+      backgroundName: 'Empty native',
+      overrides: {},
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [calmBackground, emptyBackground],
+      perks: [...samplePerks, calmPerk, berserkerPerk],
+    })
+
+    expect(
+      engine
+        .getBackgroundFitView([calmPerk, berserkerPerk], {
+          shouldAllowBook: true,
+          shouldAllowScroll: true,
+          shouldAllowSecondScroll: false,
+        })
+        .rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId),
+    ).toEqual(['background.calm_native', 'background.empty_native'])
+    expect(
+      engine
+        .getBackgroundFitView([calmPerk, berserkerPerk], {
+          shouldAllowBook: false,
+          shouldAllowScroll: true,
+          shouldAllowSecondScroll: false,
+        })
+        .rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId),
+    ).toEqual(['background.calm_native'])
+  })
+
   test('ranks backgrounds by expected covered picked perks first and disambiguates duplicate names', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const backgroundFitView = engine.getBackgroundFitView([

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import {
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
@@ -142,6 +142,7 @@ export function PerkResults({
   setQuery,
   shouldIncludeAncientScrollPerkGroups,
   shouldIncludeOriginPerkGroups,
+  visiblePerkResultSetKey,
   visiblePerks,
   hoveredPerkId,
 }: {
@@ -163,6 +164,7 @@ export function PerkResults({
   setQuery: (query: string) => void
   shouldIncludeAncientScrollPerkGroups: boolean
   shouldIncludeOriginPerkGroups: boolean
+  visiblePerkResultSetKey: string
   visiblePerks: LegendsPerkRecord[]
 }) {
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
@@ -175,12 +177,8 @@ export function PerkResults({
   })
   const perkFilterMenuId = useId()
   const perkFilterMenuRef = useRef<HTMLDivElement | null>(null)
-  const mobileResultSetKey = useMemo(
-    () => visiblePerks.map((perk) => perk.id).join('\u0000'),
-    [visiblePerks],
-  )
   const effectiveMobileVisiblePerkCount =
-    mobilePerkResultWindow.resultSetKey === mobileResultSetKey
+    mobilePerkResultWindow.resultSetKey === visiblePerkResultSetKey
       ? mobilePerkResultWindow.visiblePerkCount
       : mobilePerkResultBatchSize
   const displayedPerks = isMobilePerkResultViewport
@@ -195,7 +193,7 @@ export function PerkResults({
 
   function handleShowMoreMobilePerkResults() {
     setMobilePerkResultWindow({
-      resultSetKey: mobileResultSetKey,
+      resultSetKey: visiblePerkResultSetKey,
       visiblePerkCount: Math.min(
         effectiveMobileVisiblePerkCount + mobilePerkResultBatchSize,
         visiblePerks.length,

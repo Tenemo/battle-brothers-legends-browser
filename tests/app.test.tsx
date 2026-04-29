@@ -238,6 +238,54 @@ describe('app', () => {
     expect(backgroundSearchInput).toHaveFocus()
   })
 
+  test('keeps default background study filters out of the url and serializes changes', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+
+    await user.click(within(backgroundFitPanel).getByRole('button', { name: 'Filter backgrounds' }))
+
+    const allowBookCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Allow a book',
+    })
+    const allowScrollCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Allow a scroll',
+    })
+    const allowTwoScrollsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Allow two scrolls',
+    })
+
+    expect(allowBookCheckbox).toBeChecked()
+    expect(allowScrollCheckbox).toBeChecked()
+    expect(allowTwoScrollsCheckbox).not.toBeChecked()
+    expect(window.location.search).not.toContain('background-book')
+    expect(window.location.search).not.toContain('background-scroll')
+    expect(window.location.search).not.toContain('background-two-scrolls')
+
+    await user.click(allowBookCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('background-book=false')
+    })
+
+    await user.click(allowScrollCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('background-scroll=false')
+    })
+    expect(allowTwoScrollsCheckbox).toBeDisabled()
+    expect(allowTwoScrollsCheckbox).not.toBeChecked()
+
+    await user.click(allowScrollCheckbox)
+    await user.click(allowTwoScrollsCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('background-scroll=false')
+    })
+    expect(window.location.search).toContain('background-book=false')
+    expect(window.location.search).toContain('background-two-scrolls=true')
+  })
+
   test('updates visible state when browser history restores a shared url', async () => {
     render(<App />)
 

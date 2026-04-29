@@ -145,7 +145,13 @@ export function CategorySidebar({
               onClick={() => onCategoryToggle(availableCategoryName)}
               onFocus={() => onOpenCategoryHover(availableCategoryName)}
               onMouseEnter={() => onOpenCategoryHover(availableCategoryName)}
-              onMouseLeave={() => onCloseCategoryHover(availableCategoryName)}
+              onMouseLeave={(event) => {
+                if (event.currentTarget.ownerDocument.activeElement === event.currentTarget) {
+                  return
+                }
+
+                onCloseCategoryHover(availableCategoryName)
+              }}
               type="button"
             >
               <span className={styles.categoryChipStart}>

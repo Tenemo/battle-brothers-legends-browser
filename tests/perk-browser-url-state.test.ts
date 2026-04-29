@@ -91,6 +91,11 @@ const perkGroupOptionsByCategory = new Map([
   ['Enemy', [{ perkGroupId: 'BeastTree', perkGroupName: 'Beasts' }]],
 ])
 const perksById = new Map(samplePerks.map((perk) => [perk.id, perk]))
+const defaultBackgroundStudyUrlState = {
+  shouldAllowBackgroundStudyBook: true,
+  shouldAllowBackgroundStudyScroll: true,
+  shouldAllowSecondBackgroundStudyScroll: false,
+}
 const duplicateNamePerks: LegendsPerkRecord[] = [
   ...samplePerks,
   {
@@ -126,6 +131,7 @@ describe('perk browser url state', () => {
           Magic: ['DeadeyeTree'],
           Traits: ['CalmTree', 'ViciousTree'],
         },
+        ...defaultBackgroundStudyUrlState,
         shouldIncludeAncientScrollPerkGroups: true,
         shouldIncludeOriginBackgrounds: false,
         shouldIncludeOriginPerkGroups: false,
@@ -159,6 +165,7 @@ describe('perk browser url state', () => {
       selectedPerkGroupIdsByCategory: {
         Traits: ['CalmTree'],
       },
+      ...defaultBackgroundStudyUrlState,
       shouldIncludeAncientScrollPerkGroups: true,
       shouldIncludeOriginBackgrounds: false,
       shouldIncludeOriginPerkGroups: false,
@@ -182,6 +189,7 @@ describe('perk browser url state', () => {
       selectedPerkGroupIdsByCategory: {
         Traits: ['CalmTree'],
       },
+      ...defaultBackgroundStudyUrlState,
       shouldIncludeAncientScrollPerkGroups: true,
       shouldIncludeOriginBackgrounds: false,
       shouldIncludeOriginPerkGroups: false,
@@ -195,6 +203,7 @@ describe('perk browser url state', () => {
         query: '',
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
         shouldIncludeAncientScrollPerkGroups: true,
         shouldIncludeOriginBackgrounds: true,
         shouldIncludeOriginPerkGroups: false,
@@ -223,6 +232,7 @@ describe('perk browser url state', () => {
         query: '',
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
         shouldIncludeAncientScrollPerkGroups: true,
         shouldIncludeOriginBackgrounds: false,
         shouldIncludeOriginPerkGroups: true,
@@ -251,6 +261,7 @@ describe('perk browser url state', () => {
         query: '',
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
         shouldIncludeAncientScrollPerkGroups: false,
         shouldIncludeOriginBackgrounds: false,
         shouldIncludeOriginPerkGroups: false,
@@ -272,6 +283,43 @@ describe('perk browser url state', () => {
     ).toBe(false)
   })
 
+  test('serializes and restores non-default background study resource filters', () => {
+    const search = buildPerkBrowserUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        shouldAllowBackgroundStudyBook: false,
+        shouldAllowBackgroundStudyScroll: false,
+        shouldAllowSecondBackgroundStudyScroll: true,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe(
+      '?background-book=false&background-scroll=false&background-two-scrolls=true',
+    )
+    expect(
+      readPerkBrowserUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }),
+    ).toMatchObject({
+      shouldAllowBackgroundStudyBook: false,
+      shouldAllowBackgroundStudyScroll: false,
+      shouldAllowSecondBackgroundStudyScroll: true,
+    })
+  })
+
   test('ignores the removed combined origin and ancient scroll perk group filter', () => {
     expect(
       readPerkBrowserUrlState('?origin-scroll-perk-groups=true', {
@@ -280,6 +328,7 @@ describe('perk browser url state', () => {
         perkGroupOptionsByCategory,
       }),
     ).toMatchObject({
+      ...defaultBackgroundStudyUrlState,
       shouldIncludeAncientScrollPerkGroups: true,
       shouldIncludeOriginPerkGroups: false,
     })
@@ -292,6 +341,7 @@ describe('perk browser url state', () => {
         query: '',
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
         shouldIncludeAncientScrollPerkGroups: true,
         shouldIncludeOriginBackgrounds: false,
         shouldIncludeOriginPerkGroups: false,
@@ -323,6 +373,7 @@ describe('perk browser url state', () => {
           query: '',
           selectedCategoryNames: [],
           selectedPerkGroupIdsByCategory: {},
+          ...defaultBackgroundStudyUrlState,
           shouldIncludeAncientScrollPerkGroups: true,
           shouldIncludeOriginBackgrounds: false,
           shouldIncludeOriginPerkGroups: false,

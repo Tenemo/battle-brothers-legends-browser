@@ -10,6 +10,9 @@ export type PerkBrowserUrlState = {
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
+  shouldAllowBackgroundStudyBook: boolean
+  shouldAllowBackgroundStudyScroll: boolean
+  shouldAllowSecondBackgroundStudyScroll: boolean
   shouldIncludeAncientScrollPerkGroups: boolean
   shouldIncludeOriginBackgrounds: boolean
   shouldIncludeOriginPerkGroups: boolean
@@ -25,6 +28,9 @@ export type PerkBrowserUrlStateWriteOptions = {
   availableCategoryNames: string[]
   perksById: Map<string, LegendsPerkRecord>
   perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
+  shouldWriteBackgroundStudyBookParam?: boolean
+  shouldWriteBackgroundStudyScrollParam?: boolean
+  shouldWriteSecondBackgroundStudyScrollParam?: boolean
   shouldWriteAncientScrollPerkGroupsParam?: boolean
   shouldWriteOriginBackgroundsParam?: boolean
   shouldWriteOriginPerkGroupsParam?: boolean
@@ -33,6 +39,9 @@ export type PerkBrowserUrlStateWriteOptions = {
 const buildParamName = 'build'
 const categoryParamName = 'category'
 const ancientScrollPerkGroupsParamName = 'ancient-scroll-perk-groups'
+const backgroundStudyBookParamName = 'background-book'
+const backgroundStudyScrollParamName = 'background-scroll'
+const secondBackgroundStudyScrollParamName = 'background-two-scrolls'
 const originBackgroundsParamName = 'origin-backgrounds'
 const originPerkGroupsParamName = 'origin-perk-groups'
 const perkGroupParamKeyPrefix = 'group-'
@@ -146,6 +155,9 @@ function createDefaultUrlState(): PerkBrowserUrlState {
     query: '',
     selectedCategoryNames: [],
     selectedPerkGroupIdsByCategory: {},
+    shouldAllowBackgroundStudyBook: true,
+    shouldAllowBackgroundStudyScroll: true,
+    shouldAllowSecondBackgroundStudyScroll: false,
     shouldIncludeAncientScrollPerkGroups: true,
     shouldIncludeOriginBackgrounds: false,
     shouldIncludeOriginPerkGroups: false,
@@ -201,6 +213,21 @@ export function readPerkBrowserUrlState(
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   let selectedPerkGroupCategoryName: string | null = null
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
+  const shouldAllowBackgroundStudyBook = readBooleanSearchParam(
+    params,
+    backgroundStudyBookParamName,
+    true,
+  )
+  const shouldAllowBackgroundStudyScroll = readBooleanSearchParam(
+    params,
+    backgroundStudyScrollParamName,
+    true,
+  )
+  const shouldAllowSecondBackgroundStudyScroll = readBooleanSearchParam(
+    params,
+    secondBackgroundStudyScrollParamName,
+    false,
+  )
   const shouldIncludeAncientScrollPerkGroups = readBooleanSearchParam(
     params,
     ancientScrollPerkGroupsParamName,
@@ -265,6 +292,9 @@ export function readPerkBrowserUrlState(
       selectedCategoryNameSet.has(categoryName),
     ),
     selectedPerkGroupIdsByCategory,
+    shouldAllowBackgroundStudyBook,
+    shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll,
     shouldIncludeAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
     shouldIncludeOriginPerkGroups,
@@ -284,6 +314,11 @@ export function buildPerkBrowserUrlSearch(
   const normalizedQuery = collapseWhitespace(urlState.query)
   const shouldWriteAncientScrollPerkGroupsParam =
     options.shouldWriteAncientScrollPerkGroupsParam ?? true
+  const shouldWriteBackgroundStudyBookParam = options.shouldWriteBackgroundStudyBookParam ?? true
+  const shouldWriteBackgroundStudyScrollParam =
+    options.shouldWriteBackgroundStudyScrollParam ?? true
+  const shouldWriteSecondBackgroundStudyScrollParam =
+    options.shouldWriteSecondBackgroundStudyScrollParam ?? true
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
   const shouldWriteOriginPerkGroupsParam = options.shouldWriteOriginPerkGroupsParam ?? true
 
@@ -297,6 +332,21 @@ export function buildPerkBrowserUrlSearch(
 
   if (shouldWriteAncientScrollPerkGroupsParam && !urlState.shouldIncludeAncientScrollPerkGroups) {
     appendScalarQueryEntry(entries, ancientScrollPerkGroupsParamName, 'false')
+  }
+
+  if (shouldWriteBackgroundStudyBookParam && !urlState.shouldAllowBackgroundStudyBook) {
+    appendScalarQueryEntry(entries, backgroundStudyBookParamName, 'false')
+  }
+
+  if (shouldWriteBackgroundStudyScrollParam && !urlState.shouldAllowBackgroundStudyScroll) {
+    appendScalarQueryEntry(entries, backgroundStudyScrollParamName, 'false')
+  }
+
+  if (
+    shouldWriteSecondBackgroundStudyScrollParam &&
+    urlState.shouldAllowSecondBackgroundStudyScroll
+  ) {
+    appendScalarQueryEntry(entries, secondBackgroundStudyScrollParamName, 'true')
   }
 
   if (shouldWriteOriginBackgroundsParam && urlState.shouldIncludeOriginBackgrounds) {
@@ -354,6 +404,9 @@ export function buildPerkBrowserBuildUrlSearch(
       query: '',
       selectedCategoryNames: [],
       selectedPerkGroupIdsByCategory: {},
+      shouldAllowBackgroundStudyBook: true,
+      shouldAllowBackgroundStudyScroll: true,
+      shouldAllowSecondBackgroundStudyScroll: false,
       shouldIncludeAncientScrollPerkGroups: false,
       shouldIncludeOriginBackgrounds: false,
       shouldIncludeOriginPerkGroups: false,
@@ -363,6 +416,9 @@ export function buildPerkBrowserBuildUrlSearch(
       perksById,
       perkGroupOptionsByCategory: new Map(),
       shouldWriteAncientScrollPerkGroupsParam: false,
+      shouldWriteBackgroundStudyBookParam: false,
+      shouldWriteBackgroundStudyScrollParam: false,
+      shouldWriteSecondBackgroundStudyScrollParam: false,
       shouldWriteOriginBackgroundsParam: false,
       shouldWriteOriginPerkGroupsParam: false,
     },

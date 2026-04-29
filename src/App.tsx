@@ -109,6 +109,20 @@ function removeHiddenSelectedPerkGroupIds(
     : selectedPerkGroupIdsByCategory
 }
 
+function getSelectedPerkGroupIdsByCategorySignature(
+  selectedPerkGroupIdsByCategory: Record<string, string[]>,
+): string {
+  return Object.entries(selectedPerkGroupIdsByCategory)
+    .filter(([, selectedPerkGroupIds]) => selectedPerkGroupIds.length > 0)
+    .toSorted(([leftCategoryName], [rightCategoryName]) =>
+      compareCategoryNames(leftCategoryName, rightCategoryName),
+    )
+    .map(
+      ([categoryName, selectedPerkGroupIds]) => `${categoryName}:${selectedPerkGroupIds.join(',')}`,
+    )
+    .join('\u0000')
+}
+
 export default function App() {
   const initialUrlState = useInitialPerkBrowserUrlState({
     availableCategoryNames: allAvailableCategories,
@@ -126,6 +140,14 @@ export default function App() {
   const [selectedPerkGroupIdsByCategory, setSelectedPerkGroupIdsByCategory] = useState<
     Record<string, string[]>
   >(initialUrlState.selectedPerkGroupIdsByCategory)
+  const [shouldAllowBackgroundStudyBook, setShouldAllowBackgroundStudyBook] = useState(
+    initialUrlState.shouldAllowBackgroundStudyBook,
+  )
+  const [shouldAllowBackgroundStudyScroll, setShouldAllowBackgroundStudyScroll] = useState(
+    initialUrlState.shouldAllowBackgroundStudyScroll,
+  )
+  const [shouldAllowSecondBackgroundStudyScroll, setShouldAllowSecondBackgroundStudyScroll] =
+    useState(initialUrlState.shouldAllowSecondBackgroundStudyScroll)
   const [shouldIncludeOriginPerkGroups, setShouldIncludeOriginPerkGroups] = useState(
     initialUrlState.shouldIncludeOriginPerkGroups,
   )
@@ -194,6 +216,25 @@ export default function App() {
       }),
     [catalogPerks, query, selectedCategoryNames, selectedPerkGroupIdsByCategory],
   )
+  const visiblePerkResultSetKey = useMemo(
+    () =>
+      [
+        query,
+        selectedCategoryNames.join('\u0000'),
+        getSelectedPerkGroupIdsByCategorySignature(selectedPerkGroupIdsByCategory),
+        shouldIncludeAncientScrollPerkGroups ? 'ancient-scroll-perks' : '',
+        shouldIncludeOriginPerkGroups ? 'origin-perks' : '',
+        String(visiblePerks.length),
+      ].join('\u0001'),
+    [
+      query,
+      selectedCategoryNames,
+      selectedPerkGroupIdsByCategory,
+      shouldIncludeAncientScrollPerkGroups,
+      shouldIncludeOriginPerkGroups,
+      visiblePerks.length,
+    ],
+  )
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(
     () => visiblePerks[0]?.id ?? null,
   )
@@ -255,8 +296,18 @@ export default function App() {
   )
   const buildPlannerGroups = useMemo(() => getBuildPlannerGroups(pickedPerks), [pickedPerks])
   const backgroundFitView = useMemo(
-    () => backgroundFitEngine.getBackgroundFitView(pickedPerks),
-    [pickedPerks],
+    () =>
+      backgroundFitEngine.getBackgroundFitView(pickedPerks, {
+        shouldAllowBook: shouldAllowBackgroundStudyBook,
+        shouldAllowScroll: shouldAllowBackgroundStudyScroll,
+        shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
+      }),
+    [
+      pickedPerks,
+      shouldAllowBackgroundStudyBook,
+      shouldAllowBackgroundStudyScroll,
+      shouldAllowSecondBackgroundStudyScroll,
+    ],
   )
   const visiblePerkCountsByCategory = useMemo(
     () => getVisiblePerkCountsByCategory(visiblePerks),
@@ -348,6 +399,9 @@ export default function App() {
         setSelectedCategoryNames(urlState.selectedCategoryNames)
         setExpandedCategoryNames(urlState.selectedCategoryNames)
         setSelectedPerkGroupIdsByCategory(urlState.selectedPerkGroupIdsByCategory)
+        setShouldAllowBackgroundStudyBook(urlState.shouldAllowBackgroundStudyBook)
+        setShouldAllowBackgroundStudyScroll(urlState.shouldAllowBackgroundStudyScroll)
+        setShouldAllowSecondBackgroundStudyScroll(urlState.shouldAllowSecondBackgroundStudyScroll)
         setShouldIncludeOriginPerkGroups(urlState.shouldIncludeOriginPerkGroups)
         setShouldIncludeAncientScrollPerkGroups(urlState.shouldIncludeAncientScrollPerkGroups)
         setShouldIncludeOriginBackgrounds(urlState.shouldIncludeOriginBackgrounds)
@@ -364,6 +418,9 @@ export default function App() {
       query,
       selectedCategoryNames,
       selectedPerkGroupIdsByCategory,
+      shouldAllowBackgroundStudyBook,
+      shouldAllowBackgroundStudyScroll,
+      shouldAllowSecondBackgroundStudyScroll,
       shouldIncludeAncientScrollPerkGroups,
       shouldIncludeOriginBackgrounds,
       shouldIncludeOriginPerkGroups,
@@ -434,6 +491,24 @@ export default function App() {
 
   function handleAncientScrollPerkGroupsChange(shouldIncludeNextAncientScrollPerkGroups: boolean) {
     setShouldIncludeAncientScrollPerkGroups(shouldIncludeNextAncientScrollPerkGroups)
+  }
+
+  function handleBackgroundStudyScrollChange(shouldAllowNextBackgroundStudyScroll: boolean) {
+    setShouldAllowBackgroundStudyScroll(shouldAllowNextBackgroundStudyScroll)
+
+    if (!shouldAllowNextBackgroundStudyScroll) {
+      setShouldAllowSecondBackgroundStudyScroll(false)
+    }
+  }
+
+  function handleSecondBackgroundStudyScrollChange(
+    shouldAllowNextSecondBackgroundStudyScroll: boolean,
+  ) {
+    setShouldAllowSecondBackgroundStudyScroll(shouldAllowNextSecondBackgroundStudyScroll)
+
+    if (shouldAllowNextSecondBackgroundStudyScroll) {
+      setShouldAllowBackgroundStudyScroll(true)
+    }
   }
 
   function handleTogglePerkPicked(perkId: string) {
@@ -710,10 +785,16 @@ export default function App() {
           onOpenBuildPerkHover={openBuildPerkHover}
           onOpenBuildPerkTooltip={openBuildPerkTooltip}
           onOpenPerkGroupHover={openPerkGroupHover}
+          onBackgroundStudyBookChange={setShouldAllowBackgroundStudyBook}
+          onBackgroundStudyScrollChange={handleBackgroundStudyScrollChange}
           onOriginBackgroundsChange={setShouldIncludeOriginBackgrounds}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}
+          onSecondBackgroundStudyScrollChange={handleSecondBackgroundStudyScrollChange}
           onToggleExpanded={() => setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)}
           pickedPerkCount={pickedPerks.length}
+          shouldAllowBackgroundStudyBook={shouldAllowBackgroundStudyBook}
+          shouldAllowBackgroundStudyScroll={shouldAllowBackgroundStudyScroll}
+          shouldAllowSecondBackgroundStudyScroll={shouldAllowSecondBackgroundStudyScroll}
           shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 
@@ -758,6 +839,7 @@ export default function App() {
           setQuery={setQuery}
           shouldIncludeAncientScrollPerkGroups={shouldIncludeAncientScrollPerkGroups}
           shouldIncludeOriginPerkGroups={shouldIncludeOriginPerkGroups}
+          visiblePerkResultSetKey={visiblePerkResultSetKey}
           visiblePerks={visiblePerks}
         />
 

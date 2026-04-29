@@ -15,6 +15,10 @@ import {
   getCategoryPriority,
   isDynamicBackgroundCategoryName,
 } from './dynamic-background-categories'
+import {
+  isBuildReachableWithStudyResources,
+  type BackgroundStudyResourceFilter,
+} from './background-study-reachability'
 
 const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
   deterministicDynamicBackgroundCategoryNames,
@@ -86,7 +90,10 @@ type BackgroundFitEngine = {
     categoryName: string,
     perkGroupId: string,
   ) => number
-  getBackgroundFitView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitView
+  getBackgroundFitView: (
+    pickedPerks: LegendsPerkRecord[],
+    studyResourceFilter?: BackgroundStudyResourceFilter,
+  ) => BackgroundFitView
   getPerkBackgroundSources: (perk: LegendsPerkRecord) => LegendsPerkBackgroundSource[]
 }
 
@@ -1468,12 +1475,25 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         )
         .toSorted(comparePerkBackgroundSources)
     },
-    getBackgroundFitView(pickedPerks) {
+    getBackgroundFitView(pickedPerks, studyResourceFilter) {
       const { supportedBuildTargetPerkGroups, unsupportedBuildTargetPerkGroups } =
         getBuildTargetPerkGroups(pickedPerks)
 
       return {
         rankedBackgroundFits: backgroundProbabilityRecords
+          .filter(({ backgroundDefinition }) =>
+            studyResourceFilter === undefined ||
+            isBuildReachableWithStudyResources({
+              canUseNativeRequirements: (requirements) =>
+                getRequirementSubsetProbability({
+                  backgroundDefinition,
+                  context: backgroundProbabilityContext,
+                  requirements,
+                }) > 0,
+              filter: studyResourceFilter,
+              pickedPerks,
+            }),
+          )
           .map(
             ({ backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupKey }) => {
               const matches = normalizeBackgroundFitMatches(
