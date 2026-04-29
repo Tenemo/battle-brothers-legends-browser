@@ -108,8 +108,15 @@ function BackgroundFitMatchRow({
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
 }) {
   return (
@@ -214,8 +221,15 @@ export function BackgroundFitCard({
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onToggle: (backgroundFitKey: string) => void
   pickedPerkCount: number

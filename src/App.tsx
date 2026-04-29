@@ -33,7 +33,7 @@ import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-displa
 import { filterAndSortPerks } from './lib/perk-search'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
-  isOriginOrAncientScrollOnlyPerkGroupId,
+  shouldKeepPerkGroupWithOriginAndAncientScrollFilters,
 } from './lib/origin-and-ancient-scroll-perk-groups'
 import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
 import { cx } from './lib/class-names'
@@ -71,6 +71,44 @@ function getInitialBackgroundFitExpandedState() {
   return !window.matchMedia(mediumDesktopBackgroundFitMediaQuery).matches
 }
 
+function removeHiddenSelectedPerkGroupIds(
+  selectedPerkGroupIdsByCategory: Record<string, string[]>,
+  filters: {
+    shouldIncludeAncientScrollPerkGroups: boolean
+    shouldIncludeOriginPerkGroups: boolean
+  },
+): Record<string, string[]> {
+  let hasRemovedSelectedPerkGroupId = false
+  const visibleSelectedPerkGroupIdsByCategory: Record<string, string[]> = {}
+
+  for (const [categoryName, selectedPerkGroupIds] of Object.entries(
+    selectedPerkGroupIdsByCategory,
+  )) {
+    const visibleSelectedPerkGroupIds = selectedPerkGroupIds.filter((perkGroupId) =>
+      shouldKeepPerkGroupWithOriginAndAncientScrollFilters(perkGroupId, filters),
+    )
+
+    if (visibleSelectedPerkGroupIds.length !== selectedPerkGroupIds.length) {
+      hasRemovedSelectedPerkGroupId = true
+    }
+
+    if (visibleSelectedPerkGroupIds.length > 0) {
+      visibleSelectedPerkGroupIdsByCategory[categoryName] = visibleSelectedPerkGroupIds
+    }
+  }
+
+  if (
+    Object.keys(visibleSelectedPerkGroupIdsByCategory).length !==
+    Object.keys(selectedPerkGroupIdsByCategory).length
+  ) {
+    hasRemovedSelectedPerkGroupId = true
+  }
+
+  return hasRemovedSelectedPerkGroupId
+    ? visibleSelectedPerkGroupIdsByCategory
+    : selectedPerkGroupIdsByCategory
+}
+
 export default function App() {
   const initialUrlState = useInitialPerkBrowserUrlState({
     availableCategoryNames: allAvailableCategories,
@@ -88,10 +126,12 @@ export default function App() {
   const [selectedPerkGroupIdsByCategory, setSelectedPerkGroupIdsByCategory] = useState<
     Record<string, string[]>
   >(initialUrlState.selectedPerkGroupIdsByCategory)
-  const [
-    shouldIncludeOriginAndAncientScrollPerkGroups,
-    setShouldIncludeOriginAndAncientScrollPerkGroups,
-  ] = useState(initialUrlState.shouldIncludeOriginAndAncientScrollPerkGroups)
+  const [shouldIncludeOriginPerkGroups, setShouldIncludeOriginPerkGroups] = useState(
+    initialUrlState.shouldIncludeOriginPerkGroups,
+  )
+  const [shouldIncludeAncientScrollPerkGroups, setShouldIncludeAncientScrollPerkGroups] = useState(
+    initialUrlState.shouldIncludeAncientScrollPerkGroups,
+  )
   const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(
     initialUrlState.shouldIncludeOriginBackgrounds,
   )
@@ -105,6 +145,7 @@ export default function App() {
     clearBuildPerkTooltip,
     clearPerkGroupHover,
     clearPerkHover,
+    closeCategoryHover,
     closeBuildPerkHover,
     closeBuildPerkTooltip,
     closePerkGroupHover,
@@ -116,6 +157,7 @@ export default function App() {
     hoveredBuildPerkTooltipId,
     hoveredPerkGroupKey,
     hoveredPerkId,
+    openCategoryHover,
     openBuildPerkHover,
     openBuildPerkTooltip,
     openPerkGroupHover,
@@ -127,10 +169,11 @@ export default function App() {
   })
   const catalogPerks = useMemo(
     () =>
-      shouldIncludeOriginAndAncientScrollPerkGroups
-        ? allPerks
-        : getPerksWithOriginAndAncientScrollPerkGroupsFiltered(allPerks),
-    [shouldIncludeOriginAndAncientScrollPerkGroups],
+      getPerksWithOriginAndAncientScrollPerkGroupsFiltered(allPerks, {
+        shouldIncludeAncientScrollPerkGroups,
+        shouldIncludeOriginPerkGroups,
+      }),
+    [shouldIncludeAncientScrollPerkGroups, shouldIncludeOriginPerkGroups],
   )
   const categoryCounts = useMemo(() => getCategoryCounts(catalogPerks), [catalogPerks])
   const perkGroupOptionsByCategory = useMemo(
@@ -305,9 +348,8 @@ export default function App() {
         setSelectedCategoryNames(urlState.selectedCategoryNames)
         setExpandedCategoryNames(urlState.selectedCategoryNames)
         setSelectedPerkGroupIdsByCategory(urlState.selectedPerkGroupIdsByCategory)
-        setShouldIncludeOriginAndAncientScrollPerkGroups(
-          urlState.shouldIncludeOriginAndAncientScrollPerkGroups,
-        )
+        setShouldIncludeOriginPerkGroups(urlState.shouldIncludeOriginPerkGroups)
+        setShouldIncludeAncientScrollPerkGroups(urlState.shouldIncludeAncientScrollPerkGroups)
         setShouldIncludeOriginBackgrounds(urlState.shouldIncludeOriginBackgrounds)
         clearAllHover()
         resetShareBuildStatus()
@@ -322,8 +364,9 @@ export default function App() {
       query,
       selectedCategoryNames,
       selectedPerkGroupIdsByCategory,
-      shouldIncludeOriginAndAncientScrollPerkGroups,
+      shouldIncludeAncientScrollPerkGroups,
       shouldIncludeOriginBackgrounds,
+      shouldIncludeOriginPerkGroups,
     },
     {
       availableCategoryNames: allAvailableCategories,
@@ -366,6 +409,17 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    startTransition(() => {
+      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) =>
+        removeHiddenSelectedPerkGroupIds(currentSelectedPerkGroupIdsByCategory, {
+          shouldIncludeAncientScrollPerkGroups,
+          shouldIncludeOriginPerkGroups,
+        }),
+      )
+    })
+  }, [shouldIncludeAncientScrollPerkGroups, shouldIncludeOriginPerkGroups])
+
   function handleResetCategories() {
     startTransition(() => {
       setExpandedCategoryNames([])
@@ -374,29 +428,12 @@ export default function App() {
     })
   }
 
-  function handleOriginAndAncientScrollPerkGroupsChange(
-    shouldIncludeRestrictedPerkGroups: boolean,
-  ) {
-    startTransition(() => {
-      setShouldIncludeOriginAndAncientScrollPerkGroups(shouldIncludeRestrictedPerkGroups)
+  function handleOriginPerkGroupsChange(shouldIncludeNextOriginPerkGroups: boolean) {
+    setShouldIncludeOriginPerkGroups(shouldIncludeNextOriginPerkGroups)
+  }
 
-      if (shouldIncludeRestrictedPerkGroups) {
-        return
-      }
-
-      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) =>
-        Object.fromEntries(
-          Object.entries(currentSelectedPerkGroupIdsByCategory)
-            .map(([categoryName, selectedPerkGroupIds]) => [
-              categoryName,
-              selectedPerkGroupIds.filter(
-                (perkGroupId) => !isOriginOrAncientScrollOnlyPerkGroupId(perkGroupId),
-              ),
-            ])
-            .filter(([, selectedPerkGroupIds]) => selectedPerkGroupIds.length > 0),
-        ),
-      )
-    })
+  function handleAncientScrollPerkGroupsChange(shouldIncludeNextAncientScrollPerkGroups: boolean) {
+    setShouldIncludeAncientScrollPerkGroups(shouldIncludeNextAncientScrollPerkGroups)
   }
 
   function handleTogglePerkPicked(perkId: string) {
@@ -690,6 +727,8 @@ export default function App() {
           emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           hoveredPerkGroupKey={hoveredPerkGroupKey}
           onCategoryToggle={handleCategoryToggle}
+          onCloseCategoryHover={closeCategoryHover}
+          onOpenCategoryHover={openCategoryHover}
           onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
           onResetCategories={handleResetCategories}
           onPerkGroupSelect={handlePerkGroupSelect}
@@ -706,8 +745,9 @@ export default function App() {
           hoveredPerkId={hoveredPerkId}
           onClosePerkGroupHover={closePerkGroupHover}
           onCloseResultsPerkHover={closeResultsPerkHover}
-          onOriginAndAncientScrollPerkGroupsChange={handleOriginAndAncientScrollPerkGroupsChange}
+          onAncientScrollPerkGroupsChange={handleAncientScrollPerkGroupsChange}
           onInspectPerkGroup={handleInspectPerkGroup}
+          onOriginPerkGroupsChange={handleOriginPerkGroupsChange}
           onOpenPerkGroupHover={openPerkGroupHover}
           onOpenResultsPerkHover={openResultsPerkHover}
           onSelectPerk={setSelectedPerkId}
@@ -716,9 +756,8 @@ export default function App() {
           query={query}
           selectedPerk={selectedPerk}
           setQuery={setQuery}
-          shouldIncludeOriginAndAncientScrollPerkGroups={
-            shouldIncludeOriginAndAncientScrollPerkGroups
-          }
+          shouldIncludeAncientScrollPerkGroups={shouldIncludeAncientScrollPerkGroups}
+          shouldIncludeOriginPerkGroups={shouldIncludeOriginPerkGroups}
           visiblePerks={visiblePerks}
         />
 

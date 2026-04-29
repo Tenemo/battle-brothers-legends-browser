@@ -129,8 +129,9 @@ export function PerkResults({
   emphasizedPerkGroupKeys,
   onCloseResultsPerkHover,
   onClosePerkGroupHover,
+  onAncientScrollPerkGroupsChange,
   onInspectPerkGroup,
-  onOriginAndAncientScrollPerkGroupsChange,
+  onOriginPerkGroupsChange,
   onOpenResultsPerkHover,
   onOpenPerkGroupHover,
   onSelectPerk,
@@ -139,7 +140,8 @@ export function PerkResults({
   query,
   selectedPerk,
   setQuery,
-  shouldIncludeOriginAndAncientScrollPerkGroups,
+  shouldIncludeAncientScrollPerkGroups,
+  shouldIncludeOriginPerkGroups,
   visiblePerks,
   hoveredPerkId,
 }: {
@@ -148,10 +150,9 @@ export function PerkResults({
   hoveredPerkId: string | null
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onCloseResultsPerkHover: (perkId: string) => void
+  onAncientScrollPerkGroupsChange: (shouldIncludeAncientScrollPerkGroups: boolean) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onOriginAndAncientScrollPerkGroupsChange: (
-    shouldIncludeOriginAndAncientScrollPerkGroups: boolean,
-  ) => void
+  onOriginPerkGroupsChange: (shouldIncludeOriginPerkGroups: boolean) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOpenResultsPerkHover: (perkId: string) => void
   onSelectPerk: (perkId: string) => void
@@ -160,7 +161,8 @@ export function PerkResults({
   query: string
   selectedPerk: LegendsPerkRecord | null
   setQuery: (query: string) => void
-  shouldIncludeOriginAndAncientScrollPerkGroups: boolean
+  shouldIncludeAncientScrollPerkGroups: boolean
+  shouldIncludeOriginPerkGroups: boolean
   visiblePerks: LegendsPerkRecord[]
 }) {
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
@@ -187,10 +189,9 @@ export function PerkResults({
   const hiddenMobilePerkCount = isMobilePerkResultViewport
     ? Math.max(visiblePerks.length - displayedPerks.length, 0)
     : 0
-  const nextMobilePerkResultBatchSize = Math.min(
-    mobilePerkResultBatchSize,
-    hiddenMobilePerkCount,
-  )
+  const hasActivePerkSourceFilter =
+    shouldIncludeOriginPerkGroups || !shouldIncludeAncientScrollPerkGroups
+  const nextMobilePerkResultBatchSize = Math.min(mobilePerkResultBatchSize, hiddenMobilePerkCount)
 
   function handleShowMoreMobilePerkResults() {
     setMobilePerkResultWindow({
@@ -214,10 +215,7 @@ export function PerkResults({
     }
 
     handleMobilePerkResultMediaChange(mobilePerkResultMediaQueryList)
-    mobilePerkResultMediaQueryList.addEventListener(
-      'change',
-      handleMobilePerkResultMediaChange,
-    )
+    mobilePerkResultMediaQueryList.addEventListener('change', handleMobilePerkResultMediaChange)
 
     return () => {
       mobilePerkResultMediaQueryList.removeEventListener(
@@ -278,7 +276,7 @@ export function PerkResults({
                 aria-expanded={isPerkFilterMenuOpen}
                 aria-label="Filter perks"
                 className={backgroundFitStyles.backgroundFitFilterButton}
-                data-active-filter={shouldIncludeOriginAndAncientScrollPerkGroups}
+                data-active-filter={hasActivePerkSourceFilter}
                 data-perk-filter-button="true"
                 data-testid="perk-filter-button"
                 onClick={() =>
@@ -288,7 +286,7 @@ export function PerkResults({
               >
                 <FunnelIcon
                   className={backgroundFitStyles.backgroundFitFilterIcon}
-                  isFilled={shouldIncludeOriginAndAncientScrollPerkGroups}
+                  isFilled={hasActivePerkSourceFilter}
                   testId="perk-filter-icon"
                 />
               </button>
@@ -301,14 +299,21 @@ export function PerkResults({
                 >
                   <label className={backgroundFitStyles.backgroundFitFilterOption}>
                     <input
-                      checked={shouldIncludeOriginAndAncientScrollPerkGroups}
-                      data-testid="origin-scroll-perk-groups-checkbox"
-                      onChange={(event) =>
-                        onOriginAndAncientScrollPerkGroupsChange(event.target.checked)
-                      }
+                      checked={shouldIncludeOriginPerkGroups}
+                      data-testid="origin-perk-groups-checkbox"
+                      onChange={(event) => onOriginPerkGroupsChange(event.target.checked)}
                       type="checkbox"
                     />
-                    <span>Origin and ancient scroll perk groups</span>
+                    <span>Origin perks</span>
+                  </label>
+                  <label className={backgroundFitStyles.backgroundFitFilterOption}>
+                    <input
+                      checked={shouldIncludeAncientScrollPerkGroups}
+                      data-testid="ancient-scroll-perk-groups-checkbox"
+                      onChange={(event) => onAncientScrollPerkGroupsChange(event.target.checked)}
+                      type="checkbox"
+                    />
+                    <span>Ancient scroll perks</span>
                   </label>
                 </div>
               ) : null}

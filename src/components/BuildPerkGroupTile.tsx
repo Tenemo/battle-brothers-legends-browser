@@ -145,8 +145,12 @@ export function BuildPerkGroupTile({
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: BuildPerkPillSelection,
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   optionIconClassName?: string
   perks: BuildPerkGroupTilePerk[]
@@ -228,7 +232,11 @@ export function BuildPerkGroupTile({
         </div>
         <div className={styles.plannerGroupCardCopy}>
           <div className={styles.plannerSlotTopline}>
-            <strong className={styles.plannerSlotName} data-testid="planner-slot-name" title={groupLabel}>
+            <strong
+              className={styles.plannerSlotName}
+              data-testid="planner-slot-name"
+              title={groupLabel}
+            >
               {groupLabel}
             </strong>
             {metaLabel ? (

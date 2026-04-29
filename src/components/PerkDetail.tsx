@@ -28,8 +28,12 @@ type PerkDetailProps = {
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: BuildPerkPillSelection,
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onToggleExpanded: () => void
   onTogglePerkPicked: (perkId: string) => void
@@ -141,7 +145,6 @@ export function PerkDetail({
                 <div>
                   <p className={styles.eyebrow}>{selectedPerk.primaryCategoryName}</p>
                   <h2>{selectedPerk.perkName}</h2>
-                  <p className={styles.detailMeta}>{selectedPerk.categoryNames.join(', ')}</p>
                 </div>
               </div>
               <div className={styles.detailHeaderActions}>

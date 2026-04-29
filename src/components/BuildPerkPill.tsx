@@ -25,8 +25,12 @@ export function BuildPerkPill({
   onCloseHover: (perkId: string) => void
   onCloseTooltip: () => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenHover: (perkId: string) => void
-  onOpenTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onOpenTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: BuildPerkPillSelection,
+  ) => void
   perkGroupSelection?: BuildPerkPillSelection
   perkId: string
   perkName: string

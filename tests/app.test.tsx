@@ -9,7 +9,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'apprentice_background.nut',
     'paladin_background.nut',
   ]),
-  perkNamesForAppTests: new Set(['Berserk', 'Magic Missile']),
+  perkNamesForAppTests: new Set(['Ammunition Binding', 'Berserk', 'Magic Missile']),
 }))
 
 vi.mock('../src/data/legends-perks.json', async () => {
@@ -105,7 +105,7 @@ describe('app', () => {
     expect(perkSearchInput).toHaveFocus()
   })
 
-  test('excludes origin and ancient scroll perk groups from perk results by default', async () => {
+  test('splits origin and ancient scroll perk search filters', async () => {
     const user = userEvent.setup()
     render(<App />)
     const perkSearchInput = screen.getByLabelText('Search perks')
@@ -122,22 +122,58 @@ describe('app', () => {
     ).toHaveTextContent('Vicious')
     expect(
       within(berserkResultRow as HTMLElement).getByTestId('perk-placement-list'),
-    ).not.toHaveTextContent('Berserker')
+    ).toHaveTextContent('Berserker')
 
     await user.clear(perkSearchInput)
-    await user.type(perkSearchInput, 'Magic Missile')
+    await user.type(perkSearchInput, 'Ammunition Binding')
 
     expect(screen.getByText('No perks found')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Filter perks' }))
 
-    const restrictedPerkGroupsCheckbox = screen.getByRole('checkbox', {
-      name: 'Origin and ancient scroll perk groups',
+    const getOriginPerkGroupsCheckbox = () =>
+      screen.getByRole('checkbox', {
+        name: 'Origin perks',
+      })
+    const getAncientScrollPerkGroupsCheckbox = () =>
+      screen.getByRole('checkbox', {
+        name: 'Ancient scroll perks',
+      })
+
+    expect(getOriginPerkGroupsCheckbox()).not.toBeChecked()
+    expect(getAncientScrollPerkGroupsCheckbox()).toBeChecked()
+    expect(window.location.search).not.toContain('ancient-scroll-perk-groups')
+
+    await user.click(getAncientScrollPerkGroupsCheckbox())
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('ancient-scroll-perk-groups=false')
+    })
+    expect(getOriginPerkGroupsCheckbox()).not.toBeChecked()
+    expect(getAncientScrollPerkGroupsCheckbox()).not.toBeChecked()
+
+    await user.click(getOriginPerkGroupsCheckbox())
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('results-list')).getByRole('button', {
+          name: 'Inspect Ammunition Binding',
+        }),
+      ).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(window.location.search).toContain('origin-perk-groups=true')
+    })
+    expect(window.location.search).toContain('ancient-scroll-perk-groups=false')
+
+    await user.click(getAncientScrollPerkGroupsCheckbox())
+
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('ancient-scroll-perk-groups')
     })
 
-    expect(restrictedPerkGroupsCheckbox).not.toBeChecked()
-
-    await user.click(restrictedPerkGroupsCheckbox)
+    await user.clear(perkSearchInput)
+    await user.type(perkSearchInput, 'Magic Missile')
 
     await waitFor(() => {
       expect(
@@ -146,9 +182,15 @@ describe('app', () => {
         }),
       ).toBeInTheDocument()
     })
+    expect(window.location.search).toContain('origin-perk-groups=true')
+
+    await user.click(screen.getByRole('button', { name: 'Filter perks' }))
+    await user.click(getOriginPerkGroupsCheckbox())
+
     await waitFor(() => {
-      expect(window.location.search).toContain('origin-scroll-perk-groups=true')
+      expect(window.location.search).not.toContain('origin-perk-groups')
     })
+    expect(window.location.search).not.toContain('ancient-scroll-perk-groups')
   })
 
   test('shows the background search clear button only while search has text', async () => {

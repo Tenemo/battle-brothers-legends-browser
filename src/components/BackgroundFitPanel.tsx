@@ -46,8 +46,15 @@ export function BackgroundFitPanel({
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
@@ -262,7 +269,7 @@ export function BackgroundFitPanel({
               data-testid="background-fit-ranking-summary"
               hidden={hasActiveBackgroundFitSearch}
             >
-              Ranked by expected perks pickable first.
+              Ranked by expected perks pickable.
             </p>
           ) : (
             <div className={styles.backgroundFitEmptyState}>

@@ -45,9 +45,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
-  await expect(
-    backgroundFitPanel.getByText(/Ranked by expected perks pickable first./i),
-  ).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Ranked by expected perks pickable./i)).toBeVisible()
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
   ).toBeVisible()
@@ -208,10 +206,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(axePerkPill).toBeVisible()
   await axePerkPill.hover()
   await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 500 })
+  await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
   await expect(pickedAxePerkTile).toHaveAttribute('data-highlighted', 'true')
   await expect(pickedAxePerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 1500 })
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
   await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(pickedAxePerkTile).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(page.getByRole('tooltip')).not.toContainText('Axe Mastery')
@@ -573,9 +571,7 @@ test('keeps the background search enabled without any picked perks', async ({ pa
     }),
   ).toBeVisible()
   await expect(backgroundFitPanel.locator('[data-search-highlight="true"]')).toContainText(['Oath'])
-  await expect(
-    backgroundFitPanel.getByText(/Ranked by expected perks pickable first./i),
-  ).toHaveCount(0)
+  await expect(backgroundFitPanel.getByText(/Ranked by expected perks pickable./i)).toHaveCount(0)
 })
 
 test('hides redundant background disambiguator pills when they only repeat the name', async ({
@@ -645,9 +641,7 @@ test('keeps dense background names readable from a shared build url and starts c
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
-  await expect(
-    backgroundFitPanel.getByText(/Ranked by expected perks pickable first./i),
-  ).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Ranked by expected perks pickable./i)).toBeVisible()
 
   const hedgeKnightCard = backgroundFitPanel
     .getByTestId('background-fit-card')

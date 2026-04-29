@@ -1,6 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import {
   getCategoryOnlyEmphasisNames,
+  getEmphasizedCategoryNames,
   getEmphasizedPerkGroupKeys,
   getSelectedPerkGroupKeys,
 } from '../src/lib/use-perk-interaction-state'
@@ -27,6 +28,22 @@ describe('perk interaction state selectors', () => {
       getSortedSetValues(
         getCategoryOnlyEmphasisNames({
           selectedCategoryNames: ['Traits', 'Magic', 'Enemy', 'Weapon'],
+          selectedPerkGroupIdsByCategory: {
+            Enemy: [],
+            Magic: ['DeadeyeTree'],
+            Traits: ['CalmTree'],
+          },
+        }),
+      ),
+    ).toEqual(['Enemy', 'Weapon'])
+  })
+
+  test('combines durable category selections with the transient hovered category', () => {
+    expect(
+      getSortedSetValues(
+        getEmphasizedCategoryNames({
+          hoveredCategoryName: 'Weapon',
+          selectedCategoryNames: ['Traits', 'Magic', 'Enemy'],
           selectedPerkGroupIdsByCategory: {
             Enemy: [],
             Magic: ['DeadeyeTree'],

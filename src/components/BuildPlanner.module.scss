@@ -517,7 +517,7 @@
     min-height: 0;
     padding-top: var(--space-xs);
     color: var(--text-muted);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     font-weight: 600;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -663,7 +663,7 @@
     }
 
     &[data-tooltip-pending='true']::after {
-      animation: build-perk-tooltip-timer var(--motion-entry-duration) linear forwards;
+      animation: build-perk-tooltip-timer calc(var(--motion-entry-duration) * 2) linear forwards;
       opacity: 1;
     }
 
@@ -695,8 +695,7 @@
     min-height: calc(var(--planner-perk-row-min-height) - var(--primitive-length-2px));
     border: 0;
     border-radius: inherit;
-    padding:
-      var(--primitive-length-0-38rem) var(--primitive-length-2-34rem)
+    padding: var(--primitive-length-0-38rem) var(--primitive-length-0-46rem)
       var(--primitive-length-0-38rem) var(--primitive-length-0-46rem);
     background: transparent;
     color: inherit;
@@ -715,6 +714,18 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+  }
+
+  .plannerSlotPerk .plannerSlotRemoveButton {
+    background: var(--surface-overlay);
+    box-shadow: var(--shadow-selected-ring);
+    color: var(--text-primary);
+
+    &:hover,
+    &:focus-visible {
+      background: var(--surface-control-active);
+      color: var(--text-primary);
+    }
   }
 
   .plannerSlotPlaceholder {
@@ -970,7 +981,7 @@
     }
 
     &[data-tooltip-pending='true']::after {
-      animation: build-perk-tooltip-timer var(--motion-entry-duration) linear forwards;
+      animation: build-perk-tooltip-timer calc(var(--motion-entry-duration) * 2) linear forwards;
       opacity: 1;
     }
   }
@@ -1065,7 +1076,7 @@
 
     .plannerSlotPerkInspect {
       gap: var(--space-sm);
-      padding: var(--space-xs) var(--primitive-length-2-34rem) var(--space-xs) var(--space-sm);
+      padding: var(--space-xs) var(--space-sm);
     }
 
     .plannerGroupCardHeader {

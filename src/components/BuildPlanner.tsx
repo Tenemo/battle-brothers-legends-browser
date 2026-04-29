@@ -126,8 +126,12 @@ export function BuildPlanner({
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPlannerPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
   onLoadSavedBuild: (savedBuildId: string) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: PlannerPerkGroupSelection,
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onRemovePickedPerk: (perkId: string) => void
   onSaveCurrentBuild: (name: string) => Promise<void>

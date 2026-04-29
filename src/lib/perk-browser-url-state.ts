@@ -10,8 +10,9 @@ export type PerkBrowserUrlState = {
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
-  shouldIncludeOriginAndAncientScrollPerkGroups: boolean
+  shouldIncludeAncientScrollPerkGroups: boolean
   shouldIncludeOriginBackgrounds: boolean
+  shouldIncludeOriginPerkGroups: boolean
 }
 
 export type PerkBrowserUrlStateReadOptions = {
@@ -24,14 +25,16 @@ export type PerkBrowserUrlStateWriteOptions = {
   availableCategoryNames: string[]
   perksById: Map<string, LegendsPerkRecord>
   perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
-  shouldWriteOriginAndAncientScrollPerkGroupsParam?: boolean
+  shouldWriteAncientScrollPerkGroupsParam?: boolean
   shouldWriteOriginBackgroundsParam?: boolean
+  shouldWriteOriginPerkGroupsParam?: boolean
 }
 
 const buildParamName = 'build'
 const categoryParamName = 'category'
-const originAndAncientScrollPerkGroupsParamName = 'origin-scroll-perk-groups'
+const ancientScrollPerkGroupsParamName = 'ancient-scroll-perk-groups'
 const originBackgroundsParamName = 'origin-backgrounds'
+const originPerkGroupsParamName = 'origin-perk-groups'
 const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
@@ -143,8 +146,9 @@ function createDefaultUrlState(): PerkBrowserUrlState {
     query: '',
     selectedCategoryNames: [],
     selectedPerkGroupIdsByCategory: {},
-    shouldIncludeOriginAndAncientScrollPerkGroups: false,
+    shouldIncludeAncientScrollPerkGroups: true,
     shouldIncludeOriginBackgrounds: false,
+    shouldIncludeOriginPerkGroups: false,
   }
 }
 
@@ -197,14 +201,19 @@ export function readPerkBrowserUrlState(
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   let selectedPerkGroupCategoryName: string | null = null
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
-  const shouldIncludeOriginAndAncientScrollPerkGroups = readBooleanSearchParam(
+  const shouldIncludeAncientScrollPerkGroups = readBooleanSearchParam(
     params,
-    originAndAncientScrollPerkGroupsParamName,
-    false,
+    ancientScrollPerkGroupsParamName,
+    true,
   )
   const shouldIncludeOriginBackgrounds = readBooleanSearchParam(
     params,
     originBackgroundsParamName,
+    false,
+  )
+  const shouldIncludeOriginPerkGroups = readBooleanSearchParam(
+    params,
+    originPerkGroupsParamName,
     false,
   )
 
@@ -256,8 +265,9 @@ export function readPerkBrowserUrlState(
       selectedCategoryNameSet.has(categoryName),
     ),
     selectedPerkGroupIdsByCategory,
-    shouldIncludeOriginAndAncientScrollPerkGroups,
+    shouldIncludeAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
+    shouldIncludeOriginPerkGroups,
   }
 }
 
@@ -272,19 +282,21 @@ export function buildPerkBrowserUrlSearch(
   )
   let hasWrittenPerkGroup = false
   const normalizedQuery = collapseWhitespace(urlState.query)
-  const shouldWriteOriginAndAncientScrollPerkGroupsParam =
-    options.shouldWriteOriginAndAncientScrollPerkGroupsParam ?? true
+  const shouldWriteAncientScrollPerkGroupsParam =
+    options.shouldWriteAncientScrollPerkGroupsParam ?? true
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
+  const shouldWriteOriginPerkGroupsParam = options.shouldWriteOriginPerkGroupsParam ?? true
 
   if (normalizedQuery) {
     appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
   }
 
-  if (
-    shouldWriteOriginAndAncientScrollPerkGroupsParam &&
-    urlState.shouldIncludeOriginAndAncientScrollPerkGroups
-  ) {
-    appendScalarQueryEntry(entries, originAndAncientScrollPerkGroupsParamName, 'true')
+  if (shouldWriteOriginPerkGroupsParam && urlState.shouldIncludeOriginPerkGroups) {
+    appendScalarQueryEntry(entries, originPerkGroupsParamName, 'true')
+  }
+
+  if (shouldWriteAncientScrollPerkGroupsParam && !urlState.shouldIncludeAncientScrollPerkGroups) {
+    appendScalarQueryEntry(entries, ancientScrollPerkGroupsParamName, 'false')
   }
 
   if (shouldWriteOriginBackgroundsParam && urlState.shouldIncludeOriginBackgrounds) {
@@ -342,15 +354,17 @@ export function buildPerkBrowserBuildUrlSearch(
       query: '',
       selectedCategoryNames: [],
       selectedPerkGroupIdsByCategory: {},
-      shouldIncludeOriginAndAncientScrollPerkGroups: false,
+      shouldIncludeAncientScrollPerkGroups: false,
       shouldIncludeOriginBackgrounds: false,
+      shouldIncludeOriginPerkGroups: false,
     },
     {
       availableCategoryNames: [],
       perksById,
       perkGroupOptionsByCategory: new Map(),
-      shouldWriteOriginAndAncientScrollPerkGroupsParam: false,
+      shouldWriteAncientScrollPerkGroupsParam: false,
       shouldWriteOriginBackgroundsParam: false,
+      shouldWriteOriginPerkGroupsParam: false,
     },
   )
 }

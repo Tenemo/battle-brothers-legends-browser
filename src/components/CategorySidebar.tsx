@@ -16,6 +16,8 @@ type CategorySidebarProps = {
   categoryCounts: Map<string, number>
   hoveredPerkGroupKey: string | null
   onCategoryToggle: (categoryName: string) => void
+  onCloseCategoryHover: (categoryName: string) => void
+  onOpenCategoryHover: (categoryName: string) => void
   onResetCategoryPerkGroups: (categoryName: string) => void
   onResetCategories: () => void
   onPerkGroupSelect: (categoryName: string, perkGroupId: string) => void
@@ -55,6 +57,8 @@ export function CategorySidebar({
   categoryCounts,
   hoveredPerkGroupKey,
   onCategoryToggle,
+  onCloseCategoryHover,
+  onOpenCategoryHover,
   onResetCategoryPerkGroups,
   onResetCategories,
   onPerkGroupSelect,
@@ -94,7 +98,6 @@ export function CategorySidebar({
     >
       <div className={styles.panelHeading}>
         <h2>Categories</h2>
-        <p>Enable categories, then choose one perk group to focus the results.</p>
       </div>
       <button
         aria-label="Reset all category filters"
@@ -138,7 +141,11 @@ export function CategorySidebar({
               aria-pressed={isActive}
               className={styles.categoryChip}
               data-highlighted={shouldHighlightCategory}
+              onBlur={() => onCloseCategoryHover(availableCategoryName)}
               onClick={() => onCategoryToggle(availableCategoryName)}
+              onFocus={() => onOpenCategoryHover(availableCategoryName)}
+              onMouseEnter={() => onOpenCategoryHover(availableCategoryName)}
+              onMouseLeave={() => onCloseCategoryHover(availableCategoryName)}
               type="button"
             >
               <span className={styles.categoryChipStart}>

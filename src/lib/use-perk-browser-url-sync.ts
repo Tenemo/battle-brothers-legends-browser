@@ -26,8 +26,9 @@ export function usePerkBrowserUrlSync(
     query,
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
-    shouldIncludeOriginAndAncientScrollPerkGroups,
+    shouldIncludeAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
+    shouldIncludeOriginPerkGroups,
   } = urlState
 
   useEffect(() => {
@@ -41,8 +42,9 @@ export function usePerkBrowserUrlSync(
         query,
         selectedCategoryNames,
         selectedPerkGroupIdsByCategory,
-        shouldIncludeOriginAndAncientScrollPerkGroups,
+        shouldIncludeAncientScrollPerkGroups,
         shouldIncludeOriginBackgrounds,
+        shouldIncludeOriginPerkGroups,
       },
       {
         availableCategoryNames,
@@ -68,8 +70,9 @@ export function usePerkBrowserUrlSync(
     query,
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
-    shouldIncludeOriginAndAncientScrollPerkGroups,
+    shouldIncludeAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
+    shouldIncludeOriginPerkGroups,
   ])
 
   useEffect(() => {

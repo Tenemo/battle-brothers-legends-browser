@@ -96,9 +96,7 @@ test('resets the category sidebar scroll when switching active categories', asyn
     .toBeLessThanOrEqual(1)
 })
 
-test('excludes origin and ancient scroll perk groups from perk results by default', async ({
-  page,
-}) => {
+test('splits origin and ancient scroll perk search filters', async ({ page }) => {
   await gotoPerksBrowser(page)
 
   const resultsList = getResultsList(page)
@@ -107,16 +105,29 @@ test('excludes origin and ancient scroll perk groups from perk results by defaul
   await expect(filterPerksButton).toBeVisible()
   await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
   await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBeNull()
   await expect
-    .poll(() => new URL(page.url()).searchParams.get('origin-scroll-perk-groups'))
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
     .toBeNull()
+
+  await searchPerks(page, 'Ammunition Binding')
+
+  await expect(resultsList.getByRole('button', { name: 'Inspect Ammunition Binding' })).toHaveCount(
+    0,
+  )
+  await expect(page.getByText('No perks found')).toBeVisible()
 
   await searchPerks(page, 'Magic Missile Focus')
 
-  await expect(
-    resultsList.getByRole('button', { name: 'Inspect Magic Missile Focus' }),
-  ).toHaveCount(0)
-  await expect(page.getByText('No perks found')).toBeVisible()
+  const defaultMagicMissileFocusResultRow = resultsList
+    .getByRole('button', { name: 'Inspect Magic Missile Focus' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+  const defaultMagicMissileFocusPlacementList =
+    defaultMagicMissileFocusResultRow.getByTestId('perk-placement-list')
+
+  await expect(defaultMagicMissileFocusResultRow).toBeVisible()
+  await expect(defaultMagicMissileFocusPlacementList).toContainText('Evocation')
+  await expect(defaultMagicMissileFocusPlacementList).not.toContainText('Seer')
 
   await searchPerks(page, 'Berserk')
 
@@ -128,53 +139,178 @@ test('excludes origin and ancient scroll perk groups from perk results by defaul
   await expect(berserkResultRow).toBeVisible()
   await expect(berserkPlacementList).toContainText('Vicious')
   await expect(berserkPlacementList).toContainText('Aggressive')
-  await expect(berserkPlacementList).not.toContainText('Berserker')
+  await expect(berserkPlacementList).toContainText('Berserker')
 
   await filterPerksButton.click()
 
   const perkFiltersGroup = page.getByRole('group', { name: 'Perk filters' })
-  const restrictedPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
-    name: 'Origin and ancient scroll perk groups',
+  const originPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
+    name: 'Origin perks',
   })
-  const restrictedPerkGroupsCheckboxControl = perkFiltersGroup.locator(
-    'input[data-testid="origin-scroll-perk-groups-checkbox"]',
+  const ancientScrollPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
+    name: 'Ancient scroll perks',
+  })
+  const originPerkGroupsCheckboxControl = perkFiltersGroup.locator(
+    'input[data-testid="origin-perk-groups-checkbox"]',
   )
+  const ancientScrollPerkGroupsCheckboxControl = perkFiltersGroup.locator(
+    'input[data-testid="ancient-scroll-perk-groups-checkbox"]',
+  )
+  const filterOptions = [
+    {
+      checkboxControl: originPerkGroupsCheckboxControl,
+      label: perkFiltersGroup.getByText('Origin perks', { exact: true }),
+    },
+    {
+      checkboxControl: ancientScrollPerkGroupsCheckboxControl,
+      label: perkFiltersGroup.getByText('Ancient scroll perks', { exact: true }),
+    },
+  ] as const
 
-  await expect(restrictedPerkGroupsCheckbox).not.toBeChecked()
+  await expect(originPerkGroupsCheckbox).not.toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).toBeChecked()
+
+  for (const { checkboxControl, label } of filterOptions) {
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+
+        return checkboxBox === null
+          ? null
+          : {
+              height: Math.round(checkboxBox.height),
+              width: Math.round(checkboxBox.width),
+            }
+      })
+      .toEqual({
+        height: 16,
+        width: 16,
+      })
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+        const labelBox = await label.boundingBox()
+
+        if (checkboxBox === null || labelBox === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        return Math.abs(checkboxBox.y + checkboxBox.height / 2 - (labelBox.y + labelBox.height / 2))
+      })
+      .toBeLessThanOrEqual(1)
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+        const labelBox = await label.boundingBox()
+
+        if (checkboxBox === null || labelBox === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        return checkboxBox.y + checkboxBox.height / 2 - (labelBox.y + labelBox.height / 2)
+      })
+      .toBeLessThanOrEqual(-0.5)
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+        const labelBox = await label.boundingBox()
+
+        if (checkboxBox === null || labelBox === null) {
+          return Number.NEGATIVE_INFINITY
+        }
+
+        return checkboxBox.y + checkboxBox.height / 2 - (labelBox.y + labelBox.height / 2)
+      })
+      .toBeGreaterThanOrEqual(-1.75)
+  }
+
+  await ancientScrollPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).not.toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).not.toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBeNull()
   await expect
-    .poll(async () => {
-      const checkboxBox = await restrictedPerkGroupsCheckboxControl.boundingBox()
-
-      return checkboxBox === null
-        ? null
-        : {
-            height: Math.round(checkboxBox.height),
-            width: Math.round(checkboxBox.width),
-          }
-    })
-    .toEqual({
-      height: 16,
-      width: 16,
-    })
-
-  await restrictedPerkGroupsCheckbox.click()
-
-  await expect(restrictedPerkGroupsCheckbox).toBeChecked()
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('origin-scroll-perk-groups'))
-    .toBe('true')
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBe('false')
   await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
     'fill',
     'currentColor',
   )
-  await expect(berserkPlacementList).toContainText('Berserker')
 
   await searchPerks(page, 'Magic Missile Focus')
 
   await expect(
     resultsList.getByRole('button', { name: 'Inspect Magic Missile Focus' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
+
+  await originPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).not.toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBe('true')
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBe('false')
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
+
+  await searchPerks(page, 'Ammunition Binding')
+
+  const ammunitionBindingResultRow = resultsList
+    .getByRole('button', { name: 'Inspect Ammunition Binding' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+
+  await expect(ammunitionBindingResultRow).toBeVisible()
+  await expect(ammunitionBindingResultRow.getByTestId('perk-placement-list')).toContainText(
+    'ArcherCommand',
+  )
+
+  await searchPerks(page, 'Magic Missile Focus')
+
+  const magicMissileFocusResultRow = resultsList
+    .getByRole('button', { name: 'Inspect Magic Missile Focus' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+  const magicMissileFocusPlacementList =
+    magicMissileFocusResultRow.getByTestId('perk-placement-list')
+
+  await expect(magicMissileFocusResultRow).toBeVisible()
+  await expect(magicMissileFocusPlacementList).toContainText('Seer')
+  await expect(magicMissileFocusPlacementList).not.toContainText('Evocation')
+
+  await ancientScrollPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBe('true')
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBeNull()
+  await expect(magicMissileFocusPlacementList).toContainText('Evocation')
+  await expect(magicMissileFocusPlacementList).toContainText('Seer')
+
+  await originPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).not.toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBeNull()
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBeNull()
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
+
+  await searchPerks(page, 'Berserk')
+
+  const refreshedBerserkResultRow = resultsList
+    .getByRole('button', { exact: true, name: 'Inspect Berserk' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+  const refreshedBerserkPlacementList = refreshedBerserkResultRow.getByTestId('perk-placement-list')
+
+  await expect(refreshedBerserkPlacementList).toContainText('Berserker')
 
   const savedUrl = page.url()
   const sharedPage = await page.context().newPage()
@@ -184,12 +320,17 @@ test('excludes origin and ancient scroll perk groups from perk results by defaul
     await sharedPage.goto(savedUrl)
 
     await expect(
-      getResultsList(sharedPage).getByRole('button', { name: 'Inspect Magic Missile Focus' }),
+      getResultsList(sharedPage).getByRole('button', { exact: true, name: 'Inspect Berserk' }),
     ).toBeVisible()
     await sharedPage.getByRole('button', { name: 'Filter perks' }).click()
     await expect(
       sharedPage.getByRole('checkbox', {
-        name: 'Origin and ancient scroll perk groups',
+        name: 'Origin perks',
+      }),
+    ).not.toBeChecked()
+    await expect(
+      sharedPage.getByRole('checkbox', {
+        name: 'Ancient scroll perks',
       }),
     ).toBeChecked()
   } finally {

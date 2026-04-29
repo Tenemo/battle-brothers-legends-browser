@@ -435,11 +435,9 @@
       display: inline-flex;
       align-items: center;
       min-height: var(--space-3xl);
-      transform: translateY(var(--primitive-length-negative-0-02rem));
     }
 
-    input[data-testid='origin-backgrounds-checkbox'],
-    input[data-testid='origin-scroll-perk-groups-checkbox'] {
+    input[type='checkbox'] {
       appearance: none;
       box-sizing: border-box;
       display: grid;
@@ -464,6 +462,7 @@
       box-shadow: var(--shadow-checkbox);
       color: var(--accent-soft);
       cursor: pointer;
+      transform: translateY(var(--primitive-length-negative-1px));
       transition:
         border-color var(--motion-fast-duration) ease,
         background-color var(--motion-fast-duration) ease,
@@ -505,10 +504,8 @@
       }
     }
 
-    &:hover input[data-testid='origin-backgrounds-checkbox'],
-    &:hover input[data-testid='origin-scroll-perk-groups-checkbox'],
-    input[data-testid='origin-backgrounds-checkbox']:focus-visible,
-    input[data-testid='origin-scroll-perk-groups-checkbox']:focus-visible {
+    &:hover input[type='checkbox'],
+    input[type='checkbox']:focus-visible {
       border-color: var(--accent-color);
       background:
         linear-gradient(180deg, var(--primitive-color-rgb-255-255-255-alpha-0-06), transparent),
