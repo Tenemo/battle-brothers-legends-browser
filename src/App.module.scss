@@ -212,7 +212,8 @@
       var(--workspace-background-fit-column) var(--workspace-category-column) minmax(
         var(--primitive-length-20-625rem),
         0.96fr
-      ) var(--workspace-detail-column);
+      )
+      var(--workspace-detail-column);
     gap: var(--primitive-length-0-7rem);
     align-items: stretch;
     min-height: 0;
@@ -276,7 +277,8 @@
         var(--workspace-background-fit-column) var(--workspace-category-column) minmax(
           var(--primitive-length-18rem),
           1fr
-        ) var(--workspace-detail-column);
+        )
+        var(--workspace-detail-column);
       gap: var(--primitive-length-0-55rem);
     }
   }
@@ -291,7 +293,8 @@
         var(--workspace-background-fit-column) var(--workspace-category-column) minmax(
           var(--primitive-length-20-625rem),
           0.96fr
-        ) var(--workspace-detail-column);
+        )
+        var(--workspace-detail-column);
     }
   }
 

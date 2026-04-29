@@ -107,12 +107,6 @@
     }
   }
 
-  .detailItemMain {
-    display: flex;
-    gap: var(--space-icon-gap);
-    align-items: flex-start;
-  }
-
   .detailPlacementList {
     display: grid;
     gap: var(--space-md);
@@ -207,7 +201,6 @@
       }
     }
 
-    .detailItemMain,
     .detailPlacementList {
       gap: var(--space-sm);
     }

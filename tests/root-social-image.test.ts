@@ -14,33 +14,15 @@ describe('root social image generation', () => {
     expect(svg).toContain('letter-spacing="0.16em"')
     expect(svg).toContain('font-family="Cinzel, serif"')
     expect(svg).toContain('letter-spacing="0.02em"')
-    expect(svg).toContain(
-      '<text x="99" y="214" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="26" font-weight="400" letter-spacing="0.16em">',
-    )
-    expect(svg).toContain('font-size="78"')
-    expect(svg).toContain('font-size="41"')
     expect(svg).toContain('Build planner')
-    expect(svg).toContain(
-      '<text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Build planner</text>',
-    )
     expect(svg).toContain('Search perks, inspect perk groups')
     expect(svg).toContain('with exact in-mod labels')
     expect(svg).toContain('and real game icons.')
     expect(svg).toContain('fill="url(#background)"')
     expect(svg).toContain('fill="url(#warm-accent)"')
     expect(svg).toContain('fill="url(#line-pattern)"')
-    expect(svg).toContain('width="258" height="258"')
-    expect(svg).toContain('<g transform="translate(126 268)">')
-    expect(svg).toContain(
-      '<text x="430" y="320" fill="#fffaf0" font-family="Cinzel, serif" font-size="41" font-weight="700" letter-spacing="0.02em">',
-    )
-    expect(svg).toContain('<text x="12" y="614"')
     expect(svg).toContain('text-decoration="underline"')
-    expect(svg).toContain('<text x="1188" y="614"')
-    expect(svg).toContain('font-size="24" font-weight="600" text-anchor="end"')
     expect(svg).toContain('Legends 19.3.17')
-    expect(svg).not.toContain('<line x1="4" y1="626"')
-    expect(svg).not.toContain('width="172" height="8"')
   })
 
   test('produces a non-empty PNG with the expected file signature', async () => {

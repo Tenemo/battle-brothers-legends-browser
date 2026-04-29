@@ -79,7 +79,13 @@ export function GitHubIcon({ className }: { className: string }) {
   )
 }
 
-export function CategoryChevron({ className, isExpanded }: { className: string; isExpanded: boolean }) {
+export function CategoryChevron({
+  className,
+  isExpanded,
+}: {
+  className: string
+  isExpanded: boolean
+}) {
   return (
     <ChevronRight
       aria-hidden="true"

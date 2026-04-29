@@ -17,7 +17,6 @@ function getSavedBuildErrorMessage(error: unknown): string {
 export function useSavedBuilds({ referenceVersion }: { referenceVersion: string }): {
   deleteSavedBuild: (savedBuildId: string) => Promise<void>
   isSavedBuildsLoading: boolean
-  reloadSavedBuilds: () => Promise<void>
   saveCurrentBuild: (options: {
     name: string
     pickedPerkIds: string[]
@@ -138,7 +137,6 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
   return {
     deleteSavedBuild,
     isSavedBuildsLoading,
-    reloadSavedBuilds,
     saveCurrentBuild,
     savedBuildPersistenceState,
     savedBuilds,

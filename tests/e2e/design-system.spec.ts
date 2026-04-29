@@ -1,5 +1,10 @@
-import { expect, test, type Page } from '@playwright/test'
-import { addPerkToBuildFromResults, gotoPerksBrowser, searchPerks } from './support/perks-browser'
+import { expect, test } from '@playwright/test'
+import {
+  addPerkToBuildFromResults,
+  getResolvedCssBorderColor,
+  gotoPerksBrowser,
+  searchPerks,
+} from './support/perks-browser'
 
 function getPrimitiveStyleSnapshot() {
   function getElementStyle(selector: string) {
@@ -42,19 +47,6 @@ function getPrimitiveStyleSnapshot() {
     plannerButtonIcon: getElementStyle('[data-testid="clear-build-button"] svg'),
     plannerPill: getElementStyle('[data-testid="planner-pill"]'),
   }
-}
-
-async function getResolvedCssBorderColor(page: Page, cssBorderColorValue: string) {
-  return page.evaluate((borderColorValue) => {
-    const colorProbe = document.createElement('div')
-    colorProbe.style.borderColor = borderColorValue
-    document.body.append(colorProbe)
-    const resolvedColor = window.getComputedStyle(colorProbe).borderTopColor
-
-    colorProbe.remove()
-
-    return resolvedColor
-  }, cssBorderColorValue)
 }
 
 test('keeps repeated surfaces aligned through shared design primitives', async ({ page }) => {

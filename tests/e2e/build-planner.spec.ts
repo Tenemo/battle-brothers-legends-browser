@@ -2,15 +2,20 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
+  expectCssRgbColorsToMatch,
   expectNoDocumentHorizontalOverflow,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
+  getParsedCssRgbColor,
+  getResolvedCssBackgroundColor,
+  getResolvedCssBorderColor,
   getSidebarPerkGroupButton,
   gotoPerksBrowser,
   inspectPerkFromResults,
   mediumPerksBrowserViewport,
   searchPerks,
+  waitForCssRgbColor,
 } from './support/perks-browser'
 
 const manyPickedPerkNames = [
@@ -49,70 +54,6 @@ function createBuildUrl(perkNames: string[]): string {
     .join(',')
 
   return `/?build=${buildValue}`
-}
-
-function getParsedCssRgbColor(cssColor: string) {
-  const colorMatch = cssColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(0|1|0?\.\d+))?\)$/u)
-
-  if (!colorMatch) {
-    throw new Error(`Unable to parse CSS rgb color: ${cssColor}`)
-  }
-
-  return {
-    alpha: colorMatch[4] === undefined ? 1 : Number(colorMatch[4]),
-    blue: Number(colorMatch[3]),
-    green: Number(colorMatch[2]),
-    red: Number(colorMatch[1]),
-  }
-}
-
-function doCssRgbColorsMatch(actualColor: string, expectedColor: string) {
-  const actual = getParsedCssRgbColor(actualColor)
-  const expectedColorParts = getParsedCssRgbColor(expectedColor)
-
-  return (
-    actual.red === expectedColorParts.red &&
-    actual.green === expectedColorParts.green &&
-    actual.blue === expectedColorParts.blue &&
-    Math.abs(actual.alpha - expectedColorParts.alpha) <= 0.001
-  )
-}
-
-function expectCssRgbColorsToMatch(actualColor: string, expectedColor: string) {
-  expect(doCssRgbColorsMatch(actualColor, expectedColor)).toBe(true)
-}
-
-async function waitForCssRgbColor(
-  getCssColor: () => Promise<string>,
-  expectedColor: string,
-): Promise<void> {
-  await expect.poll(async () => doCssRgbColorsMatch(await getCssColor(), expectedColor)).toBe(true)
-}
-
-async function getResolvedCssBackgroundColor(page: Page, cssBackgroundValue: string) {
-  return page.evaluate((backgroundValue) => {
-    const colorProbe = document.createElement('div')
-    colorProbe.style.background = backgroundValue
-    document.body.append(colorProbe)
-    const resolvedColor = window.getComputedStyle(colorProbe).backgroundColor
-
-    colorProbe.remove()
-
-    return resolvedColor
-  }, cssBackgroundValue)
-}
-
-async function getResolvedCssBorderColor(page: Page, cssBorderColorValue: string) {
-  return page.evaluate((borderColorValue) => {
-    const colorProbe = document.createElement('div')
-    colorProbe.style.borderTopColor = borderColorValue
-    document.body.append(colorProbe)
-    const resolvedColor = window.getComputedStyle(colorProbe).borderTopColor
-
-    colorProbe.remove()
-
-    return resolvedColor
-  }, cssBorderColorValue)
 }
 
 async function getPickedPerkNameLayoutMetrics(pickedPerkTile: Locator) {

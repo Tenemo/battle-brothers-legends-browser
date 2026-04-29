@@ -4,7 +4,7 @@ import type {
   LegendsPerkRecord,
 } from '../types/legends-perks'
 
-export const originAndAncientScrollOnlyPerkGroupIds = new Set([
+const originAndAncientScrollOnlyPerkGroupIds = new Set([
   'ArcherCommandTree',
   'AssassinLeftoverTree',
   'BerserkerMagicTree',
@@ -12,16 +12,16 @@ export const originAndAncientScrollOnlyPerkGroupIds = new Set([
   'SeerMagicTree',
 ])
 
-export const originPerkGroupIds = new Set([
+const originPerkGroupIds = new Set([
   'ArcherCommandTree',
   'AssassinLeftoverTree',
   'BerserkerMagicTree',
   'SeerMagicTree',
 ])
 
-export const ancientScrollPerkGroupIds = new Set(['BerserkerMagicTree', 'EvocationMagicTree'])
+const ancientScrollPerkGroupIds = new Set(['BerserkerMagicTree', 'EvocationMagicTree'])
 
-export type OriginAndAncientScrollPerkGroupFilters = {
+type OriginAndAncientScrollPerkGroupFilters = {
   shouldIncludeAncientScrollPerkGroups: boolean
   shouldIncludeOriginPerkGroups: boolean
 }

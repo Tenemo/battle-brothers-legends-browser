@@ -107,7 +107,9 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     }
 
     const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
-    const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
+    const plannerBoard = document.querySelector(
+      '[data-testid="planner-board"]',
+    ) as HTMLElement | null
     const backgroundFitPanel = document.querySelector(
       '[data-testid="background-fit-panel"]',
     ) as HTMLElement | null
@@ -214,10 +216,7 @@ async function readRailControlMetrics(page: Page) {
         chevronStrokeWidth: Number(chevron.getAttribute('stroke-width')),
         chevronWidth: chevronBounds.width,
         originalDesktopRailThickness: readInheritedLengthInPixels(button, '--control-height-lg'),
-        originalMobileRailHeight: readInheritedLengthInPixels(
-          button,
-          '--primitive-length-3-25rem',
-        ),
+        originalMobileRailHeight: readInheritedLengthInPixels(button, '--primitive-length-3-25rem'),
       }
     }
 
@@ -314,7 +313,9 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
+        const plannerBoard = document.querySelector(
+          '[data-testid="planner-board"]',
+        ) as HTMLElement | null
 
         return plannerBoard === null
           ? Number.POSITIVE_INFINITY
@@ -398,9 +399,7 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     expect(desktopMetrics.perkRowPaddingBlock).toBeLessThanOrEqual(
       expectation.maximumPerkRowPaddingBlock,
     )
-    expect(desktopMetrics.perkRowIconWidth).toBeLessThanOrEqual(
-      expectation.maximumPerkRowIconWidth,
-    )
+    expect(desktopMetrics.perkRowIconWidth).toBeLessThanOrEqual(expectation.maximumPerkRowIconWidth)
     expect(desktopMetrics.perkPlacementIconWidth).toBeLessThanOrEqual(
       expectation.maximumPerkPlacementIconWidth,
     )
@@ -642,8 +641,16 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
   page,
 }) => {
   for (const expectation of [
-    { maximumSearchTop: 760, minimumPlannerBoardOverflow: 80, viewportSize: { height: 844, width: 390 } },
-    { maximumSearchTop: 700, minimumPlannerBoardOverflow: 80, viewportSize: { height: 568, width: 320 } },
+    {
+      maximumSearchTop: 760,
+      minimumPlannerBoardOverflow: 80,
+      viewportSize: { height: 844, width: 390 },
+    },
+    {
+      maximumSearchTop: 700,
+      minimumPlannerBoardOverflow: 80,
+      viewportSize: { height: 568, width: 320 },
+    },
   ]) {
     await page.setViewportSize(expectation.viewportSize)
     await page.goto(denseDesktopBuildUrl)
@@ -653,8 +660,12 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
 
     const denseMobileMetrics = await page.evaluate(() => {
       const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
-      const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
-      const searchInput = document.querySelector('[aria-label="Search perks"]') as HTMLElement | null
+      const plannerBoard = document.querySelector(
+        '[data-testid="planner-board"]',
+      ) as HTMLElement | null
+      const searchInput = document.querySelector(
+        '[aria-label="Search perks"]',
+      ) as HTMLElement | null
       const saveButton = document.querySelector(
         'button[aria-label="Save current build"]',
       ) as HTMLElement | null
@@ -715,7 +726,9 @@ test('lets the mobile document scroll when the pointer is over results', async (
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+        const resultsList = document.querySelector(
+          '[data-testid="results-list"]',
+        ) as HTMLElement | null
 
         if (resultsList === null) {
           throw new Error('Missing results list.')
@@ -738,9 +751,7 @@ test('keeps key mobile touch targets large enough', async ({ page }) => {
   }
 })
 
-test('keeps mobile background fit cards compact while preserving tap targets', async ({
-  page,
-}) => {
+test('keeps mobile background fit cards compact while preserving tap targets', async ({ page }) => {
   await page.setViewportSize({ height: 844, width: 390 })
   await page.goto(denseDesktopBuildUrl)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
