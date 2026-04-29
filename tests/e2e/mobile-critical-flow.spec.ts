@@ -6,12 +6,12 @@ import {
   getBuildPerksBar,
   getPerkDetailPanel,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   searchPerks,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 test('keeps the main build and filtering flow usable on mobile', async ({ page }) => {
-  await gotoPerksBrowser(page, { width: 390, height: 844 })
+  await gotoBuildPlanner(page, { width: 390, height: 844 })
   await expectNoDocumentHorizontalOverflow(page)
 
   await searchPerks(page, 'Axe Mastery')

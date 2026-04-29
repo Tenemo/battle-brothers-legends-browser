@@ -1,16 +1,16 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
-type PerksBrowserViewport = {
+type BuildPlannerViewport = {
   height: number
   width: number
 }
 
-const defaultPerksBrowserViewport = {
+const defaultBuildPlannerViewport = {
   height: 720,
   width: 900,
 } as const
 
-export const mediumPerksBrowserViewport = {
+export const mediumBuildPlannerViewport = {
   height: 720,
   width: 820,
 } as const
@@ -126,9 +126,9 @@ export function getSidebarPerkGroupButton(page: Page, perkGroupName: string): Lo
   })
 }
 
-export async function gotoPerksBrowser(
+export async function gotoBuildPlanner(
   page: Page,
-  viewport: PerksBrowserViewport = defaultPerksBrowserViewport,
+  viewport: BuildPlannerViewport = defaultBuildPlannerViewport,
 ): Promise<void> {
   await page.setViewportSize(viewport)
   await page.goto('/')

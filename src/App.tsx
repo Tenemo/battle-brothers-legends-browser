@@ -28,7 +28,7 @@ import {
   getVisiblePerkCountsByCategory,
 } from './lib/category-filter-model'
 import { compareCategoryNames } from './lib/dynamic-background-categories'
-import { buildPerkBrowserBuildUrlSearch } from './lib/perk-browser-url-state'
+import { createSharedBuildUrlSearch } from './lib/build-planner-url-state'
 import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
 import {
@@ -36,11 +36,11 @@ import {
   shouldKeepPerkGroupWithOriginAndAncientScrollFilters,
 } from './lib/origin-and-ancient-scroll-perk-groups'
 import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
-import { cx } from './lib/class-names'
+import { joinClassNames } from './lib/class-names'
 import {
-  usePerkBrowserUrlSync,
-  useInitialPerkBrowserUrlState,
-} from './lib/use-perk-browser-url-sync'
+  useBuildPlannerUrlSync,
+  useInitialBuildPlannerUrlState,
+} from './lib/use-build-planner-url-sync'
 import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
@@ -124,7 +124,7 @@ function getSelectedPerkGroupIdsByCategorySignature(
 }
 
 export default function App() {
-  const initialUrlState = useInitialPerkBrowserUrlState({
+  const initialUrlState = useInitialBuildPlannerUrlState({
     availableCategoryNames: allAvailableCategories,
     perks: allPerks,
     perkGroupOptionsByCategory: allPerkGroupOptionsByCategory,
@@ -252,7 +252,7 @@ export default function App() {
     [pickedPerkIds],
   )
   const buildShareSearch = useMemo(
-    () => buildPerkBrowserBuildUrlSearch(pickedPerkIds, allPerksById),
+    () => createSharedBuildUrlSearch(pickedPerkIds, allPerksById),
     [pickedPerkIds],
   )
   const hasPickedPerks = pickedPerks.length > 0
@@ -412,7 +412,7 @@ export default function App() {
     [clearAllHover, resetShareBuildStatus],
   )
 
-  usePerkBrowserUrlSync(
+  useBuildPlannerUrlSync(
     {
       pickedPerkIds,
       query,
@@ -581,9 +581,7 @@ export default function App() {
     }
 
     try {
-      await copyBuildShareUrl(
-        buildPerkBrowserBuildUrlSearch(savedBuild.availablePerkIds, allPerksById),
-      )
+      await copyBuildShareUrl(createSharedBuildUrlSearch(savedBuild.availablePerkIds, allPerksById))
       setSavedBuildOperationStatus('copied')
     } catch {
       setSavedBuildOperationStatus('copy-error')
@@ -683,7 +681,7 @@ export default function App() {
           <h1>Build planner</h1>
           <a
             aria-label="Open the Battle Brothers Legends mod repository on GitHub"
-            className={cx(styles.eyebrow, styles.heroBrand)}
+            className={joinClassNames(styles.eyebrow, styles.heroBrand)}
             href={legendsModRepositoryUrl}
             rel="noopener noreferrer"
             target="_blank"

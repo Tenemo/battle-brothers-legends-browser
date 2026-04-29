@@ -2,7 +2,7 @@ import legendsPerksDatasetJson from '../data/legends-perks.json'
 import type { RankedBackgroundFit } from './background-fit'
 import { createBackgroundFitEngine, getGuaranteedCoveredPickedPerkCount } from './background-fit'
 import { isOriginBackgroundFit } from './background-origin'
-import { buildPerkBrowserBuildUrlSearch, readPerkBrowserUrlState } from './perk-browser-url-state'
+import { createSharedBuildUrlSearch, readBuildPlannerUrlState } from './build-planner-url-state'
 import type { LegendsPerkRecord, LegendsPerksDataset } from '../types/legends-perks'
 
 export type BuildSharePreviewPerk = {
@@ -49,7 +49,7 @@ function getPerksFromPickedPerkIds(pickedPerkIds: string[]): LegendsPerkRecord[]
 }
 
 function getPickedPerkIdsFromSearch(search: string | URLSearchParams): string[] {
-  const urlState = readPerkBrowserUrlState(search.toString(), {
+  const urlState = readBuildPlannerUrlState(search.toString(), {
     availableCategoryNames: [],
     perks: allPerks,
     perkGroupOptionsByCategory: emptyPerkGroupOptionsByGroup,
@@ -59,7 +59,7 @@ function getPickedPerkIdsFromSearch(search: string | URLSearchParams): string[] 
 }
 
 function buildShareSearchFromPickedPerkIds(pickedPerkIds: string[]): string {
-  return buildPerkBrowserBuildUrlSearch(pickedPerkIds, allPerksById)
+  return createSharedBuildUrlSearch(pickedPerkIds, allPerksById)
 }
 
 function formatPerkListForSentence(perkNames: string[], maxVisiblePerks: number): string {

@@ -2,9 +2,9 @@ import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   getResolvedCssBorderColor,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   searchPerks,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 function getPrimitiveStyleSnapshot() {
   function getElementStyle(selector: string) {
@@ -50,7 +50,7 @@ function getPrimitiveStyleSnapshot() {
 }
 
 test('keeps repeated surfaces aligned through shared design primitives', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
   await page.mouse.move(0, 0)

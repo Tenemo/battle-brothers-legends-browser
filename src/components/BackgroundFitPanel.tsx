@@ -1,5 +1,5 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import type { BackgroundFitView } from '../lib/background-fit'
 import { isOriginBackgroundFit } from '../lib/background-origin'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
@@ -66,9 +66,7 @@ export function BackgroundFitPanel({
   onBackgroundStudyScrollChange: (shouldAllowBackgroundStudyScroll: boolean) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
-  onSecondBackgroundStudyScrollChange: (
-    shouldAllowSecondBackgroundStudyScroll: boolean,
-  ) => void
+  onSecondBackgroundStudyScrollChange: (shouldAllowSecondBackgroundStudyScroll: boolean) => void
   onToggleExpanded: () => void
   pickedPerkCount: number
   shouldAllowBackgroundStudyBook: boolean
@@ -307,8 +305,7 @@ export function BackgroundFitPanel({
                     <label className={styles.backgroundFitFilterOption}>
                       <input
                         checked={
-                          shouldAllowBackgroundStudyScroll &&
-                          shouldAllowSecondBackgroundStudyScroll
+                          shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll
                         }
                         data-testid="background-study-second-scroll-checkbox"
                         disabled={!shouldAllowBackgroundStudyScroll}
@@ -364,7 +361,7 @@ export function BackgroundFitPanel({
           )}
           <div
             aria-hidden={!isExpanded}
-            className={cx(styles.backgroundFitResultsScroll, 'app-scrollbar')}
+            className={joinClassNames(styles.backgroundFitResultsScroll, 'app-scrollbar')}
             data-scroll-container="true"
             data-testid="background-fit-panel-body"
             onScrollCapture={() => {

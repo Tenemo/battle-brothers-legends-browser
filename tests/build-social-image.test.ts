@@ -67,7 +67,7 @@ describe('build social image', () => {
     const svg = createBuildSocialImageSvg({
       ...payload,
       pickedPerkCount: 19,
-      pickedPerks: Array.from({ length: 19 }, (_, perkIndex) => ({
+      pickedPerks: Array.from({ length: 19 }, (_unusedValue, perkIndex) => ({
         iconPath: null,
         perkName: `Perk ${perkIndex + 1}`,
       })),

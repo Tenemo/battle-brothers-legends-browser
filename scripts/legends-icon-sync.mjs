@@ -1,5 +1,14 @@
 import { spawn } from 'node:child_process'
-import { access, copyFile, cp, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
+import {
+  access,
+  copyFile,
+  cp as copyDirectory,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm as removePath,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -318,7 +327,7 @@ export async function syncLegendsIcons({
       ? defaultStagingIconOutputDirectoryPath
       : `${outputDirectoryPath}-staging`
 
-  await rm(stagingOutputDirectoryPath, { force: true, recursive: true })
+  await removePath(stagingOutputDirectoryPath, { force: true, recursive: true })
   await mkdir(stagingOutputDirectoryPath, { recursive: true })
 
   try {
@@ -332,8 +341,8 @@ export async function syncLegendsIcons({
       outputDirectoryPath: stagingOutputDirectoryPath,
     })
 
-    await rm(outputDirectoryPath, { force: true, recursive: true })
-    await cp(stagingOutputDirectoryPath, outputDirectoryPath, { recursive: true })
+    await removePath(outputDirectoryPath, { force: true, recursive: true })
+    await copyDirectory(stagingOutputDirectoryPath, outputDirectoryPath, { recursive: true })
 
     return {
       archivePaths,
@@ -343,7 +352,7 @@ export async function syncLegendsIcons({
       outputDirectoryPath,
     }
   } finally {
-    await rm(extractionDirectoryPath, { force: true, recursive: true })
-    await rm(stagingOutputDirectoryPath, { force: true, recursive: true })
+    await removePath(extractionDirectoryPath, { force: true, recursive: true })
+    await removePath(stagingOutputDirectoryPath, { force: true, recursive: true })
   }
 }

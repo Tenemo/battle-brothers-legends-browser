@@ -1,5 +1,5 @@
 import { getPerkGroupHoverKey, renderGameIcon } from '../lib/perk-display'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import { BuildPerkPill, type BuildPerkPillSelection } from './BuildPerkPill'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
@@ -55,7 +55,7 @@ function renderPerkGroupOptionIcon({
 }) {
   const perkGroupKey = getPerkGroupHoverKey(perkGroupOption)
   const icon = renderGameIcon({
-    className: cx(
+    className: joinClassNames(
       sharedStyles.perkIcon,
       sharedStyles.perkIconGroup,
       styles.plannerGroupOptionIcon,
@@ -177,7 +177,7 @@ export function BuildPerkGroupTile({
 
   return (
     <article
-      className={cx(styles.plannerGroupCard, className)}
+      className={joinClassNames(styles.plannerGroupCard, className)}
       data-has-highlighted-perk={hasHighlightedPerk}
       data-highlighted={isHighlighted}
       data-planner-item="group-card"
@@ -241,7 +241,7 @@ export function BuildPerkGroupTile({
             </strong>
             {metaLabel ? (
               <span
-                className={cx(styles.plannerSlotGroupCount, metaClassName)}
+                className={joinClassNames(styles.plannerSlotGroupCount, metaClassName)}
                 data-testid={metaTestId ?? 'planner-slot-group-count'}
               >
                 {metaLabel}

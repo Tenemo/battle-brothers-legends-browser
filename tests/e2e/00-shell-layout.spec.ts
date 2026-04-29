@@ -8,9 +8,9 @@ import {
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   searchPerks,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 const denseDesktopBuildUrl =
   '/?build=Axe+Mastery,Mace+Mastery,Sword+Mastery,Recover,Berserk,Nimble,Dodge,Underdog,Battle+Flow,Killing+Frenzy,Rotation,Colossus'
@@ -291,7 +291,7 @@ async function readMobileTouchTargetMetrics(page: Page) {
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await expectViewportLocked(page)
   const buildPlanner = page.getByLabel('Build planner')
 
@@ -328,7 +328,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
 test('uses normal page scrolling on tablet widths instead of cramped viewport rows', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 720, width: 900 })
+  await gotoBuildPlanner(page, { height: 720, width: 900 })
   await expectNoDocumentHorizontalOverflow(page)
 
   await expect
@@ -358,7 +358,7 @@ test('keeps the below-desktop section order consistent across the mobile boundar
     { height: 720, width: 900 },
     { height: 720, width: 1279 },
   ]) {
-    await gotoPerksBrowser(page, viewportSize)
+    await gotoBuildPlanner(page, viewportSize)
     await expectNoDocumentHorizontalOverflow(page)
 
     const sectionTops = await readBelowDesktopSectionTops(page)
@@ -426,7 +426,7 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
 })
 
 test('keeps desktop side rails thin and mobile rails touchable', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const desktopRailMetrics = await readRailControlMetrics(page)
@@ -442,7 +442,7 @@ test('keeps desktop side rails thin and mobile rails touchable', async ({ page }
   expect(desktopRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
   expect(desktopRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 
-  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
 
   const mobileRailMetrics = await readRailControlMetrics(page)
 
@@ -520,7 +520,7 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
 test('uses normal page scrolling on mobile while keeping core controls usable', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 740, width: 360 })
+  await gotoBuildPlanner(page, { height: 740, width: 360 })
   await expectNoDocumentHorizontalOverflow(page)
 
   await expect
@@ -582,7 +582,7 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
 test('limits unfiltered phone results without restoring the nested scroll trap', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
   await expectNoDocumentHorizontalOverflow(page)
 
   await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toBeVisible()
@@ -625,7 +625,7 @@ test('limits unfiltered phone results without restoring the nested scroll trap',
   await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
   await expect(page.getByTestId('results-list').getByTestId('perk-row')).toHaveCount(1)
 
-  await gotoPerksBrowser(page, { height: 740, width: 761 })
+  await gotoBuildPlanner(page, { height: 740, width: 761 })
   await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
   await expect
     .poll(async () =>
@@ -701,7 +701,7 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
 })
 
 test('lets the mobile document scroll when the pointer is over results', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
   await expectNoDocumentHorizontalOverflow(page)
 
   const wheelTarget = await page.evaluate(() => {
@@ -741,7 +741,7 @@ test('lets the mobile document scroll when the pointer is over results', async (
 })
 
 test('keeps key mobile touch targets large enough', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
 
   const touchTargetMetrics = await readMobileTouchTargetMetrics(page)
 
@@ -798,7 +798,7 @@ test('keeps mobile background fit cards compact while preserving tap targets', a
 })
 
 test('keeps collapsed background fit content out of the keyboard order', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
   await page.getByRole('button', { name: 'Collapse background fit' }).click()

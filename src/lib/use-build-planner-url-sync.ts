@@ -1,24 +1,24 @@
 import { useEffect, useState } from 'react'
 import {
-  buildPerkBrowserUrlSearch,
-  readPerkBrowserUrlStateFromLocation,
-  type PerkBrowserUrlState,
-  type PerkBrowserUrlStateReadOptions,
-  type PerkBrowserUrlStateWriteOptions,
-} from './perk-browser-url-state'
+  createBuildPlannerUrlSearch,
+  readBuildPlannerUrlStateFromLocation,
+  type BuildPlannerUrlState,
+  type BuildPlannerUrlStateReadOptions,
+  type BuildPlannerUrlStateWriteOptions,
+} from './build-planner-url-state'
 
-export function useInitialPerkBrowserUrlState(
-  options: PerkBrowserUrlStateReadOptions,
-): PerkBrowserUrlState {
-  const [initialUrlState] = useState(() => readPerkBrowserUrlStateFromLocation(options))
+export function useInitialBuildPlannerUrlState(
+  options: BuildPlannerUrlStateReadOptions,
+): BuildPlannerUrlState {
+  const [initialUrlState] = useState(() => readBuildPlannerUrlStateFromLocation(options))
 
   return initialUrlState
 }
 
-export function usePerkBrowserUrlSync(
-  urlState: PerkBrowserUrlState,
-  options: PerkBrowserUrlStateWriteOptions,
-  onUrlStateChange?: (urlState: PerkBrowserUrlState) => void,
+export function useBuildPlannerUrlSync(
+  urlState: BuildPlannerUrlState,
+  options: BuildPlannerUrlStateWriteOptions,
+  onUrlStateChange?: (urlState: BuildPlannerUrlState) => void,
 ): void {
   const { availableCategoryNames, perkGroupOptionsByCategory, perksById } = options
   const {
@@ -39,7 +39,7 @@ export function usePerkBrowserUrlSync(
       return
     }
 
-    const nextSearch = buildPerkBrowserUrlSearch(
+    const nextSearch = createBuildPlannerUrlSearch(
       {
         pickedPerkIds,
         query,
@@ -93,7 +93,7 @@ export function usePerkBrowserUrlSync(
 
     function handlePopState() {
       handleUrlStateChange(
-        readPerkBrowserUrlStateFromLocation({
+        readBuildPlannerUrlStateFromLocation({
           availableCategoryNames,
           perks: [...perksById.values()],
           perkGroupOptionsByCategory,

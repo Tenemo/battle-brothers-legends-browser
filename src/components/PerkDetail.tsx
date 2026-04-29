@@ -5,7 +5,7 @@ import {
   renderGameIcon,
   type GroupedBackgroundSource,
 } from '../lib/perk-display'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
 import type { LegendsFavouredEnemyTarget, LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
@@ -122,7 +122,7 @@ export function PerkDetail({
       <div
         aria-hidden={!isExpanded}
         aria-live="polite"
-        className={cx(styles.detailPanelBody, 'app-scrollbar')}
+        className={joinClassNames(styles.detailPanelBody, 'app-scrollbar')}
         data-scroll-container="true"
         data-testid="perk-detail-panel-body"
         hidden={!isExpanded}
@@ -137,7 +137,7 @@ export function PerkDetail({
             <div className={styles.detailHeader}>
               <div className={styles.detailHeaderMain}>
                 {renderGameIcon({
-                  className: cx(sharedStyles.perkIcon, sharedStyles.perkIconLarge),
+                  className: joinClassNames(sharedStyles.perkIcon, sharedStyles.perkIconLarge),
                   iconPath: getPerkDisplayIconPath(selectedPerk),
                   label: `${selectedPerk.perkName} icon`,
                   testId: 'detail-perk-icon',

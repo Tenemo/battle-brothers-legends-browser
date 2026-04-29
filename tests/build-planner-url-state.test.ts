@@ -1,9 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 import {
-  buildPerkBrowserUrlSearch,
-  readPerkBrowserUrlState,
-} from '../src/lib/perk-browser-url-state'
+  createBuildPlannerUrlSearch,
+  readBuildPlannerUrlState,
+} from '../src/lib/build-planner-url-state'
 
 const samplePerks: LegendsPerkRecord[] = [
   {
@@ -120,9 +120,9 @@ const duplicateNamePerks: LegendsPerkRecord[] = [
 ]
 const duplicateNamePerksById = new Map(duplicateNamePerks.map((perk) => [perk.id, perk]))
 
-describe('perk browser url state', () => {
+describe('build planner url state', () => {
   test('serializes only one perk group with filters and build query params', () => {
-    const search = buildPerkBrowserUrlSearch(
+    const search = createBuildPlannerUrlSearch(
       {
         pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
         query: 'Perfect Focus',
@@ -150,7 +150,7 @@ describe('perk browser url state', () => {
 
   test('parses only one grouped readable perk group param', () => {
     expect(
-      readPerkBrowserUrlState(
+      readBuildPlannerUrlState(
         '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&group-magic=Deadeye&build=Clarity,Perfect+Focus',
         {
           availableCategoryNames,
@@ -174,7 +174,7 @@ describe('perk browser url state', () => {
 
   test('ignores unknown values, normalizes values, and infers categories from groups', () => {
     expect(
-      readPerkBrowserUrlState(
+      readBuildPlannerUrlState(
         '?category=traits,missing&group-traits=calm,calm,unknown&group-magic=deadeye&build=perfect-focus,perfect-focus,unknown,peaceable,Clarity&search=++Perfect+++Focus++',
         {
           availableCategoryNames,
@@ -197,7 +197,7 @@ describe('perk browser url state', () => {
   })
 
   test('serializes and restores the non-default origin background filter', () => {
-    const search = buildPerkBrowserUrlSearch(
+    const search = createBuildPlannerUrlSearch(
       {
         pickedPerkIds: [],
         query: '',
@@ -217,7 +217,7 @@ describe('perk browser url state', () => {
 
     expect(search).toBe('?origin-backgrounds=true')
     expect(
-      readPerkBrowserUrlState(search, {
+      readBuildPlannerUrlState(search, {
         availableCategoryNames,
         perks: samplePerks,
         perkGroupOptionsByCategory,
@@ -226,7 +226,7 @@ describe('perk browser url state', () => {
   })
 
   test('serializes and restores the non-default origin perk group filter', () => {
-    const search = buildPerkBrowserUrlSearch(
+    const search = createBuildPlannerUrlSearch(
       {
         pickedPerkIds: [],
         query: '',
@@ -246,7 +246,7 @@ describe('perk browser url state', () => {
 
     expect(search).toBe('?origin-perk-groups=true')
     expect(
-      readPerkBrowserUrlState(search, {
+      readBuildPlannerUrlState(search, {
         availableCategoryNames,
         perks: samplePerks,
         perkGroupOptionsByCategory,
@@ -255,7 +255,7 @@ describe('perk browser url state', () => {
   })
 
   test('serializes and restores the non-default disabled ancient scroll perk group filter', () => {
-    const search = buildPerkBrowserUrlSearch(
+    const search = createBuildPlannerUrlSearch(
       {
         pickedPerkIds: [],
         query: '',
@@ -275,7 +275,7 @@ describe('perk browser url state', () => {
 
     expect(search).toBe('?ancient-scroll-perk-groups=false')
     expect(
-      readPerkBrowserUrlState(search, {
+      readBuildPlannerUrlState(search, {
         availableCategoryNames,
         perks: samplePerks,
         perkGroupOptionsByCategory,
@@ -284,7 +284,7 @@ describe('perk browser url state', () => {
   })
 
   test('serializes and restores non-default background study resource filters', () => {
-    const search = buildPerkBrowserUrlSearch(
+    const search = createBuildPlannerUrlSearch(
       {
         pickedPerkIds: [],
         query: '',
@@ -308,7 +308,7 @@ describe('perk browser url state', () => {
       '?background-book=false&background-scroll=false&background-two-scrolls=true',
     )
     expect(
-      readPerkBrowserUrlState(search, {
+      readBuildPlannerUrlState(search, {
         availableCategoryNames,
         perks: samplePerks,
         perkGroupOptionsByCategory,
@@ -322,7 +322,7 @@ describe('perk browser url state', () => {
 
   test('ignores the removed combined origin and ancient scroll perk group filter', () => {
     expect(
-      readPerkBrowserUrlState('?origin-scroll-perk-groups=true', {
+      readBuildPlannerUrlState('?origin-scroll-perk-groups=true', {
         availableCategoryNames,
         perks: samplePerks,
         perkGroupOptionsByCategory,
@@ -335,7 +335,7 @@ describe('perk browser url state', () => {
   })
 
   test('serializes duplicate-name build perks with readable stable ids and restores both ids', () => {
-    const search = buildPerkBrowserUrlSearch(
+    const search = createBuildPlannerUrlSearch(
       {
         pickedPerkIds: ['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'],
         query: '',
@@ -357,7 +357,7 @@ describe('perk browser url state', () => {
       '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
     expect(
-      readPerkBrowserUrlState(search, {
+      readBuildPlannerUrlState(search, {
         availableCategoryNames,
         perks: duplicateNamePerks,
         perkGroupOptionsByCategory,
@@ -367,7 +367,7 @@ describe('perk browser url state', () => {
 
   test('omits the query string entirely when only default state needs to be shared', () => {
     expect(
-      buildPerkBrowserUrlSearch(
+      createBuildPlannerUrlSearch(
         {
           pickedPerkIds: [],
           query: '',

@@ -1,6 +1,6 @@
 import { type KeyboardEvent, useEffect, useId, useRef } from 'react'
 import { CircleAlert, RotateCcw, X } from 'lucide-react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import styles from './BuildPlanner.module.scss'
 
 function keepKeyboardFocusInsideDialog(event: KeyboardEvent<HTMLElement>) {
@@ -85,7 +85,7 @@ export function ClearBuildConfirmationDialog({
         </div>
         <div className={styles.clearBuildDialogActions}>
           <button
-            className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
+            className={joinClassNames(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
             onClick={onCancel}
             ref={keepBuildButtonRef}
             type="button"
@@ -94,7 +94,7 @@ export function ClearBuildConfirmationDialog({
             Keep build
           </button>
           <button
-            className={cx(styles.plannerActionButton, styles.clearBuildConfirmButton)}
+            className={joinClassNames(styles.plannerActionButton, styles.clearBuildConfirmButton)}
             onClick={onConfirm}
             type="button"
           >

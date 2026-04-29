@@ -1,11 +1,11 @@
 import type { LegendsPerkRecord } from '../types/legends-perks'
 
-export type PerkBrowserUrlPerkGroupOption = {
+export type BuildPlannerUrlPerkGroupOption = {
   perkGroupId: string
   perkGroupName: string
 }
 
-export type PerkBrowserUrlState = {
+export type BuildPlannerUrlState = {
   pickedPerkIds: string[]
   query: string
   selectedCategoryNames: string[]
@@ -18,16 +18,16 @@ export type PerkBrowserUrlState = {
   shouldIncludeOriginPerkGroups: boolean
 }
 
-export type PerkBrowserUrlStateReadOptions = {
+export type BuildPlannerUrlStateReadOptions = {
   availableCategoryNames: string[]
   perks: LegendsPerkRecord[]
-  perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
+  perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
 }
 
-export type PerkBrowserUrlStateWriteOptions = {
+export type BuildPlannerUrlStateWriteOptions = {
   availableCategoryNames: string[]
   perksById: Map<string, LegendsPerkRecord>
-  perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
+  perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
   shouldWriteBackgroundStudyBookParam?: boolean
   shouldWriteBackgroundStudyScrollParam?: boolean
   shouldWriteSecondBackgroundStudyScrollParam?: boolean
@@ -149,7 +149,7 @@ function appendGroupedQueryEntry(entries: string[], key: string, values: string[
   )
 }
 
-function createDefaultUrlState(): PerkBrowserUrlState {
+function createDefaultUrlState(): BuildPlannerUrlState {
   return {
     pickedPerkIds: [],
     query: '',
@@ -178,10 +178,10 @@ function readBooleanSearchParam(
   return !['0', 'false', 'no', 'off'].includes(collapseWhitespace(value).toLowerCase())
 }
 
-export function readPerkBrowserUrlState(
+export function readBuildPlannerUrlState(
   search: string,
-  options: PerkBrowserUrlStateReadOptions,
-): PerkBrowserUrlState {
+  options: BuildPlannerUrlStateReadOptions,
+): BuildPlannerUrlState {
   const params = new URLSearchParams(search)
   const categoryNameByLookupValue = new Map(
     options.availableCategoryNames.map((categoryName) => [
@@ -301,9 +301,9 @@ export function readPerkBrowserUrlState(
   }
 }
 
-export function buildPerkBrowserUrlSearch(
-  urlState: PerkBrowserUrlState,
-  options: PerkBrowserUrlStateWriteOptions,
+export function createBuildPlannerUrlSearch(
+  urlState: BuildPlannerUrlState,
+  options: BuildPlannerUrlStateWriteOptions,
 ): string {
   const entries: string[] = []
   const selectedCategoryNameSet = new Set(urlState.selectedCategoryNames)
@@ -394,11 +394,11 @@ export function buildPerkBrowserUrlSearch(
   return searchString ? `?${searchString}` : ''
 }
 
-export function buildPerkBrowserBuildUrlSearch(
+export function createSharedBuildUrlSearch(
   pickedPerkIds: string[],
   perksById: Map<string, LegendsPerkRecord>,
 ): string {
-  return buildPerkBrowserUrlSearch(
+  return createBuildPlannerUrlSearch(
     {
       pickedPerkIds,
       query: '',
@@ -425,12 +425,12 @@ export function buildPerkBrowserBuildUrlSearch(
   )
 }
 
-export function readPerkBrowserUrlStateFromLocation(
-  options: PerkBrowserUrlStateReadOptions,
-): PerkBrowserUrlState {
+export function readBuildPlannerUrlStateFromLocation(
+  options: BuildPlannerUrlStateReadOptions,
+): BuildPlannerUrlState {
   if (typeof window === 'undefined') {
     return createDefaultUrlState()
   }
 
-  return readPerkBrowserUrlState(window.location.search, options)
+  return readBuildPlannerUrlState(window.location.search, options)
 }

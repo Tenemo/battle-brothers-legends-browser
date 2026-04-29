@@ -5,16 +5,16 @@ import {
   enableCategory,
   getResultsList,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   inspectPerkFromResults,
   searchPerks,
   selectPerkGroup,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 test('switches active categories and scoped perk groups, then clears everything cleanly', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await enableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveText('Perk groups')
@@ -45,7 +45,7 @@ test('switches active categories and scoped perk groups, then clears everything 
 })
 
 test('keeps only one selected perk group when another group is selected', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await enableCategory(page, 'Traits')
   await selectPerkGroup(page, 'Calm')
@@ -69,7 +69,7 @@ test('keeps only one selected perk group when another group is selected', async 
 })
 
 test('resets the category sidebar scroll when switching active categories', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
 
   const categorySidebar = page.getByTestId('category-sidebar')
 
@@ -97,7 +97,7 @@ test('resets the category sidebar scroll when switching active categories', asyn
 })
 
 test('splits origin and ancient scroll perk search filters', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   const resultsList = getResultsList(page)
   const filterPerksButton = page.getByRole('button', { name: 'Filter perks' })
@@ -344,7 +344,7 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
 test('shows real effect previews for hooked perk descriptions instead of perk group text', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
   const resultsList = getResultsList(page)
 
   await searchPerks(page, 'Berserk')
@@ -373,7 +373,7 @@ test('shows real effect previews for hooked perk descriptions instead of perk gr
 })
 
 test('shows normalized mastery labels in the result list', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Axe Mastery')
 
@@ -387,7 +387,7 @@ test('shows normalized mastery labels in the result list', async ({ page }) => {
 test('reorders categories and perk groups around the active perk search query and highlights the match', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Shady')
 
@@ -410,7 +410,7 @@ test('reorders categories and perk groups around the active perk search query an
 })
 
 test('highlights the searched perk phrase in the visible perk results', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Axe')
 
@@ -421,7 +421,7 @@ test('highlights the searched perk phrase in the visible perk results', async ({
 })
 
 test('shows every matching perk group placement in the result list', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'ranger')
 
@@ -472,7 +472,7 @@ test('shows every matching perk group placement in the result list', async ({ pa
 })
 
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await page.getByTestId('hero').evaluate(async (element) => {
     await Promise.all(
       element.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
@@ -593,7 +593,7 @@ test('keeps search result and repository hover states fixed in place', async ({ 
 })
 
 test('keeps middle-of-word search highlights from adding visual gaps', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'tellige')
 
@@ -625,7 +625,7 @@ test('keeps middle-of-word search highlights from adding visual gaps', async ({ 
 test('shows picked categories and perk groups with stars and keeps picked result rows outlined while selection changes the background', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
   await getResultsList(page)

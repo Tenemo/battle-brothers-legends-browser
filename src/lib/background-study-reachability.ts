@@ -153,6 +153,7 @@ function isAncientScrollReachableRequirement(requirement: StudyReachabilityRequi
 function getPickedPerkRequirementOptions(
   pickedPerks: LegendsPerkRecord[],
 ): StudyReachabilityRequirement[][] {
+  const seenRequirementOptionKeys = new Set<string>()
   const pickedPerkRequirementOptions: StudyReachabilityRequirement[][] = []
 
   for (const pickedPerk of pickedPerks) {
@@ -177,7 +178,13 @@ function getPickedPerkRequirementOptions(
       })
     }
 
-    if (requirementOptions.length > 0) {
+    const requirementOptionKey = requirementOptions
+      .map((requirement) => createPerkGroupKey(requirement.categoryName, requirement.perkGroupId))
+      .toSorted()
+      .join(',')
+
+    if (requirementOptions.length > 0 && !seenRequirementOptionKeys.has(requirementOptionKey)) {
+      seenRequirementOptionKeys.add(requirementOptionKey)
       pickedPerkRequirementOptions.push(requirementOptions)
     }
   }
@@ -191,8 +198,58 @@ function getRequirementMapKey(requirementMap: Map<string, StudyReachabilityRequi
   return [...requirementMap.keys()].toSorted().join(',')
 }
 
-function getScrollAssignmentKey(scrollRequirementKeys: readonly string[]): string {
-  return [...scrollRequirementKeys].toSorted().join(',')
+function getUniqueReachableRequirementKeys({
+  isReachableRequirement,
+  pickedPerkRequirementOptions,
+}: {
+  isReachableRequirement: (requirement: StudyReachabilityRequirement) => boolean
+  pickedPerkRequirementOptions: StudyReachabilityRequirement[][]
+}): string[] {
+  const reachableRequirementKeys = new Set<string>()
+
+  for (const requirementOptions of pickedPerkRequirementOptions) {
+    for (const requirement of requirementOptions) {
+      if (isReachableRequirement(requirement)) {
+        reachableRequirementKeys.add(
+          createPerkGroupKey(requirement.categoryName, requirement.perkGroupId),
+        )
+      }
+    }
+  }
+
+  return [...reachableRequirementKeys].toSorted()
+}
+
+function getScrollRequirementKeySets(
+  scrollRequirementKeys: string[],
+  scrollSlotCount: number,
+): string[][] {
+  const scrollRequirementKeySets: string[][] = [[]]
+  const subset: string[] = []
+  const maximumSubsetSize = Math.min(scrollSlotCount, scrollRequirementKeys.length)
+
+  function visit(startIndex: number, subsetSize: number): void {
+    if (subset.length === subsetSize) {
+      scrollRequirementKeySets.push([...subset])
+      return
+    }
+
+    for (
+      let candidateIndex = startIndex;
+      candidateIndex <= scrollRequirementKeys.length - (subsetSize - subset.length);
+      candidateIndex += 1
+    ) {
+      subset.push(scrollRequirementKeys[candidateIndex])
+      visit(candidateIndex + 1, subsetSize)
+      subset.pop()
+    }
+  }
+
+  for (let subsetSize = 1; subsetSize <= maximumSubsetSize; subsetSize += 1) {
+    visit(0, subsetSize)
+  }
+
+  return scrollRequirementKeySets
 }
 
 export function isBuildReachableWithStudyResources({
@@ -211,8 +268,26 @@ export function isBuildReachableWithStudyResources({
   }
 
   const scrollSlotCount = getScrollSlotCount(filter)
-  const failedStateKeys = new Set<string>()
   const nativeRequirementResultByKey = new Map<string, boolean>()
+  const bookRequirementKeys = filter.shouldAllowBook
+    ? [
+        null,
+        ...getUniqueReachableRequirementKeys({
+          isReachableRequirement: isSkillBookReachableRequirement,
+          pickedPerkRequirementOptions,
+        }),
+      ]
+    : [null]
+  const scrollRequirementKeySets =
+    scrollSlotCount > 0
+      ? getScrollRequirementKeySets(
+          getUniqueReachableRequirementKeys({
+            isReachableRequirement: isAncientScrollReachableRequirement,
+            pickedPerkRequirementOptions,
+          }),
+          scrollSlotCount,
+        )
+      : [[]]
 
   function canUseNativeRequirementMap(
     nativeRequirementMap: Map<string, StudyReachabilityRequirement>,
@@ -230,102 +305,126 @@ export function isBuildReachableWithStudyResources({
     return result
   }
 
-  function visit({
-    assignedBookRequirementKey,
-    assignedScrollRequirementKeys,
-    nativeRequirementMap,
-    pickedPerkIndex,
-  }: {
-    assignedBookRequirementKey: string | null
-    assignedScrollRequirementKeys: string[]
-    nativeRequirementMap: Map<string, StudyReachabilityRequirement>
-    pickedPerkIndex: number
-  }): boolean {
-    const stateKey = [
-      pickedPerkIndex,
-      getRequirementMapKey(nativeRequirementMap),
-      assignedBookRequirementKey ?? '',
-      getScrollAssignmentKey(assignedScrollRequirementKeys),
-    ].join('|')
+  function canUseNativeOptionGroups(
+    nativeOptionGroups: StudyReachabilityRequirement[][],
+  ): boolean {
+    const failedNativeStateKeys = new Set<string>()
+    const possibleNativeOptionGroups = nativeOptionGroups
+      .map((nativeOptionGroup) =>
+        nativeOptionGroup.filter((requirement) =>
+          canUseNativeRequirementMap(
+            new Map([[createPerkGroupKey(requirement.categoryName, requirement.perkGroupId), requirement]]),
+          ),
+        ),
+      )
+      .toSorted((leftOptions, rightOptions) => leftOptions.length - rightOptions.length)
 
-    if (failedStateKeys.has(stateKey)) {
+    if (possibleNativeOptionGroups.some((nativeOptionGroup) => nativeOptionGroup.length === 0)) {
       return false
     }
 
-    if (pickedPerkIndex === pickedPerkRequirementOptions.length) {
-      return canUseNativeRequirementMap(nativeRequirementMap)
-    }
+    function visitNative({
+      nativeOptionGroupIndex,
+      nativeRequirementMap,
+    }: {
+      nativeOptionGroupIndex: number
+      nativeRequirementMap: Map<string, StudyReachabilityRequirement>
+    }): boolean {
+      const stateKey = `${nativeOptionGroupIndex}|${getRequirementMapKey(nativeRequirementMap)}`
 
-    const requirementOptions = pickedPerkRequirementOptions[pickedPerkIndex]
+      if (failedNativeStateKeys.has(stateKey)) {
+        return false
+      }
 
-    for (const requirement of requirementOptions) {
-      const requirementKey = createPerkGroupKey(requirement.categoryName, requirement.perkGroupId)
-      const nextNativeRequirementMap = new Map(nativeRequirementMap)
-      nextNativeRequirementMap.set(requirementKey, requirement)
-
-      if (
-        visit({
-          assignedBookRequirementKey,
-          assignedScrollRequirementKeys,
-          nativeRequirementMap: nextNativeRequirementMap,
-          pickedPerkIndex: pickedPerkIndex + 1,
-        })
-      ) {
+      if (nativeOptionGroupIndex === possibleNativeOptionGroups.length) {
         return true
       }
 
+      const currentNativeOptionGroup = possibleNativeOptionGroups[nativeOptionGroupIndex]
+
       if (
-        filter.shouldAllowBook &&
-        isSkillBookReachableRequirement(requirement) &&
-        (assignedBookRequirementKey === null || assignedBookRequirementKey === requirementKey) &&
-        visit({
-          assignedBookRequirementKey: requirementKey,
-          assignedScrollRequirementKeys,
+        currentNativeOptionGroup.some((requirement) =>
+          nativeRequirementMap.has(
+            createPerkGroupKey(requirement.categoryName, requirement.perkGroupId),
+          ),
+        )
+      ) {
+        return visitNative({
+          nativeOptionGroupIndex: nativeOptionGroupIndex + 1,
           nativeRequirementMap,
-          pickedPerkIndex: pickedPerkIndex + 1,
         })
-      ) {
-        return true
       }
 
-      if (scrollSlotCount > 0 && isAncientScrollReachableRequirement(requirement)) {
-        const hasAssignedScrollRequirement =
-          assignedScrollRequirementKeys.includes(requirementKey)
-        const canAssignAdditionalScrollRequirement =
-          assignedScrollRequirementKeys.length < scrollSlotCount
+      for (const requirement of currentNativeOptionGroup) {
+        const requirementKey = createPerkGroupKey(requirement.categoryName, requirement.perkGroupId)
+        const nextNativeRequirementMap = new Map(nativeRequirementMap)
+        nextNativeRequirementMap.set(requirementKey, requirement)
 
         if (
-          (hasAssignedScrollRequirement || canAssignAdditionalScrollRequirement) &&
-          visit({
-            assignedBookRequirementKey,
-            assignedScrollRequirementKeys: hasAssignedScrollRequirement
-              ? assignedScrollRequirementKeys
-              : [...assignedScrollRequirementKeys, requirementKey].toSorted(),
-            nativeRequirementMap,
-            pickedPerkIndex: pickedPerkIndex + 1,
+          canUseNativeRequirementMap(nextNativeRequirementMap) &&
+          visitNative({
+            nativeOptionGroupIndex: nativeOptionGroupIndex + 1,
+            nativeRequirementMap: nextNativeRequirementMap,
           })
         ) {
           return true
         }
       }
+
+      failedNativeStateKeys.add(stateKey)
+      return false
     }
 
-    failedStateKeys.add(stateKey)
-    return false
+    return visitNative({
+      nativeOptionGroupIndex: 0,
+      nativeRequirementMap: new Map(),
+    })
+  }
+
+  function canStudyAssignmentsReachBuild({
+    assignedBookRequirementKey,
+    assignedScrollRequirementKeys,
+  }: {
+    assignedBookRequirementKey: string | null
+    assignedScrollRequirementKeys: string[]
+  }): boolean {
+    const studyRequirementKeys = new Set([
+      ...(assignedBookRequirementKey === null ? [] : [assignedBookRequirementKey]),
+      ...assignedScrollRequirementKeys,
+    ])
+    const nativeOptionGroups = pickedPerkRequirementOptions.filter((requirementOptions) =>
+      requirementOptions.every(
+        (requirement) =>
+          !studyRequirementKeys.has(
+            createPerkGroupKey(requirement.categoryName, requirement.perkGroupId),
+          ),
+      ),
+    )
+
+    return canUseNativeOptionGroups(nativeOptionGroups)
   }
 
   /*
-   * The search chooses one valid perk-group placement for each picked perk. A branch can cover
-   * that placement natively, with the single skill-book slot, or with one of the limited ancient
-   * scroll slots. Only the native branch accumulates requirements for the background probability
-   * engine; book and scroll branches consume their item slots instead. This prevents alternate
-   * placements from being counted as simultaneous requirements and keeps the expensive native
-   * joint-probability check memoized by the exact native requirement set.
+   * The search first enumerates the small set of item assignments that matter for the current
+   * picked perks: no book or one book group, and zero to the allowed number of distinct scroll
+   * groups. For each assignment, any picked perk with at least one placement covered by an item is
+   * already satisfied. The remaining picked perks are solved as native background requirements,
+   * choosing exactly one placement per perk and memoizing the expensive joint native check by the
+   * exact chosen requirement set. This keeps alternate placements from becoming simultaneous
+   * requirements and avoids branching over every picked perk's book and scroll choices.
    */
-  return visit({
-    assignedBookRequirementKey: null,
-    assignedScrollRequirementKeys: [],
-    nativeRequirementMap: new Map(),
-    pickedPerkIndex: 0,
-  })
+  for (const assignedBookRequirementKey of bookRequirementKeys) {
+    for (const assignedScrollRequirementKeys of scrollRequirementKeySets) {
+      if (
+        canStudyAssignmentsReachBuild({
+          assignedBookRequirementKey,
+          assignedScrollRequirementKeys,
+        })
+      ) {
+        return true
+      }
+    }
+  }
+
+  return false
 }

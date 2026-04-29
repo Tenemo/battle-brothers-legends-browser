@@ -1,6 +1,6 @@
 import { type MouseEvent, useId, useRef, useState } from 'react'
 import { Check, CircleAlert, Copy, FolderOpen, RotateCcw, Save } from 'lucide-react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import type { BuildPlannerGroupedPerkGroup } from '../lib/build-planner'
 import { getAnchoredTooltipStyle } from '../lib/perk-display'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
@@ -235,7 +235,7 @@ export function BuildPlanner({
             </p>
             <button
               aria-label="Save current build"
-              className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
               disabled={!hasPickedPerks}
               onClick={handleOpenSavedBuildsDialog}
               type="button"
@@ -245,7 +245,7 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Open saved builds"
-              className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
               onClick={handleOpenSavedBuildsDialog}
               type="button"
             >
@@ -254,7 +254,7 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Copy build link"
-              className={cx(styles.plannerActionButton, styles.shareBuildButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.shareBuildButton)}
               data-status={shareBuildStatus === 'idle' ? undefined : shareBuildStatus}
               disabled={pickedPerks.length === 0}
               onClick={() => {
@@ -277,7 +277,7 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Clear build"
-              className={cx(styles.plannerActionButton, styles.clearBuildActionButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.clearBuildActionButton)}
               data-testid="clear-build-button"
               disabled={pickedPerks.length === 0}
               onClick={() => setIsClearBuildDialogOpen(true)}

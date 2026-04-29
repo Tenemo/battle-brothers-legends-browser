@@ -1,6 +1,6 @@
 import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState } from 'react'
 import { Copy, Download, Save, Trash2, X } from 'lucide-react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
@@ -244,7 +244,7 @@ export function SavedBuildsDialog({
           </div>
           <button
             aria-label="Close saved builds"
-            className={cx(styles.plannerActionButton, styles.savedBuildsCloseButton)}
+            className={joinClassNames(styles.plannerActionButton, styles.savedBuildsCloseButton)}
             onClick={onClose}
             type="button"
           >
@@ -266,7 +266,7 @@ export function SavedBuildsDialog({
               value={buildName}
             />
             <button
-              className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
               disabled={!hasPickedPerks || isSaving}
               type="submit"
             >
@@ -287,7 +287,7 @@ export function SavedBuildsDialog({
         ) : null}
 
         <div
-          className={cx(styles.savedBuildsList, 'app-scrollbar')}
+          className={joinClassNames(styles.savedBuildsList, 'app-scrollbar')}
           data-scroll-container="true"
           data-testid="saved-builds-list"
         >
@@ -326,7 +326,10 @@ export function SavedBuildsDialog({
                   <div className={styles.savedBuildCardActions}>
                     <button
                       aria-label={`Load saved build ${savedBuild.name}`}
-                      className={cx(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
+                      className={joinClassNames(
+                        styles.plannerActionButton,
+                        styles.savedBuildPrimaryButton,
+                      )}
                       disabled={savedBuild.availablePerkIds.length === 0 || isPending}
                       onClick={() => {
                         onLoadSavedBuild(savedBuild.id)
@@ -351,7 +354,10 @@ export function SavedBuildsDialog({
                     </button>
                     <button
                       aria-label={`Delete saved build ${savedBuild.name}`}
-                      className={cx(styles.plannerActionButton, styles.savedBuildDeleteButton)}
+                      className={joinClassNames(
+                        styles.plannerActionButton,
+                        styles.savedBuildDeleteButton,
+                      )}
                       disabled={isPending}
                       onClick={() => {
                         void handleDeleteSavedBuild(savedBuild.id)

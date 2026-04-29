@@ -1,6 +1,6 @@
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 
-type PerkBrowserFilters = {
+type PerkSearchFilters = {
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
@@ -149,7 +149,7 @@ function comparePerksAlphabetically(
   )
 }
 
-function perkMatchesFilters(perk: LegendsPerkRecord, filters: PerkBrowserFilters): boolean {
+function perkMatchesFilters(perk: LegendsPerkRecord, filters: PerkSearchFilters): boolean {
   if (filters.selectedCategoryNames.length > 0) {
     const matchingSelectedCategoryNames = filters.selectedCategoryNames.filter((categoryName) =>
       perk.categoryNames.includes(categoryName),
@@ -239,7 +239,7 @@ function getSearchScore(perk: LegendsPerkRecord, query: string): number | null {
 
 export function filterAndSortPerks(
   perks: LegendsPerkRecord[],
-  filters: PerkBrowserFilters,
+  filters: PerkSearchFilters,
 ): LegendsPerkRecord[] {
   const visiblePerks = perks.filter((perk) => perkMatchesFilters(perk, filters))
   const normalizedQuery = normalizeSearchValue(filters.query)

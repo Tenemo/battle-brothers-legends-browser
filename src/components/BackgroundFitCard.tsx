@@ -16,7 +16,7 @@ import {
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import { BackgroundFitAccordionChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
@@ -55,7 +55,7 @@ export function BackgroundFitTargetPerkGroup({
     <li className={styles.backgroundFitTarget}>
       <div className={styles.backgroundFitPerkGroupMain}>
         {renderGameIcon({
-          className: cx(
+          className: joinClassNames(
             sharedStyles.perkIcon,
             sharedStyles.perkIconGroup,
             styles.backgroundFitPerkGroupIcon,
@@ -174,7 +174,7 @@ function BackgroundFitMetricBadge({
   return (
     <span
       aria-label={`${label}. ${tooltip}`}
-      className={cx(styles.backgroundFitMetricBadge, className)}
+      className={joinClassNames(styles.backgroundFitMetricBadge, className)}
       data-testid="background-fit-summary-badge"
       title={tooltip}
     >
@@ -276,7 +276,7 @@ export function BackgroundFitCard({
                 {rank + 1}
               </span>
               {renderGameIcon({
-                className: cx(sharedStyles.perkIcon, styles.backgroundFitIcon),
+                className: joinClassNames(sharedStyles.perkIcon, styles.backgroundFitIcon),
                 iconPath: backgroundFit.iconPath,
                 label: `${backgroundFit.backgroundName} background icon`,
                 testId: 'background-fit-icon',

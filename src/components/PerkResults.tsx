@@ -5,7 +5,7 @@ import {
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 import { BuildToggleButton, ClearableSearchField, FunnelIcon } from './SharedControls'
@@ -67,7 +67,11 @@ function renderPerkPlacementChip({
       type="button"
     >
       {renderGameIcon({
-        className: cx(sharedStyles.perkIcon, sharedStyles.perkIconGroup, styles.perkPlacementIcon),
+        className: joinClassNames(
+          sharedStyles.perkIcon,
+          sharedStyles.perkIconGroup,
+          styles.perkPlacementIcon,
+        ),
         iconPath: placement.perkGroupIconPath ?? getPerkDisplayIconPath(perk),
         label: `${placement.perkGroupName} perk group icon`,
         testId: 'perk-placement-icon',
@@ -322,7 +326,7 @@ export function PerkResults({
       </div>
 
       <ul
-        className={cx(styles.resultsList, 'app-scrollbar')}
+        className={joinClassNames(styles.resultsList, 'app-scrollbar')}
         data-scroll-container="true"
         data-testid="results-list"
       >
@@ -369,7 +373,7 @@ export function PerkResults({
                   />
                   <div className={styles.perkRowLayout}>
                     {renderGameIcon({
-                      className: cx(
+                      className: joinClassNames(
                         sharedStyles.perkIcon,
                         sharedStyles.perkIconSmall,
                         styles.perkRowIcon,
@@ -392,7 +396,7 @@ export function PerkResults({
                     </div>
                     <div className={styles.perkRowContextSlot}>
                       <div
-                        className={cx(styles.perkContext, styles.perkPlacementList)}
+                        className={joinClassNames(styles.perkContext, styles.perkPlacementList)}
                         data-testid="perk-placement-list"
                       >
                         {renderPerkPlacements({

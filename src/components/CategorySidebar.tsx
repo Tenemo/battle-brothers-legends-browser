@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import { BuildStar, CategoryChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './CategorySidebar.module.scss'
@@ -35,7 +35,7 @@ function renderPickedStars(keyPrefix: string, count: number) {
 
   return (
     <span aria-hidden="true" className={styles.categoryChipPickedStars}>
-      {Array.from({ length: count }, (_, pickedPerkIndex) => (
+      {Array.from({ length: count }, (_unusedValue, pickedPerkIndex) => (
         <BuildStar
           className={styles.categoryChipPickedStar}
           isPicked
@@ -90,7 +90,7 @@ export function CategorySidebar({
 
   return (
     <aside
-      className={cx(styles.sidebar, 'app-scrollbar')}
+      className={joinClassNames(styles.sidebar, 'app-scrollbar')}
       aria-label="Perk categories"
       data-scroll-container="true"
       data-testid="category-sidebar"

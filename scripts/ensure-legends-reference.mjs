@@ -1,5 +1,14 @@
 import { createWriteStream } from 'node:fs'
-import { access, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import {
+  access,
+  cp as copyDirectory,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm as removePath,
+  writeFile,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
@@ -234,16 +243,24 @@ async function populateCurrentReferenceDirectory({
       'scripts',
     )
 
-    await rm(currentDirectoryPath, { force: true, recursive: true })
+    await removePath(currentDirectoryPath, { force: true, recursive: true })
     await mkdir(currentDirectoryPath, { recursive: true })
-    await cp(extractedReferenceRootDirectoryPath, path.join(currentDirectoryPath, 'mod_legends'), {
-      recursive: true,
-    })
+    await copyDirectory(
+      extractedReferenceRootDirectoryPath,
+      path.join(currentDirectoryPath, 'mod_legends'),
+      {
+        recursive: true,
+      },
+    )
 
     if (await pathExists(extractedScriptsDirectoryPath)) {
-      await cp(extractedScriptsDirectoryPath, path.join(currentDirectoryPath, 'scripts'), {
-        recursive: true,
-      })
+      await copyDirectory(
+        extractedScriptsDirectoryPath,
+        path.join(currentDirectoryPath, 'scripts'),
+        {
+          recursive: true,
+        },
+      )
     }
 
     const referenceMetadata = createReferenceMetadata({
@@ -259,7 +276,7 @@ async function populateCurrentReferenceDirectory({
 
     return referenceMetadata
   } finally {
-    await rm(temporaryDirectoryPath, { force: true, recursive: true })
+    await removePath(temporaryDirectoryPath, { force: true, recursive: true })
   }
 }
 

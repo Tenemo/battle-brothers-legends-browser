@@ -5,16 +5,16 @@ import {
   getBuildPerksBar,
   getBuildSharedGroupsList,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   inspectPerkFromResults,
   searchPerks,
   selectPerkGroup,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 test('stores readable filters and build state in the url and restores them on a shared link', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await selectPerkGroup(page, 'Calm')

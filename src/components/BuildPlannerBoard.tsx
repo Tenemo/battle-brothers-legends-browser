@@ -1,5 +1,5 @@
 import { useId, type RefObject } from 'react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import type {
   BuildPlannerGroupedPerkGroup,
   BuildPlannerPerkGroupRequirementOption,
@@ -127,7 +127,7 @@ function PlannerSectionToggle({
       aria-controls={controlledSectionId}
       aria-expanded={isExpanded}
       aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
-      className={cx(styles.plannerRowLabel, styles.plannerSectionToggle)}
+      className={joinClassNames(styles.plannerRowLabel, styles.plannerSectionToggle)}
       data-collapsed-chip={isCollapsedChip}
       data-testid="planner-section-toggle"
       id={buttonId}
@@ -290,7 +290,7 @@ export function BuildPlannerBoard({
 
   return (
     <div
-      className={cx(styles.plannerBoard, 'app-scrollbar')}
+      className={joinClassNames(styles.plannerBoard, 'app-scrollbar')}
       data-planner-board="true"
       data-scroll-container="true"
       data-testid="planner-board"
@@ -331,7 +331,7 @@ export function BuildPlannerBoard({
         </div>
         <div className={styles.plannerTrackScroll}>
           <div
-            className={cx(styles.plannerTrack, styles.plannerTrackPerks)}
+            className={joinClassNames(styles.plannerTrack, styles.plannerTrackPerks)}
             data-planner-collection="picked-perks"
             data-testid="build-perks-bar"
           >
@@ -346,7 +346,7 @@ export function BuildPlannerBoard({
 
                 return (
                   <div
-                    className={cx(styles.plannerSlot, styles.plannerSlotPerk)}
+                    className={joinClassNames(styles.plannerSlot, styles.plannerSlotPerk)}
                     data-highlighted={isHighlighted}
                     data-planner-item="picked-perk"
                     data-testid="planner-slot-perk"
@@ -394,7 +394,7 @@ export function BuildPlannerBoard({
                       type="button"
                     >
                       {renderGameIcon({
-                        className: cx(sharedStyles.perkIcon, sharedStyles.perkIconTiny),
+                        className: joinClassNames(sharedStyles.perkIcon, sharedStyles.perkIconTiny),
                         iconPath: getPerkDisplayIconPath(pickedPerk),
                         label: `${pickedPerk.perkName} build icon`,
                         testId: 'planner-picked-perk-icon',
@@ -408,7 +408,10 @@ export function BuildPlannerBoard({
                     </button>
                     <button
                       aria-label={`Remove ${pickedPerk.perkName} from build`}
-                      className={cx(sharedStyles.searchClearButton, styles.plannerSlotRemoveButton)}
+                      className={joinClassNames(
+                        sharedStyles.searchClearButton,
+                        styles.plannerSlotRemoveButton,
+                      )}
                       data-testid="planner-slot-remove-button"
                       onClick={() => onRemovePickedPerk(pickedPerk.id)}
                       type="button"
@@ -420,7 +423,7 @@ export function BuildPlannerBoard({
               })
             ) : (
               <div
-                className={cx(styles.plannerSlot, styles.plannerSlotPlaceholder)}
+                className={joinClassNames(styles.plannerSlot, styles.plannerSlotPlaceholder)}
                 data-placeholder="true"
               >
                 <div className={styles.plannerSlotCopy}>

@@ -13,7 +13,7 @@ export default defineConfig({
   webServer: {
     command: developmentServerCommand,
     port: 4173,
-    reuseExistingServer: true,
+    reuseExistingServer: false,
     timeout: 120000,
   },
 })

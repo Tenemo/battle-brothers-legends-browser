@@ -8,19 +8,21 @@ import {
   getBuildIndividualGroupsList,
   getResultsList,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
-  mediumPerksBrowserViewport,
+  gotoBuildPlanner,
+  mediumBuildPlannerViewport,
   searchPerks,
   selectPerkGroup,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 const denseSharedBuildUrl =
-  '/?category=Other&group-other=Forceful,Ranger,Shady&build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Fortified+Mind,Hold+Out,Underdog,Assured+Conquest'
+  '/?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Fortified+Mind,Hold+Out,Underdog,Assured+Conquest'
+const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
+const denseSharedBuildSearchBackgroundQuery = 'disowned'
 
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
@@ -245,7 +247,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
 })
 
 test('filters the background fit list with the background search field', async ({ page }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
@@ -384,7 +386,7 @@ test('filters the background fit list with the background search field', async (
 })
 
 test('filters origin backgrounds from the background search menu', async ({ page }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
@@ -470,7 +472,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
   const sharedPage = await page.context().newPage()
 
   try {
-    await sharedPage.setViewportSize(mediumPerksBrowserViewport)
+    await sharedPage.setViewportSize(mediumBuildPlannerViewport)
     await sharedPage.goto(savedUrl)
 
     const sharedBackgroundFitPanel = getBackgroundFitPanel(sharedPage)
@@ -512,7 +514,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
 })
 
 test('shows probabilistic background fit matches with percentage badges', async ({ page }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
   await searchPerks(page, 'Danger Pay')
   await addPerkToBuildFromResults(page, 'Danger Pay')
 
@@ -553,7 +555,7 @@ test('shows probabilistic background fit matches with percentage badges', async 
 })
 
 test('keeps the background search enabled without any picked perks', async ({ page }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
@@ -577,7 +579,7 @@ test('keeps the background search enabled without any picked perks', async ({ pa
 test('hides redundant background disambiguator pills when they only repeat the name', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
@@ -609,7 +611,7 @@ test('hides redundant background disambiguator pills when they only repeat the n
 test('keeps zero-match backgrounds after matching backgrounds in the full ranked list', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, mediumPerksBrowserViewport)
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
@@ -643,36 +645,40 @@ test('keeps dense background names readable from a shared build url and starts c
   ).toHaveAttribute('aria-expanded', 'true')
   await expect(backgroundFitPanel.getByText(/Ranked by expected perks pickable./i)).toBeVisible()
 
-  const hedgeKnightCard = backgroundFitPanel
+  const denseBuildBackgroundCard = backgroundFitPanel
     .getByTestId('background-fit-card')
-    .filter({ hasText: 'Hedge Knight' })
+    .filter({ hasText: denseSharedBuildSearchBackgroundName })
     .first()
-  const hedgeKnightHeading = hedgeKnightCard.locator('h3')
-  const hedgeKnightPanel = hedgeKnightCard.getByTestId('background-fit-card-panel')
+  const denseBuildBackgroundHeading = denseBuildBackgroundCard.locator('h3')
+  const denseBuildBackgroundPanel = denseBuildBackgroundCard.getByTestId(
+    'background-fit-card-panel',
+  )
 
-  await hedgeKnightHeading.scrollIntoViewIfNeeded()
-  await expect(hedgeKnightHeading).toBeVisible()
-  await expect(hedgeKnightPanel).toHaveAttribute('aria-hidden', 'true')
+  await denseBuildBackgroundHeading.scrollIntoViewIfNeeded()
+  await expect(denseBuildBackgroundHeading).toBeVisible()
+  await expect(denseBuildBackgroundPanel).toHaveAttribute('aria-hidden', 'true')
   await expect
     .poll(async () => {
-      const hedgeKnightBoundingBox = await hedgeKnightHeading.boundingBox()
+      const denseBuildBackgroundBoundingBox = await denseBuildBackgroundHeading.boundingBox()
 
-      return hedgeKnightBoundingBox === null
+      return denseBuildBackgroundBoundingBox === null
         ? null
         : {
-            height: hedgeKnightBoundingBox.height,
-            width: hedgeKnightBoundingBox.width,
+            height: denseBuildBackgroundBoundingBox.height,
+            width: denseBuildBackgroundBoundingBox.width,
           }
     })
     .toMatchObject({
       height: expect.any(Number),
       width: expect.any(Number),
     })
-  const hedgeKnightBoundingBox = await hedgeKnightHeading.boundingBox()
+  const denseBuildBackgroundBoundingBox = await denseBuildBackgroundHeading.boundingBox()
 
-  expect(hedgeKnightBoundingBox).not.toBeNull()
-  expect(hedgeKnightBoundingBox!.width).toBeGreaterThan(90)
-  expect(hedgeKnightBoundingBox!.width).toBeGreaterThan(hedgeKnightBoundingBox!.height * 2)
+  expect(denseBuildBackgroundBoundingBox).not.toBeNull()
+  expect(denseBuildBackgroundBoundingBox!.width).toBeGreaterThan(90)
+  expect(denseBuildBackgroundBoundingBox!.width).toBeGreaterThan(
+    denseBuildBackgroundBoundingBox!.height * 2,
+  )
 })
 
 test('keeps the dense build workspace visible while filtering backgrounds on desktop', async ({
@@ -687,14 +693,14 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
   await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
-  await backgroundSearchInput.fill('hedge')
+  await backgroundSearchInput.fill(denseSharedBuildSearchBackgroundQuery)
 
-  const hedgeKnightHeading = backgroundFitPanel.getByRole('heading', {
+  const denseBuildBackgroundHeading = backgroundFitPanel.getByRole('heading', {
     level: 3,
-    name: 'Hedge Knight',
+    name: denseSharedBuildSearchBackgroundName,
   })
 
-  await expect(hedgeKnightHeading).toBeVisible()
+  await expect(denseBuildBackgroundHeading).toBeVisible()
   await expect
     .poll(async () =>
       page.evaluate(() => document.documentElement.scrollHeight - window.innerHeight),
@@ -730,29 +736,29 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
     .toBeLessThanOrEqual(1)
   await expect
     .poll(async () =>
-      page.evaluate(() => {
+      page.evaluate((expectedBackgroundName) => {
         const backgroundFitPanelBody = document.querySelector(
           '[data-testid="background-fit-panel-body"]',
         )
-        const hedgeKnightHeading = [
+        const denseBuildBackgroundHeading = [
           ...document.querySelectorAll('[data-testid="background-fit-card"] h3'),
-        ].find((heading) => heading.textContent?.trim() === 'Hedge Knight')
+        ].find((heading) => heading.textContent?.trim() === expectedBackgroundName)
 
         if (
           !(backgroundFitPanelBody instanceof HTMLElement) ||
-          !(hedgeKnightHeading instanceof HTMLElement)
+          !(denseBuildBackgroundHeading instanceof HTMLElement)
         ) {
           return false
         }
 
         const backgroundFitPanelBodyBox = backgroundFitPanelBody.getBoundingClientRect()
-        const hedgeKnightHeadingBox = hedgeKnightHeading.getBoundingClientRect()
+        const denseBuildBackgroundHeadingBox = denseBuildBackgroundHeading.getBoundingClientRect()
 
         return (
-          hedgeKnightHeadingBox.top >= backgroundFitPanelBodyBox.top &&
-          hedgeKnightHeadingBox.bottom <= backgroundFitPanelBodyBox.bottom
+          denseBuildBackgroundHeadingBox.top >= backgroundFitPanelBodyBox.top &&
+          denseBuildBackgroundHeadingBox.bottom <= backgroundFitPanelBodyBox.bottom
         )
-      }),
+      }, denseSharedBuildSearchBackgroundName),
     )
     .toBe(true)
 })
@@ -766,9 +772,12 @@ test('does not stretch the background search field on tall desktop screens', asy
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
   await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
-  await backgroundSearchInput.fill('hedge')
+  await backgroundSearchInput.fill(denseSharedBuildSearchBackgroundQuery)
   await expect(
-    backgroundFitPanel.getByRole('heading', { level: 3, name: 'Hedge Knight' }),
+    backgroundFitPanel.getByRole('heading', {
+      level: 3,
+      name: denseSharedBuildSearchBackgroundName,
+    }),
   ).toBeVisible()
   await expect
     .poll(async () =>

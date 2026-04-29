@@ -14,7 +14,7 @@
     "predev": "pnpm run generate:social-image",
     "dev": "vite",
     "predev:test": "pnpm run generate:social-image",
-    "dev:test": "vite --host 127.0.0.1 --port 4173",
+    "dev:test": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "prebuild": "pnpm run generate:social-image",
     "build": "tsc -b && vite build",
     "build:netlify": "pnpm run generate:social-image && tsc -b && vite build && node ./scripts/build-netlify-edge-functions.mjs",

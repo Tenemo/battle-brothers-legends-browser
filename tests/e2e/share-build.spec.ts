@@ -4,10 +4,10 @@ import {
   enableCategory,
   getBuildPerksBar,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   searchPerks,
   selectPerkGroup,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 test('copies a canonical build-only link from an active filtered workspace', async ({ page }) => {
   await page.addInitScript(() => {
@@ -21,7 +21,7 @@ test('copies a canonical build-only link from an active filtered workspace', asy
       },
     })
   })
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   const copyBuildLinkButton = page.getByRole('button', { name: 'Copy build link' })
 
@@ -75,7 +75,7 @@ test('shows a deterministic copy failure state when clipboard paths fail', async
       value: () => false,
     })
   })
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
