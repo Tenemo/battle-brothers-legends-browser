@@ -10,6 +10,7 @@ export default defineConfig({
     headless: true,
     trace: 'on-first-retry',
   },
+  workers: 6,
   webServer: {
     command: developmentServerCommand,
     port: 4173,

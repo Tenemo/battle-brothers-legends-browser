@@ -441,7 +441,6 @@
     &:hover,
     &:focus-within {
       .plannerSlotRemoveButton {
-        opacity: 1;
         visibility: visible;
         pointer-events: auto;
       }
@@ -471,23 +470,40 @@
   }
 
   .plannerSlotRemoveButton {
-    right: var(--space-xs);
+    appearance: none;
+    position: absolute;
+    inset: 0 0 0 auto;
     z-index: var(--z-index-interactive);
-    opacity: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40%;
+    border: 0;
+    border-left: var(--primitive-length-1px) solid var(--border-overlay);
+    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    padding: 0;
+    background: var(--surface-overlay-raised);
+    color: var(--text-primary);
+    cursor: pointer;
     visibility: hidden;
     pointer-events: none;
-  }
-
-  .plannerSlotPerk .plannerSlotRemoveButton {
-    background: var(--surface-overlay);
-    box-shadow: var(--shadow-selected-ring);
-    color: var(--text-primary);
+    transition:
+      background-color var(--motion-fast-duration) ease,
+      color var(--motion-fast-duration) ease;
 
     &:hover,
     &:focus-visible {
       background: var(--surface-control-active);
       color: var(--text-primary);
     }
+
+    &:focus-visible {
+      @include focus-ring(var(--primitive-length-negative-2px));
+    }
+  }
+
+  .plannerSlotPerk .plannerSlotRemoveButton {
+    box-shadow: var(--shadow-selected-ring);
   }
 
   .plannerSlotPlaceholder {

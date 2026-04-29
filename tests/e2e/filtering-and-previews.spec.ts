@@ -16,13 +16,32 @@ test('switches active categories and scoped perk groups, then clears everything 
 }) => {
   await gotoBuildPlanner(page)
 
+  const categoriesHeading = page.getByRole('heading', { level: 2, name: 'Categories' })
+  const categoryHeaderHeightBeforeSelection = await categoriesHeading.evaluate(
+    (element) => element.parentElement?.getBoundingClientRect().height ?? 0,
+  )
+
   await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
   await enableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveText('Perk groups')
+  await expect
+    .poll(() =>
+      categoriesHeading.evaluate(
+        (element) => element.parentElement?.getBoundingClientRect().height ?? 0,
+      ),
+    )
+    .toBe(categoryHeaderHeightBeforeSelection)
   await page.getByRole('button', { name: 'Clear category selection' }).click()
   await expect(page.getByTestId('perk-group-heading')).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+  await expect
+    .poll(() =>
+      categoriesHeading.evaluate(
+        (element) => element.parentElement?.getBoundingClientRect().height ?? 0,
+      ),
+    )
+    .toBe(categoryHeaderHeightBeforeSelection)
 
   await enableCategory(page, 'Traits')
   await disableCategory(page, 'Traits')

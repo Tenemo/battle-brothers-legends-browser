@@ -1302,18 +1302,39 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   const ammunitionBundlesPickedPerkTile = getBuildPerksBar(page)
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Ammunition Bundles' })
+  const ammunitionBundlesRemoveButton = ammunitionBundlesPickedPerkTile.getByTestId(
+    'planner-slot-remove-button',
+  )
 
   await expect(ammunitionBundlesPickedPerkTile).toBeVisible()
+  await expect(ammunitionBundlesRemoveButton).toHaveAttribute(
+    'title',
+    'Remove Ammunition Bundles from build',
+  )
 
   const pickedPerkMetrics = await ammunitionBundlesPickedPerkTile.evaluate((pickedPerkTile) => {
     const pickedPerkName = pickedPerkTile.querySelector('[data-testid="planner-picked-perk-name"]')
+    const pickedPerkRemoveButton = pickedPerkTile.querySelector(
+      '[data-testid="planner-slot-remove-button"]',
+    )
+    const pickedPerkInspectButton = pickedPerkTile.querySelector(
+      'button[aria-label="View Ammunition Bundles from build planner"]',
+    )
     const buildPlanner = pickedPerkTile.closest('[aria-label="Build planner"]')
 
-    if (!(pickedPerkName instanceof HTMLElement) || !(buildPlanner instanceof HTMLElement)) {
+    if (
+      !(pickedPerkName instanceof HTMLElement) ||
+      !(pickedPerkRemoveButton instanceof HTMLElement) ||
+      !(pickedPerkInspectButton instanceof HTMLElement) ||
+      !(buildPlanner instanceof HTMLElement)
+    ) {
       return null
     }
 
     const pickedPerkTileRectangle = pickedPerkTile.getBoundingClientRect()
+    const pickedPerkInspectButtonRectangle = pickedPerkInspectButton.getBoundingClientRect()
+    const pickedPerkRemoveButtonRectangle = pickedPerkRemoveButton.getBoundingClientRect()
+    const pickedPerkRemoveButtonStyle = window.getComputedStyle(pickedPerkRemoveButton)
     const computedStyle = window.getComputedStyle(pickedPerkTile)
     const pickedPerkNameStyle = window.getComputedStyle(pickedPerkName)
     const pickedPerkNameRectangle = pickedPerkName.getBoundingClientRect()
@@ -1343,11 +1364,57 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
       nameWhiteSpace: pickedPerkNameStyle.whiteSpace,
       nameWordBreak: pickedPerkNameStyle.wordBreak,
       pickedPerkSlotWidth: plannerPickedPerkSlotWidth * rootFontSize,
+      removeBottomOffset: Math.abs(
+        pickedPerkRemoveButtonRectangle.bottom - pickedPerkTileRectangle.bottom,
+      ),
+      removeOpacity: pickedPerkRemoveButtonStyle.opacity,
+      removePosition: pickedPerkRemoveButtonStyle.position,
+      removeRightOffset: Math.abs(
+        pickedPerkRemoveButtonRectangle.right - pickedPerkTileRectangle.right,
+      ),
+      removeTopOffset: Math.abs(pickedPerkRemoveButtonRectangle.top - pickedPerkTileRectangle.top),
+      removeTransitionProperty: pickedPerkRemoveButtonStyle.transitionProperty,
+      removeVisibility: pickedPerkRemoveButtonStyle.visibility,
+      removeWidthRatio: pickedPerkRemoveButtonRectangle.width / pickedPerkTileRectangle.width,
       slotWidth: plannerSlotWidth * rootFontSize,
+      inspectButtonWidth: pickedPerkInspectButtonRectangle.width,
       tileWidth: pickedPerkTileRectangle.width,
       widthStyle: computedStyle.width,
     }
   })
+  const pickedPerkNameSizeBeforeHover = await ammunitionBundlesPickedPerkTile
+    .getByTestId('planner-picked-perk-name')
+    .evaluate((pickedPerkName) => {
+      const rectangle = pickedPerkName.getBoundingClientRect()
+
+      return {
+        height: rectangle.height,
+        width: rectangle.width,
+      }
+    })
+
+  await ammunitionBundlesPickedPerkTile.hover()
+
+  const pickedPerkRemoveButtonStyleAfterHover = await ammunitionBundlesRemoveButton.evaluate(
+    (pickedPerkRemoveButton) => {
+      const pickedPerkRemoveButtonStyle = window.getComputedStyle(pickedPerkRemoveButton)
+
+      return {
+        opacity: pickedPerkRemoveButtonStyle.opacity,
+        visibility: pickedPerkRemoveButtonStyle.visibility,
+      }
+    },
+  )
+  const pickedPerkNameSizeAfterHover = await ammunitionBundlesPickedPerkTile
+    .getByTestId('planner-picked-perk-name')
+    .evaluate((pickedPerkName) => {
+      const rectangle = pickedPerkName.getBoundingClientRect()
+
+      return {
+        height: rectangle.height,
+        width: rectangle.width,
+      }
+    })
   const plannerGroupCard = getBuildIndividualGroupsList(page)
     .getByTestId('planner-group-card')
     .first()
@@ -1398,6 +1465,20 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   expect(pickedPerkMetrics!.nameHeight).toBeLessThanOrEqual(
     pickedPerkMetrics!.nameLineHeight * 2 + 1,
   )
+  expect(pickedPerkMetrics!.removePosition).toBe('absolute')
+  expect(pickedPerkMetrics!.removeOpacity).toBe('1')
+  expect(pickedPerkMetrics!.removeTransitionProperty).not.toContain('opacity')
+  expect(pickedPerkMetrics!.removeVisibility).toBe('hidden')
+  expect(pickedPerkRemoveButtonStyleAfterHover.opacity).toBe('1')
+  expect(pickedPerkRemoveButtonStyleAfterHover.visibility).toBe('visible')
+  expect(pickedPerkMetrics!.removeRightOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.removeTopOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.removeBottomOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.removeWidthRatio).toBeGreaterThanOrEqual(0.39)
+  expect(pickedPerkMetrics!.removeWidthRatio).toBeLessThanOrEqual(0.41)
+  expect(pickedPerkMetrics!.inspectButtonWidth).toBeGreaterThan(pickedPerkMetrics!.tileWidth * 0.95)
+  expect(Math.abs(pickedPerkNameSizeAfterHover.width - pickedPerkNameSizeBeforeHover.width)).toBeLessThanOrEqual(1)
+  expect(Math.abs(pickedPerkNameSizeAfterHover.height - pickedPerkNameSizeBeforeHover.height)).toBeLessThanOrEqual(1)
   expect(
     Math.abs(pickedPerkMetrics!.tileWidth - pickedPerkMetrics!.pickedPerkSlotWidth),
   ).toBeLessThanOrEqual(1)

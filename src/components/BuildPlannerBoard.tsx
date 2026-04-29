@@ -408,12 +408,10 @@ export function BuildPlannerBoard({
                     </button>
                     <button
                       aria-label={`Remove ${pickedPerk.perkName} from build`}
-                      className={joinClassNames(
-                        sharedStyles.searchClearButton,
-                        styles.plannerSlotRemoveButton,
-                      )}
+                      className={styles.plannerSlotRemoveButton}
                       data-testid="planner-slot-remove-button"
                       onClick={() => onRemovePickedPerk(pickedPerk.id)}
+                      title={`Remove ${pickedPerk.perkName} from build`}
                       type="button"
                     >
                       <span aria-hidden="true" className={sharedStyles.searchClearIcon} />
