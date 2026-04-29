@@ -140,6 +140,7 @@ export function PerkResults({
   onSelectPerk,
   onTogglePerkPicked,
   pickedPerkOrderById,
+  perkResultListScrollResetKey,
   query,
   selectedPerk,
   setQuery,
@@ -162,6 +163,7 @@ export function PerkResults({
   onSelectPerk: (perkId: string) => void
   onTogglePerkPicked: (perkId: string) => void
   pickedPerkOrderById: Map<string, number>
+  perkResultListScrollResetKey: number
   query: string
   selectedPerk: LegendsPerkRecord | null
   setQuery: (query: string) => void
@@ -180,6 +182,7 @@ export function PerkResults({
   })
   const perkFilterMenuId = useId()
   const perkFilterMenuRef = useRef<HTMLDivElement | null>(null)
+  const resultsListRef = useRef<HTMLUListElement | null>(null)
   const effectiveMobileVisiblePerkCount =
     mobilePerkResultWindow.resultSetKey === visiblePerkResultSetKey
       ? mobilePerkResultWindow.visiblePerkCount
@@ -245,6 +248,23 @@ export function PerkResults({
       document.removeEventListener('pointerdown', handleDocumentPointerDown)
     }
   }, [isPerkFilterMenuOpen])
+
+  useEffect(() => {
+    const resultsList = resultsListRef.current
+
+    if (resultsList === null) {
+      return
+    }
+
+    if (typeof resultsList.scrollTo === 'function') {
+      resultsList.scrollTo({
+        top: 0,
+      })
+      return
+    }
+
+    resultsList.scrollTop = 0
+  }, [perkResultListScrollResetKey, visiblePerkResultSetKey])
 
   return (
     <section className={styles.resultsPanel} aria-label="Perk results" data-testid="results-panel">
@@ -328,6 +348,7 @@ export function PerkResults({
         className={joinClassNames(styles.resultsList, 'app-scrollbar')}
         data-scroll-container="true"
         data-testid="results-list"
+        ref={resultsListRef}
       >
         {visiblePerks.length === 0 ? (
           <li className={sharedStyles.emptyState} data-testid="empty-state">

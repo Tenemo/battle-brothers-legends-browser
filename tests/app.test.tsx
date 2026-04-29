@@ -9,7 +9,13 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'apprentice_background.nut',
     'paladin_background.nut',
   ]),
-  perkNamesForAppTests: new Set(['Ammunition Binding', 'Berserk', 'Magic Missile']),
+  perkNamesForAppTests: new Set([
+    'Ammunition Binding',
+    'Berserk',
+    'Hold Out',
+    'Killing Frenzy',
+    'Magic Missile',
+  ]),
 }))
 
 vi.mock('../src/data/legends-perks.json', async () => {
@@ -191,6 +197,37 @@ describe('app', () => {
       expect(window.location.search).not.toContain('origin-perk-groups')
     })
     expect(window.location.search).not.toContain('ancient-scroll-perk-groups')
+  })
+
+  test('keeps hidden origin perk groups out of the build planner until enabled', async () => {
+    const user = userEvent.setup()
+
+    window.history.replaceState({}, '', '/?build=Killing+Frenzy,Hold+Out')
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText('2 perks picked.')).toBeInTheDocument()
+    })
+
+    const sharedPerkGroups = screen.getByTestId('build-shared-groups-list')
+
+    expect(
+      within(sharedPerkGroups).queryByRole('button', {
+        name: 'Select perk group Cutthroat',
+      }),
+    ).not.toBeInTheDocument()
+    expect(within(sharedPerkGroups).queryByText('Cutthroat')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Filter perks' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Origin perks' }))
+
+    await waitFor(() => {
+      expect(
+        within(sharedPerkGroups).getByRole('button', {
+          name: 'Select perk group Cutthroat',
+        }),
+      ).toBeInTheDocument()
+    })
   })
 
   test('shows the background search clear button only while search has text', async () => {

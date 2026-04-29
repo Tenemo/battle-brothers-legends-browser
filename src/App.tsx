@@ -140,6 +140,7 @@ export default function App() {
   const [selectedPerkGroupIdsByCategory, setSelectedPerkGroupIdsByCategory] = useState<
     Record<string, string[]>
   >(initialUrlState.selectedPerkGroupIdsByCategory)
+  const [perkResultListScrollResetKey, setPerkResultListScrollResetKey] = useState(0)
   const [shouldAllowBackgroundStudyBook, setShouldAllowBackgroundStudyBook] = useState(
     initialUrlState.shouldAllowBackgroundStudyBook,
   )
@@ -251,6 +252,14 @@ export default function App() {
       }),
     [pickedPerkIds],
   )
+  const plannerGroupPerks = useMemo(
+    () =>
+      getPerksWithOriginAndAncientScrollPerkGroupsFiltered(pickedPerks, {
+        shouldIncludeAncientScrollPerkGroups,
+        shouldIncludeOriginPerkGroups,
+      }),
+    [pickedPerks, shouldIncludeAncientScrollPerkGroups, shouldIncludeOriginPerkGroups],
+  )
   const buildShareSearch = useMemo(
     () => createSharedBuildUrlSearch(pickedPerkIds, allPerksById),
     [pickedPerkIds],
@@ -294,7 +303,10 @@ export default function App() {
       }),
     [savedBuilds],
   )
-  const buildPlannerGroups = useMemo(() => getBuildPlannerGroups(pickedPerks), [pickedPerks])
+  const buildPlannerGroups = useMemo(
+    () => getBuildPlannerGroups(plannerGroupPerks),
+    [plannerGroupPerks],
+  )
   const backgroundFitView = useMemo(
     () =>
       backgroundFitEngine.getBackgroundFitView(pickedPerks, {
@@ -477,8 +489,13 @@ export default function App() {
     })
   }, [shouldIncludeAncientScrollPerkGroups, shouldIncludeOriginPerkGroups])
 
+  function requestPerkResultListScrollReset() {
+    setPerkResultListScrollResetKey((currentScrollResetKey) => currentScrollResetKey + 1)
+  }
+
   function handleResetCategories() {
     startTransition(() => {
+      requestPerkResultListScrollReset()
       setExpandedCategoryNames([])
       setSelectedCategoryNames([])
       setSelectedPerkGroupIdsByCategory({})
@@ -591,6 +608,8 @@ export default function App() {
   function selectPerkGroup(
     perkGroupSelection: { categoryName: string; perkGroupId: string } | null,
   ) {
+    requestPerkResultListScrollReset()
+
     if (perkGroupSelection === null) {
       setSelectedCategoryNames([])
       setExpandedCategoryNames([])
@@ -630,6 +649,8 @@ export default function App() {
     startTransition(() => {
       const isSelected = selectedCategoryNames.includes(nextCategoryName)
 
+      requestPerkResultListScrollReset()
+
       if (isSelected) {
         setExpandedCategoryNames([])
         setSelectedCategoryNames([])
@@ -645,12 +666,13 @@ export default function App() {
   }
 
   function handleResetCategoryPerkGroups(categoryName: string) {
-    startTransition(() =>
+    startTransition(() => {
+      requestPerkResultListScrollReset()
       setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => ({
         ...currentSelectedPerkGroupIdsByCategory,
         [categoryName]: [],
-      })),
-    )
+      }))
+    })
   }
 
   function handlePerkGroupSelect(categoryName: string, perkGroupId: string) {
@@ -837,6 +859,7 @@ export default function App() {
           setQuery={setQuery}
           shouldIncludeAncientScrollPerkGroups={shouldIncludeAncientScrollPerkGroups}
           shouldIncludeOriginPerkGroups={shouldIncludeOriginPerkGroups}
+          perkResultListScrollResetKey={perkResultListScrollResetKey}
           visiblePerkResultSetKey={visiblePerkResultSetKey}
           visiblePerks={visiblePerks}
         />

@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
@@ -68,25 +67,11 @@ export function CategorySidebar({
   selectedCategoryNames,
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
-  const sidebarRef = useRef<HTMLElement | null>(null)
-  const expandedCategoryNameSignature = expandedCategoryNames.join('\u0000')
-
-  useEffect(() => {
-    const sidebar = sidebarRef.current
-
-    if (sidebar === null) {
-      return
-    }
-
-    if (typeof sidebar.scrollTo === 'function') {
-      sidebar.scrollTo({
-        top: 0,
-      })
-      return
-    }
-
-    sidebar.scrollTop = 0
-  }, [expandedCategoryNameSignature])
+  const hasActiveCategoryFilter =
+    selectedCategoryNames.length > 0 ||
+    Object.values(selectedPerkGroupIdsByCategory).some(
+      (selectedPerkGroupIds) => selectedPerkGroupIds.length > 0,
+    )
 
   return (
     <aside
@@ -94,10 +79,19 @@ export function CategorySidebar({
       aria-label="Perk categories"
       data-scroll-container="true"
       data-testid="category-sidebar"
-      ref={sidebarRef}
     >
       <div className={styles.panelHeading}>
         <h2>Categories</h2>
+        {hasActiveCategoryFilter ? (
+          <button
+            aria-label="Clear category selection"
+            className={joinClassNames(sharedStyles.searchClearButton, styles.categoryClearButton)}
+            onClick={onResetCategories}
+            type="button"
+          >
+            <span aria-hidden="true" className={sharedStyles.searchClearIcon} />
+          </button>
+        ) : null}
       </div>
       <button
         aria-label="Reset all category filters"
@@ -191,6 +185,9 @@ export function CategorySidebar({
                 {activePerkGroupOptions.map((perkGroupOption) => {
                   const pickedPerkCountInPerkGroup =
                     pickedPerkCountsByPerkGroup.get(perkGroupOption.perkGroupId) ?? 0
+                  const isSelectedPerkGroup = selectedPerkGroupIds.includes(
+                    perkGroupOption.perkGroupId,
+                  )
                   const perkGroupKey = getPerkGroupHoverKey({
                     categoryName: availableCategoryName,
                     perkGroupId: perkGroupOption.perkGroupId,
@@ -201,7 +198,7 @@ export function CategorySidebar({
                   return (
                     <button
                       aria-label={`Select perk group ${perkGroupOption.perkGroupName}`}
-                      aria-pressed={selectedPerkGroupIds.includes(perkGroupOption.perkGroupId)}
+                      aria-pressed={isSelectedPerkGroup}
                       className={styles.perkGroupChip}
                       data-highlighted={isPerkGroupHighlighted}
                       key={perkGroupOption.perkGroupId}

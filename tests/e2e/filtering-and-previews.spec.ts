@@ -16,10 +16,26 @@ test('switches active categories and scoped perk groups, then clears everything 
 }) => {
   await gotoBuildPlanner(page)
 
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
   await enableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveText('Perk groups')
+  await page.getByRole('button', { name: 'Clear category selection' }).click()
+  await expect(page.getByTestId('perk-group-heading')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+
+  await enableCategory(page, 'Traits')
   await disableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveCount(0)
+
+  await enableCategory(page, 'Traits')
+  await selectPerkGroup(page, 'Calm')
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Clear category selection' }).click()
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
 
   await enableCategory(page, 'Traits')
   await selectPerkGroup(page, 'Calm')
@@ -68,31 +84,34 @@ test('keeps only one selected perk group when another group is selected', async 
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
 })
 
-test('resets the category sidebar scroll when switching active categories', async ({ page }) => {
+test('resets the perk result scroll when category filters change', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
 
-  const categorySidebar = page.getByTestId('category-sidebar')
+  const resultsList = getResultsList(page)
 
   await enableCategory(page, 'Weapon')
-  await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(resultsList.getByRole('button', { name: 'Inspect Axe Mastery' })).toBeVisible()
   await expect
     .poll(async () =>
-      categorySidebar.evaluate((element) => element.scrollHeight - element.clientHeight),
+      resultsList.evaluate((element) => element.scrollHeight - element.clientHeight),
     )
     .toBeGreaterThan(100)
 
-  await categorySidebar.evaluate((element) => {
+  await resultsList.evaluate((element) => {
     element.scrollTop = element.scrollHeight
   })
   await expect
-    .poll(async () => categorySidebar.evaluate((element) => element.scrollTop))
+    .poll(async () => resultsList.evaluate((element) => element.scrollTop))
     .toBeGreaterThan(0)
 
-  await categorySidebar.getByRole('button', { name: 'Enable category Traits' }).click()
+  await disableCategory(page, 'Weapon')
+  await enableCategory(page, 'Traits')
 
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toBeVisible()
   await expect
-    .poll(async () => categorySidebar.evaluate((element) => element.scrollTop))
+    .poll(async () => resultsList.evaluate((element) => element.scrollTop))
     .toBeLessThanOrEqual(1)
 })
 

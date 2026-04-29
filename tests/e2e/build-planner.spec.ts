@@ -10,6 +10,7 @@ import {
   getParsedCssRgbColor,
   getResolvedCssBackgroundColor,
   getResolvedCssBorderColor,
+  getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
   inspectPerkFromResults,
@@ -987,6 +988,47 @@ test('selects build planner perk groups from their group tiles', async ({ page }
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('heading', { level: 2, name: 'Battle Forged' })).toBeVisible()
+})
+
+test('resets perk result scrolling when selecting the same build planner perk group again', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, { height: 560, width: 1366 })
+  await searchPerks(page, 'Berserker Rage')
+  await addPerkToBuildFromResults(page, 'Berserker Rage')
+
+  const resultsList = getResultsList(page)
+  const berserkerGroupCard = getBuildIndividualGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Berserker' })
+  const exposedGroupCardPosition = {
+    x: 16,
+    y: 16,
+  }
+
+  await berserkerGroupCard.click({ position: exposedGroupCardPosition })
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(getSidebarPerkGroupButton(page, 'Berserker')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(resultsList.getByRole('button', { name: 'Inspect Berserker Rage' })).toBeVisible()
+  await expect
+    .poll(async () => resultsList.evaluate((element) => element.scrollHeight - element.clientHeight))
+    .toBeGreaterThan(50)
+
+  await resultsList.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await expect
+    .poll(async () => resultsList.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0)
+
+  await berserkerGroupCard.click({ position: exposedGroupCardPosition })
+
+  await expect
+    .poll(async () => resultsList.evaluate((element) => element.scrollTop))
+    .toBeLessThanOrEqual(1)
 })
 
 test('filters multi-option planner group icons individually', async ({ page }) => {
