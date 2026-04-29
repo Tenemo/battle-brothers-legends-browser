@@ -28,6 +28,19 @@ export default defineConfig({
       },
     },
   ],
+  server: {
+    watch: {
+      ignored: [
+        '**/.cache/**',
+        '**/.netlify/**',
+        '**/dist/**',
+        '**/netlify/generated-edge-functions/**',
+        '**/playwright-report/**',
+        '**/public/game-icons-staging/**',
+        '**/test-results/**',
+      ],
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: false,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { PerkGroupReference } from './use-perk-interaction-state'
+import type { BuildPerkHoverOptions, PerkGroupReference } from './use-perk-interaction-state'
 
 const buildPerkTooltipCloseGraceMs = 120
 const buildPerkTooltipOpenDelayMs = 1500
@@ -25,11 +25,16 @@ export function useBuildPerkTooltipPreview({
   hoveredBuildPerkId: string | null
   onCloseHover: (perkId: string) => void
   onCloseTooltip: () => void
-  onOpenHover: (perkId: string, perkGroupReference?: PerkGroupReference) => void
+  onOpenHover: (
+    perkId: string,
+    perkGroupReference?: PerkGroupReference,
+    options?: BuildPerkHoverOptions,
+  ) => void
   onOpenTooltip: (
     perkId: string,
     currentTarget: HTMLElement,
     perkGroupReference?: PerkGroupReference,
+    options?: BuildPerkHoverOptions,
   ) => void
 }) {
   const [activeTooltipIndicatorPerkId, setActiveTooltipIndicatorPerkId] = useState<string | null>(
@@ -105,11 +110,16 @@ export function useBuildPerkTooltipPreview({
   )
 
   const openTooltipPreview = useCallback(
-    (perkId: string, currentTarget: HTMLElement, perkGroupReference?: PerkGroupReference) => {
+    (
+      perkId: string,
+      currentTarget: HTMLElement,
+      perkGroupReference?: PerkGroupReference,
+      options?: BuildPerkHoverOptions,
+    ) => {
       pointerPreviewPerkIdRef.current = perkId
       clearTooltipCloseTimer()
       clearTooltipOpenTimers()
-      onOpenHover(perkId, perkGroupReference)
+      onOpenHover(perkId, perkGroupReference, options)
 
       if (hoveredBuildPerkId === perkId) {
         setActiveTooltipIndicatorPerkId(perkId)
@@ -126,7 +136,7 @@ export function useBuildPerkTooltipPreview({
       tooltipOpenTimeoutRef.current = window.setTimeout(() => {
         tooltipOpenTimeoutRef.current = null
         setActiveTooltipIndicatorPerkId(perkId)
-        onOpenTooltip(perkId, currentTarget, perkGroupReference)
+        onOpenTooltip(perkId, currentTarget, perkGroupReference, options)
       }, buildPerkTooltipOpenDelayMs)
     },
     [

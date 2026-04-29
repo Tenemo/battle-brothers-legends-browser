@@ -69,23 +69,45 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .toBeGreaterThan(0)
   await expect(apprenticeCard.getByText('Expected 1/1 perks pickable')).toBeVisible()
   await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
-  await expect(apprenticeCard.getByText('Up to 1/1 perks pickable')).toBeVisible()
+  await expect(apprenticeCard.getByText('Best native roll covers 1/1')).toBeVisible()
   await expect(apprenticeCard.getByTestId('background-fit-accordion-summary-row')).toHaveCount(1)
   await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
   const expectedBuildPerksBadge = apprenticeCard
     .getByTestId('background-fit-summary-badge')
     .filter({ hasText: 'Expected 1/1 perks pickable' })
+  const guaranteedBuildPerksBadge = apprenticeCard
+    .getByTestId('background-fit-summary-badge')
+    .filter({ hasText: 'Guaranteed 1/1 perks pickable' })
+  const bestNativeRollBadge = apprenticeCard
+    .getByTestId('background-fit-summary-badge')
+    .filter({ hasText: 'Best native roll covers 1/1' })
+  const fullBuildBadge = apprenticeCard
+    .getByTestId('background-fit-summary-badge')
+    .filter({ hasText: /Full build/i })
+    .first()
 
-  await expect(expectedBuildPerksBadge).toHaveAttribute('title', /Expected picked-perk coverage/i)
-  await expect(expectedBuildPerksBadge).toHaveAttribute('title', /Expected 1\/1 perks pickable/i)
-  await expect(expectedBuildPerksBadge).toHaveAttribute(
-    'aria-label',
-    /Expected picked-perk coverage/i,
+  await expect(fullBuildBadge).toHaveAttribute('title', /one legal native background roll/i)
+  await expect(fullBuildBadge).toHaveAttribute('title', /selected book and scroll filters/i)
+  await expect(fullBuildBadge).not.toHaveAttribute('title', /Full build:/i)
+  await expect(expectedBuildPerksBadge).toHaveAttribute('title', /average of 1 of 1 picked perks/i)
+  await expect(expectedBuildPerksBadge).toHaveAttribute('title', /Alternate perk-group placements/i)
+  await expect(expectedBuildPerksBadge).not.toHaveAttribute(
+    'title',
+    /Expected 1\/1 perks pickable/i,
   )
   await expect(expectedBuildPerksBadge).toHaveAttribute(
     'aria-label',
     /Expected 1\/1 perks pickable/i,
   )
+  await expect(expectedBuildPerksBadge).toHaveAttribute(
+    'aria-label',
+    /average of 1 of 1 picked perks/i,
+  )
+  await expect(guaranteedBuildPerksBadge).toHaveAttribute('title', /always has/i)
+  await expect(guaranteedBuildPerksBadge).not.toHaveAttribute('title', /Guaranteed 1\/1/i)
+  await expect(bestNativeRollBadge).toHaveAttribute('title', /one legal native background roll/i)
+  await expect(bestNativeRollBadge).toHaveAttribute('title', /Books and scrolls are not included/i)
+  await expect(bestNativeRollBadge).not.toHaveAttribute('title', /Best native roll covers/i)
   await expect(apprenticeCard.getByTestId('background-fit-card-panel')).toHaveAttribute(
     'aria-hidden',
     'true',

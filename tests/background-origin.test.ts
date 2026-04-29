@@ -28,6 +28,7 @@ function createBackgroundFit({
     guaranteedMatchedPerkGroupCount: 0,
     iconPath: null,
     matches: [],
+    maximumNativeCoveredPickedPerkCount: 0,
     maximumTotalPerkGroupCount: 0,
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
   }
@@ -61,6 +62,7 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
       expectedMatchedPerkGroupCount: 0,
       guaranteedMatchedPerkGroupCount: 0,
       matches: [],
+      maximumNativeCoveredPickedPerkCount: 0,
       maximumTotalPerkGroupCount: 0,
     }),
   )
@@ -444,6 +446,7 @@ describe('background origin detection', () => {
           expectedMatchedPerkGroupCount: 0,
           guaranteedMatchedPerkGroupCount: 0,
           matches: [],
+          maximumNativeCoveredPickedPerkCount: 0,
           maximumTotalPerkGroupCount: 0,
         }),
       )

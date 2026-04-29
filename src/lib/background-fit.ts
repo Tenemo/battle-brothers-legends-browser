@@ -82,6 +82,7 @@ export type RankedBackgroundFit = {
   expectedMatchedPerkGroupCount: number
   guaranteedMatchedPerkGroupCount: number
   iconPath: string | null
+  maximumNativeCoveredPickedPerkCount: number
   maximumTotalPerkGroupCount: number
   matches: BackgroundFitMatch[]
   sourceFilePath: string
@@ -882,40 +883,48 @@ function getBackgroundNativeOutcomeDistribution({
   return outcomeDistribution
 }
 
-function calculateBuildReachabilityProbabilityWithStudyResources({
-  backgroundDefinition,
-  context,
+function calculateNativeOutcomeSummary({
   filter,
+  nativeOutcomeDistribution,
   pickedPerks,
 }: {
-  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
-  context: BackgroundProbabilityContext
-  filter: BackgroundStudyResourceFilter
+  filter: BackgroundStudyResourceFilter | null
+  nativeOutcomeDistribution: BackgroundOutcomeDistribution
   pickedPerks: LegendsPerkRecord[]
-}): number {
-  const relevantPerkGroupIdsByCategory = getRelevantPerkGroupIdsByCategory(pickedPerks)
-  const nativeOutcomeDistribution = getBackgroundNativeOutcomeDistribution({
-    backgroundDefinition,
-    context,
-    relevantPerkGroupIdsByCategory,
-  })
+}): {
+  buildReachabilityProbability: number | null
+  maximumNativeCoveredPickedPerkCount: number
+} {
+  const pickedPerkRequirementKeyOptions = pickedPerks.map(getSupportedPerkGroupRequirementKeys)
   let buildReachabilityProbability = 0
+  let maximumNativeCoveredPickedPerkCount = 0
 
   /*
    * Native outcome keys are exact intersections between one complete background roll and the
-   * perk groups the picked build can use. Those outcomes are disjoint, so the final probability is
-   * the direct sum of outcomes where the native groups plus the allowed study resources can cover
-   * every picked perk through at least one placement. This counts every valid path without
-   * double-counting overlapping alternate placements.
+   * perk groups the picked build can use. Those outcomes are disjoint, so full-build probability is
+   * the direct sum of outcomes where native groups plus the allowed study resources cover every
+   * picked perk. The best-native-roll metric is the maximum picked-perk count covered by any one of
+   * those same legal outcomes, which keeps mutually exclusive optional groups from being merged.
    */
   for (const [
     nativeOutcomeDistributionKey,
     nativeOutcomeProbability,
   ] of nativeOutcomeDistribution) {
+    const nativeRequirementKeys = parseOutcomeDistributionKey(nativeOutcomeDistributionKey)
+
+    maximumNativeCoveredPickedPerkCount = Math.max(
+      maximumNativeCoveredPickedPerkCount,
+      getNativeOutcomeCoveredPickedPerkCount({
+        nativeRequirementKeys,
+        pickedPerkRequirementKeyOptions,
+      }),
+    )
+
     if (
+      filter !== null &&
       isBuildCoveredByNativeAndStudyResources({
         filter,
-        nativeRequirementKeys: parseOutcomeDistributionKey(nativeOutcomeDistributionKey),
+        nativeRequirementKeys,
         pickedPerks,
       })
     ) {
@@ -923,7 +932,11 @@ function calculateBuildReachabilityProbabilityWithStudyResources({
     }
   }
 
-  return clampProbability(buildReachabilityProbability)
+  return {
+    buildReachabilityProbability:
+      filter === null ? null : clampProbability(buildReachabilityProbability),
+    maximumNativeCoveredPickedPerkCount,
+  }
 }
 
 function hasEveryPerkGroup(
@@ -1356,6 +1369,27 @@ function getSupportedPerkGroupRequirements(pickedPerk: LegendsPerkRecord): PerkG
   }
 
   return requirements
+}
+
+function getSupportedPerkGroupRequirementKeys(pickedPerk: LegendsPerkRecord): string[] {
+  return getSupportedPerkGroupRequirements(pickedPerk).map((requirement) =>
+    getPerkGroupProbabilityKey(requirement.categoryName, requirement.perkGroupId),
+  )
+}
+
+function getNativeOutcomeCoveredPickedPerkCount({
+  nativeRequirementKeys,
+  pickedPerkRequirementKeyOptions,
+}: {
+  nativeRequirementKeys: ReadonlySet<string>
+  pickedPerkRequirementKeyOptions: string[][]
+}): number {
+  return pickedPerkRequirementKeyOptions.reduce(
+    (coveredPickedPerkCount, requirementKeyOptions) =>
+      coveredPickedPerkCount +
+      Number(requirementKeyOptions.some((requirementKey) => nativeRequirementKeys.has(requirementKey))),
+    0,
+  )
 }
 
 function getPerkCoverageProbability({
@@ -1871,8 +1905,6 @@ function compareRankedBackgroundFits(
   const rightGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
     rightBackgroundFit.matches,
   )
-  const leftCoveredPickedPerkCount = getCoveredPickedPerkCount(leftBackgroundFit.matches)
-  const rightCoveredPickedPerkCount = getCoveredPickedPerkCount(rightBackgroundFit.matches)
 
   return (
     (rightBackgroundFit.buildReachabilityProbability ?? 0) -
@@ -1880,7 +1912,8 @@ function compareRankedBackgroundFits(
     rightBackgroundFit.expectedCoveredPickedPerkCount -
       leftBackgroundFit.expectedCoveredPickedPerkCount ||
     rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
-    rightCoveredPickedPerkCount - leftCoveredPickedPerkCount ||
+    rightBackgroundFit.maximumNativeCoveredPickedPerkCount -
+      leftBackgroundFit.maximumNativeCoveredPickedPerkCount ||
     leftBackgroundFit.backgroundName.localeCompare(rightBackgroundFit.backgroundName) ||
     leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId) ||
     leftBackgroundFit.sourceFilePath.localeCompare(rightBackgroundFit.sourceFilePath)
@@ -1977,6 +2010,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
     getBackgroundFitView(pickedPerks, studyResourceFilter) {
       const { supportedBuildTargetPerkGroups, unsupportedBuildTargetPerkGroups } =
         getBuildTargetPerkGroups(pickedPerks)
+      const relevantPerkGroupIdsByCategory = getRelevantPerkGroupIdsByCategory(pickedPerks)
 
       return {
         rankedBackgroundFits: backgroundProbabilityRecords
@@ -1998,15 +2032,17 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                 return []
               }
 
-              const buildReachabilityProbability =
-                studyResourceFilter === undefined
-                  ? null
-                  : calculateBuildReachabilityProbabilityWithStudyResources({
-                      backgroundDefinition,
-                      context: backgroundProbabilityContext,
-                      filter: studyResourceFilter,
-                      pickedPerks,
-                    })
+              const nativeOutcomeDistribution = getBackgroundNativeOutcomeDistribution({
+                backgroundDefinition,
+                context: backgroundProbabilityContext,
+                relevantPerkGroupIdsByCategory,
+              })
+              const { buildReachabilityProbability, maximumNativeCoveredPickedPerkCount } =
+                calculateNativeOutcomeSummary({
+                  filter: studyResourceFilter ?? null,
+                  nativeOutcomeDistribution,
+                  pickedPerks,
+                })
 
               if (
                 studyResourceFilter !== undefined &&
@@ -2063,6 +2099,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                 guaranteedMatchedPerkGroupCount: matches.filter((match) => match.isGuaranteed)
                   .length,
                 iconPath: backgroundDefinition.iconPath ?? null,
+                maximumNativeCoveredPickedPerkCount,
                 maximumTotalPerkGroupCount,
                 matches,
                 sourceFilePath: backgroundDefinition.sourceFilePath,

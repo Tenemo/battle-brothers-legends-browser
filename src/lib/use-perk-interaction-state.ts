@@ -12,6 +12,10 @@ export type PerkGroupReference = {
   perkGroupId: string
 }
 
+export type BuildPerkHoverOptions = {
+  shouldEmphasizePerkGroup?: boolean
+}
+
 type SelectedPerkGroupIdsByCategory = Record<string, string[]>
 
 type PerkInteractionState = {
@@ -32,12 +36,14 @@ type PerkInteractionAction =
   | {
       perkGroupReference?: PerkGroupReference
       perkId: string
+      shouldEmphasizePerkGroup?: boolean
       type: 'open-build-perk-hover'
     }
   | {
       anchorRectangle: TooltipAnchorRectangle
       perkGroupReference?: PerkGroupReference
       perkId: string
+      shouldEmphasizePerkGroup?: boolean
       type: 'open-build-perk-tooltip'
     }
   | { categoryName: string; type: 'open-category-hover' }
@@ -116,7 +122,8 @@ function perkInteractionReducer(
       return {
         ...state,
         hoveredCategoryName: null,
-        hoveredPerkGroupReference: action.perkGroupReference ?? null,
+        hoveredPerkGroupReference:
+          action.shouldEmphasizePerkGroup === false ? null : (action.perkGroupReference ?? null),
         hoveredPerkId: action.perkId,
       }
 
@@ -127,7 +134,8 @@ function perkInteractionReducer(
           perkId: action.perkId,
         },
         hoveredCategoryName: null,
-        hoveredPerkGroupReference: action.perkGroupReference ?? null,
+        hoveredPerkGroupReference:
+          action.shouldEmphasizePerkGroup === false ? null : (action.perkGroupReference ?? null),
         hoveredPerkId: action.perkId,
       }
 
@@ -290,6 +298,7 @@ export function usePerkInteractionState({
     perkId: string,
     currentTarget: HTMLElement,
     perkGroupReference?: PerkGroupReference,
+    options: BuildPerkHoverOptions = {},
   ) {
     const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
 
@@ -303,12 +312,22 @@ export function usePerkInteractionState({
       },
       perkGroupReference,
       perkId,
+      shouldEmphasizePerkGroup: options.shouldEmphasizePerkGroup,
       type: 'open-build-perk-tooltip',
     })
   }
 
-  function openBuildPerkHover(perkId: string, perkGroupReference?: PerkGroupReference) {
-    dispatch({ perkGroupReference, perkId, type: 'open-build-perk-hover' })
+  function openBuildPerkHover(
+    perkId: string,
+    perkGroupReference?: PerkGroupReference,
+    options: BuildPerkHoverOptions = {},
+  ) {
+    dispatch({
+      perkGroupReference,
+      perkId,
+      shouldEmphasizePerkGroup: options.shouldEmphasizePerkGroup,
+      type: 'open-build-perk-hover',
+    })
   }
 
   function openResultsPerkHover(perkId: string) {

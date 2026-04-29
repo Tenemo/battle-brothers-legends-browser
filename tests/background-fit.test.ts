@@ -3,9 +3,11 @@ import {
   calculateBackgroundPerkGroupProbabilities,
   createBackgroundFitEngine,
   getBuildTargetPerkGroups,
+  getCoveredPickedPerkCount,
 } from '../src/lib/background-fit'
 import legendsPerksDatasetJson from '../src/data/legends-perks.json'
 import {
+  formatBackgroundFitBestNativeRollLabel,
   formatBackgroundFitExpectedBuildPerksLabel,
   formatBackgroundFitProbabilityLabel,
   formatBackgroundSourceProbabilityLabel,
@@ -361,6 +363,10 @@ describe('background fit', () => {
     )
   })
 
+  test('formats exact best native roll coverage separately from pickable overlap', () => {
+    expect(formatBackgroundFitBestNativeRollLabel(2, 4)).toBe('Best native roll covers 2/4')
+  })
+
   test('formats background source probabilities without internal minimum labels', () => {
     expect(formatBackgroundSourceProbabilityLabel(1)).toBe('Guaranteed')
     expect(formatBackgroundSourceProbabilityLabel(0.5)).toBe('50% chance')
@@ -463,6 +469,7 @@ describe('background fit', () => {
     expect(probabilitiesByPerkGroupId.get('Weapon::AxeTree')).toBe(1)
     expect(probabilitiesByPerkGroupId.get('Weapon::BowTree')).toBe(1)
     expect(duplicateExplicitFit.expectedCoveredPickedPerkCount).toBe(2)
+    expect(duplicateExplicitFit.maximumNativeCoveredPickedPerkCount).toBe(2)
     expect(duplicateExplicitFit.maximumTotalPerkGroupCount).toBe(2)
     expect(duplicateExplicitFit.matches).toEqual(
       expect.arrayContaining([
@@ -499,6 +506,7 @@ describe('background fit', () => {
 
     expect(balancedScholarFit?.expectedMatchedPerkGroupCount).toBe(1)
     expect(balancedScholarFit?.expectedCoveredPickedPerkCount).toBe(1)
+    expect(balancedScholarFit?.maximumNativeCoveredPickedPerkCount).toBe(1)
     expect(balancedScholarFit?.matches).toEqual([
       expect.objectContaining({
         isGuaranteed: true,
@@ -521,7 +529,32 @@ describe('background fit', () => {
       )
 
     expect(balancedScholarFit?.expectedCoveredPickedPerkCount).toBe(2)
+    expect(balancedScholarFit?.maximumNativeCoveredPickedPerkCount).toBe(2)
     expect(classRollFit?.expectedCoveredPickedPerkCount).toBe(1)
+    expect(classRollFit?.maximumNativeCoveredPickedPerkCount).toBe(1)
+  })
+
+  test('calculates exact best native roll coverage instead of marginal overlap union', () => {
+    const oneRandomTraitBackground = createBackgroundDefinition({
+      backgroundId: 'background.one_random_trait',
+      backgroundName: 'One random trait',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [oneRandomTraitBackground],
+    })
+    const oneRandomTraitFit = engine.getBackgroundFitView([
+      samplePerks[4],
+      samplePerks[5],
+      samplePerks[6],
+    ]).rankedBackgroundFits[0]
+
+    expect(getCoveredPickedPerkCount(oneRandomTraitFit.matches)).toBe(3)
+    expect(oneRandomTraitFit.expectedCoveredPickedPerkCount).toBe(1)
+    expect(oneRandomTraitFit.maximumNativeCoveredPickedPerkCount).toBe(1)
   })
 
   test('uses exact fill-to-minimum probabilities for deterministic categories', () => {
@@ -1243,19 +1276,7 @@ describe('background fit', () => {
     )
   })
 
-  test('breaks ties on expected and guaranteed coverage by total covered picked perks', () => {
-    const singleProfessionPerk = createPerk({
-      id: 'perk.profession.single',
-      perkConstName: 'LegendSingleProfession',
-      perkName: 'Single profession craft',
-      placements: [
-        createPlacement({
-          categoryName: 'Profession',
-          perkGroupId: 'SingleProfessionTree',
-          perkGroupName: 'Single profession',
-        }),
-      ],
-    })
+  test('breaks ties on expected and guaranteed coverage by exact best native roll coverage', () => {
     const firstEnemyPerk = createPerk({
       id: 'perk.enemy.first',
       perkConstName: 'LegendEnemyFirst',
@@ -1280,31 +1301,32 @@ describe('background fit', () => {
         }),
       ],
     })
-    const onePossibleProfessionBackground = createBackgroundDefinition({
-      backgroundId: 'background.one_possible_profession',
-      backgroundName: 'One possible profession',
+    const oneNativeTraitBackground = createBackgroundDefinition({
+      backgroundId: 'background.one_native_trait',
+      backgroundName: 'One native trait',
       overrides: {
-        Profession: { chance: 0.5, minimumPerkGroups: 0, perkGroupIds: [] },
+        Traits: { minimumPerkGroups: 1, perkGroupIds: [] },
       },
     })
     const twoPossibleEnemyBackground = createBackgroundDefinition({
       backgroundId: 'background.two_possible_enemy',
       backgroundName: 'Two possible enemy',
       overrides: {
-        Enemy: { chance: 0.5, minimumPerkGroups: 0, perkGroupIds: [] },
+        Enemy: { chance: 0.5, minimumPerkGroups: 1, perkGroupIds: [] },
       },
     })
     const engine = createBackgroundFitEngine({
       ...sampleDataset,
-      backgroundFitBackgrounds: [onePossibleProfessionBackground, twoPossibleEnemyBackground],
-      perkCount: 3,
-      perkGroupCount: 3,
-      perks: [singleProfessionPerk, firstEnemyPerk, secondEnemyPerk],
+      backgroundFitBackgrounds: [oneNativeTraitBackground, twoPossibleEnemyBackground],
+      perkCount: 4,
+      perkGroupCount: 4,
+      perks: [firstEnemyPerk, secondEnemyPerk, samplePerks[5], samplePerks[6]],
     })
     const backgroundFitView = engine.getBackgroundFitView([
-      singleProfessionPerk,
       firstEnemyPerk,
       secondEnemyPerk,
+      samplePerks[5],
+      samplePerks[6],
     ])
     const orderedBackgroundIds = backgroundFitView.rankedBackgroundFits.map(
       (backgroundFit) => backgroundFit.backgroundId,
@@ -1316,20 +1338,22 @@ describe('background fit', () => {
       ]),
     )
 
-    expect(backgroundFitsById.get('background.one_possible_profession')).toEqual(
+    expect(backgroundFitsById.get('background.one_native_trait')).toEqual(
       expect.objectContaining({
-        expectedCoveredPickedPerkCount: 0.5,
+        expectedCoveredPickedPerkCount: 1,
         guaranteedMatchedPerkGroupCount: 0,
+        maximumNativeCoveredPickedPerkCount: 1,
       }),
     )
     expect(backgroundFitsById.get('background.two_possible_enemy')).toEqual(
       expect.objectContaining({
-        expectedCoveredPickedPerkCount: 0.5,
+        expectedCoveredPickedPerkCount: 1,
         guaranteedMatchedPerkGroupCount: 0,
+        maximumNativeCoveredPickedPerkCount: 2,
       }),
     )
     expect(orderedBackgroundIds.indexOf('background.two_possible_enemy')).toBeLessThan(
-      orderedBackgroundIds.indexOf('background.one_possible_profession'),
+      orderedBackgroundIds.indexOf('background.one_native_trait'),
     )
   })
 

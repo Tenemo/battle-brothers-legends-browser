@@ -1,6 +1,5 @@
 import { createWriteStream } from 'node:fs'
 import {
-  access,
   cp as copyDirectory,
   mkdir,
   mkdtemp,
@@ -14,7 +13,7 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
-import { spawn } from 'node:child_process'
+import { pathExists, runCommand } from './script-utils.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -61,52 +60,8 @@ export function getLatestReleaseApiUrl({
   return `${githubApiBaseUrl}/repos/${githubRepository}/releases/latest`
 }
 
-async function pathExists(targetPath) {
-  try {
-    await access(targetPath)
-    return true
-  } catch {
-    return false
-  }
-}
-
 function sanitizeReleaseTagName(tagName) {
   return normalizeWhitespace(tagName).replace(/[<>:"/\\|?*]+/g, '-')
-}
-
-async function runCommand(commandName, commandArguments) {
-  return new Promise((resolve, reject) => {
-    const childProcess = spawn(commandName, commandArguments, {
-      shell: false,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
-    })
-    let standardOutput = ''
-    let standardError = ''
-
-    childProcess.stdout.on('data', (chunk) => {
-      standardOutput += chunk.toString()
-    })
-
-    childProcess.stderr.on('data', (chunk) => {
-      standardError += chunk.toString()
-    })
-
-    childProcess.on('error', reject)
-
-    childProcess.on('close', (exitCode) => {
-      if (exitCode === 0) {
-        resolve(standardOutput)
-        return
-      }
-
-      reject(
-        new Error(
-          `Command failed: ${commandName} ${commandArguments.join(' ')}\n${standardError.trim()}`,
-        ),
-      )
-    })
-  })
 }
 
 async function downloadArchiveFile(downloadUrl, archiveFilePath, fetchImpl) {

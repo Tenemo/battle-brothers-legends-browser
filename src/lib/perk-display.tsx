@@ -213,7 +213,7 @@ export function formatBackgroundFitProbabilityLabel(probability: number): string
   return `${Number.isInteger(roundedPercentage) ? roundedPercentage.toFixed(0) : roundedPercentage.toFixed(1)}%`
 }
 
-function formatBackgroundFitScoreLabel(score: number): string {
+export function formatBackgroundFitScoreLabel(score: number): string {
   const roundedScore = Math.round(score * 10) / 10
 
   return Number.isInteger(roundedScore) ? roundedScore.toFixed(0) : roundedScore.toFixed(1)
@@ -310,11 +310,11 @@ export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): 
     .toLowerCase()
 }
 
-export function formatBackgroundFitPickablePerksLabel(
-  coveredPickedPerkCount: number,
+export function formatBackgroundFitBestNativeRollLabel(
+  maximumNativeCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Up to ${coveredPickedPerkCount}/${pickedPerkCount} perks pickable`
+  return `Best native roll covers ${maximumNativeCoveredPickedPerkCount}/${pickedPerkCount}`
 }
 
 export function formatBackgroundFitExpectedBuildPerksLabel(

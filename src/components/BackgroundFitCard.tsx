@@ -1,5 +1,4 @@
 import {
-  getCoveredPickedPerkCount,
   getGuaranteedCoveredPickedPerkCount,
   type BackgroundFitMatch,
   type BuildTargetPerkGroup,
@@ -8,9 +7,10 @@ import {
 import {
   formatBackgroundFitExpectedBuildPerksLabel,
   formatBackgroundFitBuildReachabilityLabel,
+  formatBackgroundFitBestNativeRollLabel,
   formatBackgroundFitGuaranteedPerksLabel,
-  formatBackgroundFitPickablePerksLabel,
   formatBackgroundFitProbabilityLabel,
+  formatBackgroundFitScoreLabel,
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
   getVisibleBackgroundPillLabel,
@@ -23,34 +23,33 @@ import { BackgroundFitAccordionChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
 
-function getBackgroundFitPickablePerksSummaryCopy(
-  coveredPickedPerkCount: number,
+function getBackgroundFitBestNativeRollSummaryCopy(
+  maximumNativeCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Best-case picked-perk coverage: up to ${coveredPickedPerkCount} of ${pickedPerkCount} picked perks can be covered if every relevant optional perk group appears.`
+  return `One legal native background roll can cover ${maximumNativeCoveredPickedPerkCount} of ${pickedPerkCount} picked perks. Books and scrolls are not included.`
 }
 
 function getBackgroundFitGuaranteedPerksSummaryCopy(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Guaranteed picked-perk coverage: ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} picked perks are covered before optional rolls.`
+  return `Groups this background always has cover ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} picked perks. Optional rolls, books, and scrolls are not included.`
 }
 
 function getBackgroundFitExpectedBuildPerksSummaryCopy(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Expected picked-perk coverage: ${formatBackgroundFitExpectedBuildPerksLabel(
+  return `After dynamic background rolls, this background covers an average of ${formatBackgroundFitScoreLabel(
     expectedCoveredPickedPerkCount,
-    pickedPerkCount,
-  )} after dynamic perk group rolls.`
+  )} of ${pickedPerkCount} picked perks. Alternate perk-group placements count once per picked perk. Books and scrolls are not included.`
 }
 
 function getBackgroundFitBuildReachabilitySummaryCopy(probability: number): string {
-  return `Full build chance: ${formatBackgroundFitProbabilityLabel(
+  return `One legal native background roll plus the selected book and scroll filters can cover every picked perk with a ${formatBackgroundFitProbabilityLabel(
     probability,
-  )} after dynamic perk group rolls and the selected study resources.`
+  )} chance.`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -247,7 +246,6 @@ export function BackgroundFitCard({
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
-  const coveredPickedPerkCount = getCoveredPickedPerkCount(backgroundFit.matches)
   const guaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
     backgroundFit.matches,
   )
@@ -361,12 +359,12 @@ export function BackgroundFitCard({
               />
               <BackgroundFitMetricBadge
                 className={styles.backgroundFitSummaryBadge}
-                label={formatBackgroundFitPickablePerksLabel(
-                  coveredPickedPerkCount,
+                label={formatBackgroundFitBestNativeRollLabel(
+                  backgroundFit.maximumNativeCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
-                tooltip={getBackgroundFitPickablePerksSummaryCopy(
-                  coveredPickedPerkCount,
+                tooltip={getBackgroundFitBestNativeRollSummaryCopy(
+                  backgroundFit.maximumNativeCoveredPickedPerkCount,
                   pickedPerkCount,
                 )}
               />

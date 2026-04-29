@@ -18,6 +18,7 @@ import {
   unwrapReference,
   unwrapTable,
 } from './squirrel-subset-parser.mjs'
+import { sortUniqueStrings } from './script-utils.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -310,10 +311,6 @@ function splitDescriptionParagraphs(value) {
       ),
     )
     .filter(Boolean)
-}
-
-function sortUniqueStrings(values) {
-  return [...new Set(values.filter(Boolean))].toSorted((left, right) => left.localeCompare(right))
 }
 
 function getCategoryPriority(categoryOrder, categoryName) {

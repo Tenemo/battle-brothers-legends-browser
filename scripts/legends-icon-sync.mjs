@@ -1,6 +1,4 @@
-import { spawn } from 'node:child_process'
 import {
-  access,
   copyFile,
   cp as copyDirectory,
   mkdir,
@@ -12,6 +10,7 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { pathExists, runCommand, sortUniqueStrings } from './script-utils.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -38,21 +37,6 @@ function normalizeRelativeIconPath(relativeIconPath) {
   return relativeIconPath.replaceAll('\\', '/').replace(/^\/+/, '')
 }
 
-function sortUniqueStrings(values) {
-  return [...new Set(values.filter(Boolean))].toSorted((leftValue, rightValue) =>
-    leftValue.localeCompare(rightValue),
-  )
-}
-
-async function pathExists(targetPath) {
-  try {
-    await access(targetPath)
-    return true
-  } catch {
-    return false
-  }
-}
-
 function chunkValues(values, maximumChunkLength) {
   const chunks = []
 
@@ -61,41 +45,6 @@ function chunkValues(values, maximumChunkLength) {
   }
 
   return chunks
-}
-
-function runCommand(commandName, commandArguments) {
-  return new Promise((resolve, reject) => {
-    const childProcess = spawn(commandName, commandArguments, {
-      shell: false,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
-    })
-    let standardOutput = ''
-    let standardError = ''
-
-    childProcess.stdout.on('data', (chunk) => {
-      standardOutput += chunk.toString()
-    })
-
-    childProcess.stderr.on('data', (chunk) => {
-      standardError += chunk.toString()
-    })
-
-    childProcess.on('error', reject)
-
-    childProcess.on('close', (exitCode) => {
-      if (exitCode === 0) {
-        resolve(standardOutput)
-        return
-      }
-
-      reject(
-        new Error(
-          `Command failed: ${commandName} ${commandArguments.join(' ')}\n${standardError.trim()}`,
-        ),
-      )
-    })
-  })
 }
 
 export function collectRequiredGameIconPaths(dataset) {
