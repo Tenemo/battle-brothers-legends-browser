@@ -802,9 +802,10 @@
 
     @include surface-transition;
 
-    &:not([data-has-highlighted-perk='true']):hover,
-    &:not([data-has-highlighted-perk='true']):focus-within,
-    &[data-highlighted='true']:not([data-has-highlighted-perk='true']) {
+    &:hover,
+    &:focus-within,
+    &[data-highlighted='true'],
+    &[data-has-highlighted-perk='true'] {
       border-color: var(--border-strong);
       background: var(--surface-result-active);
       color: var(--text-primary);

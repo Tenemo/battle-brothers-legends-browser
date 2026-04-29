@@ -190,7 +190,7 @@ export function PerkResults({
     ? Math.max(visiblePerks.length - displayedPerks.length, 0)
     : 0
   const hasActivePerkSourceFilter =
-    shouldIncludeOriginPerkGroups || !shouldIncludeAncientScrollPerkGroups
+    shouldIncludeOriginPerkGroups || shouldIncludeAncientScrollPerkGroups
   const nextMobilePerkResultBatchSize = Math.min(mobilePerkResultBatchSize, hiddenMobilePerkCount)
 
   function handleShowMoreMobilePerkResults() {

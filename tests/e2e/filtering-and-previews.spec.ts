@@ -103,8 +103,11 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
   const filterPerksButton = page.getByRole('button', { name: 'Filter perks' })
 
   await expect(filterPerksButton).toBeVisible()
-  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
-  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
   await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBeNull()
   await expect
     .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
@@ -232,11 +235,8 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
   await expect
     .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
     .toBe('false')
-  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
-  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
-    'fill',
-    'currentColor',
-  )
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
 
   await searchPerks(page, 'Magic Missile Focus')
 
@@ -300,8 +300,11 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
   await expect
     .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
     .toBeNull()
-  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
-  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
 
   await searchPerks(page, 'Berserk')
 

@@ -1110,6 +1110,8 @@ test('separates planner group card hover from icon and perk pill hover states', 
     .filter({ hasText: 'Heavy Armor' })
   const heavyArmorIcon = heavyArmorGroupCard.getByTestId('planner-group-option-icon').first()
   const battleForgedPill = heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' })
+  const immovableObjectPill = heavyArmorGroupCard.getByRole('button', { name: 'Immovable Object' })
+  const steadfastPill = heavyArmorGroupCard.getByRole('button', { name: 'Steadfast' })
   const battleForgedPickedPerkTile = getBuildPerksBar(page)
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Battle Forged' })
@@ -1178,6 +1180,27 @@ test('separates planner group card hover from icon and perk pill hover states', 
 
   expectCssRgbColorsToMatch(iconBorderAfterCardHover, iconBorderBeforeCardHover)
 
+  await page.mouse.move(1, 1)
+  await expect(heavyArmorGroupCard).toHaveAttribute('data-has-highlighted-perk', 'false')
+  await expect(immovableObjectPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect(steadfastPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect
+    .poll(() =>
+      heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .toBe(cardBackgroundBeforeHover)
+
+  await battleForgedPickedPerkTile.hover()
+  await expect(heavyArmorGroupCard).toHaveAttribute('data-has-highlighted-perk', 'true')
+  await expect(battleForgedPill).toHaveAttribute('data-highlighted', 'true')
+  await expect(immovableObjectPill).toHaveAttribute('data-highlighted', 'false')
+  await expect(steadfastPill).toHaveAttribute('data-highlighted', 'false')
+  await expect
+    .poll(() =>
+      heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
+    )
+    .toBe(activePlannerSurfaceColor)
+
   await battleForgedPill.hover()
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
@@ -1204,7 +1227,10 @@ test('separates planner group card hover from icon and perk pill hover states', 
     .poll(() =>
       heavyArmorGroupCard.evaluate((element) => window.getComputedStyle(element).backgroundColor),
     )
-    .toBe(cardBackgroundBeforeHover)
+    .toBe(activePlannerSurfaceColor)
+  await expect(battleForgedPill).toHaveAttribute('data-highlighted', 'true')
+  await expect(immovableObjectPill).toHaveAttribute('data-highlighted', 'false')
+  await expect(steadfastPill).toHaveAttribute('data-highlighted', 'false')
   await expect
     .poll(() =>
       battleForgedPill.evaluate((element) => window.getComputedStyle(element).backgroundColor),
