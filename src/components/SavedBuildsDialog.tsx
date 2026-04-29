@@ -2,9 +2,11 @@ import { type FormEvent, type KeyboardEvent, useEffect, useId, useRef, useState 
 import { Copy, Download, Save, Trash2, X } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
+import { useModalBackgroundInert } from '../lib/use-modal-background-inert'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
-import styles from './BuildPlanner.module.scss'
+import plannerStyles from './BuildPlanner.module.scss'
+import styles from './SavedBuildsDialog.module.scss'
 
 function getDefaultSavedBuildName(savedBuilds: BuildPlannerSavedBuild[]): string {
   const savedBuildNames = new Set(savedBuilds.map((savedBuild) => savedBuild.name))
@@ -158,6 +160,8 @@ export function SavedBuildsDialog({
     ? savedBuildsErrorMessage
     : getSavedBuildOperationStatusLabel(savedBuildOperationStatus)
 
+  useModalBackgroundInert(dialogBackdropRef)
+
   useEffect(() => {
     if (nameInputRef.current && !nameInputRef.current.disabled) {
       nameInputRef.current.focus()
@@ -244,11 +248,14 @@ export function SavedBuildsDialog({
           </div>
           <button
             aria-label="Close saved builds"
-            className={joinClassNames(styles.plannerActionButton, styles.savedBuildsCloseButton)}
+            className={joinClassNames(
+              plannerStyles.plannerActionButton,
+              styles.savedBuildsCloseButton,
+            )}
             onClick={onClose}
             type="button"
           >
-            <X aria-hidden="true" className={styles.plannerButtonIcon} />
+            <X aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
             Close
           </button>
         </div>
@@ -266,11 +273,14 @@ export function SavedBuildsDialog({
               value={buildName}
             />
             <button
-              className={joinClassNames(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
+              className={joinClassNames(
+                plannerStyles.plannerActionButton,
+                styles.savedBuildPrimaryButton,
+              )}
               disabled={!hasPickedPerks || isSaving}
               type="submit"
             >
-              <Save aria-hidden="true" className={styles.plannerButtonIcon} />
+              <Save aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
               {isSaving ? 'Saving' : 'Save current'}
             </button>
           </div>
@@ -327,7 +337,7 @@ export function SavedBuildsDialog({
                     <button
                       aria-label={`Load saved build ${savedBuild.name}`}
                       className={joinClassNames(
-                        styles.plannerActionButton,
+                        plannerStyles.plannerActionButton,
                         styles.savedBuildPrimaryButton,
                       )}
                       disabled={savedBuild.availablePerkIds.length === 0 || isPending}
@@ -337,25 +347,25 @@ export function SavedBuildsDialog({
                       }}
                       type="button"
                     >
-                      <Download aria-hidden="true" className={styles.plannerButtonIcon} />
+                      <Download aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
                       Load
                     </button>
                     <button
                       aria-label={`Copy saved build ${savedBuild.name} link`}
-                      className={styles.plannerActionButton}
+                      className={plannerStyles.plannerActionButton}
                       disabled={savedBuild.availablePerkIds.length === 0 || isPending}
                       onClick={() => {
                         void handleCopySavedBuildLink(savedBuild.id)
                       }}
                       type="button"
                     >
-                      <Copy aria-hidden="true" className={styles.plannerButtonIcon} />
+                      <Copy aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
                       Copy link
                     </button>
                     <button
                       aria-label={`Delete saved build ${savedBuild.name}`}
                       className={joinClassNames(
-                        styles.plannerActionButton,
+                        plannerStyles.plannerActionButton,
                         styles.savedBuildDeleteButton,
                       )}
                       disabled={isPending}
@@ -364,7 +374,7 @@ export function SavedBuildsDialog({
                       }}
                       type="button"
                     >
-                      <Trash2 aria-hidden="true" className={styles.plannerButtonIcon} />
+                      <Trash2 aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
                       Delete
                     </button>
                   </div>

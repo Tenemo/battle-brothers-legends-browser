@@ -75,6 +75,7 @@ $primitive-lengths: (
   '1-4rem': 1.4rem,
   '1-42rem': 1.42rem,
   '1-45rem': 1.45rem,
+  '1-5rem': 1.5rem,
   '1-65rem': 1.65rem,
   '1-68rem': 1.68rem,
   '1-72rem': 1.72rem,
@@ -253,12 +254,11 @@ $primitive-rgb-colors: (
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 
-    --body-font-family: 'Source Sans 3', serif;
+    --body-font-family: 'Source Sans 3', sans-serif;
     --heading-font-family: 'Cinzel', serif;
     --font-weight-regular: 400;
     --background-color: #0c0908;
     --surface-panel: rgb(27 21 18 / 0.82);
-    --surface-panel-muted: rgb(18 15 13 / 0.95);
     --surface-control: rgb(37 29 25 / 0.82);
     --surface-control-active: rgb(53 39 30 / 0.95);
     --panel-background: var(--surface-panel);
@@ -273,10 +273,9 @@ $primitive-rgb-colors: (
     --accent-soft: #ddb07b;
     --border-color: rgb(198 138 73 / 0.18);
     --focus-ring: rgb(221 176 123 / 0.9);
-    --shadow-panel: 0 24px 80px rgb(0 0 0 / 0.32);
-    --panel-shadow: var(--shadow-panel);
+    --shadow-panel: 0 14px 32px rgb(0 0 0 / 0.28);
     --target-size: 2.3rem;
-    --target-size-compact: 1.2rem;
+    --target-size-compact: 1.5rem;
     --space-3xs: 0.08rem;
     --space-2xs: 0.16rem;
     --space-xs: 0.24rem;
@@ -289,8 +288,6 @@ $primitive-rgb-colors: (
     --space-control-inline: 0.68rem;
     --space-rail-padding-block: 0.78rem;
     --space-rail-block: 0.62rem;
-    --space-rail-inline: 0.32rem;
-    --space-rail-button-gap: 0.56rem;
     --space-icon-gap: 0.58rem;
     --rail-button-thickness: 1.65rem;
     --rail-button-mobile-min-height: 2.28rem;
@@ -301,28 +298,26 @@ $primitive-rgb-colors: (
     --radius-sm: 0.42rem;
     --radius-md: 0.52rem;
     --radius-lg: 0.62rem;
-    --radius-xl: 0.72rem;
-    --radius-2xl: 0.8rem;
+    --radius-xl: 0.56rem;
+    --radius-2xl: 0.56rem;
     --radius-control: 0.56rem;
-    --radius-result: 0.74rem;
     --radius-icon: 0.78rem;
     --radius-pill: 999px;
-    --font-size-3xs: 0.58rem;
-    --font-size-2xs: 0.62rem;
-    --font-size-xs: 0.68rem;
-    --font-size-sm: 0.74rem;
-    --font-size-md: 0.78rem;
-    --font-size-lg: 0.82rem;
-    --font-size-xl: 0.9rem;
-    --font-size-2xl: 0.98rem;
-    --font-size-base: 0.8rem;
+    --font-size-3xs: 0.64rem;
+    --font-size-2xs: 0.68rem;
+    --font-size-xs: 0.74rem;
+    --font-size-sm: 0.8rem;
+    --font-size-md: 0.84rem;
+    --font-size-lg: 0.9rem;
+    --font-size-xl: 1rem;
+    --font-size-2xl: 1.05rem;
+    --font-size-base: 0.88rem;
     --surface-result: rgb(18 15 13 / 0.86);
     --surface-result-hover: rgb(28 23 20 / 0.9);
     --surface-result-active: var(--surface-control-active);
     --surface-result-muted: rgb(18 15 13 / 0.58);
     --surface-card: rgb(18 15 13 / 0.88);
-    --surface-card-background:
-      linear-gradient(180deg, rgb(181 128 73 / 0.07), transparent 65%), var(--surface-card);
+    --surface-card-background: var(--surface-card);
     --surface-overlay: rgb(17 13 11 / 0.98);
     --surface-overlay-raised:
       linear-gradient(180deg, rgb(26 21 17 / 0.98), rgb(15 12 10 / 0.99)), rgb(15 12 10);
@@ -338,12 +333,8 @@ $primitive-rgb-colors: (
     --border-success: rgb(116 168 105 / 0.54);
     --text-danger: rgb(244 205 197);
     --text-success: rgb(211 237 199);
-    --shadow-low: 0 10px 24px rgb(0 0 0 / 0.24);
-    --shadow-medium: 0 18px 36px rgb(0 0 0 / 0.34);
-    --shadow-high: 0 24px 58px rgb(0 0 0 / 0.48);
-    --shadow-color-low: rgb(0 0 0 / 0.24);
-    --shadow-color-medium: rgb(0 0 0 / 0.34);
-    --shadow-color-high: rgb(0 0 0 / 0.48);
+    --shadow-medium: 0 12px 24px rgb(0 0 0 / 0.3);
+    --shadow-high: 0 18px 40px rgb(0 0 0 / 0.42);
     --shadow-inner-highlight: inset 0 1px 0 rgb(255 255 255 / 0.04);
     --shadow-search-highlight: 0 0 0 0.08em rgb(204 155 84 / 0.14);
     --shadow-perk-icon: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 10px 24px rgb(0 0 0 / 0.24);
@@ -361,12 +352,7 @@ $primitive-rgb-colors: (
     --icon-size-2xs: 0.78rem;
     --icon-size-xs: 0.82rem;
     --icon-size-sm: 0.9rem;
-    --icon-size-md: 1rem;
-    --icon-size-lg: 1.05rem;
-    --icon-size-xl: 1.3rem;
     --motion-fast: 160ms ease;
-    --motion-medium: 180ms ease;
-    --motion-panel: 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
     --motion-fast-duration: 160ms;
     --motion-medium-duration: 180ms;
     --motion-panel-duration: 220ms;

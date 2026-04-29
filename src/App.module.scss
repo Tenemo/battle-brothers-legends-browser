@@ -20,16 +20,6 @@
     position: fixed;
     inset: 0;
     background:
-      radial-gradient(
-        circle at top,
-        var(--primitive-color-rgb-181-128-73-alpha-0-16),
-        transparent 30%
-      ),
-      radial-gradient(
-        circle at 80% 20%,
-        var(--primitive-color-rgb-120-72-43-alpha-0-18),
-        transparent 24%
-      ),
       linear-gradient(
         var(--primitive-color-rgb-13-11-10-alpha-0-2),
         var(--primitive-color-rgb-13-11-10-alpha-0-72)
@@ -313,7 +303,7 @@
       --control-height-md: var(--primitive-length-1-8rem);
       --control-height-lg: var(--primitive-length-2rem);
       --target-size: var(--primitive-length-2rem);
-      --target-size-compact: var(--primitive-length-1-05rem);
+      --target-size-compact: var(--primitive-length-1-5rem);
       --rail-button-thickness: var(--primitive-length-1-4rem);
 
       gap: var(--primitive-length-0-5rem);

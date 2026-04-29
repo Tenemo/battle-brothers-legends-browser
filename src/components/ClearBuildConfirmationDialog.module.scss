@@ -1,0 +1,102 @@
+@use '../styles/mixins' as *;
+
+@layer components {
+  .dialogBackdrop {
+    @include dialog-backdrop;
+  }
+
+  .clearBuildDialog {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    width: min(var(--primitive-length-30rem), 100%);
+
+    @include dialog-surface;
+
+    h2 {
+      margin: 0;
+      font-size: var(--font-size-2xl);
+    }
+  }
+
+  .clearBuildDialogIcon {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+
+    @include size(var(--primitive-length-2-15rem));
+
+    border: var(--primitive-length-1px) solid var(--border-danger);
+    border-radius: var(--radius-lg);
+    background: var(--surface-danger);
+    color: var(--text-danger);
+  }
+
+  .clearBuildDialogIconSvg {
+    @include size(var(--primitive-length-1-12rem));
+
+    stroke-width: 1.9;
+  }
+
+  .clearBuildDialogCopy {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+
+    p {
+      margin: 0;
+      color: var(--text-secondary);
+      font-size: var(--font-size-lg);
+      line-height: 1.32;
+    }
+  }
+
+  .clearBuildDialogWarning {
+    color: var(--text-danger);
+  }
+
+  .clearBuildDialogActions {
+    grid-column: 1 / -1;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-md);
+  }
+
+  .clearBuildNeutralButton {
+    border-color: var(--border-overlay);
+    color: var(--text-primary);
+  }
+
+  .clearBuildConfirmButton {
+    border-color: var(--border-danger);
+    background: var(--surface-danger);
+    color: var(--text-danger);
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      border-color: var(--border-danger-hover);
+      background: var(--surface-danger-hover);
+    }
+  }
+
+  @include mobile {
+    .dialogBackdrop {
+      align-items: stretch;
+      padding: var(--space-lg);
+    }
+
+    .clearBuildDialog {
+      grid-template-columns: 1fr;
+      align-content: start;
+      max-height: calc(var(--primitive-length-100vh) - var(--primitive-length-1-12rem));
+    }
+
+    .clearBuildDialogActions {
+      justify-content: stretch;
+
+      button {
+        flex: 1 1 100%;
+      }
+    }
+  }
+}

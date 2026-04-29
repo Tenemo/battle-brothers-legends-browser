@@ -6,7 +6,7 @@
     --planner-perk-row-min-height: var(--primitive-length-3-45rem);
     --planner-picked-perk-slot-width: var(--primitive-length-8-04rem);
     --planner-row-label-width: var(--primitive-length-10-4rem);
-    --planner-slot-width: var(--primitive-length-10-4rem);
+    --planner-slot-width: var(--planner-tile-width);
     --planner-track-gap: var(--space-md);
     --planner-tile-width: var(--primitive-length-14rem);
     --planner-placeholder-width: var(--primitive-length-15rem);
@@ -74,7 +74,6 @@
   .buildPlannerInfo,
   .plannerActionButton,
   .buildPlannerInfoButton,
-  .clearBuildDialogIcon,
   .plannerPill,
   .plannerSectionToggle {
     display: inline-flex;
@@ -212,8 +211,7 @@
     min-width: var(--primitive-length-5-9rem);
   }
 
-  .clearBuildActionButton,
-  .savedBuildDeleteButton {
+  .clearBuildActionButton {
     &:hover:not(:disabled),
     &:focus-visible:not(:disabled) {
       border-color: var(--border-danger);
@@ -222,196 +220,10 @@
     }
   }
 
-  .clearBuildConfirmButton {
-    border-color: var(--border-danger);
-    background: var(--surface-danger);
-    color: var(--text-danger);
-
-    &:hover:not(:disabled),
-    &:focus-visible:not(:disabled) {
-      border-color: var(--border-danger-hover);
-      background: var(--surface-danger-hover);
-    }
-  }
-
-  .dialogBackdrop {
-    position: fixed;
-    z-index: var(--z-index-modal);
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: var(--space-3xl);
-    background: var(--primitive-color-rgb-0-0-0-alpha-0-62);
-  }
-
-  .savedBuildsDialog,
-  .clearBuildDialog {
-    display: grid;
-    gap: var(--space-xl);
-    overflow: hidden;
-    border: var(--primitive-length-1px) solid var(--border-overlay);
-    border-radius: var(--radius-xl);
-    padding: var(--space-xl);
-    background: var(--surface-overlay-raised);
-    box-shadow: var(--shadow-high), var(--shadow-inner-highlight);
-  }
-
-  .savedBuildsDialog {
-    width: min(var(--primitive-length-42rem), 100%);
-    max-height: min(
-      var(--primitive-length-40rem),
-      calc(var(--primitive-length-100vh) - var(--control-height-md))
-    );
-
-    h2 {
-      margin: 0;
-      font-size: var(--font-size-2xl);
-    }
-  }
-
-  .clearBuildDialog {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-    width: min(var(--primitive-length-30rem), 100%);
-
-    h2 {
-      margin: 0;
-      font-size: var(--font-size-2xl);
-    }
-  }
-
-  .savedBuildsDialogHeader {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2xl);
-    align-items: flex-start;
-  }
-
-  .clearBuildDialogIcon {
-    justify-content: center;
-
-    @include size(var(--primitive-length-2-15rem));
-
-    border: var(--primitive-length-1px) solid var(--border-danger);
-    border-radius: var(--radius-lg);
-    background: var(--surface-danger);
-    color: var(--text-danger);
-  }
-
-  .clearBuildDialogIconSvg {
-    @include size(var(--primitive-length-1-12rem));
-
-    stroke-width: 1.9;
-  }
-
-  .clearBuildDialogCopy,
-  .savedBuildForm,
-  .savedBuildsList,
   .buildPerkTooltipCopy {
     display: grid;
   }
 
-  .clearBuildDialogCopy {
-    gap: var(--space-sm);
-    min-width: 0;
-
-    p {
-      margin: 0;
-      color: var(--text-secondary);
-      font-size: var(--font-size-lg);
-      line-height: 1.32;
-    }
-  }
-
-  .clearBuildDialogWarning {
-    color: var(--text-danger);
-  }
-
-  .clearBuildDialogActions {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: var(--space-md);
-  }
-
-  .savedBuildsStorageStatus {
-    margin: var(--space-xs) 0 0;
-    color: var(--text-muted);
-    font-size: var(--font-size-md);
-  }
-
-  .savedBuildsCloseButton {
-    flex: 0 0 auto;
-  }
-
-  .savedBuildForm {
-    gap: var(--space-sm);
-
-    label {
-      color: var(--text-muted);
-      font-size: var(--font-size-sm);
-    }
-
-    input {
-      min-width: 0;
-      min-height: var(--control-height-md);
-      border: var(--primitive-length-1px) solid var(--border-color);
-      border-radius: var(--radius-xl);
-      padding: var(--primitive-length-0-4rem) var(--space-lg);
-      background: var(--input-background);
-      color: var(--text-primary);
-      font: inherit;
-
-      &:hover,
-      &:focus,
-      &:focus-visible {
-        border-color: var(--border-strong);
-        background: var(--surface-control-active);
-        outline: 0;
-      }
-
-      &:disabled {
-        opacity: 0.48;
-      }
-    }
-  }
-
-  .savedBuildFormRow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    gap: var(--space-md);
-  }
-
-  .savedBuildPrimaryButton {
-    border-color: var(--border-overlay);
-    color: var(--text-primary);
-  }
-
-  .savedBuildsStatusMessage {
-    margin: 0;
-    border: var(--primitive-length-1px) solid var(--border-success);
-    border-radius: var(--radius-lg);
-    padding: var(--space-md) var(--space-lg);
-    background: var(--surface-success);
-    color: var(--text-success);
-    font-size: var(--font-size-md);
-
-    &[data-status='error'] {
-      border-color: var(--border-danger);
-      background: var(--surface-danger);
-      color: var(--text-danger);
-    }
-  }
-
-  .savedBuildsList {
-    gap: var(--space-md);
-    min-height: 0;
-    overflow: auto;
-  }
-
-  .savedBuildsEmpty,
   .plannerSlot[data-placeholder='true'],
   .plannerSectionPlaceholder {
     border-color: var(--border-overlay);
@@ -419,60 +231,10 @@
     background: var(--surface-result-muted);
   }
 
-  .savedBuildsEmpty {
-    margin: 0;
-    border-width: var(--primitive-length-1px);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
-    color: var(--text-muted);
-    font-size: var(--font-size-lg);
-  }
-
-  .savedBuildCard,
   .plannerSlot,
   .plannerGroupCard,
   .plannerSectionPlaceholder {
     @include result-surface;
-  }
-
-  .savedBuildCard {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    gap: var(--space-xl);
-    align-items: center;
-    padding: var(--space-lg);
-  }
-
-  .savedBuildCardCopy {
-    min-width: 0;
-  }
-
-  .savedBuildCardName {
-    display: block;
-    color: var(--text-primary);
-    font-size: var(--font-size-xl);
-
-    @include truncate;
-  }
-
-  .savedBuildCardMeta,
-  .savedBuildCardPreview {
-    margin: var(--space-2xs) 0 0;
-    color: var(--text-muted);
-    font-size: var(--font-size-sm);
-  }
-
-  .savedBuildCardPreview {
-    color: var(--text-secondary);
-
-    @include truncate;
-  }
-
-  .savedBuildCardActions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: var(--space-sm);
   }
 
   .plannerBoard {
@@ -1031,9 +793,7 @@
     .buildPlanner {
       --planner-group-row-min-height: var(--primitive-length-3-7rem);
       --planner-perk-row-min-height: var(--primitive-length-2-72rem);
-      --planner-picked-perk-row-min-height: var(--primitive-length-2-4rem);
       --planner-row-label-width: var(--primitive-length-8-4rem);
-      --planner-slot-width: var(--primitive-length-8-7rem);
       --planner-track-gap: var(--primitive-length-0-34rem);
       --planner-tile-width: var(--primitive-length-11-4rem);
       --planner-placeholder-width: var(--primitive-length-12rem);
@@ -1117,36 +877,10 @@
       padding: var(--space-xs) var(--space-md);
     }
 
-    .dialogBackdrop {
-      align-items: stretch;
-      padding: var(--space-lg);
-    }
-
-    .savedBuildsDialog,
-    .clearBuildDialog {
-      max-height: calc(var(--primitive-length-100vh) - var(--primitive-length-1-12rem));
-    }
-
-    .clearBuildDialog,
-    .savedBuildFormRow,
-    .savedBuildCard,
     .plannerRow {
       grid-template-columns: 1fr;
     }
 
-    .clearBuildDialog {
-      align-content: start;
-    }
-
-    .clearBuildDialogActions {
-      justify-content: stretch;
-
-      .plannerActionButton {
-        flex: 1 1 100%;
-      }
-    }
-
-    .savedBuildCardActions,
     .plannerBoard {
       justify-content: flex-start;
     }

@@ -196,9 +196,21 @@ export function formatPickedPerkCountLabel(perkCount: number): string {
 }
 
 export function formatBackgroundFitProbabilityLabel(probability: number): string {
-  const percentage = Math.round(probability * 1000) / 10
+  const percentage = probability * 100
 
-  return `${Number.isInteger(percentage) ? percentage.toFixed(0) : percentage.toFixed(1)}%`
+  if (percentage > 0 && percentage < 0.01) {
+    return '<0.01%'
+  }
+
+  if (percentage < 1) {
+    const roundedSmallPercentage = Math.round(percentage * 100) / 100
+
+    return `${Number.isInteger(roundedSmallPercentage) ? roundedSmallPercentage.toFixed(0) : roundedSmallPercentage.toFixed(2)}%`
+  }
+
+  const roundedPercentage = Math.round(percentage * 10) / 10
+
+  return `${Number.isInteger(roundedPercentage) ? roundedPercentage.toFixed(0) : roundedPercentage.toFixed(1)}%`
 }
 
 function formatBackgroundFitScoreLabel(score: number): string {
@@ -319,6 +331,10 @@ export function formatBackgroundFitGuaranteedPerksLabel(
   pickedPerkCount: number,
 ): string {
   return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
+}
+
+export function formatBackgroundFitBuildReachabilityLabel(probability: number): string {
+  return `Full build ${formatBackgroundFitProbabilityLabel(probability)}`
 }
 
 export function getPerkGroupHoverKey({ categoryName, perkGroupId }: PerkGroupHoverTarget): string {

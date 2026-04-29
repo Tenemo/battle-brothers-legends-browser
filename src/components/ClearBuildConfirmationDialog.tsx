@@ -1,7 +1,9 @@
 import { type KeyboardEvent, useEffect, useId, useRef } from 'react'
 import { CircleAlert, RotateCcw, X } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
-import styles from './BuildPlanner.module.scss'
+import { useModalBackgroundInert } from '../lib/use-modal-background-inert'
+import plannerStyles from './BuildPlanner.module.scss'
+import styles from './ClearBuildConfirmationDialog.module.scss'
 
 function keepKeyboardFocusInsideDialog(event: KeyboardEvent<HTMLElement>) {
   if (event.key !== 'Tab') {
@@ -42,8 +44,11 @@ export function ClearBuildConfirmationDialog({
 }) {
   const titleId = useId()
   const descriptionId = useId()
+  const dialogBackdropRef = useRef<HTMLDivElement | null>(null)
   const keepBuildButtonRef = useRef<HTMLButtonElement | null>(null)
   const pickedPerkLabel = `${pickedPerkCount} picked perk${pickedPerkCount === 1 ? '' : 's'}`
+
+  useModalBackgroundInert(dialogBackdropRef)
 
   useEffect(() => {
     keepBuildButtonRef.current?.focus()
@@ -65,6 +70,7 @@ export function ClearBuildConfirmationDialog({
           onCancel()
         }
       }}
+      ref={dialogBackdropRef}
     >
       <section
         aria-describedby={descriptionId}
@@ -85,20 +91,26 @@ export function ClearBuildConfirmationDialog({
         </div>
         <div className={styles.clearBuildDialogActions}>
           <button
-            className={joinClassNames(styles.plannerActionButton, styles.savedBuildPrimaryButton)}
+            className={joinClassNames(
+              plannerStyles.plannerActionButton,
+              styles.clearBuildNeutralButton,
+            )}
             onClick={onCancel}
             ref={keepBuildButtonRef}
             type="button"
           >
-            <X aria-hidden="true" className={styles.plannerButtonIcon} />
+            <X aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
             Keep build
           </button>
           <button
-            className={joinClassNames(styles.plannerActionButton, styles.clearBuildConfirmButton)}
+            className={joinClassNames(
+              plannerStyles.plannerActionButton,
+              styles.clearBuildConfirmButton,
+            )}
             onClick={onConfirm}
             type="button"
           >
-            <RotateCcw aria-hidden="true" className={styles.plannerButtonIcon} />
+            <RotateCcw aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
             Clear build
           </button>
         </div>

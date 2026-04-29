@@ -47,7 +47,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
-  await expect(backgroundFitPanel.getByText(/Ranked by expected perks pickable./i)).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Ranked by full build chance./i)).toBeVisible()
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
   ).toBeVisible()
@@ -643,7 +643,7 @@ test('keeps dense background names readable from a shared build url and starts c
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
-  await expect(backgroundFitPanel.getByText(/Ranked by expected perks pickable./i)).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Ranked by full build chance./i)).toBeVisible()
 
   const denseBuildBackgroundCard = backgroundFitPanel
     .getByTestId('background-fit-card')

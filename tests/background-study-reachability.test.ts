@@ -78,7 +78,10 @@ function createNativeRequirementChecker(reachableRequirementSets: string[][]) {
 
   return (requirements: StudyReachabilityRequirement[]) =>
     reachableRequirementSetKeys.has(
-      requirements.map((requirement) => createRequirementKey(requirement)).toSorted().join(','),
+      requirements
+        .map((requirement) => createRequirementKey(requirement))
+        .toSorted()
+        .join(','),
     )
 }
 
@@ -196,10 +199,7 @@ describe('background study reachability', () => {
   })
 
   test('chooses one alternate placement per picked perk instead of requiring every placement', () => {
-    const flexiblePerk = createPerk('calm or berserker perk', [
-      calmPlacement,
-      berserkerPlacement,
-    ])
+    const flexiblePerk = createPerk('calm or berserker perk', [calmPlacement, berserkerPlacement])
     const noNativeGroups = createNativeRequirementChecker([[]])
 
     expect(

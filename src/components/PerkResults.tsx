@@ -9,7 +9,6 @@ import { joinClassNames } from '../lib/class-names'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 import { BuildToggleButton, ClearableSearchField, FunnelIcon } from './SharedControls'
-import backgroundFitStyles from './BackgroundFitPanel.module.scss'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
 
@@ -259,7 +258,7 @@ export function PerkResults({
           testId="perk-results-search-field"
           trailingControl={
             <div
-              className={backgroundFitStyles.backgroundFitFilterMenu}
+              className={sharedStyles.filterMenu}
               onKeyDown={(event) => {
                 if (event.key !== 'Escape') {
                   return
@@ -277,7 +276,7 @@ export function PerkResults({
                 aria-controls={perkFilterMenuId}
                 aria-expanded={isPerkFilterMenuOpen}
                 aria-label="Filter perks"
-                className={backgroundFitStyles.backgroundFitFilterButton}
+                className={sharedStyles.filterButton}
                 data-active-filter={hasActivePerkSourceFilter}
                 data-perk-filter-button="true"
                 data-testid="perk-filter-button"
@@ -287,7 +286,7 @@ export function PerkResults({
                 type="button"
               >
                 <FunnelIcon
-                  className={backgroundFitStyles.backgroundFitFilterIcon}
+                  className={sharedStyles.filterIcon}
                   isFilled={hasActivePerkSourceFilter}
                   testId="perk-filter-icon"
                 />
@@ -295,11 +294,11 @@ export function PerkResults({
               {isPerkFilterMenuOpen ? (
                 <div
                   aria-label="Perk filters"
-                  className={backgroundFitStyles.backgroundFitFilterPopover}
+                  className={sharedStyles.filterPopover}
                   id={perkFilterMenuId}
                   role="group"
                 >
-                  <label className={backgroundFitStyles.backgroundFitFilterOption}>
+                  <label className={sharedStyles.filterOption}>
                     <input
                       checked={shouldIncludeOriginPerkGroups}
                       data-testid="origin-perk-groups-checkbox"
@@ -308,7 +307,7 @@ export function PerkResults({
                     />
                     <span>Origin perks</span>
                   </label>
-                  <label className={backgroundFitStyles.backgroundFitFilterOption}>
+                  <label className={sharedStyles.filterOption}>
                     <input
                       checked={shouldIncludeAncientScrollPerkGroups}
                       data-testid="ancient-scroll-perk-groups-checkbox"

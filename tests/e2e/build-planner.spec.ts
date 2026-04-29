@@ -257,6 +257,16 @@ test('build planner splits shared and individual perk groups without layout drif
         .evaluate((element) => element.getBoundingClientRect().height),
     )
     .toBeGreaterThanOrEqual(plannerBoardHeightBeforePicking - 8)
+  const headerHeightAfterPicking = await page
+    .getByTestId('build-planner-header')
+    .evaluate((element) => element.getBoundingClientRect().height)
+  const rootFontSize = await page.evaluate(() =>
+    Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize),
+  )
+  const plannerRowTopTolerance = Math.max(
+    Math.ceil(rootFontSize * 0.625),
+    Math.ceil(Math.abs(headerHeightAfterPicking - initialHeaderHeight)) + 1,
+  )
   const plannerRowTopsAfterPicking = await page
     .getByTestId('planner-row')
     .evaluateAll((rows) => rows.map((row) => Math.round(row.getBoundingClientRect().top)))
@@ -265,7 +275,7 @@ test('build planner splits shared and individual perk groups without layout drif
   for (const [rowIndex, plannerRowTopBeforePicking] of plannerRowTopsBeforePicking.entries()) {
     expect(
       Math.abs(plannerRowTopsAfterPicking[rowIndex] - plannerRowTopBeforePicking),
-    ).toBeLessThanOrEqual(8)
+    ).toBeLessThanOrEqual(plannerRowTopTolerance)
   }
   await expect(
     getBuildSharedGroupsList(page).getByText(

@@ -5,6 +5,7 @@ import { isOriginBackgroundFit } from '../lib/background-origin'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
+import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
 
 export function BackgroundFitPanel({
@@ -92,6 +93,9 @@ export function BackgroundFitPanel({
     backgroundFitView.supportedBuildTargetPerkGroups.length > 0
   const hasUnsupportedBackgroundFitTargets =
     backgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
+  const hasBuildReachabilityProbability = backgroundFitView.rankedBackgroundFits.some(
+    (backgroundFit) => backgroundFit.buildReachabilityProbability !== null,
+  )
   const hasActiveBackgroundFilter =
     shouldIncludeOriginBackgrounds ||
     !shouldAllowBackgroundStudyBook ||
@@ -223,7 +227,7 @@ export function BackgroundFitPanel({
             testId="background-fit-search-field"
             trailingControl={
               <div
-                className={styles.backgroundFitFilterMenu}
+                className={sharedStyles.filterMenu}
                 onKeyDown={(event) => {
                   if (event.key !== 'Escape') {
                     return
@@ -241,7 +245,7 @@ export function BackgroundFitPanel({
                   aria-controls={backgroundFitFilterMenuId}
                   aria-expanded={isBackgroundFilterMenuOpen}
                   aria-label="Filter backgrounds"
-                  className={styles.backgroundFitFilterButton}
+                  className={sharedStyles.filterButton}
                   data-active-filter={hasActiveBackgroundFilter}
                   data-background-fit-filter-button="true"
                   data-testid="background-fit-filter-button"
@@ -254,7 +258,7 @@ export function BackgroundFitPanel({
                   type="button"
                 >
                   <FunnelIcon
-                    className={styles.backgroundFitFilterIcon}
+                    className={sharedStyles.filterIcon}
                     isFilled={hasActiveBackgroundFilter}
                     testId="background-fit-filter-icon"
                   />
@@ -262,11 +266,11 @@ export function BackgroundFitPanel({
                 {isBackgroundFilterMenuOpen ? (
                   <div
                     aria-label="Background filters"
-                    className={styles.backgroundFitFilterPopover}
+                    className={sharedStyles.filterPopover}
                     id={backgroundFitFilterMenuId}
                     role="group"
                   >
-                    <label className={styles.backgroundFitFilterOption}>
+                    <label className={sharedStyles.filterOption}>
                       <input
                         checked={shouldIncludeOriginBackgrounds}
                         data-testid="origin-backgrounds-checkbox"
@@ -278,7 +282,7 @@ export function BackgroundFitPanel({
                       />
                       <span>Origin backgrounds</span>
                     </label>
-                    <label className={styles.backgroundFitFilterOption}>
+                    <label className={sharedStyles.filterOption}>
                       <input
                         checked={shouldAllowBackgroundStudyBook}
                         data-testid="background-study-book-checkbox"
@@ -290,7 +294,7 @@ export function BackgroundFitPanel({
                       />
                       <span>Allow a book</span>
                     </label>
-                    <label className={styles.backgroundFitFilterOption}>
+                    <label className={sharedStyles.filterOption}>
                       <input
                         checked={shouldAllowBackgroundStudyScroll}
                         data-testid="background-study-scroll-checkbox"
@@ -302,7 +306,7 @@ export function BackgroundFitPanel({
                       />
                       <span>Allow a scroll</span>
                     </label>
-                    <label className={styles.backgroundFitFilterOption}>
+                    <label className={sharedStyles.filterOption}>
                       <input
                         checked={
                           shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll
@@ -329,7 +333,9 @@ export function BackgroundFitPanel({
               data-testid="background-fit-ranking-summary"
               hidden={hasActiveBackgroundFitSearch}
             >
-              Ranked by expected perks pickable.
+              {hasBuildReachabilityProbability
+                ? 'Ranked by full build chance.'
+                : 'Ranked by expected perks pickable.'}
             </p>
           ) : (
             <div className={styles.backgroundFitEmptyState}>

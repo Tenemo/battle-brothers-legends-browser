@@ -21,6 +21,7 @@ function createBackgroundFit({
   return {
     backgroundId,
     backgroundName,
+    buildReachabilityProbability: null,
     disambiguator,
     expectedCoveredPickedPerkCount: 0,
     expectedMatchedPerkGroupCount: 0,
@@ -51,6 +52,7 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
   return legendsPerksDataset.backgroundFitBackgrounds.map(
     (backgroundDefinition): RankedBackgroundFit => ({
       ...backgroundDefinition,
+      buildReachabilityProbability: null,
       disambiguator:
         (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
           ? getBackgroundSourceFileLabel(backgroundDefinition.sourceFilePath)
@@ -436,6 +438,7 @@ describe('background origin detection', () => {
       .map(
         (backgroundFit): RankedBackgroundFit => ({
           ...backgroundFit,
+          buildReachabilityProbability: null,
           disambiguator: null,
           expectedCoveredPickedPerkCount: 0,
           expectedMatchedPerkGroupCount: 0,

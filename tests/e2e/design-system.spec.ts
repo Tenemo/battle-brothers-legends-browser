@@ -120,7 +120,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
 
   expect(focusedSearchInputStyle).toEqual({
     borderColor: strongBorderColor,
-    outlineStyle: 'none',
-    outlineWidth: '0px',
+    outlineStyle: 'solid',
+    outlineWidth: '2px',
   })
 })

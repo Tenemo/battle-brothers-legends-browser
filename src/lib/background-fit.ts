@@ -16,6 +16,7 @@ import {
   isDynamicBackgroundCategoryName,
 } from './dynamic-background-categories'
 import {
+  isBuildCoveredByNativeAndStudyResources,
   isBuildReachableWithStudyResources,
   type BackgroundStudyResourceFilter,
 } from './background-study-reachability'
@@ -32,6 +33,13 @@ type BackgroundProbabilityRecord = {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
   maximumTotalPerkGroupCount: number
   probabilitiesByPerkGroupKey: Map<string, number>
+}
+
+type BackgroundOutcomeDistribution = Map<string, number>
+
+type FullCategoryOutcome = {
+  perkGroupIds: Set<string>
+  probability: number
 }
 
 type ClassWeaponDependencyByClassPerkGroupId = Map<string, Set<string>>
@@ -68,6 +76,7 @@ export type BackgroundFitMatch = BuildTargetPerkGroup & {
 export type RankedBackgroundFit = {
   backgroundId: string
   backgroundName: string
+  buildReachabilityProbability: number | null
   disambiguator: string | null
   expectedCoveredPickedPerkCount: number
   expectedMatchedPerkGroupCount: number
@@ -229,6 +238,52 @@ function buildPerkGroupIdsByCategory(
 
 function getPerkGroupProbabilityKey(categoryName: string, perkGroupId: string): string {
   return `${categoryName}::${perkGroupId}`
+}
+
+function getOutcomeDistributionKey(perkGroupKeys: Iterable<string>): string {
+  return [...perkGroupKeys].toSorted().join(',')
+}
+
+function parseOutcomeDistributionKey(outcomeDistributionKey: string): Set<string> {
+  return new Set(outcomeDistributionKey.length === 0 ? [] : outcomeDistributionKey.split(','))
+}
+
+function addOutcomeProbability(
+  outcomeDistribution: BackgroundOutcomeDistribution,
+  perkGroupKeys: Iterable<string>,
+  probability: number,
+): void {
+  if (probability <= 0) {
+    return
+  }
+
+  const outcomeDistributionKey = getOutcomeDistributionKey(perkGroupKeys)
+
+  outcomeDistribution.set(
+    outcomeDistributionKey,
+    (outcomeDistribution.get(outcomeDistributionKey) ?? 0) + probability,
+  )
+}
+
+function combineOutcomeDistributions(
+  leftOutcomeDistribution: BackgroundOutcomeDistribution,
+  rightOutcomeDistribution: BackgroundOutcomeDistribution,
+): BackgroundOutcomeDistribution {
+  const combinedOutcomeDistribution: BackgroundOutcomeDistribution = new Map()
+
+  for (const [leftOutcomeDistributionKey, leftProbability] of leftOutcomeDistribution) {
+    const leftPerkGroupKeys = parseOutcomeDistributionKey(leftOutcomeDistributionKey)
+
+    for (const [rightOutcomeDistributionKey, rightProbability] of rightOutcomeDistribution) {
+      addOutcomeProbability(
+        combinedOutcomeDistribution,
+        [...leftPerkGroupKeys, ...parseOutcomeDistributionKey(rightOutcomeDistributionKey)],
+        leftProbability * rightProbability,
+      )
+    }
+  }
+
+  return combinedOutcomeDistribution
 }
 
 function buildClassWeaponDependencyByClassPerkGroupId(
@@ -427,6 +482,448 @@ function getCategoryDefinition(
       perkGroupIds: [],
     }
   )
+}
+
+function getRelevantPerkGroupIdsByCategory(
+  pickedPerks: LegendsPerkRecord[],
+): Map<LegendsDynamicBackgroundCategoryName, Set<string>> {
+  const relevantPerkGroupIdsByCategory = new Map<
+    LegendsDynamicBackgroundCategoryName,
+    Set<string>
+  >()
+
+  for (const categoryName of dynamicBackgroundCategoryNames) {
+    relevantPerkGroupIdsByCategory.set(categoryName, new Set())
+  }
+
+  for (const pickedPerk of pickedPerks) {
+    for (const placement of pickedPerk.placements) {
+      if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
+        continue
+      }
+
+      relevantPerkGroupIdsByCategory.get(placement.categoryName)?.add(placement.perkGroupId)
+    }
+  }
+
+  return relevantPerkGroupIdsByCategory
+}
+
+function getRelevantPerkGroupKeys({
+  categoryName,
+  perkGroupIds,
+  relevantPerkGroupIds,
+}: {
+  categoryName: LegendsDynamicBackgroundCategoryName
+  perkGroupIds: Iterable<string>
+  relevantPerkGroupIds: ReadonlySet<string>
+}): string[] {
+  const relevantPerkGroupKeys: string[] = []
+
+  for (const perkGroupId of perkGroupIds) {
+    if (relevantPerkGroupIds.has(perkGroupId)) {
+      relevantPerkGroupKeys.push(getPerkGroupProbabilityKey(categoryName, perkGroupId))
+    }
+  }
+
+  return relevantPerkGroupKeys
+}
+
+function getDeterministicCategoryOutcomeDistribution({
+  categoryDefinition,
+  categoryName,
+  poolPerkGroupIds,
+  relevantPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  poolPerkGroupIds: string[]
+  relevantPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const randomPerkGroupCount = getAdditionalRandomPerkGroupCount(
+    categoryDefinition,
+    remainingPerkGroupIds.length,
+  )
+  const totalCombinationCount = countCombinations(
+    remainingPerkGroupIds.length,
+    randomPerkGroupCount,
+  )
+
+  if (totalCombinationCount === 0) {
+    return outcomeDistribution
+  }
+
+  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+    categoryName,
+    perkGroupIds: explicitPerkGroupIdSet,
+    relevantPerkGroupIds,
+  })
+
+  forEachSubsetOfSize(remainingPerkGroupIds, randomPerkGroupCount, (perkGroupSubset) => {
+    addOutcomeProbability(
+      outcomeDistribution,
+      [
+        ...explicitRelevantPerkGroupKeys,
+        ...getRelevantPerkGroupKeys({
+          categoryName,
+          perkGroupIds: perkGroupSubset,
+          relevantPerkGroupIds,
+        }),
+      ],
+      1 / totalCombinationCount,
+    )
+  })
+
+  return outcomeDistribution
+}
+
+function getChanceCategoryOutcomeDistribution({
+  categoryDefinition,
+  categoryName,
+  poolPerkGroupIds,
+  relevantPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  poolPerkGroupIds: string[]
+  relevantPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const selectedCountDistribution = getChanceSelectedCountDistribution(
+    getChanceAttemptCount(categoryDefinition),
+    clampProbability(categoryDefinition.chance ?? 0),
+    remainingPerkGroupIds.length,
+  )
+  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+    categoryName,
+    perkGroupIds: explicitPerkGroupIdSet,
+    relevantPerkGroupIds,
+  })
+
+  for (const [
+    selectedPerkGroupCount,
+    selectedPerkGroupCountProbability,
+  ] of selectedCountDistribution) {
+    const totalCombinationCount = countCombinations(
+      remainingPerkGroupIds.length,
+      selectedPerkGroupCount,
+    )
+
+    if (totalCombinationCount === 0) {
+      continue
+    }
+
+    forEachSubsetOfSize(remainingPerkGroupIds, selectedPerkGroupCount, (perkGroupSubset) => {
+      addOutcomeProbability(
+        outcomeDistribution,
+        [
+          ...explicitRelevantPerkGroupKeys,
+          ...getRelevantPerkGroupKeys({
+            categoryName,
+            perkGroupIds: perkGroupSubset,
+            relevantPerkGroupIds,
+          }),
+        ],
+        selectedPerkGroupCountProbability / totalCombinationCount,
+      )
+    })
+  }
+
+  return outcomeDistribution
+}
+
+function getExplicitOnlyCategoryOutcomeDistribution({
+  categoryDefinition,
+  categoryName,
+  relevantPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  relevantPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+
+  addOutcomeProbability(
+    outcomeDistribution,
+    getRelevantPerkGroupKeys({
+      categoryName,
+      perkGroupIds: categoryDefinition.perkGroupIds,
+      relevantPerkGroupIds,
+    }),
+    1,
+  )
+
+  return outcomeDistribution
+}
+
+function getDeterministicFullCategoryOutcomes(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  poolPerkGroupIds: string[],
+): FullCategoryOutcome[] {
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const randomPerkGroupCount = getAdditionalRandomPerkGroupCount(
+    categoryDefinition,
+    remainingPerkGroupIds.length,
+  )
+  const totalCombinationCount = countCombinations(
+    remainingPerkGroupIds.length,
+    randomPerkGroupCount,
+  )
+  const fullCategoryOutcomes: FullCategoryOutcome[] = []
+
+  if (totalCombinationCount === 0) {
+    return fullCategoryOutcomes
+  }
+
+  forEachSubsetOfSize(remainingPerkGroupIds, randomPerkGroupCount, (perkGroupSubset) => {
+    fullCategoryOutcomes.push({
+      perkGroupIds: new Set([...explicitPerkGroupIdSet, ...perkGroupSubset]),
+      probability: 1 / totalCombinationCount,
+    })
+  })
+
+  return fullCategoryOutcomes
+}
+
+function getClassOutcomeDistributionForWeaponOutcome({
+  categoryDefinition,
+  classWeaponDependencyByClassPerkGroupId,
+  poolPerkGroupIds,
+  relevantPerkGroupIds,
+  weaponPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  classWeaponDependencyByClassPerkGroupId: ClassWeaponDependencyByClassPerkGroupId
+  poolPerkGroupIds: string[]
+  relevantPerkGroupIds: ReadonlySet<string>
+  weaponPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const eligibleRemainingClassPerkGroupIds = getEligibleRemainingClassPerkGroupIds(
+    poolPerkGroupIds,
+    explicitPerkGroupIdSet,
+    new Set(weaponPerkGroupIds),
+    classWeaponDependencyByClassPerkGroupId,
+  )
+  const selectedCountDistribution = getChanceSelectedCountDistribution(
+    getChanceAttemptCount(categoryDefinition),
+    clampProbability(categoryDefinition.chance ?? 0),
+    eligibleRemainingClassPerkGroupIds.length,
+  )
+  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+    categoryName: 'Class',
+    perkGroupIds: explicitPerkGroupIdSet,
+    relevantPerkGroupIds,
+  })
+
+  for (const [
+    selectedPerkGroupCount,
+    selectedPerkGroupCountProbability,
+  ] of selectedCountDistribution) {
+    const totalCombinationCount = countCombinations(
+      eligibleRemainingClassPerkGroupIds.length,
+      selectedPerkGroupCount,
+    )
+
+    if (totalCombinationCount === 0) {
+      continue
+    }
+
+    forEachSubsetOfSize(
+      eligibleRemainingClassPerkGroupIds,
+      selectedPerkGroupCount,
+      (perkGroupSubset) => {
+        addOutcomeProbability(
+          outcomeDistribution,
+          [
+            ...explicitRelevantPerkGroupKeys,
+            ...getRelevantPerkGroupKeys({
+              categoryName: 'Class',
+              perkGroupIds: perkGroupSubset,
+              relevantPerkGroupIds,
+            }),
+          ],
+          selectedPerkGroupCountProbability / totalCombinationCount,
+        )
+      },
+    )
+  }
+
+  return outcomeDistribution
+}
+
+function getWeaponAndClassOutcomeDistribution({
+  backgroundDefinition,
+  context,
+  relevantPerkGroupIdsByCategory,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  context: BackgroundProbabilityContext
+  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const weaponCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Weapon')
+  const weaponPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Weapon') ?? []
+  const classCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Class')
+  const classPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Class') ?? []
+  const relevantWeaponPerkGroupIds = relevantPerkGroupIdsByCategory.get('Weapon') ?? new Set()
+  const relevantClassPerkGroupIds = relevantPerkGroupIdsByCategory.get('Class') ?? new Set()
+
+  for (const weaponOutcome of getDeterministicFullCategoryOutcomes(
+    weaponCategoryDefinition,
+    weaponPoolPerkGroupIds,
+  )) {
+    const weaponRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+      categoryName: 'Weapon',
+      perkGroupIds: weaponOutcome.perkGroupIds,
+      relevantPerkGroupIds: relevantWeaponPerkGroupIds,
+    })
+    const classOutcomeDistribution = getClassOutcomeDistributionForWeaponOutcome({
+      categoryDefinition: classCategoryDefinition,
+      classWeaponDependencyByClassPerkGroupId: context.classWeaponDependencyByClassPerkGroupId,
+      poolPerkGroupIds: classPoolPerkGroupIds,
+      relevantPerkGroupIds: relevantClassPerkGroupIds,
+      weaponPerkGroupIds: weaponOutcome.perkGroupIds,
+    })
+
+    for (const [classOutcomeDistributionKey, classOutcomeProbability] of classOutcomeDistribution) {
+      addOutcomeProbability(
+        outcomeDistribution,
+        [
+          ...weaponRelevantPerkGroupKeys,
+          ...parseOutcomeDistributionKey(classOutcomeDistributionKey),
+        ],
+        weaponOutcome.probability * classOutcomeProbability,
+      )
+    }
+  }
+
+  return outcomeDistribution
+}
+
+function getCategoryOutcomeDistribution({
+  backgroundDefinition,
+  categoryName,
+  context,
+  relevantPerkGroupIdsByCategory,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  context: BackgroundProbabilityContext
+  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+}): BackgroundOutcomeDistribution {
+  const categoryDefinition = getCategoryDefinition(backgroundDefinition, categoryName)
+  const poolPerkGroupIds = context.perkGroupIdsByCategory.get(categoryName) ?? []
+  const relevantPerkGroupIds = relevantPerkGroupIdsByCategory.get(categoryName) ?? new Set()
+
+  if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
+    return getDeterministicCategoryOutcomeDistribution({
+      categoryDefinition,
+      categoryName,
+      poolPerkGroupIds,
+      relevantPerkGroupIds,
+    })
+  }
+
+  if (chanceDynamicBackgroundCategoryNameSet.has(categoryName)) {
+    return getChanceCategoryOutcomeDistribution({
+      categoryDefinition,
+      categoryName,
+      poolPerkGroupIds,
+      relevantPerkGroupIds,
+    })
+  }
+
+  return getExplicitOnlyCategoryOutcomeDistribution({
+    categoryDefinition,
+    categoryName,
+    relevantPerkGroupIds,
+  })
+}
+
+function getBackgroundNativeOutcomeDistribution({
+  backgroundDefinition,
+  context,
+  relevantPerkGroupIdsByCategory,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  context: BackgroundProbabilityContext
+  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+}): BackgroundOutcomeDistribution {
+  let outcomeDistribution = getWeaponAndClassOutcomeDistribution({
+    backgroundDefinition,
+    context,
+    relevantPerkGroupIdsByCategory,
+  })
+
+  for (const categoryName of dynamicBackgroundCategoryNames) {
+    if (categoryName === 'Weapon' || categoryName === 'Class') {
+      continue
+    }
+
+    outcomeDistribution = combineOutcomeDistributions(
+      outcomeDistribution,
+      getCategoryOutcomeDistribution({
+        backgroundDefinition,
+        categoryName,
+        context,
+        relevantPerkGroupIdsByCategory,
+      }),
+    )
+  }
+
+  return outcomeDistribution
+}
+
+function calculateBuildReachabilityProbabilityWithStudyResources({
+  backgroundDefinition,
+  context,
+  filter,
+  pickedPerks,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  context: BackgroundProbabilityContext
+  filter: BackgroundStudyResourceFilter
+  pickedPerks: LegendsPerkRecord[]
+}): number {
+  const relevantPerkGroupIdsByCategory = getRelevantPerkGroupIdsByCategory(pickedPerks)
+  const nativeOutcomeDistribution = getBackgroundNativeOutcomeDistribution({
+    backgroundDefinition,
+    context,
+    relevantPerkGroupIdsByCategory,
+  })
+  let buildReachabilityProbability = 0
+
+  /*
+   * Native outcome keys are exact intersections between one complete background roll and the
+   * perk groups the picked build can use. Those outcomes are disjoint, so the final probability is
+   * the direct sum of outcomes where the native groups plus the allowed study resources can cover
+   * every picked perk through at least one placement. This counts every valid path without
+   * double-counting overlapping alternate placements.
+   */
+  for (const [
+    nativeOutcomeDistributionKey,
+    nativeOutcomeProbability,
+  ] of nativeOutcomeDistribution) {
+    if (
+      isBuildCoveredByNativeAndStudyResources({
+        filter,
+        nativeRequirementKeys: parseOutcomeDistributionKey(nativeOutcomeDistributionKey),
+        pickedPerks,
+      })
+    ) {
+      buildReachabilityProbability += nativeOutcomeProbability
+    }
+  }
+
+  return clampProbability(buildReachabilityProbability)
 }
 
 function hasEveryPerkGroup(
@@ -1378,6 +1875,8 @@ function compareRankedBackgroundFits(
   const rightCoveredPickedPerkCount = getCoveredPickedPerkCount(rightBackgroundFit.matches)
 
   return (
+    (rightBackgroundFit.buildReachabilityProbability ?? 0) -
+      (leftBackgroundFit.buildReachabilityProbability ?? 0) ||
     rightBackgroundFit.expectedCoveredPickedPerkCount -
       leftBackgroundFit.expectedCoveredPickedPerkCount ||
     rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
@@ -1481,21 +1980,42 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
 
       return {
         rankedBackgroundFits: backgroundProbabilityRecords
-          .filter(({ backgroundDefinition }) =>
-            studyResourceFilter === undefined ||
-            isBuildReachableWithStudyResources({
-              canUseNativeRequirements: (requirements) =>
-                getRequirementSubsetProbability({
-                  backgroundDefinition,
-                  context: backgroundProbabilityContext,
-                  requirements,
-                }) > 0,
-              filter: studyResourceFilter,
-              pickedPerks,
-            }),
-          )
-          .map(
+          .flatMap(
             ({ backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupKey }) => {
+              if (
+                studyResourceFilter !== undefined &&
+                !isBuildReachableWithStudyResources({
+                  canUseNativeRequirements: (requirements) =>
+                    getRequirementSubsetProbability({
+                      backgroundDefinition,
+                      context: backgroundProbabilityContext,
+                      requirements,
+                    }) > 0,
+                  filter: studyResourceFilter,
+                  pickedPerks,
+                })
+              ) {
+                return []
+              }
+
+              const buildReachabilityProbability =
+                studyResourceFilter === undefined
+                  ? null
+                  : calculateBuildReachabilityProbabilityWithStudyResources({
+                      backgroundDefinition,
+                      context: backgroundProbabilityContext,
+                      filter: studyResourceFilter,
+                      pickedPerks,
+                    })
+
+              if (
+                studyResourceFilter !== undefined &&
+                buildReachabilityProbability !== null &&
+                buildReachabilityProbability <= 0
+              ) {
+                return []
+              }
+
               const matches = normalizeBackgroundFitMatches(
                 supportedBuildTargetPerkGroups
                   .flatMap((buildTargetPerkGroup) => {
@@ -1525,6 +2045,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
               return {
                 backgroundId: backgroundDefinition.backgroundId,
                 backgroundName: backgroundDefinition.backgroundName,
+                buildReachabilityProbability,
                 disambiguator:
                   (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ??
                     0) > 1

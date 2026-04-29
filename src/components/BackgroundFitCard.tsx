@@ -7,6 +7,7 @@ import {
 } from '../lib/background-fit'
 import {
   formatBackgroundFitExpectedBuildPerksLabel,
+  formatBackgroundFitBuildReachabilityLabel,
   formatBackgroundFitGuaranteedPerksLabel,
   formatBackgroundFitPickablePerksLabel,
   formatBackgroundFitProbabilityLabel,
@@ -44,6 +45,12 @@ function getBackgroundFitExpectedBuildPerksSummaryCopy(
     expectedCoveredPickedPerkCount,
     pickedPerkCount,
   )} after dynamic perk group rolls.`
+}
+
+function getBackgroundFitBuildReachabilitySummaryCopy(probability: number): string {
+  return `Full build chance: ${formatBackgroundFitProbabilityLabel(
+    probability,
+  )} after dynamic perk group rolls and the selected study resources.`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -319,6 +326,17 @@ export function BackgroundFitCard({
               className={styles.backgroundFitAccordionSummaryRow}
               data-testid="background-fit-accordion-summary-row"
             >
+              {backgroundFit.buildReachabilityProbability === null ? null : (
+                <BackgroundFitMetricBadge
+                  className={styles.backgroundFitSummaryBadge}
+                  label={formatBackgroundFitBuildReachabilityLabel(
+                    backgroundFit.buildReachabilityProbability,
+                  )}
+                  tooltip={getBackgroundFitBuildReachabilitySummaryCopy(
+                    backgroundFit.buildReachabilityProbability,
+                  )}
+                />
+              )}
               <BackgroundFitMetricBadge
                 className={styles.backgroundFitSummaryBadge}
                 label={formatBackgroundFitExpectedBuildPerksLabel(

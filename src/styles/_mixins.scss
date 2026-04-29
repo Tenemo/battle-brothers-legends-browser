@@ -2,7 +2,6 @@
   border: var(--primitive-length-1px) solid var(--border-color);
   background: var(--panel-background);
   box-shadow: var(--shadow-panel);
-  backdrop-filter: blur(var(--primitive-length-10px));
 }
 
 @mixin rounded-panel {
@@ -84,6 +83,28 @@
   box-shadow: var(--shadow-medium);
   color: var(--text-secondary);
   pointer-events: auto;
+}
+
+@mixin dialog-backdrop {
+  position: fixed;
+  z-index: var(--z-index-modal);
+  inset: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-3xl);
+  background: var(--primitive-color-rgb-0-0-0-alpha-0-62);
+}
+
+@mixin dialog-surface {
+  display: grid;
+  gap: var(--space-xl);
+  overflow: hidden;
+  border: var(--primitive-length-1px) solid var(--border-overlay);
+  border-radius: var(--radius-xl);
+  padding: var(--space-xl);
+  background: var(--surface-overlay-raised);
+  box-shadow: var(--shadow-high), var(--shadow-inner-highlight);
 }
 
 @mixin rail-panel-shell($body-selector, $label-selector, $body-transform, $label-transform) {
@@ -174,9 +195,7 @@
   max-width: var(--rail-button-thickness);
   border: 0;
   padding: var(--space-rail-padding-block) var(--rail-button-inline-padding);
-  background:
-    linear-gradient(180deg, var(--primitive-color-rgb-181-128-73-alpha-0-1), transparent 38%),
-    var(--primitive-color-rgb-20-17-14-alpha-0-92);
+  background: var(--primitive-color-rgb-20-17-14-alpha-0-92);
   color: inherit;
   font: inherit;
   cursor: pointer;
@@ -188,9 +207,7 @@
   &:hover,
   &:focus-visible {
     border-color: var(--accent-color);
-    background:
-      linear-gradient(180deg, var(--primitive-color-rgb-181-128-73-alpha-0-14), transparent 38%),
-      var(--primitive-color-rgb-28-23-20-alpha-0-95);
+    background: var(--primitive-color-rgb-28-23-20-alpha-0-95);
   }
 
   &:focus-visible {
