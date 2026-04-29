@@ -215,12 +215,18 @@ describe('build social image', () => {
     await createBuildSocialImageResponse(
       new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Student.png'),
       {
+        previewOptions: {
+          shouldIncludeTopBackgroundFits: false,
+        },
         renderPng,
       },
     )
     await createBuildSocialImageResponse(
       new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Colossus.png'),
       {
+        previewOptions: {
+          shouldIncludeTopBackgroundFits: false,
+        },
         renderPng,
       },
     )

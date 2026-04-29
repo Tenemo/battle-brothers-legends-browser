@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import {
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
+  formatMorePerkResultsLabel,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
@@ -462,7 +463,7 @@ export function PerkResults({
                   onClick={handleShowMoreMobilePerkResults}
                   type="button"
                 >
-                  Show {nextMobilePerkResultBatchSize} more perks
+                  {formatMorePerkResultsLabel(nextMobilePerkResultBatchSize)}
                 </button>
               </li>
             ) : null}

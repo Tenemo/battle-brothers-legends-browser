@@ -195,6 +195,10 @@ export function formatPickedPerkCountLabel(perkCount: number): string {
   return `${perkCount} perk${perkCount === 1 ? '' : 's'}`
 }
 
+export function formatMorePerkResultsLabel(perkCount: number): string {
+  return `Show ${perkCount} more perk${perkCount === 1 ? '' : 's'}`
+}
+
 export function formatBackgroundFitProbabilityLabel(probability: number): string {
   const percentage = probability * 100
 

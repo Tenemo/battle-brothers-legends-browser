@@ -48,6 +48,20 @@ const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
 
+function normalizeBackgroundStudyScrollState({
+  shouldAllowBackgroundStudyScroll,
+  shouldAllowSecondBackgroundStudyScroll,
+}: {
+  shouldAllowBackgroundStudyScroll: boolean
+  shouldAllowSecondBackgroundStudyScroll: boolean
+}) {
+  return {
+    shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll:
+      shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll,
+  }
+}
+
 function collapseWhitespace(value: string): string {
   return value.trim().replace(/\s+/gu, ' ')
 }
@@ -243,6 +257,10 @@ export function readBuildPlannerUrlState(
     originPerkGroupsParamName,
     false,
   )
+  const backgroundStudyScrollState = normalizeBackgroundStudyScrollState({
+    shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll,
+  })
 
   for (const categoryValue of getGroupedParamValues(params, categoryParamName)) {
     const categoryName = categoryNameByLookupValue.get(normalizeLookupValue(categoryValue))
@@ -293,8 +311,7 @@ export function readBuildPlannerUrlState(
     ),
     selectedPerkGroupIdsByCategory,
     shouldAllowBackgroundStudyBook,
-    shouldAllowBackgroundStudyScroll,
-    shouldAllowSecondBackgroundStudyScroll,
+    ...backgroundStudyScrollState,
     shouldIncludeAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
     shouldIncludeOriginPerkGroups,
@@ -344,6 +361,7 @@ export function createBuildPlannerUrlSearch(
 
   if (
     shouldWriteSecondBackgroundStudyScrollParam &&
+    urlState.shouldAllowBackgroundStudyScroll &&
     urlState.shouldAllowSecondBackgroundStudyScroll
   ) {
     appendScalarQueryEntry(entries, secondBackgroundStudyScrollParamName, 'true')

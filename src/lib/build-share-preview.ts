@@ -30,6 +30,10 @@ export type BuildSharePreviewPayload = {
   topBackgroundFits: BuildSharePreviewBackgroundFit[]
 }
 
+export type BuildSharePreviewOptions = {
+  shouldIncludeTopBackgroundFits?: boolean
+}
+
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const allPerks = legendsPerksDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
@@ -138,6 +142,7 @@ function createBuildImagePath(canonicalSearch: string): string {
 
 function createBuildSharePreviewPayloadFromPickedPerkIds(
   pickedPerkIds: string[],
+  { shouldIncludeTopBackgroundFits = true }: BuildSharePreviewOptions = {},
 ): BuildSharePreviewPayload {
   const pickedPerks = getPerksFromPickedPerkIds(pickedPerkIds)
 
@@ -156,8 +161,11 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
     }
   }
 
-  const backgroundFitView = backgroundFitEngine.getBackgroundFitView(pickedPerks)
-  const topBackgroundFits = getTopBackgroundFits(backgroundFitView.rankedBackgroundFits)
+  const topBackgroundFits = shouldIncludeTopBackgroundFits
+    ? getTopBackgroundFits(
+        backgroundFitEngine.getBackgroundFitView(pickedPerks).rankedBackgroundFits,
+      )
+    : []
   const canonicalSearch = buildShareSearchFromPickedPerkIds(
     pickedPerks.map((pickedPerk) => pickedPerk.id),
   )
@@ -188,6 +196,10 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
 
 export function createBuildSharePreviewPayloadFromSearch(
   search: string | URLSearchParams,
+  options?: BuildSharePreviewOptions,
 ): BuildSharePreviewPayload {
-  return createBuildSharePreviewPayloadFromPickedPerkIds(getPickedPerkIdsFromSearch(search))
+  return createBuildSharePreviewPayloadFromPickedPerkIds(
+    getPickedPerkIdsFromSearch(search),
+    options,
+  )
 }

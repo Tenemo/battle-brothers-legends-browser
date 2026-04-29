@@ -291,6 +291,41 @@ describe('build planner url state', () => {
         selectedCategoryNames: [],
         selectedPerkGroupIdsByCategory: {},
         shouldAllowBackgroundStudyBook: false,
+        shouldAllowBackgroundStudyScroll: true,
+        shouldAllowSecondBackgroundStudyScroll: true,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?background-book=false&background-two-scrolls=true')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }),
+    ).toMatchObject({
+      shouldAllowBackgroundStudyBook: false,
+      shouldAllowBackgroundStudyScroll: true,
+      shouldAllowSecondBackgroundStudyScroll: true,
+    })
+  })
+
+  test('normalizes impossible background study scroll combinations', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        shouldAllowBackgroundStudyBook: false,
         shouldAllowBackgroundStudyScroll: false,
         shouldAllowSecondBackgroundStudyScroll: true,
         shouldIncludeAncientScrollPerkGroups: true,
@@ -304,19 +339,16 @@ describe('build planner url state', () => {
       },
     )
 
-    expect(search).toBe(
-      '?background-book=false&background-scroll=false&background-two-scrolls=true',
-    )
+    expect(search).toBe('?background-book=false&background-scroll=false')
     expect(
-      readBuildPlannerUrlState(search, {
+      readBuildPlannerUrlState('?background-scroll=false&background-two-scrolls=true', {
         availableCategoryNames,
         perks: samplePerks,
         perkGroupOptionsByCategory,
       }),
     ).toMatchObject({
-      shouldAllowBackgroundStudyBook: false,
       shouldAllowBackgroundStudyScroll: false,
-      shouldAllowSecondBackgroundStudyScroll: true,
+      shouldAllowSecondBackgroundStudyScroll: false,
     })
   })
 

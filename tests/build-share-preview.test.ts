@@ -53,6 +53,9 @@ describe('build share preview', () => {
   test('uses a path-keyed social image url for dense shared builds', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       '?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Hold+Out,Underdog,Assured+Conquest,Colossus,Tactical+Maneuvers,Nine+Lives,Crippling+Strikes,Perfect+Focus',
+      {
+        shouldIncludeTopBackgroundFits: false,
+      },
     )
 
     expect(payload.status).toBe('found')
