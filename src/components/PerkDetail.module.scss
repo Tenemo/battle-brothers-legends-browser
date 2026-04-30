@@ -161,24 +161,23 @@
 
   .detailRequirementChainOverlay {
     position: absolute;
-    top: var(--primitive-length-negative-0-65rem);
-    left: var(--primitive-length-negative-0-82rem);
+    top: var(--space-2xs);
+    left: var(--space-2xs);
     z-index: var(--z-index-base);
     display: block;
-    width: var(--primitive-length-5-5rem);
-    height: var(--primitive-length-5-5rem);
+    width: calc(var(--primitive-length-5-5rem) * 0.6);
+    height: calc(var(--primitive-length-5-5rem) * 0.6);
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
-    opacity: 0.22;
+    opacity: 0.8;
     pointer-events: none;
-    transform: rotate(-12deg);
+    transform: rotate(-70deg);
   }
 
   .detailRequirementChainImage {
     display: block;
     width: 100%;
     height: 100%;
-    clip-path: polygon(0 0, 100% 0, 100% 68%, 70% 68%, 66.7% 96%, 55% 100%, 0 100%);
     user-select: none;
   }
 
@@ -217,10 +216,6 @@
   .detailStudyResourceTile {
     min-height: var(--primitive-length-4-2rem);
     padding-right: var(--primitive-length-2-65rem);
-  }
-
-  .detailStudyResourceTileBadge {
-    color: var(--accent-soft);
   }
 
   .detailStudyResourceTileIcon {

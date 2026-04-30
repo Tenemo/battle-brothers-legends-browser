@@ -546,9 +546,6 @@ function StudyResourceRequirementList({
                     hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
                     hoveredPerkId={hoveredPerkId}
                     isWide
-                    metaClassName={styles.detailStudyResourceTileBadge}
-                    metaLabel={entry.label}
-                    metaTestId="detail-study-resource-tile-badge"
                     onCloseBuildPerkHover={onCloseBuildPerkHover}
                     onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
                     onClosePerkGroupHover={onClosePerkGroupHover}

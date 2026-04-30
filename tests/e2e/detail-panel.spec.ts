@@ -23,13 +23,20 @@ function readBackgroundSourceProbabilityLabel(label: string): number {
   return Number(chanceMatch[1]) / 100
 }
 
-test('starts with an empty detail panel until a perk or background is selected', async ({ page }) => {
+test('starts with an empty detail panel until a perk or background is selected', async ({
+  page,
+}) => {
   await gotoBuildPlanner(page)
 
   await expect(
     page.getByRole('heading', { level: 2, name: 'Select a perk or background' }),
   ).toBeVisible()
-  await expect(page.getByTestId('perk-row').first()).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'No perks found' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByTestId('perk-row')).toHaveCount(0)
   await expect(page.locator('[data-testid="perk-row"][data-selected="true"]')).toHaveCount(0)
 })
 

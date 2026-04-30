@@ -27,6 +27,7 @@ export function useBuildPlannerUrlSync(
     perksById,
   } = options
   const {
+    categoryFilterMode,
     optionalPerkIds,
     pickedPerkIds,
     query,
@@ -48,6 +49,7 @@ export function useBuildPlannerUrlSync(
 
     const nextSearch = createBuildPlannerUrlSearch(
       {
+        categoryFilterMode,
         optionalPerkIds,
         pickedPerkIds,
         query,
@@ -81,6 +83,7 @@ export function useBuildPlannerUrlSync(
   }, [
     availableCategoryNames,
     availableBackgroundVeteranPerkLevelIntervals,
+    categoryFilterMode,
     optionalPerkIds,
     perkGroupOptionsByCategory,
     perksById,

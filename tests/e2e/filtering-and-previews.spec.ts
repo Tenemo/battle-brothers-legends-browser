@@ -101,8 +101,13 @@ test('keeps only one selected perk group when another group is selected', async 
   await selectPerkGroup(page, 'Deadeye')
 
   await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'false')
-  await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('Magic')
+  await expect(page.getByRole('button', { name: 'Enable category Magic' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByText('No perks found')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBeNull()
 })
 
@@ -118,9 +123,9 @@ test('resets category drilldown when typing a perk search', async ({ page }) => 
   await searchPerks(page, 'Axe')
 
   await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
-  await expect(page.getByRole('button', { name: 'Reset all category filters' })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
     'aria-pressed',
-    'true',
+    'false',
   )
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
@@ -129,6 +134,33 @@ test('resets category drilldown when typing a perk search', async ({ page }) => 
   ).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
   await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+})
+
+test('leaves no category selected when deselecting a scoped perk group from an expanded category', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await expandCategory(page, 'Enemy')
+  await selectPerkGroup(page, 'Beasts')
+
+  await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Beasts')).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    getResultsList(page).getByRole('button', { name: 'Inspect Favoured Enemy - Beasts' }),
+  ).toBeVisible()
+
+  await selectPerkGroup(page, 'Beasts')
+
+  await expect(page.getByRole('button', { name: 'Enable category Enemy' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(getSidebarPerkGroupButton(page, 'Beasts')).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByText('No perks found')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-enemy')).toBeNull()
 })
 
 test('resets the perk result scroll when category filters change', async ({ page }) => {
@@ -619,7 +651,10 @@ test('keeps category rows compact with bordered separation in the sidebar', asyn
     return categoryButtons.flatMap((categoryButton, categoryIndex) => {
       const nextCategoryButton = categoryButtons[categoryIndex + 1]
 
-      if (!(categoryButton instanceof HTMLElement) || !(nextCategoryButton instanceof HTMLElement)) {
+      if (
+        !(categoryButton instanceof HTMLElement) ||
+        !(nextCategoryButton instanceof HTMLElement)
+      ) {
         return []
       }
 

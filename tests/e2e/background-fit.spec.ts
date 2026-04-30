@@ -136,6 +136,9 @@ test('shows the background fit panel for a picked build and keeps the shell view
       const metricValues = [
         ...metricTable.querySelectorAll('[data-testid="background-fit-summary-value"]'),
       ]
+      const metricMustHaveIcons = [
+        ...metricTable.querySelectorAll('[data-testid="background-fit-summary-must-have-icon"]'),
+      ]
       const metricTableRectangle = metricTable.getBoundingClientRect()
       const valueLeftOffsets = metricValues.map((metricValue) =>
         Math.round(metricValue.getBoundingClientRect().left - metricTableRectangle.left),
@@ -143,6 +146,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
 
       return {
         headerCount: metricTable.querySelectorAll('th, thead').length,
+        mustHaveIconLabels: metricMustHaveIcons.map(
+          (metricMustHaveIcon) =>
+            metricMustHaveIcon.closest('[data-testid="background-fit-summary-label"]')
+              ?.textContent ?? '',
+        ),
         isLabelBeforeValue: metricRows.every((metricRow) => {
           const metricLabel = metricRow.querySelector(
             '[data-testid="background-fit-summary-label"]',
@@ -186,6 +194,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
     .first()
 
   expect(metricTableGeometry.headerCount).toBe(0)
+  expect(metricTableGeometry.mustHaveIconLabels).toEqual([
+    'Must-have build chance',
+    'Expected must-have perks pickable',
+  ])
   expect(metricTableGeometry.isLabelBeforeValue).toBe(true)
   expect(metricTableGeometry.labelTextAligns).toEqual(['left', 'left', 'left'])
   expect(metricTableGeometry.rowBorderTopWidths).toEqual(['0px', '1px', '1px'])

@@ -135,6 +135,32 @@ const samplePerks: LegendsPerkRecord[] = [
 ]
 
 describe('perk search', () => {
+  test('shows no unscoped results until all categories, a category, or search text is selected', () => {
+    const noSelectionResults = filterAndSortPerks(samplePerks, {
+      categoryFilterMode: 'none',
+      query: '',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
+    })
+    const allCategoryResults = filterAndSortPerks(samplePerks, {
+      categoryFilterMode: 'all',
+      query: '',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
+    })
+
+    expect(noSelectionResults).toEqual([])
+    expect(allCategoryResults.map((perk) => perk.perkName)).toEqual(
+      expect.arrayContaining([
+        'Clarity',
+        'Favoured Enemy - Beasts',
+        'Heightened Senses',
+        'Lookout',
+      ]),
+    )
+    expect(allCategoryResults).toHaveLength(samplePerks.length)
+  })
+
   test('prefers exact name matches over broader text matches', () => {
     const results = filterAndSortPerks(samplePerks, {
       query: 'Clarity',

@@ -304,6 +304,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   page,
 }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
+  await page.getByRole('button', { name: 'Show all categories' }).click()
   await expectViewportLocked(page)
   const buildPlanner = page.getByLabel('Build planner')
 
@@ -602,6 +603,7 @@ test('limits unfiltered phone results without restoring the nested scroll trap',
   page,
 }) => {
   await gotoBuildPlanner(page, { height: 844, width: 390 })
+  await page.getByRole('button', { name: 'Show all categories' }).click()
   await expectNoDocumentHorizontalOverflow(page)
 
   await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toBeVisible()
@@ -645,6 +647,7 @@ test('limits unfiltered phone results without restoring the nested scroll trap',
   await expect(page.getByTestId('results-list').getByTestId('perk-row')).toHaveCount(1)
 
   await gotoBuildPlanner(page, { height: 740, width: 761 })
+  await page.getByRole('button', { name: 'Show all categories' }).click()
   await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
   await expect
     .poll(async () =>
@@ -761,6 +764,7 @@ test('lets the mobile document scroll when the pointer is over results', async (
 
 test('keeps key mobile touch targets large enough', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 844, width: 390 })
+  await searchPerks(page, 'Blacksmiths Technique')
 
   const touchTargetMetrics = await readMobileTouchTargetMetrics(page)
 
@@ -881,8 +885,7 @@ test('keeps desktop rail bodies mounted and anchored for open and close animatio
         }
 
         return (
-          Math.abs(buttonBox.right - sidebarBox.right) <= 1 &&
-          bodyBox.right <= buttonBox.left + 1
+          Math.abs(buttonBox.right - sidebarBox.right) <= 1 && bodyBox.right <= buttonBox.left + 1
         )
       }),
     )

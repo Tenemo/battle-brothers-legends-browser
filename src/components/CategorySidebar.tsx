@@ -1,4 +1,5 @@
 import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
+import type { CategoryFilterMode } from '../lib/category-filter-state'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
@@ -15,15 +16,17 @@ type CategorySidebarProps = {
   emphasizedPerkGroupKeys: ReadonlySet<string>
   expandedCategoryNames: string[]
   categoryCounts: Map<string, number>
+  categoryFilterMode: CategoryFilterMode
   hoveredPerkGroupKey: string | null
   isExpanded: boolean
   onCategoryExpandToggle: (categoryName: string) => void
   onCategoryToggle: (categoryName: string) => void
+  onClearCategorySelection: () => void
   onCloseCategoryHover: (categoryName: string) => void
   onOpenCategoryHover: (categoryName: string) => void
   onResetCategoryPerkGroups: (categoryName: string) => void
-  onResetCategories: () => void
   onPerkGroupSelect: (categoryName: string, perkGroupId: string) => void
+  onSelectAllCategories: () => void
   onToggleExpanded: () => void
   pickedPerkCountsByCategory: Map<string, number>
   pickedPerkCountsByPerkGroup: Map<string, number>
@@ -59,15 +62,17 @@ export function CategorySidebar({
   emphasizedPerkGroupKeys,
   expandedCategoryNames,
   categoryCounts,
+  categoryFilterMode,
   hoveredPerkGroupKey,
   isExpanded,
   onCategoryExpandToggle,
   onCategoryToggle,
+  onClearCategorySelection,
   onCloseCategoryHover,
   onOpenCategoryHover,
   onResetCategoryPerkGroups,
-  onResetCategories,
   onPerkGroupSelect,
+  onSelectAllCategories,
   onToggleExpanded,
   pickedPerkCountsByCategory,
   pickedPerkCountsByPerkGroup,
@@ -76,7 +81,7 @@ export function CategorySidebar({
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
   const hasActiveCategoryFilter =
-    selectedCategoryNames.length > 0 ||
+    categoryFilterMode !== 'none' ||
     Object.values(selectedPerkGroupIdsByCategory).some(
       (selectedPerkGroupIds) => selectedPerkGroupIds.length > 0,
     )
@@ -119,7 +124,7 @@ export function CategorySidebar({
             <button
               aria-label="Clear category selection"
               className={joinClassNames(sharedStyles.searchClearButton, styles.categoryClearButton)}
-              onClick={onResetCategories}
+              onClick={onClearCategorySelection}
               type="button"
             >
               <span aria-hidden="true" className={sharedStyles.searchClearIcon} />
@@ -127,10 +132,10 @@ export function CategorySidebar({
           ) : null}
         </div>
         <button
-          aria-label="Reset all category filters"
-          aria-pressed={selectedCategoryNames.length === 0}
+          aria-label="Show all categories"
+          aria-pressed={categoryFilterMode === 'all'}
           className={styles.categoryChip}
-          onClick={onResetCategories}
+          onClick={onSelectAllCategories}
           type="button"
         >
           <span className={styles.categoryChipStart}>

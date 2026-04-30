@@ -1,5 +1,9 @@
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import {
+  getCategoryFilterModeFromSelection,
+  type CategoryFilterMode,
+} from './category-filter-state'
+import {
   areBackgroundVeteranPerkLevelIntervalsDefault,
   baselineBackgroundVeteranPerkLevelIntervals,
   normalizeBackgroundVeteranPerkLevelIntervals,
@@ -11,6 +15,7 @@ export type BuildPlannerUrlPerkGroupOption = {
 }
 
 export type BuildPlannerUrlState = {
+  categoryFilterMode?: CategoryFilterMode
   optionalPerkIds: string[]
   pickedPerkIds: string[]
   query: string
@@ -59,6 +64,7 @@ const originPerkGroupsParamName = 'origin-perk-groups'
 const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
+const allCategoriesParamValue = 'all'
 const emptyBackgroundVeteranPerkLevelIntervalsParamValue = 'none'
 
 function normalizeBackgroundStudyScrollState({
@@ -211,6 +217,7 @@ function createPerkUrlLabels(
 
 function createDefaultUrlState(): BuildPlannerUrlState {
   return {
+    categoryFilterMode: 'none',
     optionalPerkIds: [],
     pickedPerkIds: [],
     query: '',
@@ -316,6 +323,7 @@ export function readBuildPlannerUrlState(
   const optionalPerkIds: string[] = []
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   let selectedPerkGroupCategoryName: string | null = null
+  let hasAllCategoriesParamValue = false
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
   const shouldAllowBackgroundStudyBook = readBooleanSearchParam(
     params,
@@ -358,10 +366,13 @@ export function readBuildPlannerUrlState(
   })
 
   for (const categoryValue of getGroupedParamValues(params, categoryParamName)) {
-    const categoryName = categoryNameByLookupValue.get(normalizeLookupValue(categoryValue))
+    const normalizedCategoryValue = normalizeLookupValue(categoryValue)
+    const categoryName = categoryNameByLookupValue.get(normalizedCategoryValue)
 
     if (categoryName) {
       selectedCategoryNameSet.add(categoryName)
+    } else if (normalizedCategoryValue === allCategoriesParamValue) {
+      hasAllCategoriesParamValue = true
     }
   }
 
@@ -410,13 +421,21 @@ export function readBuildPlannerUrlState(
     optionalPerkIds.push(perkId)
   }
 
+  const selectedCategoryNames = options.availableCategoryNames.filter((categoryName) =>
+    selectedCategoryNameSet.has(categoryName),
+  )
+
   return {
+    categoryFilterMode:
+      selectedCategoryNames.length > 0 || Object.keys(selectedPerkGroupIdsByCategory).length > 0
+        ? 'selection'
+        : hasAllCategoriesParamValue
+          ? 'all'
+          : 'none',
     optionalPerkIds,
     pickedPerkIds,
     query,
-    selectedCategoryNames: options.availableCategoryNames.filter((categoryName) =>
-      selectedCategoryNameSet.has(categoryName),
-    ),
+    selectedCategoryNames,
     selectedBackgroundVeteranPerkLevelIntervals,
     selectedPerkGroupIdsByCategory,
     shouldAllowBackgroundStudyBook,
@@ -436,6 +455,12 @@ export function createBuildPlannerUrlSearch(
   const orderedSelectedCategoryNames = options.availableCategoryNames.filter((categoryName) =>
     selectedCategoryNameSet.has(categoryName),
   )
+  const categoryFilterMode =
+    urlState.categoryFilterMode ??
+    getCategoryFilterModeFromSelection({
+      selectedCategoryNames: urlState.selectedCategoryNames,
+      selectedPerkGroupIdsByCategory: urlState.selectedPerkGroupIdsByCategory,
+    })
   let hasWrittenPerkGroup = false
   const normalizedQuery = collapseWhitespace(urlState.query)
   const shouldWriteAncientScrollPerkGroupsParam =
@@ -505,9 +530,15 @@ export function createBuildPlannerUrlSearch(
     appendScalarQueryEntry(entries, originBackgroundsParamName, 'true')
   }
 
-  appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedCategoryNames)
+  if (categoryFilterMode === 'all') {
+    appendGroupedQueryEntry(entries, categoryParamName, [allCategoriesParamValue])
+  } else if (categoryFilterMode === 'selection') {
+    appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedCategoryNames)
+  }
 
-  for (const categoryName of orderedSelectedCategoryNames) {
+  for (const categoryName of categoryFilterMode === 'selection'
+    ? orderedSelectedCategoryNames
+    : []) {
     if (hasWrittenPerkGroup) {
       break
     }
@@ -556,6 +587,7 @@ export function createSharedBuildUrlSearch(
 ): string {
   return createBuildPlannerUrlSearch(
     {
+      categoryFilterMode: 'none',
       optionalPerkIds,
       pickedPerkIds,
       query: '',

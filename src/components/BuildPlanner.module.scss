@@ -535,14 +535,18 @@
     left: calc((var(--primitive-length-negative-5px) - var(--primitive-length-3px)) * var(--planner-slot-requirement-chain-scale));
     z-index: var(--z-index-raised);
     display: block;
-    width: calc((var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale));
-    height: calc((var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale));
+    width: calc(
+      (var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale)
+    );
+    height: calc(
+      (var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale)
+    );
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
     margin-top: calc(
       (var(--primitive-length-12px) * -1) * var(--planner-slot-requirement-chain-scale)
     );
-    opacity: 0.4;
+    opacity: 0.8;
     pointer-events: none;
     transform: translate(
       calc((var(--primitive-length-0-12rem) * -1) * var(--planner-slot-requirement-chain-scale)),
@@ -999,7 +1003,9 @@
     }
 
     .plannerRequirementLegend {
-      --planner-requirement-legend-mobile-width: calc((var(--planner-requirement-legend-slot-width) * 2) + var(--space-md) + var(--primitive-length-8px));
+      --planner-requirement-legend-mobile-width: calc(
+        (var(--planner-requirement-legend-slot-width) * 2) + var(--space-md) + var(--primitive-length-8px)
+      );
 
       flex: 0 0 auto;
       width: var(--planner-requirement-legend-mobile-width);

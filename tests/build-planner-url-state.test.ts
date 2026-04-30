@@ -211,6 +211,7 @@ describe('build planner url state', () => {
         },
       ),
     ).toEqual({
+      categoryFilterMode: 'selection',
       pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
       query: 'Perfect Focus',
       selectedCategoryNames: ['Traits', 'Magic'],
@@ -235,6 +236,7 @@ describe('build planner url state', () => {
         },
       ),
     ).toEqual({
+      categoryFilterMode: 'selection',
       pickedPerkIds: ['perk.legend_perfect_focus', 'perk.legend_peaceable', 'perk.legend_clarity'],
       query: 'Perfect Focus',
       selectedCategoryNames: ['Traits'],
@@ -245,6 +247,40 @@ describe('build planner url state', () => {
       shouldIncludeAncientScrollPerkGroups: true,
       shouldIncludeOriginBackgrounds: false,
       shouldIncludeOriginPerkGroups: false,
+    })
+  })
+
+  test('serializes and restores explicit all categories selection', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        categoryFilterMode: 'all',
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?category=all')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }),
+    ).toMatchObject({
+      categoryFilterMode: 'all',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
     })
   })
 

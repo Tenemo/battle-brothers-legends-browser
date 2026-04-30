@@ -1,3 +1,4 @@
+import { Link } from 'lucide-react'
 import type {
   BackgroundFitMatch,
   BuildTargetPerkGroup,
@@ -201,7 +202,11 @@ function BackgroundFitMatchRow({
         hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
         hoveredPerkId={hoveredPerkId}
         isWide
-        metaClassName={styles.backgroundFitMatchProbabilityBadge}
+        metaClassName={
+          match.isGuaranteed
+            ? styles.backgroundFitMatchGuaranteedText
+            : styles.backgroundFitMatchProbabilityBadge
+        }
         metaLabel={
           match.isGuaranteed ? 'Guaranteed' : formatBackgroundFitProbabilityLabel(match.probability)
         }
@@ -235,6 +240,8 @@ const fullBuildChanceMetricLabel = 'Full build chance'
 const mustHaveBuildChanceMetricLabel = 'Must-have build chance'
 
 function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: BackgroundFitMetric) {
+  const shouldShowMustHaveIcon = label.toLowerCase().includes('must-have')
+
   return (
     <div
       aria-label={`${accessibleLabel}. ${tooltip}`}
@@ -244,6 +251,13 @@ function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: Back
       title={tooltip}
     >
       <span className={styles.backgroundFitMetricLabel} data-testid="background-fit-summary-label">
+        {shouldShowMustHaveIcon ? (
+          <Link
+            aria-hidden="true"
+            className={styles.backgroundFitMetricMustHaveIcon}
+            data-testid="background-fit-summary-must-have-icon"
+          />
+        ) : null}
         {label}
       </span>
       <span className={styles.backgroundFitMetricValue} data-testid="background-fit-summary-value">

@@ -179,6 +179,14 @@
     }
   }
 
+  .backgroundFitMatchGuaranteedText {
+    color: var(--accent-soft);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    text-align: right;
+    white-space: normal;
+  }
+
   .backgroundFitMatchProbabilityBadge,
   .backgroundFitDisambiguator,
   .backgroundFitRank,
@@ -429,11 +437,22 @@
   }
 
   .backgroundFitMetricLabel {
+    display: inline-flex;
+    gap: var(--space-2xs);
+    align-items: center;
     min-width: 0;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
     line-height: 1.1;
     text-align: left;
+  }
+
+  .backgroundFitMetricMustHaveIcon {
+    flex: 0 0 auto;
+    width: var(--icon-size-xs);
+    height: var(--icon-size-xs);
+    color: var(--accent-soft);
+    stroke-width: 2.2;
   }
 
   .backgroundFitMatchSection {

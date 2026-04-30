@@ -91,7 +91,9 @@ describe('background details study resources', () => {
     const [mustHaveStudyResourceSection] = screen.getAllByTestId('detail-study-resource-section')
     const studyResourceTile = within(mustHaveStudyResourceSection).getByTestId('planner-group-card')
 
-    expect(within(studyResourceTile).getByText('Skill book')).toBeVisible()
+    expect(
+      within(mustHaveStudyResourceSection).getByRole('img', { name: 'Skill book' }),
+    ).toBeVisible()
     expect(
       within(studyResourceTile).getByRole('button', { name: 'Select perk group Calm' }),
     ).toBeVisible()

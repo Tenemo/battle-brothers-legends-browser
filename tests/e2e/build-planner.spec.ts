@@ -360,9 +360,9 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(Math.abs(infoButtonStyle.width - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(infoButtonStyle.textTransform).toBe('none')
   expect(infoButtonGlyphStyle.fontFamily).toContain('Georgia')
-  expect(Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize)).toBeLessThan(
-    0.5,
-  )
+  expect(
+    Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize),
+  ).toBeLessThan(0.5)
   expect(infoButtonGlyphStyle.fontStyle).toBe('italic')
   expect(infoButtonGlyphStyle.transform).not.toBe('none')
 
@@ -1840,7 +1840,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(
     Math.abs(
       requirementLegendTileLayoutMetrics!.optionalTop -
-      requirementLegendTileLayoutMetrics!.mustHaveTop,
+        requirementLegendTileLayoutMetrics!.mustHaveTop,
     ),
   ).toBeLessThan(0.5)
   expect(requirementLegendTileLayoutMetrics!.mustHaveNameTextAlign).toBe('center')
@@ -1915,7 +1915,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(mustHaveChainMetrics!.chainImageClipPath).toContain('70% 68%')
   expect(mustHaveChainMetrics!.chainImageClipPath).toContain('66.7% 96%')
   expect(mustHaveChainMetrics!.chainImageClipPath).not.toBe('none')
-  expect(mustHaveChainMetrics!.chainOpacity).toBe('0.4')
+  expect(mustHaveChainMetrics!.chainOpacity).toBe('0.8')
   expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft)
   expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft - 7)
   expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
@@ -1953,8 +1953,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
     const perkName = element.querySelector('[data-testid="planner-picked-perk-name"]')
 
     return {
-      fontSize:
-        perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
+      fontSize: perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
       height: rectangle.height,
       width: rectangle.width,
     }
@@ -1964,8 +1963,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
     const perkName = element.querySelector('[data-testid="planner-picked-perk-name"]')
 
     return {
-      fontSize:
-        perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
+      fontSize: perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
       height: rectangle.height,
       width: rectangle.width,
     }

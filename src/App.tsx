@@ -33,6 +33,10 @@ import {
   getVisiblePerkCountsByCategoryPerkGroup,
   getVisiblePerkCountsByCategory,
 } from './lib/category-filter-model'
+import {
+  getCategoryFilterModeFromSelection,
+  type CategoryFilterMode,
+} from './lib/category-filter-state'
 import { compareCategoryNames } from './lib/dynamic-background-categories'
 import { createSharedBuildUrlSearch } from './lib/build-planner-url-state'
 import {
@@ -199,10 +203,12 @@ function getSelectedPerkGroupIdsByCategorySignature(
 }
 
 function hasActiveCategoryFilterSelection(
+  categoryFilterMode: CategoryFilterMode,
   selectedCategoryNames: string[],
   selectedPerkGroupIdsByCategory: Record<string, string[]>,
 ): boolean {
   return (
+    categoryFilterMode !== 'none' ||
     selectedCategoryNames.length > 0 ||
     Object.values(selectedPerkGroupIdsByCategory).some(
       (selectedPerkGroupIds) => selectedPerkGroupIds.length > 0,
@@ -223,6 +229,13 @@ export default function App() {
   )
   const [selectedCategoryNames, setSelectedCategoryNames] = useState<string[]>(
     initialUrlState.selectedCategoryNames,
+  )
+  const [categoryFilterMode, setCategoryFilterMode] = useState<CategoryFilterMode>(
+    initialUrlState.categoryFilterMode ??
+      getCategoryFilterModeFromSelection({
+        selectedCategoryNames: initialUrlState.selectedCategoryNames,
+        selectedPerkGroupIdsByCategory: initialUrlState.selectedPerkGroupIdsByCategory,
+      }),
   )
   const [expandedCategoryNames, setExpandedCategoryNames] = useState<string[]>(
     initialUrlState.selectedCategoryNames,
@@ -369,15 +382,23 @@ export default function App() {
   const visiblePerks = useMemo(
     () =>
       filterAndSortPerks(catalogPerks, {
+        categoryFilterMode,
         query,
         selectedCategoryNames,
         selectedPerkGroupIdsByCategory,
       }),
-    [catalogPerks, query, selectedCategoryNames, selectedPerkGroupIdsByCategory],
+    [
+      catalogPerks,
+      categoryFilterMode,
+      query,
+      selectedCategoryNames,
+      selectedPerkGroupIdsByCategory,
+    ],
   )
   const visiblePerkResultSetKey = useMemo(
     () =>
       [
+        categoryFilterMode,
         query,
         selectedCategoryNames.join('\u0000'),
         getSelectedPerkGroupIdsByCategorySignature(selectedPerkGroupIdsByCategory),
@@ -386,6 +407,7 @@ export default function App() {
         String(visiblePerks.length),
       ].join('\u0001'),
     [
+      categoryFilterMode,
       query,
       selectedCategoryNames,
       selectedPerkGroupIdsByCategory,
@@ -782,6 +804,13 @@ export default function App() {
         setPickedBuildPerks(
           createPickedBuildPerkState(urlState.pickedPerkIds, urlState.optionalPerkIds),
         )
+        setCategoryFilterMode(
+          urlState.categoryFilterMode ??
+            getCategoryFilterModeFromSelection({
+              selectedCategoryNames: urlState.selectedCategoryNames,
+              selectedPerkGroupIdsByCategory: urlState.selectedPerkGroupIdsByCategory,
+            }),
+        )
         setSelectedCategoryNames(urlState.selectedCategoryNames)
         setExpandedCategoryNames(urlState.selectedCategoryNames)
         setSelectedPerkGroupIdsByCategory(urlState.selectedPerkGroupIdsByCategory)
@@ -806,6 +835,7 @@ export default function App() {
     {
       optionalPerkIds: optionalPickedPerkIds,
       pickedPerkIds,
+      categoryFilterMode,
       query,
       selectedCategoryNames,
       selectedBackgroundVeteranPerkLevelIntervals,
@@ -874,16 +904,28 @@ export default function App() {
     setPerkResultListScrollResetKey((currentScrollResetKey) => currentScrollResetKey + 1)
   }
 
-  function resetCategoryFiltersToAll() {
+  function clearCategoryFilterSelection() {
     requestPerkResultListScrollReset()
+    setCategoryFilterMode('none')
     setExpandedCategoryNames([])
     setSelectedCategoryNames([])
     setSelectedPerkGroupIdsByCategory({})
   }
 
-  function handleResetCategories() {
+  function handleClearCategorySelection() {
     startTransition(() => {
-      resetCategoryFiltersToAll()
+      clearCategoryFilterSelection()
+    })
+  }
+
+  function handleSelectAllCategories() {
+    startTransition(() => {
+      requestPerkResultListScrollReset()
+      setQuery('')
+      setCategoryFilterMode('all')
+      setExpandedCategoryNames([])
+      setSelectedCategoryNames([])
+      setSelectedPerkGroupIdsByCategory({})
     })
   }
 
@@ -892,10 +934,14 @@ export default function App() {
 
     if (
       nextQuery.trim().length > 0 &&
-      hasActiveCategoryFilterSelection(selectedCategoryNames, selectedPerkGroupIdsByCategory)
+      hasActiveCategoryFilterSelection(
+        categoryFilterMode,
+        selectedCategoryNames,
+        selectedPerkGroupIdsByCategory,
+      )
     ) {
       startTransition(() => {
-        resetCategoryFiltersToAll()
+        clearCategoryFilterSelection()
       })
     }
   }
@@ -1099,12 +1145,14 @@ export default function App() {
     requestPerkResultListScrollReset()
 
     if (perkGroupSelection === null) {
+      setCategoryFilterMode('none')
       setSelectedCategoryNames([])
       setExpandedCategoryNames([])
       setSelectedPerkGroupIdsByCategory({})
       return
     }
 
+    setCategoryFilterMode('selection')
     setSelectedCategoryNames([perkGroupSelection.categoryName])
     setExpandedCategoryNames([perkGroupSelection.categoryName])
     setSelectedPerkGroupIdsByCategory({
@@ -1157,6 +1205,7 @@ export default function App() {
       setQuery('')
 
       if (isSelected) {
+        setCategoryFilterMode('none')
         setExpandedCategoryNames([])
         setSelectedCategoryNames([])
         setSelectedPerkGroupIdsByCategory({})
@@ -1164,6 +1213,7 @@ export default function App() {
       }
 
       // Category chips are a drilldown control, so opening one category replaces the previous category and nested perk group filters.
+      setCategoryFilterMode('selection')
       setExpandedCategoryNames([nextCategoryName])
       setSelectedCategoryNames([nextCategoryName])
       setSelectedPerkGroupIdsByCategory({})
@@ -1174,6 +1224,7 @@ export default function App() {
     startTransition(() => {
       requestPerkResultListScrollReset()
       setQuery('')
+      setCategoryFilterMode('selection')
       setExpandedCategoryNames([categoryName])
       setSelectedCategoryNames([categoryName])
       setSelectedPerkGroupIdsByCategory({})
@@ -1189,8 +1240,9 @@ export default function App() {
 
       if (isSelectedPerkGroup) {
         requestPerkResultListScrollReset()
+        setCategoryFilterMode('none')
         setExpandedCategoryNames([categoryName])
-        setSelectedCategoryNames([categoryName])
+        setSelectedCategoryNames([])
         setSelectedPerkGroupIdsByCategory({})
         return
       }
@@ -1403,6 +1455,7 @@ export default function App() {
 
         <CategorySidebar
           allPerkCount={catalogPerks.length}
+          categoryFilterMode={categoryFilterMode}
           displayedCategoryNames={displayedCategoryNames}
           displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
           expandedCategoryNames={expandedCategoryNames}
@@ -1413,11 +1466,12 @@ export default function App() {
           isExpanded={isCategorySidebarExpanded}
           onCategoryExpandToggle={handleCategoryExpandToggle}
           onCategoryToggle={handleCategoryToggle}
+          onClearCategorySelection={handleClearCategorySelection}
           onCloseCategoryHover={closeCategoryHover}
           onOpenCategoryHover={openCategoryHover}
           onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
-          onResetCategories={handleResetCategories}
           onPerkGroupSelect={handlePerkGroupSelect}
+          onSelectAllCategories={handleSelectAllCategories}
           onToggleExpanded={() => setIsCategorySidebarExpanded((isExpanded) => !isExpanded)}
           pickedPerkCountsByCategory={pickedPerkCountsByCategory}
           pickedPerkCountsByPerkGroup={pickedPerkCountsByPerkGroup}
