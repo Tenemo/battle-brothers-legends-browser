@@ -3,6 +3,7 @@ import {
   clearAllFilters,
   disableCategory,
   enableCategory,
+  expandCategory,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -460,7 +461,12 @@ test('reorders categories and perk groups around the active perk search query an
 
   await expect(categoryButtons.first()).toHaveAttribute('aria-label', 'Enable category Other')
 
-  await enableCategory(page, 'Other')
+  await expandCategory(page, 'Other')
+  await expect(page.getByLabel('Search perks')).toHaveValue('Shady')
+  await expect(page.getByRole('button', { name: 'Enable category Other' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
 
   const perkGroupButtons = page
     .getByTestId('category-sidebar')
@@ -470,6 +476,85 @@ test('reorders categories and perk groups around the active perk search query an
   await expect(
     page.getByTestId('category-sidebar').locator('[data-search-highlight="true"]'),
   ).toContainText(['Shady'])
+})
+
+test('keeps category disclosure separate from category and perk group selection', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await searchPerks(page, 'Axe')
+  await expandCategory(page, 'Weapon')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
+  await expect(page.getByRole('button', { name: 'Enable category Weapon' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+
+  await enableCategory(page, 'Weapon')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
+  await expect(
+    getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
+  ).toBeVisible()
+
+  await searchPerks(page, 'Axe')
+  await expandCategory(page, 'Weapon')
+  await selectPerkGroup(page, 'Axe')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-weapon')).toBe('Axe')
+})
+
+test('places ancient scroll markers next to sidebar perk group names', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await expandCategory(page, 'Magic')
+
+  const markerMetrics = await getSidebarPerkGroupButton(page, 'Evocation').evaluate((button) => {
+    const label = button.querySelector('[data-testid="perk-group-label"]')
+    const marker = button.querySelector('[data-testid="ancient-scroll-perk-group-marker"]')
+    const count = button.querySelector('[data-testid="perk-group-count"]')
+
+    if (
+      !(label instanceof HTMLElement) ||
+      !(marker instanceof HTMLElement) ||
+      !(count instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const labelRectangle = label.getBoundingClientRect()
+    const markerRectangle = marker.getBoundingClientRect()
+    const countRectangle = count.getBoundingClientRect()
+
+    return {
+      countLeft: countRectangle.left,
+      gapAfterLabel: markerRectangle.left - labelRectangle.right,
+      markerRight: markerRectangle.right,
+      spaceBeforeCount: countRectangle.left - markerRectangle.right,
+      verticalCenterOffset: Math.abs(
+        markerRectangle.top +
+          markerRectangle.height / 2 -
+          (labelRectangle.top + labelRectangle.height / 2),
+      ),
+    }
+  })
+
+  expect(markerMetrics).not.toBeNull()
+  expect(markerMetrics!.gapAfterLabel).toBeGreaterThanOrEqual(0)
+  expect(markerMetrics!.gapAfterLabel).toBeLessThanOrEqual(8)
+  expect(markerMetrics!.spaceBeforeCount).toBeGreaterThan(0)
+  expect(markerMetrics!.markerRight).toBeLessThan(markerMetrics!.countLeft)
+  expect(markerMetrics!.verticalCenterOffset).toBeLessThanOrEqual(2)
 })
 
 test('highlights the searched perk phrase in the visible perk results', async ({ page }) => {

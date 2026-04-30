@@ -1703,13 +1703,13 @@ test('marks picked perks as optional and separates them from must-have perks', a
   const requirementLegend = page.getByTestId('planner-requirement-legend')
   const mustHaveLegendTile = requirementLegend
     .getByTestId('planner-requirement-legend-tile')
-    .filter({ hasText: 'Must-have perk' })
+    .filter({ hasText: 'Must-have' })
   const optionalLegendTile = requirementLegend
     .getByTestId('planner-requirement-legend-tile')
-    .filter({ hasText: 'Optional perk' })
+    .filter({ hasText: 'Optional' })
   await expect(requirementLegend.getByTestId('planner-requirement-legend-tile')).toHaveText([
-    'Must-have perk',
-    'Optional perk',
+    'Must-have',
+    'Optional',
   ])
   await expect(mustHaveLegendTile).toHaveAttribute('data-requirement', 'must-have')
   await expect(optionalLegendTile).toHaveAttribute('data-requirement', 'optional')
@@ -2089,6 +2089,18 @@ test('marks picked perks as optional and separates them from must-have perks', a
       .filter({ hasText: 'Must-have build chance' })
       .first(),
   ).toBeVisible()
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-table')
+      .first()
+      .getByTestId('background-fit-summary-label'),
+  ).toHaveText([
+    'Must-have build chance',
+    'Full build chance',
+    'Expected must-have perks pickable',
+    'Expected optional perks pickable',
+    'Guaranteed perks pickable',
+  ])
   await expect(
     backgroundFitPanel
       .getByTestId('background-fit-summary-metric')

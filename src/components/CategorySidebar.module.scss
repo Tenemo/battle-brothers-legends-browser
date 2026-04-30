@@ -88,15 +88,72 @@
     }
   }
 
+  .categoryChipFrame {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    border: var(--primitive-length-1px) solid transparent;
+    border-radius: var(--radius-control);
+    background: var(--button-background);
+    color: inherit;
+    font-size: var(--primitive-length-0-84rem);
+
+    @include control-transition;
+
+    &:hover,
+    &[data-highlighted='true'],
+    &[data-selected='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+    }
+  }
+
+  .categoryDisclosureButton,
+  .categorySelectButton {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .categoryDisclosureButton {
+    display: grid;
+    place-items: center;
+    flex: 0 0 var(--primitive-length-1-5rem);
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-control) 0 0 var(--radius-control);
+  }
+
+  .categorySelectButton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--primitive-length-0-55rem);
+    padding: var(--primitive-length-0-3rem) var(--primitive-length-0-46rem)
+      var(--primitive-length-0-3rem) var(--space-xs);
+    text-align: left;
+  }
+
   .categoryChipStart,
   .categoryChipEnd,
   .categoryChipPickedStars,
+  .perkGroupChipStart,
   .perkGroupChipEnd {
     display: inline-flex;
     align-items: center;
   }
 
-  .categoryChipStart {
+  .categoryChipStart,
+  .perkGroupChipStart {
     gap: var(--primitive-length-0-38rem);
     min-width: 0;
   }
@@ -118,8 +175,17 @@
   }
 
   .categoryLabel,
-  .perkGroupChipStart {
+  .perkGroupLabel {
     min-width: 0;
+  }
+
+  .perkGroupChipStart .perkGroupAncientScrollMarker {
+    position: static;
+    flex: 0 0 auto;
+
+    @include size(var(--icon-size-xs));
+
+    margin-left: 0;
   }
 
   .categoryChevron {
@@ -164,10 +230,6 @@
     background: var(--primitive-color-rgb-21-17-14-alpha-0-9);
     color: var(--text-secondary);
     font-size: var(--font-size-base);
-
-    &[data-ancient-scroll-perk-group='true'] {
-      padding-right: var(--primitive-length-1-4rem);
-    }
   }
 
   @keyframes fade-in {
@@ -192,6 +254,9 @@
   }
 
   @include mobile {
+    .categoryChipFrame,
+    .categoryDisclosureButton,
+    .categorySelectButton,
     .categoryChip,
     .perkGroupChip {
       min-height: var(--primitive-length-2-72rem);

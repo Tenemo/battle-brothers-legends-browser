@@ -116,6 +116,9 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     const categorySidebar = document.querySelector(
       '[data-testid="category-sidebar"]',
     ) as HTMLElement | null
+    const detailPanel = document.querySelector(
+      '[data-testid="perk-detail-panel"]',
+    ) as HTMLElement | null
     const detailPanelBody = document.querySelector(
       '[data-testid="perk-detail-panel-body"]',
     ) as HTMLElement | null
@@ -130,6 +133,9 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
       '[data-testid="perk-row-icon"]',
     ) as HTMLElement | null
     const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+    const resultsPanel = document.querySelector(
+      '[data-testid="results-panel"]',
+    ) as HTMLElement | null
     const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
     const detailPanelBodyStyle =
       detailPanelBody === null ? null : window.getComputedStyle(detailPanelBody)
@@ -139,8 +145,13 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     const resultsListStyle = resultsList === null ? null : window.getComputedStyle(resultsList)
 
     return {
+      backgroundFitPanelLeft:
+        backgroundFitPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       backgroundFitPanelWidth: backgroundFitPanel?.getBoundingClientRect().width ?? 0,
+      categorySidebarLeft:
+        categorySidebar?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       categorySidebarWidth: categorySidebar?.getBoundingClientRect().width ?? 0,
+      detailPanelLeft: detailPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       detailPanelBodyGap:
         detailPanelBodyStyle === null
           ? Number.POSITIVE_INFINITY
@@ -165,6 +176,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
           ? Number.POSITIVE_INFINITY
           : plannerBoard.scrollHeight - plannerBoard.clientHeight,
       plannerHeight: planner?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY,
+      resultsPanelLeft: resultsPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       resultsListHeight: resultsList?.clientHeight ?? 0,
       resultsListGap:
         resultsListStyle === null
@@ -389,6 +401,9 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
 
     const desktopMetrics = await readDenseDesktopLayoutMetrics(page)
 
+    expect(desktopMetrics.backgroundFitPanelLeft).toBeLessThan(desktopMetrics.detailPanelLeft)
+    expect(desktopMetrics.detailPanelLeft).toBeLessThan(desktopMetrics.resultsPanelLeft)
+    expect(desktopMetrics.resultsPanelLeft).toBeLessThan(desktopMetrics.categorySidebarLeft)
     expect(desktopMetrics.backgroundFitPanelWidth).toBeLessThanOrEqual(
       expectation.maximumBackgroundFitPanelWidth,
     )

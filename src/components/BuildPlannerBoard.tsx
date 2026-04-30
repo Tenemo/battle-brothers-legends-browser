@@ -145,7 +145,7 @@ export function BuildPlannerRequirementLegend() {
         <PlannerSlotRequirementChain />
         <div className={styles.plannerSlotPerkInspect}>
           <span className={styles.plannerPickedPerkName} data-testid="planner-picked-perk-name">
-            Must-have perk
+            Must-have
           </span>
         </div>
       </div>
@@ -156,7 +156,7 @@ export function BuildPlannerRequirementLegend() {
       >
         <div className={styles.plannerSlotPerkInspect}>
           <span className={styles.plannerPickedPerkName} data-testid="planner-picked-perk-name">
-            Optional perk
+            Optional
           </span>
         </div>
       </div>

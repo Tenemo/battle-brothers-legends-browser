@@ -929,13 +929,25 @@ export default function App() {
     })
   }
 
+  function handleCategoryExpandToggle(categoryName: string) {
+    startTransition(() => {
+      setExpandedCategoryNames((currentExpandedCategoryNames) =>
+        currentExpandedCategoryNames.includes(categoryName)
+          ? currentExpandedCategoryNames.filter(
+              (expandedCategoryName) => expandedCategoryName !== categoryName,
+            )
+          : [...currentExpandedCategoryNames, categoryName],
+      )
+    })
+  }
+
   function handleCategoryToggle(nextCategoryName: string) {
     startTransition(() => {
       const isSelected = selectedCategoryNames.includes(nextCategoryName)
 
       requestPerkResultListScrollReset()
 
-      if (isSelected) {
+      if (isSelected && query.length === 0) {
         setExpandedCategoryNames([])
         setSelectedCategoryNames([])
         setSelectedPerkGroupIdsByCategory({})
@@ -943,6 +955,7 @@ export default function App() {
       }
 
       // Category chips are a drilldown control, so opening one category replaces the previous category and nested perk group filters.
+      setQuery('')
       setExpandedCategoryNames([nextCategoryName])
       setSelectedCategoryNames([nextCategoryName])
       setSelectedPerkGroupIdsByCategory({})
@@ -952,15 +965,16 @@ export default function App() {
   function handleResetCategoryPerkGroups(categoryName: string) {
     startTransition(() => {
       requestPerkResultListScrollReset()
-      setSelectedPerkGroupIdsByCategory((currentSelectedPerkGroupIdsByCategory) => ({
-        ...currentSelectedPerkGroupIdsByCategory,
-        [categoryName]: [],
-      }))
+      setQuery('')
+      setExpandedCategoryNames([categoryName])
+      setSelectedCategoryNames([categoryName])
+      setSelectedPerkGroupIdsByCategory({})
     })
   }
 
   function handlePerkGroupSelect(categoryName: string, perkGroupId: string) {
     startTransition(() => {
+      setQuery('')
       selectPerkGroup({ categoryName, perkGroupId })
     })
   }
@@ -1115,26 +1129,26 @@ export default function App() {
           shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 
-        <CategorySidebar
-          allPerkCount={catalogPerks.length}
-          displayedCategoryNames={displayedCategoryNames}
-          displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
-          expandedCategoryNames={expandedCategoryNames}
-          categoryCounts={categoryCounts}
+        <PerkDetail
           emphasizedCategoryNames={emphasizedCategoryNames}
           emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-          hoveredPerkGroupKey={hoveredPerkGroupKey}
-          onCategoryToggle={handleCategoryToggle}
-          onCloseCategoryHover={closeCategoryHover}
-          onOpenCategoryHover={openCategoryHover}
-          onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
-          onResetCategories={handleResetCategories}
-          onPerkGroupSelect={handlePerkGroupSelect}
-          pickedPerkCountsByCategory={pickedPerkCountsByCategory}
-          pickedPerkCountsByPerkGroup={pickedPerkCountsByPerkGroup}
-          query={query}
-          selectedCategoryNames={selectedCategoryNames}
-          selectedPerkGroupIdsByCategory={selectedPerkGroupIdsByCategory}
+          groupedBackgroundSources={groupedBackgroundSources}
+          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
+          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+          hoveredPerkId={hoveredPerkId}
+          isSelectedPerkPicked={isSelectedPerkPicked}
+          isExpanded={isPerkDetailPanelExpanded}
+          onCloseBuildPerkHover={closeBuildPerkHover}
+          onCloseBuildPerkTooltip={closeBuildPerkTooltip}
+          onClosePerkGroupHover={closePerkGroupHover}
+          onInspectPerk={handleInspectPlannerPerk}
+          onInspectPerkGroup={handleInspectPerkGroup}
+          onOpenBuildPerkHover={openBuildPerkHover}
+          onOpenBuildPerkTooltip={openBuildPerkTooltip}
+          onOpenPerkGroupHover={openPerkGroupHover}
+          onToggleExpanded={() => setIsPerkDetailPanelExpanded((isExpanded) => !isExpanded)}
+          onTogglePerkPicked={handleTogglePerkPicked}
+          selectedPerk={selectedPerk}
         />
 
         <PerkResults
@@ -1161,26 +1175,27 @@ export default function App() {
           visiblePerks={visiblePerks}
         />
 
-        <PerkDetail
+        <CategorySidebar
+          allPerkCount={catalogPerks.length}
+          displayedCategoryNames={displayedCategoryNames}
+          displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
+          expandedCategoryNames={expandedCategoryNames}
+          categoryCounts={categoryCounts}
           emphasizedCategoryNames={emphasizedCategoryNames}
           emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-          groupedBackgroundSources={groupedBackgroundSources}
-          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
-          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-          hoveredPerkId={hoveredPerkId}
-          isSelectedPerkPicked={isSelectedPerkPicked}
-          isExpanded={isPerkDetailPanelExpanded}
-          onCloseBuildPerkHover={closeBuildPerkHover}
-          onCloseBuildPerkTooltip={closeBuildPerkTooltip}
-          onClosePerkGroupHover={closePerkGroupHover}
-          onInspectPerk={handleInspectPlannerPerk}
-          onInspectPerkGroup={handleInspectPerkGroup}
-          onOpenBuildPerkHover={openBuildPerkHover}
-          onOpenBuildPerkTooltip={openBuildPerkTooltip}
-          onOpenPerkGroupHover={openPerkGroupHover}
-          onToggleExpanded={() => setIsPerkDetailPanelExpanded((isExpanded) => !isExpanded)}
-          onTogglePerkPicked={handleTogglePerkPicked}
-          selectedPerk={selectedPerk}
+          hoveredPerkGroupKey={hoveredPerkGroupKey}
+          onCategoryExpandToggle={handleCategoryExpandToggle}
+          onCategoryToggle={handleCategoryToggle}
+          onCloseCategoryHover={closeCategoryHover}
+          onOpenCategoryHover={openCategoryHover}
+          onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
+          onResetCategories={handleResetCategories}
+          onPerkGroupSelect={handlePerkGroupSelect}
+          pickedPerkCountsByCategory={pickedPerkCountsByCategory}
+          pickedPerkCountsByPerkGroup={pickedPerkCountsByPerkGroup}
+          query={query}
+          selectedCategoryNames={selectedCategoryNames}
+          selectedPerkGroupIdsByCategory={selectedPerkGroupIdsByCategory}
         />
       </main>
     </div>

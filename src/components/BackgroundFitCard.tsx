@@ -404,25 +404,6 @@ export function BackgroundFitCard({
     backgroundFit.guaranteedCoveredMustHavePerkCount +
     backgroundFit.guaranteedCoveredOptionalPerkCount
   const summaryMetrics = [
-    ...(optionalPickedPerkCount > 0 && backgroundFit.fullBuildReachabilityProbability !== null
-      ? [
-          {
-            accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
-              backgroundFit.fullBuildReachabilityProbability,
-              fullBuildChanceMetricLabel,
-            ),
-            label: fullBuildChanceMetricLabel,
-            tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
-              backgroundFit.fullBuildReachabilityProbability,
-              'the full build, including optional perks',
-              studyResourceFilter,
-            ),
-            value: formatBackgroundFitProbabilityLabel(
-              backgroundFit.fullBuildReachabilityProbability,
-            ),
-          },
-        ]
-      : []),
     ...(backgroundFit.mustHaveBuildReachabilityProbability === null
       ? []
       : [
@@ -442,6 +423,25 @@ export function BackgroundFitCard({
             ),
           },
         ]),
+    ...(optionalPickedPerkCount > 0 && backgroundFit.fullBuildReachabilityProbability !== null
+      ? [
+          {
+            accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
+              backgroundFit.fullBuildReachabilityProbability,
+              fullBuildChanceMetricLabel,
+            ),
+            label: fullBuildChanceMetricLabel,
+            tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
+              backgroundFit.fullBuildReachabilityProbability,
+              'the full build, including optional perks',
+              studyResourceFilter,
+            ),
+            value: formatBackgroundFitProbabilityLabel(
+              backgroundFit.fullBuildReachabilityProbability,
+            ),
+          },
+        ]
+      : []),
     {
       accessibleLabel: formatBackgroundFitExpectedBuildPerksLabel(
         backgroundFit.expectedCoveredMustHavePerkCount,

@@ -229,6 +229,14 @@ export async function disableCategory(page: Page, categoryName: string): Promise
   await page.getByRole('button', { name: `Disable category ${categoryName}` }).click()
 }
 
+export async function expandCategory(page: Page, categoryName: string): Promise<void> {
+  await page.getByRole('button', { name: `Expand category ${categoryName}` }).click()
+}
+
+export async function collapseCategory(page: Page, categoryName: string): Promise<void> {
+  await page.getByRole('button', { name: `Collapse category ${categoryName}` }).click()
+}
+
 export async function selectPerkGroup(page: Page, perkGroupName: string): Promise<void> {
   await getSidebarPerkGroupButton(page, perkGroupName).click()
 }

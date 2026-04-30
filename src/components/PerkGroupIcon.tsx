@@ -3,6 +3,7 @@ import {
   ancientScrollIconPath,
   ancientScrollPerkGroupMarkerTestId,
 } from '../lib/ancient-scroll-perk-group-display'
+import { joinClassNames } from '../lib/class-names'
 import { renderGameIcon } from '../lib/perk-display'
 import styles from './PerkGroupIcon.module.scss'
 
@@ -14,6 +15,7 @@ type PerkGroupIconProps = {
 }
 
 type AncientScrollPerkGroupMarkerProps = {
+  className?: string
   onBlur?: FocusEventHandler<HTMLButtonElement>
   onClick?: MouseEventHandler<HTMLButtonElement>
   onFocus?: FocusEventHandler<HTMLButtonElement>
@@ -22,6 +24,7 @@ type AncientScrollPerkGroupMarkerProps = {
 }
 
 export function AncientScrollPerkGroupMarker({
+  className,
   onBlur,
   onClick,
   onFocus,
@@ -32,7 +35,7 @@ export function AncientScrollPerkGroupMarker({
     return (
       <button
         aria-label="Learnable using an ancient scroll"
-        className={styles.ancientScrollMarker}
+        className={joinClassNames(styles.ancientScrollMarker, className)}
         data-testid={ancientScrollPerkGroupMarkerTestId}
         onBlur={onBlur}
         onClick={onClick}
@@ -57,7 +60,7 @@ export function AncientScrollPerkGroupMarker({
   return (
     <img
       alt="Learnable using an ancient scroll"
-      className={styles.ancientScrollMarker}
+      className={joinClassNames(styles.ancientScrollMarker, className)}
       data-testid={ancientScrollPerkGroupMarkerTestId}
       decoding="async"
       loading="lazy"
