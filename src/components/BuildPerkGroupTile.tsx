@@ -183,8 +183,14 @@ export function BuildPerkGroupTile({
     : undefined
   const markerPointerHandlers = primaryPerkGroupOption
     ? {
+        onBlur: () => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption)),
         onClick: () =>
           onInspectPerkGroup(
+            primaryPerkGroupOption.categoryName,
+            primaryPerkGroupOption.perkGroupId,
+          ),
+        onFocus: () =>
+          onOpenPerkGroupHover(
             primaryPerkGroupOption.categoryName,
             primaryPerkGroupOption.perkGroupId,
           ),

@@ -514,6 +514,7 @@
     display: block;
     width: 100%;
     height: 100%;
+    clip-path: polygon(0 0, 100% 0, 100% 68%, 70% 68%, 66.7% 96%, 55% 100%, 0 100%);
     user-select: none;
   }
 

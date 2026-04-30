@@ -1610,6 +1610,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
     return {
       chainBottom: chainRectangle.bottom,
       chainImageBottom: chainImageRectangle.bottom,
+      chainImageClipPath: window.getComputedStyle(requirementChainImage).clipPath,
       chainImageComplete: requirementChainImage.complete,
       chainImageHeight: chainImageRectangle.height,
       chainImageNaturalHeight: requirementChainImage.naturalHeight,
@@ -1634,6 +1635,10 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(mustHaveChainMetrics!.chainImageNaturalWidth).toBeGreaterThan(0)
   expect(mustHaveChainMetrics!.chainImageWidth).toBeGreaterThan(0)
   expect(mustHaveChainMetrics!.chainImageHeight).toBeGreaterThan(0)
+  expect(mustHaveChainMetrics!.chainImageClipPath).toContain('polygon(')
+  expect(mustHaveChainMetrics!.chainImageClipPath).toContain('70% 68%')
+  expect(mustHaveChainMetrics!.chainImageClipPath).toContain('66.7% 96%')
+  expect(mustHaveChainMetrics!.chainImageClipPath).not.toBe('none')
   expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft)
   expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
     mustHaveChainMetrics!.tileTop + mustHaveChainMetrics!.tileHeight * 0.5,
