@@ -53,6 +53,8 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
+  await page.getByRole('button', { name: 'Expand background fit' }).click()
+  await expect(page.getByRole('button', { name: 'Expand background Apprentice' })).toBeVisible()
   await page.mouse.move(0, 0)
 
   const styles = await page.evaluate(getPrimitiveStyleSnapshot)

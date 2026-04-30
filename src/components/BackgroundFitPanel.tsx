@@ -8,6 +8,12 @@ import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './Sh
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
 
+const emptyBackgroundFitView: BackgroundFitView = {
+  rankedBackgroundFits: [],
+  supportedBuildTargetPerkGroups: [],
+  unsupportedBuildTargetPerkGroups: [],
+}
+
 export function BackgroundFitPanel({
   backgroundFitView,
   emphasizedCategoryNames,
@@ -16,6 +22,7 @@ export function BackgroundFitPanel({
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
   isExpanded,
+  isLoadingBackgroundFitView,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onClearPerkGroupHover,
@@ -39,13 +46,14 @@ export function BackgroundFitPanel({
   shouldAllowSecondBackgroundStudyScroll,
   shouldIncludeOriginBackgrounds,
 }: {
-  backgroundFitView: BackgroundFitView
+  backgroundFitView: BackgroundFitView | null
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
   isExpanded: boolean
+  isLoadingBackgroundFitView: boolean
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onClearPerkGroupHover: () => void
@@ -79,6 +87,7 @@ export function BackgroundFitPanel({
   shouldAllowSecondBackgroundStudyScroll: boolean
   shouldIncludeOriginBackgrounds: boolean
 }) {
+  const effectiveBackgroundFitView = backgroundFitView ?? emptyBackgroundFitView
   const [backgroundFitInputValue, setBackgroundFitInputValue] = useState('')
   const [isBackgroundFilterMenuOpen, setIsBackgroundFilterMenuOpen] = useState(false)
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitInputValue)
@@ -94,10 +103,10 @@ export function BackgroundFitPanel({
   const backgroundFitFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const hasPickedPerks = pickedPerkCount > 0
   const hasSupportedBackgroundFitTargets =
-    backgroundFitView.supportedBuildTargetPerkGroups.length > 0
+    effectiveBackgroundFitView.supportedBuildTargetPerkGroups.length > 0
   const hasUnsupportedBackgroundFitTargets =
-    backgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
-  const hasBuildReachabilityProbability = backgroundFitView.rankedBackgroundFits.some(
+    effectiveBackgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
+  const hasBuildReachabilityProbability = effectiveBackgroundFitView.rankedBackgroundFits.some(
     (backgroundFit) => backgroundFit.buildReachabilityProbability !== null,
   )
   const hasActiveBackgroundFilter =
@@ -106,6 +115,8 @@ export function BackgroundFitPanel({
     !shouldAllowBackgroundStudyScroll ||
     shouldAllowSecondBackgroundStudyScroll
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
+  const shouldShowBackgroundFitTargetSummary =
+    hasPickedPerks && !isLoadingBackgroundFitView
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
   const backgroundFitEmptyResultTarget =
     normalizedBackgroundFitQuery.length > 0
@@ -113,7 +124,7 @@ export function BackgroundFitPanel({
       : 'the selected filters'
   const visibleRankedBackgroundFits = useMemo(
     () =>
-      backgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
+      effectiveBackgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
         if (!shouldIncludeOriginBackgrounds && isOriginBackgroundFit(backgroundFit)) {
           return false
         }
@@ -123,24 +134,26 @@ export function BackgroundFitPanel({
           getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery)
         )
       }),
-    [backgroundFitView, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds],
+    [effectiveBackgroundFitView, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds],
   )
   const rankedBackgroundFitIndexByKey = useMemo(
     () =>
       new Map(
-        backgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => [
-          getBackgroundFitKey(backgroundFit),
-          backgroundFitIndex,
-        ]),
+        effectiveBackgroundFitView.rankedBackgroundFits.map(
+          (backgroundFit, backgroundFitIndex) => [
+            getBackgroundFitKey(backgroundFit),
+            backgroundFitIndex,
+          ],
+        ),
       ),
-    [backgroundFitView],
+    [effectiveBackgroundFitView],
   )
   const rankedBackgroundFitKeySignature = useMemo(
     () =>
-      backgroundFitView.rankedBackgroundFits
+      effectiveBackgroundFitView.rankedBackgroundFits
         .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
         .join('|'),
-    [backgroundFitView],
+    [effectiveBackgroundFitView],
   )
   const expandedBackgroundFitKey =
     backgroundFitAccordionState.rankedBackgroundFitKeySignature === rankedBackgroundFitKeySignature
@@ -331,7 +344,7 @@ export function BackgroundFitPanel({
             }
             value={backgroundFitInputValue}
           />
-          {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (
+          {!shouldShowBackgroundFitTargetSummary ? null : hasSupportedBackgroundFitTargets ? (
             <p
               className={styles.backgroundFitRankingSummary}
               data-testid="background-fit-ranking-summary"
@@ -356,7 +369,7 @@ export function BackgroundFitPanel({
                     Profession, and Magic.
                   </p>
                   <ul className={styles.backgroundFitTargetList} data-unsupported="true">
-                    {backgroundFitView.unsupportedBuildTargetPerkGroups.map(
+                    {effectiveBackgroundFitView.unsupportedBuildTargetPerkGroups.map(
                       (buildTargetPerkGroup) => (
                         <BackgroundFitTargetPerkGroup
                           buildTargetPerkGroup={buildTargetPerkGroup}
@@ -379,7 +392,11 @@ export function BackgroundFitPanel({
             }}
             ref={backgroundFitResultsScrollRef}
           >
-            {visibleRankedBackgroundFits.length > 0 ? (
+            {isLoadingBackgroundFitView ? (
+              <div className={styles.backgroundFitEmptyState}>
+                <p className={styles.backgroundFitSummaryCopy}>Calculating background fits.</p>
+              </div>
+            ) : visibleRankedBackgroundFits.length > 0 ? (
               <ol className={styles.backgroundFitRanking} data-testid="background-fit-ranking">
                 {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
                   <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>

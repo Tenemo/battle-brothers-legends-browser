@@ -756,6 +756,7 @@ test('keeps mobile background fit cards compact while preserving tap targets', a
   await page.goto(denseDesktopBuildUrl)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expectNoDocumentHorizontalOverflow(page)
+  await expect(page.getByTestId('background-fit-card').nth(4)).toBeAttached()
 
   const backgroundFitCardMetrics = await page.evaluate(() => {
     const cards = [...document.querySelectorAll<HTMLElement>('[data-testid="background-fit-card"]')]

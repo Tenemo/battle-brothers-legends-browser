@@ -16,7 +16,7 @@ import { PerkDetail } from './components/PerkDetail'
 import { PerkResults } from './components/PerkResults'
 import { GitHubIcon } from './components/SharedControls'
 import legendsPerksDatasetJson from './data/legends-perks.json'
-import { createBackgroundFitEngine } from './lib/background-fit'
+import { createBackgroundFitEngine, type BackgroundFitView } from './lib/background-fit'
 import { getBuildPlannerGroups } from './lib/build-planner'
 import {
   compareDisplayedCategories,
@@ -67,6 +67,11 @@ const allAvailableCategories = [...allCategoryCounts.keys()].toSorted(compareCat
 type PickedBuildPerkState = {
   isOptional: boolean
   perkId: string
+}
+
+type BackgroundFitViewState = {
+  key: string
+  view: BackgroundFitView
 }
 
 function createPickedBuildPerkState(
@@ -205,6 +210,8 @@ export default function App() {
   )
   const [isPerkDetailPanelExpanded, setIsPerkDetailPanelExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
+  const [backgroundFitViewState, setBackgroundFitViewState] =
+    useState<BackgroundFitViewState | null>(null)
   const {
     clearAllHover,
     clearBuildPerkTooltip,
@@ -367,9 +374,37 @@ export default function App() {
     () => getBuildPlannerGroups(plannerGroupPerks),
     [plannerGroupPerks],
   )
-  const backgroundFitView = useMemo(
+  const backgroundFitViewKey = useMemo(
     () =>
-      backgroundFitEngine.getBackgroundFitView(
+      [
+        pickedPerkIds.join('\u0000'),
+        optionalPickedPerkIds.join('\u0000'),
+        shouldAllowBackgroundStudyBook ? 'book' : 'no-book',
+        shouldAllowBackgroundStudyScroll ? 'scroll' : 'no-scroll',
+        shouldAllowSecondBackgroundStudyScroll ? 'second-scroll' : 'single-scroll',
+      ].join('\u0001'),
+    [
+      optionalPickedPerkIds,
+      pickedPerkIds,
+      shouldAllowBackgroundStudyBook,
+      shouldAllowBackgroundStudyScroll,
+      shouldAllowSecondBackgroundStudyScroll,
+    ],
+  )
+  const shouldLoadBackgroundFitView =
+    isBackgroundFitPanelExpanded || hasActiveBackgroundFitSearch
+  const backgroundFitView =
+    backgroundFitViewState?.key === backgroundFitViewKey ? backgroundFitViewState.view : null
+  const isBackgroundFitViewLoading = shouldLoadBackgroundFitView && backgroundFitView === null
+
+  useEffect(() => {
+    if (!shouldLoadBackgroundFitView || backgroundFitView !== null) {
+      return
+    }
+
+    let isCancelled = false
+    const backgroundFitCalculationTimeout = window.setTimeout(() => {
+      const nextBackgroundFitView = backgroundFitEngine.getBackgroundFitView(
         pickedPerks,
         {
           shouldAllowBook: shouldAllowBackgroundStudyBook,
@@ -379,15 +414,34 @@ export default function App() {
         {
           optionalPickedPerkIds: optionalPickedPerkIdSet,
         },
-      ),
-    [
-      optionalPickedPerkIdSet,
-      pickedPerks,
-      shouldAllowBackgroundStudyBook,
-      shouldAllowBackgroundStudyScroll,
-      shouldAllowSecondBackgroundStudyScroll,
-    ],
-  )
+      )
+
+      if (isCancelled) {
+        return
+      }
+
+      startTransition(() => {
+        setBackgroundFitViewState({
+          key: backgroundFitViewKey,
+          view: nextBackgroundFitView,
+        })
+      })
+    }, 0)
+
+    return () => {
+      isCancelled = true
+      window.clearTimeout(backgroundFitCalculationTimeout)
+    }
+  }, [
+    backgroundFitView,
+    backgroundFitViewKey,
+    optionalPickedPerkIdSet,
+    pickedPerks,
+    shouldAllowBackgroundStudyBook,
+    shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll,
+    shouldLoadBackgroundFitView,
+  ])
   const visiblePerkCountsByCategory = useMemo(
     () => getVisiblePerkCountsByCategory(visiblePerks),
     [visiblePerks],
@@ -936,6 +990,7 @@ export default function App() {
           hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
           hoveredPerkId={hoveredPerkId}
           isExpanded={isBackgroundFitPanelExpanded}
+          isLoadingBackgroundFitView={isBackgroundFitViewLoading}
           onCloseBuildPerkHover={closeBuildPerkHover}
           onCloseBuildPerkTooltip={closeBuildPerkTooltip}
           onClearPerkGroupHover={clearPerkGroupHover}

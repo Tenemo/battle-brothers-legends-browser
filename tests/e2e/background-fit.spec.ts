@@ -731,6 +731,12 @@ test('keeps zero-match backgrounds after matching backgrounds in the full ranked
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
+  ).toBeVisible()
+
   const backgroundNameOrder = await page.evaluate(() =>
     [...document.querySelectorAll('[data-testid="background-fit-card"] h3')].map((heading) =>
       heading.textContent?.trim(),
