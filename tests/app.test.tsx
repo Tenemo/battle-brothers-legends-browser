@@ -77,6 +77,11 @@ describe('app', () => {
         name: 'Open the build planner repository on GitHub',
       }),
     ).toHaveAttribute('href', 'https://github.com/Tenemo/battle-brothers-legends-browser')
+    expect(
+      screen.getByRole('link', {
+        name: 'Open Piotr Piechowski projects',
+      }),
+    ).toHaveAttribute('href', 'https://piech.dev/projects')
     expect(screen.getByLabelText('Search perks')).toBeInTheDocument()
     expect(screen.getByTestId('build-perks-bar')).toBeInTheDocument()
     expect(screen.getByTestId('build-shared-groups-list')).toBeInTheDocument()

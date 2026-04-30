@@ -608,6 +608,42 @@ test('places ancient scroll markers next to sidebar perk group names', async ({ 
   expect(markerMetrics!.verticalCenterOffset).toBeLessThanOrEqual(2)
 })
 
+test('keeps category rows flush in the sidebar', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  const categoryGapMetrics = await page.getByTestId('category-sidebar').evaluate((sidebar) => {
+    const categoryButtons = Array.from(
+      sidebar.querySelectorAll('button[aria-label^="Enable category "]'),
+    ).slice(0, 4)
+
+    return categoryButtons.flatMap((categoryButton, categoryIndex) => {
+      const nextCategoryButton = categoryButtons[categoryIndex + 1]
+
+      if (!(categoryButton instanceof HTMLElement) || !(nextCategoryButton instanceof HTMLElement)) {
+        return []
+      }
+
+      const categoryFrame = categoryButton.parentElement
+      const nextCategoryFrame = nextCategoryButton.parentElement
+
+      if (!(categoryFrame instanceof HTMLElement) || !(nextCategoryFrame instanceof HTMLElement)) {
+        return []
+      }
+
+      const categoryFrameRectangle = categoryFrame.getBoundingClientRect()
+      const nextCategoryFrameRectangle = nextCategoryFrame.getBoundingClientRect()
+
+      return [nextCategoryFrameRectangle.top - categoryFrameRectangle.bottom]
+    })
+  })
+
+  expect(categoryGapMetrics.length).toBeGreaterThanOrEqual(3)
+
+  for (const categoryGap of categoryGapMetrics) {
+    expect(categoryGap).toBeLessThanOrEqual(1)
+  }
+})
+
 test('highlights the searched perk phrase in the visible perk results', async ({ page }) => {
   await gotoBuildPlanner(page)
 

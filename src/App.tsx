@@ -14,7 +14,7 @@ import {
 import { CategorySidebar } from './components/CategorySidebar'
 import { DetailsPanel } from './components/PerkDetail'
 import { PerkResults } from './components/PerkResults'
-import { GitHubIcon } from './components/SharedControls'
+import { GitHubIcon, PersonIcon } from './components/SharedControls'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import {
   createBackgroundFitEngine,
@@ -71,6 +71,7 @@ const allPerks = legendsPerksDataset.perks.map((perk) => ({
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
+const personalProjectsUrl = 'https://piech.dev/projects'
 const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
 const backgroundFitCompletionProgressMinimumDurationMs = 700
 const plannerVersion = __PLANNER_VERSION__
@@ -1251,6 +1252,15 @@ export default function App() {
               target="_blank"
             >
               <GitHubIcon className={styles.heroRepositoryLinkIcon} />
+            </a>
+            <a
+              aria-label="Open Piotr Piechowski projects"
+              className={styles.heroRepositoryLink}
+              href={personalProjectsUrl}
+              rel="noopener noreferrer"
+              target="_blank"
+            >
+              <PersonIcon className={styles.heroRepositoryLinkIcon} />
             </a>
           </div>
         </div>
