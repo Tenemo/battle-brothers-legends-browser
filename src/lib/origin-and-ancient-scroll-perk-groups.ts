@@ -12,6 +12,26 @@ const originPerkGroupIds = new Set([
 ])
 
 const ancientScrollPerkGroupIds = new Set(['BerserkerMagicTree', 'EvocationMagicTree'])
+const ancientScrollLearnablePerkGroupIds = new Set([
+  'AssassinMagicTree',
+  'BardMagicTree',
+  'BasicNecroMagicTree',
+  'BerserkerMagicTree',
+  'CaptainMagicTree',
+  'ConjurationMagicTree',
+  'DruidMagicTree',
+  'EvocationMagicTree',
+  'IllusionistMagicTree',
+  'PhilosophyMagicTree',
+  'RangerHuntMagicTree',
+  'StavesMagicTree',
+  'TransmutationMagicTree',
+  'ValaChantMagicTree',
+  'ValaTranceMagicTree',
+  'VampireMagicTree',
+  'WarlockMagicTree',
+  'ZombieMagicTree',
+])
 const originAndAncientScrollOnlyPerkGroupIds = new Set([
   ...originPerkGroupIds,
   ...ancientScrollPerkGroupIds,
@@ -32,6 +52,10 @@ export function isOriginPerkGroupId(perkGroupId: string): boolean {
 
 export function isAncientScrollPerkGroupId(perkGroupId: string): boolean {
   return ancientScrollPerkGroupIds.has(perkGroupId)
+}
+
+export function isAncientScrollLearnablePerkGroupId(perkGroupId: string): boolean {
+  return ancientScrollLearnablePerkGroupIds.has(perkGroupId)
 }
 
 export function shouldKeepPerkGroupWithOriginAndAncientScrollFilters(

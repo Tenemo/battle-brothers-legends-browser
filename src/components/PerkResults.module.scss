@@ -183,6 +183,10 @@
     &:focus-visible {
       @include focus-ring;
     }
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-4rem);
+    }
   }
 
   .perkPlacementIcon {

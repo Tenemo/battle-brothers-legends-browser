@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest'
 import legendsPerksDatasetJson from '../src/data/legends-perks.json'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
+  isAncientScrollLearnablePerkGroupId,
   isAncientScrollPerkGroupId,
   isOriginPerkGroupId,
   isOriginOrAncientScrollOnlyPerkGroupId,
@@ -87,6 +88,14 @@ describe('origin and ancient scroll perk groups', () => {
         isAncientScrollPerkGroupId(placement.perkGroupId),
       ),
     ).toBe(true)
+  })
+
+  test('distinguishes scroll-learnable magic trees from the hidden ancient scroll filter groups', () => {
+    expect(isAncientScrollLearnablePerkGroupId('ValaChantMagicTree')).toBe(true)
+    expect(isAncientScrollLearnablePerkGroupId('EvocationMagicTree')).toBe(true)
+    expect(isAncientScrollPerkGroupId('ValaChantMagicTree')).toBe(false)
+    expect(isAncientScrollLearnablePerkGroupId('SeerMagicTree')).toBe(false)
+    expect(isAncientScrollLearnablePerkGroupId('AxeTree')).toBe(false)
   })
 
   test('keeps overlapping origin and ancient scroll perk groups when either source filter is enabled', () => {

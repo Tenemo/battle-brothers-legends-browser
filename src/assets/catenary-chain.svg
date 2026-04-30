@@ -1,0 +1,77 @@
+<svg width="100%" height="100%" viewBox="90 145 570 570" xmlns="http://www.w3.org/2000/svg">
+<defs>
+<linearGradient id="metalH" x1="10%" y1="0%" x2="90%" y2="100%">
+<stop offset="0%" stop-color="#4a4f54"/>
+<stop offset="15%" stop-color="#8e969d"/>
+<stop offset="30%" stop-color="#ffffff"/>
+<stop offset="50%" stop-color="#60666b"/>
+<stop offset="60%" stop-color="#2a2e32"/>
+<stop offset="80%" stop-color="#555a5f"/>
+<stop offset="90%" stop-color="#111315"/>
+<stop offset="100%" stop-color="#2a2e32"/>
+</linearGradient>
+
+<linearGradient id="metalV" x1="10%" y1="0%" x2="90%" y2="100%">
+  <stop offset="0%" stop-color="#3a3e42"/>
+  <stop offset="20%" stop-color="#7e868d"/>
+  <stop offset="35%" stop-color="#f0f2f5"/>
+  <stop offset="55%" stop-color="#40464b"/>
+  <stop offset="70%" stop-color="#1a1e22"/>
+  <stop offset="85%" stop-color="#454a4f"/>
+  <stop offset="95%" stop-color="#0a0c0f"/>
+  <stop offset="100%" stop-color="#1a1e22"/>
+</linearGradient>
+
+<filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+  <feDropShadow dx="8" dy="12" stdDeviation="6" flood-opacity="0.65" flood-color="#000000"/>
+</filter>
+
+<g id="link_H_shape">
+    <path d="M -36,-26 L 36,-26 A 26 26 0 0 1 36,26 L -36,26 A 26 26 0 0 1 -36,-26 Z" fill="none" />
+</g>
+<g id="link_V_shape">
+    <path d="M -36,-10 L 36,-10 A 10 10 0 0 1 36,10 L -36,10 A 10 10 0 0 1 -36,-10 Z" fill="none" />
+</g>
+
+<g id="link_H">
+    <use href="#link_H_shape" stroke="#151719" stroke-width="22" />
+    <use href="#link_H_shape" stroke="url(#metalH)" stroke-width="18" />
+    <use href="#link_H_shape" stroke="#ffffff" stroke-width="2" stroke-opacity="0.65" transform="translate(0, -1)" />
+    <use href="#link_H_shape" stroke="#000000" stroke-width="2" stroke-opacity="0.85" transform="translate(0, 1)" />
+</g>
+
+<g id="link_V">
+    <use href="#link_V_shape" stroke="#151719" stroke-width="22" />
+    <use href="#link_V_shape" stroke="url(#metalV)" stroke-width="18" />
+    <use href="#link_V_shape" stroke="#ffffff" stroke-width="2" stroke-opacity="0.55" transform="translate(0, -1)" />
+    <use href="#link_V_shape" stroke="#000000" stroke-width="2" stroke-opacity="0.85" transform="translate(0, 1)" />
+</g>
+
+<clipPath id="clip_V_back">
+    <rect x="-100" y="-100" width="200" height="100.5" />
+</clipPath>
+<clipPath id="clip_V_front">
+    <rect x="-100" y="-0.5" width="200" height="100.5" />
+</clipPath>
+</defs>
+
+<g filter="url(#shadow)">
+<g transform="translate(142.33, 193.11) rotate(71.09)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+<g transform="translate(202.86, 333.35) rotate(61.78)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+<g transform="translate(288.18, 459.92) rotate(49.82)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+<g transform="translate(399.82, 563.85) rotate(35.90)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+<g transform="translate(533.35, 637.60) rotate(22.15)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+
+<g transform="translate(169.75, 264.46) rotate(66.76)"><use href="#link_H" /></g>
+<g transform="translate(242.21, 398.87) rotate(56.13)"><use href="#link_H" /></g>
+<g transform="translate(340.83, 515.29) rotate(43.00)"><use href="#link_H" /></g>
+<g transform="translate(464.36, 604.75) rotate(28.86)"><use href="#link_H" /></g>
+<g transform="translate(605.60, 662.52) rotate(16.01)"><use href="#link_H" /></g>
+
+<g transform="translate(142.33, 193.11) rotate(71.09)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+<g transform="translate(202.86, 333.35) rotate(61.78)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+<g transform="translate(288.18, 459.92) rotate(49.82)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+<g transform="translate(399.82, 563.85) rotate(35.90)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+<g transform="translate(533.35, 637.60) rotate(22.15)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+</g>
+</svg>

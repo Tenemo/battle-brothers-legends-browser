@@ -1,6 +1,8 @@
-import { getPerkGroupHoverKey, renderGameIcon } from '../lib/perk-display'
+import { getPerkGroupHoverKey } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import { hasAncientScrollLearnablePerkGroup } from '../lib/ancient-scroll-perk-group-display'
 import { BuildPerkPill, type BuildPerkPillSelection } from './BuildPerkPill'
+import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
 
@@ -54,17 +56,19 @@ function renderPerkGroupOptionIcon({
   perkGroupOption: BuildPerkGroupTileOption
 }) {
   const perkGroupKey = getPerkGroupHoverKey(perkGroupOption)
-  const icon = renderGameIcon({
-    className: joinClassNames(
-      sharedStyles.perkIcon,
-      sharedStyles.perkIconGroup,
-      styles.plannerGroupOptionIcon,
-      optionIconClassName,
-    ),
-    iconPath: perkGroupOption.perkGroupIconPath,
-    label: `${perkGroupOption.perkGroupLabel} perk group icon`,
-    testId: 'planner-group-option-icon',
-  })
+  const icon = (
+    <PerkGroupIcon
+      className={joinClassNames(
+        sharedStyles.perkIcon,
+        sharedStyles.perkIconGroup,
+        styles.plannerGroupOptionIcon,
+        optionIconClassName,
+      )}
+      iconPath={perkGroupOption.perkGroupIconPath}
+      label={`${perkGroupOption.perkGroupLabel} perk group icon`}
+      testId="planner-group-option-icon"
+    />
+  )
 
   if (!arePerkGroupOptionsInteractive || !isSelectablePerkGroupOption(perkGroupOption)) {
     return (
@@ -168,10 +172,28 @@ export function BuildPerkGroupTile({
   )
   const hasHighlightedPerk =
     hoveredPerkId !== null && perks.some((perk) => perk.perkId === hoveredPerkId)
+  const hasAncientScrollMarker = hasAncientScrollLearnablePerkGroup(
+    groupOptions.map((perkGroupOption) => perkGroupOption.perkGroupId),
+  )
   const primaryPerkGroupSelection = primaryPerkGroupOption
     ? {
         categoryName: primaryPerkGroupOption.categoryName,
         perkGroupId: primaryPerkGroupOption.perkGroupId,
+      }
+    : undefined
+  const markerPointerHandlers = primaryPerkGroupOption
+    ? {
+        onClick: () =>
+          onInspectPerkGroup(
+            primaryPerkGroupOption.categoryName,
+            primaryPerkGroupOption.perkGroupId,
+          ),
+        onMouseEnter: () =>
+          onOpenPerkGroupHover(
+            primaryPerkGroupOption.categoryName,
+            primaryPerkGroupOption.perkGroupId,
+          ),
+        onMouseLeave: () => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption)),
       }
     : undefined
 
@@ -179,6 +201,7 @@ export function BuildPerkGroupTile({
     <article
       className={joinClassNames(styles.plannerGroupCard, className)}
       data-has-highlighted-perk={hasHighlightedPerk}
+      data-ancient-scroll-perk-group={hasAncientScrollMarker}
       data-highlighted={isHighlighted}
       data-planner-item="group-card"
       data-testid="planner-group-card"
@@ -274,6 +297,7 @@ export function BuildPerkGroupTile({
           ),
         )}
       </div>
+      {hasAncientScrollMarker ? <AncientScrollPerkGroupMarker {...markerPointerHandlers} /> : null}
     </article>
   )
 }

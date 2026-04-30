@@ -1,6 +1,8 @@
 import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
+import { AncientScrollPerkGroupMarker } from './PerkGroupIcon'
 import { BuildStar, CategoryChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './CategorySidebar.module.scss'
@@ -195,11 +197,15 @@ export function CategorySidebar({
                   const isPerkGroupHighlighted =
                     emphasizedPerkGroupKeys.has(perkGroupKey) ||
                     emphasizedCategoryNames.has(availableCategoryName)
+                  const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(
+                    perkGroupOption.perkGroupId,
+                  )
                   return (
                     <button
                       aria-label={`Select perk group ${perkGroupOption.perkGroupName}`}
                       aria-pressed={isSelectedPerkGroup}
                       className={styles.perkGroupChip}
+                      data-ancient-scroll-perk-group={isAncientScrollPerkGroup}
                       data-highlighted={isPerkGroupHighlighted}
                       key={perkGroupOption.perkGroupId}
                       onClick={() =>
@@ -219,6 +225,7 @@ export function CategorySidebar({
                         {renderPickedStars(perkGroupOption.perkGroupId, pickedPerkCountInPerkGroup)}
                         <span>{perkGroupOption.perkCount}</span>
                       </span>
+                      {isAncientScrollPerkGroup ? <AncientScrollPerkGroupMarker /> : null}
                     </button>
                   )
                 })}

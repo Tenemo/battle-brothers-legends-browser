@@ -9,6 +9,8 @@ import {
 import { joinClassNames } from '../lib/class-names'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
+import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
+import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
 import { BuildToggleButton, ClearableSearchField, FunnelIcon } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
@@ -46,6 +48,7 @@ function renderPerkPlacementChip({
   query: string
 }) {
   const perkGroupKey = getPerkGroupHoverKey(placement)
+  const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(placement.perkGroupId)
   const isHighlighted =
     emphasizedPerkGroupKeys.has(perkGroupKey) || emphasizedCategoryNames.has(placement.categoryName)
 
@@ -53,6 +56,7 @@ function renderPerkPlacementChip({
     <button
       aria-label={`Select perk group ${placement.perkGroupName}`}
       className={styles.perkPlacementChip}
+      data-ancient-scroll-perk-group={isAncientScrollPerkGroup}
       data-highlighted={isHighlighted}
       data-testid="perk-placement-chip"
       key={keyPrefix}
@@ -66,16 +70,16 @@ function renderPerkPlacementChip({
       onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
       type="button"
     >
-      {renderGameIcon({
-        className: joinClassNames(
+      <PerkGroupIcon
+        className={joinClassNames(
           sharedStyles.perkIcon,
           sharedStyles.perkIconGroup,
           styles.perkPlacementIcon,
-        ),
-        iconPath: placement.perkGroupIconPath ?? getPerkDisplayIconPath(perk),
-        label: `${placement.perkGroupName} perk group icon`,
-        testId: 'perk-placement-icon',
-      })}
+        )}
+        iconPath={placement.perkGroupIconPath ?? getPerkDisplayIconPath(perk)}
+        label={`${placement.perkGroupName} perk group icon`}
+        testId="perk-placement-icon"
+      />
       <span className={styles.perkPlacementLabel} data-testid="perk-placement-label">
         {renderHighlightedText({
           highlightClassName: sharedStyles.searchHighlight,
@@ -84,6 +88,7 @@ function renderPerkPlacementChip({
           text: placement.perkGroupName,
         })}
       </span>
+      {isAncientScrollPerkGroup ? <AncientScrollPerkGroupMarker /> : null}
     </button>
   )
 }

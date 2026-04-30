@@ -1,5 +1,6 @@
 import { useId, type RefObject } from 'react'
 import { Link, Split } from 'lucide-react'
+import catenaryChainUrl from '../assets/catenary-chain.svg'
 import { joinClassNames } from '../lib/class-names'
 import type {
   BuildPlannerGroupedPerkGroup,
@@ -17,8 +18,6 @@ import { PlannerSectionChevron } from './SharedControls'
 import type { BuildPlannerPickedPerk, PlannerPerkGroupSelection } from './build-planner-types'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
-
-const MUST_HAVE_CHAIN_LINK_COUNT = 7
 
 function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirementOption[]): string {
   return [
@@ -393,13 +392,14 @@ export function BuildPlannerBoard({
                         role="img"
                         title="Must-have perk"
                       >
-                        {Array.from({ length: MUST_HAVE_CHAIN_LINK_COUNT }, (_, chainLinkIndex) => (
-                          <span
-                            aria-hidden="true"
-                            className={styles.plannerSlotRequirementLink}
-                            key={chainLinkIndex}
-                          />
-                        ))}
+                        <img
+                          alt=""
+                          aria-hidden="true"
+                          className={styles.plannerSlotRequirementImage}
+                          data-testid="planner-slot-requirement-chain-image"
+                          draggable={false}
+                          src={catenaryChainUrl}
+                        />
                       </span>
                     ) : null}
                     <button

@@ -75,6 +75,7 @@
   }
 
   .backgroundFitTarget {
+    position: relative;
     display: flex;
     justify-content: space-between;
     gap: var(--space-xl);
@@ -88,6 +89,10 @@
     > div {
       flex: 1 1 auto;
       min-width: 0;
+    }
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-65rem);
     }
   }
 

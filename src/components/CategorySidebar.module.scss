@@ -50,6 +50,7 @@
 
   .categoryChip,
   .perkGroupChip {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -163,6 +164,10 @@
     background: var(--primitive-color-rgb-21-17-14-alpha-0-9);
     color: var(--text-secondary);
     font-size: var(--font-size-base);
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-4rem);
+    }
   }
 
   @keyframes fade-in {

@@ -17,7 +17,9 @@ import {
   renderHighlightedText,
 } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
+import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
 import { BackgroundFitAccordionChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
@@ -61,19 +63,26 @@ export function BackgroundFitTargetPerkGroup({
 }: {
   buildTargetPerkGroup: BuildTargetPerkGroup
 }) {
+  const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(
+    buildTargetPerkGroup.perkGroupId,
+  )
+
   return (
-    <li className={styles.backgroundFitTarget}>
+    <li
+      className={styles.backgroundFitTarget}
+      data-ancient-scroll-perk-group={isAncientScrollPerkGroup}
+    >
       <div className={styles.backgroundFitPerkGroupMain}>
-        {renderGameIcon({
-          className: joinClassNames(
+        <PerkGroupIcon
+          className={joinClassNames(
             sharedStyles.perkIcon,
             sharedStyles.perkIconGroup,
             styles.backgroundFitPerkGroupIcon,
-          ),
-          iconPath: buildTargetPerkGroup.perkGroupIconPath,
-          label: `${buildTargetPerkGroup.perkGroupName} perk group icon`,
-          testId: 'background-fit-perk-group-icon',
-        })}
+          )}
+          iconPath={buildTargetPerkGroup.perkGroupIconPath}
+          label={`${buildTargetPerkGroup.perkGroupName} perk group icon`}
+          testId="background-fit-perk-group-icon"
+        />
         <div>
           <strong>{buildTargetPerkGroup.perkGroupName}</strong>
           <p className={styles.backgroundFitTargetSupport}>
@@ -84,6 +93,7 @@ export function BackgroundFitTargetPerkGroup({
       <span className={styles.backgroundFitTargetBadge} data-testid="background-fit-target-badge">
         {formatPickedPerkCountLabel(buildTargetPerkGroup.pickedPerkCount)}
       </span>
+      {isAncientScrollPerkGroup ? <AncientScrollPerkGroupMarker /> : null}
     </li>
   )
 }

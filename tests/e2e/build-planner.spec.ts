@@ -1592,34 +1592,63 @@ test('marks picked perks as optional and separates them from must-have perks', a
     const requirementChain = pickedPerkTile.querySelector(
       '[data-testid="planner-slot-requirement-chain"]',
     )
+    const requirementChainImage = pickedPerkTile.querySelector(
+      '[data-testid="planner-slot-requirement-chain-image"]',
+    )
 
-    if (!(requirementChain instanceof HTMLElement)) {
+    if (
+      !(requirementChain instanceof HTMLElement) ||
+      !(requirementChainImage instanceof HTMLImageElement)
+    ) {
       return null
     }
 
     const tileRectangle = pickedPerkTile.getBoundingClientRect()
     const chainRectangle = requirementChain.getBoundingClientRect()
+    const chainImageRectangle = requirementChainImage.getBoundingClientRect()
 
     return {
       chainBottom: chainRectangle.bottom,
+      chainImageBottom: chainImageRectangle.bottom,
+      chainImageComplete: requirementChainImage.complete,
+      chainImageHeight: chainImageRectangle.height,
+      chainImageNaturalHeight: requirementChainImage.naturalHeight,
+      chainImageNaturalWidth: requirementChainImage.naturalWidth,
+      chainImageRight: chainImageRectangle.right,
+      chainImageTop: chainImageRectangle.top,
+      chainImageWidth: chainImageRectangle.width,
       chainLeft: chainRectangle.left,
-      chainLinkCount: requirementChain.childElementCount,
       chainRight: chainRectangle.right,
       chainTop: chainRectangle.top,
       tileBottom: tileRectangle.bottom,
+      tileHeight: tileRectangle.height,
       tileLeft: tileRectangle.left,
+      tileTop: tileRectangle.top,
       tileWidth: tileRectangle.width,
     }
   })
 
   expect(mustHaveChainMetrics).not.toBeNull()
-  expect(mustHaveChainMetrics!.chainLinkCount).toBe(7)
+  expect(mustHaveChainMetrics!.chainImageComplete).toBe(true)
+  expect(mustHaveChainMetrics!.chainImageNaturalHeight).toBeGreaterThan(0)
+  expect(mustHaveChainMetrics!.chainImageNaturalWidth).toBeGreaterThan(0)
+  expect(mustHaveChainMetrics!.chainImageWidth).toBeGreaterThan(0)
+  expect(mustHaveChainMetrics!.chainImageHeight).toBeGreaterThan(0)
   expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft)
+  expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
+    mustHaveChainMetrics!.tileTop + mustHaveChainMetrics!.tileHeight * 0.5,
+  )
   expect(mustHaveChainMetrics!.chainRight).toBeGreaterThan(
+    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.2,
+  )
+  expect(mustHaveChainMetrics!.chainRight).toBeLessThan(
     mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.35,
   )
   expect(mustHaveChainMetrics!.chainTop).toBeLessThan(mustHaveChainMetrics!.tileBottom)
   expect(mustHaveChainMetrics!.chainBottom).toBeGreaterThan(mustHaveChainMetrics!.tileBottom)
+  expect(mustHaveChainMetrics!.chainImageTop).toBe(mustHaveChainMetrics!.chainTop)
+  expect(mustHaveChainMetrics!.chainImageRight).toBe(mustHaveChainMetrics!.chainRight)
+  expect(mustHaveChainMetrics!.chainImageBottom).toBe(mustHaveChainMetrics!.chainBottom)
   await expect(buildPerksBar.getByTestId('planner-picked-perk-name')).toHaveText([
     'Clarity',
     'Perfect Focus',

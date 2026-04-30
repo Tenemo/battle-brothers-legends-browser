@@ -1,0 +1,22 @@
+@use '../styles/mixins' as *;
+
+@layer components {
+  .ancientScrollMarker {
+    position: absolute;
+    right: var(--primitive-length-0-16rem);
+    bottom: var(--primitive-length-0-16rem);
+    z-index: var(--z-index-indicator);
+
+    @include size(clamp(var(--primitive-length-0-72rem), 46%, var(--primitive-length-1-12rem)));
+
+    border: var(--primitive-length-1px) solid var(--primitive-color-rgb-221-176-123-alpha-0-55);
+    border-radius: var(--radius-pill);
+    background:
+      linear-gradient(180deg, var(--primitive-color-rgb-255-255-255-alpha-0-1), transparent),
+      var(--primitive-color-rgb-20-17-14-alpha-0-92);
+    box-shadow: var(--shadow-selected-ring);
+    cursor: help;
+    object-fit: contain;
+    pointer-events: auto;
+  }
+}

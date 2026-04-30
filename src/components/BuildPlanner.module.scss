@@ -494,57 +494,26 @@
 
   .plannerSlotRequirementChain {
     position: absolute;
-    bottom: var(--primitive-length-negative-0-16rem);
-    left: var(--primitive-length-negative-0-9rem);
+    top: 50%;
+    left: 0;
     z-index: var(--z-index-raised);
-    display: inline-flex;
-    align-items: center;
-    width: max-content;
-    transform: rotate(-26deg);
-    transform-origin: left center;
+    display: block;
+    width: calc(var(--primitive-length-1-4rem) * 1.5);
+    height: calc(var(--primitive-length-1-4rem) * 1.5);
     filter: drop-shadow(var(--shadow-chain-drop));
+    line-height: 0;
     pointer-events: none;
+    transform: translate(
+      calc(var(--primitive-length-0-12rem) * -1),
+      calc(var(--primitive-length-0-24rem) * -1)
+    );
   }
 
-  .plannerSlotRequirementLink {
-    position: relative;
+  .plannerSlotRequirementImage {
     display: block;
-    flex: 0 0 auto;
-    width: var(--primitive-length-1-35rem);
-    height: var(--primitive-length-0-68rem);
-    margin-bottom: var(--primitive-length-0-24rem);
-    margin-left: var(--primitive-length-negative-0-45rem);
-    border: var(--primitive-length-0-18rem) solid var(--primitive-color-rgb-14-11-10-alpha-0-88);
-    border-top-color: var(--primitive-color-rgb-53-39-30-alpha-0-95);
-    border-right-color: var(--primitive-color-rgb-28-23-20-alpha-0-95);
-    border-radius: var(--radius-pill);
-    background: transparent;
-    box-shadow: var(--shadow-chain-link);
-    transform: rotate(34deg);
-
-    &:first-child {
-      margin-left: 0;
-    }
-
-    &::before {
-      content: '';
-      position: absolute;
-      inset: var(--primitive-length-0-08rem);
-      border: var(--primitive-length-1px) solid var(--primitive-color-rgb-255-255-255-alpha-0-06);
-      border-radius: inherit;
-      pointer-events: none;
-    }
-
-    &:nth-child(even) {
-      z-index: var(--z-index-base);
-      margin-top: var(--primitive-length-0-34rem);
-      margin-bottom: 0;
-      transform: rotate(-34deg);
-    }
-
-    &:nth-child(odd) {
-      z-index: var(--z-index-raised);
-    }
+    width: 100%;
+    height: 100%;
+    user-select: none;
   }
 
   .plannerSlotActionIcon {
@@ -680,6 +649,10 @@
       background: var(--surface-result-active);
       color: var(--text-primary);
       box-shadow: var(--shadow-selected-ring);
+    }
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-65rem);
     }
 
     &[data-wide='true'] {
