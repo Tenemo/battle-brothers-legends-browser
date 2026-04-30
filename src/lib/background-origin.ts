@@ -87,7 +87,7 @@ function getOriginBackgroundPillLabelForSourceLabel(label: string): string | nul
   return null
 }
 
-function isOriginBackgroundSourceLabel(label: string): boolean {
+export function isOriginBackgroundSourceLabel(label: string): boolean {
   const sourceLabel = getBackgroundSourceLabel(label)
 
   return (

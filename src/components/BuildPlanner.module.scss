@@ -48,15 +48,6 @@
         }
       }
     }
-
-    h2 {
-      display: block;
-      margin: 0;
-      font-family: var(--heading-font-family);
-      font-size: var(--font-size-2xl);
-      font-weight: 700;
-      letter-spacing: var(--primitive-length-0-02em);
-    }
   }
 
   .buildPlannerHeader {
@@ -68,7 +59,6 @@
   }
 
   .buildPlannerTitleRow,
-  .buildPlannerTitle,
   .buildPlannerActions,
   .buildPlannerCount,
   .buildPlannerInfo,
@@ -81,14 +71,10 @@
   }
 
   .buildPlannerTitleRow {
+    flex: 1 1 auto;
     flex-wrap: nowrap;
-    gap: var(--space-lg);
-    min-width: 0;
-  }
-
-  .buildPlannerTitle {
-    flex: 0 0 auto;
-    gap: var(--space-sm);
+    gap: var(--space-xl);
+    align-items: center;
     min-width: 0;
   }
 
@@ -266,6 +252,7 @@
   }
 
   .plannerRowLabelStack {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: var(--space-2xs);
@@ -296,6 +283,15 @@
     font-weight: 600;
     letter-spacing: 0;
     text-transform: uppercase;
+  }
+
+  .plannerRequirementLegend {
+    display: flex;
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+    gap: var(--space-sm);
+    align-items: center;
+    pointer-events: none;
   }
 
   .plannerSectionToggle {
@@ -386,6 +382,8 @@
   }
 
   .plannerTrackPerks {
+    padding-bottom: var(--space-lg);
+
     .plannerSlot {
       min-height: var(--planner-perk-row-min-height);
     }
@@ -460,8 +458,8 @@
     }
 
     &[data-requirement='optional'] {
-      border-color: var(--border-muted);
-      background: var(--primitive-color-rgb-204-155-84-alpha-0-08);
+      border-color: var(--border-planner-optional);
+      background: var(--surface-planner-optional);
       color: var(--text-secondary);
 
       .plannerPickedPerkName {
@@ -495,14 +493,15 @@
   .plannerSlotRequirementChain {
     position: absolute;
     top: 50%;
-    left: var(--primitive-length-negative-5px);
+    left: calc(var(--primitive-length-negative-5px) - var(--primitive-length-3px));
     z-index: var(--z-index-raised);
     display: block;
-    width: calc(var(--primitive-length-1-4rem) * 1.5);
-    height: calc(var(--primitive-length-1-4rem) * 1.5);
+    width: calc(var(--primitive-length-1-4rem) * 2.25);
+    height: calc(var(--primitive-length-1-4rem) * 2.25);
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
-    margin-top: var(--primitive-length-3px);
+    margin-top: calc(var(--primitive-length-12px) * -1);
+    opacity: 0.6;
     pointer-events: none;
     transform: translate(
       calc(var(--primitive-length-0-12rem) * -1),
@@ -948,6 +947,11 @@
     .buildPlannerHeader {
       align-items: flex-start;
       flex-direction: column;
+    }
+
+    .buildPlannerTitleRow {
+      flex-wrap: wrap;
+      gap: var(--space-md);
     }
 
     .buildPlannerActions {

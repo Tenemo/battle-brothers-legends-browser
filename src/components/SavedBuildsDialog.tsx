@@ -47,13 +47,31 @@ function getSavedBuildPersistenceLabel(
 ): string {
   switch (savedBuildPersistenceState) {
     case 'persistent':
-      return 'Storage: protected'
+      return 'Saved in this browser using IndexedDB. The browser should not clear it automatically.'
     case 'best-effort':
-      return 'Storage: best effort'
+      return 'Saved in this browser using IndexedDB. The browser may clear it if site data is cleared or storage is under pressure.'
     case 'unavailable':
-      return 'Storage: unavailable'
+      return 'Saved in this browser using IndexedDB. This browser does not report whether it may clear it automatically.'
     case 'unknown':
-      return 'Storage: checking'
+      return 'Saved in this browser using IndexedDB. Checking whether the browser may clear it automatically.'
+  }
+}
+
+function getSavedBuildPersistenceTooltip(
+  savedBuildPersistenceState: SavedBuildPersistenceState,
+): string {
+  const storageScope =
+    'Saved builds are stored in IndexedDB for this browser profile and this site. They are not uploaded or synced by this app.'
+
+  switch (savedBuildPersistenceState) {
+    case 'persistent':
+      return `${storageScope} The browser reports persistent storage is enabled, so it should not evict these saves automatically under storage pressure. Clearing site data, using a different browser profile, using a different device, or private browsing can still remove or hide them.`
+    case 'best-effort':
+      return `${storageScope} Browser API state: not persistent. The saves still persist normally across reloads and browser restarts, but the browser may evict them under storage pressure, and clearing site data will remove them. This is common for localhost development sites or sites the browser has not granted persistent storage to.`
+    case 'unavailable':
+      return `${storageScope} This browser does not expose the Storage API persistence status here, so the app cannot tell whether these saves are protected from browser eviction. Clearing site data, using a different browser profile, using a different device, or private browsing can remove or hide them.`
+    case 'unknown':
+      return `${storageScope} The app is checking the browser Storage API, or the browser did not return a persistence status. Until that check completes, the app cannot tell whether these saves are protected from browser eviction.`
   }
 }
 
@@ -245,7 +263,10 @@ export function SavedBuildsDialog({
         <div className={styles.savedBuildsDialogHeader}>
           <div>
             <h2 id={titleId}>Saved builds</h2>
-            <p className={styles.savedBuildsStorageStatus}>
+            <p
+              className={styles.savedBuildsStorageStatus}
+              title={getSavedBuildPersistenceTooltip(savedBuildPersistenceState)}
+            >
               {getSavedBuildPersistenceLabel(savedBuildPersistenceState)}
             </p>
           </div>
@@ -351,7 +372,7 @@ export function SavedBuildsDialog({
                       type="button"
                     >
                       <Download aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
-                      Load
+                      Load build
                     </button>
                     <button
                       aria-label={`Copy saved build ${savedBuild.name} link`}

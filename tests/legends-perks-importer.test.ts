@@ -110,6 +110,44 @@ describe('legends perks importer', () => {
     )
   })
 
+  test('applies fixed origin roster veteran intervals without changing normal backgrounds', () => {
+    const loneWolfBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.legend_lonewolf',
+    )
+    const beastSlayerBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.beast_slayer',
+    )
+    const valaBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.legend_vala',
+    )
+
+    expect(loneWolfBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.legend_lonewolf',
+        backgroundName: 'Lone Wolf',
+        sourceFilePath:
+          'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_lonewolf_background.nut',
+        veteranPerkLevelInterval: 2,
+      }),
+    )
+    expect(valaBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.legend_vala',
+        backgroundName: 'Vala',
+        sourceFilePath:
+          'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_vala_background.nut',
+        veteranPerkLevelInterval: 2,
+      }),
+    )
+    expect(beastSlayerBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.beast_slayer',
+        backgroundName: 'Beast Slayer',
+        veteranPerkLevelInterval: 4,
+      }),
+    )
+  })
+
   test('parses favoured enemy targets, scaling values, and entity names from the local files', () => {
     const favouredEnemyBeast = dataset.perks.find(
       (perk) => perk.perkConstName === 'LegendFavouredEnemyBeast',

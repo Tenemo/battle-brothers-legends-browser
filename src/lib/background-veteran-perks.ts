@@ -46,7 +46,7 @@ export function areBackgroundVeteranPerkLevelIntervalsDefault(
 }
 
 export function formatBackgroundVeteranPerkLevelIntervalBadge(interval: number): string {
-  return `+${interval}`
+  return `1 / ${interval}`
 }
 
 export function formatBackgroundVeteranPerkLevelIntervalFilterLabel(interval: number): string {
@@ -54,5 +54,5 @@ export function formatBackgroundVeteranPerkLevelIntervalFilterLabel(interval: nu
 }
 
 export function formatBackgroundVeteranPerkLevelIntervalTitle(interval: number): string {
-  return `After level 12, this background gains 1 perk point every ${interval} veteran levels. The first veteran perk point is at level ${12 + interval}.`
+  return `1 / ${interval} means this background gains 1 perk point every ${interval} veteran levels after level 12. The first veteran perk point is at level ${12 + interval}.`
 }

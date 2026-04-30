@@ -73,13 +73,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
     '100%',
     '1/1',
     '1/1',
-    '1/1',
   ])
   await expect(apprenticeCard.getByTestId('background-fit-summary-label')).toHaveText([
     'Must-have build',
     'Expected must-have perks pickable',
-    'Guaranteed must-have perks pickable',
-    'Best native roll covers total perks',
+    'Guaranteed perks pickable',
   ])
   await expect(apprenticeCard.getByTestId('background-fit-accordion-summary-row')).toHaveCount(1)
   await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
@@ -137,10 +135,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
     hasText: /Expected must-have perks pickable\s*1\/1/i,
   })
   const guaranteedBuildPerksBadge = apprenticeSummaryMetrics.filter({
-    hasText: /Guaranteed must-have perks pickable\s*1\/1/i,
-  })
-  const bestNativeRollBadge = apprenticeSummaryMetrics.filter({
-    hasText: /Best native roll covers total perks\s*1\/1/i,
+    hasText: /Guaranteed perks pickable\s*1\/1/i,
   })
   const fullBuildBadges = apprenticeSummaryMetrics.filter({ hasText: /Full build/i })
   const mustHaveBuildBadge = apprenticeSummaryMetrics
@@ -149,8 +144,8 @@ test('shows the background fit panel for a picked build and keeps the shell view
 
   expect(metricTableGeometry.headerCount).toBe(0)
   expect(metricTableGeometry.isLabelBeforeValue).toBe(true)
-  expect(metricTableGeometry.labelTextAligns).toEqual(['left', 'left', 'left', 'left'])
-  expect(metricTableGeometry.rowBorderTopWidths).toEqual(['0px', '1px', '1px', '1px'])
+  expect(metricTableGeometry.labelTextAligns).toEqual(['left', 'left', 'left'])
+  expect(metricTableGeometry.rowBorderTopWidths).toEqual(['0px', '1px', '1px'])
   expect(metricTableGeometry.valueFontWeights.every((fontWeight) => Number(fontWeight) < 600)).toBe(
     true,
   )
@@ -158,9 +153,8 @@ test('shows the background fit panel for a picked build and keeps the shell view
     metricTableGeometry.valueLeftOffsets[0],
     metricTableGeometry.valueLeftOffsets[0],
     metricTableGeometry.valueLeftOffsets[0],
-    metricTableGeometry.valueLeftOffsets[0],
   ])
-  expect(metricTableGeometry.valueTextAligns).toEqual(['left', 'left', 'left', 'left'])
+  expect(metricTableGeometry.valueTextAligns).toEqual(['left', 'left', 'left'])
   await expect(fullBuildBadges).toHaveCount(0)
   await expect(mustHaveBuildBadge).toHaveAttribute('title', /one legal native background roll/i)
   await expect(mustHaveBuildBadge).toHaveAttribute(
@@ -186,10 +180,18 @@ test('shows the background fit panel for a picked build and keeps the shell view
     /average of 1 of 1 must-have picked perks/i,
   )
   await expect(guaranteedBuildPerksBadge).toHaveAttribute('title', /always has/i)
+  await expect(guaranteedBuildPerksBadge).toHaveAttribute(
+    'title',
+    /1 of 1 picked perks in the full build/i,
+  )
   await expect(guaranteedBuildPerksBadge).not.toHaveAttribute('title', /Guaranteed 1\/1/i)
-  await expect(bestNativeRollBadge).toHaveAttribute('title', /one legal native background roll/i)
-  await expect(bestNativeRollBadge).toHaveAttribute('title', /Books and scrolls are not included/i)
-  await expect(bestNativeRollBadge).not.toHaveAttribute('title', /Best native roll covers/i)
+  await expect(guaranteedBuildPerksBadge).toHaveAttribute(
+    'aria-label',
+    /Guaranteed 1\/1 perks pickable/i,
+  )
+  await expect(
+    apprenticeSummaryMetrics.filter({ hasText: /Best native roll covers total perks/i }),
+  ).toHaveCount(0)
   await expect(apprenticeCard.getByTestId('background-fit-card-panel')).toHaveAttribute(
     'aria-hidden',
     'true',

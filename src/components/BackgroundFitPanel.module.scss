@@ -327,16 +327,48 @@
   }
 
   .backgroundFitVeteranPerkBadge {
+    --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-190-128-73-alpha-0-68);
+    --background-fit-veteran-perk-badge-background: var(--primitive-color-rgb-120-72-43-alpha-0-22);
+    --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-236-176-116);
+
     flex: 0 0 auto;
     max-width: 100%;
     min-height: var(--target-size-compact);
+    border-color: var(--background-fit-veteran-perk-badge-border);
     padding: var(--space-3xs) var(--space-sm);
-    color: var(--accent-soft);
+    background:
+      linear-gradient(180deg, var(--primitive-color-rgb-255-255-255-alpha-0-06), transparent),
+      var(--background-fit-veteran-perk-badge-background);
+    color: var(--background-fit-veteran-perk-badge-color);
     font-size: var(--font-size-xs);
     letter-spacing: 0;
     line-height: 1;
     white-space: nowrap;
     cursor: help;
+
+    &[data-veteran-perk-interval='2'] {
+      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-236-196-95-alpha-0-82);
+      --background-fit-veteran-perk-badge-background: var(
+        --primitive-color-rgb-161-112-39-alpha-0-3
+      );
+      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-255-224-143);
+    }
+
+    &[data-veteran-perk-interval='3'] {
+      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-194-198-203-alpha-0-74);
+      --background-fit-veteran-perk-badge-background: var(
+        --primitive-color-rgb-114-119-126-alpha-0-24
+      );
+      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-232-235-238);
+    }
+
+    &[data-veteran-perk-interval='4'] {
+      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-190-128-73-alpha-0-68);
+      --background-fit-veteran-perk-badge-background: var(
+        --primitive-color-rgb-120-72-43-alpha-0-22
+      );
+      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-236-176-116);
+    }
   }
 
   .backgroundFitAccordionSummary,

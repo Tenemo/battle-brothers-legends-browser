@@ -1,5 +1,5 @@
 import { type MouseEvent, useId, useRef, useState } from 'react'
-import { Check, CircleAlert, Copy, FolderOpen, RotateCcw, Save } from 'lucide-react'
+import { Check, CircleAlert, Copy, FolderOpen, RotateCcw } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import type { BuildPlannerGroupedPerkGroup } from '../lib/build-planner'
 import { getAnchoredTooltipStyle } from '../lib/perk-display'
@@ -8,7 +8,7 @@ import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-previe
 import type { HoveredBuildPerkTooltip } from '../lib/use-perk-interaction-state'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import { BuildPlannerBoard } from './BuildPlannerBoard'
+import { BuildPlannerBoard, BuildPlannerRequirementLegend } from './BuildPlannerBoard'
 import { ClearBuildConfirmationDialog } from './ClearBuildConfirmationDialog'
 import { SavedBuildsDialog } from './SavedBuildsDialog'
 import type {
@@ -235,10 +235,8 @@ export function BuildPlanner({
       >
         <div className={styles.buildPlannerHeader} data-testid="build-planner-header">
           <div className={styles.buildPlannerTitleRow}>
-            <div className={styles.buildPlannerTitle}>
-              <h2>Build planner</h2>
-              {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
-            </div>
+            {hasPickedPerks ? <BuildPlannerInfoButton /> : null}
+            <BuildPlannerRequirementLegend />
           </div>
           <div className={styles.buildPlannerActions}>
             <p className={styles.buildPlannerCount} data-testid="build-planner-count">
@@ -247,23 +245,13 @@ export function BuildPlanner({
                 : `${pickedPerks.length} perk${pickedPerks.length === 1 ? '' : 's'} picked.`}
             </p>
             <button
-              aria-label="Save current build"
-              className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
-              disabled={!hasPickedPerks}
-              onClick={handleOpenSavedBuildsDialog}
-              type="button"
-            >
-              <Save aria-hidden="true" className={styles.plannerButtonIcon} />
-              Save build
-            </button>
-            <button
-              aria-label="Open saved builds"
+              aria-label="Save / Load build"
               className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
               onClick={handleOpenSavedBuildsDialog}
               type="button"
             >
               <FolderOpen aria-hidden="true" className={styles.plannerButtonIcon} />
-              Saved builds
+              Save / Load build
             </button>
             <button
               aria-label="Copy build link"

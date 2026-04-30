@@ -6,7 +6,6 @@ import type {
 import {
   formatBackgroundFitExpectedBuildPerksLabel,
   formatBackgroundFitBuildReachabilityLabel,
-  formatBackgroundFitBestNativeRollLabel,
   formatBackgroundFitGuaranteedPerksLabel,
   formatBackgroundFitProbabilityLabel,
   formatBackgroundFitScoreLabel,
@@ -33,13 +32,6 @@ import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
 import { BackgroundFitAccordionChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
-
-function getBackgroundFitBestNativeRollSummaryCopy(
-  maximumNativeCoveredPickedPerkCount: number,
-  pickedPerkCount: number,
-): string {
-  return `One legal native background roll can cover ${maximumNativeCoveredPickedPerkCount} of ${pickedPerkCount} total picked perks. Books and scrolls are not included.`
-}
 
 function getBackgroundFitGuaranteedPerksSummaryCopy(
   guaranteedCoveredPickedPerkCount: number,
@@ -405,6 +397,9 @@ export function BackgroundFitCard({
   const accordionButtonId = `background-fit-card-button-${rank}`
   const accordionPanelId = `background-fit-card-panel-${rank}`
   const rankTitle = getBackgroundFitRankTitle(backgroundFit, rank)
+  const guaranteedCoveredPickedPerkCount =
+    backgroundFit.guaranteedCoveredMustHavePerkCount +
+    backgroundFit.guaranteedCoveredOptionalPerkCount
   const summaryMetrics = [
     ...(optionalPickedPerkCount > 0 && backgroundFit.fullBuildReachabilityProbability !== null
       ? [
@@ -484,53 +479,17 @@ export function BackgroundFitCard({
       : []),
     {
       accessibleLabel: formatBackgroundFitGuaranteedPerksLabel(
-        backgroundFit.guaranteedCoveredMustHavePerkCount,
-        mustHavePickedPerkCount,
-        'must-have perks',
+        guaranteedCoveredPickedPerkCount,
+        pickedPerkCount,
+        'perks',
       ),
-      label: 'Guaranteed must-have perks pickable',
+      label: 'Guaranteed perks pickable',
       tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
-        backgroundFit.guaranteedCoveredMustHavePerkCount,
-        mustHavePickedPerkCount,
-        'must-have picked perks',
-      ),
-      value: createRatioValue(
-        backgroundFit.guaranteedCoveredMustHavePerkCount,
-        mustHavePickedPerkCount,
-      ),
-    },
-    ...(optionalPickedPerkCount > 0
-      ? [
-          {
-            accessibleLabel: formatBackgroundFitGuaranteedPerksLabel(
-              backgroundFit.guaranteedCoveredOptionalPerkCount,
-              optionalPickedPerkCount,
-              'optional perks',
-            ),
-            label: 'Guaranteed optional perks pickable',
-            tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
-              backgroundFit.guaranteedCoveredOptionalPerkCount,
-              optionalPickedPerkCount,
-              'optional picked perks',
-            ),
-            value: createRatioValue(
-              backgroundFit.guaranteedCoveredOptionalPerkCount,
-              optionalPickedPerkCount,
-            ),
-          },
-        ]
-      : []),
-    {
-      accessibleLabel: formatBackgroundFitBestNativeRollLabel(
-        backgroundFit.maximumNativeCoveredPickedPerkCount,
+        guaranteedCoveredPickedPerkCount,
         pickedPerkCount,
+        'picked perks in the full build',
       ),
-      label: 'Best native roll covers total perks',
-      tooltip: getBackgroundFitBestNativeRollSummaryCopy(
-        backgroundFit.maximumNativeCoveredPickedPerkCount,
-        pickedPerkCount,
-      ),
-      value: createRatioValue(backgroundFit.maximumNativeCoveredPickedPerkCount, pickedPerkCount),
+      value: createRatioValue(guaranteedCoveredPickedPerkCount, pickedPerkCount),
     },
   ]
 
@@ -598,6 +557,7 @@ export function BackgroundFitCard({
                   aria-label={`${veteranPerkLevelIntervalLabel} veteran perk interval`}
                   className={styles.backgroundFitVeteranPerkBadge}
                   data-testid="background-fit-veteran-perk-badge"
+                  data-veteran-perk-interval={backgroundFit.veteranPerkLevelInterval}
                   title={veteranPerkLevelIntervalTitle}
                 >
                   {veteranPerkLevelIntervalLabel}

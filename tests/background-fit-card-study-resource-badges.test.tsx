@@ -241,11 +241,12 @@ describe('background fit card study resource badges', () => {
 
     const veteranPerkBadge = screen.getByTestId('background-fit-veteran-perk-badge')
 
-    expect(veteranPerkBadge).toHaveTextContent('+3')
-    expect(veteranPerkBadge).toHaveAccessibleName('+3 veteran perk interval')
+    expect(veteranPerkBadge).toHaveTextContent('1 / 3')
+    expect(veteranPerkBadge).toHaveAccessibleName('1 / 3 veteran perk interval')
+    expect(veteranPerkBadge).toHaveAttribute('data-veteran-perk-interval', '3')
     expect(veteranPerkBadge).toHaveAttribute(
       'title',
-      'After level 12, this background gains 1 perk point every 3 veteran levels. The first veteran perk point is at level 15.',
+      '1 / 3 means this background gains 1 perk point every 3 veteran levels after level 12. The first veteran perk point is at level 15.',
     )
   })
 

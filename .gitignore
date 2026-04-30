@@ -20,6 +20,8 @@ test-results
 dist
 dist-ssr
 *.local
+temp.txt
+temp/
 
 # Editor directories and files
 .vscode/*

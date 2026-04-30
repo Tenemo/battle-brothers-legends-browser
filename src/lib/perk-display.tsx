@@ -306,6 +306,7 @@ export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): 
     visibleBackgroundPillLabel,
     backgroundFit.backgroundId,
     formatBackgroundVeteranPerkLevelIntervalBadge(backgroundFit.veteranPerkLevelInterval),
+    `+${backgroundFit.veteranPerkLevelInterval}`,
     `${backgroundFit.veteranPerkLevelInterval} veteran levels`,
     sourceFileName,
     backgroundFit.sourceFilePath,

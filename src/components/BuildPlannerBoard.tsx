@@ -109,6 +109,57 @@ function getHighlightedBuildPerkIdsForEmphasis({
   return highlightedBuildPerkIds
 }
 
+function PlannerSlotRequirementChain() {
+  return (
+    <span
+      aria-label="Must-have perk"
+      className={styles.plannerSlotRequirementChain}
+      data-testid="planner-slot-requirement-chain"
+      role="img"
+      title="Must-have perk"
+    >
+      <img
+        alt=""
+        aria-hidden="true"
+        className={styles.plannerSlotRequirementImage}
+        data-testid="planner-slot-requirement-chain-image"
+        draggable={false}
+        src={catenaryChainUrl}
+      />
+    </span>
+  )
+}
+
+export function BuildPlannerRequirementLegend() {
+  return (
+    <div
+      aria-label="Picked perk requirement legend"
+      className={styles.plannerRequirementLegend}
+      data-testid="planner-requirement-legend"
+    >
+      <div
+        className={joinClassNames(styles.plannerSlot, styles.plannerSlotPerk)}
+        data-requirement="must-have"
+        data-testid="planner-requirement-legend-tile"
+      >
+        <PlannerSlotRequirementChain />
+        <div className={styles.plannerSlotPerkInspect}>
+          <span className={styles.plannerPickedPerkName}>Must-have perk</span>
+        </div>
+      </div>
+      <div
+        className={joinClassNames(styles.plannerSlot, styles.plannerSlotPerk)}
+        data-requirement="optional"
+        data-testid="planner-requirement-legend-tile"
+      >
+        <div className={styles.plannerSlotPerkInspect}>
+          <span className={styles.plannerPickedPerkName}>Optional perk</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PlannerSectionToggle({
   buttonId,
   controlledSectionId,
@@ -384,24 +435,7 @@ export function BuildPlannerBoard({
                       closeBuildPerkTooltipPreview(pickedPerk.id, event.relatedTarget)
                     }
                   >
-                    {!pickedPerk.isOptional ? (
-                      <span
-                        aria-label="Must-have perk"
-                        className={styles.plannerSlotRequirementChain}
-                        data-testid="planner-slot-requirement-chain"
-                        role="img"
-                        title="Must-have perk"
-                      >
-                        <img
-                          alt=""
-                          aria-hidden="true"
-                          className={styles.plannerSlotRequirementImage}
-                          data-testid="planner-slot-requirement-chain-image"
-                          draggable={false}
-                          src={catenaryChainUrl}
-                        />
-                      </span>
-                    ) : null}
+                    {!pickedPerk.isOptional ? <PlannerSlotRequirementChain /> : null}
                     <button
                       aria-describedby={
                         hoveredBuildPerkId === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined

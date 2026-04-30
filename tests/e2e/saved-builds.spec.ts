@@ -35,7 +35,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
   await searchPerks(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
 
-  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
   await page.getByLabel('Build name').fill('Calm focus')
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
 
@@ -47,7 +47,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
 
   await page.goto('/')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
-  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
 
   const savedBuild = page
     .getByTestId('saved-builds-list')
@@ -79,7 +79,7 @@ test('keeps local save and load controls usable on mobile', async ({ page }) => 
   await addPerkToBuildFromResults(page, 'Axe Mastery')
   await expectNoDocumentHorizontalOverflow(page)
 
-  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
   await page.getByLabel('Build name').fill('Mobile axe')
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
   await expect(page.getByRole('status')).toHaveText('Saved build')
@@ -93,7 +93,7 @@ test('keeps local save and load controls usable on mobile', async ({ page }) => 
   await clearBuildDialog.getByRole('button', { name: 'Clear build' }).click()
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 
-  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
   await page.getByRole('button', { name: 'Load saved build Mobile axe' }).click()
   await expect(getBuildPerksBar(page).getByText('Axe Mastery')).toBeVisible()
   await expectNoDocumentHorizontalOverflow(page)
@@ -105,7 +105,7 @@ test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => 
   await searchPerks(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
 
-  const openSavedBuildsButton = page.getByRole('button', { name: 'Open saved builds' })
+  const openSavedBuildsButton = page.getByRole('button', { name: 'Save / Load build' })
 
   await openSavedBuildsButton.click()
 
@@ -136,13 +136,13 @@ test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => 
   await expect(openSavedBuildsButton).toBeFocused()
 })
 
-test('deletes saved builds from local storage', async ({ page }) => {
+test('deletes saved builds from IndexedDB storage', async ({ page }) => {
   await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
 
-  await page.getByRole('button', { name: 'Open saved builds' }).click()
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
   await page.getByLabel('Build name').fill('Temporary clarity')
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
   await expect(page.getByTestId('saved-builds-list')).toContainText('Temporary clarity')

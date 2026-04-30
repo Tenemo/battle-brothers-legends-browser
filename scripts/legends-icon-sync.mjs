@@ -27,7 +27,11 @@ const defaultStagingIconOutputDirectoryPath = path.join(
   'public',
   'game-icons-staging',
 )
-const appRequiredGameIconPaths = ['ui/items/trade/scroll.png']
+const appRequiredGameIconPaths = [
+  'ui/items/misc/inventory_ledger_item.png',
+  'ui/items/trade/scroll.png',
+  'ui/traits/trait_icon_11.png',
+]
 const defaultSteamRootDirectoryPaths = [
   process.env.BATTLE_BROTHERS_STEAM_ROOT,
   process.env['PROGRAMFILES(X86)'] ? path.join(process.env['PROGRAMFILES(X86)'], 'Steam') : null,

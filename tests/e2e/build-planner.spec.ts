@@ -1575,6 +1575,96 @@ test('marks picked perks as optional and separates them from must-have perks', a
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const buildPerksBar = getBuildPerksBar(page)
+  const requirementLegend = page.getByTestId('planner-requirement-legend')
+  const mustHaveLegendTile = requirementLegend
+    .getByTestId('planner-requirement-legend-tile')
+    .filter({ hasText: 'Must-have perk' })
+  const optionalLegendTile = requirementLegend
+    .getByTestId('planner-requirement-legend-tile')
+    .filter({ hasText: 'Optional perk' })
+  await expect(requirementLegend.getByTestId('planner-requirement-legend-tile')).toHaveText([
+    'Must-have perk',
+    'Optional perk',
+  ])
+  await expect(mustHaveLegendTile).toHaveAttribute('data-requirement', 'must-have')
+  await expect(optionalLegendTile).toHaveAttribute('data-requirement', 'optional')
+  await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
+  await expect(optionalLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(0)
+  const requirementLegendPlacementMetrics = await page
+    .getByTestId('build-planner-header')
+    .evaluate((buildPlannerHeader) => {
+      const heading = buildPlannerHeader.querySelector('h2')
+      const requirementLegend = buildPlannerHeader.querySelector(
+        '[data-testid="planner-requirement-legend"]',
+      )
+
+      if (!(heading instanceof HTMLElement) || !(requirementLegend instanceof HTMLElement)) {
+        return null
+      }
+
+      const headerRectangle = buildPlannerHeader.getBoundingClientRect()
+      const headingRectangle = heading.getBoundingClientRect()
+      const legendRectangle = requirementLegend.getBoundingClientRect()
+
+      return {
+        headingRight: headingRectangle.right,
+        headerBottom: headerRectangle.bottom,
+        headerTop: headerRectangle.top,
+        legendBottom: legendRectangle.bottom,
+        legendLeft: legendRectangle.left,
+        legendTop: legendRectangle.top,
+      }
+    })
+
+  expect(requirementLegendPlacementMetrics).not.toBeNull()
+  expect(requirementLegendPlacementMetrics!.legendLeft).toBeGreaterThan(
+    requirementLegendPlacementMetrics!.headingRight + 16,
+  )
+  expect(requirementLegendPlacementMetrics!.legendTop).toBeGreaterThanOrEqual(
+    requirementLegendPlacementMetrics!.headerTop - 1,
+  )
+  expect(requirementLegendPlacementMetrics!.legendTop).toBeLessThan(
+    requirementLegendPlacementMetrics!.headerTop + 8,
+  )
+  expect(requirementLegendPlacementMetrics!.legendBottom).toBeLessThanOrEqual(
+    requirementLegendPlacementMetrics!.headerBottom + 1,
+  )
+  const requirementLegendTileLayoutMetrics = await requirementLegend.evaluate((legend) => {
+    const legendTiles = [
+      ...legend.querySelectorAll('[data-testid="planner-requirement-legend-tile"]'),
+    ]
+
+    if (legendTiles.length !== 2) {
+      return null
+    }
+
+    const [mustHaveTile, optionalTile] = legendTiles
+
+    if (!(mustHaveTile instanceof HTMLElement) || !(optionalTile instanceof HTMLElement)) {
+      return null
+    }
+
+    const mustHaveRectangle = mustHaveTile.getBoundingClientRect()
+    const optionalRectangle = optionalTile.getBoundingClientRect()
+
+    return {
+      mustHaveRight: mustHaveRectangle.right,
+      mustHaveTop: mustHaveRectangle.top,
+      optionalLeft: optionalRectangle.left,
+      optionalTop: optionalRectangle.top,
+    }
+  })
+
+  expect(requirementLegendTileLayoutMetrics).not.toBeNull()
+  expect(requirementLegendTileLayoutMetrics!.optionalLeft).toBeGreaterThan(
+    requirementLegendTileLayoutMetrics!.mustHaveRight,
+  )
+  expect(
+    Math.abs(
+      requirementLegendTileLayoutMetrics!.optionalTop -
+        requirementLegendTileLayoutMetrics!.mustHaveTop,
+    ),
+  ).toBeLessThan(0.5)
   const clarityPickedPerkTile = buildPerksBar
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Clarity' })
@@ -1605,6 +1695,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
 
     const tileRectangle = pickedPerkTile.getBoundingClientRect()
     const chainRectangle = requirementChain.getBoundingClientRect()
+    const chainStyle = window.getComputedStyle(requirementChain)
     const chainImageRectangle = requirementChainImage.getBoundingClientRect()
 
     return {
@@ -1619,6 +1710,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
       chainImageTop: chainImageRectangle.top,
       chainImageWidth: chainImageRectangle.width,
       chainLeft: chainRectangle.left,
+      chainOpacity: chainStyle.opacity,
       chainRight: chainRectangle.right,
       chainTop: chainRectangle.top,
       tileBottom: tileRectangle.bottom,
@@ -1633,21 +1725,28 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(mustHaveChainMetrics!.chainImageComplete).toBe(true)
   expect(mustHaveChainMetrics!.chainImageNaturalHeight).toBeGreaterThan(0)
   expect(mustHaveChainMetrics!.chainImageNaturalWidth).toBeGreaterThan(0)
-  expect(mustHaveChainMetrics!.chainImageWidth).toBeGreaterThan(0)
-  expect(mustHaveChainMetrics!.chainImageHeight).toBeGreaterThan(0)
+  expect(mustHaveChainMetrics!.chainImageWidth).toBeGreaterThan(48)
+  expect(mustHaveChainMetrics!.chainImageWidth).toBeLessThan(52)
+  expect(mustHaveChainMetrics!.chainImageHeight).toBeGreaterThan(48)
+  expect(mustHaveChainMetrics!.chainImageHeight).toBeLessThan(52)
   expect(mustHaveChainMetrics!.chainImageClipPath).toContain('polygon(')
   expect(mustHaveChainMetrics!.chainImageClipPath).toContain('70% 68%')
   expect(mustHaveChainMetrics!.chainImageClipPath).toContain('66.7% 96%')
   expect(mustHaveChainMetrics!.chainImageClipPath).not.toBe('none')
+  expect(mustHaveChainMetrics!.chainOpacity).toBe('0.6')
   expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft)
+  expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft - 7)
   expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
     mustHaveChainMetrics!.tileTop + mustHaveChainMetrics!.tileHeight * 0.5,
   )
+  expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
+    mustHaveChainMetrics!.tileTop + mustHaveChainMetrics!.tileHeight * 0.25,
+  )
   expect(mustHaveChainMetrics!.chainRight).toBeGreaterThan(
-    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.2,
+    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.3,
   )
   expect(mustHaveChainMetrics!.chainRight).toBeLessThan(
-    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.35,
+    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.42,
   )
   expect(mustHaveChainMetrics!.chainTop).toBeLessThan(mustHaveChainMetrics!.tileBottom)
   expect(mustHaveChainMetrics!.chainBottom).toBeGreaterThan(mustHaveChainMetrics!.tileBottom)
@@ -1662,6 +1761,33 @@ test('marks picked perks as optional and separates them from must-have perks', a
 
   const mustHaveBackgroundColor = await perfectFocusPickedPerkTile.evaluate(
     (element) => window.getComputedStyle(element).backgroundColor,
+  )
+  const mustHaveLegendBackgroundColor = await mustHaveLegendTile.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
+  expect(mustHaveLegendBackgroundColor).toBe(mustHaveBackgroundColor)
+  const mustHaveTileDimensions = await perfectFocusPickedPerkTile.evaluate((element) => {
+    const rectangle = element.getBoundingClientRect()
+
+    return {
+      height: rectangle.height,
+      width: rectangle.width,
+    }
+  })
+  const mustHaveLegendTileDimensions = await mustHaveLegendTile.evaluate((element) => {
+    const rectangle = element.getBoundingClientRect()
+
+    return {
+      height: rectangle.height,
+      width: rectangle.width,
+    }
+  })
+
+  expect(Math.abs(mustHaveLegendTileDimensions.height - mustHaveTileDimensions.height * 0.65)).toBeLessThan(
+    0.75,
+  )
+  expect(Math.abs(mustHaveLegendTileDimensions.width - mustHaveTileDimensions.width * 0.65)).toBeLessThan(
+    0.75,
   )
 
   await clarityPickedPerkTile.hover()
@@ -1685,11 +1811,18 @@ test('marks picked perks as optional and separates them from must-have perks', a
   ).toHaveAttribute('title', 'Mark Clarity as must-have')
   await expect(page).toHaveURL(/optional=Clarity/u)
 
+  await page.mouse.move(0, 0)
+
   const optionalBackgroundColor = await optionalClarityPickedPerkTile.evaluate(
     (element) => window.getComputedStyle(element).backgroundColor,
   )
 
   expect(optionalBackgroundColor).not.toBe(mustHaveBackgroundColor)
+  expect(optionalBackgroundColor).toContain('26, 26, 26')
+  const optionalLegendBackgroundColor = await optionalLegendTile.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
+  expect(optionalLegendBackgroundColor).toBe(optionalBackgroundColor)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
@@ -1712,6 +1845,27 @@ test('marks picked perks as optional and separates them from must-have perks', a
       .filter({ hasText: /Expected optional perks pickable\s*[\d.]+\/1/i })
       .first(),
   ).toBeVisible()
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-metric')
+      .filter({ hasText: /Guaranteed perks pickable\s*\d+\/3/i })
+      .first(),
+  ).toBeVisible()
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-label')
+      .filter({ hasText: 'Guaranteed must-have perks pickable' }),
+  ).toHaveCount(0)
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-label')
+      .filter({ hasText: 'Guaranteed optional perks pickable' }),
+  ).toHaveCount(0)
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-label')
+      .filter({ hasText: 'Best native roll covers total perks' }),
+  ).toHaveCount(0)
 })
 
 test('keeps picked perk word layout unchanged on hover', async ({ page }) => {

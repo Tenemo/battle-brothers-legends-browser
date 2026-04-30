@@ -667,7 +667,7 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
         '[aria-label="Search perks"]',
       ) as HTMLElement | null
       const saveButton = document.querySelector(
-        'button[aria-label="Save current build"]',
+        'button[aria-label="Save / Load build"]',
       ) as HTMLElement | null
 
       if (

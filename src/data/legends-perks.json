@@ -372,7 +372,7 @@
       },
       "iconPath": "ui/backgrounds/background_53.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_assassin_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_legion_auxiliary",
@@ -861,7 +861,7 @@
       },
       "iconPath": "ui/backgrounds/background_berserker.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_berserker_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_commander_berserker",
@@ -930,7 +930,7 @@
       },
       "iconPath": "ui/backgrounds/background_berserker.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_berserker_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_blacksmith",
@@ -1520,7 +1520,7 @@
       },
       "iconPath": "ui/traits/trait_icon_32.png",
       "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_1h_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.companion",
@@ -1577,7 +1577,7 @@
       },
       "iconPath": "ui/traits/trait_icon_32.png",
       "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_2h_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.companion",
@@ -1634,7 +1634,7 @@
       },
       "iconPath": "ui/traits/trait_icon_32.png",
       "sourceFilePath": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_ranged_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_companion_melee",
@@ -2764,7 +2764,7 @@
       },
       "iconPath": "ui/backgrounds/druid_background.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_druid_background.nut",
-      "veteranPerkLevelInterval": 3
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_commander_druid",
@@ -2818,7 +2818,7 @@
       },
       "iconPath": "ui/backgrounds/druid_background.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_druid_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_enchanter",
@@ -3396,7 +3396,7 @@
       },
       "iconPath": "ui/backgrounds/background_18.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_beggar_commander_op_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.gambler",
@@ -3819,7 +3819,7 @@
       },
       "iconPath": "ui/backgrounds/legend_guildmaster_background.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_guildmaster_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.assassin_southern",
@@ -4138,7 +4138,7 @@
       },
       "iconPath": "ui/backgrounds/crusader.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_crusader_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_legion_honour_guard",
@@ -5226,7 +5226,7 @@
       },
       "iconPath": "ui/backgrounds/background_lone_wolf.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_lonewolf_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.lumberjack",
@@ -5400,7 +5400,7 @@
       },
       "iconPath": "ui/backgrounds/seer_02.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/mage_legend_mage_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_magister",
@@ -5760,7 +5760,7 @@
       },
       "iconPath": "ui/backgrounds/warlock_01.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_necro_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_spiritualist",
@@ -5884,7 +5884,7 @@
       },
       "iconPath": "ui/backgrounds/background_19.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_peddler_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.messenger",
@@ -6603,7 +6603,7 @@
       },
       "iconPath": "ui/backgrounds/noble_02.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_noble_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.nomad",
@@ -7194,7 +7194,7 @@
       },
       "iconPath": "ui/backgrounds/background_necromancer_2.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_preserver_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_puppet",
@@ -7304,7 +7304,7 @@
       },
       "iconPath": "ui/backgrounds/background_necromancer.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_puppet_master_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_qiyan",
@@ -7495,7 +7495,7 @@
       },
       "iconPath": "ui/backgrounds/ranger_02.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_ranger_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_ranger",
@@ -7957,7 +7957,7 @@
       },
       "iconPath": "ui/backgrounds/seer_02.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_witch_commander_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.sellsword",
@@ -8367,7 +8367,7 @@
       },
       "iconPath": "ui/backgrounds/background_necromancer_4.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_warlock_summoner_background.nut",
-      "veteranPerkLevelInterval": 4
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_surgeon",
@@ -8968,7 +8968,7 @@
       },
       "iconPath": "ui/backgrounds/legend_vala.png",
       "sourceFilePath": ".cache/legends-public/current/scripts/skills/backgrounds/legend_vala_background.nut",
-      "veteranPerkLevelInterval": 3
+      "veteranPerkLevelInterval": 2
     },
     {
       "backgroundId": "background.legend_necro",
@@ -9462,7 +9462,7 @@
       }
     ]
   },
-  "generatedAt": "2026-04-30T09:25:24.301Z",
+  "generatedAt": "2026-04-30T14:02:42.675Z",
   "perkCount": 367,
   "perks": [
     {
@@ -83649,6 +83649,110 @@
     {
       "path": ".cache/legends-public/current/mod_legends/hooks/skills/backgrounds/witchhunter_background.nut",
       "role": "background dynamic pools"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legend_random_3_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legend_random_party_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legend_random_solo_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legend_risen_legion_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_assassin_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_beggar_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_berserker_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_crusader_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_custom_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_debug_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_druid_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_escaped_slaves_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_free_company_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_horse_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_inquisition_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_mage_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_necro_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_noble_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_nomad_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_party_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_rangers_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_scaling_beggar_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_seer_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_sisterhood_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_solo_necro_scenario.nut",
+      "role": "scenario perk sources"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/scenarios/world/legends_troupe_scenario.nut",
+      "role": "scenario perk sources"
     },
     {
       "path": ".cache/legends-public/current/scripts/skills/backgrounds/legend_alchemist_background.nut",
