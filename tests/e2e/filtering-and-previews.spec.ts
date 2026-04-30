@@ -3,23 +3,59 @@ import {
   clearAllFilters,
   disableCategory,
   enableCategory,
+  expandCategory,
   getResultsList,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   inspectPerkFromResults,
   searchPerks,
   selectPerkGroup,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 test('switches active categories and scoped perk groups, then clears everything cleanly', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
+  const categoriesHeading = page.getByRole('heading', { level: 2, name: 'Categories' })
+  const categoryHeaderHeightBeforeSelection = await categoriesHeading.evaluate(
+    (element) => element.parentElement?.getBoundingClientRect().height ?? 0,
+  )
+
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
   await enableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveText('Perk groups')
+  await expect
+    .poll(() =>
+      categoriesHeading.evaluate(
+        (element) => element.parentElement?.getBoundingClientRect().height ?? 0,
+      ),
+    )
+    .toBe(categoryHeaderHeightBeforeSelection)
+  await page.getByRole('button', { name: 'Clear category selection' }).click()
+  await expect(page.getByTestId('perk-group-heading')).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+  await expect
+    .poll(() =>
+      categoriesHeading.evaluate(
+        (element) => element.parentElement?.getBoundingClientRect().height ?? 0,
+      ),
+    )
+    .toBe(categoryHeaderHeightBeforeSelection)
+
+  await enableCategory(page, 'Traits')
   await disableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveCount(0)
+
+  await enableCategory(page, 'Traits')
+  await selectPerkGroup(page, 'Calm')
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
+  await page.getByRole('button', { name: 'Clear category selection' }).click()
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
 
   await enableCategory(page, 'Traits')
   await selectPerkGroup(page, 'Calm')
@@ -45,7 +81,7 @@ test('switches active categories and scoped perk groups, then clears everything 
 })
 
 test('keeps only one selected perk group when another group is selected', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await enableCategory(page, 'Traits')
   await selectPerkGroup(page, 'Calm')
@@ -64,31 +100,103 @@ test('keeps only one selected perk group when another group is selected', async 
 
   await selectPerkGroup(page, 'Deadeye')
 
-  await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'true')
-  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
+  await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('Magic')
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBeNull()
 })
 
-test('excludes origin and ancient scroll perk groups from perk results by default', async ({
-  page,
-}) => {
-  await gotoPerksBrowser(page)
+test('resets category drilldown when typing a perk search', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await enableCategory(page, 'Traits')
+  await selectPerkGroup(page, 'Calm')
+
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
+
+  await searchPerks(page, 'Axe')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
+  await expect(page.getByRole('button', { name: 'Reset all category filters' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
+  await expect(
+    getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
+  ).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+})
+
+test('resets the perk result scroll when category filters change', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
+
+  const resultsList = getResultsList(page)
+
+  await enableCategory(page, 'Weapon')
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(resultsList.getByRole('button', { name: 'Inspect Axe Mastery' })).toBeVisible()
+  await expect
+    .poll(async () =>
+      resultsList.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
+    .toBeGreaterThan(100)
+
+  await resultsList.evaluate((element) => {
+    element.scrollTop = element.scrollHeight
+  })
+  await expect
+    .poll(async () => resultsList.evaluate((element) => element.scrollTop))
+    .toBeGreaterThan(0)
+
+  await disableCategory(page, 'Weapon')
+  await enableCategory(page, 'Traits')
+
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toBeVisible()
+  await expect
+    .poll(async () => resultsList.evaluate((element) => element.scrollTop))
+    .toBeLessThanOrEqual(1)
+})
+
+test('splits origin and ancient scroll perk search filters', async ({ page }) => {
+  await gotoBuildPlanner(page)
 
   const resultsList = getResultsList(page)
   const filterPerksButton = page.getByRole('button', { name: 'Filter perks' })
 
   await expect(filterPerksButton).toBeVisible()
-  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
-  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBeNull()
   await expect
-    .poll(() => new URL(page.url()).searchParams.get('origin-scroll-perk-groups'))
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
     .toBeNull()
+
+  await searchPerks(page, 'Ammunition Binding')
+
+  await expect(resultsList.getByRole('button', { name: 'Inspect Ammunition Binding' })).toHaveCount(
+    0,
+  )
+  await expect(page.getByText('No perks found')).toBeVisible()
 
   await searchPerks(page, 'Magic Missile Focus')
 
-  await expect(
-    resultsList.getByRole('button', { name: 'Inspect Magic Missile Focus' }),
-  ).toHaveCount(0)
-  await expect(page.getByText('No perks found')).toBeVisible()
+  const defaultMagicMissileFocusResultRow = resultsList
+    .getByRole('button', { name: 'Inspect Magic Missile Focus' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+  const defaultMagicMissileFocusPlacementList =
+    defaultMagicMissileFocusResultRow.getByTestId('perk-placement-list')
+
+  await expect(defaultMagicMissileFocusResultRow).toBeVisible()
+  await expect(defaultMagicMissileFocusPlacementList).toContainText('Evocation')
+  await expect(defaultMagicMissileFocusPlacementList).not.toContainText('Seer')
 
   await searchPerks(page, 'Berserk')
 
@@ -100,53 +208,178 @@ test('excludes origin and ancient scroll perk groups from perk results by defaul
   await expect(berserkResultRow).toBeVisible()
   await expect(berserkPlacementList).toContainText('Vicious')
   await expect(berserkPlacementList).toContainText('Aggressive')
-  await expect(berserkPlacementList).not.toContainText('Berserker')
+  await expect(berserkPlacementList).toContainText('Berserker')
 
   await filterPerksButton.click()
 
   const perkFiltersGroup = page.getByRole('group', { name: 'Perk filters' })
-  const restrictedPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
-    name: 'Origin and ancient scroll perk groups',
+  const originPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
+    name: 'Origin perks',
   })
-  const restrictedPerkGroupsCheckboxControl = perkFiltersGroup.locator(
-    'input[data-testid="origin-scroll-perk-groups-checkbox"]',
+  const ancientScrollPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
+    name: 'Ancient scroll perks',
+  })
+  const originPerkGroupsCheckboxControl = perkFiltersGroup.locator(
+    'input[data-testid="origin-perk-groups-checkbox"]',
   )
-
-  await expect(restrictedPerkGroupsCheckbox).not.toBeChecked()
-  await expect
-    .poll(async () => {
-      const checkboxBox = await restrictedPerkGroupsCheckboxControl.boundingBox()
-
-      return checkboxBox === null
-        ? null
-        : {
-            height: Math.round(checkboxBox.height),
-            width: Math.round(checkboxBox.width),
-          }
-    })
-    .toEqual({
-      height: 16,
-      width: 16,
-    })
-
-  await restrictedPerkGroupsCheckbox.click()
-
-  await expect(restrictedPerkGroupsCheckbox).toBeChecked()
-  await expect
-    .poll(() => new URL(page.url()).searchParams.get('origin-scroll-perk-groups'))
-    .toBe('true')
-  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
-  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
-    'fill',
-    'currentColor',
+  const ancientScrollPerkGroupsCheckboxControl = perkFiltersGroup.locator(
+    'input[data-testid="ancient-scroll-perk-groups-checkbox"]',
   )
-  await expect(berserkPlacementList).toContainText('Berserker')
+  const filterOptions = [
+    {
+      checkboxControl: originPerkGroupsCheckboxControl,
+      label: perkFiltersGroup.getByText('Origin perks', { exact: true }),
+    },
+    {
+      checkboxControl: ancientScrollPerkGroupsCheckboxControl,
+      label: perkFiltersGroup.getByText('Ancient scroll perks', { exact: true }),
+    },
+  ] as const
+
+  await expect(originPerkGroupsCheckbox).not.toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).toBeChecked()
+
+  for (const { checkboxControl, label } of filterOptions) {
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+
+        return checkboxBox === null
+          ? null
+          : {
+              height: Math.round(checkboxBox.height),
+              width: Math.round(checkboxBox.width),
+            }
+      })
+      .toEqual({
+        height: 16,
+        width: 16,
+      })
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+        const labelBox = await label.boundingBox()
+
+        if (checkboxBox === null || labelBox === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        return Math.abs(checkboxBox.y + checkboxBox.height / 2 - (labelBox.y + labelBox.height / 2))
+      })
+      .toBeLessThanOrEqual(1)
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+        const labelBox = await label.boundingBox()
+
+        if (checkboxBox === null || labelBox === null) {
+          return Number.POSITIVE_INFINITY
+        }
+
+        return checkboxBox.y + checkboxBox.height / 2 - (labelBox.y + labelBox.height / 2)
+      })
+      .toBeLessThanOrEqual(-0.5)
+    await expect
+      .poll(async () => {
+        const checkboxBox = await checkboxControl.boundingBox()
+        const labelBox = await label.boundingBox()
+
+        if (checkboxBox === null || labelBox === null) {
+          return Number.NEGATIVE_INFINITY
+        }
+
+        return checkboxBox.y + checkboxBox.height / 2 - (labelBox.y + labelBox.height / 2)
+      })
+      .toBeGreaterThanOrEqual(-1.75)
+  }
+
+  await ancientScrollPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).not.toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).not.toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBeNull()
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBe('false')
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'false')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute('fill', 'none')
 
   await searchPerks(page, 'Magic Missile Focus')
 
   await expect(
     resultsList.getByRole('button', { name: 'Inspect Magic Missile Focus' }),
-  ).toBeVisible()
+  ).toHaveCount(0)
+
+  await originPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).not.toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBe('true')
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBe('false')
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
+
+  await searchPerks(page, 'Ammunition Binding')
+
+  const ammunitionBindingResultRow = resultsList
+    .getByRole('button', { name: 'Inspect Ammunition Binding' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+
+  await expect(ammunitionBindingResultRow).toBeVisible()
+  await expect(ammunitionBindingResultRow.getByTestId('perk-placement-list')).toContainText(
+    'ArcherCommand',
+  )
+
+  await searchPerks(page, 'Magic Missile Focus')
+
+  const magicMissileFocusResultRow = resultsList
+    .getByRole('button', { name: 'Inspect Magic Missile Focus' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+  const magicMissileFocusPlacementList =
+    magicMissileFocusResultRow.getByTestId('perk-placement-list')
+
+  await expect(magicMissileFocusResultRow).toBeVisible()
+  await expect(magicMissileFocusPlacementList).toContainText('Seer')
+  await expect(magicMissileFocusPlacementList).not.toContainText('Evocation')
+
+  await ancientScrollPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBe('true')
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBeNull()
+  await expect(magicMissileFocusPlacementList).toContainText('Evocation')
+  await expect(magicMissileFocusPlacementList).toContainText('Seer')
+
+  await originPerkGroupsCheckbox.click()
+
+  await expect(originPerkGroupsCheckbox).not.toBeChecked()
+  await expect(ancientScrollPerkGroupsCheckbox).toBeChecked()
+  await expect.poll(() => new URL(page.url()).searchParams.get('origin-perk-groups')).toBeNull()
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get('ancient-scroll-perk-groups'))
+    .toBeNull()
+  await expect(filterPerksButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterPerksButton.getByTestId('perk-filter-icon')).toHaveAttribute(
+    'fill',
+    'currentColor',
+  )
+
+  await searchPerks(page, 'Berserk')
+
+  const refreshedBerserkResultRow = resultsList
+    .getByRole('button', { exact: true, name: 'Inspect Berserk' })
+    .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
+  const refreshedBerserkPlacementList = refreshedBerserkResultRow.getByTestId('perk-placement-list')
+
+  await expect(refreshedBerserkPlacementList).toContainText('Berserker')
 
   const savedUrl = page.url()
   const sharedPage = await page.context().newPage()
@@ -156,12 +389,17 @@ test('excludes origin and ancient scroll perk groups from perk results by defaul
     await sharedPage.goto(savedUrl)
 
     await expect(
-      getResultsList(sharedPage).getByRole('button', { name: 'Inspect Magic Missile Focus' }),
+      getResultsList(sharedPage).getByRole('button', { exact: true, name: 'Inspect Berserk' }),
     ).toBeVisible()
     await sharedPage.getByRole('button', { name: 'Filter perks' }).click()
     await expect(
       sharedPage.getByRole('checkbox', {
-        name: 'Origin and ancient scroll perk groups',
+        name: 'Origin perks',
+      }),
+    ).not.toBeChecked()
+    await expect(
+      sharedPage.getByRole('checkbox', {
+        name: 'Ancient scroll perks',
       }),
     ).toBeChecked()
   } finally {
@@ -172,7 +410,7 @@ test('excludes origin and ancient scroll perk groups from perk results by defaul
 test('shows real effect previews for hooked perk descriptions instead of perk group text', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
   const resultsList = getResultsList(page)
 
   await searchPerks(page, 'Berserk')
@@ -201,7 +439,7 @@ test('shows real effect previews for hooked perk descriptions instead of perk gr
 })
 
 test('shows normalized mastery labels in the result list', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Axe Mastery')
 
@@ -215,7 +453,7 @@ test('shows normalized mastery labels in the result list', async ({ page }) => {
 test('reorders categories and perk groups around the active perk search query and highlights the match', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Shady')
 
@@ -225,7 +463,12 @@ test('reorders categories and perk groups around the active perk search query an
 
   await expect(categoryButtons.first()).toHaveAttribute('aria-label', 'Enable category Other')
 
-  await enableCategory(page, 'Other')
+  await expandCategory(page, 'Other')
+  await expect(page.getByLabel('Search perks')).toHaveValue('Shady')
+  await expect(page.getByRole('button', { name: 'Enable category Other' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
 
   const perkGroupButtons = page
     .getByTestId('category-sidebar')
@@ -237,8 +480,136 @@ test('reorders categories and perk groups around the active perk search query an
   ).toContainText(['Shady'])
 })
 
+test('keeps category disclosure separate from category and perk group selection', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await searchPerks(page, 'Axe')
+  await expandCategory(page, 'Weapon')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
+  await expect(page.getByRole('button', { name: 'Enable category Weapon' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+
+  await enableCategory(page, 'Weapon')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
+  await expect(
+    getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
+  ).toBeVisible()
+
+  await searchPerks(page, 'Axe')
+  await expandCategory(page, 'Weapon')
+  await selectPerkGroup(page, 'Axe')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Axe')).toHaveAttribute('aria-pressed', 'true')
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-weapon')).toBe('Axe')
+})
+
+test('keeps category hover and disclosure styling separate from perk group highlights', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await expandCategory(page, 'Magic')
+  await page.mouse.move(1, 1)
+
+  const magicCategoryButton = page.getByRole('button', { name: 'Enable category Magic' })
+  const magicDisclosureButton = page.getByRole('button', { name: 'Collapse category Magic' })
+  const alchemyGroupButton = getSidebarPerkGroupButton(page, 'Alchemy')
+  const deadeyeGroupButton = getSidebarPerkGroupButton(page, 'Deadeye')
+  const disclosureBaseStyles = await magicDisclosureButton.evaluate((button) => {
+    const computedStyle = window.getComputedStyle(button)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderLeftColor: computedStyle.borderLeftColor,
+      borderRightColor: computedStyle.borderRightColor,
+      borderRightWidth: computedStyle.borderRightWidth,
+    }
+  })
+
+  expect(disclosureBaseStyles.borderRightWidth).toBe('2px')
+
+  await magicCategoryButton.hover()
+
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(alchemyGroupButton).toHaveAttribute('data-highlighted', 'false')
+  await expect(deadeyeGroupButton).toHaveAttribute('data-highlighted', 'false')
+
+  await magicDisclosureButton.hover()
+
+  const disclosureHoverStyles = await magicDisclosureButton.evaluate((button) => {
+    const computedStyle = window.getComputedStyle(button)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderLeftColor: computedStyle.borderLeftColor,
+      borderRightColor: computedStyle.borderRightColor,
+    }
+  })
+
+  expect(disclosureHoverStyles.backgroundColor).not.toBe(disclosureBaseStyles.backgroundColor)
+  expect(disclosureHoverStyles.borderLeftColor).not.toBe(disclosureBaseStyles.borderLeftColor)
+  expect(disclosureHoverStyles.borderRightColor).not.toBe(disclosureBaseStyles.borderRightColor)
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
+})
+
+test('places ancient scroll markers next to sidebar perk group names', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await expandCategory(page, 'Magic')
+
+  const markerMetrics = await getSidebarPerkGroupButton(page, 'Evocation').evaluate((button) => {
+    const label = button.querySelector('[data-testid="perk-group-label"]')
+    const marker = button.querySelector('[data-testid="ancient-scroll-perk-group-marker"]')
+    const count = button.querySelector('[data-testid="perk-group-count"]')
+
+    if (
+      !(label instanceof HTMLElement) ||
+      !(marker instanceof HTMLElement) ||
+      !(count instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const labelRectangle = label.getBoundingClientRect()
+    const markerRectangle = marker.getBoundingClientRect()
+    const countRectangle = count.getBoundingClientRect()
+
+    return {
+      countLeft: countRectangle.left,
+      gapAfterLabel: markerRectangle.left - labelRectangle.right,
+      markerRight: markerRectangle.right,
+      spaceBeforeCount: countRectangle.left - markerRectangle.right,
+      verticalCenterOffset: Math.abs(
+        markerRectangle.top +
+          markerRectangle.height / 2 -
+          (labelRectangle.top + labelRectangle.height / 2),
+      ),
+    }
+  })
+
+  expect(markerMetrics).not.toBeNull()
+  expect(markerMetrics!.gapAfterLabel).toBeGreaterThanOrEqual(0)
+  expect(markerMetrics!.gapAfterLabel).toBeLessThanOrEqual(8)
+  expect(markerMetrics!.spaceBeforeCount).toBeGreaterThan(0)
+  expect(markerMetrics!.markerRight).toBeLessThan(markerMetrics!.countLeft)
+  expect(markerMetrics!.verticalCenterOffset).toBeLessThanOrEqual(2)
+})
+
 test('highlights the searched perk phrase in the visible perk results', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Axe')
 
@@ -249,7 +620,7 @@ test('highlights the searched perk phrase in the visible perk results', async ({
 })
 
 test('shows every matching perk group placement in the result list', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'ranger')
 
@@ -300,7 +671,7 @@ test('shows every matching perk group placement in the result list', async ({ pa
 })
 
 test('keeps search result and repository hover states fixed in place', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await page.getByTestId('hero').evaluate(async (element) => {
     await Promise.all(
       element.getAnimations().map((animation) => animation.finished.catch(() => undefined)),
@@ -421,7 +792,7 @@ test('keeps search result and repository hover states fixed in place', async ({ 
 })
 
 test('keeps middle-of-word search highlights from adding visual gaps', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'tellige')
 
@@ -453,7 +824,7 @@ test('keeps middle-of-word search highlights from adding visual gaps', async ({ 
 test('shows picked categories and perk groups with stars and keeps picked result rows outlined while selection changes the background', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
   await getResultsList(page)

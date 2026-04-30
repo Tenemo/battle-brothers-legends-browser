@@ -4,16 +4,75 @@ import type {
   LegendsPerkRecord,
 } from '../types/legends-perks'
 
-export const originAndAncientScrollOnlyPerkGroupIds = new Set([
+const originPerkGroupIds = new Set([
   'ArcherCommandTree',
   'AssassinLeftoverTree',
   'BerserkerMagicTree',
-  'EvocationMagicTree',
   'SeerMagicTree',
 ])
 
+const ancientScrollPerkGroupIds = new Set(['BerserkerMagicTree', 'EvocationMagicTree'])
+const ancientScrollLearnablePerkGroupIds = new Set([
+  'AssassinMagicTree',
+  'BardMagicTree',
+  'BasicNecroMagicTree',
+  'BerserkerMagicTree',
+  'CaptainMagicTree',
+  'ConjurationMagicTree',
+  'DruidMagicTree',
+  'EvocationMagicTree',
+  'IllusionistMagicTree',
+  'PhilosophyMagicTree',
+  'RangerHuntMagicTree',
+  'StavesMagicTree',
+  'TransmutationMagicTree',
+  'ValaChantMagicTree',
+  'ValaTranceMagicTree',
+  'VampireMagicTree',
+  'WarlockMagicTree',
+  'ZombieMagicTree',
+])
+const originAndAncientScrollOnlyPerkGroupIds = new Set([
+  ...originPerkGroupIds,
+  ...ancientScrollPerkGroupIds,
+])
+
+type OriginAndAncientScrollPerkGroupFilters = {
+  shouldIncludeAncientScrollPerkGroups: boolean
+  shouldIncludeOriginPerkGroups: boolean
+}
+
 export function isOriginOrAncientScrollOnlyPerkGroupId(perkGroupId: string): boolean {
   return originAndAncientScrollOnlyPerkGroupIds.has(perkGroupId)
+}
+
+export function isOriginPerkGroupId(perkGroupId: string): boolean {
+  return originPerkGroupIds.has(perkGroupId)
+}
+
+export function isAncientScrollPerkGroupId(perkGroupId: string): boolean {
+  return ancientScrollPerkGroupIds.has(perkGroupId)
+}
+
+export function isAncientScrollLearnablePerkGroupId(perkGroupId: string): boolean {
+  return ancientScrollLearnablePerkGroupIds.has(perkGroupId)
+}
+
+export function shouldKeepPerkGroupWithOriginAndAncientScrollFilters(
+  perkGroupId: string,
+  filters: OriginAndAncientScrollPerkGroupFilters,
+): boolean {
+  const isOriginPerkGroup = isOriginPerkGroupId(perkGroupId)
+  const isAncientScrollPerkGroup = isAncientScrollPerkGroupId(perkGroupId)
+
+  if (!isOriginPerkGroup && !isAncientScrollPerkGroup) {
+    return true
+  }
+
+  return (
+    (isOriginPerkGroup && filters.shouldIncludeOriginPerkGroups) ||
+    (isAncientScrollPerkGroup && filters.shouldIncludeAncientScrollPerkGroups)
+  )
 }
 
 function getFilteredCategoryNames(placements: LegendsPerkPlacement[]): string[] {
@@ -76,10 +135,14 @@ function buildFilteredSearchText({
 
 export function getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
   perks: LegendsPerkRecord[],
+  filters: OriginAndAncientScrollPerkGroupFilters = {
+    shouldIncludeAncientScrollPerkGroups: false,
+    shouldIncludeOriginPerkGroups: false,
+  },
 ): LegendsPerkRecord[] {
   return perks.flatMap((perk) => {
-    const placements = perk.placements.filter(
-      (placement) => !isOriginOrAncientScrollOnlyPerkGroupId(placement.perkGroupId),
+    const placements = perk.placements.filter((placement) =>
+      shouldKeepPerkGroupWithOriginAndAncientScrollFilters(placement.perkGroupId, filters),
     )
 
     if (placements.length === 0) {
@@ -90,8 +153,8 @@ export function getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
       return [perk]
     }
 
-    const backgroundSources = perk.backgroundSources.filter(
-      (backgroundSource) => !isOriginOrAncientScrollOnlyPerkGroupId(backgroundSource.perkGroupId),
+    const backgroundSources = perk.backgroundSources.filter((backgroundSource) =>
+      shouldKeepPerkGroupWithOriginAndAncientScrollFilters(backgroundSource.perkGroupId, filters),
     )
     const categoryNames = getFilteredCategoryNames(placements)
 

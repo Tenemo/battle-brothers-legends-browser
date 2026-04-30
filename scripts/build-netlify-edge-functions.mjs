@@ -1,4 +1,4 @@
-import { rm } from 'node:fs/promises'
+import { rm as removePath } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,7 +13,7 @@ const edgeFunctionOutputDirectoryPath = path.join(
   'generated-edge-functions',
 )
 
-await rm(edgeFunctionOutputDirectoryPath, {
+await removePath(edgeFunctionOutputDirectoryPath, {
   force: true,
   recursive: true,
 })

@@ -2,6 +2,9 @@ import { describe, expect, test } from 'vitest'
 import legendsPerksDatasetJson from '../src/data/legends-perks.json'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
+  isAncientScrollLearnablePerkGroupId,
+  isAncientScrollPerkGroupId,
+  isOriginPerkGroupId,
   isOriginOrAncientScrollOnlyPerkGroupId,
 } from '../src/lib/origin-and-ancient-scroll-perk-groups'
 import { filterAndSortPerks } from '../src/lib/perk-search'
@@ -30,6 +33,95 @@ describe('origin and ancient scroll perk groups', () => {
     expect(filteredPerksByName.has('Magic Missile')).toBe(false)
     expect(filteredPerksByName.has('Chain Lightning')).toBe(false)
     expect(filteredPerksByName.has('Ammunition Binding')).toBe(false)
+  })
+
+  test('can include origin perk groups without ancient scroll perk groups', () => {
+    const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
+      legendsPerksDataset.perks,
+      {
+        shouldIncludeAncientScrollPerkGroups: false,
+        shouldIncludeOriginPerkGroups: true,
+      },
+    )
+    const originPerksByName = new Map(originPerks.map((perk) => [perk.perkName, perk]))
+    const ammunitionBinding = originPerksByName.get('Ammunition Binding')
+    const magicMissileFocus = originPerksByName.get('Magic Missile Focus')
+
+    expect(ammunitionBinding?.placements.map((placement) => placement.perkGroupName)).toEqual([
+      'ArcherCommand',
+    ])
+    expect(
+      ammunitionBinding?.placements.every((placement) =>
+        isOriginPerkGroupId(placement.perkGroupId),
+      ),
+    ).toBe(true)
+    expect(magicMissileFocus?.placements.map((placement) => placement.perkGroupName)).toEqual([
+      'Seer',
+    ])
+    expect(
+      magicMissileFocus?.placements.some((placement) =>
+        isAncientScrollPerkGroupId(placement.perkGroupId),
+      ),
+    ).toBe(false)
+  })
+
+  test('can include ancient scroll perk groups without origin perk groups', () => {
+    const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
+      legendsPerksDataset.perks,
+      {
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginPerkGroups: false,
+      },
+    )
+    const ancientScrollPerksByName = new Map(
+      ancientScrollPerks.map((perk) => [perk.perkName, perk]),
+    )
+    const ammunitionBinding = ancientScrollPerksByName.get('Ammunition Binding')
+    const magicMissileFocus = ancientScrollPerksByName.get('Magic Missile Focus')
+
+    expect(ammunitionBinding).toBeUndefined()
+    expect(magicMissileFocus?.placements.map((placement) => placement.perkGroupName)).toEqual([
+      'Evocation',
+    ])
+    expect(
+      magicMissileFocus?.placements.every((placement) =>
+        isAncientScrollPerkGroupId(placement.perkGroupId),
+      ),
+    ).toBe(true)
+  })
+
+  test('distinguishes scroll-learnable magic trees from the hidden ancient scroll filter groups', () => {
+    expect(isAncientScrollLearnablePerkGroupId('ValaChantMagicTree')).toBe(true)
+    expect(isAncientScrollLearnablePerkGroupId('EvocationMagicTree')).toBe(true)
+    expect(isAncientScrollPerkGroupId('ValaChantMagicTree')).toBe(false)
+    expect(isAncientScrollLearnablePerkGroupId('SeerMagicTree')).toBe(false)
+    expect(isAncientScrollLearnablePerkGroupId('AxeTree')).toBe(false)
+  })
+
+  test('keeps overlapping origin and ancient scroll perk groups when either source filter is enabled', () => {
+    const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
+      legendsPerksDataset.perks,
+      {
+        shouldIncludeAncientScrollPerkGroups: false,
+        shouldIncludeOriginPerkGroups: true,
+      },
+    )
+    const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
+      legendsPerksDataset.perks,
+      {
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginPerkGroups: false,
+      },
+    )
+    const originBerserk = originPerks.find((perk) => perk.perkName === 'Berserk')
+    const ancientScrollBerserk = ancientScrollPerks.find((perk) => perk.perkName === 'Berserk')
+
+    expect(originBerserk?.placements.map((placement) => placement.perkGroupName)).toContain(
+      'Berserker',
+    )
+    expect(ancientScrollBerserk?.placements.map((placement) => placement.perkGroupName)).toContain(
+      'Berserker',
+    )
   })
 
   test('does not leave restricted placement or background source records behind', () => {

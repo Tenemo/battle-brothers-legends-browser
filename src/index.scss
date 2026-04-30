@@ -112,6 +112,12 @@
 }
 
 @layer utilities {
+  :where(*, *::before, *::after) {
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+  }
+
   @supports (scrollbar-color: auto) and (not selector(::-webkit-scrollbar)) {
     html,
     body,

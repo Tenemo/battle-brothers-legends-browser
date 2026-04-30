@@ -5,16 +5,16 @@ import {
   getBuildPerksBar,
   getBuildSharedGroupsList,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   inspectPerkFromResults,
   searchPerks,
   selectPerkGroup,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 test('stores readable filters and build state in the url and restores them on a shared link', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await selectPerkGroup(page, 'Calm')
@@ -32,7 +32,7 @@ test('stores readable filters and build state in the url and restores them on a 
 
   const savedUrl = page.url()
 
-  expect(savedUrl).toContain('search=Clarity')
+  expect(savedUrl).not.toContain('search=')
   expect(savedUrl).not.toContain('tier=')
   expect(savedUrl).toContain('category=Magic')
   expect(savedUrl).not.toContain('group-traits')
@@ -41,6 +41,7 @@ test('stores readable filters and build state in the url and restores them on a 
   expect(savedUrl).not.toContain('origin-backgrounds')
   expect(new URL(savedUrl).searchParams.getAll('category')).toEqual(['Magic'])
   expect(new URL(savedUrl).searchParams.getAll('build')).toEqual(['Perfect Focus,Clarity'])
+  expect(new URL(savedUrl).searchParams.get('search')).toBeNull()
   expect(new URL(savedUrl).searchParams.get('origin-backgrounds')).toBeNull()
 
   const sharedPage = await page.context().newPage()
@@ -49,12 +50,15 @@ test('stores readable filters and build state in the url and restores them on a 
     await sharedPage.setViewportSize({ width: 900, height: 720 })
     await sharedPage.goto(savedUrl)
 
-    await expect(sharedPage.getByLabel('Search perks')).toHaveValue('Clarity')
+    await expect(sharedPage.getByLabel('Search perks')).toHaveValue('')
     await expect(sharedPage.getByLabel('Filter by tier')).toHaveCount(0)
     await expect(sharedPage.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
     await expect(getSidebarPerkGroupButton(sharedPage, 'Calm')).toHaveCount(0)
-    await expect(getSidebarPerkGroupButton(sharedPage, 'Deadeye')).toHaveAttribute('aria-pressed', 'false')
+    await expect(getSidebarPerkGroupButton(sharedPage, 'Deadeye')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     await expect(getBuildPerksBar(sharedPage).getByText('Perfect Focus')).toBeVisible()
     await expect(getBuildPerksBar(sharedPage).getByText('Clarity')).toBeVisible()
     await expect(

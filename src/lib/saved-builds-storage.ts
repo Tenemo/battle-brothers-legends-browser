@@ -4,6 +4,7 @@ export type SavedBuildRecord = {
   createdAt: string
   id: string
   name: string
+  optionalPerkIds: string[]
   pickedPerkIds: string[]
   referenceVersion: string
   schemaVersion: 1
@@ -145,16 +146,22 @@ export function createSavedBuildRecord({
   id = createSavedBuildId(),
   name,
   now = new Date(),
+  optionalPerkIds = [],
   pickedPerkIds,
   referenceVersion,
 }: {
   id?: string
   name: string
   now?: Date
+  optionalPerkIds?: string[]
   pickedPerkIds: string[]
   referenceVersion: string
 }): SavedBuildRecord {
   const normalizedPickedPerkIds = normalizePickedPerkIds(pickedPerkIds)
+  const normalizedPickedPerkIdSet = new Set(normalizedPickedPerkIds)
+  const normalizedOptionalPerkIds = normalizePickedPerkIds(optionalPerkIds).filter(
+    (optionalPerkId) => normalizedPickedPerkIdSet.has(optionalPerkId),
+  )
 
   if (normalizedPickedPerkIds.length === 0) {
     throw new Error('A saved build needs at least one perk.')
@@ -166,6 +173,7 @@ export function createSavedBuildRecord({
     createdAt: savedAt,
     id,
     name: normalizeSavedBuildName(name),
+    optionalPerkIds: normalizedOptionalPerkIds,
     pickedPerkIds: normalizedPickedPerkIds,
     referenceVersion,
     schemaVersion: savedBuildSchemaVersion,
@@ -206,12 +214,18 @@ export function readSavedBuildRecord(value: unknown): SavedBuildRecord | null {
     return null
   }
 
+  const pickedPerkIdSet = new Set(pickedPerkIds)
+  const optionalPerkIds = normalizePickedPerkIds(savedBuild.optionalPerkIds).filter(
+    (optionalPerkId) => pickedPerkIdSet.has(optionalPerkId),
+  )
+
   return {
     createdAt,
     id,
     name: normalizeSavedBuildName(
       typeof savedBuild.name === 'string' ? savedBuild.name : 'Untitled build',
     ),
+    optionalPerkIds,
     pickedPerkIds,
     referenceVersion,
     schemaVersion: savedBuildSchemaVersion,

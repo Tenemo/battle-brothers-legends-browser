@@ -1,11 +1,19 @@
 import { createWriteStream } from 'node:fs'
-import { access, cp, mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises'
+import {
+  cp as copyDirectory,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm as removePath,
+  writeFile,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
-import { spawn } from 'node:child_process'
+import { pathExists, runCommand } from './script-utils.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -52,52 +60,8 @@ export function getLatestReleaseApiUrl({
   return `${githubApiBaseUrl}/repos/${githubRepository}/releases/latest`
 }
 
-async function pathExists(targetPath) {
-  try {
-    await access(targetPath)
-    return true
-  } catch {
-    return false
-  }
-}
-
 function sanitizeReleaseTagName(tagName) {
   return normalizeWhitespace(tagName).replace(/[<>:"/\\|?*]+/g, '-')
-}
-
-async function runCommand(commandName, commandArguments) {
-  return new Promise((resolve, reject) => {
-    const childProcess = spawn(commandName, commandArguments, {
-      shell: false,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
-    })
-    let standardOutput = ''
-    let standardError = ''
-
-    childProcess.stdout.on('data', (chunk) => {
-      standardOutput += chunk.toString()
-    })
-
-    childProcess.stderr.on('data', (chunk) => {
-      standardError += chunk.toString()
-    })
-
-    childProcess.on('error', reject)
-
-    childProcess.on('close', (exitCode) => {
-      if (exitCode === 0) {
-        resolve(standardOutput)
-        return
-      }
-
-      reject(
-        new Error(
-          `Command failed: ${commandName} ${commandArguments.join(' ')}\n${standardError.trim()}`,
-        ),
-      )
-    })
-  })
 }
 
 async function downloadArchiveFile(downloadUrl, archiveFilePath, fetchImpl) {
@@ -234,16 +198,24 @@ async function populateCurrentReferenceDirectory({
       'scripts',
     )
 
-    await rm(currentDirectoryPath, { force: true, recursive: true })
+    await removePath(currentDirectoryPath, { force: true, recursive: true })
     await mkdir(currentDirectoryPath, { recursive: true })
-    await cp(extractedReferenceRootDirectoryPath, path.join(currentDirectoryPath, 'mod_legends'), {
-      recursive: true,
-    })
+    await copyDirectory(
+      extractedReferenceRootDirectoryPath,
+      path.join(currentDirectoryPath, 'mod_legends'),
+      {
+        recursive: true,
+      },
+    )
 
     if (await pathExists(extractedScriptsDirectoryPath)) {
-      await cp(extractedScriptsDirectoryPath, path.join(currentDirectoryPath, 'scripts'), {
-        recursive: true,
-      })
+      await copyDirectory(
+        extractedScriptsDirectoryPath,
+        path.join(currentDirectoryPath, 'scripts'),
+        {
+          recursive: true,
+        },
+      )
     }
 
     const referenceMetadata = createReferenceMetadata({
@@ -259,7 +231,7 @@ async function populateCurrentReferenceDirectory({
 
     return referenceMetadata
   } finally {
-    await rm(temporaryDirectoryPath, { force: true, recursive: true })
+    await removePath(temporaryDirectoryPath, { force: true, recursive: true })
   }
 }
 

@@ -6,6 +6,7 @@ import type {
   LegendsPerkRecord,
   LegendsPerkScenarioSource,
 } from '../types/legends-perks'
+import { formatBackgroundVeteranPerkLevelIntervalBadge } from './background-veteran-perks'
 
 export type GroupedBackgroundSource = {
   backgroundNames: string[]
@@ -195,13 +196,31 @@ export function formatPickedPerkCountLabel(perkCount: number): string {
   return `${perkCount} perk${perkCount === 1 ? '' : 's'}`
 }
 
-export function formatBackgroundFitProbabilityLabel(probability: number): string {
-  const percentage = Math.round(probability * 1000) / 10
-
-  return `${Number.isInteger(percentage) ? percentage.toFixed(0) : percentage.toFixed(1)}%`
+export function formatMorePerkResultsLabel(perkCount: number): string {
+  return `Show ${perkCount} more perk${perkCount === 1 ? '' : 's'}`
 }
 
-function formatBackgroundFitScoreLabel(score: number): string {
+export function formatBackgroundFitProbabilityLabel(probability: number): string {
+  const percentage = probability * 100
+
+  if (percentage > 0 && percentage < 0.01) {
+    const roundedTinyPercentage = Math.round(percentage * 10000) / 10000
+
+    return roundedTinyPercentage > 0 ? `${roundedTinyPercentage}%` : '<0.0001%'
+  }
+
+  if (percentage < 1) {
+    const roundedSmallPercentage = Math.round(percentage * 100) / 100
+
+    return `${Number.isInteger(roundedSmallPercentage) ? roundedSmallPercentage.toFixed(0) : roundedSmallPercentage.toFixed(2)}%`
+  }
+
+  const roundedPercentage = Math.round(percentage * 10) / 10
+
+  return `${Number.isInteger(roundedPercentage) ? roundedPercentage.toFixed(0) : roundedPercentage.toFixed(1)}%`
+}
+
+export function formatBackgroundFitScoreLabel(score: number): string {
   const roundedScore = Math.round(score * 10) / 10
 
   return Number.isInteger(roundedScore) ? roundedScore.toFixed(0) : roundedScore.toFixed(1)
@@ -286,6 +305,9 @@ export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): 
       : formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator),
     visibleBackgroundPillLabel,
     backgroundFit.backgroundId,
+    formatBackgroundVeteranPerkLevelIntervalBadge(backgroundFit.veteranPerkLevelInterval),
+    `+${backgroundFit.veteranPerkLevelInterval}`,
+    `${backgroundFit.veteranPerkLevelInterval} veteran levels`,
     sourceFileName,
     backgroundFit.sourceFilePath,
   ]
@@ -298,27 +320,36 @@ export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): 
     .toLowerCase()
 }
 
-export function formatBackgroundFitPickablePerksLabel(
-  coveredPickedPerkCount: number,
+export function formatBackgroundFitBestNativeRollLabel(
+  maximumNativeCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Up to ${coveredPickedPerkCount}/${pickedPerkCount} perks pickable`
+  return `Best native roll covers ${maximumNativeCoveredPickedPerkCount}/${pickedPerkCount} total perks`
 }
 
 export function formatBackgroundFitExpectedBuildPerksLabel(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel = 'perks',
 ): string {
   return `Expected ${formatBackgroundFitScoreLabel(
     expectedCoveredPickedPerkCount,
-  )}/${pickedPerkCount} perks pickable`
+  )}/${pickedPerkCount} ${scopeLabel} pickable`
 }
 
 export function formatBackgroundFitGuaranteedPerksLabel(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel = 'perks',
 ): string {
-  return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
+  return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} ${scopeLabel} pickable`
+}
+
+export function formatBackgroundFitBuildReachabilityLabel(
+  probability: number,
+  scopeLabel = 'Full build',
+): string {
+  return `${scopeLabel} ${formatBackgroundFitProbabilityLabel(probability)}`
 }
 
 export function getPerkGroupHoverKey({ categoryName, perkGroupId }: PerkGroupHoverTarget): string {

@@ -1,7 +1,13 @@
 import type { BuildPerkPillSelection } from './BuildPerkPill'
+import type { LegendsPerkRecord } from '../types/legends-perks'
+
+export type BuildPlannerPickedPerk = LegendsPerkRecord & {
+  isOptional: boolean
+}
 
 export type BuildPlannerSavedBuild = {
   availablePerkIds: string[]
+  optionalPerkIds: string[]
   id: string
   missingPerkCount: number
   name: string

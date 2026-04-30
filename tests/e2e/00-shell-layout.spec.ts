@@ -8,9 +8,9 @@ import {
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   searchPerks,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 const denseDesktopBuildUrl =
   '/?build=Axe+Mastery,Mace+Mastery,Sword+Mastery,Recover,Berserk,Nimble,Dodge,Underdog,Battle+Flow,Killing+Frenzy,Rotation,Colossus'
@@ -107,12 +107,17 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     }
 
     const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
-    const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
+    const plannerBoard = document.querySelector(
+      '[data-testid="planner-board"]',
+    ) as HTMLElement | null
     const backgroundFitPanel = document.querySelector(
       '[data-testid="background-fit-panel"]',
     ) as HTMLElement | null
     const categorySidebar = document.querySelector(
       '[data-testid="category-sidebar"]',
+    ) as HTMLElement | null
+    const detailPanel = document.querySelector(
+      '[data-testid="perk-detail-panel"]',
     ) as HTMLElement | null
     const detailPanelBody = document.querySelector(
       '[data-testid="perk-detail-panel-body"]',
@@ -128,6 +133,9 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
       '[data-testid="perk-row-icon"]',
     ) as HTMLElement | null
     const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+    const resultsPanel = document.querySelector(
+      '[data-testid="results-panel"]',
+    ) as HTMLElement | null
     const workspace = document.querySelector('[data-testid="workspace"]') as HTMLElement | null
     const detailPanelBodyStyle =
       detailPanelBody === null ? null : window.getComputedStyle(detailPanelBody)
@@ -137,8 +145,13 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     const resultsListStyle = resultsList === null ? null : window.getComputedStyle(resultsList)
 
     return {
+      backgroundFitPanelLeft:
+        backgroundFitPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       backgroundFitPanelWidth: backgroundFitPanel?.getBoundingClientRect().width ?? 0,
+      categorySidebarLeft:
+        categorySidebar?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       categorySidebarWidth: categorySidebar?.getBoundingClientRect().width ?? 0,
+      detailPanelLeft: detailPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       detailPanelBodyGap:
         detailPanelBodyStyle === null
           ? Number.POSITIVE_INFINITY
@@ -163,6 +176,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
           ? Number.POSITIVE_INFINITY
           : plannerBoard.scrollHeight - plannerBoard.clientHeight,
       plannerHeight: planner?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY,
+      resultsPanelLeft: resultsPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       resultsListHeight: resultsList?.clientHeight ?? 0,
       resultsListGap:
         resultsListStyle === null
@@ -214,10 +228,7 @@ async function readRailControlMetrics(page: Page) {
         chevronStrokeWidth: Number(chevron.getAttribute('stroke-width')),
         chevronWidth: chevronBounds.width,
         originalDesktopRailThickness: readInheritedLengthInPixels(button, '--control-height-lg'),
-        originalMobileRailHeight: readInheritedLengthInPixels(
-          button,
-          '--primitive-length-3-25rem',
-        ),
+        originalMobileRailHeight: readInheritedLengthInPixels(button, '--primitive-length-3-25rem'),
       }
     }
 
@@ -228,10 +239,71 @@ async function readRailControlMetrics(page: Page) {
   })
 }
 
+async function readBelowDesktopSectionTops(page: Page) {
+  return page.evaluate(() => {
+    function getElementTop(selector: string) {
+      const element = document.querySelector(selector)
+
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing section for selector ${selector}.`)
+      }
+
+      return element.getBoundingClientRect().top
+    }
+
+    return {
+      backgroundFit: getElementTop('[data-testid="background-fit-panel"]'),
+      buildPlanner: getElementTop('[aria-label="Build planner"]'),
+      filters: getElementTop('[data-testid="category-sidebar"]'),
+      perkDetails: getElementTop('[data-testid="perk-detail-panel"]'),
+      results: getElementTop('[data-testid="results-panel"]'),
+    }
+  })
+}
+
+async function readMobileTouchTargetMetrics(page: Page) {
+  return page.evaluate(() => {
+    const targetSelectors = [
+      {
+        name: 'repository link',
+        selector: 'a[aria-label="Open the build planner repository on GitHub"]',
+      },
+      { name: 'perk filter', selector: '[data-testid="perk-filter-button"]' },
+      {
+        name: 'result build toggle',
+        selector: 'button[aria-label="Add Blacksmiths Technique to build from results"]',
+      },
+      {
+        name: 'planner section toggle',
+        selector: '[data-testid="planner-section-toggle"]',
+      },
+      { name: 'category filter', selector: 'button[aria-label="Enable category Weapon"]' },
+      { name: 'perk details rail', selector: 'button[aria-label="Collapse perk details"]' },
+      { name: 'background fit rail', selector: 'button[aria-label="Collapse background fit"]' },
+    ]
+
+    return targetSelectors.map(({ name, selector }) => {
+      const element = document.querySelector(selector)
+
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing touch target "${name}" for selector ${selector}.`)
+      }
+
+      const rectangle = element.getBoundingClientRect()
+
+      return {
+        height: rectangle.height,
+        name,
+        width: rectangle.width,
+      }
+    })
+  })
+}
+
 test('keeps the shell pinned to the viewport with always-visible planner rows', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await expectViewportLocked(page)
   const buildPlanner = page.getByLabel('Build planner')
 
@@ -253,7 +325,9 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   await expect
     .poll(async () =>
       page.evaluate(() => {
-        const plannerBoard = document.querySelector('[data-testid="planner-board"]') as HTMLElement | null
+        const plannerBoard = document.querySelector(
+          '[data-testid="planner-board"]',
+        ) as HTMLElement | null
 
         return plannerBoard === null
           ? Number.POSITIVE_INFINITY
@@ -266,7 +340,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
 test('uses normal page scrolling on tablet widths instead of cramped viewport rows', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 720, width: 900 })
+  await gotoBuildPlanner(page, { height: 720, width: 900 })
   await expectNoDocumentHorizontalOverflow(page)
 
   await expect
@@ -285,6 +359,27 @@ test('uses normal page scrolling on tablet widths instead of cramped viewport ro
     () => document.documentElement.scrollHeight - window.innerHeight,
   )
   expect(scrollableDocumentHeight).toBeGreaterThan(200)
+})
+
+test('keeps the below-desktop section order consistent across the mobile boundary', async ({
+  page,
+}) => {
+  for (const viewportSize of [
+    { height: 740, width: 760 },
+    { height: 740, width: 761 },
+    { height: 720, width: 900 },
+    { height: 720, width: 1279 },
+  ]) {
+    await gotoBuildPlanner(page, viewportSize)
+    await expectNoDocumentHorizontalOverflow(page)
+
+    const sectionTops = await readBelowDesktopSectionTops(page)
+
+    expect(sectionTops.buildPlanner).toBeLessThan(sectionTops.results)
+    expect(sectionTops.results).toBeLessThan(sectionTops.perkDetails)
+    expect(sectionTops.perkDetails).toBeLessThan(sectionTops.filters)
+    expect(sectionTops.filters).toBeLessThan(sectionTops.backgroundFit)
+  }
 })
 
 test('keeps dense picked builds compact across desktop viewport sizes', async ({ page }) => {
@@ -306,6 +401,9 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
 
     const desktopMetrics = await readDenseDesktopLayoutMetrics(page)
 
+    expect(desktopMetrics.backgroundFitPanelLeft).toBeLessThan(desktopMetrics.detailPanelLeft)
+    expect(desktopMetrics.detailPanelLeft).toBeLessThan(desktopMetrics.resultsPanelLeft)
+    expect(desktopMetrics.resultsPanelLeft).toBeLessThan(desktopMetrics.categorySidebarLeft)
     expect(desktopMetrics.backgroundFitPanelWidth).toBeLessThanOrEqual(
       expectation.maximumBackgroundFitPanelWidth,
     )
@@ -316,9 +414,7 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     expect(desktopMetrics.perkRowPaddingBlock).toBeLessThanOrEqual(
       expectation.maximumPerkRowPaddingBlock,
     )
-    expect(desktopMetrics.perkRowIconWidth).toBeLessThanOrEqual(
-      expectation.maximumPerkRowIconWidth,
-    )
+    expect(desktopMetrics.perkRowIconWidth).toBeLessThanOrEqual(expectation.maximumPerkRowIconWidth)
     expect(desktopMetrics.perkPlacementIconWidth).toBeLessThanOrEqual(
       expectation.maximumPerkPlacementIconWidth,
     )
@@ -344,8 +440,8 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
   }
 })
 
-test('keeps side rail controls thin with stronger chevrons', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 768, width: 1366 })
+test('keeps desktop side rails thin and mobile rails touchable', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const desktopRailMetrics = await readRailControlMetrics(page)
@@ -361,16 +457,14 @@ test('keeps side rail controls thin with stronger chevrons', async ({ page }) =>
   expect(desktopRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
   expect(desktopRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 
-  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
 
   const mobileRailMetrics = await readRailControlMetrics(page)
 
-  expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeLessThanOrEqual(
-    mobileRailMetrics.backgroundFit.originalMobileRailHeight * 0.72,
-  )
-  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeLessThanOrEqual(
-    mobileRailMetrics.perkDetails.originalMobileRailHeight * 0.72,
-  )
+  expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeGreaterThanOrEqual(40)
+  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeGreaterThanOrEqual(40)
+  expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeLessThanOrEqual(48)
+  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeLessThanOrEqual(48)
   expect(mobileRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
   expect(mobileRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
   expect(mobileRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
@@ -441,7 +535,7 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
 test('uses normal page scrolling on mobile while keeping core controls usable', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page, { height: 740, width: 360 })
+  await gotoBuildPlanner(page, { height: 740, width: 360 })
   await expectNoDocumentHorizontalOverflow(page)
 
   await expect
@@ -500,8 +594,227 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
   ).toBeVisible()
 })
 
+test('limits unfiltered phone results without restoring the nested scroll trap', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
+  await expectNoDocumentHorizontalOverflow(page)
+
+  await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toBeVisible()
+
+  const initialPhoneResultsMetrics = await page.evaluate(() => {
+    const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+    const showMoreButton = document.querySelector(
+      '[data-testid="show-more-results-button"]',
+    ) as HTMLElement | null
+
+    if (resultsList === null || showMoreButton === null) {
+      throw new Error('Missing phone result limiter target.')
+    }
+
+    return {
+      documentScrollHeight: document.documentElement.scrollHeight,
+      resultsListOverflowY: window.getComputedStyle(resultsList).overflowY,
+      resultRowCount: resultsList.querySelectorAll('[data-testid="perk-row"]').length,
+      showMoreButtonHeight: showMoreButton.getBoundingClientRect().height,
+    }
+  })
+
+  expect(initialPhoneResultsMetrics.resultRowCount).toBe(12)
+  expect(initialPhoneResultsMetrics.resultsListOverflowY).toBe('visible')
+  expect(initialPhoneResultsMetrics.documentScrollHeight).toBeLessThan(10000)
+  expect(initialPhoneResultsMetrics.showMoreButtonHeight).toBeGreaterThanOrEqual(40)
+
+  await page.getByRole('button', { name: 'Show 12 more perks' }).click()
+  await expect
+    .poll(async () =>
+      page
+        .getByTestId('results-list')
+        .getByTestId('perk-row')
+        .evaluateAll((rows) => rows.length),
+    )
+    .toBe(24)
+
+  await page.getByLabel('Search perks').fill('Student')
+  await expect(page.getByRole('button', { name: 'Inspect Student' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
+  await expect(page.getByTestId('results-list').getByTestId('perk-row')).toHaveCount(1)
+
+  await gotoBuildPlanner(page, { height: 740, width: 761 })
+  await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
+  await expect
+    .poll(async () =>
+      page
+        .getByTestId('results-list')
+        .getByTestId('perk-row')
+        .evaluateAll((rows) => rows.length),
+    )
+    .toBeGreaterThan(12)
+})
+
+test('keeps dense mobile builds compact without pushing search multiple screens down', async ({
+  page,
+}) => {
+  for (const expectation of [
+    {
+      maximumSearchTop: 760,
+      minimumPlannerBoardOverflow: 80,
+      viewportSize: { height: 844, width: 390 },
+    },
+    {
+      maximumSearchTop: 700,
+      minimumPlannerBoardOverflow: 80,
+      viewportSize: { height: 568, width: 320 },
+    },
+  ]) {
+    await page.setViewportSize(expectation.viewportSize)
+    await page.goto(denseDesktopBuildUrl)
+    await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+    await expectNoDocumentHorizontalOverflow(page)
+    await expect(page.getByText('12 perks picked.')).toBeVisible()
+
+    const denseMobileMetrics = await page.evaluate(() => {
+      const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
+      const plannerBoard = document.querySelector(
+        '[data-testid="planner-board"]',
+      ) as HTMLElement | null
+      const searchInput = document.querySelector(
+        '[aria-label="Search perks"]',
+      ) as HTMLElement | null
+      const saveButton = document.querySelector(
+        'button[aria-label="Save / Load build"]',
+      ) as HTMLElement | null
+
+      if (
+        planner === null ||
+        plannerBoard === null ||
+        searchInput === null ||
+        saveButton === null
+      ) {
+        throw new Error('Missing dense mobile layout metric target.')
+      }
+
+      return {
+        plannerBoardOverflow: plannerBoard.scrollHeight - plannerBoard.clientHeight,
+        plannerBoardOverflowY: window.getComputedStyle(plannerBoard).overflowY,
+        plannerHeight: planner.getBoundingClientRect().height,
+        saveButtonHeight: saveButton.getBoundingClientRect().height,
+        searchTop: searchInput.getBoundingClientRect().top,
+      }
+    })
+
+    expect(denseMobileMetrics.plannerBoardOverflow).toBeGreaterThanOrEqual(
+      expectation.minimumPlannerBoardOverflow,
+    )
+    expect(denseMobileMetrics.plannerBoardOverflowY).toBe('auto')
+    expect(denseMobileMetrics.searchTop).toBeLessThanOrEqual(expectation.maximumSearchTop)
+    expect(denseMobileMetrics.saveButtonHeight).toBeGreaterThanOrEqual(40)
+    expect(denseMobileMetrics.plannerHeight).toBeLessThanOrEqual(
+      expectation.viewportSize.height * 0.9,
+    )
+  }
+})
+
+test('lets the mobile document scroll when the pointer is over results', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
+  await expectNoDocumentHorizontalOverflow(page)
+
+  const wheelTarget = await page.evaluate(() => {
+    const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+
+    if (resultsList === null) {
+      throw new Error('Missing results list.')
+    }
+
+    const rectangle = resultsList.getBoundingClientRect()
+
+    return {
+      x: rectangle.left + rectangle.width / 2,
+      y: Math.min(rectangle.top + 60, window.innerHeight - 24),
+    }
+  })
+
+  await page.mouse.move(wheelTarget.x, wheelTarget.y)
+  await page.mouse.wheel(0, 900)
+
+  await expect.poll(async () => page.evaluate(() => window.scrollY)).toBeGreaterThan(0)
+  await expect
+    .poll(async () =>
+      page.evaluate(() => {
+        const resultsList = document.querySelector(
+          '[data-testid="results-list"]',
+        ) as HTMLElement | null
+
+        if (resultsList === null) {
+          throw new Error('Missing results list.')
+        }
+
+        return resultsList.scrollTop
+      }),
+    )
+    .toBe(0)
+})
+
+test('keeps key mobile touch targets large enough', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
+
+  const touchTargetMetrics = await readMobileTouchTargetMetrics(page)
+
+  for (const touchTargetMetric of touchTargetMetrics) {
+    expect(touchTargetMetric.width, `${touchTargetMetric.name} width`).toBeGreaterThanOrEqual(40)
+    expect(touchTargetMetric.height, `${touchTargetMetric.name} height`).toBeGreaterThanOrEqual(40)
+  }
+})
+
+test('keeps mobile background fit cards compact while preserving tap targets', async ({ page }) => {
+  await page.setViewportSize({ height: 844, width: 390 })
+  await page.goto(denseDesktopBuildUrl)
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+  await expectNoDocumentHorizontalOverflow(page)
+  await expect(page.getByTestId('background-fit-card').nth(4)).toBeAttached()
+
+  const backgroundFitCardMetrics = await page.evaluate(() => {
+    const cards = [...document.querySelectorAll<HTMLElement>('[data-testid="background-fit-card"]')]
+      .slice(0, 5)
+      .map((card) => {
+        const header = card.querySelector<HTMLElement>('[class*="backgroundFitCardHeaderMain"]')
+        const chevronFrame = card.querySelector<HTMLElement>(
+          '[class*="backgroundFitAccordionChevronFrame"]',
+        )
+        const cardRectangle = card.getBoundingClientRect()
+        const chevronFrameRectangle = chevronFrame?.getBoundingClientRect()
+
+        return {
+          chevronFrameHeight: chevronFrameRectangle?.height ?? 0,
+          chevronFrameWidth: chevronFrameRectangle?.width ?? 0,
+          headerDirection: header === null ? '' : window.getComputedStyle(header).flexDirection,
+          height: cardRectangle.height,
+        }
+      })
+
+    const backgroundFitResults = document.querySelector(
+      '[data-testid="background-fit-panel-body"]',
+    ) as HTMLElement | null
+
+    return {
+      cards,
+      scrollHeight: backgroundFitResults?.scrollHeight ?? Number.POSITIVE_INFINITY,
+    }
+  })
+
+  expect(backgroundFitCardMetrics.cards).toHaveLength(5)
+  expect(backgroundFitCardMetrics.scrollHeight).toBeLessThan(20000)
+
+  for (const cardMetric of backgroundFitCardMetrics.cards) {
+    expect(cardMetric.height).toBeLessThanOrEqual(130)
+    expect(cardMetric.headerDirection).toBe('row')
+    expect(cardMetric.chevronFrameHeight).toBeGreaterThanOrEqual(40)
+    expect(cardMetric.chevronFrameWidth).toBeGreaterThanOrEqual(40)
+  }
+})
+
 test('keeps collapsed background fit content out of the keyboard order', async ({ page }) => {
-  await gotoPerksBrowser(page, { height: 844, width: 390 })
+  await gotoBuildPlanner(page, { height: 844, width: 390 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
   await page.getByRole('button', { name: 'Collapse background fit' }).click()

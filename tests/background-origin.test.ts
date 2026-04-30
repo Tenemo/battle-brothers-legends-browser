@@ -21,14 +21,25 @@ function createBackgroundFit({
   return {
     backgroundId,
     backgroundName,
+    buildReachabilityProbability: null,
     disambiguator,
+    expectedCoveredMustHavePerkCount: 0,
+    expectedCoveredOptionalPerkCount: 0,
     expectedCoveredPickedPerkCount: 0,
     expectedMatchedPerkGroupCount: 0,
+    fullBuildReachabilityProbability: null,
+    fullBuildStudyResourceRequirement: null,
+    guaranteedCoveredMustHavePerkCount: 0,
+    guaranteedCoveredOptionalPerkCount: 0,
     guaranteedMatchedPerkGroupCount: 0,
     iconPath: null,
     matches: [],
+    maximumNativeCoveredPickedPerkCount: 0,
     maximumTotalPerkGroupCount: 0,
+    mustHaveBuildReachabilityProbability: null,
+    mustHaveStudyResourceRequirement: null,
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
+    veteranPerkLevelInterval: 4,
   }
 }
 
@@ -51,15 +62,25 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
   return legendsPerksDataset.backgroundFitBackgrounds.map(
     (backgroundDefinition): RankedBackgroundFit => ({
       ...backgroundDefinition,
+      buildReachabilityProbability: null,
       disambiguator:
         (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
           ? getBackgroundSourceFileLabel(backgroundDefinition.sourceFilePath)
           : null,
+      expectedCoveredMustHavePerkCount: 0,
+      expectedCoveredOptionalPerkCount: 0,
       expectedCoveredPickedPerkCount: 0,
       expectedMatchedPerkGroupCount: 0,
+      fullBuildReachabilityProbability: null,
+      fullBuildStudyResourceRequirement: null,
+      guaranteedCoveredMustHavePerkCount: 0,
+      guaranteedCoveredOptionalPerkCount: 0,
       guaranteedMatchedPerkGroupCount: 0,
       matches: [],
+      maximumNativeCoveredPickedPerkCount: 0,
       maximumTotalPerkGroupCount: 0,
+      mustHaveBuildReachabilityProbability: null,
+      mustHaveStudyResourceRequirement: null,
     }),
   )
 }
@@ -436,12 +457,22 @@ describe('background origin detection', () => {
       .map(
         (backgroundFit): RankedBackgroundFit => ({
           ...backgroundFit,
+          buildReachabilityProbability: null,
           disambiguator: null,
+          expectedCoveredMustHavePerkCount: 0,
+          expectedCoveredOptionalPerkCount: 0,
           expectedCoveredPickedPerkCount: 0,
           expectedMatchedPerkGroupCount: 0,
+          fullBuildReachabilityProbability: null,
+          fullBuildStudyResourceRequirement: null,
+          guaranteedCoveredMustHavePerkCount: 0,
+          guaranteedCoveredOptionalPerkCount: 0,
           guaranteedMatchedPerkGroupCount: 0,
           matches: [],
+          maximumNativeCoveredPickedPerkCount: 0,
           maximumTotalPerkGroupCount: 0,
+          mustHaveBuildReachabilityProbability: null,
+          mustHaveStudyResourceRequirement: null,
         }),
       )
 

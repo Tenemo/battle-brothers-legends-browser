@@ -10,7 +10,7 @@ At runtime the app is fully static. It reads JSON from `src/data`, images from `
 - Searches across perk names, descriptions, perk groups, perk group names, background sources, scenario overlays, and favoured enemy targets.
 - Filters by category and perk group.
 - Lets you pick perks into a build planner, splits matching perk groups into shared 2-plus-perk coverage and individual-perk coverage, merges identical match sets, and previews picked-perk effects on hover.
-- Ranks parsed Legends backgrounds against the current build by exact perk-perk-group fit, separating guaranteed matches from probabilistic matches and showing exact marginal probabilities for non-guaranteed perk groups.
+- Ranks parsed Legends backgrounds against the current build by full-build reachability chance, separates guaranteed matches from probabilistic matches, shows exact best-native-roll coverage, and shows exact marginal probabilities for non-guaranteed perk groups.
 - Persists the current filters and picked build in grouped readable query params so the current setup can be shared or reloaded directly from the URL.
 - Serves a centralized static SEO metadata contract for the root app URL, including canonical tags, an Open Graph preview image, JSON-LD, `robots.txt`, and a one-page sitemap.
 - Shows exact perk group placement, dynamic background pool sources, scenario grants, and favoured enemy metadata for the selected perk.
@@ -24,7 +24,7 @@ The current committed dataset in this repository contains:
 - `367` perks
 - `116` perk groups
 - `225` parsed source files
-- Legends reference version `19.3.17`
+- Legends reference version `19.3.20`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 
@@ -33,18 +33,18 @@ These values change whenever `pnpm sync:perks` is run against a newer or differe
 The main app lives in `src/App.tsx` and imports `src/data/legends-perks.json` directly into the bundle. The UI has five main areas:
 
 - a build planner strip for selected perks, shared perk groups covering 2 or more picked perks, individual-perk group matches, and hover previews
-- a collapsible background-fit sidebar that ranks every parsed background against the current build
+- a collapsible background-fit sidebar that ranks every parsed background against the current build and filters out backgrounds that cannot reach the build with the selected study resources
 - a category sidebar with expandable perk groups
 - a searchable result list
 - a detail panel for the currently selected perk
 
 Search and filtering are fully client-side. The ranking logic in `src/lib/perk-search.ts` prefers exact perk-name matches first, then prefix and substring matches, then perk group names and category names, and finally broader text matches from descriptions and related metadata. When there is no search query, results are sorted by category, perk group, tier, and perk name.
 
-The app also keeps the current search, selected categories, selected perk groups, and picked build in the URL query string. The supported format groups selected values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`.
+The app also keeps the current search, selected categories, selected perk groups, picked build, and non-default background-fit filters in the URL query string. The supported format groups selected values into single params such as `category=Traits,Magic` and `build=Perfect+Focus,Clarity`.
 
-The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique perk group targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build perk groups such as `Other` separately instead of forcing them into the ranking. Backgrounds are ranked by guaranteed picked-perk coverage first, then total picked-perk coverage, then stable background name and source ordering.
+The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique perk group targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build perk groups such as `Other` separately instead of forcing them into the ranking. By default it keeps backgrounds that can reach the build natively, with one skill book, with one ancient scroll, or with both. The background filter can also disable books, disable scrolls, allow a second scroll, or include origin backgrounds. Backgrounds are ranked by exact full-build reachability chance first, then expected native picked-perk coverage, guaranteed native picked-perk coverage, exact best-native-roll picked-perk coverage, and stable background name/source ordering.
 
-The probability model is exact and deterministic. Explicit perk groups on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy` and `Profession` use the same chance-attempt loops as the Legends source. `Magic` only contributes explicit perk groups because the Legends 19.3.17 magic loop does not append random perk groups. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-perk-group probabilities change when a background can or cannot produce the required weapon perk groups.
+The probability model is exact and deterministic. Explicit perk groups on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy` and `Profession` use the same chance-attempt loops as the Legends source. `Magic` only contributes explicit perk groups because the Legends 19.3.20 magic loop does not append random perk groups. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-perk-group probabilities change when a background can or cannot produce the required weapon perk groups.
 
 The detail panel can show:
 
@@ -250,7 +250,7 @@ It still regenerates the deterministic root social preview image before building
   Feature components for the build planner, background-fit panel, perk results, detail panel, and shared controls.
 - `src/lib/perk-search.ts`
   Client-side search ranking, filtering, tier labeling, and perk preview selection.
-- `src/lib/perk-browser-url-state.ts`
+- `src/lib/build-planner-url-state.ts`
   Grouped readable query-string parsing and serialization for shared filter and build state.
 - `src/lib/build-planner.ts`
   Build-planner helpers for deduping perk-group options, grouping perk coverage across the current build, and formatting grouped labels.

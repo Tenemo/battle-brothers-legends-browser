@@ -1,0 +1,194 @@
+@use '../styles/mixins' as *;
+
+@layer components {
+  .dialogBackdrop {
+    @include dialog-backdrop;
+  }
+
+  .savedBuildsDialog {
+    width: min(var(--primitive-length-42rem), 100%);
+    max-height: min(
+      var(--primitive-length-40rem),
+      calc(var(--primitive-length-100vh) - var(--control-height-md))
+    );
+
+    @include dialog-surface;
+
+    h2 {
+      margin: 0;
+      font-size: var(--font-size-2xl);
+    }
+  }
+
+  .savedBuildsDialogHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-2xl);
+    align-items: flex-start;
+  }
+
+  .savedBuildsStorageStatus {
+    margin: var(--space-xs) 0 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-md);
+  }
+
+  .savedBuildsCloseButton {
+    flex: 0 0 auto;
+  }
+
+  .savedBuildForm,
+  .savedBuildsList {
+    display: grid;
+  }
+
+  .savedBuildForm {
+    gap: var(--space-sm);
+
+    label {
+      color: var(--text-muted);
+      font-size: var(--font-size-sm);
+    }
+
+    input {
+      min-width: 0;
+      min-height: var(--control-height-md);
+      border: var(--primitive-length-1px) solid var(--border-color);
+      border-radius: var(--radius-xl);
+      padding: var(--primitive-length-0-4rem) var(--space-lg);
+      background: var(--input-background);
+      color: var(--text-primary);
+      font: inherit;
+
+      &:hover,
+      &:focus {
+        border-color: var(--border-strong);
+        background: var(--surface-control-active);
+      }
+
+      &:focus-visible {
+        @include focus-ring;
+      }
+
+      &:disabled {
+        opacity: 0.48;
+      }
+    }
+  }
+
+  .savedBuildFormRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--space-md);
+  }
+
+  .savedBuildPrimaryButton {
+    border-color: var(--border-overlay);
+    color: var(--text-primary);
+  }
+
+  .savedBuildDeleteButton {
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      border-color: var(--border-danger);
+      background: var(--surface-danger);
+      color: var(--text-danger);
+    }
+  }
+
+  .savedBuildsStatusMessage {
+    margin: 0;
+    border: var(--primitive-length-1px) solid var(--border-success);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--surface-success);
+    color: var(--text-success);
+    font-size: var(--font-size-md);
+
+    &[data-status='error'] {
+      border-color: var(--border-danger);
+      background: var(--surface-danger);
+      color: var(--text-danger);
+    }
+  }
+
+  .savedBuildsList {
+    gap: var(--space-md);
+    min-height: 0;
+    overflow: auto;
+  }
+
+  .savedBuildsEmpty {
+    margin: 0;
+    border-width: var(--primitive-length-1px);
+    border-color: var(--border-overlay);
+    border-style: dashed;
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    background: var(--surface-result-muted);
+    color: var(--text-muted);
+    font-size: var(--font-size-lg);
+  }
+
+  .savedBuildCard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--space-xl);
+    align-items: center;
+    padding: var(--space-lg);
+
+    @include result-surface;
+  }
+
+  .savedBuildCardCopy {
+    min-width: 0;
+  }
+
+  .savedBuildCardName {
+    display: block;
+    color: var(--text-primary);
+    font-size: var(--font-size-xl);
+
+    @include truncate;
+  }
+
+  .savedBuildCardMeta,
+  .savedBuildCardPreview {
+    margin: var(--space-2xs) 0 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-sm);
+  }
+
+  .savedBuildCardPreview {
+    color: var(--text-secondary);
+
+    @include truncate;
+  }
+
+  .savedBuildCardActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+  }
+
+  @include mobile {
+    .dialogBackdrop {
+      align-items: stretch;
+      padding: var(--space-lg);
+    }
+
+    .savedBuildsDialog {
+      max-height: calc(var(--primitive-length-100vh) - var(--primitive-length-1-12rem));
+    }
+
+    .savedBuildFormRow,
+    .savedBuildCard {
+      grid-template-columns: 1fr;
+    }
+
+    .savedBuildCardActions {
+      justify-content: flex-start;
+    }
+  }
+}

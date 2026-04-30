@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import type { BuildPerkHoverOptions, PerkGroupReference } from './use-perk-interaction-state'
 
 const buildPerkTooltipCloseGraceMs = 120
-const buildPerkTooltipOpenDelayMs = 750
-const buildPerkTooltipTimerDelayMs = 250
+const buildPerkTooltipOpenDelayMs = 1500
+const buildPerkTooltipTimerDelayMs = 500
 
 function isBuildPerkTooltipTarget(relatedTarget: EventTarget | null): boolean {
   const buildPerkTooltip = document.querySelector('[data-build-perk-tooltip="true"]')
@@ -24,8 +25,17 @@ export function useBuildPerkTooltipPreview({
   hoveredBuildPerkId: string | null
   onCloseHover: (perkId: string) => void
   onCloseTooltip: () => void
-  onOpenHover: (perkId: string) => void
-  onOpenTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenHover: (
+    perkId: string,
+    perkGroupReference?: PerkGroupReference,
+    options?: BuildPerkHoverOptions,
+  ) => void
+  onOpenTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupReference?: PerkGroupReference,
+    options?: BuildPerkHoverOptions,
+  ) => void
 }) {
   const [activeTooltipIndicatorPerkId, setActiveTooltipIndicatorPerkId] = useState<string | null>(
     null,
@@ -100,11 +110,16 @@ export function useBuildPerkTooltipPreview({
   )
 
   const openTooltipPreview = useCallback(
-    (perkId: string, currentTarget: HTMLElement) => {
+    (
+      perkId: string,
+      currentTarget: HTMLElement,
+      perkGroupReference?: PerkGroupReference,
+      options?: BuildPerkHoverOptions,
+    ) => {
       pointerPreviewPerkIdRef.current = perkId
       clearTooltipCloseTimer()
       clearTooltipOpenTimers()
-      onOpenHover(perkId)
+      onOpenHover(perkId, perkGroupReference, options)
 
       if (hoveredBuildPerkId === perkId) {
         setActiveTooltipIndicatorPerkId(perkId)
@@ -121,7 +136,7 @@ export function useBuildPerkTooltipPreview({
       tooltipOpenTimeoutRef.current = window.setTimeout(() => {
         tooltipOpenTimeoutRef.current = null
         setActiveTooltipIndicatorPerkId(perkId)
-        onOpenTooltip(perkId, currentTarget)
+        onOpenTooltip(perkId, currentTarget, perkGroupReference, options)
       }, buildPerkTooltipOpenDelayMs)
     },
     [

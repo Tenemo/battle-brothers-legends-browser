@@ -1,4 +1,11 @@
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+  cp as copyDirectory,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm as removePath,
+  writeFile,
+} from 'node:fs/promises'
 import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
 import { createDataset, createImporterDiagnostics } from '../scripts/legends-perks-importer.mjs'
@@ -77,6 +84,7 @@ describe('legends perks importer', () => {
           }),
         }),
         iconPath: 'ui/backgrounds/background_57.png',
+        veteranPerkLevelInterval: 4,
       }),
     )
   })
@@ -99,6 +107,44 @@ describe('legends perks importer', () => {
           role: 'perk strings',
         },
       ]),
+    )
+  })
+
+  test('applies fixed origin roster veteran intervals without changing normal backgrounds', () => {
+    const loneWolfBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.legend_lonewolf',
+    )
+    const beastSlayerBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.beast_slayer',
+    )
+    const valaBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.legend_vala',
+    )
+
+    expect(loneWolfBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.legend_lonewolf',
+        backgroundName: 'Lone Wolf',
+        sourceFilePath:
+          'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_lonewolf_background.nut',
+        veteranPerkLevelInterval: 2,
+      }),
+    )
+    expect(valaBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.legend_vala',
+        backgroundName: 'Vala',
+        sourceFilePath:
+          'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_vala_background.nut',
+        veteranPerkLevelInterval: 2,
+      }),
+    )
+    expect(beastSlayerBackground).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.beast_slayer',
+        backgroundName: 'Beast Slayer',
+        veteranPerkLevelInterval: 4,
+      }),
     )
   })
 
@@ -240,6 +286,7 @@ describe('legends perks importer', () => {
         iconPath: 'ui/backgrounds/background_gladiator_prizefighter.png',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_gladiator_prizefighter_background.nut',
+        veteranPerkLevelInterval: 3,
       }),
     )
     expect(legionaryBackground).toEqual(
@@ -249,6 +296,7 @@ describe('legends perks importer', () => {
         iconPath: 'ui/backgrounds/background_puppet.png',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_legionary_background.nut',
+        veteranPerkLevelInterval: 4,
       }),
     )
 
@@ -312,9 +360,13 @@ describe('legends perks importer', () => {
         'legends-reference',
       )
 
-      await cp(path.dirname(fixtureReferenceRootDirectoryPath), temporaryReferenceDirectoryPath, {
-        recursive: true,
-      })
+      await copyDirectory(
+        path.dirname(fixtureReferenceRootDirectoryPath),
+        temporaryReferenceDirectoryPath,
+        {
+          recursive: true,
+        },
+      )
 
       const beastHunterBackgroundFilePath = path.join(
         temporaryReferenceDirectoryPath,
@@ -344,6 +396,7 @@ describe('legends perks importer', () => {
             '    // this.m.ID = "background.commented_out";',
             '    // this.m.Name = "Commented out background";',
             '    // this.m.PerkTreeDynamicMins.Enemy = 99;',
+            '    // this.getContainer().getActor().setVeteranPerks(2);',
             '    /*',
             '    this.m.PerkTreeDynamic = {',
             '      Weapon = [::Const.Perks.AxeTree],',
@@ -354,6 +407,7 @@ describe('legends perks importer', () => {
             '      Profession = [],',
             '      Magic = []',
             '    };',
+            '    this.getContainer().getActor().setVeteranPerks(2);',
             '    */',
             '    this.character_background.create();',
           ].join('\n'),
@@ -398,6 +452,7 @@ describe('legends perks importer', () => {
               perkGroupIds: [],
             }),
           }),
+          veteranPerkLevelInterval: 4,
         }),
       )
       expect(
@@ -421,7 +476,7 @@ describe('legends perks importer', () => {
         ]),
       )
     } finally {
-      await rm(temporaryFixtureDirectoryPath, { force: true, recursive: true })
+      await removePath(temporaryFixtureDirectoryPath, { force: true, recursive: true })
     }
   })
 
@@ -445,9 +500,13 @@ describe('legends perks importer', () => {
         'legends-reference',
       )
 
-      await cp(path.dirname(fixtureReferenceRootDirectoryPath), temporaryReferenceDirectoryPath, {
-        recursive: true,
-      })
+      await copyDirectory(
+        path.dirname(fixtureReferenceRootDirectoryPath),
+        temporaryReferenceDirectoryPath,
+        {
+          recursive: true,
+        },
+      )
 
       const traderScenarioFilePath = path.join(
         temporaryReferenceDirectoryPath,
@@ -506,7 +565,7 @@ describe('legends perks importer', () => {
         ]),
       )
     } finally {
-      await rm(temporaryFixtureDirectoryPath, { force: true, recursive: true })
+      await removePath(temporaryFixtureDirectoryPath, { force: true, recursive: true })
     }
   })
 })

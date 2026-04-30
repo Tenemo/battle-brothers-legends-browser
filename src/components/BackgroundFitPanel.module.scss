@@ -75,6 +75,7 @@
   }
 
   .backgroundFitTarget {
+    position: relative;
     display: flex;
     justify-content: space-between;
     gap: var(--space-xl);
@@ -88,6 +89,10 @@
     > div {
       flex: 1 1 auto;
       min-width: 0;
+    }
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-65rem);
     }
   }
 
@@ -150,16 +155,10 @@
   }
 
   .backgroundFitMatchProbabilityBadge,
-  .backgroundFitMetricBadge,
   .backgroundFitDisambiguator,
-  .backgroundFitRank {
+  .backgroundFitRank,
+  .backgroundFitVeteranPerkBadge {
     @include badge-surface;
-  }
-
-  .backgroundFitMetricBadge {
-    padding: var(--primitive-length-0-14rem) var(--space-md);
-    overflow-wrap: anywhere;
-    cursor: help;
   }
 
   .backgroundFitCard {
@@ -232,9 +231,12 @@
 
   .backgroundFitCardHeaderMain,
   .backgroundFitCardHeading,
-  .backgroundFitCardTitleRow,
-  .backgroundFitAccordionSummaryRow {
+  .backgroundFitCardTitleRow {
     display: flex;
+    min-width: 0;
+  }
+
+  .backgroundFitAccordionSummaryRow {
     min-width: 0;
   }
 
@@ -256,7 +258,6 @@
 
     h3 {
       margin: 0;
-      overflow-wrap: break-word;
       font-family: var(--heading-font-family);
       font-size: var(--primitive-length-0-94rem);
       line-height: 1.08;
@@ -270,6 +271,30 @@
     align-items: center;
     min-height: var(--control-height-sm);
     transform: translateY(var(--primitive-length-0-12rem));
+  }
+
+  .backgroundFitStudyResourceBadges {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: var(--space-2xs);
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .backgroundFitStudyResourceBadge {
+    flex: 0 0 auto;
+    object-fit: contain;
+    filter: drop-shadow(var(--shadow-chain-drop));
+    cursor: help;
+    pointer-events: auto;
+
+    @include size(var(--primitive-length-1-35rem));
+  }
+
+  .backgroundFitStudyResourceBadgeOptionalOnly {
+    filter: drop-shadow(var(--shadow-chain-drop))
+      drop-shadow(0 0 var(--primitive-length-0-24rem) var(--border-success))
+      drop-shadow(0 0 var(--primitive-length-0-06rem) var(--text-success));
   }
 
   .backgroundFitRank {
@@ -298,8 +323,52 @@
     font-size: var(--font-size-3xs);
     letter-spacing: 0;
     line-height: 1;
-    overflow-wrap: anywhere;
     white-space: nowrap;
+  }
+
+  .backgroundFitVeteranPerkBadge {
+    --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-190-128-73-alpha-0-68);
+    --background-fit-veteran-perk-badge-background: var(--primitive-color-rgb-120-72-43-alpha-0-22);
+    --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-236-176-116);
+
+    flex: 0 0 auto;
+    max-width: 100%;
+    min-height: var(--target-size-compact);
+    border-color: var(--background-fit-veteran-perk-badge-border);
+    padding: var(--space-3xs) var(--space-sm);
+    background:
+      linear-gradient(180deg, var(--primitive-color-rgb-255-255-255-alpha-0-06), transparent),
+      var(--background-fit-veteran-perk-badge-background);
+    color: var(--background-fit-veteran-perk-badge-color);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: help;
+
+    &[data-veteran-perk-interval='2'] {
+      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-236-196-95-alpha-0-82);
+      --background-fit-veteran-perk-badge-background: var(
+        --primitive-color-rgb-161-112-39-alpha-0-3
+      );
+      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-255-224-143);
+    }
+
+    &[data-veteran-perk-interval='3'] {
+      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-194-198-203-alpha-0-74);
+      --background-fit-veteran-perk-badge-background: var(
+        --primitive-color-rgb-114-119-126-alpha-0-24
+      );
+      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-232-235-238);
+    }
+
+    &[data-veteran-perk-interval='4'] {
+      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-190-128-73-alpha-0-68);
+      --background-fit-veteran-perk-badge-background: var(
+        --primitive-color-rgb-120-72-43-alpha-0-22
+      );
+      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-236-176-116);
+    }
   }
 
   .backgroundFitAccordionSummary,
@@ -314,10 +383,42 @@
     gap: var(--space-sm);
   }
 
-  .backgroundFitAccordionSummaryRow {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: var(--space-sm);
+  .backgroundFitMetricTable {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .backgroundFitMetricRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
+    gap: var(--space-md);
+    align-items: baseline;
+    min-width: 0;
+    padding: var(--primitive-length-0-12rem) 0;
+    text-align: left;
+    cursor: help;
+
+    + .backgroundFitMetricRow {
+      border-top: var(--primitive-length-1px) solid var(--border-subtle);
+    }
+  }
+
+  .backgroundFitMetricValue {
+    color: var(--accent-soft);
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+    line-height: 1.05;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .backgroundFitMetricLabel {
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    text-align: left;
   }
 
   .backgroundFitAccordionChevronFrame {
@@ -372,154 +473,6 @@
     flex: 0 0 auto;
   }
 
-  .backgroundFitFilterMenu {
-    position: relative;
-    display: inline-flex;
-  }
-
-  .backgroundFitFilterButton {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-
-    @include size(var(--primitive-length-1-8rem));
-
-    border: 0;
-    border-radius: var(--radius-pill);
-    padding: 0;
-    background: transparent;
-    color: var(--text-soft);
-    cursor: pointer;
-    transition:
-      background-color var(--motion-fast-duration) ease,
-      color var(--motion-fast-duration) ease;
-
-    &:hover,
-    &:focus-visible,
-    &[data-active-filter='true'] {
-      background: var(--border-overlay);
-      color: var(--text-primary);
-    }
-
-    &:focus-visible {
-      @include focus-ring(var(--primitive-length-negative-2px));
-    }
-  }
-
-  .backgroundFitFilterIcon {
-    @include size(var(--space-3xl));
-  }
-
-  .backgroundFitFilterPopover {
-    position: absolute;
-    z-index: var(--z-index-popover);
-    top: calc(100% + var(--space-md));
-    right: 0;
-    min-width: var(--primitive-length-12-2rem);
-    border: var(--primitive-length-1px) solid var(--border-overlay);
-    border-radius: var(--radius-lg);
-    padding: var(--primitive-length-0-46rem);
-    background: var(--primitive-color-rgb-20-17-14-alpha-0-98);
-    box-shadow: var(--shadow-filter-popover);
-  }
-
-  .backgroundFitFilterOption {
-    display: flex;
-    align-items: center;
-    gap: var(--primitive-length-0-48rem);
-    min-height: var(--control-height-sm);
-    color: var(--text-primary);
-    font-size: var(--font-size-lg);
-    line-height: 1;
-    cursor: pointer;
-
-    span {
-      display: inline-flex;
-      align-items: center;
-      min-height: var(--space-3xl);
-      transform: translateY(var(--primitive-length-negative-0-02rem));
-    }
-
-    input[data-testid='origin-backgrounds-checkbox'],
-    input[data-testid='origin-scroll-perk-groups-checkbox'] {
-      appearance: none;
-      box-sizing: border-box;
-      display: grid;
-      flex: 0 0 var(--space-3xl);
-      place-items: center;
-
-      @include size(var(--space-3xl));
-
-      inline-size: var(--space-3xl);
-      block-size: var(--space-3xl);
-      min-width: var(--space-3xl);
-      max-width: var(--space-3xl);
-      min-height: var(--space-3xl);
-      max-height: var(--space-3xl);
-      border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-28);
-      border-radius: var(--primitive-length-0-26rem);
-      margin: 0;
-      padding: 0;
-      background:
-        linear-gradient(180deg, var(--highlight-white-subtle), transparent),
-        var(--primitive-color-rgb-18-15-13-alpha-0-92);
-      box-shadow: var(--shadow-checkbox);
-      color: var(--accent-soft);
-      cursor: pointer;
-      transition:
-        border-color var(--motion-fast-duration) ease,
-        background-color var(--motion-fast-duration) ease,
-        box-shadow var(--motion-fast-duration) ease,
-        color var(--motion-fast-duration) ease;
-
-      &::before {
-        content: '';
-
-        @include size(var(--primitive-length-0-48rem), var(--primitive-length-0-26rem));
-
-        border-bottom: var(--primitive-length-2px) solid currentcolor;
-        border-left: var(--primitive-length-2px) solid currentcolor;
-        opacity: 0;
-        transform: translateY(var(--primitive-length-negative-0-05rem)) rotate(-45deg) scale(0.82);
-        transition:
-          opacity var(--motion-tooltip-duration) ease,
-          transform var(--motion-tooltip-duration) ease;
-      }
-
-      &:focus-visible {
-        @include focus-ring;
-      }
-
-      &:checked {
-        border-color: var(--accent-color);
-        background:
-          linear-gradient(
-            180deg,
-            var(--primitive-color-rgb-204-155-84-alpha-0-24),
-            var(--primitive-color-rgb-204-155-84-alpha-0-08)
-          ),
-          var(--primitive-color-rgb-28-23-20-alpha-0-98);
-
-        &::before {
-          opacity: 1;
-          transform: translateY(var(--primitive-length-negative-0-05rem)) rotate(-45deg) scale(1);
-        }
-      }
-    }
-
-    &:hover input[data-testid='origin-backgrounds-checkbox'],
-    &:hover input[data-testid='origin-scroll-perk-groups-checkbox'],
-    input[data-testid='origin-backgrounds-checkbox']:focus-visible,
-    input[data-testid='origin-scroll-perk-groups-checkbox']:focus-visible {
-      border-color: var(--accent-color);
-      background:
-        linear-gradient(180deg, var(--primitive-color-rgb-255-255-255-alpha-0-06), transparent),
-        var(--primitive-color-rgb-28-23-20-alpha-0-96);
-      box-shadow: var(--shadow-checkbox-hover);
-    }
-  }
-
   @include desktop {
     .backgroundFitCardHeading h3 {
       min-width: var(--primitive-length-5-8rem);
@@ -538,6 +491,7 @@
       width: 100%;
       height: auto;
       min-height: var(--rail-button-mobile-min-height);
+      order: 4;
 
       &[data-expanded='false'] {
         width: 100%;
@@ -583,12 +537,31 @@
   }
 
   @include mobile {
-    .backgroundFitPanel {
-      order: 4;
-    }
-
     .backgroundFitPanelBody {
       max-height: var(--primitive-length-24rem);
+    }
+
+    .backgroundFitRanking,
+    .backgroundFitMatchList {
+      gap: var(--space-sm);
+    }
+
+    .backgroundFitAccordionTrigger {
+      padding: var(--space-xs) var(--space-sm);
+    }
+
+    .backgroundFitCardHeader,
+    .backgroundFitAccordionSummary {
+      gap: var(--space-2xs);
+    }
+
+    .backgroundFitRailButton,
+    .backgroundFitAccordionChevronFrame {
+      min-height: var(--primitive-length-2-72rem);
+    }
+
+    .backgroundFitAccordionChevronFrame {
+      @include size(var(--primitive-length-2-72rem));
     }
 
     .backgroundFitCardHeading,
@@ -596,9 +569,39 @@
       width: 100%;
     }
 
-    .backgroundFitTarget,
-    .backgroundFitMatch,
+    .backgroundFitCardHeading {
+      flex: 1 1 auto;
+
+      h3 {
+        font-size: var(--font-size-base);
+        line-height: 1.05;
+      }
+    }
+
+    .backgroundFitCardTitleRow {
+      gap: var(--space-2xs);
+      min-height: 0;
+      transform: none;
+    }
+
     .backgroundFitCardHeaderMain {
+      flex-direction: row;
+      align-items: center;
+    }
+
+    .backgroundFitMetricRow {
+      grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
+      gap: var(--space-xs);
+      padding: var(--primitive-length-0-08rem) 0;
+    }
+
+    .backgroundFitMetricValue,
+    .backgroundFitMetricLabel {
+      font-size: var(--font-size-xs);
+    }
+
+    .backgroundFitTarget,
+    .backgroundFitMatch {
       flex-direction: column;
       align-items: flex-start;
     }

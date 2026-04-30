@@ -11,6 +11,11 @@
   }
 
   .panelHeading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    min-height: var(--primitive-length-1-8rem);
     margin-bottom: var(--space-md);
 
     h2 {
@@ -26,6 +31,12 @@
     }
   }
 
+  .categoryClearButton {
+    position: static;
+    flex: 0 0 auto;
+    transform: none;
+  }
+
   .categoryCard {
     margin-bottom: var(--space-2xs);
     border: var(--primitive-length-1px) solid transparent;
@@ -39,6 +50,7 @@
 
   .categoryChip,
   .perkGroupChip {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -76,15 +88,94 @@
     }
   }
 
+  .categoryChipFrame {
+    display: flex;
+    align-items: stretch;
+    width: 100%;
+    border: var(--primitive-length-1px) solid transparent;
+    border-radius: var(--radius-control);
+    background: var(--button-background);
+    color: inherit;
+    font-size: var(--primitive-length-0-84rem);
+
+    @include control-transition;
+
+    &[data-highlighted='true'],
+    &[data-selected='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+    }
+  }
+
+  .categoryDisclosureButton,
+  .categorySelectButton {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .categoryDisclosureButton {
+    display: grid;
+    place-items: center;
+    flex: 0 0 var(--primitive-length-1-5rem);
+    border: var(--primitive-length-1px) solid transparent;
+    border-right: var(--primitive-length-2px) solid var(--border-subtle);
+    padding: 0 var(--space-xs);
+    border-radius: var(--radius-control) 0 0 var(--radius-control);
+    color: var(--text-muted);
+    transition:
+      border-color var(--motion-fast),
+      background-color var(--motion-fast),
+      color var(--motion-fast);
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent-color);
+      background: var(--primitive-color-rgb-204-155-84-alpha-0-11);
+      color: var(--accent-soft);
+    }
+  }
+
+  .categorySelectButton {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: var(--primitive-length-0-55rem);
+    padding: var(--primitive-length-0-3rem) var(--primitive-length-0-46rem)
+      var(--primitive-length-0-3rem) var(--space-xs);
+    text-align: left;
+  }
+
+  .categoryChipFrame[data-selected='true'] .categoryDisclosureButton {
+    border-right-color: var(--primitive-color-rgb-204-155-84-alpha-0-28);
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--accent-color);
+    }
+  }
+
   .categoryChipStart,
   .categoryChipEnd,
   .categoryChipPickedStars,
+  .perkGroupChipStart,
   .perkGroupChipEnd {
     display: inline-flex;
     align-items: center;
   }
 
-  .categoryChipStart {
+  .categoryChipStart,
+  .perkGroupChipStart {
     gap: var(--primitive-length-0-38rem);
     min-width: 0;
   }
@@ -106,8 +197,17 @@
   }
 
   .categoryLabel,
-  .perkGroupChipStart {
+  .perkGroupLabel {
     min-width: 0;
+  }
+
+  .perkGroupChipStart .perkGroupAncientScrollMarker {
+    position: static;
+    flex: 0 0 auto;
+
+    @include size(var(--icon-size-xs));
+
+    margin-left: 0;
   }
 
   .categoryChevron {
@@ -170,13 +270,18 @@
     .sidebar {
       height: auto;
       min-height: 0;
+      order: 3;
       overflow: visible;
     }
   }
 
   @include mobile {
-    .sidebar {
-      order: 3;
+    .categoryChipFrame,
+    .categoryDisclosureButton,
+    .categorySelectButton,
+    .categoryChip,
+    .perkGroupChip {
+      min-height: var(--primitive-length-2-72rem);
     }
   }
 }

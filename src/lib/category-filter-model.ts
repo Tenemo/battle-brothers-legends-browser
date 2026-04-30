@@ -1,9 +1,9 @@
-import type { PerkBrowserUrlPerkGroupOption } from './perk-browser-url-state'
+import type { BuildPlannerUrlPerkGroupOption } from './build-planner-url-state'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import { compareCategoryNames } from './dynamic-background-categories'
 import { getSearchMatchPriority } from './perk-display'
 
-export type CategoryPerkGroupOption = PerkBrowserUrlPerkGroupOption & {
+export type CategoryPerkGroupOption = BuildPlannerUrlPerkGroupOption & {
   perkCount: number
 }
 

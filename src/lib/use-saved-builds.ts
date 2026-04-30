@@ -17,8 +17,8 @@ function getSavedBuildErrorMessage(error: unknown): string {
 export function useSavedBuilds({ referenceVersion }: { referenceVersion: string }): {
   deleteSavedBuild: (savedBuildId: string) => Promise<void>
   isSavedBuildsLoading: boolean
-  reloadSavedBuilds: () => Promise<void>
   saveCurrentBuild: (options: {
+    optionalPerkIds?: string[]
     name: string
     pickedPerkIds: string[]
   }) => Promise<SavedBuildRecord>
@@ -53,9 +53,11 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
   const saveCurrentBuild = useCallback(
     async ({
       name,
+      optionalPerkIds,
       pickedPerkIds,
     }: {
       name: string
+      optionalPerkIds?: string[]
       pickedPerkIds: string[]
     }): Promise<SavedBuildRecord> => {
       try {
@@ -64,6 +66,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
 
         const savedBuild = createSavedBuildRecord({
           name,
+          optionalPerkIds,
           pickedPerkIds,
           referenceVersion,
         })
@@ -138,7 +141,6 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
   return {
     deleteSavedBuild,
     isSavedBuildsLoading,
-    reloadSavedBuilds,
     saveCurrentBuild,
     savedBuildPersistenceState,
     savedBuilds,

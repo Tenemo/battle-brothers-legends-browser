@@ -1,4 +1,4 @@
-import { access, mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises'
+import { access, mkdir, mkdtemp, rm as removePath, writeFile } from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { afterEach, describe, expect, test } from 'vitest'
@@ -18,7 +18,7 @@ async function createTemporaryDirectory() {
 
 afterEach(async () => {
   for (const temporaryDirectoryPath of temporaryDirectoryPaths.splice(0)) {
-    await rm(temporaryDirectoryPath, { force: true, recursive: true })
+    await removePath(temporaryDirectoryPath, { force: true, recursive: true })
   }
 })
 

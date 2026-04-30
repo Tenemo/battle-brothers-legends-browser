@@ -7,38 +7,56 @@ export type HoveredBuildPerkTooltip = {
   perkId: string
 }
 
-type PerkGroupReference = {
+export type PerkGroupReference = {
   categoryName: string
   perkGroupId: string
 }
 
+export type BuildPerkHoverOptions = {
+  shouldEmphasizePerkGroup?: boolean
+}
+
 type SelectedPerkGroupIdsByCategory = Record<string, string[]>
+type HoveredPerkGroupReferenceSource = 'build-perk' | 'perk-group'
 
 type PerkInteractionState = {
   hoveredBuildPerkTooltip: HoveredBuildPerkTooltip | null
+  hoveredCategoryName: string | null
   hoveredPerkGroupReference: PerkGroupReference | null
+  hoveredPerkGroupReferenceSource: HoveredPerkGroupReferenceSource | null
   hoveredPerkId: string | null
 }
 
 type PerkInteractionAction =
   | { type: 'clear-all-hover' }
+  | { categoryName: string; type: 'clear-category-hover' }
   | { perkId: string; type: 'clear-build-perk-tooltip' }
   | { type: 'clear-perk-group-hover' }
   | { perkId: string; type: 'clear-perk-hover' }
   | { type: 'close-build-perk-tooltip' }
   | { perkGroupKey: string; type: 'close-perk-group-hover' }
-  | { perkId: string; type: 'open-build-perk-hover' }
+  | {
+      perkGroupReference?: PerkGroupReference
+      perkId: string
+      shouldEmphasizePerkGroup?: boolean
+      type: 'open-build-perk-hover'
+    }
   | {
       anchorRectangle: TooltipAnchorRectangle
+      perkGroupReference?: PerkGroupReference
       perkId: string
+      shouldEmphasizePerkGroup?: boolean
       type: 'open-build-perk-tooltip'
     }
+  | { categoryName: string; type: 'open-category-hover' }
   | { perkGroupReference: PerkGroupReference; type: 'open-perk-group-hover' }
   | { perkId: string; type: 'open-results-perk-hover' }
 
 const initialPerkInteractionState: PerkInteractionState = {
   hoveredBuildPerkTooltip: null,
+  hoveredCategoryName: null,
   hoveredPerkGroupReference: null,
+  hoveredPerkGroupReferenceSource: null,
   hoveredPerkId: null,
 }
 
@@ -54,6 +72,14 @@ function perkInteractionReducer(
     case 'clear-all-hover':
       return initialPerkInteractionState
 
+    case 'clear-category-hover':
+      return state.hoveredCategoryName === action.categoryName
+        ? {
+            ...state,
+            hoveredCategoryName: null,
+          }
+        : state
+
     case 'clear-build-perk-tooltip':
       return state.hoveredBuildPerkTooltip?.perkId === action.perkId
         ? {
@@ -68,12 +94,15 @@ function perkInteractionReducer(
         : {
             ...state,
             hoveredPerkGroupReference: null,
+            hoveredPerkGroupReferenceSource: null,
           }
 
     case 'clear-perk-hover':
       return state.hoveredPerkId === action.perkId
         ? {
             ...state,
+            hoveredPerkGroupReference: null,
+            hoveredPerkGroupReferenceSource: null,
             hoveredPerkId: null,
           }
         : state
@@ -91,13 +120,20 @@ function perkInteractionReducer(
         ? {
             ...state,
             hoveredPerkGroupReference: null,
+            hoveredPerkGroupReferenceSource: null,
           }
         : state
 
     case 'open-build-perk-hover':
       return {
         ...state,
-        hoveredPerkGroupReference: null,
+        hoveredCategoryName: null,
+        hoveredPerkGroupReference:
+          action.shouldEmphasizePerkGroup === false ? null : (action.perkGroupReference ?? null),
+        hoveredPerkGroupReferenceSource:
+          action.shouldEmphasizePerkGroup === false || action.perkGroupReference === undefined
+            ? null
+            : 'build-perk',
         hoveredPerkId: action.perkId,
       }
 
@@ -107,21 +143,40 @@ function perkInteractionReducer(
           anchorRectangle: action.anchorRectangle,
           perkId: action.perkId,
         },
-        hoveredPerkGroupReference: null,
+        hoveredCategoryName: null,
+        hoveredPerkGroupReference:
+          action.shouldEmphasizePerkGroup === false ? null : (action.perkGroupReference ?? null),
+        hoveredPerkGroupReferenceSource:
+          action.shouldEmphasizePerkGroup === false || action.perkGroupReference === undefined
+            ? null
+            : 'build-perk',
         hoveredPerkId: action.perkId,
+      }
+
+    case 'open-category-hover':
+      return {
+        hoveredBuildPerkTooltip: null,
+        hoveredCategoryName: action.categoryName,
+        hoveredPerkGroupReference: null,
+        hoveredPerkGroupReferenceSource: null,
+        hoveredPerkId: null,
       }
 
     case 'open-perk-group-hover':
       return {
         hoveredBuildPerkTooltip: null,
+        hoveredCategoryName: null,
         hoveredPerkGroupReference: action.perkGroupReference,
+        hoveredPerkGroupReferenceSource: 'perk-group',
         hoveredPerkId: null,
       }
 
     case 'open-results-perk-hover':
       return {
         hoveredBuildPerkTooltip: null,
+        hoveredCategoryName: null,
         hoveredPerkGroupReference: null,
+        hoveredPerkGroupReferenceSource: null,
         hoveredPerkId: action.perkId,
       }
   }
@@ -161,6 +216,27 @@ export function getCategoryOnlyEmphasisNames({
   return categoryOnlyEmphasisNames
 }
 
+export function getEmphasizedCategoryNames({
+  hoveredCategoryName,
+  selectedCategoryNames,
+  selectedPerkGroupIdsByCategory,
+}: {
+  hoveredCategoryName: string | null
+  selectedCategoryNames: string[]
+  selectedPerkGroupIdsByCategory: SelectedPerkGroupIdsByCategory
+}): Set<string> {
+  const emphasizedCategoryNames = getCategoryOnlyEmphasisNames({
+    selectedCategoryNames,
+    selectedPerkGroupIdsByCategory,
+  })
+
+  if (hoveredCategoryName !== null) {
+    emphasizedCategoryNames.add(hoveredCategoryName)
+  }
+
+  return emphasizedCategoryNames
+}
+
 export function getEmphasizedPerkGroupKeys({
   hoveredPerkGroupReference,
   selectedPerkGroupIdsByCategory,
@@ -175,6 +251,24 @@ export function getEmphasizedPerkGroupKeys({
   }
 
   return emphasizedPerkGroupKeys
+}
+
+export function getBuildPerkHighlightPerkGroupKeys({
+  hoveredPerkGroupReference,
+  hoveredPerkGroupReferenceSource,
+  selectedPerkGroupIdsByCategory,
+}: {
+  hoveredPerkGroupReference: PerkGroupReference | null
+  hoveredPerkGroupReferenceSource: HoveredPerkGroupReferenceSource | null
+  selectedPerkGroupIdsByCategory: SelectedPerkGroupIdsByCategory
+}): Set<string> {
+  const buildPerkHighlightPerkGroupKeys = getSelectedPerkGroupKeys(selectedPerkGroupIdsByCategory)
+
+  if (hoveredPerkGroupReferenceSource === 'perk-group' && hoveredPerkGroupReference !== null) {
+    buildPerkHighlightPerkGroupKeys.add(getPerkGroupHoverKey(hoveredPerkGroupReference))
+  }
+
+  return buildPerkHighlightPerkGroupKeys
 }
 
 export function usePerkInteractionState({
@@ -199,11 +293,12 @@ export function usePerkInteractionState({
     hoveredBuildPerk === null ? undefined : `build-perk-tooltip-${hoveredBuildPerk.id}`
   const emphasizedCategoryNames = useMemo(
     () =>
-      getCategoryOnlyEmphasisNames({
+      getEmphasizedCategoryNames({
+        hoveredCategoryName: state.hoveredCategoryName,
         selectedCategoryNames,
         selectedPerkGroupIdsByCategory,
       }),
-    [selectedCategoryNames, selectedPerkGroupIdsByCategory],
+    [selectedCategoryNames, selectedPerkGroupIdsByCategory, state.hoveredCategoryName],
   )
   const emphasizedPerkGroupKeys = useMemo(
     () =>
@@ -212,6 +307,19 @@ export function usePerkInteractionState({
         selectedPerkGroupIdsByCategory,
       }),
     [selectedPerkGroupIdsByCategory, state.hoveredPerkGroupReference],
+  )
+  const buildPerkHighlightPerkGroupKeys = useMemo(
+    () =>
+      getBuildPerkHighlightPerkGroupKeys({
+        hoveredPerkGroupReference: state.hoveredPerkGroupReference,
+        hoveredPerkGroupReferenceSource: state.hoveredPerkGroupReferenceSource,
+        selectedPerkGroupIdsByCategory,
+      }),
+    [
+      selectedPerkGroupIdsByCategory,
+      state.hoveredPerkGroupReference,
+      state.hoveredPerkGroupReferenceSource,
+    ],
   )
 
   function clearAllHover() {
@@ -234,7 +342,12 @@ export function usePerkInteractionState({
     dispatch({ type: 'close-build-perk-tooltip' })
   }
 
-  function openBuildPerkTooltip(perkId: string, currentTarget: HTMLElement) {
+  function openBuildPerkTooltip(
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupReference?: PerkGroupReference,
+    options: BuildPerkHoverOptions = {},
+  ) {
     const { bottom, left, right, top, width } = currentTarget.getBoundingClientRect()
 
     dispatch({
@@ -245,13 +358,24 @@ export function usePerkInteractionState({
         top,
         width,
       },
+      perkGroupReference,
       perkId,
+      shouldEmphasizePerkGroup: options.shouldEmphasizePerkGroup,
       type: 'open-build-perk-tooltip',
     })
   }
 
-  function openBuildPerkHover(perkId: string) {
-    dispatch({ perkId, type: 'open-build-perk-hover' })
+  function openBuildPerkHover(
+    perkId: string,
+    perkGroupReference?: PerkGroupReference,
+    options: BuildPerkHoverOptions = {},
+  ) {
+    dispatch({
+      perkGroupReference,
+      perkId,
+      shouldEmphasizePerkGroup: options.shouldEmphasizePerkGroup,
+      type: 'open-build-perk-hover',
+    })
   }
 
   function openResultsPerkHover(perkId: string) {
@@ -263,6 +387,14 @@ export function usePerkInteractionState({
       perkGroupReference: { categoryName, perkGroupId },
       type: 'open-perk-group-hover',
     })
+  }
+
+  function openCategoryHover(categoryName: string) {
+    dispatch({ categoryName, type: 'open-category-hover' })
+  }
+
+  function closeCategoryHover(categoryName: string) {
+    dispatch({ categoryName, type: 'clear-category-hover' })
   }
 
   function closePerkGroupHover(perkGroupKey: string) {
@@ -291,6 +423,8 @@ export function usePerkInteractionState({
     clearBuildPerkTooltip,
     clearPerkGroupHover,
     clearPerkHover,
+    buildPerkHighlightPerkGroupKeys,
+    closeCategoryHover,
     closeBuildPerkHover: clearPerkHover,
     closeBuildPerkTooltip,
     closePerkGroupHover,
@@ -302,6 +436,7 @@ export function usePerkInteractionState({
     hoveredBuildPerkTooltipId,
     hoveredPerkGroupKey,
     hoveredPerkId: state.hoveredPerkId,
+    openCategoryHover,
     openBuildPerkHover,
     openBuildPerkTooltip,
     openPerkGroupHover,

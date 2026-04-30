@@ -15,4 +15,12 @@
     local perk = ::MSU.Array.rand(this.m.FavouredEnemyPerks);
     this.addScenarioPerk(_background, perk);
   }
+
+  o.onSpawnAssets <- function ()
+  {
+    bros[1].setStartValuesEx([
+      "beast_hunter_background"
+    ]);
+    bros[1].setVeteranPerks(2);
+  }
 });

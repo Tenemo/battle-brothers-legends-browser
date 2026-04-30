@@ -2,10 +2,10 @@ import { expect, test } from '@playwright/test'
 import {
   getSidebarPerkGroupButton,
   getResultsList,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   inspectPerkFromResults,
   searchPerks,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 function readBackgroundSourceProbabilityLabel(label: string): number {
   const normalizedLabel = label.trim()
@@ -24,7 +24,7 @@ function readBackgroundSourceProbabilityLabel(label: string): number {
 }
 
 test('groups repeated background sources in the detail panel', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Perfect Focus')
   await inspectPerkFromResults(page, 'Perfect Focus')
@@ -52,7 +52,7 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
 })
 
 test('shows favoured enemy targets and scenario overlays for enemy perks', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Favoured Enemy - Beasts')
   await inspectPerkFromResults(page, 'Favoured Enemy - Beasts')
@@ -76,7 +76,7 @@ test('shows favoured enemy targets and scenario overlays for enemy perks', async
 })
 
 test('shows inferred random-fill background sources with calculated chance', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Alert')
   await inspectPerkFromResults(page, 'Alert')
@@ -94,7 +94,7 @@ test('shows inferred random-fill background sources with calculated chance', asy
 })
 
 test('merges background sources with the same probability across perk groups', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Prayer of Hope')
   await inspectPerkFromResults(page, 'Prayer of Hope')
@@ -135,7 +135,7 @@ test('merges background sources with the same probability across perk groups', a
 })
 
 test('sorts background sources from guaranteed to lowest chance', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Alert')
   await inspectPerkFromResults(page, 'Alert')
@@ -156,7 +156,7 @@ test('sorts background sources from guaranteed to lowest chance', async ({ page 
 })
 
 test('keeps raw perk group flavour strings out of perk details', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Favoured Enemy - Civilization')
   await inspectPerkFromResults(page, 'Favoured Enemy - Civilization')

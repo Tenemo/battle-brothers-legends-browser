@@ -73,6 +73,7 @@ export type LegendsBackgroundFitBackgroundDefinition = {
   >
   iconPath: string | null
   sourceFilePath: string
+  veteranPerkLevelInterval: number
 }
 
 export type LegendsBackgroundFitClassWeaponDependency = {

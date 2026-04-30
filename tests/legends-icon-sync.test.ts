@@ -14,6 +14,7 @@ const sampleDataset: LegendsPerksDataset = {
       categories: {},
       iconPath: 'ui/backgrounds/background_09.png',
       sourceFilePath: 'scripts/skills/backgrounds/farmhand_background.nut',
+      veteranPerkLevelInterval: 4,
     },
   ],
   backgroundFitRules: {
@@ -76,7 +77,10 @@ describe('legends icon sync', () => {
     expect(collectRequiredGameIconPaths(sampleDataset)).toEqual([
       'skills/passive_03.png',
       'ui/backgrounds/background_09.png',
+      'ui/items/misc/inventory_ledger_item.png',
+      'ui/items/trade/scroll.png',
       'ui/perks/clarity_circle.png',
+      'ui/traits/trait_icon_11.png',
     ])
   })
 

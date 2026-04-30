@@ -1,0 +1,80 @@
+<svg width="100%" height="100%" viewBox="-50 -50 900 900" xmlns="http://www.w3.org/2000/svg">
+<defs>
+    <linearGradient id="silverIronH" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#4a5056"/>
+        <stop offset="15%" stop-color="#f8fafd"/>
+        <stop offset="35%" stop-color="#2a2e33"/> 
+        <stop offset="60%" stop-color="#6a727a"/>
+        <stop offset="80%" stop-color="#121417"/> 
+        <stop offset="100%" stop-color="#2a2e33"/>
+    </linearGradient>
+    
+    <linearGradient id="silverIronV" x1="10%" y1="0%" x2="90%" y2="100%">
+        <stop offset="0%" stop-color="#2a2e33"/>
+        <stop offset="25%" stop-color="#b0b8c0"/>
+        <stop offset="45%" stop-color="#1a1c20"/> 
+        <stop offset="70%" stop-color="#555d64"/>
+        <stop offset="90%" stop-color="#08090a"/> 
+        <stop offset="100%" stop-color="#1c1f23"/>
+    </linearGradient>
+
+    <filter id="smoothForged" color-interpolation-filters="sRGB" x="-20%" y="-20%" width="140%" height="140%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="2" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="2.5" xChannelSelector="R" yChannelSelector="G" result="displaced" />
+        <feDropShadow dx="14" dy="22" stdDeviation="9" flood-opacity="0.65" flood-color="#000000"/>
+    </filter>
+
+    <g id="link_H_shape">
+        <path d="M -48,-38 L 48,-38 A 38 38 0 0 1 48,38 L -48,38 A 38 38 0 0 1 -48,-38 Z" fill="none" />
+    </g>
+    <g id="link_V_shape">
+        <path d="M -48,-18 L 48,-18 A 38 18 0 0 1 48,18 L -48,18 A 38 18 0 0 1 -48,-18 Z" fill="none" />
+    </g>
+
+    <g id="link_H" stroke-linecap="round" stroke-linejoin="round">
+        <use href="#link_H_shape" stroke="#0a0c0e" stroke-width="34" />
+        <use href="#link_H_shape" stroke="url(#silverIronH)" stroke-width="28" />
+        
+        <use href="#link_H_shape" stroke="#000000" stroke-width="10" stroke-opacity="0.6" transform="translate(2, 3)" />
+        <use href="#link_H_shape" stroke="#000000" stroke-width="5" stroke-opacity="0.7" transform="translate(3, 4)" />
+        
+        <use href="#link_H_shape" stroke="#ffffff" stroke-width="4" stroke-opacity="0.4" transform="translate(-1.5, -1.5)" />
+        <use href="#link_H_shape" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.8" transform="translate(-3, -3)" />
+    </g>
+
+    <g id="link_V" stroke-linecap="round" stroke-linejoin="round">
+        <use href="#link_V_shape" stroke="#0a0c0e" stroke-width="34" />
+        <use href="#link_V_shape" stroke="url(#silverIronV)" stroke-width="28" />
+        
+        <use href="#link_V_shape" stroke="#000000" stroke-width="10" stroke-opacity="0.6" transform="translate(2, 3)" />
+        <use href="#link_V_shape" stroke="#000000" stroke-width="5" stroke-opacity="0.7" transform="translate(3, 4)" />
+        
+        <use href="#link_V_shape" stroke="#ffffff" stroke-width="4" stroke-opacity="0.4" transform="translate(-1.5, -1.5)" />
+        <use href="#link_V_shape" stroke="#ffffff" stroke-width="1.5" stroke-opacity="0.8" transform="translate(-3, -3)" />
+    </g>
+
+    <clipPath id="clip_V_back">
+        <rect x="-150" y="-150" width="300" height="150.5" />
+    </clipPath>
+    <clipPath id="clip_V_front">
+        <rect x="-150" y="-0.5" width="300" height="150.5" />
+    </clipPath>
+</defs>
+
+<g filter="url(#smoothForged)">
+    <g transform="translate(120.00, 120.00) rotate(76.57)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+    <g transform="translate(197.57, 384.72) rotate(69.89)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+    <g transform="translate(323.90, 628.88) rotate(51.91)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+    <g transform="translate(559.51, 743.49) rotate(-10.24)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
+
+    <g transform="translate(155.00, 253.47) rotate(73.88)"><use href="#link_H" /></g>
+    <g transform="translate(251.54, 511.65) rotate(63.48)"><use href="#link_H" /></g>
+    <g transform="translate(426.29, 720.01) rotate(28.70)"><use href="#link_H" /></g>
+    <g transform="translate(680.00, 680.00) rotate(-42.26)"><use href="#link_H" /></g>
+
+    <g transform="translate(120.00, 120.00) rotate(76.57)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+    <g transform="translate(197.57, 384.72) rotate(69.89)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+    <g transform="translate(323.90, 628.88) rotate(51.91)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+    <g transform="translate(559.51, 743.49) rotate(-10.24)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
+</g>
+</svg>
