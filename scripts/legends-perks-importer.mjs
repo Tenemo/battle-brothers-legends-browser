@@ -27,6 +27,7 @@ const projectRootDirectoryPath = path.resolve(__dirname, '..')
 export const defaultReferenceRootDirectoryPath = defaultLegendsReferenceDirectoryPath
 
 const defaultCategoryOrder = [...dynamicBackgroundCategoryOrder]
+const fallbackVeteranPerkLevelInterval = 4
 
 export function createImporterDiagnostics() {
   return {
@@ -440,6 +441,44 @@ function extractNumericOperations(source, assignmentPrefix) {
   return operations
 }
 
+function normalizeVeteranPerkLevelInterval(value) {
+  return Number.isInteger(value) && value > 0 ? value : null
+}
+
+function extractSetVeteranPerksInterval(source, diagnosticContext = null) {
+  const intervals = []
+
+  for (const argumentList of extractCallArgumentLists(source, 'setVeteranPerks')) {
+    const intervalSource = argumentList[0]
+
+    if (!intervalSource) {
+      continue
+    }
+
+    try {
+      const interval = normalizeVeteranPerkLevelInterval(
+        numberValue(parseSquirrelValue(intervalSource).value),
+      )
+
+      if (interval !== null) {
+        intervals.push(interval)
+      }
+    } catch (error) {
+      addImporterParseWarning(diagnosticContext, 'setVeteranPerks argument', intervalSource, error)
+    }
+  }
+
+  return intervals.at(-1) ?? null
+}
+
+function parseDefaultVeteranPerkLevelInterval(fileSource, diagnosticContext = null) {
+  const interval = normalizeVeteranPerkLevelInterval(
+    numberValue(extractAssignedValue(fileSource, 'o.m.VeteranPerks', diagnosticContext)),
+  )
+
+  return interval ?? fallbackVeteranPerkLevelInterval
+}
+
 function extractCallArgumentLists(source, callee) {
   const argumentLists = []
   let searchIndex = 0
@@ -791,6 +830,7 @@ function createDefaultBackgroundDefinition(
   backgroundScriptId,
   baseDynamicTreeValue,
   baseMinimums,
+  defaultVeteranPerkLevelInterval,
   sourceFilePath,
 ) {
   return {
@@ -801,6 +841,7 @@ function createDefaultBackgroundDefinition(
     iconPath: null,
     minimums: cloneMinimums(baseMinimums),
     sourceFilePath,
+    veteranPerkLevelInterval: defaultVeteranPerkLevelInterval,
   }
 }
 
@@ -863,6 +904,7 @@ function applyBackgroundCreateBody({
     iconPath,
     minimums,
     sourceFilePath,
+    veteranPerkLevelInterval: baseBackgroundDefinition.veteranPerkLevelInterval,
   }
 }
 
@@ -871,6 +913,7 @@ function parseBackgroundHookFile(
   sourceFilePath,
   baseDynamicTreeValue,
   baseMinimums,
+  defaultVeteranPerkLevelInterval,
   diagnostics,
 ) {
   const wrapperFunction = extractHookWrapperFunction(fileSource)
@@ -892,6 +935,7 @@ function parseBackgroundHookFile(
       getBackgroundScriptIdFromSourceFilePath(sourceFilePath),
       baseDynamicTreeValue,
       baseMinimums,
+      defaultVeteranPerkLevelInterval,
       sourceFilePath,
     ),
     createBody: createFunctionLiteral.body,
@@ -907,7 +951,14 @@ function parseBackgroundHookFile(
     return null
   }
 
-  return backgroundDefinition
+  return {
+    ...backgroundDefinition,
+    veteranPerkLevelInterval:
+      extractSetVeteranPerksInterval(stripSquirrelComments(fileSource), {
+        diagnostics,
+        sourceFilePath,
+      }) ?? backgroundDefinition.veteranPerkLevelInterval,
+  }
 }
 
 function parseBackgroundScriptFileDefinition(fileSource, sourceFilePath) {
@@ -950,6 +1001,7 @@ function parseBackgroundScriptFileDefinition(fileSource, sourceFilePath) {
     createBody: createFunctionEntry.body,
     parentBackgroundScriptId: path.posix.basename(inheritedBackgroundScriptPath),
     sourceFilePath,
+    veteranPerkLevelInterval: extractSetVeteranPerksInterval(stripSquirrelComments(fileSource)),
   }
 }
 
@@ -957,6 +1009,7 @@ function resolveScriptBackgroundDefinitions(
   rawBackgroundDefinitionsByScriptId,
   baseDynamicTreeValue,
   baseMinimums,
+  defaultVeteranPerkLevelInterval,
   diagnostics,
 ) {
   const resolvedBackgroundDefinitionsByScriptId = new Map()
@@ -991,6 +1044,7 @@ function resolveScriptBackgroundDefinitions(
           backgroundScriptId,
           baseDynamicTreeValue,
           baseMinimums,
+          defaultVeteranPerkLevelInterval,
           rawBackgroundDefinition.sourceFilePath,
         )
 
@@ -1009,8 +1063,18 @@ function resolveScriptBackgroundDefinitions(
       return null
     }
 
-    resolvedBackgroundDefinitionsByScriptId.set(backgroundScriptId, resolvedBackgroundDefinition)
-    return resolvedBackgroundDefinition
+    const resolvedBackgroundDefinitionWithVeteranPerks = {
+      ...resolvedBackgroundDefinition,
+      veteranPerkLevelInterval:
+        rawBackgroundDefinition.veteranPerkLevelInterval ??
+        resolvedBackgroundDefinition.veteranPerkLevelInterval,
+    }
+
+    resolvedBackgroundDefinitionsByScriptId.set(
+      backgroundScriptId,
+      resolvedBackgroundDefinitionWithVeteranPerks,
+    )
+    return resolvedBackgroundDefinitionWithVeteranPerks
   }
 
   for (const backgroundScriptId of rawBackgroundDefinitionsByScriptId.keys()) {
@@ -1125,6 +1189,7 @@ function buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions) {
         ),
         iconPath: background.iconPath,
         sourceFilePath: background.sourceFilePath,
+        veteranPerkLevelInterval: background.veteranPerkLevelInterval,
       }
     })
     .toSorted(
@@ -1590,6 +1655,13 @@ export async function createDataset(
     'z_legends_fav_enemies.nut',
   )
   const perkGroupRulesFilePath = path.join(referenceRootDirectoryPath, 'config', 'perks_tree.nut')
+  const playerHookFilePath = path.join(
+    referenceRootDirectoryPath,
+    'hooks',
+    'entity',
+    'tactical',
+    'player.nut',
+  )
   const hookBackgroundDirectoryPath = path.join(
     referenceRootDirectoryPath,
     'hooks',
@@ -1620,6 +1692,7 @@ export async function createDataset(
     favoriteEnemyConfigFileSource,
     perkGroupRulesFileSource,
     characterBackgroundFileSource,
+    playerHookFileSource,
   ] = await Promise.all([
     readFileIfExists(characterBackgroundReferencesFilePath),
     readFile(perkDefinitionsFilePath, 'utf8'),
@@ -1628,6 +1701,7 @@ export async function createDataset(
     readFile(favoriteEnemyConfigFilePath, 'utf8'),
     readFile(perkGroupRulesFilePath, 'utf8'),
     readFile(characterBackgroundFilePath, 'utf8'),
+    readFileIfExists(playerHookFilePath),
   ])
 
   const perkStringFileEntries = (
@@ -1810,6 +1884,13 @@ export async function createDataset(
   }
 
   const baseMinimums = buildMinimumsObject(baseMinimumsValue)
+  const defaultVeteranPerkLevelInterval =
+    playerHookFileSource === null
+      ? fallbackVeteranPerkLevelInterval
+      : parseDefaultVeteranPerkLevelInterval(stripSquirrelComments(playerHookFileSource), {
+          diagnostics,
+          sourceFilePath: toPosixRelativePath(playerHookFilePath),
+        })
   const hookBackgrounds = hookBackgroundFileEntries
     .map((backgroundFileEntry) =>
       parseBackgroundHookFile(
@@ -1817,6 +1898,7 @@ export async function createDataset(
         backgroundFileEntry.sourceFilePath,
         baseDynamicTreeValue,
         baseMinimums,
+        defaultVeteranPerkLevelInterval,
         diagnostics,
       ),
     )
@@ -1839,6 +1921,7 @@ export async function createDataset(
     rawScriptBackgroundDefinitionsByScriptId,
     baseDynamicTreeValue,
     baseMinimums,
+    defaultVeteranPerkLevelInterval,
     diagnostics,
   )
   const knownBackgroundScriptIds = new Set([
@@ -2110,6 +2193,14 @@ export async function createDataset(
     { path: toPosixRelativePath(categoryOrderFilePath), role: 'perk category order' },
     { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favoured enemy metadata' },
     { path: toPosixRelativePath(perkGroupRulesFilePath), role: 'background fit rules' },
+    ...(playerHookFileSource === null
+      ? []
+      : [
+          {
+            path: toPosixRelativePath(playerHookFilePath),
+            role: 'veteran perk default',
+          },
+        ]),
     ...(characterBackgroundReferencesFileSource
       ? [
           {

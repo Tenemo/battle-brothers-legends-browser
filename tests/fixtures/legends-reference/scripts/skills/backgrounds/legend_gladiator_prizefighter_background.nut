@@ -21,4 +21,9 @@ this.legend_gladiator_prizefighter_background <- this.inherit("scripts/skills/ba
       Magic = []
     }
   }
+
+  function onAddEquipment()
+  {
+    this.getContainer().getActor().setVeteranPerks(3);
+  }
 });

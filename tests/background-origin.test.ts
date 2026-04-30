@@ -39,6 +39,7 @@ function createBackgroundFit({
     mustHaveBuildReachabilityProbability: null,
     mustHaveStudyResourceRequirement: null,
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
+    veteranPerkLevelInterval: 4,
   }
 }
 

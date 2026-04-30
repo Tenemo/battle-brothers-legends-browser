@@ -156,7 +156,8 @@
 
   .backgroundFitMatchProbabilityBadge,
   .backgroundFitDisambiguator,
-  .backgroundFitRank {
+  .backgroundFitRank,
+  .backgroundFitVeteranPerkBadge {
     @include badge-surface;
   }
 
@@ -323,6 +324,18 @@
     letter-spacing: 0;
     line-height: 1;
     white-space: nowrap;
+  }
+
+  .backgroundFitVeteranPerkBadge {
+    flex: 0 0 auto;
+    max-width: 100%;
+    padding: var(--primitive-length-0-05rem) var(--primitive-length-0-34rem);
+    color: var(--accent-soft);
+    font-size: var(--font-size-3xs);
+    letter-spacing: 0;
+    line-height: 1;
+    white-space: nowrap;
+    cursor: help;
   }
 
   .backgroundFitAccordionSummary,

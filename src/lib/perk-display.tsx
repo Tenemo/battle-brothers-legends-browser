@@ -6,6 +6,7 @@ import type {
   LegendsPerkRecord,
   LegendsPerkScenarioSource,
 } from '../types/legends-perks'
+import { formatBackgroundVeteranPerkLevelIntervalBadge } from './background-veteran-perks'
 
 export type GroupedBackgroundSource = {
   backgroundNames: string[]
@@ -304,6 +305,8 @@ export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): 
       : formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator),
     visibleBackgroundPillLabel,
     backgroundFit.backgroundId,
+    formatBackgroundVeteranPerkLevelIntervalBadge(backgroundFit.veteranPerkLevelInterval),
+    `${backgroundFit.veteranPerkLevelInterval} veteran levels`,
     sourceFileName,
     backgroundFit.sourceFilePath,
   ]

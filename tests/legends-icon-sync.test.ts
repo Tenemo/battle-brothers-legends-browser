@@ -14,6 +14,7 @@ const sampleDataset: LegendsPerksDataset = {
       categories: {},
       iconPath: 'ui/backgrounds/background_09.png',
       sourceFilePath: 'scripts/skills/backgrounds/farmhand_background.nut',
+      veteranPerkLevelInterval: 4,
     },
   ],
   backgroundFitRules: {

@@ -1,4 +1,9 @@
 import type { LegendsPerkRecord } from '../types/legends-perks'
+import {
+  areBackgroundVeteranPerkLevelIntervalsDefault,
+  baselineBackgroundVeteranPerkLevelIntervals,
+  normalizeBackgroundVeteranPerkLevelIntervals,
+} from './background-veteran-perks'
 
 export type BuildPlannerUrlPerkGroupOption = {
   perkGroupId: string
@@ -10,6 +15,7 @@ export type BuildPlannerUrlState = {
   pickedPerkIds: string[]
   query: string
   selectedCategoryNames: string[]
+  selectedBackgroundVeteranPerkLevelIntervals: number[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
   shouldAllowBackgroundStudyBook: boolean
   shouldAllowBackgroundStudyScroll: boolean
@@ -21,16 +27,19 @@ export type BuildPlannerUrlState = {
 
 export type BuildPlannerUrlStateReadOptions = {
   availableCategoryNames: string[]
+  availableBackgroundVeteranPerkLevelIntervals?: number[]
   perks: LegendsPerkRecord[]
   perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
 }
 
 export type BuildPlannerUrlStateWriteOptions = {
   availableCategoryNames: string[]
+  availableBackgroundVeteranPerkLevelIntervals?: number[]
   perksById: Map<string, LegendsPerkRecord>
   perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
   shouldWriteBackgroundStudyBookParam?: boolean
   shouldWriteBackgroundStudyScrollParam?: boolean
+  shouldWriteBackgroundVeteranPerkLevelIntervalsParam?: boolean
   shouldWriteSecondBackgroundStudyScrollParam?: boolean
   shouldWriteAncientScrollPerkGroupsParam?: boolean
   shouldWriteOriginBackgroundsParam?: boolean
@@ -42,6 +51,7 @@ const categoryParamName = 'category'
 const ancientScrollPerkGroupsParamName = 'ancient-scroll-perk-groups'
 const backgroundStudyBookParamName = 'background-book'
 const backgroundStudyScrollParamName = 'background-scroll'
+const backgroundVeteranPerkLevelIntervalsParamName = 'background-veteran-perks'
 const optionalPerksParamName = 'optional'
 const secondBackgroundStudyScrollParamName = 'background-two-scrolls'
 const originBackgroundsParamName = 'origin-backgrounds'
@@ -49,6 +59,7 @@ const originPerkGroupsParamName = 'origin-perk-groups'
 const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
+const emptyBackgroundVeteranPerkLevelIntervalsParamValue = 'none'
 
 function normalizeBackgroundStudyScrollState({
   shouldAllowBackgroundStudyScroll,
@@ -62,6 +73,21 @@ function normalizeBackgroundStudyScrollState({
     shouldAllowSecondBackgroundStudyScroll:
       shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll,
   }
+}
+
+function getAvailableBackgroundVeteranPerkLevelIntervals(
+  options: Pick<
+    BuildPlannerUrlStateReadOptions | BuildPlannerUrlStateWriteOptions,
+    'availableBackgroundVeteranPerkLevelIntervals'
+  >,
+): number[] {
+  const availableIntervals =
+    options.availableBackgroundVeteranPerkLevelIntervals ??
+    baselineBackgroundVeteranPerkLevelIntervals
+
+  return [...new Set(availableIntervals)]
+    .filter((interval) => Number.isInteger(interval) && interval > 0)
+    .toSorted((leftInterval, rightInterval) => leftInterval - rightInterval)
 }
 
 function collapseWhitespace(value: string): string {
@@ -189,6 +215,7 @@ function createDefaultUrlState(): BuildPlannerUrlState {
     pickedPerkIds: [],
     query: '',
     selectedCategoryNames: [],
+    selectedBackgroundVeteranPerkLevelIntervals: [...baselineBackgroundVeteranPerkLevelIntervals],
     selectedPerkGroupIdsByCategory: {},
     shouldAllowBackgroundStudyBook: true,
     shouldAllowBackgroundStudyScroll: true,
@@ -197,6 +224,44 @@ function createDefaultUrlState(): BuildPlannerUrlState {
     shouldIncludeOriginBackgrounds: false,
     shouldIncludeOriginPerkGroups: false,
   }
+}
+
+function readBackgroundVeteranPerkLevelIntervalsSearchParam(
+  params: URLSearchParams,
+  availableIntervals: readonly number[],
+): number[] {
+  const value = params.get(backgroundVeteranPerkLevelIntervalsParamName)
+
+  if (value === null) {
+    return [...availableIntervals]
+  }
+
+  const groupedValues = splitGroupedParamValue(value)
+
+  if (groupedValues.length === 0) {
+    return [...availableIntervals]
+  }
+
+  if (
+    groupedValues.some(
+      (groupedValue) =>
+        normalizeLookupValue(groupedValue) === emptyBackgroundVeteranPerkLevelIntervalsParamValue,
+    )
+  ) {
+    return []
+  }
+
+  const parsedIntervals = groupedValues.flatMap((groupedValue) => {
+    const parsedInterval = Number(groupedValue)
+
+    return Number.isInteger(parsedInterval) && parsedInterval > 0 ? [parsedInterval] : []
+  })
+  const normalizedIntervals = normalizeBackgroundVeteranPerkLevelIntervals(
+    parsedIntervals,
+    availableIntervals,
+  )
+
+  return normalizedIntervals.length > 0 ? normalizedIntervals : [...availableIntervals]
 }
 
 function readBooleanSearchParam(
@@ -224,6 +289,8 @@ export function readBuildPlannerUrlState(
       categoryName,
     ]),
   )
+  const availableBackgroundVeteranPerkLevelIntervals =
+    getAvailableBackgroundVeteranPerkLevelIntervals(options)
   const categoryNameByParamKey = new Map(
     options.availableCategoryNames.map((categoryName) => [
       createPerkGroupParamKey(categoryName),
@@ -280,6 +347,11 @@ export function readBuildPlannerUrlState(
     originPerkGroupsParamName,
     false,
   )
+  const selectedBackgroundVeteranPerkLevelIntervals =
+    readBackgroundVeteranPerkLevelIntervalsSearchParam(
+      params,
+      availableBackgroundVeteranPerkLevelIntervals,
+    )
   const backgroundStudyScrollState = normalizeBackgroundStudyScrollState({
     shouldAllowBackgroundStudyScroll,
     shouldAllowSecondBackgroundStudyScroll,
@@ -345,6 +417,7 @@ export function readBuildPlannerUrlState(
     selectedCategoryNames: options.availableCategoryNames.filter((categoryName) =>
       selectedCategoryNameSet.has(categoryName),
     ),
+    selectedBackgroundVeteranPerkLevelIntervals,
     selectedPerkGroupIdsByCategory,
     shouldAllowBackgroundStudyBook,
     ...backgroundStudyScrollState,
@@ -370,6 +443,8 @@ export function createBuildPlannerUrlSearch(
   const shouldWriteBackgroundStudyBookParam = options.shouldWriteBackgroundStudyBookParam ?? true
   const shouldWriteBackgroundStudyScrollParam =
     options.shouldWriteBackgroundStudyScrollParam ?? true
+  const shouldWriteBackgroundVeteranPerkLevelIntervalsParam =
+    options.shouldWriteBackgroundVeteranPerkLevelIntervalsParam ?? true
   const shouldWriteSecondBackgroundStudyScrollParam =
     options.shouldWriteSecondBackgroundStudyScrollParam ?? true
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
@@ -401,6 +476,29 @@ export function createBuildPlannerUrlSearch(
     urlState.shouldAllowSecondBackgroundStudyScroll
   ) {
     appendScalarQueryEntry(entries, secondBackgroundStudyScrollParamName, 'true')
+  }
+
+  const availableBackgroundVeteranPerkLevelIntervals =
+    getAvailableBackgroundVeteranPerkLevelIntervals(options)
+  const selectedBackgroundVeteranPerkLevelIntervals = normalizeBackgroundVeteranPerkLevelIntervals(
+    urlState.selectedBackgroundVeteranPerkLevelIntervals,
+    availableBackgroundVeteranPerkLevelIntervals,
+  )
+
+  if (
+    shouldWriteBackgroundVeteranPerkLevelIntervalsParam &&
+    !areBackgroundVeteranPerkLevelIntervalsDefault(
+      selectedBackgroundVeteranPerkLevelIntervals,
+      availableBackgroundVeteranPerkLevelIntervals,
+    )
+  ) {
+    appendGroupedQueryEntry(
+      entries,
+      backgroundVeteranPerkLevelIntervalsParamName,
+      selectedBackgroundVeteranPerkLevelIntervals.length === 0
+        ? [emptyBackgroundVeteranPerkLevelIntervalsParamValue]
+        : selectedBackgroundVeteranPerkLevelIntervals.map(String),
+    )
   }
 
   if (shouldWriteOriginBackgroundsParam && urlState.shouldIncludeOriginBackgrounds) {
@@ -462,6 +560,7 @@ export function createSharedBuildUrlSearch(
       pickedPerkIds,
       query: '',
       selectedCategoryNames: [],
+      selectedBackgroundVeteranPerkLevelIntervals: [...baselineBackgroundVeteranPerkLevelIntervals],
       selectedPerkGroupIdsByCategory: {},
       shouldAllowBackgroundStudyBook: true,
       shouldAllowBackgroundStudyScroll: true,
@@ -472,11 +571,13 @@ export function createSharedBuildUrlSearch(
     },
     {
       availableCategoryNames: [],
+      availableBackgroundVeteranPerkLevelIntervals: [],
       perksById,
       perkGroupOptionsByCategory: new Map(),
       shouldWriteAncientScrollPerkGroupsParam: false,
       shouldWriteBackgroundStudyBookParam: false,
       shouldWriteBackgroundStudyScrollParam: false,
+      shouldWriteBackgroundVeteranPerkLevelIntervalsParam: false,
       shouldWriteSecondBackgroundStudyScrollParam: false,
       shouldWriteOriginBackgroundsParam: false,
       shouldWriteOriginPerkGroupsParam: false,

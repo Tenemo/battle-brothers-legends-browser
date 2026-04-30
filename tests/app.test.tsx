@@ -291,13 +291,38 @@ describe('app', () => {
     const allowTwoScrollsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
       name: 'Allow two scrolls',
     })
+    const everyTwoVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Every 2 veteran levels',
+    })
+    const everyThreeVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Every 3 veteran levels',
+    })
+    const everyFourVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Every 4 veteran levels',
+    })
 
     expect(allowBookCheckbox).toBeChecked()
     expect(allowScrollCheckbox).toBeChecked()
     expect(allowTwoScrollsCheckbox).not.toBeChecked()
+    expect(everyTwoVeteranLevelsCheckbox).toBeChecked()
+    expect(everyThreeVeteranLevelsCheckbox).toBeChecked()
+    expect(everyFourVeteranLevelsCheckbox).toBeChecked()
     expect(window.location.search).not.toContain('background-book')
     expect(window.location.search).not.toContain('background-scroll')
     expect(window.location.search).not.toContain('background-two-scrolls')
+    expect(window.location.search).not.toContain('background-veteran-perks')
+
+    await user.click(everyTwoVeteranLevelsCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('background-veteran-perks=3,4')
+    })
+
+    await user.click(everyTwoVeteranLevelsCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('background-veteran-perks')
+    })
 
     await user.click(allowBookCheckbox)
 

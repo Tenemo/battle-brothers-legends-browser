@@ -108,6 +108,7 @@ function createBackgroundDefinition({
     categories,
     iconPath: null,
     sourceFilePath: `backgrounds/${backgroundId}.nut`,
+    veteranPerkLevelInterval: 4,
   }
 }
 

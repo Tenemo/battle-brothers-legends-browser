@@ -135,6 +135,7 @@ export type RankedBackgroundFit = {
   mustHaveBuildReachabilityProbability: number | null
   mustHaveStudyResourceRequirement: StudyResourceRequirementProfile | null
   sourceFilePath: string
+  veteranPerkLevelInterval: number
 }
 
 export type BackgroundFitView = {
@@ -2319,6 +2320,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       maximumTotalPerkGroupCount,
       matches,
       sourceFilePath: backgroundDefinition.sourceFilePath,
+      veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
     }
 
     return cachedBackgroundFitRecord.baseBackgroundFit

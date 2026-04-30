@@ -20,12 +20,18 @@ export function useBuildPlannerUrlSync(
   options: BuildPlannerUrlStateWriteOptions,
   onUrlStateChange?: (urlState: BuildPlannerUrlState) => void,
 ): void {
-  const { availableCategoryNames, perkGroupOptionsByCategory, perksById } = options
+  const {
+    availableBackgroundVeteranPerkLevelIntervals,
+    availableCategoryNames,
+    perkGroupOptionsByCategory,
+    perksById,
+  } = options
   const {
     optionalPerkIds,
     pickedPerkIds,
     query,
     selectedCategoryNames,
+    selectedBackgroundVeteranPerkLevelIntervals,
     selectedPerkGroupIdsByCategory,
     shouldAllowBackgroundStudyBook,
     shouldAllowBackgroundStudyScroll,
@@ -46,6 +52,7 @@ export function useBuildPlannerUrlSync(
         pickedPerkIds,
         query,
         selectedCategoryNames,
+        selectedBackgroundVeteranPerkLevelIntervals,
         selectedPerkGroupIdsByCategory,
         shouldAllowBackgroundStudyBook,
         shouldAllowBackgroundStudyScroll,
@@ -56,6 +63,7 @@ export function useBuildPlannerUrlSync(
       },
       {
         availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals,
         perkGroupOptionsByCategory,
         perksById,
       },
@@ -72,12 +80,14 @@ export function useBuildPlannerUrlSync(
     )
   }, [
     availableCategoryNames,
+    availableBackgroundVeteranPerkLevelIntervals,
     optionalPerkIds,
     perkGroupOptionsByCategory,
     perksById,
     pickedPerkIds,
     query,
     selectedCategoryNames,
+    selectedBackgroundVeteranPerkLevelIntervals,
     selectedPerkGroupIdsByCategory,
     shouldAllowBackgroundStudyBook,
     shouldAllowBackgroundStudyScroll,
@@ -98,6 +108,7 @@ export function useBuildPlannerUrlSync(
       handleUrlStateChange(
         readBuildPlannerUrlStateFromLocation({
           availableCategoryNames,
+          availableBackgroundVeteranPerkLevelIntervals,
           perks: [...perksById.values()],
           perkGroupOptionsByCategory,
         }),
@@ -109,5 +120,11 @@ export function useBuildPlannerUrlSync(
     return () => {
       window.removeEventListener('popstate', handlePopState)
     }
-  }, [availableCategoryNames, onUrlStateChange, perkGroupOptionsByCategory, perksById])
+  }, [
+    availableBackgroundVeteranPerkLevelIntervals,
+    availableCategoryNames,
+    onUrlStateChange,
+    perkGroupOptionsByCategory,
+    perksById,
+  ])
 }

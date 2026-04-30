@@ -22,6 +22,10 @@ import {
   backgroundStudyResourceBadgeTestId,
   getBackgroundStudyResourceBadgeDisplay,
 } from '../lib/background-study-resource-display'
+import {
+  formatBackgroundVeteranPerkLevelIntervalBadge,
+  formatBackgroundVeteranPerkLevelIntervalTitle,
+} from '../lib/background-veteran-perks'
 import type { BackgroundStudyResourceFilter } from '../lib/background-study-reachability'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
@@ -379,6 +383,12 @@ export function BackgroundFitCard({
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
+  const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
+    backgroundFit.veteranPerkLevelInterval,
+  )
+  const veteranPerkLevelIntervalTitle = formatBackgroundVeteranPerkLevelIntervalTitle(
+    backgroundFit.veteranPerkLevelInterval,
+  )
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
   const isExpanded = expandedBackgroundFitKey === backgroundFitKey
@@ -525,7 +535,7 @@ export function BackgroundFitCard({
         aria-expanded={isExpanded}
         aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background ${backgroundFit.backgroundName}${
           backgroundPillLabel ? ` (${backgroundPillLabel})` : ''
-        }`}
+        } (${veteranPerkLevelIntervalLabel} veteran perk interval)`}
         className={styles.backgroundFitAccordionTrigger}
         id={accordionButtonId}
         onClick={() => {
@@ -568,6 +578,14 @@ export function BackgroundFitCard({
                     })}
                   </span>
                 ) : null}
+                <span
+                  aria-label={`${veteranPerkLevelIntervalLabel} veteran perk interval`}
+                  className={styles.backgroundFitVeteranPerkBadge}
+                  data-testid="background-fit-veteran-perk-badge"
+                  title={veteranPerkLevelIntervalTitle}
+                >
+                  {veteranPerkLevelIntervalLabel}
+                </span>
               </div>
             </div>
 

@@ -36,6 +36,7 @@ import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
   shouldKeepPerkGroupWithOriginAndAncientScrollFilters,
 } from './lib/origin-and-ancient-scroll-perk-groups'
+import { getAvailableBackgroundVeteranPerkLevelIntervals } from './lib/background-veteran-perks'
 import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
 import { joinClassNames } from './lib/class-names'
 import {
@@ -63,6 +64,8 @@ const plannerVersion = __PLANNER_VERSION__
 const allCategoryCounts = getCategoryCounts(allPerks)
 const allPerkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
 const allAvailableCategories = [...allCategoryCounts.keys()].toSorted(compareCategoryNames)
+const availableBackgroundVeteranPerkLevelIntervals =
+  getAvailableBackgroundVeteranPerkLevelIntervals(legendsPerksDataset.backgroundFitBackgrounds)
 
 type PickedBuildPerkState = {
   isOptional: boolean
@@ -171,6 +174,7 @@ function hasActiveCategoryFilterSelection(
 export default function App() {
   const initialUrlState = useInitialBuildPlannerUrlState({
     availableCategoryNames: allAvailableCategories,
+    availableBackgroundVeteranPerkLevelIntervals,
     perks: allPerks,
     perkGroupOptionsByCategory: allPerkGroupOptionsByCategory,
   })
@@ -205,6 +209,10 @@ export default function App() {
   const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(
     initialUrlState.shouldIncludeOriginBackgrounds,
   )
+  const [
+    selectedBackgroundVeteranPerkLevelIntervals,
+    setSelectedBackgroundVeteranPerkLevelIntervals,
+  ] = useState(initialUrlState.selectedBackgroundVeteranPerkLevelIntervals)
   const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(
     getInitialBackgroundFitExpandedState,
   )
@@ -539,6 +547,9 @@ export default function App() {
         setShouldIncludeOriginPerkGroups(urlState.shouldIncludeOriginPerkGroups)
         setShouldIncludeAncientScrollPerkGroups(urlState.shouldIncludeAncientScrollPerkGroups)
         setShouldIncludeOriginBackgrounds(urlState.shouldIncludeOriginBackgrounds)
+        setSelectedBackgroundVeteranPerkLevelIntervals(
+          urlState.selectedBackgroundVeteranPerkLevelIntervals,
+        )
         clearAllHover()
         resetShareBuildStatus()
       })
@@ -552,6 +563,7 @@ export default function App() {
       pickedPerkIds,
       query,
       selectedCategoryNames,
+      selectedBackgroundVeteranPerkLevelIntervals,
       selectedPerkGroupIdsByCategory,
       shouldAllowBackgroundStudyBook,
       shouldAllowBackgroundStudyScroll,
@@ -562,6 +574,7 @@ export default function App() {
     },
     {
       availableCategoryNames: allAvailableCategories,
+      availableBackgroundVeteranPerkLevelIntervals,
       perksById: allPerksById,
       perkGroupOptionsByCategory: allPerkGroupOptionsByCategory,
     },
@@ -666,6 +679,25 @@ export default function App() {
     if (shouldAllowNextSecondBackgroundStudyScroll) {
       setShouldAllowBackgroundStudyScroll(true)
     }
+  }
+
+  function handleBackgroundVeteranPerkLevelIntervalChange(
+    interval: number,
+    shouldIncludeInterval: boolean,
+  ) {
+    setSelectedBackgroundVeteranPerkLevelIntervals((currentIntervals) => {
+      const nextIntervalSet = new Set(currentIntervals)
+
+      if (shouldIncludeInterval) {
+        nextIntervalSet.add(interval)
+      } else {
+        nextIntervalSet.delete(interval)
+      }
+
+      return availableBackgroundVeteranPerkLevelIntervals.filter((availableInterval) =>
+        nextIntervalSet.has(availableInterval),
+      )
+    })
   }
 
   function handleTogglePerkPicked(perkId: string) {
@@ -1001,6 +1033,9 @@ export default function App() {
           onOpenPerkGroupHover={openPerkGroupHover}
           onBackgroundStudyBookChange={setShouldAllowBackgroundStudyBook}
           onBackgroundStudyScrollChange={handleBackgroundStudyScrollChange}
+          onBackgroundVeteranPerkLevelIntervalChange={
+            handleBackgroundVeteranPerkLevelIntervalChange
+          }
           onOriginBackgroundsChange={setShouldIncludeOriginBackgrounds}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}
           onSecondBackgroundStudyScrollChange={handleSecondBackgroundStudyScrollChange}
@@ -1011,6 +1046,10 @@ export default function App() {
           shouldAllowBackgroundStudyBook={shouldAllowBackgroundStudyBook}
           shouldAllowBackgroundStudyScroll={shouldAllowBackgroundStudyScroll}
           shouldAllowSecondBackgroundStudyScroll={shouldAllowSecondBackgroundStudyScroll}
+          availableBackgroundVeteranPerkLevelIntervals={
+            availableBackgroundVeteranPerkLevelIntervals
+          }
+          selectedBackgroundVeteranPerkLevelIntervals={selectedBackgroundVeteranPerkLevelIntervals}
           shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 

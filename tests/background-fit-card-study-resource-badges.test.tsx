@@ -41,6 +41,7 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
     mustHaveBuildReachabilityProbability: 1,
     mustHaveStudyResourceRequirement: nativeStudyResourceRequirement,
     sourceFilePath: 'backgrounds/study_resource_badges_background.nut',
+    veteranPerkLevelInterval: 4,
     ...overrides,
   }
 }
@@ -228,6 +229,23 @@ describe('background fit card study resource badges', () => {
     expect(screen.getByText('Must-have build').closest('[title]')).toHaveAttribute(
       'title',
       'One legal native background roll without books or scrolls can cover every picked perk with a 100% chance for the must-have build.',
+    )
+  })
+
+  test('shows the veteran perk interval badge with a native tooltip', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        veteranPerkLevelInterval: 3,
+      }),
+    )
+
+    const veteranPerkBadge = screen.getByTestId('background-fit-veteran-perk-badge')
+
+    expect(veteranPerkBadge).toHaveTextContent('+3')
+    expect(veteranPerkBadge).toHaveAccessibleName('+3 veteran perk interval')
+    expect(veteranPerkBadge).toHaveAttribute(
+      'title',
+      'After level 12, this background gains 1 perk point every 3 veteran levels. The first veteran perk point is at level 15.',
     )
   })
 })

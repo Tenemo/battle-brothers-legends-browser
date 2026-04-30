@@ -84,6 +84,7 @@ describe('legends perks importer', () => {
           }),
         }),
         iconPath: 'ui/backgrounds/background_57.png',
+        veteranPerkLevelInterval: 4,
       }),
     )
   })
@@ -247,6 +248,7 @@ describe('legends perks importer', () => {
         iconPath: 'ui/backgrounds/background_gladiator_prizefighter.png',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_gladiator_prizefighter_background.nut',
+        veteranPerkLevelInterval: 3,
       }),
     )
     expect(legionaryBackground).toEqual(
@@ -256,6 +258,7 @@ describe('legends perks importer', () => {
         iconPath: 'ui/backgrounds/background_puppet.png',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_legionary_background.nut',
+        veteranPerkLevelInterval: 4,
       }),
     )
 
@@ -355,6 +358,7 @@ describe('legends perks importer', () => {
             '    // this.m.ID = "background.commented_out";',
             '    // this.m.Name = "Commented out background";',
             '    // this.m.PerkTreeDynamicMins.Enemy = 99;',
+            '    // this.getContainer().getActor().setVeteranPerks(2);',
             '    /*',
             '    this.m.PerkTreeDynamic = {',
             '      Weapon = [::Const.Perks.AxeTree],',
@@ -365,6 +369,7 @@ describe('legends perks importer', () => {
             '      Profession = [],',
             '      Magic = []',
             '    };',
+            '    this.getContainer().getActor().setVeteranPerks(2);',
             '    */',
             '    this.character_background.create();',
           ].join('\n'),
@@ -409,6 +414,7 @@ describe('legends perks importer', () => {
               perkGroupIds: [],
             }),
           }),
+          veteranPerkLevelInterval: 4,
         }),
       )
       expect(

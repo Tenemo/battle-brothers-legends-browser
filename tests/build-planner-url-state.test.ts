@@ -93,6 +93,7 @@ const perkGroupOptionsByCategory = new Map([
 const perksById = new Map(samplePerks.map((perk) => [perk.id, perk]))
 const defaultBackgroundStudyUrlState = {
   optionalPerkIds: [],
+  selectedBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
   shouldAllowBackgroundStudyBook: true,
   shouldAllowBackgroundStudyScroll: true,
   shouldAllowSecondBackgroundStudyScroll: false,
@@ -341,6 +342,7 @@ describe('build planner url state', () => {
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
+        selectedBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
         selectedPerkGroupIdsByCategory: {},
         shouldAllowBackgroundStudyBook: false,
         shouldAllowBackgroundStudyScroll: true,
@@ -370,6 +372,120 @@ describe('build planner url state', () => {
     })
   })
 
+  test('serializes and restores background veteran perk interval filters', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        optionalPerkIds: [],
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedBackgroundVeteranPerkLevelIntervals: [2, 4],
+        selectedPerkGroupIdsByCategory: {},
+        shouldAllowBackgroundStudyBook: true,
+        shouldAllowBackgroundStudyScroll: true,
+        shouldAllowSecondBackgroundStudyScroll: false,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?background-veteran-perks=2,4')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).selectedBackgroundVeteranPerkLevelIntervals,
+    ).toEqual([2, 4])
+  })
+
+  test('serializes and restores empty background veteran perk interval filters', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        optionalPerkIds: [],
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedBackgroundVeteranPerkLevelIntervals: [],
+        selectedPerkGroupIdsByCategory: {},
+        shouldAllowBackgroundStudyBook: true,
+        shouldAllowBackgroundStudyScroll: true,
+        shouldAllowSecondBackgroundStudyScroll: false,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?background-veteran-perks=none')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).selectedBackgroundVeteranPerkLevelIntervals,
+    ).toEqual([])
+  })
+
+  test('treats supplied background veteran perk intervals as the default set', () => {
+    const availableBackgroundVeteranPerkLevelIntervals = [2, 3, 4, 5]
+    const defaultSearch = createBuildPlannerUrlSearch(
+      {
+        optionalPerkIds: [],
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedBackgroundVeteranPerkLevelIntervals: availableBackgroundVeteranPerkLevelIntervals,
+        selectedPerkGroupIdsByCategory: {},
+        shouldAllowBackgroundStudyBook: true,
+        shouldAllowBackgroundStudyScroll: true,
+        shouldAllowSecondBackgroundStudyScroll: false,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(defaultSearch).toBe('')
+    expect(
+      readBuildPlannerUrlState('', {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).selectedBackgroundVeteranPerkLevelIntervals,
+    ).toEqual(availableBackgroundVeteranPerkLevelIntervals)
+    expect(
+      readBuildPlannerUrlState('?background-veteran-perks=2,missing,5', {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).selectedBackgroundVeteranPerkLevelIntervals,
+    ).toEqual([2, 5])
+  })
+
   test('normalizes impossible background study scroll combinations', () => {
     const search = createBuildPlannerUrlSearch(
       {
@@ -377,6 +493,7 @@ describe('build planner url state', () => {
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
+        selectedBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
         selectedPerkGroupIdsByCategory: {},
         shouldAllowBackgroundStudyBook: false,
         shouldAllowBackgroundStudyScroll: false,

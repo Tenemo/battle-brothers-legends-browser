@@ -502,6 +502,7 @@
     height: calc(var(--primitive-length-1-4rem) * 1.5);
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
+    margin-top: var(--primitive-length-3px);
     pointer-events: none;
     transform: translate(
       calc(var(--primitive-length-0-12rem) * -1),

@@ -2,6 +2,10 @@ import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'r
 import { joinClassNames } from '../lib/class-names'
 import type { BackgroundFitView } from '../lib/background-fit'
 import { isOriginBackgroundFit } from '../lib/background-origin'
+import {
+  areBackgroundVeteranPerkLevelIntervalsDefault,
+  formatBackgroundVeteranPerkLevelIntervalFilterLabel,
+} from '../lib/background-veteran-perks'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
@@ -34,6 +38,7 @@ export function BackgroundFitPanel({
   onOpenPerkGroupHover,
   onBackgroundStudyBookChange,
   onBackgroundStudyScrollChange,
+  onBackgroundVeteranPerkLevelIntervalChange,
   onOriginBackgroundsChange,
   onSearchActivityChange,
   onSecondBackgroundStudyScrollChange,
@@ -44,6 +49,8 @@ export function BackgroundFitPanel({
   shouldAllowBackgroundStudyBook,
   shouldAllowBackgroundStudyScroll,
   shouldAllowSecondBackgroundStudyScroll,
+  availableBackgroundVeteranPerkLevelIntervals,
+  selectedBackgroundVeteranPerkLevelIntervals,
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView | null
@@ -75,6 +82,10 @@ export function BackgroundFitPanel({
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onBackgroundStudyBookChange: (shouldAllowBackgroundStudyBook: boolean) => void
   onBackgroundStudyScrollChange: (shouldAllowBackgroundStudyScroll: boolean) => void
+  onBackgroundVeteranPerkLevelIntervalChange: (
+    interval: number,
+    shouldIncludeInterval: boolean,
+  ) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
   onSecondBackgroundStudyScrollChange: (shouldAllowSecondBackgroundStudyScroll: boolean) => void
@@ -85,6 +96,8 @@ export function BackgroundFitPanel({
   shouldAllowBackgroundStudyBook: boolean
   shouldAllowBackgroundStudyScroll: boolean
   shouldAllowSecondBackgroundStudyScroll: boolean
+  availableBackgroundVeteranPerkLevelIntervals: number[]
+  selectedBackgroundVeteranPerkLevelIntervals: number[]
   shouldIncludeOriginBackgrounds: boolean
 }) {
   const effectiveBackgroundFitView = backgroundFitView ?? emptyBackgroundFitView
@@ -109,11 +122,19 @@ export function BackgroundFitPanel({
   const hasBuildReachabilityProbability = effectiveBackgroundFitView.rankedBackgroundFits.some(
     (backgroundFit) => backgroundFit.buildReachabilityProbability !== null,
   )
+  const selectedBackgroundVeteranPerkLevelIntervalSet = useMemo(
+    () => new Set(selectedBackgroundVeteranPerkLevelIntervals),
+    [selectedBackgroundVeteranPerkLevelIntervals],
+  )
   const hasActiveBackgroundFilter =
     shouldIncludeOriginBackgrounds ||
     !shouldAllowBackgroundStudyBook ||
     !shouldAllowBackgroundStudyScroll ||
-    shouldAllowSecondBackgroundStudyScroll
+    shouldAllowSecondBackgroundStudyScroll ||
+    !areBackgroundVeteranPerkLevelIntervalsDefault(
+      selectedBackgroundVeteranPerkLevelIntervals,
+      availableBackgroundVeteranPerkLevelIntervals,
+    )
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
   const shouldShowBackgroundFitTargetSummary = hasPickedPerks && !isLoadingBackgroundFitView
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
@@ -128,12 +149,23 @@ export function BackgroundFitPanel({
           return false
         }
 
+        if (
+          !selectedBackgroundVeteranPerkLevelIntervalSet.has(backgroundFit.veteranPerkLevelInterval)
+        ) {
+          return false
+        }
+
         return (
           normalizedBackgroundFitQuery.length === 0 ||
           getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery)
         )
       }),
-    [effectiveBackgroundFitView, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds],
+    [
+      effectiveBackgroundFitView,
+      normalizedBackgroundFitQuery,
+      selectedBackgroundVeteranPerkLevelIntervalSet,
+      shouldIncludeOriginBackgrounds,
+    ],
   )
   const rankedBackgroundFitIndexByKey = useMemo(
     () =>
@@ -189,7 +221,12 @@ export function BackgroundFitPanel({
     }
 
     backgroundFitResultsScroll.scrollTop = 0
-  }, [isExpanded, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds])
+  }, [
+    isExpanded,
+    normalizedBackgroundFitQuery,
+    selectedBackgroundVeteranPerkLevelIntervalSet,
+    shouldIncludeOriginBackgrounds,
+  ])
 
   useEffect(() => {
     if (!isBackgroundFilterMenuOpen) {
@@ -335,6 +372,23 @@ export function BackgroundFitPanel({
                       />
                       <span>Allow two scrolls</span>
                     </label>
+                    {availableBackgroundVeteranPerkLevelIntervals.map((interval) => (
+                      <label className={sharedStyles.filterOption} key={interval}>
+                        <input
+                          checked={selectedBackgroundVeteranPerkLevelIntervalSet.has(interval)}
+                          data-testid={`background-veteran-perk-${interval}-checkbox`}
+                          onChange={(event) => {
+                            clearBackgroundFitInteractiveHover()
+                            onBackgroundVeteranPerkLevelIntervalChange(
+                              interval,
+                              event.target.checked,
+                            )
+                          }}
+                          type="checkbox"
+                        />
+                        <span>{formatBackgroundVeteranPerkLevelIntervalFilterLabel(interval)}</span>
+                      </label>
+                    ))}
                   </div>
                 ) : null}
               </div>
