@@ -99,6 +99,51 @@ test('keeps local save and load controls usable on mobile', async ({ page }) => 
   await expectNoDocumentHorizontalOverflow(page)
 })
 
+test('overwrites a saved build after confirmation', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
+  await page.getByLabel('Build name').fill('Overwrite target')
+  await page.getByRole('button', { exact: true, name: 'Save current' }).click()
+  await expect(page.getByRole('status')).toHaveText('Saved build')
+  await page.getByRole('button', { name: 'Close saved builds' }).click()
+
+  await clearBuildWithConfirmation(page)
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
+
+  const savedBuild = page
+    .getByTestId('saved-builds-list')
+    .getByTestId('saved-build-card')
+    .filter({ hasText: 'Overwrite target' })
+  const overwriteSavedBuildButton = savedBuild.getByRole('button', {
+    name: 'Overwrite saved build Overwrite target',
+  })
+
+  await expect(overwriteSavedBuildButton).toHaveText('Overwrite')
+  await overwriteSavedBuildButton.click()
+  await expect(
+    savedBuild.getByRole('button', { name: 'Confirm overwrite saved build Overwrite target' }),
+  ).toHaveText('Confirm?')
+  await savedBuild
+    .getByRole('button', { name: 'Confirm overwrite saved build Overwrite target' })
+    .click()
+  await expect(page.getByRole('status')).toHaveText('Saved build')
+
+  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await clearBuildWithConfirmation(page)
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
+  await savedBuild.getByRole('button', { name: 'Load saved build Overwrite target' }).click()
+
+  await expect(getBuildPerksBar(page).getByText('Axe Mastery')).toBeVisible()
+  await expect(getBuildPerksBar(page).getByText('Clarity')).toHaveCount(0)
+})
+
 test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => {
   await gotoBuildPlanner(page)
 

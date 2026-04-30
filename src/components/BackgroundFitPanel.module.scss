@@ -124,6 +124,29 @@
     padding-right: var(--primitive-length-0-18rem);
   }
 
+  .backgroundFitProgressBar {
+    width: 100%;
+    height: var(--primitive-length-0-42rem);
+    overflow: hidden;
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-pill);
+    background: var(--surface-control);
+
+    &::-webkit-progress-bar {
+      background: var(--surface-control);
+    }
+
+    &::-webkit-progress-value {
+      border-radius: inherit;
+      background: var(--accent-soft);
+    }
+
+    &::-moz-progress-bar {
+      border-radius: inherit;
+      background: var(--accent-soft);
+    }
+  }
+
   .backgroundFitPerkGroupMain {
     display: flex;
     gap: var(--space-md);

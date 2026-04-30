@@ -147,6 +147,23 @@ export function DetailPanelRailChevron({
   )
 }
 
+export function CategorySidebarRailChevron({
+  className,
+  isExpanded,
+}: {
+  className: string
+  isExpanded: boolean
+}) {
+  return (
+    <ChevronRight
+      aria-hidden="true"
+      className={className}
+      data-expanded={isExpanded}
+      strokeWidth={railChevronStrokeWidth}
+    />
+  )
+}
+
 export function FunnelIcon({
   className,
   isFilled = false,

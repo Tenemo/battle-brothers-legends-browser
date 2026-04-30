@@ -1,6 +1,6 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { joinClassNames } from '../lib/class-names'
-import type { BackgroundFitView } from '../lib/background-fit'
+import type { BackgroundFitCalculationProgress, BackgroundFitView } from '../lib/background-fit'
 import { isOriginBackgroundFit } from '../lib/background-origin'
 import {
   areBackgroundVeteranPerkLevelIntervalsDefault,
@@ -26,6 +26,7 @@ export function BackgroundFitPanel({
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
   backgroundFitErrorMessage,
+  backgroundFitProgress,
   isExpanded,
   isLoadingBackgroundFitView,
   onCloseBuildPerkHover,
@@ -61,6 +62,7 @@ export function BackgroundFitPanel({
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
   backgroundFitErrorMessage: string | null
+  backgroundFitProgress: BackgroundFitCalculationProgress | null
   isExpanded: boolean
   isLoadingBackgroundFitView: boolean
   onCloseBuildPerkHover: (perkId: string) => void
@@ -451,7 +453,19 @@ export function BackgroundFitPanel({
               </div>
             ) : isLoadingBackgroundFitView ? (
               <div className={styles.backgroundFitEmptyState}>
-                <p className={styles.backgroundFitSummaryCopy}>Calculating background fits.</p>
+                <p className={styles.backgroundFitSummaryCopy}>
+                  {backgroundFitProgress && backgroundFitProgress.totalBackgroundCount > 0
+                    ? `Checking backgrounds ${backgroundFitProgress.checkedBackgroundCount}/${backgroundFitProgress.totalBackgroundCount}.`
+                    : 'Calculating background fits.'}
+                </p>
+                {backgroundFitProgress && backgroundFitProgress.totalBackgroundCount > 0 ? (
+                  <progress
+                    aria-label="Background fit progress"
+                    className={styles.backgroundFitProgressBar}
+                    max={backgroundFitProgress.totalBackgroundCount}
+                    value={backgroundFitProgress.checkedBackgroundCount}
+                  />
+                ) : null}
               </div>
             ) : visibleRankedBackgroundFits.length > 0 ? (
               <ol className={styles.backgroundFitRanking} data-testid="background-fit-ranking">

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { SavedBuildsDialog } from '../src/components/SavedBuildsDialog'
 import type { SavedBuildPersistenceState } from '../src/lib/saved-builds-storage'
@@ -23,6 +24,7 @@ function renderSavedBuildsDialog(savedBuildPersistenceState: SavedBuildPersisten
       onCopySavedBuildLink={vi.fn(async () => undefined)}
       onDeleteSavedBuild={vi.fn(async () => undefined)}
       onLoadSavedBuild={vi.fn()}
+      onOverwriteSavedBuild={vi.fn(async () => undefined)}
       onSaveCurrentBuild={vi.fn(async () => undefined)}
       pickedPerks={[]}
       savedBuildOperationStatus="idle"
@@ -53,6 +55,7 @@ describe('saved builds dialog', () => {
         onCopySavedBuildLink={vi.fn(async () => undefined)}
         onDeleteSavedBuild={vi.fn(async () => undefined)}
         onLoadSavedBuild={vi.fn()}
+        onOverwriteSavedBuild={vi.fn(async () => undefined)}
         onSaveCurrentBuild={vi.fn(async () => undefined)}
         pickedPerks={[]}
         savedBuildOperationStatus="idle"
@@ -77,6 +80,7 @@ describe('saved builds dialog', () => {
         onCopySavedBuildLink={vi.fn(async () => undefined)}
         onDeleteSavedBuild={vi.fn(async () => undefined)}
         onLoadSavedBuild={vi.fn()}
+        onOverwriteSavedBuild={vi.fn(async () => undefined)}
         onSaveCurrentBuild={vi.fn(async () => undefined)}
         pickedPerks={[]}
         savedBuildOperationStatus="idle"
@@ -101,6 +105,7 @@ describe('saved builds dialog', () => {
         onCopySavedBuildLink={vi.fn(async () => undefined)}
         onDeleteSavedBuild={vi.fn(async () => undefined)}
         onLoadSavedBuild={vi.fn()}
+        onOverwriteSavedBuild={vi.fn(async () => undefined)}
         onSaveCurrentBuild={vi.fn(async () => undefined)}
         pickedPerks={[]}
         savedBuildOperationStatus="idle"
@@ -125,5 +130,61 @@ describe('saved builds dialog', () => {
     expect(screen.getByRole('button', { name: 'Load saved build Calm focus' })).toHaveTextContent(
       'Load build',
     )
+  })
+
+  test('requires a second click before overwriting a saved build', async () => {
+    const user = userEvent.setup()
+    const onOverwriteSavedBuild = vi.fn(async () => undefined)
+
+    render(
+      <SavedBuildsDialog
+        isSavedBuildsLoading={false}
+        onClose={vi.fn()}
+        onCopySavedBuildLink={vi.fn(async () => undefined)}
+        onDeleteSavedBuild={vi.fn(async () => undefined)}
+        onLoadSavedBuild={vi.fn()}
+        onOverwriteSavedBuild={onOverwriteSavedBuild}
+        onSaveCurrentBuild={vi.fn(async () => undefined)}
+        pickedPerks={[
+          {
+            backgroundSources: [],
+            categoryNames: ['Traits'],
+            descriptionParagraphs: ['Calm focus'],
+            iconPath: null,
+            id: 'perk.legend_clarity',
+            isOptional: false,
+            perkConstName: 'LegendClarity',
+            perkName: 'Clarity',
+            placements: [],
+            primaryCategoryName: 'Traits',
+            scenarioSources: [],
+            searchText: 'Clarity',
+          },
+        ]}
+        savedBuildOperationStatus="idle"
+        savedBuildPersistenceState="best-effort"
+        savedBuilds={[savedBuild]}
+        savedBuildsErrorMessage={null}
+      />,
+    )
+
+    const overwriteSavedBuildButton = screen.getByRole('button', {
+      name: 'Overwrite saved build Calm focus',
+    })
+
+    expect(overwriteSavedBuildButton).toHaveTextContent('Overwrite')
+
+    await user.click(overwriteSavedBuildButton)
+
+    expect(onOverwriteSavedBuild).not.toHaveBeenCalled()
+    expect(
+      screen.getByRole('button', { name: 'Confirm overwrite saved build Calm focus' }),
+    ).toHaveTextContent('Confirm?')
+
+    await user.click(
+      screen.getByRole('button', { name: 'Confirm overwrite saved build Calm focus' }),
+    )
+
+    expect(onOverwriteSavedBuild).toHaveBeenCalledWith('saved-build-clarity')
   })
 })

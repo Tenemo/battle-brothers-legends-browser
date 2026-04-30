@@ -217,8 +217,8 @@
       --workspace-background-fit-column: auto;
     }
 
-    &[data-detail-collapsed='true'] {
-      --workspace-detail-column: auto;
+    &[data-category-collapsed='true'] {
+      --workspace-category-column: auto;
     }
   }
 

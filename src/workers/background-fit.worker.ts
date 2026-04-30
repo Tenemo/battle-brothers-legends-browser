@@ -42,6 +42,17 @@ function calculateBackgroundFitView(request: BackgroundFitWorkerRequest) {
   })
 
   return backgroundFitEngine.getBackgroundFitView(pickedPerks, request.studyResourceFilter, {
+    onProgress(progress) {
+      if (request.requestId !== latestRequestId) {
+        return
+      }
+
+      postBackgroundFitResponse({
+        progress,
+        requestId: request.requestId,
+        type: 'background-fit-progress',
+      })
+    },
     optionalPickedPerkIds: new Set(request.optionalPickedPerkIds),
   })
 }

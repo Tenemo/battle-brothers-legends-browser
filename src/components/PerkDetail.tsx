@@ -10,7 +10,7 @@ import { getTierLabel } from '../lib/perk-search'
 import type { LegendsFavouredEnemyTarget, LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
-import { BuildToggleButton, DetailPanelRailChevron } from './SharedControls'
+import { BuildToggleButton } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkDetail.module.scss'
 
@@ -21,7 +21,6 @@ type PerkDetailProps = {
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
-  isExpanded: boolean
   isSelectedPerkPicked: boolean
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
@@ -35,7 +34,6 @@ type PerkDetailProps = {
     perkGroupSelection?: BuildPerkPillSelection,
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  onToggleExpanded: () => void
   onTogglePerkPicked: (perkId: string) => void
   selectedPerk: LegendsPerkRecord | null
 }
@@ -80,7 +78,6 @@ export function PerkDetail({
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
-  isExpanded,
   isSelectedPerkPicked,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
@@ -90,7 +87,6 @@ export function PerkDetail({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
-  onToggleExpanded,
   onTogglePerkPicked,
   selectedPerk,
 }: PerkDetailProps) {
@@ -98,34 +94,13 @@ export function PerkDetail({
     <aside
       aria-label="Perk details"
       className={styles.detailPanel}
-      data-expanded={isExpanded}
       data-testid="perk-detail-panel"
     >
-      <button
-        aria-expanded={isExpanded}
-        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} perk details`}
-        className={styles.detailPanelRailButton}
-        onClick={onToggleExpanded}
-        type="button"
-      >
-        <span aria-hidden="true" className={styles.detailPanelRailButtonIcon}>
-          <DetailPanelRailChevron
-            className={styles.detailPanelRailChevron}
-            isExpanded={isExpanded}
-          />
-        </span>
-        <span aria-hidden="true" className={styles.detailPanelRailButtonLabel}>
-          Perk details
-        </span>
-      </button>
-
       <div
-        aria-hidden={!isExpanded}
         aria-live="polite"
         className={joinClassNames(styles.detailPanelBody, 'app-scrollbar')}
         data-scroll-container="true"
         data-testid="perk-detail-panel-body"
-        hidden={!isExpanded}
       >
         {selectedPerk === null ? (
           <div className={sharedStyles.emptyState} data-testid="empty-state">

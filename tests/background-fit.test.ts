@@ -1366,6 +1366,38 @@ describe('background fit', () => {
     )
   })
 
+  test('reports progress for each checked background while dropping zero must-have matches', () => {
+    const progressLabels: string[] = []
+    const calmOnlyBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_only',
+      backgroundName: 'Calm only',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const emptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.empty',
+      backgroundName: 'Empty',
+      overrides: {},
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [calmOnlyBackground, emptyBackground],
+    })
+
+    const backgroundFitView = engine.getBackgroundFitView([samplePerks[4]], noStudyResources, {
+      onProgress(progress) {
+        progressLabels.push(
+          `${progress.checkedBackgroundCount}/${progress.totalBackgroundCount}`,
+        )
+      },
+    })
+
+    expect(progressLabels).toEqual(['0/2', '1/2', '2/2'])
+    expect(backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId))
+      .toEqual(['background.calm_only'])
+  })
+
   test('calculates small non-zero full build chances for dense real background fits', () => {
     const denseBuildPerkNames = [
       'Student',

@@ -109,6 +109,7 @@ export function BuildPlanner({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
+  onOverwriteSavedBuild,
   onRemovePickedPerk,
   onTogglePickedPerkOptional,
   onSaveCurrentBuild,
@@ -147,6 +148,7 @@ export function BuildPlanner({
     perkGroupSelection?: PlannerPerkGroupSelection,
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onOverwriteSavedBuild: (savedBuildId: string) => Promise<void>
   onRemovePickedPerk: (perkId: string) => void
   onTogglePickedPerkOptional: (perkId: string) => void
   onSaveCurrentBuild: (name: string) => Promise<void>
@@ -332,6 +334,7 @@ export function BuildPlanner({
           onCopySavedBuildLink={onCopySavedBuildLink}
           onDeleteSavedBuild={onDeleteSavedBuild}
           onLoadSavedBuild={onLoadSavedBuild}
+          onOverwriteSavedBuild={onOverwriteSavedBuild}
           onSaveCurrentBuild={onSaveCurrentBuild}
           pickedPerks={pickedPerks}
           savedBuildOperationStatus={savedBuildOperationStatus}

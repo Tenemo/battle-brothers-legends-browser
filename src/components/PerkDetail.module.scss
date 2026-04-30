@@ -2,40 +2,18 @@
 
 @layer components {
   .detailPanel {
+    display: flex;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding: 0;
     width: 100%;
 
-    @include rail-panel-shell(
-      '.detailPanelBody',
-      '.detailPanelRailButtonLabel',
-      translateX(var(--font-size-xl)),
-      translateY(var(--primitive-length-0-45rem))
-    );
+    @include rounded-panel;
   }
 
   .detailPanelBody {
     @include rail-panel-body(var(--space-xl), auto);
-  }
-
-  .detailPanelRailButton {
-    border-right: var(--primitive-length-1px) solid var(--border-muted);
-
-    @include rail-button;
-  }
-
-  .detailPanelRailButtonIcon {
-    @include rail-button-icon;
-  }
-
-  .detailPanelRailChevron {
-    @include rail-chevron;
-  }
-
-  .detailPanel[data-expanded='false'] .detailPanelRailChevron {
-    transform: rotate(180deg);
-  }
-
-  .detailPanelRailButtonLabel {
-    @include rail-label;
   }
 
   .detailHeader {
@@ -215,59 +193,19 @@
       flex-direction: column;
       width: 100%;
       height: auto;
-      min-height: var(--rail-button-mobile-min-height);
+      min-height: var(--primitive-length-12rem);
       order: 2;
-
-      &[data-expanded='false'] {
-        width: 100%;
-
-        .detailPanelBody {
-          transform: translateY(var(--primitive-length-negative-0-45rem));
-        }
-
-        .detailPanelRailChevron {
-          transform: none;
-        }
-      }
-
-      &[data-expanded='true'] {
-        min-height: var(--primitive-length-12rem);
-      }
-    }
-
-    .detailPanelRailButton {
-      border-right: 0;
-
-      @include mobile-rail;
     }
 
     .detailPanelBody {
-      order: 1;
       max-height: min(var(--primitive-length-36rem), var(--primitive-length-70vh));
       transform: translateY(0);
-    }
-
-    .detailPanelRailButtonLabel,
-    .detailPanel[data-expanded='true'] .detailPanelRailButtonLabel {
-      max-height: none;
-      overflow: visible;
-      opacity: 1;
-      writing-mode: horizontal-tb;
-      transform: none;
-    }
-
-    .detailPanelRailChevron[data-expanded='true'] {
-      transform: rotate(90deg);
     }
   }
 
   @include mobile {
     .detailPanelBody {
       max-height: var(--primitive-length-24rem);
-    }
-
-    .detailPanelRailButton {
-      min-height: var(--primitive-length-2-72rem);
     }
 
     .detailHeader,

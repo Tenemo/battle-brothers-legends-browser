@@ -2,12 +2,43 @@
 
 @layer components {
   .sidebar {
+    width: 100%;
+
+    @include rail-panel-shell(
+      '.sidebarBody',
+      '.categorySidebarRailButtonLabel',
+      translateX(var(--font-size-xl)),
+      translateY(var(--primitive-length-0-45rem))
+    );
+  }
+
+  .sidebarBody {
+    @include rail-panel-body(var(--space-xl), auto);
+
     height: 100%;
     min-height: 0;
-    overflow: auto;
-    padding: var(--space-xl);
+  }
 
-    @include rounded-panel;
+  .categorySidebarRailButton {
+    border-right: var(--primitive-length-1px) solid var(--border-muted);
+
+    @include rail-button;
+  }
+
+  .categorySidebarRailButtonIcon {
+    @include rail-button-icon;
+  }
+
+  .categorySidebarRailChevron {
+    @include rail-chevron;
+  }
+
+  .sidebar[data-expanded='false'] .categorySidebarRailChevron {
+    transform: rotate(180deg);
+  }
+
+  .categorySidebarRailButtonLabel {
+    @include rail-label;
   }
 
   .panelHeading {
@@ -268,14 +299,63 @@
 
   @include below-desktop {
     .sidebar {
+      flex-direction: column;
       height: auto;
       min-height: 0;
       order: 3;
+
+      &[data-expanded='false'] {
+        width: 100%;
+
+        .sidebarBody {
+          transform: translateY(var(--primitive-length-negative-0-45rem));
+        }
+
+        .categorySidebarRailChevron {
+          transform: none;
+        }
+      }
+
+      &[data-expanded='true'] {
+        min-height: var(--primitive-length-12rem);
+      }
+    }
+
+    .categorySidebarRailButton {
+      border-right: 0;
+
+      @include mobile-rail;
+    }
+
+    .sidebarBody {
+      order: 1;
+      max-height: min(var(--primitive-length-36rem), var(--primitive-length-70vh));
+      transform: translateY(0);
+    }
+
+    .categorySidebarRailButtonLabel,
+    .sidebar[data-expanded='true'] .categorySidebarRailButtonLabel {
+      max-height: none;
       overflow: visible;
+      opacity: 1;
+      writing-mode: horizontal-tb;
+      transform: none;
+    }
+
+    .categorySidebarRailChevron[data-expanded='true'] {
+      transform: rotate(90deg);
     }
   }
 
   @include mobile {
+    .sidebarBody {
+      max-height: var(--primitive-length-24rem);
+    }
+
+    .categorySidebarRailButton {
+      min-height: var(--primitive-length-2-72rem);
+    }
+
     .categoryChipFrame,
     .categoryDisclosureButton,
     .categorySelectButton,
