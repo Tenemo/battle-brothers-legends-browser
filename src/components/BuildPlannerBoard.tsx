@@ -72,19 +72,19 @@ function isPlannerPerkGroupOptionEmphasized({
 }
 
 function getHighlightedBuildPerkIdsForEmphasis({
+  buildPerkHighlightPerkGroupKeys,
   emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
   individualPerkGroups,
   sharedPerkGroups,
 }: {
+  buildPerkHighlightPerkGroupKeys: ReadonlySet<string>
   emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
   individualPerkGroups: BuildPlannerGroupedPerkGroup[]
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }): Set<string> {
   const highlightedBuildPerkIds = new Set<string>()
 
-  if (emphasizedCategoryNames.size === 0 && emphasizedPerkGroupKeys.size === 0) {
+  if (emphasizedCategoryNames.size === 0 && buildPerkHighlightPerkGroupKeys.size === 0) {
     return highlightedBuildPerkIds
   }
 
@@ -92,7 +92,7 @@ function getHighlightedBuildPerkIdsForEmphasis({
     const isMatchingGroup = plannerPerkGroup.perkGroupOptions.some((perkGroupOption) =>
       isPlannerPerkGroupOptionEmphasized({
         emphasizedCategoryNames,
-        emphasizedPerkGroupKeys,
+        emphasizedPerkGroupKeys: buildPerkHighlightPerkGroupKeys,
         perkGroupOption,
       }),
     )
@@ -266,6 +266,7 @@ function renderPlannerGroupCard({
 
 export function BuildPlannerBoard({
   activeBuildPerkTooltipIndicatorPerkId,
+  buildPerkHighlightPerkGroupKeys,
   clearPendingBuildPerkTooltip,
   closeBuildPerkTooltipPreview,
   emphasizedCategoryNames,
@@ -294,6 +295,7 @@ export function BuildPlannerBoard({
   sharedPerkGroups,
 }: {
   activeBuildPerkTooltipIndicatorPerkId: string | null
+  buildPerkHighlightPerkGroupKeys: ReadonlySet<string>
   clearPendingBuildPerkTooltip: () => void
   closeBuildPerkTooltipPreview: (perkId: string, relatedTarget?: EventTarget | null) => void
   emphasizedCategoryNames: ReadonlySet<string>
@@ -336,8 +338,8 @@ export function BuildPlannerBoard({
   const hasPickedPerks = pickedPerks.length > 0
   const hasIndividualPerkGroups = individualPerkGroups.length > 0
   const highlightedBuildPerkIdsForEmphasis = getHighlightedBuildPerkIdsForEmphasis({
+    buildPerkHighlightPerkGroupKeys,
     emphasizedCategoryNames,
-    emphasizedPerkGroupKeys,
     individualPerkGroups,
     sharedPerkGroups,
   })
@@ -438,6 +440,20 @@ export function BuildPlannerBoard({
                     onMouseLeave={(event) =>
                       closeBuildPerkTooltipPreview(pickedPerk.id, event.relatedTarget)
                     }
+                    onMouseMove={(event) => {
+                      if (
+                        hoveredBuildPerkId === pickedPerk.id ||
+                        activeBuildPerkTooltipIndicatorPerkId === pickedPerk.id
+                      ) {
+                        return
+                      }
+
+                      openBuildPerkTooltipPreview(
+                        pickedPerk.id,
+                        event.currentTarget,
+                        primaryPerkGroupSelection,
+                      )
+                    }}
                   >
                     {!pickedPerk.isOptional ? <PlannerSlotRequirementChain /> : null}
                     <button

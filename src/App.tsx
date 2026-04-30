@@ -225,6 +225,7 @@ export default function App() {
     clearBuildPerkTooltip,
     clearPerkGroupHover,
     clearPerkHover,
+    buildPerkHighlightPerkGroupKeys,
     closeCategoryHover,
     closeBuildPerkHover,
     closeBuildPerkTooltip,
@@ -973,6 +974,7 @@ export default function App() {
 
       <BuildPlanner
         hasActiveBackgroundFitSearch={hasActiveBackgroundFitSearch}
+        buildPerkHighlightPerkGroupKeys={buildPerkHighlightPerkGroupKeys}
         emphasizedCategoryNames={emphasizedCategoryNames}
         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
         hoveredBuildPerk={hoveredBuildPerk}

@@ -1269,6 +1269,40 @@ test('separates planner group card hover from icon and perk pill hover states', 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 })
 
+test('keeps picked perk hover from highlighting peer picked perks in the same group', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await page.goto(createBuildUrl(['Battle Forged', 'Immovable Object', 'Steadfast', 'Brawny']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const buildPerksBar = getBuildPerksBar(page)
+  const battleForgedPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Battle Forged' })
+  const immovableObjectPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Immovable Object' })
+  const steadfastPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Steadfast' })
+  const brawnyPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Brawny' })
+  const heavyArmorGroupCard = getBuildSharedGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Heavy Armor' })
+
+  await battleForgedPickedPerkTile.hover()
+
+  await expect(heavyArmorGroupCard).toHaveAttribute('data-has-highlighted-perk', 'true')
+  await expect(battleForgedPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+  await expect(immovableObjectPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect(steadfastPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect(brawnyPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+})
+
 test('keeps long planner group names compact without category text', async ({ page }) => {
   await gotoBuildPlanner(page)
 
@@ -2035,6 +2069,43 @@ test('cancels a picked perk tooltip timer before marking the perk optional', asy
 
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
+})
+
+test('starts a picked perk tooltip timer from mouse movement after marking the perk optional', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
+  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const buildPerksBar = getBuildPerksBar(page)
+  const clarityPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Clarity' })
+
+  await clarityPickedPerkTile.hover()
+  await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 1000,
+  })
+  await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
+
+  const optionalClarityPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Clarity' })
+
+  await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-requirement', 'optional')
+  await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
+  await optionalClarityPickedPerkTile.dispatchEvent('mousemove', {
+    bubbles: true,
+    clientX: 32,
+    clientY: 32,
+  })
+
+  await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 1000,
+  })
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
+  await expect(page.getByRole('tooltip')).toContainText(/An additional \+10% of any damage/i)
 })
 
 test('keeps picked perk word layout unchanged on hover', async ({ page }) => {

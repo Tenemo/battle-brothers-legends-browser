@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest'
 import {
+  getBuildPerkHighlightPerkGroupKeys,
   getCategoryOnlyEmphasisNames,
   getEmphasizedCategoryNames,
   getEmphasizedPerkGroupKeys,
@@ -69,5 +70,40 @@ describe('perk interaction state selectors', () => {
         }),
       ),
     ).toEqual(['Magic::DeadeyeTree', 'Traits::CalmTree', 'Traits::LargeTree', 'Weapon::AxeTree'])
+  })
+
+  test('keeps build perk hover groups from highlighting peer build perks', () => {
+    expect(
+      getSortedSetValues(
+        getBuildPerkHighlightPerkGroupKeys({
+          hoveredPerkGroupReference: {
+            categoryName: 'Weapon',
+            perkGroupId: 'AxeTree',
+          },
+          hoveredPerkGroupReferenceSource: 'build-perk',
+          selectedPerkGroupIdsByCategory: {
+            Magic: ['DeadeyeTree'],
+            Weapon: ['SwordTree'],
+          },
+        }),
+      ),
+    ).toEqual(['Magic::DeadeyeTree', 'Weapon::SwordTree'])
+  })
+
+  test('uses directly hovered groups to highlight matching build perks', () => {
+    expect(
+      getSortedSetValues(
+        getBuildPerkHighlightPerkGroupKeys({
+          hoveredPerkGroupReference: {
+            categoryName: 'Weapon',
+            perkGroupId: 'AxeTree',
+          },
+          hoveredPerkGroupReferenceSource: 'perk-group',
+          selectedPerkGroupIdsByCategory: {
+            Magic: ['DeadeyeTree'],
+          },
+        }),
+      ),
+    ).toEqual(['Magic::DeadeyeTree', 'Weapon::AxeTree'])
   })
 })

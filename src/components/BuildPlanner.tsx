@@ -87,6 +87,7 @@ function BuildPlannerInfoButton() {
 }
 
 export function BuildPlanner({
+  buildPerkHighlightPerkGroupKeys,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
   hasActiveBackgroundFitSearch,
@@ -120,6 +121,7 @@ export function BuildPlanner({
   shareBuildStatus,
   sharedPerkGroups,
 }: {
+  buildPerkHighlightPerkGroupKeys: ReadonlySet<string>
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   hasActiveBackgroundFitSearch: boolean
@@ -293,6 +295,7 @@ export function BuildPlanner({
 
         <BuildPlannerBoard
           activeBuildPerkTooltipIndicatorPerkId={activeTooltipIndicatorPerkId}
+          buildPerkHighlightPerkGroupKeys={buildPerkHighlightPerkGroupKeys}
           clearPendingBuildPerkTooltip={clearPendingTooltip}
           closeBuildPerkTooltipPreview={closeTooltipPreview}
           emphasizedCategoryNames={emphasizedCategoryNames}
