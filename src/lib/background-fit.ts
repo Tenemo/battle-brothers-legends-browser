@@ -163,8 +163,14 @@ export type BackgroundFitCalculationProgress = {
   totalBackgroundCount: number
 }
 
+export type BackgroundFitPartialView = BackgroundFitCalculationProgress & {
+  view: BackgroundFitView
+}
+
 export type BackgroundFitViewOptions = {
+  onPartialView?: (partialView: BackgroundFitPartialView) => void
   onProgress?: (progress: BackgroundFitCalculationProgress) => void
+  partialViewChunkSize?: number
   optionalPickedPerkIds?: ReadonlySet<string>
 }
 
@@ -182,6 +188,8 @@ type BackgroundFitEngine = {
   getBackgroundFitSummaryView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitSummaryView
   getPerkBackgroundSources: (perk: LegendsPerkRecord) => LegendsPerkBackgroundSource[]
 }
+
+const defaultBackgroundFitPartialViewChunkSize = 8
 
 function compareBuildTargetPerkGroups(
   leftPerkGroup: BuildTargetPerkGroup,
@@ -2613,11 +2621,56 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       const rankedBackgroundFits: RankedBackgroundFit[] = []
       const totalBackgroundCount = backgroundFitBuildCache.cachedBackgroundFitRecords.length
       let checkedBackgroundCount = 0
-
-      options.onProgress?.({
-        checkedBackgroundCount,
-        totalBackgroundCount,
+      let lastPartialViewCheckedBackgroundCount = 0
+      let lastPartialViewRankedBackgroundFitCount = 0
+      const requestedPartialViewChunkSize =
+        options.partialViewChunkSize ?? defaultBackgroundFitPartialViewChunkSize
+      const partialViewChunkSize = Number.isFinite(requestedPartialViewChunkSize)
+        ? Math.max(1, Math.floor(requestedPartialViewChunkSize))
+        : defaultBackgroundFitPartialViewChunkSize
+      const getCurrentBackgroundFitView = (): BackgroundFitView => ({
+        rankedBackgroundFits: rankedBackgroundFits.toSorted(compareRankedBackgroundFits),
+        supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+        unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
       })
+      const reportProgress = () => {
+        options.onProgress?.({
+          checkedBackgroundCount,
+          totalBackgroundCount,
+        })
+      }
+      const reportPartialView = () => {
+        if (
+          !options.onPartialView ||
+          checkedBackgroundCount >= totalBackgroundCount ||
+          rankedBackgroundFits.length === 0 ||
+          rankedBackgroundFits.length === lastPartialViewRankedBackgroundFitCount
+        ) {
+          return
+        }
+
+        if (
+          lastPartialViewRankedBackgroundFitCount > 0 &&
+          checkedBackgroundCount - lastPartialViewCheckedBackgroundCount < partialViewChunkSize
+        ) {
+          return
+        }
+
+        lastPartialViewCheckedBackgroundCount = checkedBackgroundCount
+        lastPartialViewRankedBackgroundFitCount = rankedBackgroundFits.length
+        options.onPartialView({
+          checkedBackgroundCount,
+          totalBackgroundCount,
+          view: getCurrentBackgroundFitView(),
+        })
+      }
+      const reportCheckedBackground = () => {
+        checkedBackgroundCount += 1
+        reportProgress()
+        reportPartialView()
+      }
+
+      reportProgress()
 
       for (const cachedBackgroundFitRecord of backgroundFitBuildCache.cachedBackgroundFitRecords) {
         const mustHaveStudyResourceRequirement =
@@ -2636,11 +2689,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
           !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(mustHaveScopeCacheKey) &&
           mustHaveStudyResourceRequirement === null
         ) {
-          checkedBackgroundCount += 1
-          options.onProgress?.({
-            checkedBackgroundCount,
-            totalBackgroundCount,
-          })
+          reportCheckedBackground()
           continue
         }
 
@@ -2656,11 +2705,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
           mustHavePickedPerks.length > 0 &&
           mustHaveNativeOutcomeSummary.buildReachabilityProbability <= 0
         ) {
-          checkedBackgroundCount += 1
-          options.onProgress?.({
-            checkedBackgroundCount,
-            totalBackgroundCount,
-          })
+          reportCheckedBackground()
           continue
         }
 
@@ -2741,18 +2786,10 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
           mustHaveStudyResourceRequirement,
         })
 
-        checkedBackgroundCount += 1
-        options.onProgress?.({
-          checkedBackgroundCount,
-          totalBackgroundCount,
-        })
+        reportCheckedBackground()
       }
 
-      return {
-        rankedBackgroundFits: rankedBackgroundFits.toSorted(compareRankedBackgroundFits),
-        supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
-        unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
-      }
+      return getCurrentBackgroundFitView()
     },
   }
 }

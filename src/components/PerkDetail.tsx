@@ -91,11 +91,7 @@ export function PerkDetail({
   selectedPerk,
 }: PerkDetailProps) {
   return (
-    <aside
-      aria-label="Perk details"
-      className={styles.detailPanel}
-      data-testid="perk-detail-panel"
-    >
+    <aside aria-label="Perk details" className={styles.detailPanel} data-testid="perk-detail-panel">
       <div
         aria-live="polite"
         className={joinClassNames(styles.detailPanelBody, 'app-scrollbar')}

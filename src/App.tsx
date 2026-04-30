@@ -85,6 +85,11 @@ type BackgroundFitViewState = {
   view: BackgroundFitView
 }
 
+type BackgroundFitPartialViewState = {
+  key: string
+  view: BackgroundFitView
+}
+
 type BackgroundFitErrorState = {
   key: string
   message: string
@@ -238,6 +243,8 @@ export default function App() {
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const [backgroundFitViewState, setBackgroundFitViewState] =
     useState<BackgroundFitViewState | null>(null)
+  const [backgroundFitPartialViewState, setBackgroundFitPartialViewState] =
+    useState<BackgroundFitPartialViewState | null>(null)
   const [backgroundFitErrorState, setBackgroundFitErrorState] =
     useState<BackgroundFitErrorState | null>(null)
   const [backgroundFitProgressState, setBackgroundFitProgressState] =
@@ -261,6 +268,14 @@ export default function App() {
         })
 
         return backgroundFitEngine.getBackgroundFitView(fallbackPickedPerks, studyResourceFilter, {
+          onPartialView: options?.onPartialView
+            ? (partialView) => {
+                options.onPartialView?.(partialView.view, {
+                  checkedBackgroundCount: partialView.checkedBackgroundCount,
+                  totalBackgroundCount: partialView.totalBackgroundCount,
+                })
+              }
+            : undefined,
           onProgress: options?.onProgress,
           optionalPickedPerkIds: new Set(fallbackOptionalPickedPerkIds),
         })
@@ -454,8 +469,13 @@ export default function App() {
     ],
   )
   const shouldLoadBackgroundFitView = isBackgroundFitPanelExpanded || hasActiveBackgroundFitSearch
-  const backgroundFitView =
+  const completedBackgroundFitView =
     backgroundFitViewState?.key === backgroundFitViewKey ? backgroundFitViewState.view : null
+  const partialBackgroundFitView =
+    backgroundFitPartialViewState?.key === backgroundFitViewKey
+      ? backgroundFitPartialViewState.view
+      : null
+  const backgroundFitView = completedBackgroundFitView ?? partialBackgroundFitView
   const backgroundFitErrorMessage =
     backgroundFitErrorState?.key === backgroundFitViewKey ? backgroundFitErrorState.message : null
   const backgroundFitProgress =
@@ -463,12 +483,14 @@ export default function App() {
       ? backgroundFitProgressState.progress
       : null
   const isBackgroundFitViewLoading =
-    shouldLoadBackgroundFitView && backgroundFitView === null && backgroundFitErrorMessage === null
+    shouldLoadBackgroundFitView &&
+    completedBackgroundFitView === null &&
+    backgroundFitErrorMessage === null
 
   useEffect(() => {
     if (
       !shouldLoadBackgroundFitView ||
-      backgroundFitView !== null ||
+      completedBackgroundFitView !== null ||
       backgroundFitErrorMessage !== null
     ) {
       return
@@ -488,6 +510,22 @@ export default function App() {
         },
       },
       {
+        onPartialView(view, progress) {
+          if (isCancelled || latestBackgroundFitRequestIdRef.current !== requestId) {
+            return
+          }
+
+          startTransition(() => {
+            setBackgroundFitProgressState({
+              key: backgroundFitViewKey,
+              progress,
+            })
+            setBackgroundFitPartialViewState({
+              key: backgroundFitViewKey,
+              view,
+            })
+          })
+        },
         onProgress(progress) {
           if (isCancelled || latestBackgroundFitRequestIdRef.current !== requestId) {
             return
@@ -514,6 +552,7 @@ export default function App() {
 
         startTransition(() => {
           setBackgroundFitErrorState(null)
+          setBackgroundFitPartialViewState(null)
           setBackgroundFitProgressState(null)
           setBackgroundFitViewState({
             key: backgroundFitViewKey,
@@ -530,6 +569,7 @@ export default function App() {
           key: backgroundFitViewKey,
           message: error instanceof Error ? error.message : 'Background fit calculation failed.',
         })
+        setBackgroundFitPartialViewState(null)
         setBackgroundFitProgressState(null)
       })
 
@@ -538,7 +578,7 @@ export default function App() {
     }
   }, [
     backgroundFitErrorMessage,
-    backgroundFitView,
+    completedBackgroundFitView,
     backgroundFitViewKey,
     getBackgroundFitWorkerClient,
     optionalPickedPerkIds,

@@ -19,6 +19,12 @@ export type BackgroundFitWorkerResponse =
       type: 'background-fit-progress'
     }
   | {
+      progress: BackgroundFitCalculationProgress
+      requestId: number
+      type: 'background-fit-partial-view'
+      view: BackgroundFitView
+    }
+  | {
       requestId: number
       type: 'background-fit-view'
       view: BackgroundFitView
@@ -35,6 +41,7 @@ export type BackgroundFitWorkerCalculation = {
 }
 
 export type BackgroundFitWorkerCalculationOptions = {
+  onPartialView?: (view: BackgroundFitView, progress: BackgroundFitCalculationProgress) => void
   onProgress?: (progress: BackgroundFitCalculationProgress) => void
 }
 
@@ -47,6 +54,7 @@ export type BackgroundFitWorkerClient = {
 }
 
 type PendingCalculation = {
+  onPartialView?: (view: BackgroundFitView, progress: BackgroundFitCalculationProgress) => void
   onProgress?: (progress: BackgroundFitCalculationProgress) => void
   reject: (error: Error) => void
   resolve: (view: BackgroundFitView) => void
@@ -93,6 +101,11 @@ export function createBackgroundFitWorkerClient({
         return
       }
 
+      if (response.type === 'background-fit-partial-view') {
+        pendingCalculation.onPartialView?.(response.view, response.progress)
+        return
+      }
+
       pendingCalculationsByRequestId.delete(response.requestId)
 
       if (response.type === 'background-fit-error') {
@@ -134,6 +147,7 @@ export function createBackgroundFitWorkerClient({
 
       const promise = new Promise<BackgroundFitView>((resolve, reject) => {
         pendingCalculationsByRequestId.set(requestId, {
+          onPartialView: options.onPartialView,
           onProgress: options.onProgress,
           reject,
           resolve,

@@ -92,7 +92,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
 
 const desktopScrollbarTargets = [
   '[data-testid="background-fit-panel-body"]',
-  '[data-testid="category-sidebar"]',
+  '[data-testid="category-sidebar-body"]',
   '[data-testid="results-list"]',
   '[data-testid="perk-detail-panel-body"]',
   '[data-testid="planner-board"]',
@@ -234,7 +234,7 @@ async function readRailControlMetrics(page: Page) {
 
     return {
       backgroundFit: readButtonMetric('background fit'),
-      perkDetails: readButtonMetric('perk details'),
+      categoryFilters: readButtonMetric('category filters'),
     }
   })
 }
@@ -278,7 +278,7 @@ async function readMobileTouchTargetMetrics(page: Page) {
         selector: '[data-testid="planner-section-toggle"]',
       },
       { name: 'category filter', selector: 'button[aria-label="Enable category Weapon"]' },
-      { name: 'perk details rail', selector: 'button[aria-label="Collapse perk details"]' },
+      { name: 'category filters rail', selector: 'button[aria-label="Collapse category filters"]' },
       { name: 'background fit rail', selector: 'button[aria-label="Collapse background fit"]' },
     ]
 
@@ -449,26 +449,26 @@ test('keeps desktop side rails thin and mobile rails touchable', async ({ page }
   expect(desktopRailMetrics.backgroundFit.buttonWidth).toBeLessThanOrEqual(
     desktopRailMetrics.backgroundFit.originalDesktopRailThickness * 0.72,
   )
-  expect(desktopRailMetrics.perkDetails.buttonWidth).toBeLessThanOrEqual(
-    desktopRailMetrics.perkDetails.originalDesktopRailThickness * 0.72,
+  expect(desktopRailMetrics.categoryFilters.buttonWidth).toBeLessThanOrEqual(
+    desktopRailMetrics.categoryFilters.originalDesktopRailThickness * 0.72,
   )
   expect(desktopRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
-  expect(desktopRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(desktopRailMetrics.categoryFilters.chevronWidth).toBeGreaterThanOrEqual(16)
   expect(desktopRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
-  expect(desktopRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(desktopRailMetrics.categoryFilters.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 
   await gotoBuildPlanner(page, { height: 844, width: 390 })
 
   const mobileRailMetrics = await readRailControlMetrics(page)
 
   expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeGreaterThanOrEqual(40)
-  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeGreaterThanOrEqual(40)
+  expect(mobileRailMetrics.categoryFilters.buttonHeight).toBeGreaterThanOrEqual(40)
   expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeLessThanOrEqual(48)
-  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeLessThanOrEqual(48)
+  expect(mobileRailMetrics.categoryFilters.buttonHeight).toBeLessThanOrEqual(48)
   expect(mobileRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
-  expect(mobileRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(mobileRailMetrics.categoryFilters.chevronWidth).toBeGreaterThanOrEqual(16)
   expect(mobileRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
-  expect(mobileRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(mobileRailMetrics.categoryFilters.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 })
 
 test('uses one app scrollbar style across desktop viewport sizes', async ({ page }) => {

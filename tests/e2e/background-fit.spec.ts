@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   enableCategory,
@@ -19,6 +19,12 @@ const denseSharedBuildUrl =
 const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
 const denseSharedBuildSearchBackgroundQuery = 'disowned'
 
+async function expectBackgroundFitCalculationComplete(backgroundFitPanel: Locator) {
+  await expect(
+    backgroundFitPanel.getByRole('progressbar', { name: 'Background fit progress' }),
+  ).toHaveCount(0)
+}
+
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
   page,
 }) => {
@@ -38,11 +44,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
   const backgroundFitRailButton = backgroundFitPanel.getByRole('button', {
     name: 'Expand background fit',
   })
-  const detailPanelRailButton = page.getByRole('button', { name: 'Collapse perk details' })
+  const categoryFiltersRailButton = page.getByRole('button', { name: 'Collapse category filters' })
 
   await expect(backgroundFitRailButton).toHaveAttribute('aria-expanded', 'false')
   await expect(backgroundFitRailButton).toHaveCSS('cursor', 'pointer')
-  await expect(detailPanelRailButton).toHaveCSS('cursor', 'pointer')
+  await expect(categoryFiltersRailButton).toHaveCSS('cursor', 'pointer')
   await backgroundFitRailButton.click()
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
@@ -652,6 +658,8 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await apprenticeCard.scrollIntoViewIfNeeded()
   await apprenticeToggle.click()
   await expect(apprenticePanel).toHaveAttribute('aria-hidden', 'false')
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
+  await expect(apprenticePanel).toHaveAttribute('aria-hidden', 'false')
 
   const barterMatchButton = apprenticeCard.getByRole('button', {
     name: 'Select perk group Barter',
@@ -741,6 +749,7 @@ test('keeps zero-match backgrounds after matching backgrounds in the full ranked
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
   ).toBeVisible()
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
 
   const backgroundNameOrder = await page.evaluate(() =>
     [...document.querySelectorAll('[data-testid="background-fit-card"] h3')].map((heading) =>

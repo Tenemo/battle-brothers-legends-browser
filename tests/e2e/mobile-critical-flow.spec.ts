@@ -53,9 +53,11 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
       perkDetailDirection: 'column',
     })
   await expect(backgroundFitPanel.getByLabel('Search backgrounds')).toBeVisible()
-  await expect(
-    perkDetailPanel.getByRole('button', { name: 'Collapse perk details' }),
-  ).toHaveAttribute('aria-expanded', 'true')
+  await expect(page.getByRole('button', { name: 'Collapse perk details' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Collapse category filters' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
   await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
   await apprenticeCard.getByRole('button', { name: 'Select perk group Axe' }).click()
 
@@ -68,10 +70,12 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }),
   ).toHaveAttribute('aria-expanded', 'false')
-  await perkDetailPanel.getByRole('button', { name: 'Collapse perk details' }).click()
-  await expect(
-    perkDetailPanel.getByRole('button', { name: 'Expand perk details' }),
-  ).toHaveAttribute('aria-expanded', 'false')
-  await expect(perkDetailPanel.getByTestId('perk-detail-panel-body')).toBeHidden()
+  await page.getByRole('button', { name: 'Collapse category filters' }).click()
+  await expect(page.getByRole('button', { name: 'Expand category filters' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  await expect(page.getByTestId('category-sidebar-body')).toBeHidden()
+  await expect(perkDetailPanel.getByTestId('perk-detail-panel-body')).toBeVisible()
   await expectNoDocumentHorizontalOverflow(page)
 })

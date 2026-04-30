@@ -1368,9 +1368,17 @@ describe('background fit', () => {
 
   test('reports progress for each checked background while dropping zero must-have matches', () => {
     const progressLabels: string[] = []
-    const calmOnlyBackground = createBackgroundDefinition({
-      backgroundId: 'background.calm_only',
-      backgroundName: 'Calm only',
+    const partialViewBackgroundIds: string[][] = []
+    const calmAlphaBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_alpha',
+      backgroundName: 'Calm alpha',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const calmBetaBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_beta',
+      backgroundName: 'Calm beta',
       overrides: {
         Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
       },
@@ -1380,22 +1388,44 @@ describe('background fit', () => {
       backgroundName: 'Empty',
       overrides: {},
     })
+    const calmGammaBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_gamma',
+      backgroundName: 'Calm gamma',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
     const engine = createBackgroundFitEngine({
       ...sampleDataset,
-      backgroundFitBackgrounds: [calmOnlyBackground, emptyBackground],
+      backgroundFitBackgrounds: [
+        calmAlphaBackground,
+        calmBetaBackground,
+        emptyBackground,
+        calmGammaBackground,
+      ],
     })
 
     const backgroundFitView = engine.getBackgroundFitView([samplePerks[4]], noStudyResources, {
+      onPartialView(partialView) {
+        partialViewBackgroundIds.push(
+          partialView.view.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId),
+        )
+      },
       onProgress(progress) {
         progressLabels.push(
           `${progress.checkedBackgroundCount}/${progress.totalBackgroundCount}`,
         )
       },
+      partialViewChunkSize: 1,
     })
 
-    expect(progressLabels).toEqual(['0/2', '1/2', '2/2'])
+    expect(progressLabels).toEqual(['0/4', '1/4', '2/4', '3/4', '4/4'])
+    expect(partialViewBackgroundIds).toEqual([
+      ['background.calm_alpha'],
+      ['background.calm_alpha', 'background.calm_beta'],
+    ])
     expect(backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId))
-      .toEqual(['background.calm_only'])
+      .toEqual(['background.calm_alpha', 'background.calm_beta', 'background.calm_gamma'])
   })
 
   test('calculates small non-zero full build chances for dense real background fits', () => {

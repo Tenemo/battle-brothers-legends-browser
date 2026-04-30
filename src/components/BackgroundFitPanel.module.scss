@@ -397,6 +397,7 @@
   .backgroundFitAccordionSummary,
   .backgroundFitCardContent,
   .backgroundFitMatchSection,
+  .backgroundFitLoadingState,
   .backgroundFitEmptyState {
     display: grid;
     min-width: 0;
@@ -487,6 +488,7 @@
     gap: var(--space-sm);
   }
 
+  .backgroundFitLoadingState,
   .backgroundFitEmptyState {
     align-content: start;
     gap: var(--space-md);

@@ -33,7 +33,7 @@ function getPrimitiveStyleSnapshot() {
     backgroundFitMetricTable: getElementStyle('[data-testid="background-fit-summary-table"]'),
     backgroundFitPanel: getElementStyle('[data-testid="background-fit-panel"]'),
     buildPlannerInfoButton: getElementStyle('[aria-label="Show build planner guidance"]'),
-    detailPanelRailChevron: getElementStyle('[aria-label="Collapse perk details"] svg'),
+    categorySidebarRailChevron: getElementStyle('[aria-label="Collapse category filters"] svg'),
     detailPanel: getElementStyle('[data-testid="perk-detail-panel"]'),
     detailBadge: getElementStyle('[data-testid="detail-badge"]'),
     perkPlacementChip: getElementStyle('[data-testid="perk-placement-chip"]'),
@@ -70,7 +70,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   expect(styles.buildPlannerInfoButton).not.toBeNull()
   expect(styles.plannerActionButton).not.toBeNull()
   expect(styles.backgroundFitRailChevron).not.toBeNull()
-  expect(styles.detailPanelRailChevron).not.toBeNull()
+  expect(styles.categorySidebarRailChevron).not.toBeNull()
   expect(styles.plannerButtonIcon).not.toBeNull()
 
   expect(styles.perkRow).toMatchObject({
@@ -89,10 +89,10 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
     borderColor: styles.plannerActionButton?.borderColor,
   })
   expect(styles.backgroundFitRailChevron).toMatchObject({
-    height: styles.detailPanelRailChevron?.height,
-    width: styles.detailPanelRailChevron?.width,
+    height: styles.categorySidebarRailChevron?.height,
+    width: styles.categorySidebarRailChevron?.width,
   })
-  expect(Number.parseFloat(styles.detailPanelRailChevron!.width)).toBeGreaterThan(
+  expect(Number.parseFloat(styles.categorySidebarRailChevron!.width)).toBeGreaterThan(
     Number.parseFloat(styles.plannerButtonIcon!.width),
   )
   expect(styles.backgroundFitPanel).toMatchObject({
