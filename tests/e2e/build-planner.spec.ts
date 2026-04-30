@@ -1393,6 +1393,8 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
         pickedPerkActionPanelRectangle.bottom - pickedPerkTileRectangle.bottom,
       ),
       actionPanelBorderRadius: pickedPerkActionPanelStyle.borderRadius,
+      actionPanelBorderBottomRightRadius: pickedPerkActionPanelStyle.borderBottomRightRadius,
+      actionPanelBorderTopRightRadius: pickedPerkActionPanelStyle.borderTopRightRadius,
       actionPanelPosition: pickedPerkActionPanelStyle.position,
       actionPanelRightOffset: Math.abs(
         pickedPerkActionPanelRectangle.right - pickedPerkTileRectangle.right,
@@ -1529,7 +1531,11 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
     pickedPerkMetrics!.nameLineHeight * 2 + 1,
   )
   expect(pickedPerkMetrics!.actionPanelPosition).toBe('absolute')
-  expect(pickedPerkMetrics!.actionPanelBorderRadius).toBe('0px')
+  expect(pickedPerkMetrics!.actionPanelBorderRadius).not.toBe('0px')
+  expect(Number.parseFloat(pickedPerkMetrics!.actionPanelBorderTopRightRadius)).toBeGreaterThan(0)
+  expect(Number.parseFloat(pickedPerkMetrics!.actionPanelBorderBottomRightRadius)).toBeGreaterThan(
+    0,
+  )
   expect(pickedPerkMetrics!.actionPanelTransitionProperty).not.toContain('opacity')
   expect(pickedPerkMetrics!.actionPanelVisibility).toBe('hidden')
   expect(pickedPerkActionPanelStyleAfterHover.visibility).toBe('visible')
@@ -1622,6 +1628,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
       const headerRectangle = buildPlannerHeader.getBoundingClientRect()
       const infoButtonRectangle = infoButton.getBoundingClientRect()
       const legendRectangle = requirementLegend.getBoundingClientRect()
+      const titleRow = requirementLegend.parentElement
       const getCenterY = (rectangle: DOMRect) => rectangle.top + rectangle.height / 2
 
       return {
@@ -1630,17 +1637,27 @@ test('marks picked perks as optional and separates them from must-have perks', a
         headerTop: headerRectangle.top,
         legendBottom: legendRectangle.bottom,
         legendCenterY: getCenterY(legendRectangle),
+        legendGapFromInfo: legendRectangle.left - infoButtonRectangle.right,
         legendLeft: legendRectangle.left,
         legendTop: legendRectangle.top,
         infoButtonCenterY: getCenterY(infoButtonRectangle),
         infoButtonRight: infoButtonRectangle.right,
+        titleRowColumnGap:
+          titleRow instanceof HTMLElement
+            ? Number.parseFloat(window.getComputedStyle(titleRow).columnGap)
+            : null,
       }
     })
 
   expect(requirementLegendPlacementMetrics).not.toBeNull()
-  expect(requirementLegendPlacementMetrics!.legendLeft).toBeGreaterThan(
-    requirementLegendPlacementMetrics!.infoButtonRight + 16,
-  )
+  expect(requirementLegendPlacementMetrics!.titleRowColumnGap).not.toBeNull()
+  expect(requirementLegendPlacementMetrics!.titleRowColumnGap).toBeLessThan(16)
+  expect(
+    Math.abs(
+      requirementLegendPlacementMetrics!.legendGapFromInfo -
+        requirementLegendPlacementMetrics!.titleRowColumnGap!,
+    ),
+  ).toBeLessThanOrEqual(1)
   expect(
     Math.abs(
       requirementLegendPlacementMetrics!.legendCenterY -
@@ -1683,24 +1700,15 @@ test('marks picked perks as optional and separates them from must-have perks', a
 
     const mustHaveRectangle = mustHaveTile.getBoundingClientRect()
     const optionalRectangle = optionalTile.getBoundingClientRect()
-    const mustHaveNameRange = document.createRange()
-    mustHaveNameRange.selectNodeContents(mustHaveName)
-    const mustHaveNameLineRectangles = [...mustHaveNameRange.getClientRects()]
-    mustHaveNameRange.detach()
-    const mustHaveTextLeft = Math.min(
-      ...mustHaveNameLineRectangles.map((rectangle) => rectangle.left),
-    )
-    const mustHaveTextRight = Math.max(
-      ...mustHaveNameLineRectangles.map((rectangle) => rectangle.right),
-    )
+    const legendColumnGap = Number.parseFloat(window.getComputedStyle(legend).columnGap)
 
     return {
+      legendColumnGap,
       mustHaveNameTextAlign: window.getComputedStyle(mustHaveName).textAlign,
       mustHaveRight: mustHaveRectangle.right,
-      mustHaveTextLeftInset: mustHaveTextLeft - mustHaveRectangle.left,
-      mustHaveTextRightInset: mustHaveRectangle.right - mustHaveTextRight,
       mustHaveTop: mustHaveRectangle.top,
       mustHaveTransform: window.getComputedStyle(mustHaveTile).transform,
+      tileGap: optionalRectangle.left - mustHaveRectangle.right,
       optionalLeft: optionalRectangle.left,
       optionalNameTextAlign: window.getComputedStyle(optionalName).textAlign,
       optionalTop: optionalRectangle.top,
@@ -1712,17 +1720,21 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(requirementLegendTileLayoutMetrics!.optionalLeft).toBeGreaterThan(
     requirementLegendTileLayoutMetrics!.mustHaveRight,
   )
+  expect(requirementLegendTileLayoutMetrics!.legendColumnGap).toBeGreaterThan(5)
+  expect(
+    Math.abs(
+      requirementLegendTileLayoutMetrics!.tileGap -
+        requirementLegendTileLayoutMetrics!.legendColumnGap,
+    ),
+  ).toBeLessThanOrEqual(1)
   expect(
     Math.abs(
       requirementLegendTileLayoutMetrics!.optionalTop -
       requirementLegendTileLayoutMetrics!.mustHaveTop,
     ),
   ).toBeLessThan(0.5)
-  expect(requirementLegendTileLayoutMetrics!.mustHaveNameTextAlign).toBe('right')
+  expect(requirementLegendTileLayoutMetrics!.mustHaveNameTextAlign).toBe('left')
   expect(requirementLegendTileLayoutMetrics!.optionalNameTextAlign).toBe('left')
-  expect(requirementLegendTileLayoutMetrics!.mustHaveTextRightInset).toBeLessThan(
-    requirementLegendTileLayoutMetrics!.mustHaveTextLeftInset,
-  )
   expect(requirementLegendTileLayoutMetrics!.mustHaveTransform).toBe('none')
   expect(requirementLegendTileLayoutMetrics!.optionalTransform).toBe('none')
   const clarityPickedPerkTile = buildPerksBar
@@ -1856,6 +1868,67 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(
     Math.abs(mustHaveLegendTileDimensions.width - mustHaveTileDimensions.width * 0.7),
   ).toBeLessThan(0.75)
+  const mustHaveTileChainGeometry = await perfectFocusPickedPerkTile.evaluate((pickedPerkTile) => {
+    const requirementChain = pickedPerkTile.querySelector(
+      '[data-testid="planner-slot-requirement-chain"]',
+    )
+
+    if (!(requirementChain instanceof HTMLElement)) {
+      return null
+    }
+
+    const chainRectangle = requirementChain.getBoundingClientRect()
+    const chainStyle = window.getComputedStyle(requirementChain)
+    const tileRectangle = pickedPerkTile.getBoundingClientRect()
+
+    return {
+      heightRatio: chainRectangle.height / tileRectangle.height,
+      leftOffsetRatio: (chainRectangle.left - tileRectangle.left) / tileRectangle.width,
+      scale: chainStyle.getPropertyValue('--planner-slot-requirement-chain-scale').trim(),
+      topOffsetRatio: (chainRectangle.top - tileRectangle.top) / tileRectangle.height,
+      widthRatio: chainRectangle.width / tileRectangle.width,
+    }
+  })
+  const mustHaveLegendChainGeometry = await mustHaveLegendTile.evaluate((pickedPerkTile) => {
+    const requirementChain = pickedPerkTile.querySelector(
+      '[data-testid="planner-slot-requirement-chain"]',
+    )
+
+    if (!(requirementChain instanceof HTMLElement)) {
+      return null
+    }
+
+    const chainRectangle = requirementChain.getBoundingClientRect()
+    const chainStyle = window.getComputedStyle(requirementChain)
+    const tileRectangle = pickedPerkTile.getBoundingClientRect()
+
+    return {
+      heightRatio: chainRectangle.height / tileRectangle.height,
+      leftOffsetRatio: (chainRectangle.left - tileRectangle.left) / tileRectangle.width,
+      scale: chainStyle.getPropertyValue('--planner-slot-requirement-chain-scale').trim(),
+      topOffsetRatio: (chainRectangle.top - tileRectangle.top) / tileRectangle.height,
+      widthRatio: chainRectangle.width / tileRectangle.width,
+    }
+  })
+
+  expect(mustHaveTileChainGeometry).not.toBeNull()
+  expect(mustHaveLegendChainGeometry).not.toBeNull()
+  expect(mustHaveTileChainGeometry!.scale).toBe('1')
+  expect(mustHaveLegendChainGeometry!.scale).toBe('0.7')
+
+  for (const chainGeometryMetric of [
+    'heightRatio',
+    'leftOffsetRatio',
+    'topOffsetRatio',
+    'widthRatio',
+  ] as const) {
+    expect(
+      Math.abs(
+        mustHaveLegendChainGeometry![chainGeometryMetric] -
+          mustHaveTileChainGeometry![chainGeometryMetric],
+      ),
+    ).toBeLessThanOrEqual(0.015)
+  }
 
   await clarityPickedPerkTile.hover()
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
@@ -1933,6 +2006,35 @@ test('marks picked perks as optional and separates them from must-have perks', a
       .getByTestId('background-fit-summary-label')
       .filter({ hasText: 'Best native roll covers total perks' }),
   ).toHaveCount(0)
+})
+
+test('cancels a picked perk tooltip timer before marking the perk optional', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
+  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const buildPerksBar = getBuildPerksBar(page)
+  const clarityPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Clarity' })
+
+  await clarityPickedPerkTile.hover()
+  await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 1000,
+  })
+  await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
+
+  const optionalClarityPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Clarity' })
+
+  await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-requirement', 'optional')
+  await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
+
+  await page.waitForTimeout(1700)
+
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
 })
 
 test('keeps picked perk word layout unchanged on hover', async ({ page }) => {

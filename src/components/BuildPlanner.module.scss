@@ -73,7 +73,7 @@
   .buildPlannerTitleRow {
     flex: 1 1 auto;
     flex-wrap: nowrap;
-    gap: var(--primitive-length-2rem);
+    gap: var(--space-lg);
     align-items: center;
     min-width: 0;
   }
@@ -286,33 +286,19 @@
   }
 
   .plannerRequirementLegend {
-    --planner-requirement-legend-chain-size: calc(
-      (var(--primitive-length-1-4rem) * 2.25) * 0.7
-    );
     --planner-requirement-legend-slot-height: calc(var(--planner-perk-row-min-height) * 0.7);
     --planner-requirement-legend-slot-width: calc(var(--planner-picked-perk-slot-width) * 0.7);
 
     display: flex;
     flex: 0 1 auto;
     flex-wrap: nowrap;
-    gap: var(--space-sm);
+    gap: var(--space-md);
     align-items: center;
     pointer-events: none;
 
     .plannerSlotPerk {
       width: min(var(--planner-requirement-legend-slot-width), 100%);
       height: var(--planner-requirement-legend-slot-height);
-
-      &[data-requirement='must-have'] {
-        .plannerSlotPerkInspect {
-          justify-content: flex-end;
-          text-align: right;
-        }
-
-        .plannerPickedPerkName {
-          text-align: right;
-        }
-      }
     }
 
     .plannerSlotPerkInspect {
@@ -322,8 +308,7 @@
     }
 
     .plannerSlotRequirementChain {
-      width: var(--planner-requirement-legend-chain-size);
-      height: var(--planner-requirement-legend-chain-size);
+      --planner-slot-requirement-chain-scale: 0.7;
     }
   }
 
@@ -524,21 +509,25 @@
   }
 
   .plannerSlotRequirementChain {
+    --planner-slot-requirement-chain-scale: 1;
+
     position: absolute;
     top: 50%;
-    left: calc(var(--primitive-length-negative-5px) - var(--primitive-length-3px));
+    left: calc((var(--primitive-length-negative-5px) - var(--primitive-length-3px)) * var(--planner-slot-requirement-chain-scale));
     z-index: var(--z-index-raised);
     display: block;
-    width: calc(var(--primitive-length-1-4rem) * 2.25);
-    height: calc(var(--primitive-length-1-4rem) * 2.25);
+    width: calc((var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale));
+    height: calc((var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale));
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
-    margin-top: calc(var(--primitive-length-12px) * -1);
+    margin-top: calc(
+      (var(--primitive-length-12px) * -1) * var(--planner-slot-requirement-chain-scale)
+    );
     opacity: 0.4;
     pointer-events: none;
     transform: translate(
-      calc(var(--primitive-length-0-12rem) * -1),
-      calc(var(--primitive-length-0-24rem) * -1)
+      calc((var(--primitive-length-0-12rem) * -1) * var(--planner-slot-requirement-chain-scale)),
+      calc((var(--primitive-length-0-24rem) * -1) * var(--planner-slot-requirement-chain-scale))
     );
   }
 
@@ -564,7 +553,8 @@
     grid-template-rows: 1fr 1fr;
     width: 32%;
     border-left: var(--primitive-length-1px) solid var(--border-overlay);
-    border-radius: 0;
+    border-radius: 0 calc(var(--radius-lg) - var(--primitive-length-1px))
+      calc(var(--radius-lg) - var(--primitive-length-1px)) 0;
     overflow: hidden;
     visibility: hidden;
     pointer-events: none;
@@ -989,7 +979,7 @@
     }
 
     .plannerRequirementLegend {
-      --planner-requirement-legend-mobile-width: calc((var(--planner-requirement-legend-slot-width) * 2) + var(--space-sm) + var(--primitive-length-8px));
+      --planner-requirement-legend-mobile-width: calc((var(--planner-requirement-legend-slot-width) * 2) + var(--space-md) + var(--primitive-length-8px));
 
       flex: 0 0 auto;
       width: var(--planner-requirement-legend-mobile-width);

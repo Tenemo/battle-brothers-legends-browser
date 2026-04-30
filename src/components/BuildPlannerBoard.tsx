@@ -482,7 +482,12 @@ export function BuildPlannerBoard({
                           styles.plannerSlotOptionalButton,
                         )}
                         data-testid="planner-slot-optional-button"
-                        onClick={() => onTogglePickedPerkOptional(pickedPerk.id)}
+                        onClick={() => {
+                          clearPendingBuildPerkTooltip()
+                          onCloseBuildPerkTooltip()
+                          onCloseBuildPerkHover(pickedPerk.id)
+                          onTogglePickedPerkOptional(pickedPerk.id)
+                        }}
                         title={
                           pickedPerk.isOptional
                             ? `Mark ${pickedPerk.perkName} as must-have`
@@ -503,7 +508,12 @@ export function BuildPlannerBoard({
                           styles.plannerSlotRemoveButton,
                         )}
                         data-testid="planner-slot-remove-button"
-                        onClick={() => onRemovePickedPerk(pickedPerk.id)}
+                        onClick={() => {
+                          clearPendingBuildPerkTooltip()
+                          onCloseBuildPerkTooltip()
+                          onCloseBuildPerkHover(pickedPerk.id)
+                          onRemovePickedPerk(pickedPerk.id)
+                        }}
                         title={`Remove ${pickedPerk.perkName} from build`}
                         type="button"
                       >
