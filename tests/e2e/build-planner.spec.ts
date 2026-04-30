@@ -1303,6 +1303,66 @@ test('keeps picked perk hover from highlighting peer picked perks in the same gr
   await expect(brawnyPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
 })
 
+test('visually highlights optional picked perks from matching group hover', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await page.goto(createBuildUrl(['Battle Forged', 'Immovable Object', 'Steadfast', 'Brawny']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const activePlannerSurfaceColor = await getResolvedCssBackgroundColor(
+    page,
+    'var(--surface-result-active)',
+  )
+  const buildPerksBar = getBuildPerksBar(page)
+  const brawnyPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Brawny' })
+  const heavyArmorGroupCard = getBuildSharedGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Heavy Armor' })
+
+  await brawnyPickedPerkTile.hover()
+  await brawnyPickedPerkTile.getByTestId('planner-slot-optional-button').click()
+  await page.getByLabel('Search perks').focus()
+  await page.mouse.move(1, 1)
+
+  const optionalBrawnyPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Brawny' })
+  await expect(optionalBrawnyPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  const optionalBrawnyBaseBackgroundColor = await optionalBrawnyPickedPerkTile.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
+  const cardHeaderHoverPoint = await heavyArmorGroupCard.evaluate((card) => {
+    const groupName = card.querySelector('[data-testid="planner-slot-name"]')
+
+    if (!(groupName instanceof HTMLElement)) {
+      return null
+    }
+
+    const groupNameRectangle = groupName.getBoundingClientRect()
+
+    return {
+      x: groupNameRectangle.left + groupNameRectangle.width / 2,
+      y: groupNameRectangle.top + groupNameRectangle.height / 2,
+    }
+  })
+
+  expect(cardHeaderHoverPoint).not.toBeNull()
+  await page.mouse.move(cardHeaderHoverPoint!.x, cardHeaderHoverPoint!.y)
+
+  await expect(optionalBrawnyPickedPerkTile).toHaveAttribute('data-requirement', 'optional')
+  await expect(optionalBrawnyPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+  expect(optionalBrawnyBaseBackgroundColor).not.toBe(activePlannerSurfaceColor)
+  await expect
+    .poll(() =>
+      optionalBrawnyPickedPerkTile.evaluate(
+        (element) => window.getComputedStyle(element).backgroundColor,
+      ),
+    )
+    .toBe(activePlannerSurfaceColor)
+})
+
 test('keeps long planner group names compact without category text', async ({ page }) => {
   await gotoBuildPlanner(page)
 

@@ -484,6 +484,19 @@
         color: var(--text-secondary);
       }
     }
+
+    &[data-requirement='optional']:hover,
+    &[data-requirement='optional']:focus-within,
+    &[data-requirement='optional'][data-highlighted='true'] {
+      border-color: var(--border-strong);
+      background: var(--surface-result-active);
+      color: var(--text-primary);
+      box-shadow: var(--shadow-selected-ring);
+
+      .plannerPickedPerkName {
+        color: var(--text-primary);
+      }
+    }
   }
 
   .plannerSlotPerkInspect {
