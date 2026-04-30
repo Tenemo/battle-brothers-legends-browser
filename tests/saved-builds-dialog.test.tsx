@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { SavedBuildsDialog } from '../src/components/SavedBuildsDialog'
@@ -14,6 +14,21 @@ const savedBuild = {
   pickedPerkCount: 1,
   referenceVersion: 'test-reference',
   updatedAt: '2026-04-30T12:00:00.000Z',
+}
+
+const pickedPerk = {
+  backgroundSources: [],
+  categoryNames: ['Traits'],
+  descriptionParagraphs: ['Calm focus'],
+  iconPath: null,
+  id: 'perk.legend_clarity',
+  isOptional: false,
+  perkConstName: 'LegendClarity',
+  perkName: 'Clarity',
+  placements: [],
+  primaryCategoryName: 'Traits',
+  scenarioSources: [],
+  searchText: 'Clarity',
 }
 
 function renderSavedBuildsDialog(savedBuildPersistenceState: SavedBuildPersistenceState) {
@@ -68,10 +83,7 @@ describe('saved builds dialog', () => {
       screen.getByText(
         'Saved in this browser using IndexedDB. The browser may clear it if site data is cleared or storage is under pressure.',
       ),
-    ).toHaveAttribute(
-      'title',
-      expect.stringContaining('Browser API state: not persistent'),
-    )
+    ).toHaveAttribute('title', expect.stringContaining('Browser API state: not persistent'))
 
     rerender(
       <SavedBuildsDialog
@@ -145,22 +157,7 @@ describe('saved builds dialog', () => {
         onLoadSavedBuild={vi.fn()}
         onOverwriteSavedBuild={onOverwriteSavedBuild}
         onSaveCurrentBuild={vi.fn(async () => undefined)}
-        pickedPerks={[
-          {
-            backgroundSources: [],
-            categoryNames: ['Traits'],
-            descriptionParagraphs: ['Calm focus'],
-            iconPath: null,
-            id: 'perk.legend_clarity',
-            isOptional: false,
-            perkConstName: 'LegendClarity',
-            perkName: 'Clarity',
-            placements: [],
-            primaryCategoryName: 'Traits',
-            scenarioSources: [],
-            searchText: 'Clarity',
-          },
-        ]}
+        pickedPerks={[pickedPerk]}
         savedBuildOperationStatus="idle"
         savedBuildPersistenceState="best-effort"
         savedBuilds={[savedBuild]}
@@ -186,5 +183,57 @@ describe('saved builds dialog', () => {
     )
 
     expect(onOverwriteSavedBuild).toHaveBeenCalledWith('saved-build-clarity')
+  })
+
+  test('disables saved build actions while an async card action is pending', async () => {
+    const user = userEvent.setup()
+    let resolveCopySavedBuildLink: () => void = () => {}
+    const onCopySavedBuildLink = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCopySavedBuildLink = resolve
+        }),
+    )
+    const onDeleteSavedBuild = vi.fn(async () => undefined)
+    const onSaveCurrentBuild = vi.fn(async () => undefined)
+
+    render(
+      <SavedBuildsDialog
+        isSavedBuildsLoading={false}
+        onClose={vi.fn()}
+        onCopySavedBuildLink={onCopySavedBuildLink}
+        onDeleteSavedBuild={onDeleteSavedBuild}
+        onLoadSavedBuild={vi.fn()}
+        onOverwriteSavedBuild={vi.fn(async () => undefined)}
+        onSaveCurrentBuild={onSaveCurrentBuild}
+        pickedPerks={[pickedPerk]}
+        savedBuildOperationStatus="idle"
+        savedBuildPersistenceState="best-effort"
+        savedBuilds={[savedBuild]}
+        savedBuildsErrorMessage={null}
+      />,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'Copy saved build Calm focus link' }))
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Load saved build Calm focus' })).toBeDisabled()
+      expect(
+        screen.getByRole('button', { name: 'Overwrite saved build Calm focus' }),
+      ).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Delete saved build Calm focus' })).toBeDisabled()
+      expect(screen.getByRole('button', { name: 'Save current' })).toBeDisabled()
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Delete saved build Calm focus' }))
+    expect(onDeleteSavedBuild).not.toHaveBeenCalled()
+    expect(onSaveCurrentBuild).not.toHaveBeenCalled()
+
+    resolveCopySavedBuildLink()
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: 'Delete saved build Calm focus' })).toBeEnabled()
+      expect(screen.getByRole('button', { name: 'Save current' })).toBeEnabled()
+    })
   })
 })

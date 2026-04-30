@@ -126,6 +126,7 @@
   }
 
   .detailBackgroundFitMatchColumn {
+    position: relative;
     display: grid;
     align-content: start;
     gap: var(--space-md);
@@ -134,6 +135,12 @@
     border-radius: var(--radius-lg);
     padding: var(--space-md);
     background: var(--primitive-color-rgb-18-15-13-alpha-0-56);
+    isolation: isolate;
+    overflow: hidden;
+
+    &[data-requirement-scope='must-have'] {
+      padding-top: var(--space-lg);
+    }
   }
 
   .detailBackgroundFitMatchColumnHeader {
@@ -152,22 +159,27 @@
     }
   }
 
-  .detailRequirementChainIconFrame {
-    position: relative;
-    display: inline-grid;
-    place-items: center;
-    flex: 0 0 auto;
-    border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-22);
-    border-radius: var(--radius-pill);
-    background: var(--primitive-color-rgb-204-155-84-alpha-0-11);
-
-    @include size(var(--primitive-length-1-35rem));
+  .detailRequirementChainOverlay {
+    position: absolute;
+    top: var(--primitive-length-negative-0-65rem);
+    left: var(--primitive-length-negative-0-82rem);
+    z-index: var(--z-index-base);
+    display: block;
+    width: var(--primitive-length-5-5rem);
+    height: var(--primitive-length-5-5rem);
+    filter: drop-shadow(var(--shadow-chain-drop));
+    line-height: 0;
+    opacity: 0.22;
+    pointer-events: none;
+    transform: rotate(-12deg);
   }
 
-  .detailRequirementChainIcon {
+  .detailRequirementChainImage {
     display: block;
-
-    @include size(var(--icon-size-xs));
+    width: 100%;
+    height: 100%;
+    clip-path: polygon(0 0, 100% 0, 100% 68%, 70% 68%, 66.7% 96%, 55% 100%, 0 100%);
+    user-select: none;
   }
 
   .detailMatchSectionLabel {
@@ -193,24 +205,35 @@
     list-style: none;
 
     li {
-      display: grid;
-      grid-template-columns: var(--primitive-length-1-65rem) minmax(0, 1fr);
-      gap: var(--space-sm);
-      align-items: center;
       min-width: 0;
-      border: var(--primitive-length-1px) solid var(--border-subtle);
-      border-radius: var(--radius-control);
-      padding: var(--space-sm);
-      background: var(--primitive-color-rgb-16-13-11-alpha-0-46);
     }
   }
 
-  .detailStudyResourceIcon {
+  .detailStudyResourceTileFrame {
+    position: relative;
+    min-width: 0;
+  }
+
+  .detailStudyResourceTile {
+    min-height: var(--primitive-length-4-2rem);
+    padding-right: var(--primitive-length-2-65rem);
+  }
+
+  .detailStudyResourceTileBadge {
+    color: var(--accent-soft);
+  }
+
+  .detailStudyResourceTileIcon {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    z-index: var(--z-index-interactive);
     display: block;
     object-fit: contain;
     filter: drop-shadow(var(--shadow-chain-drop));
+    pointer-events: none;
 
-    @include size(var(--primitive-length-1-35rem));
+    @include size(var(--primitive-length-1-4rem));
   }
 
   .detailBackgroundFitEmptyMessage {

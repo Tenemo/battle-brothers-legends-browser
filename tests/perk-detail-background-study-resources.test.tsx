@@ -1,0 +1,101 @@
+import { render, screen, within } from '@testing-library/react'
+import { describe, expect, test, vi } from 'vitest'
+import { DetailsPanel } from '../src/components/PerkDetail'
+import type { RankedBackgroundFit } from '../src/lib/background-fit'
+import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
+
+const skillBookRequirementProfile = {
+  bookRequirement: {
+    categoryName: 'Traits',
+    perkGroupId: 'CalmTree',
+  },
+  requiredScrollCount: 0,
+  requiresBook: true,
+  requiresBright: false,
+  scrollRequirements: [],
+} satisfies StudyResourceRequirementProfile
+
+const backgroundFit = {
+  backgroundId: 'background.apprentice',
+  backgroundName: 'Apprentice',
+  buildReachabilityProbability: 1,
+  disambiguator: null,
+  expectedCoveredMustHavePerkCount: 1,
+  expectedCoveredOptionalPerkCount: 0,
+  expectedCoveredPickedPerkCount: 1,
+  expectedMatchedPerkGroupCount: 0,
+  fullBuildReachabilityProbability: 1,
+  fullBuildStudyResourceRequirement: skillBookRequirementProfile,
+  guaranteedCoveredMustHavePerkCount: 0,
+  guaranteedCoveredOptionalPerkCount: 0,
+  guaranteedMatchedPerkGroupCount: 0,
+  iconPath: null,
+  matches: [],
+  maximumNativeCoveredPickedPerkCount: 0,
+  maximumTotalPerkGroupCount: 1,
+  mustHaveBuildReachabilityProbability: 1,
+  mustHaveStudyResourceRequirement: skillBookRequirementProfile,
+  sourceFilePath: 'scripts/skills/backgrounds/apprentice_background.nut',
+  veteranPerkLevelInterval: 4,
+} satisfies RankedBackgroundFit
+
+describe('background details study resources', () => {
+  test('uses planner perk group tiles for book and scroll learning requirements', () => {
+    render(
+      <DetailsPanel
+        activeDetailType="background"
+        backgroundFitDetail={{ backgroundFit, rank: 0 }}
+        emphasizedCategoryNames={new Set()}
+        emphasizedPerkGroupKeys={new Set()}
+        groupedBackgroundSources={[]}
+        hoveredBuildPerkId={null}
+        hoveredBuildPerkTooltipId={undefined}
+        hoveredPerkId={null}
+        isSelectedPerkPicked={false}
+        mustHavePickedPerkCount={1}
+        mustHavePickedPerkIds={['perk.legend_clarity']}
+        onCloseBuildPerkHover={vi.fn()}
+        onCloseBuildPerkTooltip={vi.fn()}
+        onClosePerkGroupHover={vi.fn()}
+        onInspectPerk={vi.fn()}
+        onInspectPerkGroup={vi.fn()}
+        onOpenBuildPerkHover={vi.fn()}
+        onOpenBuildPerkTooltip={vi.fn()}
+        onOpenPerkGroupHover={vi.fn()}
+        onTogglePerkPicked={vi.fn()}
+        optionalPickedPerkCount={0}
+        optionalPickedPerkIds={[]}
+        pickedPerkCount={1}
+        selectedPerk={null}
+        studyResourceFilter={{
+          shouldAllowBook: true,
+          shouldAllowScroll: true,
+          shouldAllowSecondScroll: false,
+        }}
+        supportedBuildTargetPerkGroups={[
+          {
+            categoryName: 'Traits',
+            pickedPerkCount: 1,
+            pickedPerkIds: ['perk.legend_clarity'],
+            pickedPerkNames: ['Clarity'],
+            perkGroupIconPath: 'ui/perks/perk_01.png',
+            perkGroupId: 'CalmTree',
+            perkGroupName: 'Calm',
+          },
+        ]}
+      />,
+    )
+
+    expect(screen.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
+
+    const [mustHaveStudyResourceSection] = screen.getAllByTestId('detail-study-resource-section')
+    const studyResourceTile = within(mustHaveStudyResourceSection).getByTestId('planner-group-card')
+
+    expect(within(studyResourceTile).getByText('Skill book')).toBeVisible()
+    expect(
+      within(studyResourceTile).getByRole('button', { name: 'Select perk group Calm' }),
+    ).toBeVisible()
+    expect(within(studyResourceTile).getByRole('button', { name: 'Clarity' })).toBeVisible()
+    expect(screen.queryByText('Skill book: Calm')).not.toBeInTheDocument()
+  })
+})

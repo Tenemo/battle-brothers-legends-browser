@@ -182,6 +182,7 @@ export function SavedBuildsDialog({
   const [pendingSavedBuildId, setPendingSavedBuildId] = useState<string | null>(null)
   const hasPickedPerks = pickedPerks.length > 0
   const defaultSavedBuildName = getDefaultSavedBuildName(savedBuilds)
+  const isSavedBuildActionPending = isSaving || pendingSavedBuildId !== null
   const statusLabel = savedBuildsErrorMessage
     ? savedBuildsErrorMessage
     : getSavedBuildOperationStatusLabel(savedBuildOperationStatus)
@@ -204,7 +205,7 @@ export function SavedBuildsDialog({
   async function handleSaveCurrentBuild(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!hasPickedPerks || isSaving) {
+    if (!hasPickedPerks || isSavedBuildActionPending) {
       return
     }
 
@@ -221,6 +222,10 @@ export function SavedBuildsDialog({
   }
 
   async function handleCopySavedBuildLink(savedBuildId: string) {
+    if (isSavedBuildActionPending) {
+      return
+    }
+
     try {
       setConfirmingOverwriteSavedBuildId(null)
       setPendingSavedBuildId(savedBuildId)
@@ -233,6 +238,10 @@ export function SavedBuildsDialog({
   }
 
   async function handleDeleteSavedBuild(savedBuildId: string) {
+    if (isSavedBuildActionPending) {
+      return
+    }
+
     try {
       setConfirmingOverwriteSavedBuildId(null)
       setPendingSavedBuildId(savedBuildId)
@@ -245,7 +254,7 @@ export function SavedBuildsDialog({
   }
 
   async function handleOverwriteSavedBuild(savedBuildId: string) {
-    if (!hasPickedPerks || pendingSavedBuildId !== null) {
+    if (!hasPickedPerks || isSavedBuildActionPending) {
       return
     }
 
@@ -317,7 +326,7 @@ export function SavedBuildsDialog({
           <label htmlFor={nameInputId}>Build name</label>
           <div className={styles.savedBuildFormRow}>
             <input
-              disabled={!hasPickedPerks || isSaving}
+              disabled={!hasPickedPerks || isSavedBuildActionPending}
               id={nameInputId}
               onChange={(event) => setBuildName(event.target.value)}
               placeholder={defaultSavedBuildName}
@@ -330,7 +339,7 @@ export function SavedBuildsDialog({
                 plannerStyles.plannerActionButton,
                 styles.savedBuildPrimaryButton,
               )}
-              disabled={!hasPickedPerks || isSaving}
+              disabled={!hasPickedPerks || isSavedBuildActionPending}
               type="submit"
             >
               <Save aria-hidden="true" className={plannerStyles.plannerButtonIcon} />
@@ -366,7 +375,6 @@ export function SavedBuildsDialog({
                 savedBuild.missingPerkCount > 0
                   ? `${savedBuild.availablePerkIds.length} of ${savedBuild.pickedPerkCount} perks available. ${savedBuild.missingPerkCount} unavailable.`
                   : `${savedBuild.pickedPerkCount} perk${savedBuild.pickedPerkCount === 1 ? '' : 's'}.`
-              const isPending = pendingSavedBuildId === savedBuild.id
               const isConfirmingOverwrite = confirmingOverwriteSavedBuildId === savedBuild.id
 
               return (
@@ -394,7 +402,9 @@ export function SavedBuildsDialog({
                         plannerStyles.plannerActionButton,
                         styles.savedBuildPrimaryButton,
                       )}
-                      disabled={savedBuild.availablePerkIds.length === 0 || isPending}
+                      disabled={
+                        savedBuild.availablePerkIds.length === 0 || isSavedBuildActionPending
+                      }
                       onClick={() => {
                         onLoadSavedBuild(savedBuild.id)
                         onClose()
@@ -414,7 +424,7 @@ export function SavedBuildsDialog({
                         plannerStyles.plannerActionButton,
                         styles.savedBuildPrimaryButton,
                       )}
-                      disabled={!hasPickedPerks || pendingSavedBuildId !== null}
+                      disabled={!hasPickedPerks || isSavedBuildActionPending}
                       onClick={() => {
                         void handleOverwriteSavedBuild(savedBuild.id)
                       }}
@@ -426,7 +436,9 @@ export function SavedBuildsDialog({
                     <button
                       aria-label={`Copy saved build ${savedBuild.name} link`}
                       className={plannerStyles.plannerActionButton}
-                      disabled={savedBuild.availablePerkIds.length === 0 || isPending}
+                      disabled={
+                        savedBuild.availablePerkIds.length === 0 || isSavedBuildActionPending
+                      }
                       onClick={() => {
                         void handleCopySavedBuildLink(savedBuild.id)
                       }}
@@ -441,7 +453,7 @@ export function SavedBuildsDialog({
                         plannerStyles.plannerActionButton,
                         styles.savedBuildDeleteButton,
                       )}
-                      disabled={isPending}
+                      disabled={isSavedBuildActionPending}
                       onClick={() => {
                         void handleDeleteSavedBuild(savedBuild.id)
                       }}

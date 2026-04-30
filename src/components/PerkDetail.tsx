@@ -12,10 +12,7 @@ import type {
   BuildTargetPerkGroup,
   RankedBackgroundFit,
 } from '../lib/background-fit'
-import {
-  brightTraitIconPath,
-  skillBookIconPath,
-} from '../lib/background-study-resource-display'
+import { brightTraitIconPath, skillBookIconPath } from '../lib/background-study-resource-display'
 import { ancientScrollIconPath } from '../lib/ancient-scroll-perk-group-display'
 import type {
   BackgroundStudyResourceFilter,
@@ -34,7 +31,7 @@ import {
   BackgroundFitMetricSummary,
   BackgroundFitStudyResourceBadges,
 } from './BackgroundFitCard'
-import { BuildPerkGroupTile } from './BuildPerkGroupTile'
+import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
@@ -75,6 +72,7 @@ type PerkDetailProps = {
 }
 
 type StudyResourceRequirementEntry = {
+  iconAlt: string
   iconPath: string
   key: string
   label: string
@@ -143,8 +141,7 @@ export function DetailsPanel({
   studyResourceFilter,
   supportedBuildTargetPerkGroups,
 }: PerkDetailProps) {
-  const selectedBackgroundFitDetail =
-    activeDetailType === 'background' ? backgroundFitDetail : null
+  const selectedBackgroundFitDetail = activeDetailType === 'background' ? backgroundFitDetail : null
 
   return (
     <aside aria-label="Details" className={styles.detailPanel} data-testid="perk-detail-panel">
@@ -419,6 +416,7 @@ function getStudyResourceRequirementEntries(
 
   if (studyResourceRequirementProfile.bookRequirement) {
     entries.push({
+      iconAlt: 'Skill book',
       iconPath: skillBookIconPath,
       key: `book-${getRequirementKey(studyResourceRequirementProfile.bookRequirement)}`,
       label: 'Skill book',
@@ -427,8 +425,12 @@ function getStudyResourceRequirementEntries(
     })
   }
 
-  for (const [scrollIndex, scrollRequirement] of studyResourceRequirementProfile.scrollRequirements.entries()) {
+  for (const [
+    scrollIndex,
+    scrollRequirement,
+  ] of studyResourceRequirementProfile.scrollRequirements.entries()) {
     entries.push({
+      iconAlt: 'Ancient scroll',
       iconPath: ancientScrollIconPath,
       key: `scroll-${scrollIndex}-${getRequirementKey(scrollRequirement)}`,
       label: 'Ancient scroll',
@@ -439,6 +441,7 @@ function getStudyResourceRequirementEntries(
 
   if (studyResourceRequirementProfile.requiresBright) {
     entries.push({
+      iconAlt: 'Bright trait',
       iconPath: brightTraitIconPath,
       key: 'bright',
       label: 'Bright',
@@ -458,7 +461,9 @@ function getAdditionalStudyResourceRequirementEntries({
   fullStudyResourceRequirementProfile: StudyResourceRequirementProfile | null
 }): StudyResourceRequirementEntry[] {
   const baseRequirementKeys = new Set(
-    getStudyResourceRequirementEntries(baseStudyResourceRequirementProfile).map((entry) => entry.key),
+    getStudyResourceRequirementEntries(baseStudyResourceRequirementProfile).map(
+      (entry) => entry.key,
+    ),
   )
 
   return getStudyResourceRequirementEntries(fullStudyResourceRequirementProfile).filter(
@@ -469,14 +474,44 @@ function getAdditionalStudyResourceRequirementEntries({
 function StudyResourceRequirementList({
   buildTargetPerkGroupByKey,
   emptyMessage,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
   entries,
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
+  hoveredPerkId,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
+  onClosePerkGroupHover,
+  onInspectPerk,
+  onInspectPerkGroup,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
+  onOpenPerkGroupHover,
 }: {
   buildTargetPerkGroupByKey: ReadonlyMap<string, BuildTargetPerkGroup>
   emptyMessage: string
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
   entries: StudyResourceRequirementEntry[]
+  hoveredBuildPerkId: string | null
+  hoveredBuildPerkTooltipId: string | undefined
+  hoveredPerkId: string | null
+  onCloseBuildPerkHover: (perkId: string) => void
+  onCloseBuildPerkTooltip: () => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: BuildPerkPillSelection,
+  ) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
 }) {
   return (
-    <div className={styles.detailStudyResourceSection}>
+    <div className={styles.detailStudyResourceSection} data-testid="detail-study-resource-section">
       <p className={styles.detailMatchSectionLabel}>Learn with book/scrolls</p>
       {entries.length > 0 ? (
         <ul className={styles.detailStudyResourceList}>
@@ -484,27 +519,46 @@ function StudyResourceRequirementList({
             const buildTargetPerkGroup =
               entry.requirement === null
                 ? null
-                : buildTargetPerkGroupByKey.get(getRequirementKey(entry.requirement))
+                : (buildTargetPerkGroupByKey.get(getRequirementKey(entry.requirement)) ?? null)
 
             return (
               <li key={entry.key}>
-                <img
-                  alt=""
-                  className={styles.detailStudyResourceIcon}
-                  decoding="async"
-                  loading="lazy"
-                  src={`/game-icons/${entry.iconPath}`}
-                />
-                <div>
-                  <strong>
-                    {entry.label}
-                    {buildTargetPerkGroup ? `: ${buildTargetPerkGroup.perkGroupName}` : ''}
-                  </strong>
-                  <p className={styles.detailSupport}>
-                    {buildTargetPerkGroup
-                      ? `${buildTargetPerkGroup.categoryName} / ${buildTargetPerkGroup.pickedPerkNames.join(', ')}`
-                      : entry.support}
-                  </p>
+                <div
+                  className={styles.detailStudyResourceTileFrame}
+                  data-testid="detail-study-resource-tile-frame"
+                >
+                  <img
+                    alt={entry.iconAlt}
+                    className={styles.detailStudyResourceTileIcon}
+                    decoding="async"
+                    loading="lazy"
+                    src={`/game-icons/${entry.iconPath}`}
+                    title={entry.label}
+                  />
+                  <BuildPerkGroupTile
+                    arePerkGroupOptionsInteractive={buildTargetPerkGroup !== null}
+                    className={styles.detailStudyResourceTile}
+                    emphasizedCategoryNames={emphasizedCategoryNames}
+                    emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                    groupLabel={buildTargetPerkGroup?.perkGroupName ?? entry.label}
+                    groupOptions={getStudyResourceTileOptions(entry, buildTargetPerkGroup)}
+                    hoveredBuildPerkId={hoveredBuildPerkId}
+                    hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+                    hoveredPerkId={hoveredPerkId}
+                    isWide
+                    metaClassName={styles.detailStudyResourceTileBadge}
+                    metaLabel={entry.label}
+                    metaTestId="detail-study-resource-tile-badge"
+                    onCloseBuildPerkHover={onCloseBuildPerkHover}
+                    onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+                    onClosePerkGroupHover={onClosePerkGroupHover}
+                    onInspectPerk={onInspectPerk}
+                    onInspectPerkGroup={onInspectPerkGroup}
+                    onOpenBuildPerkHover={onOpenBuildPerkHover}
+                    onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+                    onOpenPerkGroupHover={onOpenPerkGroupHover}
+                    perks={getStudyResourceTilePerks(entry, buildTargetPerkGroup)}
+                  />
                 </div>
               </li>
             )
@@ -515,6 +569,46 @@ function StudyResourceRequirementList({
       )}
     </div>
   )
+}
+
+function getStudyResourceTileOptions(
+  entry: StudyResourceRequirementEntry,
+  buildTargetPerkGroup: BuildTargetPerkGroup | null,
+): BuildPerkGroupTileOption[] {
+  if (buildTargetPerkGroup) {
+    return [
+      {
+        categoryName: buildTargetPerkGroup.categoryName,
+        perkGroupIconPath: buildTargetPerkGroup.perkGroupIconPath,
+        perkGroupId: buildTargetPerkGroup.perkGroupId,
+        perkGroupLabel: buildTargetPerkGroup.perkGroupName,
+      },
+    ]
+  }
+
+  return [
+    {
+      categoryName: 'Study resources',
+      isSelectable: false,
+      perkGroupIconPath: entry.iconPath,
+      perkGroupId: entry.key,
+      perkGroupLabel: entry.label,
+    },
+  ]
+}
+
+function getStudyResourceTilePerks(
+  entry: StudyResourceRequirementEntry,
+  buildTargetPerkGroup: BuildTargetPerkGroup | null,
+): { perkId: string | null; perkName: string }[] {
+  if (!buildTargetPerkGroup) {
+    return [{ perkId: null, perkName: entry.support }]
+  }
+
+  return buildTargetPerkGroup.pickedPerkNames.map((perkName, pickedPerkIndex) => ({
+    perkId: buildTargetPerkGroup.pickedPerkIds[pickedPerkIndex] ?? null,
+    perkName,
+  }))
 }
 
 function BackgroundDetail({
@@ -636,14 +730,24 @@ function BackgroundDetail({
       <div className={styles.detailSection} data-testid="detail-section">
         <h3>Matched perk groups</h3>
         <div className={styles.detailBackgroundFitMatchColumns}>
-          <div className={styles.detailBackgroundFitMatchColumn}>
+          <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="must-have">
+            <span
+              aria-label="Must-have perk groups"
+              className={styles.detailRequirementChainOverlay}
+              data-testid="detail-requirement-chain-overlay"
+              role="img"
+              title="Must-have perk groups"
+            >
+              <img
+                alt=""
+                aria-hidden="true"
+                className={styles.detailRequirementChainImage}
+                draggable={false}
+                src={catenaryChainIconPath}
+              />
+            </span>
             <div className={styles.detailBackgroundFitMatchColumnHeader}>
-              <h4>
-                <span className={styles.detailRequirementChainIconFrame}>
-                  <img alt="" className={styles.detailRequirementChainIcon} src={catenaryChainIconPath} />
-                </span>
-                Must-have
-              </h4>
+              <h4>Must-have</h4>
             </div>
             <BackgroundFitMatchSections
               backgroundFit={mustHaveBackgroundFit}
@@ -664,9 +768,22 @@ function BackgroundDetail({
             <StudyResourceRequirementList
               buildTargetPerkGroupByKey={buildTargetPerkGroupByKey}
               emptyMessage="No book or scroll needed for must-have perks."
+              emphasizedCategoryNames={emphasizedCategoryNames}
+              emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
               entries={getStudyResourceRequirementEntries(
                 backgroundFit.mustHaveStudyResourceRequirement,
               )}
+              hoveredBuildPerkId={hoveredBuildPerkId}
+              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+              hoveredPerkId={hoveredPerkId}
+              onCloseBuildPerkHover={onCloseBuildPerkHover}
+              onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+              onClosePerkGroupHover={onClosePerkGroupHover}
+              onInspectPerk={onInspectPerk}
+              onInspectPerkGroup={onInspectPerkGroup}
+              onOpenBuildPerkHover={onOpenBuildPerkHover}
+              onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+              onOpenPerkGroupHover={onOpenPerkGroupHover}
             />
           </div>
           <div className={styles.detailBackgroundFitMatchColumn}>
@@ -696,7 +813,20 @@ function BackgroundDetail({
                   ? 'No optional perks in this build.'
                   : 'No additional book or scroll needed for optional perks.'
               }
+              emphasizedCategoryNames={emphasizedCategoryNames}
+              emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
               entries={optionalStudyResourceRequirementEntries}
+              hoveredBuildPerkId={hoveredBuildPerkId}
+              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+              hoveredPerkId={hoveredPerkId}
+              onCloseBuildPerkHover={onCloseBuildPerkHover}
+              onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+              onClosePerkGroupHover={onClosePerkGroupHover}
+              onInspectPerk={onInspectPerk}
+              onInspectPerkGroup={onInspectPerkGroup}
+              onOpenBuildPerkHover={onOpenBuildPerkHover}
+              onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+              onOpenPerkGroupHover={onOpenPerkGroupHover}
             />
           </div>
         </div>

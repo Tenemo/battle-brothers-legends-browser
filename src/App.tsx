@@ -560,6 +560,7 @@ export default function App() {
 
     let isCancelled = false
     clearBackgroundFitCompletionProgressTimeout()
+    const backgroundFitProgressByViewKey = backgroundFitProgressByViewKeyRef.current
     const backgroundFitWorkerClient = getBackgroundFitWorkerClient()
     let requestId = 0
     const backgroundFitCalculation = backgroundFitWorkerClient.calculateBackgroundFitView(
@@ -578,7 +579,7 @@ export default function App() {
             return
           }
 
-          backgroundFitProgressByViewKeyRef.current.set(backgroundFitViewKey, progress)
+          backgroundFitProgressByViewKey.set(backgroundFitViewKey, progress)
 
           startTransition(() => {
             setBackgroundFitProgressState({
@@ -596,7 +597,7 @@ export default function App() {
             return
           }
 
-          backgroundFitProgressByViewKeyRef.current.set(backgroundFitViewKey, progress)
+          backgroundFitProgressByViewKey.set(backgroundFitViewKey, progress)
 
           startTransition(() => {
             setBackgroundFitProgressState({
@@ -617,7 +618,7 @@ export default function App() {
           return
         }
 
-        const latestProgress = backgroundFitProgressByViewKeyRef.current.get(backgroundFitViewKey)
+        const latestProgress = backgroundFitProgressByViewKey.get(backgroundFitViewKey)
         const completionProgress =
           latestProgress && latestProgress.totalBackgroundCount > 0
             ? {
@@ -646,6 +647,7 @@ export default function App() {
         if (completionProgress !== null) {
           backgroundFitCompletionProgressTimeoutRef.current = window.setTimeout(() => {
             backgroundFitCompletionProgressTimeoutRef.current = null
+            backgroundFitProgressByViewKey.delete(backgroundFitViewKey)
 
             if (latestBackgroundFitRequestIdRef.current !== requestId) {
               return
@@ -656,7 +658,6 @@ export default function App() {
                 currentProgressState?.key === backgroundFitViewKey ? null : currentProgressState,
               )
             })
-            backgroundFitProgressByViewKeyRef.current.delete(backgroundFitViewKey)
           }, backgroundFitCompletionProgressMinimumDurationMs)
         }
       })
@@ -665,6 +666,7 @@ export default function App() {
           return
         }
 
+        backgroundFitProgressByViewKey.delete(backgroundFitViewKey)
         setBackgroundFitErrorState({
           key: backgroundFitViewKey,
           message: error instanceof Error ? error.message : 'Background fit calculation failed.',
@@ -675,6 +677,7 @@ export default function App() {
 
     return () => {
       isCancelled = true
+      backgroundFitProgressByViewKey.delete(backgroundFitViewKey)
     }
   }, [
     backgroundFitErrorMessage,
@@ -1313,9 +1316,7 @@ export default function App() {
           backgroundFitProgress={backgroundFitProgress}
           hoveredPerkId={hoveredPerkId}
           isExpanded={isBackgroundFitPanelExpanded}
-          isLoadingBackgroundFitView={
-            isBackgroundFitViewLoading || isBackgroundFitProgressVisible
-          }
+          isLoadingBackgroundFitView={isBackgroundFitViewLoading || isBackgroundFitProgressVisible}
           onCloseBuildPerkHover={closeBuildPerkHover}
           onCloseBuildPerkTooltip={closeBuildPerkTooltip}
           onClearPerkGroupHover={clearPerkGroupHover}
