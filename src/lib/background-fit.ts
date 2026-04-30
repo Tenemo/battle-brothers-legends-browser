@@ -16,10 +16,10 @@ import {
   isDynamicBackgroundCategoryName,
 } from './dynamic-background-categories'
 import {
-  createStudyResourceCoverageProfile,
+  createStudyResourceMaskCoverageProfile,
   getMinimumStudyResourceRequirementProfile,
   type BackgroundStudyResourceFilter,
-  type StudyResourceCoverageProfile,
+  type StudyResourceMaskCoverageProfile,
   type StudyResourceRequirementProfile,
   type StudyReachabilityRequirement,
 } from './background-study-reachability'
@@ -40,7 +40,15 @@ type BackgroundProbabilityRecord = {
   probabilitiesByPerkGroupKey: Map<string, number>
 }
 
-type BackgroundOutcomeDistribution = Map<string, number>
+type CoverageMask = bigint
+
+type BackgroundOutcomeDistribution = Map<CoverageMask, number>
+
+type BackgroundFitProjection = {
+  allPickedMask: CoverageMask
+  groupCoverageMaskByRequirementKey: Map<string, CoverageMask>
+  pickedPerkMaskById: Map<string, CoverageMask>
+}
 
 type NativeOutcomeSummary = {
   buildReachabilityProbability: number
@@ -73,7 +81,7 @@ type CachedBackgroundFitRecord = {
 
 type BackgroundFitBuildCache = {
   cachedBackgroundFitRecords: CachedBackgroundFitRecord[]
-  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+  projection: BackgroundFitProjection
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
   unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }
@@ -194,7 +202,17 @@ function comparePerkBackgroundSources(
 }
 
 function clampProbability(probability: number): number {
-  return Math.max(0, Math.min(1, probability))
+  const clampedProbability = Math.max(0, Math.min(1, probability))
+
+  if (Math.abs(clampedProbability) < 1e-12) {
+    return 0
+  }
+
+  if (Math.abs(1 - clampedProbability) < 1e-12) {
+    return 1
+  }
+
+  return clampedProbability
 }
 
 function getExpectedSuccessfulDrawCount(
@@ -301,28 +319,22 @@ function getPerkGroupProbabilityKey(categoryName: string, perkGroupId: string): 
   return `${categoryName}::${perkGroupId}`
 }
 
-function getOutcomeDistributionKey(perkGroupKeys: Iterable<string>): string {
-  return [...perkGroupKeys].toSorted().join(',')
-}
-
-function parseOutcomeDistributionKey(outcomeDistributionKey: string): Set<string> {
-  return new Set(outcomeDistributionKey.length === 0 ? [] : outcomeDistributionKey.split(','))
+function getPickedPerkMask(pickedPerkIndex: number): CoverageMask {
+  return 1n << BigInt(pickedPerkIndex)
 }
 
 function addOutcomeProbability(
   outcomeDistribution: BackgroundOutcomeDistribution,
-  perkGroupKeys: Iterable<string>,
+  coverageMask: CoverageMask,
   probability: number,
 ): void {
   if (probability <= 0) {
     return
   }
 
-  const outcomeDistributionKey = getOutcomeDistributionKey(perkGroupKeys)
-
   outcomeDistribution.set(
-    outcomeDistributionKey,
-    (outcomeDistribution.get(outcomeDistributionKey) ?? 0) + probability,
+    coverageMask,
+    (outcomeDistribution.get(coverageMask) ?? 0) + probability,
   )
 }
 
@@ -332,19 +344,45 @@ function combineOutcomeDistributions(
 ): BackgroundOutcomeDistribution {
   const combinedOutcomeDistribution: BackgroundOutcomeDistribution = new Map()
 
-  for (const [leftOutcomeDistributionKey, leftProbability] of leftOutcomeDistribution) {
-    const leftPerkGroupKeys = parseOutcomeDistributionKey(leftOutcomeDistributionKey)
-
-    for (const [rightOutcomeDistributionKey, rightProbability] of rightOutcomeDistribution) {
+  for (const [leftCoverageMask, leftProbability] of leftOutcomeDistribution) {
+    for (const [rightCoverageMask, rightProbability] of rightOutcomeDistribution) {
       addOutcomeProbability(
         combinedOutcomeDistribution,
-        [...leftPerkGroupKeys, ...parseOutcomeDistributionKey(rightOutcomeDistributionKey)],
+        leftCoverageMask | rightCoverageMask,
         leftProbability * rightProbability,
       )
     }
   }
 
   return combinedOutcomeDistribution
+}
+
+function getRequirementCoverageMask(
+  projection: BackgroundFitProjection,
+  categoryName: LegendsDynamicBackgroundCategoryName,
+  perkGroupId: string,
+): CoverageMask {
+  return projection.groupCoverageMaskByRequirementKey.get(
+    getPerkGroupProbabilityKey(categoryName, perkGroupId),
+  ) ?? 0n
+}
+
+function getPerkGroupIdsCoverageMask({
+  categoryName,
+  perkGroupIds,
+  projection,
+}: {
+  categoryName: LegendsDynamicBackgroundCategoryName
+  perkGroupIds: Iterable<string>
+  projection: BackgroundFitProjection
+}): CoverageMask {
+  let coverageMask = 0n
+
+  for (const perkGroupId of perkGroupIds) {
+    coverageMask |= getRequirementCoverageMask(projection, categoryName, perkGroupId)
+  }
+
+  return coverageMask
 }
 
 function buildClassWeaponDependencyByClassPerkGroupId(
@@ -545,61 +583,134 @@ function getCategoryDefinition(
   )
 }
 
-function getRelevantPerkGroupIdsByCategory(
-  pickedPerks: LegendsPerkRecord[],
-): Map<LegendsDynamicBackgroundCategoryName, Set<string>> {
-  const relevantPerkGroupIdsByCategory = new Map<
-    LegendsDynamicBackgroundCategoryName,
-    Set<string>
-  >()
-
-  for (const categoryName of dynamicBackgroundCategoryNames) {
-    relevantPerkGroupIdsByCategory.set(categoryName, new Set())
-  }
+function createBackgroundFitProjection(pickedPerks: LegendsPerkRecord[]): BackgroundFitProjection {
+  const groupCoverageMaskByRequirementKey = new Map<string, CoverageMask>()
+  const pickedPerkMaskById = new Map<string, CoverageMask>()
+  let pickedPerkIndex = 0
 
   for (const pickedPerk of pickedPerks) {
+    const requirementKeys = new Set<string>()
+
     for (const placement of pickedPerk.placements) {
       if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
         continue
       }
 
-      relevantPerkGroupIdsByCategory.get(placement.categoryName)?.add(placement.perkGroupId)
+      requirementKeys.add(getPlacementGroupRequirementKey(placement))
     }
+
+    if (requirementKeys.size === 0) {
+      continue
+    }
+
+    const pickedPerkMask = getPickedPerkMask(pickedPerkIndex)
+    pickedPerkMaskById.set(pickedPerk.id, pickedPerkMask)
+
+    for (const requirementKey of requirementKeys) {
+      groupCoverageMaskByRequirementKey.set(
+        requirementKey,
+        (groupCoverageMaskByRequirementKey.get(requirementKey) ?? 0n) | pickedPerkMask,
+      )
+    }
+
+    pickedPerkIndex += 1
   }
 
-  return relevantPerkGroupIdsByCategory
+  return {
+    allPickedMask: pickedPerkIndex === 0 ? 0n : (1n << BigInt(pickedPerkIndex)) - 1n,
+    groupCoverageMaskByRequirementKey,
+    pickedPerkMaskById,
+  }
 }
 
-function getRelevantPerkGroupKeys({
-  categoryName,
-  perkGroupIds,
-  relevantPerkGroupIds,
-}: {
-  categoryName: LegendsDynamicBackgroundCategoryName
-  perkGroupIds: Iterable<string>
-  relevantPerkGroupIds: ReadonlySet<string>
-}): string[] {
-  const relevantPerkGroupKeys: string[] = []
+function getPickedPerksCoverageMask(
+  pickedPerks: LegendsPerkRecord[],
+  projection: BackgroundFitProjection,
+): CoverageMask {
+  let coverageMask = 0n
 
-  for (const perkGroupId of perkGroupIds) {
-    if (relevantPerkGroupIds.has(perkGroupId)) {
-      relevantPerkGroupKeys.push(getPerkGroupProbabilityKey(categoryName, perkGroupId))
-    }
+  for (const pickedPerk of pickedPerks) {
+    coverageMask |= projection.pickedPerkMaskById.get(pickedPerk.id) ?? 0n
   }
 
-  return relevantPerkGroupKeys
+  return coverageMask
+}
+
+function addProjectedRandomOutcomeProbabilities({
+  baseCoverageMask,
+  categoryName,
+  outcomeDistribution,
+  projection,
+  remainingPerkGroupIds,
+  selectedPerkGroupCount,
+  selectedPerkGroupCountProbability,
+}: {
+  baseCoverageMask: CoverageMask
+  categoryName: LegendsDynamicBackgroundCategoryName
+  outcomeDistribution: BackgroundOutcomeDistribution
+  projection: BackgroundFitProjection
+  remainingPerkGroupIds: string[]
+  selectedPerkGroupCount: number
+  selectedPerkGroupCountProbability: number
+}): void {
+  const totalCombinationCount = countCombinations(
+    remainingPerkGroupIds.length,
+    selectedPerkGroupCount,
+  )
+
+  if (totalCombinationCount === 0 || selectedPerkGroupCountProbability <= 0) {
+    return
+  }
+
+  const relevantPerkGroups = remainingPerkGroupIds.flatMap((perkGroupId) => {
+    const coverageMask = getRequirementCoverageMask(projection, categoryName, perkGroupId)
+
+    return coverageMask === 0n ? [] : [{ coverageMask, perkGroupId }]
+  })
+  const irrelevantPerkGroupCount = remainingPerkGroupIds.length - relevantPerkGroups.length
+  const minimumRelevantSubsetSize = Math.max(0, selectedPerkGroupCount - irrelevantPerkGroupCount)
+  const maximumRelevantSubsetSize = Math.min(selectedPerkGroupCount, relevantPerkGroups.length)
+
+  for (
+    let relevantSubsetSize = minimumRelevantSubsetSize;
+    relevantSubsetSize <= maximumRelevantSubsetSize;
+    relevantSubsetSize += 1
+  ) {
+    const irrelevantSubsetSize = selectedPerkGroupCount - relevantSubsetSize
+    const irrelevantCombinationCount = countCombinations(
+      irrelevantPerkGroupCount,
+      irrelevantSubsetSize,
+    )
+
+    if (irrelevantCombinationCount === 0) {
+      continue
+    }
+
+    const subsetProbability =
+      (selectedPerkGroupCountProbability * irrelevantCombinationCount) / totalCombinationCount
+
+    forEachSubsetOfSize(relevantPerkGroups, relevantSubsetSize, (perkGroupSubset) => {
+      let coverageMask = baseCoverageMask
+
+      for (const perkGroup of perkGroupSubset) {
+        coverageMask |= perkGroup.coverageMask
+      }
+
+      addOutcomeProbability(outcomeDistribution, coverageMask, subsetProbability)
+    })
+  }
 }
 
 function getDeterministicCategoryOutcomeDistribution({
   categoryDefinition,
   categoryName,
   poolPerkGroupIds,
-  relevantPerkGroupIds,
+  projection,
 }: {
   categoryDefinition: LegendsBackgroundFitCategoryDefinition
   categoryName: LegendsDynamicBackgroundCategoryName
   poolPerkGroupIds: string[]
-  relevantPerkGroupIds: ReadonlySet<string>
+  projection: BackgroundFitProjection
 }): BackgroundOutcomeDistribution {
   const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
   const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
@@ -608,34 +719,19 @@ function getDeterministicCategoryOutcomeDistribution({
     categoryDefinition,
     remainingPerkGroupIds.length,
   )
-  const totalCombinationCount = countCombinations(
-    remainingPerkGroupIds.length,
-    randomPerkGroupCount,
-  )
 
-  if (totalCombinationCount === 0) {
-    return outcomeDistribution
-  }
-
-  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+  addProjectedRandomOutcomeProbabilities({
+    baseCoverageMask: getPerkGroupIdsCoverageMask({
+      categoryName,
+      perkGroupIds: explicitPerkGroupIdSet,
+      projection,
+    }),
     categoryName,
-    perkGroupIds: explicitPerkGroupIdSet,
-    relevantPerkGroupIds,
-  })
-
-  forEachSubsetOfSize(remainingPerkGroupIds, randomPerkGroupCount, (perkGroupSubset) => {
-    addOutcomeProbability(
-      outcomeDistribution,
-      [
-        ...explicitRelevantPerkGroupKeys,
-        ...getRelevantPerkGroupKeys({
-          categoryName,
-          perkGroupIds: perkGroupSubset,
-          relevantPerkGroupIds,
-        }),
-      ],
-      1 / totalCombinationCount,
-    )
+    outcomeDistribution,
+    projection,
+    remainingPerkGroupIds,
+    selectedPerkGroupCount: randomPerkGroupCount,
+    selectedPerkGroupCountProbability: 1,
   })
 
   return outcomeDistribution
@@ -645,12 +741,12 @@ function getChanceCategoryOutcomeDistribution({
   categoryDefinition,
   categoryName,
   poolPerkGroupIds,
-  relevantPerkGroupIds,
+  projection,
 }: {
   categoryDefinition: LegendsBackgroundFitCategoryDefinition
   categoryName: LegendsDynamicBackgroundCategoryName
   poolPerkGroupIds: string[]
-  relevantPerkGroupIds: ReadonlySet<string>
+  projection: BackgroundFitProjection
 }): BackgroundOutcomeDistribution {
   const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
   const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
@@ -660,38 +756,24 @@ function getChanceCategoryOutcomeDistribution({
     clampProbability(categoryDefinition.chance ?? 0),
     remainingPerkGroupIds.length,
   )
-  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+  const baseCoverageMask = getPerkGroupIdsCoverageMask({
     categoryName,
     perkGroupIds: explicitPerkGroupIdSet,
-    relevantPerkGroupIds,
+    projection,
   })
 
   for (const [
     selectedPerkGroupCount,
     selectedPerkGroupCountProbability,
   ] of selectedCountDistribution) {
-    const totalCombinationCount = countCombinations(
-      remainingPerkGroupIds.length,
+    addProjectedRandomOutcomeProbabilities({
+      baseCoverageMask,
+      categoryName,
+      outcomeDistribution,
+      projection,
+      remainingPerkGroupIds,
       selectedPerkGroupCount,
-    )
-
-    if (totalCombinationCount === 0) {
-      continue
-    }
-
-    forEachSubsetOfSize(remainingPerkGroupIds, selectedPerkGroupCount, (perkGroupSubset) => {
-      addOutcomeProbability(
-        outcomeDistribution,
-        [
-          ...explicitRelevantPerkGroupKeys,
-          ...getRelevantPerkGroupKeys({
-            categoryName,
-            perkGroupIds: perkGroupSubset,
-            relevantPerkGroupIds,
-          }),
-        ],
-        selectedPerkGroupCountProbability / totalCombinationCount,
-      )
+      selectedPerkGroupCountProbability,
     })
   }
 
@@ -701,20 +783,20 @@ function getChanceCategoryOutcomeDistribution({
 function getExplicitOnlyCategoryOutcomeDistribution({
   categoryDefinition,
   categoryName,
-  relevantPerkGroupIds,
+  projection,
 }: {
   categoryDefinition: LegendsBackgroundFitCategoryDefinition
   categoryName: LegendsDynamicBackgroundCategoryName
-  relevantPerkGroupIds: ReadonlySet<string>
+  projection: BackgroundFitProjection
 }): BackgroundOutcomeDistribution {
   const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
 
   addOutcomeProbability(
     outcomeDistribution,
-    getRelevantPerkGroupKeys({
+    getPerkGroupIdsCoverageMask({
       categoryName,
       perkGroupIds: categoryDefinition.perkGroupIds,
-      relevantPerkGroupIds,
+      projection,
     }),
     1,
   )
@@ -752,69 +834,41 @@ function getDeterministicFullCategoryOutcomes(
   return fullCategoryOutcomes
 }
 
-function getClassOutcomeDistributionForWeaponOutcome({
+function getClassOutcomeDistributionForEligiblePool({
   categoryDefinition,
-  classWeaponDependencyByClassPerkGroupId,
-  poolPerkGroupIds,
-  relevantPerkGroupIds,
-  weaponPerkGroupIds,
+  eligibleRemainingClassPerkGroupIds,
+  projection,
 }: {
   categoryDefinition: LegendsBackgroundFitCategoryDefinition
-  classWeaponDependencyByClassPerkGroupId: ClassWeaponDependencyByClassPerkGroupId
-  poolPerkGroupIds: string[]
-  relevantPerkGroupIds: ReadonlySet<string>
-  weaponPerkGroupIds: ReadonlySet<string>
+  eligibleRemainingClassPerkGroupIds: string[]
+  projection: BackgroundFitProjection
 }): BackgroundOutcomeDistribution {
   const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
   const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
-  const eligibleRemainingClassPerkGroupIds = getEligibleRemainingClassPerkGroupIds(
-    poolPerkGroupIds,
-    explicitPerkGroupIdSet,
-    new Set(weaponPerkGroupIds),
-    classWeaponDependencyByClassPerkGroupId,
-  )
   const selectedCountDistribution = getChanceSelectedCountDistribution(
     getChanceAttemptCount(categoryDefinition),
     clampProbability(categoryDefinition.chance ?? 0),
     eligibleRemainingClassPerkGroupIds.length,
   )
-  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+  const baseCoverageMask = getPerkGroupIdsCoverageMask({
     categoryName: 'Class',
     perkGroupIds: explicitPerkGroupIdSet,
-    relevantPerkGroupIds,
+    projection,
   })
 
   for (const [
     selectedPerkGroupCount,
     selectedPerkGroupCountProbability,
   ] of selectedCountDistribution) {
-    const totalCombinationCount = countCombinations(
-      eligibleRemainingClassPerkGroupIds.length,
+    addProjectedRandomOutcomeProbabilities({
+      baseCoverageMask,
+      categoryName: 'Class',
+      outcomeDistribution,
+      projection,
+      remainingPerkGroupIds: eligibleRemainingClassPerkGroupIds,
       selectedPerkGroupCount,
-    )
-
-    if (totalCombinationCount === 0) {
-      continue
-    }
-
-    forEachSubsetOfSize(
-      eligibleRemainingClassPerkGroupIds,
-      selectedPerkGroupCount,
-      (perkGroupSubset) => {
-        addOutcomeProbability(
-          outcomeDistribution,
-          [
-            ...explicitRelevantPerkGroupKeys,
-            ...getRelevantPerkGroupKeys({
-              categoryName: 'Class',
-              perkGroupIds: perkGroupSubset,
-              relevantPerkGroupIds,
-            }),
-          ],
-          selectedPerkGroupCountProbability / totalCombinationCount,
-        )
-      },
-    )
+      selectedPerkGroupCountProbability,
+    })
   }
 
   return outcomeDistribution
@@ -823,45 +877,81 @@ function getClassOutcomeDistributionForWeaponOutcome({
 function getWeaponAndClassOutcomeDistribution({
   backgroundDefinition,
   context,
-  relevantPerkGroupIdsByCategory,
+  projection,
 }: {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
   context: BackgroundProbabilityContext
-  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+  projection: BackgroundFitProjection
 }): BackgroundOutcomeDistribution {
   const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
   const weaponCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Weapon')
   const weaponPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Weapon') ?? []
   const classCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Class')
   const classPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Class') ?? []
-  const relevantWeaponPerkGroupIds = relevantPerkGroupIdsByCategory.get('Weapon') ?? new Set()
-  const relevantClassPerkGroupIds = relevantPerkGroupIdsByCategory.get('Class') ?? new Set()
+  const explicitClassPerkGroupIdSet = new Set(classCategoryDefinition.perkGroupIds)
+  const weaponOutcomeBuckets = new Map<
+    string,
+    {
+      eligibleRemainingClassPerkGroupIds: string[]
+      probability: number
+      weaponCoverageMask: CoverageMask
+    }
+  >()
+  const classOutcomeDistributionByEligiblePoolKey = new Map<string, BackgroundOutcomeDistribution>()
 
   for (const weaponOutcome of getDeterministicFullCategoryOutcomes(
     weaponCategoryDefinition,
     weaponPoolPerkGroupIds,
   )) {
-    const weaponRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+    const weaponCoverageMask = getPerkGroupIdsCoverageMask({
       categoryName: 'Weapon',
       perkGroupIds: weaponOutcome.perkGroupIds,
-      relevantPerkGroupIds: relevantWeaponPerkGroupIds,
+      projection,
     })
-    const classOutcomeDistribution = getClassOutcomeDistributionForWeaponOutcome({
-      categoryDefinition: classCategoryDefinition,
-      classWeaponDependencyByClassPerkGroupId: context.classWeaponDependencyByClassPerkGroupId,
-      poolPerkGroupIds: classPoolPerkGroupIds,
-      relevantPerkGroupIds: relevantClassPerkGroupIds,
-      weaponPerkGroupIds: weaponOutcome.perkGroupIds,
-    })
+    const eligibleRemainingClassPerkGroupIds = getEligibleRemainingClassPerkGroupIds(
+      classPoolPerkGroupIds,
+      explicitClassPerkGroupIdSet,
+      weaponOutcome.perkGroupIds,
+      context.classWeaponDependencyByClassPerkGroupId,
+    )
+    const eligiblePoolKey = eligibleRemainingClassPerkGroupIds.join('\u0000')
+    const weaponBucketKey = `${weaponCoverageMask.toString(16)}\u0001${eligiblePoolKey}`
+    const existingBucket = weaponOutcomeBuckets.get(weaponBucketKey)
 
-    for (const [classOutcomeDistributionKey, classOutcomeProbability] of classOutcomeDistribution) {
+    if (existingBucket) {
+      existingBucket.probability += weaponOutcome.probability
+      continue
+    }
+
+    weaponOutcomeBuckets.set(weaponBucketKey, {
+      eligibleRemainingClassPerkGroupIds,
+      probability: weaponOutcome.probability,
+      weaponCoverageMask,
+    })
+  }
+
+  for (const {
+    eligibleRemainingClassPerkGroupIds,
+    probability,
+    weaponCoverageMask,
+  } of weaponOutcomeBuckets.values()) {
+    const eligiblePoolKey = eligibleRemainingClassPerkGroupIds.join('\u0000')
+    let classOutcomeDistribution = classOutcomeDistributionByEligiblePoolKey.get(eligiblePoolKey)
+
+    if (!classOutcomeDistribution) {
+      classOutcomeDistribution = getClassOutcomeDistributionForEligiblePool({
+        categoryDefinition: classCategoryDefinition,
+        eligibleRemainingClassPerkGroupIds,
+        projection,
+      })
+      classOutcomeDistributionByEligiblePoolKey.set(eligiblePoolKey, classOutcomeDistribution)
+    }
+
+    for (const [classCoverageMask, classOutcomeProbability] of classOutcomeDistribution) {
       addOutcomeProbability(
         outcomeDistribution,
-        [
-          ...weaponRelevantPerkGroupKeys,
-          ...parseOutcomeDistributionKey(classOutcomeDistributionKey),
-        ],
-        weaponOutcome.probability * classOutcomeProbability,
+        weaponCoverageMask | classCoverageMask,
+        probability * classOutcomeProbability,
       )
     }
   }
@@ -873,23 +963,22 @@ function getCategoryOutcomeDistribution({
   backgroundDefinition,
   categoryName,
   context,
-  relevantPerkGroupIdsByCategory,
+  projection,
 }: {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
   categoryName: LegendsDynamicBackgroundCategoryName
   context: BackgroundProbabilityContext
-  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+  projection: BackgroundFitProjection
 }): BackgroundOutcomeDistribution {
   const categoryDefinition = getCategoryDefinition(backgroundDefinition, categoryName)
   const poolPerkGroupIds = context.perkGroupIdsByCategory.get(categoryName) ?? []
-  const relevantPerkGroupIds = relevantPerkGroupIdsByCategory.get(categoryName) ?? new Set()
 
   if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
     return getDeterministicCategoryOutcomeDistribution({
       categoryDefinition,
       categoryName,
       poolPerkGroupIds,
-      relevantPerkGroupIds,
+      projection,
     })
   }
 
@@ -898,30 +987,30 @@ function getCategoryOutcomeDistribution({
       categoryDefinition,
       categoryName,
       poolPerkGroupIds,
-      relevantPerkGroupIds,
+      projection,
     })
   }
 
   return getExplicitOnlyCategoryOutcomeDistribution({
     categoryDefinition,
     categoryName,
-    relevantPerkGroupIds,
+    projection,
   })
 }
 
 function getBackgroundNativeOutcomeDistribution({
   backgroundDefinition,
   context,
-  relevantPerkGroupIdsByCategory,
+  projection,
 }: {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
   context: BackgroundProbabilityContext
-  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+  projection: BackgroundFitProjection
 }): BackgroundOutcomeDistribution {
   let outcomeDistribution = getWeaponAndClassOutcomeDistribution({
     backgroundDefinition,
     context,
-    relevantPerkGroupIdsByCategory,
+    projection,
   })
 
   for (const categoryName of dynamicBackgroundCategoryNames) {
@@ -935,7 +1024,7 @@ function getBackgroundNativeOutcomeDistribution({
         backgroundDefinition,
         categoryName,
         context,
-        relevantPerkGroupIdsByCategory,
+        projection,
       }),
     )
   }
@@ -948,7 +1037,7 @@ function calculateNativeOutcomeSummary({
   studyResourceCoverageProfile,
 }: {
   nativeOutcomeDistribution: BackgroundOutcomeDistribution
-  studyResourceCoverageProfile: StudyResourceCoverageProfile
+  studyResourceCoverageProfile: StudyResourceMaskCoverageProfile
 }): {
   buildReachabilityProbability: number
   maximumNativeCoveredPickedPerkCount: number
@@ -957,20 +1046,12 @@ function calculateNativeOutcomeSummary({
   let maximumNativeCoveredPickedPerkCount = 0
 
   /*
-   * Native outcome keys are exact intersections between one complete background roll and the
-   * perk groups the picked build can use. Those outcomes are disjoint, so full-build probability is
-   * the direct sum of outcomes where native groups plus the allowed study resources cover every
-   * picked perk. The best-native-roll metric is the maximum picked-perk count covered by any one of
-   * those same legal outcomes, which keeps mutually exclusive optional groups from being merged.
+   * Native outcome masks are exact projected intersections between one complete background roll and
+   * the picked perks that roll can cover. Those outcomes are disjoint, so full-build probability is
+   * the direct sum of masks where native groups plus the allowed study resources cover every target
+   * perk. The best-native-roll metric stays exact because it is measured per legal outcome mask.
    */
-  for (const [
-    nativeOutcomeDistributionKey,
-    nativeOutcomeProbability,
-  ] of nativeOutcomeDistribution) {
-    const nativeRequirementKeys = parseOutcomeDistributionKey(nativeOutcomeDistributionKey)
-    const nativeCoveredPickedPerkMask =
-      studyResourceCoverageProfile.getNativeCoveredPickedPerkMask(nativeRequirementKeys)
-
+  for (const [nativeCoveredPickedPerkMask, nativeOutcomeProbability] of nativeOutcomeDistribution) {
     maximumNativeCoveredPickedPerkCount = Math.max(
       maximumNativeCoveredPickedPerkCount,
       studyResourceCoverageProfile.getCoveredPickedPerkCount(nativeCoveredPickedPerkMask),
@@ -985,6 +1066,52 @@ function calculateNativeOutcomeSummary({
     buildReachabilityProbability: clampProbability(buildReachabilityProbability),
     maximumNativeCoveredPickedPerkCount,
   }
+}
+
+function calculateExpectedCoveredPickedPerkCountFromDistribution({
+  nativeOutcomeDistribution,
+  pickedPerksMask,
+}: {
+  nativeOutcomeDistribution: BackgroundOutcomeDistribution
+  pickedPerksMask: CoverageMask
+}): number {
+  let expectedCoveredPickedPerkCount = 0
+  const maximumCoveredPickedPerkCount = getCoveredPickedPerkMaskCount(pickedPerksMask)
+
+  for (const [nativeCoveredPickedPerkMask, nativeOutcomeProbability] of nativeOutcomeDistribution) {
+    expectedCoveredPickedPerkCount +=
+      getCoveredPickedPerkMaskCount(nativeCoveredPickedPerkMask & pickedPerksMask) *
+      nativeOutcomeProbability
+  }
+
+  const clampedExpectedCoveredPickedPerkCount = Math.max(
+    0,
+    Math.min(maximumCoveredPickedPerkCount, expectedCoveredPickedPerkCount),
+  )
+  const nearestIntegerExpectedCoveredPickedPerkCount = Math.round(
+    clampedExpectedCoveredPickedPerkCount,
+  )
+
+  return Math.abs(
+    clampedExpectedCoveredPickedPerkCount - nearestIntegerExpectedCoveredPickedPerkCount,
+  ) < 1e-12
+    ? nearestIntegerExpectedCoveredPickedPerkCount
+    : clampedExpectedCoveredPickedPerkCount
+}
+
+function getCoveredPickedPerkMaskCount(coveredPickedPerkMask: CoverageMask): number {
+  let remainingPickedPerkMask = coveredPickedPerkMask
+  let coveredPickedPerkCount = 0
+
+  while (remainingPickedPerkMask > 0n) {
+    if ((remainingPickedPerkMask & 1n) === 1n) {
+      coveredPickedPerkCount += 1
+    }
+
+    remainingPickedPerkMask >>= 1n
+  }
+
+  return coveredPickedPerkCount
 }
 
 function hasEveryPerkGroup(
@@ -1392,85 +1519,6 @@ function getRequirementSubsetProbability({
   }
 
   return probability
-}
-
-function getSupportedPerkGroupRequirements(pickedPerk: LegendsPerkRecord): PerkGroupRequirement[] {
-  const seenRequirementKeys = new Set<string>()
-  const requirements: PerkGroupRequirement[] = []
-
-  for (const placement of pickedPerk.placements) {
-    if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
-      continue
-    }
-
-    const requirementKey = getPlacementGroupRequirementKey(placement)
-
-    if (seenRequirementKeys.has(requirementKey)) {
-      continue
-    }
-
-    seenRequirementKeys.add(requirementKey)
-    requirements.push({
-      categoryName: placement.categoryName,
-      perkGroupId: placement.perkGroupId,
-    })
-  }
-
-  return requirements
-}
-
-function getPerkCoverageProbability({
-  backgroundDefinition,
-  context,
-  requirements,
-}: {
-  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
-  context: BackgroundProbabilityContext
-  requirements: PerkGroupRequirement[]
-}): number {
-  if (requirements.length === 0) {
-    return 0
-  }
-
-  let coverageProbability = 0
-
-  for (let requirementMask = 1; requirementMask < 1 << requirements.length; requirementMask += 1) {
-    const requirementSubset: PerkGroupRequirement[] = []
-
-    for (let requirementIndex = 0; requirementIndex < requirements.length; requirementIndex += 1) {
-      if ((requirementMask & (1 << requirementIndex)) !== 0) {
-        requirementSubset.push(requirements[requirementIndex])
-      }
-    }
-
-    const subsetProbability = getRequirementSubsetProbability({
-      backgroundDefinition,
-      context,
-      requirements: requirementSubset,
-    })
-
-    coverageProbability +=
-      requirementSubset.length % 2 === 1 ? subsetProbability : -subsetProbability
-  }
-
-  return clampProbability(coverageProbability)
-}
-
-function calculateExpectedCoveredPickedPerkCount(
-  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
-  pickedPerks: LegendsPerkRecord[],
-  context: BackgroundProbabilityContext,
-): number {
-  return pickedPerks.reduce(
-    (expectedCoveredPickedPerkCount, pickedPerk) =>
-      expectedCoveredPickedPerkCount +
-      getPerkCoverageProbability({
-        backgroundDefinition,
-        context,
-        requirements: getSupportedPerkGroupRequirements(pickedPerk),
-      }),
-    0,
-  )
 }
 
 function addClassCategoryProbabilities(
@@ -2015,7 +2063,10 @@ function getBackgroundDisambiguator(
 }
 
 function getPickedPerksCacheKey(pickedPerks: LegendsPerkRecord[]): string {
-  return pickedPerks.map((pickedPerk) => pickedPerk.id).join('\u0000')
+  return pickedPerks
+    .map((pickedPerk) => pickedPerk.id)
+    .toSorted()
+    .join('\u0000')
 }
 
 function getBackgroundFitScopeCacheKey(
@@ -2103,6 +2154,35 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   )
   const backgroundFitBuildCacheByPickedPerksKey = new Map<string, BackgroundFitBuildCache>()
 
+  function createEmptyBackgroundFitSummary(
+    backgroundProbabilityRecord: BackgroundProbabilityRecord,
+  ): BackgroundFitSummary {
+    const { backgroundDefinition, maximumTotalPerkGroupCount } = backgroundProbabilityRecord
+
+    return {
+      backgroundId: backgroundDefinition.backgroundId,
+      backgroundName: backgroundDefinition.backgroundName,
+      disambiguator:
+        (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
+          ? getBackgroundDisambiguator(backgroundDefinition)
+          : null,
+      expectedCoveredPickedPerkCount: 0,
+      expectedMatchedPerkGroupCount: 0,
+      guaranteedMatchedPerkGroupCount: 0,
+      iconPath: backgroundDefinition.iconPath ?? null,
+      maximumTotalPerkGroupCount,
+      matches: [],
+      sourceFilePath: backgroundDefinition.sourceFilePath,
+      veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
+    }
+  }
+
+  function getEmptyBackgroundFitSummaries(): BackgroundFitSummary[] {
+    return backgroundProbabilityRecords
+      .map(createEmptyBackgroundFitSummary)
+      .toSorted(compareBackgroundFitSummaries)
+  }
+
   function getBackgroundFitBuildCache(pickedPerks: LegendsPerkRecord[]): BackgroundFitBuildCache {
     const pickedPerksCacheKey = getPickedPerksCacheKey(pickedPerks)
     const cachedBackgroundFitBuildCache =
@@ -2132,7 +2212,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
           studyResourceRequirementByFilterKey: new Map(),
         }),
       ),
-      relevantPerkGroupIdsByCategory: getRelevantPerkGroupIdsByCategory(pickedPerks),
+      projection: createBackgroundFitProjection(pickedPerks),
       supportedBuildTargetPerkGroups,
       unsupportedBuildTargetPerkGroups,
     }
@@ -2155,7 +2235,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       backgroundDefinition:
         cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition,
       context: backgroundProbabilityContext,
-      relevantPerkGroupIdsByCategory: backgroundFitBuildCache.relevantPerkGroupIdsByCategory,
+      projection: backgroundFitBuildCache.projection,
     })
 
     return cachedBackgroundFitRecord.nativeOutcomeDistribution
@@ -2169,7 +2249,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   }: {
     backgroundFitBuildCache: BackgroundFitBuildCache
     cachedBackgroundFitRecord: CachedBackgroundFitRecord
-    studyResourceCoverageProfile: StudyResourceCoverageProfile
+    studyResourceCoverageProfile: StudyResourceMaskCoverageProfile
     studyResourceFilterCacheKey: string
   }): NativeOutcomeSummary {
     const cachedNativeOutcomeSummary =
@@ -2259,10 +2339,12 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   }
 
   function getCachedBackgroundFitBase({
+    backgroundFitBuildCache,
     cachedBackgroundFitRecord,
     pickedPerks,
     supportedBuildTargetPerkGroups,
   }: {
+    backgroundFitBuildCache: BackgroundFitBuildCache
     cachedBackgroundFitRecord: CachedBackgroundFitRecord
     pickedPerks: LegendsPerkRecord[]
     supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
@@ -2306,11 +2388,13 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
           ? getBackgroundDisambiguator(backgroundDefinition)
           : null,
-      expectedCoveredPickedPerkCount: calculateExpectedCoveredPickedPerkCount(
-        backgroundDefinition,
-        pickedPerks,
-        backgroundProbabilityContext,
-      ),
+      expectedCoveredPickedPerkCount: calculateExpectedCoveredPickedPerkCountFromDistribution({
+        nativeOutcomeDistribution: getCachedNativeOutcomeDistribution(
+          backgroundFitBuildCache,
+          cachedBackgroundFitRecord,
+        ),
+        pickedPerksMask: getPickedPerksCoverageMask(pickedPerks, backgroundFitBuildCache.projection),
+      }),
       expectedMatchedPerkGroupCount: matches.reduce(
         (expectedPerkGroupCount, match) => expectedPerkGroupCount + match.probability,
         0,
@@ -2327,10 +2411,12 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   }
 
   function getCachedExpectedCoveredPickedPerkCount({
+    backgroundFitBuildCache,
     cachedBackgroundFitRecord,
     pickedPerks,
     scopeCacheKey,
   }: {
+    backgroundFitBuildCache: BackgroundFitBuildCache
     cachedBackgroundFitRecord: CachedBackgroundFitRecord
     pickedPerks: LegendsPerkRecord[]
     scopeCacheKey: string
@@ -2342,11 +2428,13 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       return cachedExpectedCoveredPickedPerkCount
     }
 
-    const expectedCoveredPickedPerkCount = calculateExpectedCoveredPickedPerkCount(
-      cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition,
-      pickedPerks,
-      backgroundProbabilityContext,
-    )
+    const expectedCoveredPickedPerkCount = calculateExpectedCoveredPickedPerkCountFromDistribution({
+      nativeOutcomeDistribution: getCachedNativeOutcomeDistribution(
+        backgroundFitBuildCache,
+        cachedBackgroundFitRecord,
+      ),
+      pickedPerksMask: getPickedPerksCoverageMask(pickedPerks, backgroundFitBuildCache.projection),
+    })
 
     cachedBackgroundFitRecord.expectedCoveredPickedPerkCountByScopeKey.set(
       scopeCacheKey,
@@ -2367,12 +2455,21 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       )
     },
     getBackgroundFitSummaryView(pickedPerks) {
+      if (pickedPerks.length === 0) {
+        return {
+          rankedBackgroundFitSummaries: getEmptyBackgroundFitSummaries(),
+          supportedBuildTargetPerkGroups: [],
+          unsupportedBuildTargetPerkGroups: [],
+        }
+      }
+
       const backgroundFitBuildCache = getBackgroundFitBuildCache(pickedPerks)
 
       return {
         rankedBackgroundFitSummaries: backgroundFitBuildCache.cachedBackgroundFitRecords
           .map((cachedBackgroundFitRecord) =>
             getCachedBackgroundFitBase({
+              backgroundFitBuildCache,
               cachedBackgroundFitRecord,
               pickedPerks,
               supportedBuildTargetPerkGroups:
@@ -2416,6 +2513,30 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         .toSorted(comparePerkBackgroundSources)
     },
     getBackgroundFitView(pickedPerks, studyResourceFilter, options = {}) {
+      if (pickedPerks.length === 0) {
+        const buildReachabilityProbability = studyResourceFilter === undefined ? null : 1
+
+        return {
+          rankedBackgroundFits: getEmptyBackgroundFitSummaries()
+            .map((backgroundFitSummary): RankedBackgroundFit => ({
+              ...backgroundFitSummary,
+              buildReachabilityProbability,
+              expectedCoveredMustHavePerkCount: 0,
+              expectedCoveredOptionalPerkCount: 0,
+              fullBuildStudyResourceRequirement: null,
+              fullBuildReachabilityProbability: buildReachabilityProbability,
+              guaranteedCoveredMustHavePerkCount: 0,
+              guaranteedCoveredOptionalPerkCount: 0,
+              maximumNativeCoveredPickedPerkCount: 0,
+              mustHaveBuildReachabilityProbability: buildReachabilityProbability,
+              mustHaveStudyResourceRequirement: null,
+            }))
+            .toSorted(compareRankedBackgroundFits),
+          supportedBuildTargetPerkGroups: [],
+          unsupportedBuildTargetPerkGroups: [],
+        }
+      }
+
       const backgroundFitBuildCache = getBackgroundFitBuildCache(pickedPerks)
       const studyResourceFilterCacheKey = getStudyResourceFilterCacheKey(studyResourceFilter)
       const optionalPickedPerkIdSet = options.optionalPickedPerkIds ?? new Set<string>()
@@ -2453,16 +2574,26 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         optionalPickedPerks,
         studyResourceFilterCacheKey,
       )
-      const totalStudyResourceCoverageProfile = createStudyResourceCoverageProfile({
+      const getRequirementCoverageMask = (requirementKey: string) =>
+        backgroundFitBuildCache.projection.groupCoverageMaskByRequirementKey.get(requirementKey) ??
+        0n
+      const totalStudyResourceCoverageProfile = createStudyResourceMaskCoverageProfile({
         filter: studyResourceFilter ?? null,
+        getRequirementCoverageMask,
         pickedPerks,
+        targetMask: backgroundFitBuildCache.projection.allPickedMask,
       })
       const mustHaveStudyResourceCoverageProfile =
         optionalPickedPerks.length === 0
           ? totalStudyResourceCoverageProfile
-          : createStudyResourceCoverageProfile({
+          : createStudyResourceMaskCoverageProfile({
               filter: studyResourceFilter ?? null,
+              getRequirementCoverageMask,
               pickedPerks: mustHavePickedPerks,
+              targetMask: getPickedPerksCoverageMask(
+                mustHavePickedPerks,
+                backgroundFitBuildCache.projection,
+              ),
             })
 
       return {
@@ -2526,6 +2657,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                       studyResourceRequirementCacheKey: totalScopeCacheKey,
                     })
             const backgroundFitBase = getCachedBackgroundFitBase({
+              backgroundFitBuildCache,
               cachedBackgroundFitRecord,
               pickedPerks,
               supportedBuildTargetPerkGroups:
@@ -2543,6 +2675,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                   optionalPickedPerks.length === 0
                     ? backgroundFitBase.expectedCoveredPickedPerkCount
                     : getCachedExpectedCoveredPickedPerkCount({
+                        backgroundFitBuildCache,
                         cachedBackgroundFitRecord,
                         pickedPerks: mustHavePickedPerks,
                         scopeCacheKey: mustHaveScopeCacheKey,
@@ -2551,6 +2684,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                   optionalPickedPerks.length === 0
                     ? 0
                     : getCachedExpectedCoveredPickedPerkCount({
+                        backgroundFitBuildCache,
                         cachedBackgroundFitRecord,
                         pickedPerks: optionalPickedPerks,
                         scopeCacheKey: optionalScopeCacheKey,

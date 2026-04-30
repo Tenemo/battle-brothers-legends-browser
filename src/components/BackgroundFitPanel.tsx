@@ -25,6 +25,7 @@ export function BackgroundFitPanel({
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
+  backgroundFitErrorMessage,
   isExpanded,
   isLoadingBackgroundFitView,
   onCloseBuildPerkHover,
@@ -59,6 +60,7 @@ export function BackgroundFitPanel({
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
+  backgroundFitErrorMessage: string | null
   isExpanded: boolean
   isLoadingBackgroundFitView: boolean
   onCloseBuildPerkHover: (perkId: string) => void
@@ -443,7 +445,11 @@ export function BackgroundFitPanel({
             }}
             ref={backgroundFitResultsScrollRef}
           >
-            {isLoadingBackgroundFitView ? (
+            {backgroundFitErrorMessage !== null ? (
+              <div className={styles.backgroundFitEmptyState}>
+                <p className={styles.backgroundFitSummaryCopy}>{backgroundFitErrorMessage}</p>
+              </div>
+            ) : isLoadingBackgroundFitView ? (
               <div className={styles.backgroundFitEmptyState}>
                 <p className={styles.backgroundFitSummaryCopy}>Calculating background fits.</p>
               </div>

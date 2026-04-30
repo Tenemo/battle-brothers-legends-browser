@@ -599,6 +599,72 @@ describe('background fit', () => {
     )
   })
 
+  test('projects deterministic fills onto only relevant picked groups', () => {
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [
+        createBackgroundDefinition({
+          backgroundId: 'background.projected_traits',
+          backgroundName: 'Projected traits',
+          overrides: {
+            Traits: { minimumPerkGroups: 2, perkGroupIds: [] },
+          },
+        }),
+      ],
+    })
+    const [backgroundFit] = engine.getBackgroundFitView([samplePerks[4]], noStudyResources)
+      .rankedBackgroundFits
+
+    expect(backgroundFit).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 2 / 3,
+        maximumNativeCoveredPickedPerkCount: 1,
+        mustHaveBuildReachabilityProbability: 2 / 3,
+      }),
+    )
+    expect(backgroundFit.matches).toEqual([
+      expect.objectContaining({
+        perkGroupId: 'CalmTree',
+        probability: 2 / 3,
+      }),
+    ])
+  })
+
+  test('merges alternate placements into one projected picked-perk mask', () => {
+    const flexibleTraitPerk = createPerk({
+      id: 'perk.traits.flexible',
+      perkConstName: 'LegendFlexibleTrait',
+      perkName: 'Flexible trait',
+      placements: [
+        createPlacement({ categoryName: 'Traits', perkGroupId: 'CalmTree', perkGroupName: 'Calm' }),
+        createPlacement({ categoryName: 'Traits', perkGroupId: 'BoldTree', perkGroupName: 'Bold' }),
+      ],
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [
+        createBackgroundDefinition({
+          backgroundId: 'background.one_projected_trait',
+          backgroundName: 'One projected trait',
+          overrides: {
+            Traits: { minimumPerkGroups: 1, perkGroupIds: [] },
+          },
+        }),
+      ],
+      perks: [...samplePerks, flexibleTraitPerk],
+    })
+    const [backgroundFit] = engine.getBackgroundFitView([flexibleTraitPerk], noStudyResources)
+      .rankedBackgroundFits
+
+    expect(backgroundFit).toEqual(
+      expect.objectContaining({
+        expectedCoveredPickedPerkCount: 2 / 3,
+        maximumNativeCoveredPickedPerkCount: 1,
+        mustHaveBuildReachabilityProbability: 2 / 3,
+      }),
+    )
+  })
+
   test('uses exact chance-attempt probabilities for enemy and profession rolls', () => {
     const engine = createBackgroundFitEngine(sampleDataset)
     const enemyRollFit = engine

@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
@@ -40,6 +40,10 @@ import { getAvailableBackgroundVeteranPerkLevelIntervals } from './lib/backgroun
 import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
 import { joinClassNames } from './lib/class-names'
 import {
+  createBackgroundFitWorkerClient,
+  type BackgroundFitWorkerClient,
+} from './lib/background-fit-worker-client'
+import {
   useBuildPlannerUrlSync,
   useInitialBuildPlannerUrlState,
 } from './lib/use-build-planner-url-sync'
@@ -75,6 +79,11 @@ type PickedBuildPerkState = {
 type BackgroundFitViewState = {
   key: string
   view: BackgroundFitView
+}
+
+type BackgroundFitErrorState = {
+  key: string
+  message: string
 }
 
 function createPickedBuildPerkState(
@@ -220,6 +229,38 @@ export default function App() {
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const [backgroundFitViewState, setBackgroundFitViewState] =
     useState<BackgroundFitViewState | null>(null)
+  const [backgroundFitErrorState, setBackgroundFitErrorState] =
+    useState<BackgroundFitErrorState | null>(null)
+  const backgroundFitWorkerClientRef = useRef<BackgroundFitWorkerClient | null>(null)
+  const latestBackgroundFitRequestIdRef = useRef(0)
+  const getBackgroundFitWorkerClient = useCallback(() => {
+    backgroundFitWorkerClientRef.current ??= createBackgroundFitWorkerClient({
+      calculateOnMainThread({
+        optionalPickedPerkIds: fallbackOptionalPickedPerkIds,
+        pickedPerkIds: fallbackPickedPerkIds,
+        studyResourceFilter,
+      }) {
+        const fallbackPickedPerks = fallbackPickedPerkIds.flatMap((pickedPerkId) => {
+          const pickedPerk = allPerksById.get(pickedPerkId)
+
+          return pickedPerk ? [pickedPerk] : []
+        })
+
+        return backgroundFitEngine.getBackgroundFitView(fallbackPickedPerks, studyResourceFilter, {
+          optionalPickedPerkIds: new Set(fallbackOptionalPickedPerkIds),
+        })
+      },
+    })
+
+    return backgroundFitWorkerClientRef.current
+  }, [])
+  useEffect(
+    () => () => {
+      backgroundFitWorkerClientRef.current?.dispose()
+      backgroundFitWorkerClientRef.current = null
+    },
+    [],
+  )
   const {
     clearAllHover,
     clearBuildPerkTooltip,
@@ -305,10 +346,6 @@ export default function App() {
   const optionalPickedPerkIds = useMemo(
     () => getOptionalPickedBuildPerkIds(pickedBuildPerks),
     [pickedBuildPerks],
-  )
-  const optionalPickedPerkIdSet = useMemo(
-    () => new Set(optionalPickedPerkIds),
-    [optionalPickedPerkIds],
   )
   const pickedPerks = useMemo<BuildPlannerPickedPerk[]>(
     () =>
@@ -403,53 +440,75 @@ export default function App() {
   const shouldLoadBackgroundFitView = isBackgroundFitPanelExpanded || hasActiveBackgroundFitSearch
   const backgroundFitView =
     backgroundFitViewState?.key === backgroundFitViewKey ? backgroundFitViewState.view : null
-  const isBackgroundFitViewLoading = shouldLoadBackgroundFitView && backgroundFitView === null
+  const backgroundFitErrorMessage =
+    backgroundFitErrorState?.key === backgroundFitViewKey ? backgroundFitErrorState.message : null
+  const isBackgroundFitViewLoading =
+    shouldLoadBackgroundFitView && backgroundFitView === null && backgroundFitErrorMessage === null
 
   useEffect(() => {
-    if (!shouldLoadBackgroundFitView || backgroundFitView !== null) {
+    if (
+      !shouldLoadBackgroundFitView ||
+      backgroundFitView !== null ||
+      backgroundFitErrorMessage !== null
+    ) {
       return
     }
 
     let isCancelled = false
-    const backgroundFitCalculationTimeout = window.setTimeout(() => {
-      const nextBackgroundFitView = backgroundFitEngine.getBackgroundFitView(
-        pickedPerks,
-        {
-          shouldAllowBook: shouldAllowBackgroundStudyBook,
-          shouldAllowScroll: shouldAllowBackgroundStudyScroll,
-          shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
-        },
-        {
-          optionalPickedPerkIds: optionalPickedPerkIdSet,
-        },
-      )
+    const backgroundFitWorkerClient = getBackgroundFitWorkerClient()
+    const { promise, requestId } = backgroundFitWorkerClient.calculateBackgroundFitView({
+      optionalPickedPerkIds,
+      pickedPerkIds,
+      studyResourceFilter: {
+        shouldAllowBook: shouldAllowBackgroundStudyBook,
+        shouldAllowScroll: shouldAllowBackgroundStudyScroll,
+        shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
+      },
+    })
 
-      if (isCancelled) {
-        return
-      }
+    latestBackgroundFitRequestIdRef.current = requestId
 
-      startTransition(() => {
-        setBackgroundFitViewState({
-          key: backgroundFitViewKey,
-          view: nextBackgroundFitView,
+    promise
+      .then((nextBackgroundFitView) => {
+        if (isCancelled || latestBackgroundFitRequestIdRef.current !== requestId) {
+          return
+        }
+
+        startTransition(() => {
+          setBackgroundFitErrorState(null)
+          setBackgroundFitViewState({
+            key: backgroundFitViewKey,
+            view: nextBackgroundFitView,
+          })
         })
       })
-    }, 0)
+      .catch((error: unknown) => {
+        if (isCancelled || latestBackgroundFitRequestIdRef.current !== requestId) {
+          return
+        }
+
+        setBackgroundFitErrorState({
+          key: backgroundFitViewKey,
+          message: error instanceof Error ? error.message : 'Background fit calculation failed.',
+        })
+      })
 
     return () => {
       isCancelled = true
-      window.clearTimeout(backgroundFitCalculationTimeout)
     }
   }, [
+    backgroundFitErrorMessage,
     backgroundFitView,
     backgroundFitViewKey,
-    optionalPickedPerkIdSet,
-    pickedPerks,
+    getBackgroundFitWorkerClient,
+    optionalPickedPerkIds,
+    pickedPerkIds,
     shouldAllowBackgroundStudyBook,
     shouldAllowBackgroundStudyScroll,
     shouldAllowSecondBackgroundStudyScroll,
     shouldLoadBackgroundFitView,
   ])
+
   const visiblePerkCountsByCategory = useMemo(
     () => getVisiblePerkCountsByCategory(visiblePerks),
     [visiblePerks],
@@ -1017,6 +1076,7 @@ export default function App() {
       >
         <BackgroundFitPanel
           backgroundFitView={backgroundFitView}
+          backgroundFitErrorMessage={backgroundFitErrorMessage}
           emphasizedCategoryNames={emphasizedCategoryNames}
           emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
