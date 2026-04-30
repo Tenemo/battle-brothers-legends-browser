@@ -1,6 +1,6 @@
 import { type MouseEvent, useId, useRef, useState } from 'react'
 import { Check, CircleAlert, Copy, FolderOpen, RotateCcw, Save } from 'lucide-react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import type { BuildPlannerGroupedPerkGroup } from '../lib/build-planner'
 import { getAnchoredTooltipStyle } from '../lib/perk-display'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
@@ -12,6 +12,7 @@ import { BuildPlannerBoard } from './BuildPlannerBoard'
 import { ClearBuildConfirmationDialog } from './ClearBuildConfirmationDialog'
 import { SavedBuildsDialog } from './SavedBuildsDialog'
 import type {
+  BuildPlannerPickedPerk,
   BuildPlannerSavedBuild,
   PlannerPerkGroupSelection,
   SavedBuildOperationStatus,
@@ -19,10 +20,14 @@ import type {
 import { usePlannerScrollConstraint } from './use-planner-scroll-constraint'
 import styles from './BuildPlanner.module.scss'
 
-export type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
+export type {
+  BuildPlannerPickedPerk,
+  BuildPlannerSavedBuild,
+  SavedBuildOperationStatus,
+} from './build-planner-types'
 
 const buildPlannerGuidance =
-  'Use the star in the detail panel or search results to collect perk picks, then review the shared perk groups and the remaining individual-perk groups below.'
+  'Use the star in the detail panel or search results to collect perk picks. Picked perks start as must-have and are marked with a chain; background fit uses them for the main build chance. Hover a picked perk and use the split-arrow action to mark it optional. Optional perks move to the end, stay visible for full-build coverage, and are scored separately from must-have perks.'
 
 function BuildPlannerInfoButton() {
   const tooltipId = useId()
@@ -59,7 +64,13 @@ function BuildPlannerInfoButton() {
         onFocus={() => setIsOpen(true)}
         type="button"
       >
-        i
+        <span
+          aria-hidden="true"
+          className={styles.buildPlannerInfoGlyph}
+          data-testid="build-planner-info-glyph"
+        >
+          i
+        </span>
       </button>
       {isOpen ? (
         <span
@@ -98,6 +109,7 @@ export function BuildPlanner({
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
   onRemovePickedPerk,
+  onTogglePickedPerkOptional,
   onSaveCurrentBuild,
   onShareBuild,
   pickedPerks,
@@ -126,13 +138,18 @@ export function BuildPlanner({
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPlannerPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
   onLoadSavedBuild: (savedBuildId: string) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: PlannerPerkGroupSelection,
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onRemovePickedPerk: (perkId: string) => void
+  onTogglePickedPerkOptional: (perkId: string) => void
   onSaveCurrentBuild: (name: string) => Promise<void>
   onShareBuild: () => Promise<void>
-  pickedPerks: LegendsPerkRecord[]
+  pickedPerks: BuildPlannerPickedPerk[]
   savedBuildOperationStatus: SavedBuildOperationStatus
   savedBuildPersistenceState: SavedBuildPersistenceState
   savedBuilds: BuildPlannerSavedBuild[]
@@ -231,7 +248,7 @@ export function BuildPlanner({
             </p>
             <button
               aria-label="Save current build"
-              className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
               disabled={!hasPickedPerks}
               onClick={handleOpenSavedBuildsDialog}
               type="button"
@@ -241,7 +258,7 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Open saved builds"
-              className={cx(styles.plannerActionButton, styles.savedBuildActionButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
               onClick={handleOpenSavedBuildsDialog}
               type="button"
             >
@@ -250,7 +267,7 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Copy build link"
-              className={cx(styles.plannerActionButton, styles.shareBuildButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.shareBuildButton)}
               data-status={shareBuildStatus === 'idle' ? undefined : shareBuildStatus}
               disabled={pickedPerks.length === 0}
               onClick={() => {
@@ -273,7 +290,7 @@ export function BuildPlanner({
             </button>
             <button
               aria-label="Clear build"
-              className={cx(styles.plannerActionButton, styles.clearBuildActionButton)}
+              className={joinClassNames(styles.plannerActionButton, styles.clearBuildActionButton)}
               data-testid="clear-build-button"
               disabled={pickedPerks.length === 0}
               onClick={() => setIsClearBuildDialogOpen(true)}
@@ -307,6 +324,7 @@ export function BuildPlanner({
           onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
           onOpenPerkGroupHover={onOpenPerkGroupHover}
           onRemovePickedPerk={onRemovePickedPerk}
+          onTogglePickedPerkOptional={onTogglePickedPerkOptional}
           onToggleIndividualPerkGroupsSection={handleToggleIndividualPerkGroupsSection}
           onToggleSharedPerkGroupsSection={handleToggleSharedPerkGroupsSection}
           openBuildPerkTooltipPreview={openTooltipPreview}

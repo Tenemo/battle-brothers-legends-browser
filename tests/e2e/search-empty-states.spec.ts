@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test'
-import { getResultsList, gotoPerksBrowser, searchPerks } from './support/perks-browser'
+import { getResultsList, gotoBuildPlanner, searchPerks } from './support/build-planner-page'
 
 test('searches imported metadata fields and shows a real empty state', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Beast Slayers')
   await expect(

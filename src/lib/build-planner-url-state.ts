@@ -1,40 +1,68 @@
 import type { LegendsPerkRecord } from '../types/legends-perks'
 
-export type PerkBrowserUrlPerkGroupOption = {
+export type BuildPlannerUrlPerkGroupOption = {
   perkGroupId: string
   perkGroupName: string
 }
 
-export type PerkBrowserUrlState = {
+export type BuildPlannerUrlState = {
+  optionalPerkIds: string[]
   pickedPerkIds: string[]
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
-  shouldIncludeOriginAndAncientScrollPerkGroups: boolean
+  shouldAllowBackgroundStudyBook: boolean
+  shouldAllowBackgroundStudyScroll: boolean
+  shouldAllowSecondBackgroundStudyScroll: boolean
+  shouldIncludeAncientScrollPerkGroups: boolean
   shouldIncludeOriginBackgrounds: boolean
+  shouldIncludeOriginPerkGroups: boolean
 }
 
-export type PerkBrowserUrlStateReadOptions = {
+export type BuildPlannerUrlStateReadOptions = {
   availableCategoryNames: string[]
   perks: LegendsPerkRecord[]
-  perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
+  perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
 }
 
-export type PerkBrowserUrlStateWriteOptions = {
+export type BuildPlannerUrlStateWriteOptions = {
   availableCategoryNames: string[]
   perksById: Map<string, LegendsPerkRecord>
-  perkGroupOptionsByCategory: Map<string, PerkBrowserUrlPerkGroupOption[]>
-  shouldWriteOriginAndAncientScrollPerkGroupsParam?: boolean
+  perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
+  shouldWriteBackgroundStudyBookParam?: boolean
+  shouldWriteBackgroundStudyScrollParam?: boolean
+  shouldWriteSecondBackgroundStudyScrollParam?: boolean
+  shouldWriteAncientScrollPerkGroupsParam?: boolean
   shouldWriteOriginBackgroundsParam?: boolean
+  shouldWriteOriginPerkGroupsParam?: boolean
 }
 
 const buildParamName = 'build'
 const categoryParamName = 'category'
-const originAndAncientScrollPerkGroupsParamName = 'origin-scroll-perk-groups'
+const ancientScrollPerkGroupsParamName = 'ancient-scroll-perk-groups'
+const backgroundStudyBookParamName = 'background-book'
+const backgroundStudyScrollParamName = 'background-scroll'
+const optionalPerksParamName = 'optional'
+const secondBackgroundStudyScrollParamName = 'background-two-scrolls'
 const originBackgroundsParamName = 'origin-backgrounds'
+const originPerkGroupsParamName = 'origin-perk-groups'
 const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
+
+function normalizeBackgroundStudyScrollState({
+  shouldAllowBackgroundStudyScroll,
+  shouldAllowSecondBackgroundStudyScroll,
+}: {
+  shouldAllowBackgroundStudyScroll: boolean
+  shouldAllowSecondBackgroundStudyScroll: boolean
+}) {
+  return {
+    shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll:
+      shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll,
+  }
+}
 
 function collapseWhitespace(value: string): string {
   return value.trim().replace(/\s+/gu, ' ')
@@ -137,14 +165,37 @@ function appendGroupedQueryEntry(entries: string[], key: string, values: string[
   )
 }
 
-function createDefaultUrlState(): PerkBrowserUrlState {
+function createPerkUrlLabels(
+  perkIds: string[],
+  perksById: Map<string, LegendsPerkRecord>,
+  perkNameCountByLookupValue: Map<string, number>,
+): string[] {
+  const perkLabels: string[] = []
+
+  for (const perkId of perkIds) {
+    const perk = perksById.get(perkId)
+
+    if (perk) {
+      perkLabels.push(createPerkUrlLabel(perk, perkNameCountByLookupValue))
+    }
+  }
+
+  return perkLabels
+}
+
+function createDefaultUrlState(): BuildPlannerUrlState {
   return {
+    optionalPerkIds: [],
     pickedPerkIds: [],
     query: '',
     selectedCategoryNames: [],
     selectedPerkGroupIdsByCategory: {},
-    shouldIncludeOriginAndAncientScrollPerkGroups: false,
+    shouldAllowBackgroundStudyBook: true,
+    shouldAllowBackgroundStudyScroll: true,
+    shouldAllowSecondBackgroundStudyScroll: false,
+    shouldIncludeAncientScrollPerkGroups: true,
     shouldIncludeOriginBackgrounds: false,
+    shouldIncludeOriginPerkGroups: false,
   }
 }
 
@@ -162,10 +213,10 @@ function readBooleanSearchParam(
   return !['0', 'false', 'no', 'off'].includes(collapseWhitespace(value).toLowerCase())
 }
 
-export function readPerkBrowserUrlState(
+export function readBuildPlannerUrlState(
   search: string,
-  options: PerkBrowserUrlStateReadOptions,
-): PerkBrowserUrlState {
+  options: BuildPlannerUrlStateReadOptions,
+): BuildPlannerUrlState {
   const params = new URLSearchParams(search)
   const categoryNameByLookupValue = new Map(
     options.availableCategoryNames.map((categoryName) => [
@@ -194,19 +245,45 @@ export function readPerkBrowserUrlState(
   const selectedCategoryNameSet = new Set<string>()
   const pickedPerkIdSet = new Set<string>()
   const pickedPerkIds: string[] = []
+  const optionalPerkIdSet = new Set<string>()
+  const optionalPerkIds: string[] = []
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   let selectedPerkGroupCategoryName: string | null = null
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
-  const shouldIncludeOriginAndAncientScrollPerkGroups = readBooleanSearchParam(
+  const shouldAllowBackgroundStudyBook = readBooleanSearchParam(
     params,
-    originAndAncientScrollPerkGroupsParamName,
+    backgroundStudyBookParamName,
+    true,
+  )
+  const shouldAllowBackgroundStudyScroll = readBooleanSearchParam(
+    params,
+    backgroundStudyScrollParamName,
+    true,
+  )
+  const shouldAllowSecondBackgroundStudyScroll = readBooleanSearchParam(
+    params,
+    secondBackgroundStudyScrollParamName,
     false,
+  )
+  const shouldIncludeAncientScrollPerkGroups = readBooleanSearchParam(
+    params,
+    ancientScrollPerkGroupsParamName,
+    true,
   )
   const shouldIncludeOriginBackgrounds = readBooleanSearchParam(
     params,
     originBackgroundsParamName,
     false,
   )
+  const shouldIncludeOriginPerkGroups = readBooleanSearchParam(
+    params,
+    originPerkGroupsParamName,
+    false,
+  )
+  const backgroundStudyScrollState = normalizeBackgroundStudyScrollState({
+    shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll,
+  })
 
   for (const categoryValue of getGroupedParamValues(params, categoryParamName)) {
     const categoryName = categoryNameByLookupValue.get(normalizeLookupValue(categoryValue))
@@ -249,21 +326,37 @@ export function readPerkBrowserUrlState(
     pickedPerkIds.push(perkId)
   }
 
+  for (const optionalValue of getGroupedParamValues(params, optionalPerksParamName)) {
+    const lookupValue = normalizeLookupValue(optionalValue)
+    const perkId = perkIdByLookupValue.get(lookupValue)
+
+    if (!perkId || !pickedPerkIdSet.has(perkId) || optionalPerkIdSet.has(perkId)) {
+      continue
+    }
+
+    optionalPerkIdSet.add(perkId)
+    optionalPerkIds.push(perkId)
+  }
+
   return {
+    optionalPerkIds,
     pickedPerkIds,
     query,
     selectedCategoryNames: options.availableCategoryNames.filter((categoryName) =>
       selectedCategoryNameSet.has(categoryName),
     ),
     selectedPerkGroupIdsByCategory,
-    shouldIncludeOriginAndAncientScrollPerkGroups,
+    shouldAllowBackgroundStudyBook,
+    ...backgroundStudyScrollState,
+    shouldIncludeAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds,
+    shouldIncludeOriginPerkGroups,
   }
 }
 
-export function buildPerkBrowserUrlSearch(
-  urlState: PerkBrowserUrlState,
-  options: PerkBrowserUrlStateWriteOptions,
+export function createBuildPlannerUrlSearch(
+  urlState: BuildPlannerUrlState,
+  options: BuildPlannerUrlStateWriteOptions,
 ): string {
   const entries: string[] = []
   const selectedCategoryNameSet = new Set(urlState.selectedCategoryNames)
@@ -272,19 +365,42 @@ export function buildPerkBrowserUrlSearch(
   )
   let hasWrittenPerkGroup = false
   const normalizedQuery = collapseWhitespace(urlState.query)
-  const shouldWriteOriginAndAncientScrollPerkGroupsParam =
-    options.shouldWriteOriginAndAncientScrollPerkGroupsParam ?? true
+  const shouldWriteAncientScrollPerkGroupsParam =
+    options.shouldWriteAncientScrollPerkGroupsParam ?? true
+  const shouldWriteBackgroundStudyBookParam = options.shouldWriteBackgroundStudyBookParam ?? true
+  const shouldWriteBackgroundStudyScrollParam =
+    options.shouldWriteBackgroundStudyScrollParam ?? true
+  const shouldWriteSecondBackgroundStudyScrollParam =
+    options.shouldWriteSecondBackgroundStudyScrollParam ?? true
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
+  const shouldWriteOriginPerkGroupsParam = options.shouldWriteOriginPerkGroupsParam ?? true
 
   if (normalizedQuery) {
     appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
   }
 
+  if (shouldWriteOriginPerkGroupsParam && urlState.shouldIncludeOriginPerkGroups) {
+    appendScalarQueryEntry(entries, originPerkGroupsParamName, 'true')
+  }
+
+  if (shouldWriteAncientScrollPerkGroupsParam && !urlState.shouldIncludeAncientScrollPerkGroups) {
+    appendScalarQueryEntry(entries, ancientScrollPerkGroupsParamName, 'false')
+  }
+
+  if (shouldWriteBackgroundStudyBookParam && !urlState.shouldAllowBackgroundStudyBook) {
+    appendScalarQueryEntry(entries, backgroundStudyBookParamName, 'false')
+  }
+
+  if (shouldWriteBackgroundStudyScrollParam && !urlState.shouldAllowBackgroundStudyScroll) {
+    appendScalarQueryEntry(entries, backgroundStudyScrollParamName, 'false')
+  }
+
   if (
-    shouldWriteOriginAndAncientScrollPerkGroupsParam &&
-    urlState.shouldIncludeOriginAndAncientScrollPerkGroups
+    shouldWriteSecondBackgroundStudyScrollParam &&
+    urlState.shouldAllowBackgroundStudyScroll &&
+    urlState.shouldAllowSecondBackgroundStudyScroll
   ) {
-    appendScalarQueryEntry(entries, originAndAncientScrollPerkGroupsParamName, 'true')
+    appendScalarQueryEntry(entries, secondBackgroundStudyScrollParamName, 'true')
   }
 
   if (shouldWriteOriginBackgroundsParam && urlState.shouldIncludeOriginBackgrounds) {
@@ -316,51 +432,64 @@ export function buildPerkBrowserUrlSearch(
   }
 
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
-  const pickedPerkLabels: string[] = []
-
-  for (const pickedPerkId of urlState.pickedPerkIds) {
-    const perk = options.perksById.get(pickedPerkId)
-
-    if (perk) {
-      pickedPerkLabels.push(createPerkUrlLabel(perk, perkNameCountByLookupValue))
-    }
-  }
+  const pickedPerkIdSet = new Set(urlState.pickedPerkIds)
+  const pickedPerkLabels = createPerkUrlLabels(
+    urlState.pickedPerkIds,
+    options.perksById,
+    perkNameCountByLookupValue,
+  )
+  const optionalPerkLabels = createPerkUrlLabels(
+    urlState.optionalPerkIds.filter((optionalPerkId) => pickedPerkIdSet.has(optionalPerkId)),
+    options.perksById,
+    perkNameCountByLookupValue,
+  )
 
   appendGroupedQueryEntry(entries, buildParamName, pickedPerkLabels)
+  appendGroupedQueryEntry(entries, optionalPerksParamName, optionalPerkLabels)
 
   const searchString = entries.join('&')
   return searchString ? `?${searchString}` : ''
 }
 
-export function buildPerkBrowserBuildUrlSearch(
+export function createSharedBuildUrlSearch(
   pickedPerkIds: string[],
   perksById: Map<string, LegendsPerkRecord>,
+  optionalPerkIds: string[] = [],
 ): string {
-  return buildPerkBrowserUrlSearch(
+  return createBuildPlannerUrlSearch(
     {
+      optionalPerkIds,
       pickedPerkIds,
       query: '',
       selectedCategoryNames: [],
       selectedPerkGroupIdsByCategory: {},
-      shouldIncludeOriginAndAncientScrollPerkGroups: false,
+      shouldAllowBackgroundStudyBook: true,
+      shouldAllowBackgroundStudyScroll: true,
+      shouldAllowSecondBackgroundStudyScroll: false,
+      shouldIncludeAncientScrollPerkGroups: false,
       shouldIncludeOriginBackgrounds: false,
+      shouldIncludeOriginPerkGroups: false,
     },
     {
       availableCategoryNames: [],
       perksById,
       perkGroupOptionsByCategory: new Map(),
-      shouldWriteOriginAndAncientScrollPerkGroupsParam: false,
+      shouldWriteAncientScrollPerkGroupsParam: false,
+      shouldWriteBackgroundStudyBookParam: false,
+      shouldWriteBackgroundStudyScrollParam: false,
+      shouldWriteSecondBackgroundStudyScrollParam: false,
       shouldWriteOriginBackgroundsParam: false,
+      shouldWriteOriginPerkGroupsParam: false,
     },
   )
 }
 
-export function readPerkBrowserUrlStateFromLocation(
-  options: PerkBrowserUrlStateReadOptions,
-): PerkBrowserUrlState {
+export function readBuildPlannerUrlStateFromLocation(
+  options: BuildPlannerUrlStateReadOptions,
+): BuildPlannerUrlState {
   if (typeof window === 'undefined') {
     return createDefaultUrlState()
   }
 
-  return readPerkBrowserUrlState(window.location.search, options)
+  return readBuildPlannerUrlState(window.location.search, options)
 }

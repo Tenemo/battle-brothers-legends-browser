@@ -1,5 +1,7 @@
 import { useId, type RefObject } from 'react'
-import { cx } from '../lib/class-names'
+import { Link, Split } from 'lucide-react'
+import catenaryChainUrl from '../assets/catenary-chain.svg'
+import { joinClassNames } from '../lib/class-names'
 import type {
   BuildPlannerGroupedPerkGroup,
   BuildPlannerPerkGroupRequirementOption,
@@ -13,7 +15,7 @@ import {
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import { PlannerSectionChevron } from './SharedControls'
-import type { PlannerPerkGroupSelection } from './build-planner-types'
+import type { BuildPlannerPickedPerk, PlannerPerkGroupSelection } from './build-planner-types'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
 
@@ -39,6 +41,19 @@ function getPlannerGroupTileOptions(
     perkGroupId: perkGroupOption.perkGroupId,
     perkGroupLabel: perkGroupOption.perkGroupLabel,
   }))
+}
+
+function getPrimaryPlannerPerkGroupSelection(
+  perk: LegendsPerkRecord,
+): PlannerPerkGroupSelection | undefined {
+  const primaryPlacement = perk.placements[0]
+
+  return primaryPlacement
+    ? {
+        categoryName: primaryPlacement.categoryName,
+        perkGroupId: primaryPlacement.perkGroupId,
+      }
+    : undefined
 }
 
 function isPlannerPerkGroupOptionEmphasized({
@@ -114,7 +129,7 @@ function PlannerSectionToggle({
       aria-controls={controlledSectionId}
       aria-expanded={isExpanded}
       aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
-      className={cx(styles.plannerRowLabel, styles.plannerSectionToggle)}
+      className={joinClassNames(styles.plannerRowLabel, styles.plannerSectionToggle)}
       data-collapsed-chip={isCollapsedChip}
       data-testid="planner-section-toggle"
       id={buttonId}
@@ -157,8 +172,12 @@ function renderPlannerGroupCard({
   onCloseTooltip: () => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
-  onOpenHover: (perkId: string) => void
-  onOpenTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenHover: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
+  onOpenTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: PlannerPerkGroupSelection,
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
@@ -211,6 +230,7 @@ export function BuildPlannerBoard({
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
   onRemovePickedPerk,
+  onTogglePickedPerkOptional,
   onToggleIndividualPerkGroupsSection,
   onToggleSharedPerkGroupsSection,
   openBuildPerkTooltipPreview,
@@ -234,14 +254,23 @@ export function BuildPlannerBoard({
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPlannerPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: PlannerPerkGroupSelection,
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onRemovePickedPerk: (perkId: string) => void
+  onTogglePickedPerkOptional: (perkId: string) => void
   onToggleIndividualPerkGroupsSection: () => void
   onToggleSharedPerkGroupsSection: () => void
-  openBuildPerkTooltipPreview: (perkId: string, currentTarget: HTMLElement) => void
-  pickedPerks: LegendsPerkRecord[]
+  openBuildPerkTooltipPreview: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: PlannerPerkGroupSelection,
+  ) => void
+  pickedPerks: BuildPlannerPickedPerk[]
   plannerBoardRef: RefObject<HTMLDivElement | null>
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }) {
@@ -265,7 +294,7 @@ export function BuildPlannerBoard({
 
   return (
     <div
-      className={cx(styles.plannerBoard, 'app-scrollbar')}
+      className={joinClassNames(styles.plannerBoard, 'app-scrollbar')}
       data-planner-board="true"
       data-scroll-container="true"
       data-testid="planner-board"
@@ -306,12 +335,13 @@ export function BuildPlannerBoard({
         </div>
         <div className={styles.plannerTrackScroll}>
           <div
-            className={cx(styles.plannerTrack, styles.plannerTrackPerks)}
+            className={joinClassNames(styles.plannerTrack, styles.plannerTrackPerks)}
             data-planner-collection="picked-perks"
             data-testid="build-perks-bar"
           >
             {hasPickedPerks ? (
               pickedPerks.map((pickedPerk) => {
+                const primaryPerkGroupSelection = getPrimaryPlannerPerkGroupSelection(pickedPerk)
                 const isHighlighted =
                   hoveredPerkId === pickedPerk.id ||
                   highlightedBuildPerkIdsForEmphasis.has(pickedPerk.id)
@@ -319,78 +349,135 @@ export function BuildPlannerBoard({
                   activeBuildPerkTooltipIndicatorPerkId === pickedPerk.id
 
                 return (
-                <div
-                  className={cx(styles.plannerSlot, styles.plannerSlotPerk)}
-                  data-highlighted={isHighlighted}
-                  data-planner-item="picked-perk"
-                  data-testid="planner-slot-perk"
-                  data-tooltip-pending={isTooltipIndicatorActive}
-                  key={pickedPerk.id}
-                  onBlurCapture={(event) => {
-                    if (
-                      event.relatedTarget instanceof Node &&
-                      event.currentTarget.contains(event.relatedTarget)
-                    ) {
-                      return
-                    }
+                  <div
+                    className={joinClassNames(styles.plannerSlot, styles.plannerSlotPerk)}
+                    data-highlighted={isHighlighted}
+                    data-planner-item="picked-perk"
+                    data-requirement={pickedPerk.isOptional ? 'optional' : 'must-have'}
+                    data-testid="planner-slot-perk"
+                    data-tooltip-pending={isTooltipIndicatorActive}
+                    key={pickedPerk.id}
+                    onBlurCapture={(event) => {
+                      if (
+                        event.relatedTarget instanceof Node &&
+                        event.currentTarget.contains(event.relatedTarget)
+                      ) {
+                        return
+                      }
 
-                    closeBuildPerkTooltipPreview(pickedPerk.id)
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Escape') {
-                      clearPendingBuildPerkTooltip()
-                      onCloseBuildPerkTooltip()
-                    }
-                  }}
-                  onMouseEnter={(event) =>
-                    openBuildPerkTooltipPreview(pickedPerk.id, event.currentTarget)
-                  }
-                  onMouseLeave={(event) =>
-                    closeBuildPerkTooltipPreview(pickedPerk.id, event.relatedTarget)
-                  }
-                >
-                  <button
-                    aria-describedby={
-                      hoveredBuildPerkId === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
-                    }
-                    aria-label={`View ${pickedPerk.perkName} from build planner`}
-                    className={styles.plannerSlotPerkInspect}
-                    onClick={() => {
-                      clearPendingBuildPerkTooltip()
-                      onCloseBuildPerkTooltip()
-                      onInspectPlannerPerk(pickedPerk.id)
+                      closeBuildPerkTooltipPreview(pickedPerk.id)
                     }}
-                    onFocus={() => onOpenBuildPerkHover(pickedPerk.id)}
-                    type="button"
+                    onKeyDown={(event) => {
+                      if (event.key === 'Escape') {
+                        clearPendingBuildPerkTooltip()
+                        onCloseBuildPerkTooltip()
+                      }
+                    }}
+                    onMouseEnter={(event) =>
+                      openBuildPerkTooltipPreview(
+                        pickedPerk.id,
+                        event.currentTarget,
+                        primaryPerkGroupSelection,
+                      )
+                    }
+                    onMouseLeave={(event) =>
+                      closeBuildPerkTooltipPreview(pickedPerk.id, event.relatedTarget)
+                    }
                   >
-                    {renderGameIcon({
-                      className: cx(sharedStyles.perkIcon, sharedStyles.perkIconTiny),
-                      iconPath: getPerkDisplayIconPath(pickedPerk),
-                      label: `${pickedPerk.perkName} build icon`,
-                      testId: 'planner-picked-perk-icon',
-                    })}
-                    <strong
-                      className={styles.plannerPickedPerkName}
-                      data-testid="planner-picked-perk-name"
+                    {!pickedPerk.isOptional ? (
+                      <span
+                        aria-label="Must-have perk"
+                        className={styles.plannerSlotRequirementChain}
+                        data-testid="planner-slot-requirement-chain"
+                        role="img"
+                        title="Must-have perk"
+                      >
+                        <img
+                          alt=""
+                          aria-hidden="true"
+                          className={styles.plannerSlotRequirementImage}
+                          data-testid="planner-slot-requirement-chain-image"
+                          draggable={false}
+                          src={catenaryChainUrl}
+                        />
+                      </span>
+                    ) : null}
+                    <button
+                      aria-describedby={
+                        hoveredBuildPerkId === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
+                      }
+                      aria-label={`View ${pickedPerk.perkName} from build planner`}
+                      className={styles.plannerSlotPerkInspect}
+                      onClick={() => {
+                        clearPendingBuildPerkTooltip()
+                        onCloseBuildPerkTooltip()
+                        onInspectPlannerPerk(pickedPerk.id)
+                      }}
+                      onFocus={() => onOpenBuildPerkHover(pickedPerk.id, primaryPerkGroupSelection)}
+                      type="button"
                     >
-                      {pickedPerk.perkName}
-                    </strong>
-                  </button>
-                  <button
-                    aria-label={`Remove ${pickedPerk.perkName} from build`}
-                    className={cx(sharedStyles.searchClearButton, styles.plannerSlotRemoveButton)}
-                    data-testid="planner-slot-remove-button"
-                    onClick={() => onRemovePickedPerk(pickedPerk.id)}
-                    type="button"
-                  >
-                    <span aria-hidden="true" className={sharedStyles.searchClearIcon} />
-                  </button>
-                </div>
+                      {renderGameIcon({
+                        className: joinClassNames(sharedStyles.perkIcon, sharedStyles.perkIconTiny),
+                        iconPath: getPerkDisplayIconPath(pickedPerk),
+                        label: `${pickedPerk.perkName} build icon`,
+                        testId: 'planner-picked-perk-icon',
+                      })}
+                      <strong
+                        className={styles.plannerPickedPerkName}
+                        data-testid="planner-picked-perk-name"
+                      >
+                        {pickedPerk.perkName}
+                      </strong>
+                    </button>
+                    <div
+                      className={styles.plannerSlotActionPanel}
+                      data-testid="planner-slot-action-panel"
+                    >
+                      <button
+                        aria-label={
+                          pickedPerk.isOptional
+                            ? `Mark ${pickedPerk.perkName} as must-have`
+                            : `Mark ${pickedPerk.perkName} as optional`
+                        }
+                        className={joinClassNames(
+                          styles.plannerSlotOverlayButton,
+                          styles.plannerSlotOptionalButton,
+                        )}
+                        data-testid="planner-slot-optional-button"
+                        onClick={() => onTogglePickedPerkOptional(pickedPerk.id)}
+                        title={
+                          pickedPerk.isOptional
+                            ? `Mark ${pickedPerk.perkName} as must-have`
+                            : `Mark ${pickedPerk.perkName} as optional`
+                        }
+                        type="button"
+                      >
+                        {pickedPerk.isOptional ? (
+                          <Link aria-hidden="true" className={styles.plannerSlotActionIcon} />
+                        ) : (
+                          <Split aria-hidden="true" className={styles.plannerSlotActionIcon} />
+                        )}
+                      </button>
+                      <button
+                        aria-label={`Remove ${pickedPerk.perkName} from build`}
+                        className={joinClassNames(
+                          styles.plannerSlotOverlayButton,
+                          styles.plannerSlotRemoveButton,
+                        )}
+                        data-testid="planner-slot-remove-button"
+                        onClick={() => onRemovePickedPerk(pickedPerk.id)}
+                        title={`Remove ${pickedPerk.perkName} from build`}
+                        type="button"
+                      >
+                        <span aria-hidden="true" className={sharedStyles.searchClearIcon} />
+                      </button>
+                    </div>
+                  </div>
                 )
               })
             ) : (
               <div
-                className={cx(styles.plannerSlot, styles.plannerSlotPlaceholder)}
+                className={joinClassNames(styles.plannerSlot, styles.plannerSlotPlaceholder)}
                 data-placeholder="true"
               >
                 <div className={styles.plannerSlotCopy}>

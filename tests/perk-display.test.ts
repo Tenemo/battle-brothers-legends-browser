@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { groupBackgroundSources } from '../src/lib/perk-display'
+import { formatMorePerkResultsLabel, groupBackgroundSources } from '../src/lib/perk-display'
 import type { LegendsPerkBackgroundSource } from '../src/types/legends-perks'
 
 function createBackgroundSource({
@@ -27,6 +27,12 @@ function createBackgroundSource({
 }
 
 describe('perk display', () => {
+  test('formats show more perk result labels with singular and plural nouns', () => {
+    expect(formatMorePerkResultsLabel(1)).toBe('Show 1 more perk')
+    expect(formatMorePerkResultsLabel(2)).toBe('Show 2 more perks')
+    expect(formatMorePerkResultsLabel(12)).toBe('Show 12 more perks')
+  })
+
   test('groups background sources by probability and sorts them from highest chance', () => {
     const backgroundSources = [
       createBackgroundSource({

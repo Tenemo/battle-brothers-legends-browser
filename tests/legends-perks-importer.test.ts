@@ -1,4 +1,11 @@
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
+import {
+  cp as copyDirectory,
+  mkdir,
+  mkdtemp,
+  readFile,
+  rm as removePath,
+  writeFile,
+} from 'node:fs/promises'
 import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
 import { createDataset, createImporterDiagnostics } from '../scripts/legends-perks-importer.mjs'
@@ -312,9 +319,13 @@ describe('legends perks importer', () => {
         'legends-reference',
       )
 
-      await cp(path.dirname(fixtureReferenceRootDirectoryPath), temporaryReferenceDirectoryPath, {
-        recursive: true,
-      })
+      await copyDirectory(
+        path.dirname(fixtureReferenceRootDirectoryPath),
+        temporaryReferenceDirectoryPath,
+        {
+          recursive: true,
+        },
+      )
 
       const beastHunterBackgroundFilePath = path.join(
         temporaryReferenceDirectoryPath,
@@ -421,7 +432,7 @@ describe('legends perks importer', () => {
         ]),
       )
     } finally {
-      await rm(temporaryFixtureDirectoryPath, { force: true, recursive: true })
+      await removePath(temporaryFixtureDirectoryPath, { force: true, recursive: true })
     }
   })
 
@@ -445,9 +456,13 @@ describe('legends perks importer', () => {
         'legends-reference',
       )
 
-      await cp(path.dirname(fixtureReferenceRootDirectoryPath), temporaryReferenceDirectoryPath, {
-        recursive: true,
-      })
+      await copyDirectory(
+        path.dirname(fixtureReferenceRootDirectoryPath),
+        temporaryReferenceDirectoryPath,
+        {
+          recursive: true,
+        },
+      )
 
       const traderScenarioFilePath = path.join(
         temporaryReferenceDirectoryPath,
@@ -506,7 +521,7 @@ describe('legends perks importer', () => {
         ]),
       )
     } finally {
-      await rm(temporaryFixtureDirectoryPath, { force: true, recursive: true })
+      await removePath(temporaryFixtureDirectoryPath, { force: true, recursive: true })
     }
   })
 })

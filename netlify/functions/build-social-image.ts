@@ -9,6 +9,7 @@ import { createBuildSharePreviewPayloadFromSearch } from '../../src/lib/build-sh
 import { buildSocialImageWidth, createBuildSocialImageSvg } from '../../src/lib/build-social-image'
 import type {
   BuildSharePreviewBackgroundFit,
+  BuildSharePreviewOptions,
   BuildSharePreviewPayload,
   BuildSharePreviewPerk,
 } from '../../src/lib/build-share-preview'
@@ -35,6 +36,7 @@ type BuildSocialImageRenderPng = (
 ) => Promise<Uint8Array> | Uint8Array
 
 type BuildSocialImageResponseOptions = {
+  previewOptions?: BuildSharePreviewOptions
   renderPng?: BuildSocialImageRenderPng
   routeParams?: Record<string, string | undefined>
 }
@@ -280,13 +282,13 @@ export function createBuildSocialImageSearchParamsFromRouteParams(
 
 export async function createBuildSocialImageResponse(
   requestUrl: URL,
-  { renderPng, routeParams }: BuildSocialImageResponseOptions = {},
+  { previewOptions, renderPng, routeParams }: BuildSocialImageResponseOptions = {},
 ): Promise<BuildSocialImageResponse> {
   const searchParams =
     createBuildSocialImageSearchParamsFromRouteParams(routeParams) ??
     createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ??
     new URLSearchParams()
-  const payload = createBuildSharePreviewPayloadFromSearch(searchParams)
+  const payload = createBuildSharePreviewPayloadFromSearch(searchParams, previewOptions)
   const renderedImage = await renderBuildSocialImagePngWithFallback(payload, renderPng)
   const cachePolicy =
     payload.status === 'found' && !renderedImage.usedFallback

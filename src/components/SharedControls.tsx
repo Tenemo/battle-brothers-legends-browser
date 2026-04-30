@@ -1,6 +1,6 @@
 import { type ReactNode, useRef } from 'react'
 import { ChevronRight, Funnel, Star } from 'lucide-react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import styles from './SharedControls.module.scss'
 
 const railChevronStrokeWidth = 2.6
@@ -28,7 +28,7 @@ export function ClearableSearchField({
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const hasSearchValue = value.length > 0
-  const searchFieldClassName = cx(styles.searchField, className)
+  const searchFieldClassName = joinClassNames(styles.searchField, className)
 
   return (
     <div
@@ -79,7 +79,13 @@ export function GitHubIcon({ className }: { className: string }) {
   )
 }
 
-export function CategoryChevron({ className, isExpanded }: { className: string; isExpanded: boolean }) {
+export function CategoryChevron({
+  className,
+  isExpanded,
+}: {
+  className: string
+  isExpanded: boolean
+}) {
   return (
     <ChevronRight
       aria-hidden="true"
@@ -191,7 +197,7 @@ export function BuildStar({
   return (
     <Star
       aria-hidden="true"
-      className={cx(styles.buildStar, className)}
+      className={joinClassNames(styles.buildStar, className)}
       data-picked={isPicked}
       data-testid={testId}
       fill={isPicked ? 'currentColor' : 'none'}
@@ -226,7 +232,7 @@ export function BuildToggleButton({
     <button
       aria-label={actionLabel}
       aria-pressed={isPicked}
-      className={cx(styles.buildToggleButton, className)}
+      className={joinClassNames(styles.buildToggleButton, className)}
       data-compact={isCompact}
       onClick={onClick}
       title={titleLabel}

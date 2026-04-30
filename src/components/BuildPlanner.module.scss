@@ -6,7 +6,7 @@
     --planner-perk-row-min-height: var(--primitive-length-3-45rem);
     --planner-picked-perk-slot-width: var(--primitive-length-8-04rem);
     --planner-row-label-width: var(--primitive-length-10-4rem);
-    --planner-slot-width: var(--primitive-length-10-4rem);
+    --planner-slot-width: var(--planner-tile-width);
     --planner-track-gap: var(--space-md);
     --planner-tile-width: var(--primitive-length-14rem);
     --planner-placeholder-width: var(--primitive-length-15rem);
@@ -74,7 +74,6 @@
   .buildPlannerInfo,
   .plannerActionButton,
   .buildPlannerInfoButton,
-  .clearBuildDialogIcon,
   .plannerPill,
   .plannerSectionToggle {
     display: inline-flex;
@@ -138,6 +137,19 @@
       position: absolute;
       inset: var(--primitive-length-negative-0-15rem);
     }
+  }
+
+  .buildPlannerInfoGlyph {
+    display: block;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: var(--font-size-xl);
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1;
+    transform: translate(
+      var(--primitive-length-negative-0-02rem),
+      var(--primitive-length-negative-0-05rem)
+    );
   }
 
   .buildPlannerInfoTooltip,
@@ -212,8 +224,7 @@
     min-width: var(--primitive-length-5-9rem);
   }
 
-  .clearBuildActionButton,
-  .savedBuildDeleteButton {
+  .clearBuildActionButton {
     &:hover:not(:disabled),
     &:focus-visible:not(:disabled) {
       border-color: var(--border-danger);
@@ -222,196 +233,10 @@
     }
   }
 
-  .clearBuildConfirmButton {
-    border-color: var(--border-danger);
-    background: var(--surface-danger);
-    color: var(--text-danger);
-
-    &:hover:not(:disabled),
-    &:focus-visible:not(:disabled) {
-      border-color: var(--border-danger-hover);
-      background: var(--surface-danger-hover);
-    }
-  }
-
-  .dialogBackdrop {
-    position: fixed;
-    z-index: var(--z-index-modal);
-    inset: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: var(--space-3xl);
-    background: var(--primitive-color-rgb-0-0-0-alpha-0-62);
-  }
-
-  .savedBuildsDialog,
-  .clearBuildDialog {
-    display: grid;
-    gap: var(--space-xl);
-    overflow: hidden;
-    border: var(--primitive-length-1px) solid var(--border-overlay);
-    border-radius: var(--radius-xl);
-    padding: var(--space-xl);
-    background: var(--surface-overlay-raised);
-    box-shadow: var(--shadow-high), var(--shadow-inner-highlight);
-  }
-
-  .savedBuildsDialog {
-    width: min(var(--primitive-length-42rem), 100%);
-    max-height: min(
-      var(--primitive-length-40rem),
-      calc(var(--primitive-length-100vh) - var(--control-height-md))
-    );
-
-    h2 {
-      margin: 0;
-      font-size: var(--font-size-2xl);
-    }
-  }
-
-  .clearBuildDialog {
-    grid-template-columns: auto minmax(0, 1fr);
-    align-items: start;
-    width: min(var(--primitive-length-30rem), 100%);
-
-    h2 {
-      margin: 0;
-      font-size: var(--font-size-2xl);
-    }
-  }
-
-  .savedBuildsDialogHeader {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-2xl);
-    align-items: flex-start;
-  }
-
-  .clearBuildDialogIcon {
-    justify-content: center;
-
-    @include size(var(--primitive-length-2-15rem));
-
-    border: var(--primitive-length-1px) solid var(--border-danger);
-    border-radius: var(--radius-lg);
-    background: var(--surface-danger);
-    color: var(--text-danger);
-  }
-
-  .clearBuildDialogIconSvg {
-    @include size(var(--primitive-length-1-12rem));
-
-    stroke-width: 1.9;
-  }
-
-  .clearBuildDialogCopy,
-  .savedBuildForm,
-  .savedBuildsList,
   .buildPerkTooltipCopy {
     display: grid;
   }
 
-  .clearBuildDialogCopy {
-    gap: var(--space-sm);
-    min-width: 0;
-
-    p {
-      margin: 0;
-      color: var(--text-secondary);
-      font-size: var(--font-size-lg);
-      line-height: 1.32;
-    }
-  }
-
-  .clearBuildDialogWarning {
-    color: var(--text-danger);
-  }
-
-  .clearBuildDialogActions {
-    grid-column: 1 / -1;
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: var(--space-md);
-  }
-
-  .savedBuildsStorageStatus {
-    margin: var(--space-xs) 0 0;
-    color: var(--text-muted);
-    font-size: var(--font-size-md);
-  }
-
-  .savedBuildsCloseButton {
-    flex: 0 0 auto;
-  }
-
-  .savedBuildForm {
-    gap: var(--space-sm);
-
-    label {
-      color: var(--text-muted);
-      font-size: var(--font-size-sm);
-    }
-
-    input {
-      min-width: 0;
-      min-height: var(--control-height-md);
-      border: var(--primitive-length-1px) solid var(--border-color);
-      border-radius: var(--radius-xl);
-      padding: var(--primitive-length-0-4rem) var(--space-lg);
-      background: var(--input-background);
-      color: var(--text-primary);
-      font: inherit;
-
-      &:hover,
-      &:focus,
-      &:focus-visible {
-        border-color: var(--border-strong);
-        background: var(--surface-control-active);
-        outline: 0;
-      }
-
-      &:disabled {
-        opacity: 0.48;
-      }
-    }
-  }
-
-  .savedBuildFormRow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    gap: var(--space-md);
-  }
-
-  .savedBuildPrimaryButton {
-    border-color: var(--border-overlay);
-    color: var(--text-primary);
-  }
-
-  .savedBuildsStatusMessage {
-    margin: 0;
-    border: var(--primitive-length-1px) solid var(--border-success);
-    border-radius: var(--radius-lg);
-    padding: var(--space-md) var(--space-lg);
-    background: var(--surface-success);
-    color: var(--text-success);
-    font-size: var(--font-size-md);
-
-    &[data-status='error'] {
-      border-color: var(--border-danger);
-      background: var(--surface-danger);
-      color: var(--text-danger);
-    }
-  }
-
-  .savedBuildsList {
-    gap: var(--space-md);
-    min-height: 0;
-    overflow: auto;
-  }
-
-  .savedBuildsEmpty,
   .plannerSlot[data-placeholder='true'],
   .plannerSectionPlaceholder {
     border-color: var(--border-overlay);
@@ -419,60 +244,10 @@
     background: var(--surface-result-muted);
   }
 
-  .savedBuildsEmpty {
-    margin: 0;
-    border-width: var(--primitive-length-1px);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
-    color: var(--text-muted);
-    font-size: var(--font-size-lg);
-  }
-
-  .savedBuildCard,
   .plannerSlot,
   .plannerGroupCard,
   .plannerSectionPlaceholder {
     @include result-surface;
-  }
-
-  .savedBuildCard {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    gap: var(--space-xl);
-    align-items: center;
-    padding: var(--space-lg);
-  }
-
-  .savedBuildCardCopy {
-    min-width: 0;
-  }
-
-  .savedBuildCardName {
-    display: block;
-    color: var(--text-primary);
-    font-size: var(--font-size-xl);
-
-    @include truncate;
-  }
-
-  .savedBuildCardMeta,
-  .savedBuildCardPreview {
-    margin: var(--space-2xs) 0 0;
-    color: var(--text-muted);
-    font-size: var(--font-size-sm);
-  }
-
-  .savedBuildCardPreview {
-    color: var(--text-secondary);
-
-    @include truncate;
-  }
-
-  .savedBuildCardActions {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: flex-end;
-    gap: var(--space-sm);
   }
 
   .plannerBoard {
@@ -517,7 +292,7 @@
     min-height: 0;
     padding-top: var(--space-xs);
     color: var(--text-muted);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     font-weight: 600;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -637,7 +412,7 @@
     padding: 0;
     color: inherit;
     isolation: isolate;
-    overflow: hidden;
+    overflow: visible;
 
     @include surface-transition;
 
@@ -663,7 +438,7 @@
     }
 
     &[data-tooltip-pending='true']::after {
-      animation: build-perk-tooltip-timer var(--motion-entry-duration) linear forwards;
+      animation: build-perk-tooltip-timer calc(var(--motion-entry-duration) * 2) linear forwards;
       opacity: 1;
     }
 
@@ -678,14 +453,19 @@
 
     &:hover,
     &:focus-within {
-      .plannerSlotPerkInspect {
-        padding-right: var(--primitive-length-2-34rem);
-      }
-
-      .plannerSlotRemoveButton {
-        opacity: 1;
+      .plannerSlotActionPanel {
         visibility: visible;
         pointer-events: auto;
+      }
+    }
+
+    &[data-requirement='optional'] {
+      border-color: var(--border-muted);
+      background: var(--primitive-color-rgb-204-155-84-alpha-0-08);
+      color: var(--text-secondary);
+
+      .plannerPickedPerkName {
+        color: var(--text-secondary);
       }
     }
   }
@@ -699,7 +479,8 @@
     min-height: calc(var(--planner-perk-row-min-height) - var(--primitive-length-2px));
     border: 0;
     border-radius: inherit;
-    padding: var(--primitive-length-0-38rem) var(--primitive-length-0-46rem);
+    padding: var(--primitive-length-0-38rem) var(--primitive-length-0-46rem)
+      var(--primitive-length-0-38rem) var(--primitive-length-0-46rem);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -711,12 +492,79 @@
     }
   }
 
-  .plannerSlotRemoveButton {
-    right: var(--space-xs);
+  .plannerSlotRequirementChain {
+    position: absolute;
+    top: 50%;
+    left: var(--primitive-length-negative-5px);
+    z-index: var(--z-index-raised);
+    display: block;
+    width: calc(var(--primitive-length-1-4rem) * 1.5);
+    height: calc(var(--primitive-length-1-4rem) * 1.5);
+    filter: drop-shadow(var(--shadow-chain-drop));
+    line-height: 0;
+    pointer-events: none;
+    transform: translate(
+      calc(var(--primitive-length-0-12rem) * -1),
+      calc(var(--primitive-length-0-24rem) * -1)
+    );
+  }
+
+  .plannerSlotRequirementImage {
+    display: block;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+  }
+
+  .plannerSlotActionIcon {
+    @include size(var(--icon-size-xs));
+
+    stroke-width: 2.2;
+  }
+
+  .plannerSlotActionPanel {
+    position: absolute;
+    inset: 0 0 0 auto;
     z-index: var(--z-index-interactive);
-    opacity: 0;
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    width: 32%;
+    border-left: var(--primitive-length-1px) solid var(--border-overlay);
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-selected-ring);
     visibility: hidden;
     pointer-events: none;
+  }
+
+  .plannerSlotOverlayButton {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: var(--surface-overlay-raised);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition:
+      background-color var(--motion-fast-duration) ease,
+      color var(--motion-fast-duration) ease;
+
+    &:hover,
+    &:focus-visible {
+      background: var(--surface-control-active);
+      color: var(--text-primary);
+    }
+
+    &:focus-visible {
+      @include focus-ring(var(--primitive-length-negative-2px));
+    }
+  }
+
+  .plannerSlotOptionalButton {
+    border-bottom: var(--primitive-length-1px) solid var(--border-overlay);
   }
 
   .plannerSlotPlaceholder {
@@ -793,13 +641,18 @@
 
     @include surface-transition;
 
-    &:not([data-has-highlighted-perk='true']):hover,
-    &:not([data-has-highlighted-perk='true']):focus-within,
-    &[data-highlighted='true']:not([data-has-highlighted-perk='true']) {
+    &:hover,
+    &:focus-within,
+    &[data-highlighted='true'],
+    &[data-has-highlighted-perk='true'] {
       border-color: var(--border-strong);
       background: var(--surface-result-active);
       color: var(--text-primary);
       box-shadow: var(--shadow-selected-ring);
+    }
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-65rem);
     }
 
     &[data-wide='true'] {
@@ -972,7 +825,7 @@
     }
 
     &[data-tooltip-pending='true']::after {
-      animation: build-perk-tooltip-timer var(--motion-entry-duration) linear forwards;
+      animation: build-perk-tooltip-timer calc(var(--motion-entry-duration) * 2) linear forwards;
       opacity: 1;
     }
   }
@@ -983,7 +836,6 @@
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    overflow-wrap: break-word;
     text-overflow: ellipsis;
     font-size: var(--font-size-md);
     font-weight: 600;
@@ -1022,9 +874,7 @@
     .buildPlanner {
       --planner-group-row-min-height: var(--primitive-length-3-7rem);
       --planner-perk-row-min-height: var(--primitive-length-2-72rem);
-      --planner-picked-perk-row-min-height: var(--primitive-length-2-4rem);
       --planner-row-label-width: var(--primitive-length-8-4rem);
-      --planner-slot-width: var(--primitive-length-8-7rem);
       --planner-track-gap: var(--primitive-length-0-34rem);
       --planner-tile-width: var(--primitive-length-11-4rem);
       --planner-placeholder-width: var(--primitive-length-12rem);
@@ -1083,6 +933,7 @@
   @include below-desktop {
     .buildPlanner {
       flex: 0 0 auto;
+      order: 1;
       overflow: visible;
 
       &[data-background-fit-search-active='true'] {
@@ -1092,10 +943,6 @@
   }
 
   @include mobile {
-    .buildPlanner {
-      order: 1;
-    }
-
     .buildPlannerHeader {
       align-items: flex-start;
       flex-direction: column;
@@ -1106,36 +953,15 @@
       width: 100%;
     }
 
-    .dialogBackdrop {
-      align-items: stretch;
-      padding: var(--space-lg);
+    .plannerActionButton {
+      min-height: var(--primitive-length-2-72rem);
+      padding: var(--space-xs) var(--space-md);
     }
 
-    .savedBuildsDialog,
-    .clearBuildDialog {
-      max-height: calc(var(--primitive-length-100vh) - var(--primitive-length-1-12rem));
-    }
-
-    .clearBuildDialog,
-    .savedBuildFormRow,
-    .savedBuildCard,
     .plannerRow {
       grid-template-columns: 1fr;
     }
 
-    .clearBuildDialog {
-      align-content: start;
-    }
-
-    .clearBuildDialogActions {
-      justify-content: stretch;
-
-      .plannerActionButton {
-        flex: 1 1 100%;
-      }
-    }
-
-    .savedBuildCardActions,
     .plannerBoard {
       justify-content: flex-start;
     }
@@ -1146,6 +972,32 @@
 
     .plannerBoard {
       gap: var(--space-lg);
+    }
+
+    .buildPlanner[data-has-picked-perks='true'] {
+      .plannerBoard {
+        max-height: min(var(--primitive-length-24rem), var(--primitive-length-38vh));
+        overflow: auto;
+        padding-right: var(--space-2xs);
+      }
+    }
+
+    .plannerSectionToggle {
+      position: relative;
+      min-height: var(--primitive-length-2-72rem);
+      padding: var(--space-xs) var(--space-md);
+
+      &[data-collapsed-chip='true'] {
+        min-height: 0;
+        padding: var(--space-2xs) var(--space-xs);
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset: var(--primitive-length-negative-0-45rem) 0;
+          pointer-events: auto;
+        }
+      }
     }
   }
 }

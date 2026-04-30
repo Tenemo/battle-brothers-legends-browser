@@ -1,5 +1,10 @@
 import type { RankedBackgroundFit } from './background-fit'
 
+type BackgroundFitOriginCandidate = Pick<
+  RankedBackgroundFit,
+  'backgroundId' | 'disambiguator' | 'sourceFilePath'
+>
+
 export function getBackgroundSourceLabel(label: string): string {
   return label.replace(/^background\./, '').toLowerCase()
 }
@@ -13,7 +18,9 @@ function getBackgroundSourceFileLabel(sourceFilePath: string): string {
     .toLowerCase()
 }
 
-function getBackgroundFitOriginCandidateLabels(backgroundFit: RankedBackgroundFit): string[] {
+function getBackgroundFitOriginCandidateLabels(
+  backgroundFit: BackgroundFitOriginCandidate,
+): string[] {
   return [
     backgroundFit.backgroundId,
     backgroundFit.disambiguator,
@@ -92,7 +99,9 @@ function isOriginBackgroundSourceLabel(label: string): boolean {
   )
 }
 
-export function getOriginBackgroundPillLabel(backgroundFit: RankedBackgroundFit): string | null {
+export function getOriginBackgroundPillLabel(
+  backgroundFit: BackgroundFitOriginCandidate,
+): string | null {
   for (const candidateLabel of getBackgroundFitOriginCandidateLabels(backgroundFit)) {
     const pillLabel = getOriginBackgroundPillLabelForSourceLabel(candidateLabel)
 
@@ -104,7 +113,7 @@ export function getOriginBackgroundPillLabel(backgroundFit: RankedBackgroundFit)
   return null
 }
 
-export function isOriginBackgroundFit(backgroundFit: RankedBackgroundFit): boolean {
+export function isOriginBackgroundFit(backgroundFit: BackgroundFitOriginCandidate): boolean {
   const candidateLabels = getBackgroundFitOriginCandidateLabels(backgroundFit)
 
   // The imported background model has no explicit origin flag, so this mirrors the source names

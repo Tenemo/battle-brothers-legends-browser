@@ -15,6 +15,14 @@ import {
   getCategoryPriority,
   isDynamicBackgroundCategoryName,
 } from './dynamic-background-categories'
+import {
+  createStudyResourceCoverageProfile,
+  getMinimumStudyResourceRequirementProfile,
+  type BackgroundStudyResourceFilter,
+  type StudyResourceCoverageProfile,
+  type StudyResourceRequirementProfile,
+  type StudyReachabilityRequirement,
+} from './background-study-reachability'
 
 const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>(
   deterministicDynamicBackgroundCategoryNames,
@@ -23,11 +31,56 @@ const deterministicDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBack
 const chanceDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundCategoryName>([
   ...chanceDynamicBackgroundCategoryNames,
 ])
+const maximumBackgroundFitBuildCacheEntries = 8
+const nativeOnlySummaryCacheKey = 'native-only'
 
 type BackgroundProbabilityRecord = {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
   maximumTotalPerkGroupCount: number
   probabilitiesByPerkGroupKey: Map<string, number>
+}
+
+type BackgroundOutcomeDistribution = Map<string, number>
+
+type NativeOutcomeSummary = {
+  buildReachabilityProbability: number
+  maximumNativeCoveredPickedPerkCount: number
+}
+
+export type BackgroundFitSummary = Omit<
+  RankedBackgroundFit,
+  | 'buildReachabilityProbability'
+  | 'expectedCoveredMustHavePerkCount'
+  | 'expectedCoveredOptionalPerkCount'
+  | 'fullBuildReachabilityProbability'
+  | 'guaranteedCoveredMustHavePerkCount'
+  | 'guaranteedCoveredOptionalPerkCount'
+  | 'maximumNativeCoveredPickedPerkCount'
+  | 'mustHaveBuildReachabilityProbability'
+  | 'fullBuildStudyResourceRequirement'
+  | 'mustHaveStudyResourceRequirement'
+>
+
+type CachedBackgroundFitRecord = {
+  backgroundProbabilityRecord: BackgroundProbabilityRecord
+  baseBackgroundFit: BackgroundFitSummary | null
+  expectedCoveredPickedPerkCountByScopeKey: Map<string, number>
+  nativeOutcomeDistribution: BackgroundOutcomeDistribution | null
+  nativeOutcomeSummaryByFilterKey: Map<string, NativeOutcomeSummary>
+  nativeRequirementReachabilityByKey: Map<string, boolean>
+  studyResourceRequirementByFilterKey: Map<string, StudyResourceRequirementProfile | null>
+}
+
+type BackgroundFitBuildCache = {
+  cachedBackgroundFitRecords: CachedBackgroundFitRecord[]
+  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+  unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+}
+
+type FullCategoryOutcome = {
+  perkGroupIds: Set<string>
+  probability: number
 }
 
 type ClassWeaponDependencyByClassPerkGroupId = Map<string, Set<string>>
@@ -64,18 +117,34 @@ export type BackgroundFitMatch = BuildTargetPerkGroup & {
 export type RankedBackgroundFit = {
   backgroundId: string
   backgroundName: string
+  buildReachabilityProbability: number | null
   disambiguator: string | null
+  expectedCoveredMustHavePerkCount: number
+  expectedCoveredOptionalPerkCount: number
   expectedCoveredPickedPerkCount: number
   expectedMatchedPerkGroupCount: number
+  fullBuildStudyResourceRequirement: StudyResourceRequirementProfile | null
+  fullBuildReachabilityProbability: number | null
+  guaranteedCoveredMustHavePerkCount: number
+  guaranteedCoveredOptionalPerkCount: number
   guaranteedMatchedPerkGroupCount: number
   iconPath: string | null
+  maximumNativeCoveredPickedPerkCount: number
   maximumTotalPerkGroupCount: number
   matches: BackgroundFitMatch[]
+  mustHaveBuildReachabilityProbability: number | null
+  mustHaveStudyResourceRequirement: StudyResourceRequirementProfile | null
   sourceFilePath: string
 }
 
 export type BackgroundFitView = {
   rankedBackgroundFits: RankedBackgroundFit[]
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+  unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+}
+
+export type BackgroundFitSummaryView = {
+  rankedBackgroundFitSummaries: BackgroundFitSummary[]
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
   unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }
@@ -86,7 +155,14 @@ type BackgroundFitEngine = {
     categoryName: string,
     perkGroupId: string,
   ) => number
-  getBackgroundFitView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitView
+  getBackgroundFitView: (
+    pickedPerks: LegendsPerkRecord[],
+    studyResourceFilter?: BackgroundStudyResourceFilter,
+    options?: {
+      optionalPickedPerkIds?: ReadonlySet<string>
+    },
+  ) => BackgroundFitView
+  getBackgroundFitSummaryView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitSummaryView
   getPerkBackgroundSources: (perk: LegendsPerkRecord) => LegendsPerkBackgroundSource[]
 }
 
@@ -222,6 +298,52 @@ function buildPerkGroupIdsByCategory(
 
 function getPerkGroupProbabilityKey(categoryName: string, perkGroupId: string): string {
   return `${categoryName}::${perkGroupId}`
+}
+
+function getOutcomeDistributionKey(perkGroupKeys: Iterable<string>): string {
+  return [...perkGroupKeys].toSorted().join(',')
+}
+
+function parseOutcomeDistributionKey(outcomeDistributionKey: string): Set<string> {
+  return new Set(outcomeDistributionKey.length === 0 ? [] : outcomeDistributionKey.split(','))
+}
+
+function addOutcomeProbability(
+  outcomeDistribution: BackgroundOutcomeDistribution,
+  perkGroupKeys: Iterable<string>,
+  probability: number,
+): void {
+  if (probability <= 0) {
+    return
+  }
+
+  const outcomeDistributionKey = getOutcomeDistributionKey(perkGroupKeys)
+
+  outcomeDistribution.set(
+    outcomeDistributionKey,
+    (outcomeDistribution.get(outcomeDistributionKey) ?? 0) + probability,
+  )
+}
+
+function combineOutcomeDistributions(
+  leftOutcomeDistribution: BackgroundOutcomeDistribution,
+  rightOutcomeDistribution: BackgroundOutcomeDistribution,
+): BackgroundOutcomeDistribution {
+  const combinedOutcomeDistribution: BackgroundOutcomeDistribution = new Map()
+
+  for (const [leftOutcomeDistributionKey, leftProbability] of leftOutcomeDistribution) {
+    const leftPerkGroupKeys = parseOutcomeDistributionKey(leftOutcomeDistributionKey)
+
+    for (const [rightOutcomeDistributionKey, rightProbability] of rightOutcomeDistribution) {
+      addOutcomeProbability(
+        combinedOutcomeDistribution,
+        [...leftPerkGroupKeys, ...parseOutcomeDistributionKey(rightOutcomeDistributionKey)],
+        leftProbability * rightProbability,
+      )
+    }
+  }
+
+  return combinedOutcomeDistribution
 }
 
 function buildClassWeaponDependencyByClassPerkGroupId(
@@ -420,6 +542,448 @@ function getCategoryDefinition(
       perkGroupIds: [],
     }
   )
+}
+
+function getRelevantPerkGroupIdsByCategory(
+  pickedPerks: LegendsPerkRecord[],
+): Map<LegendsDynamicBackgroundCategoryName, Set<string>> {
+  const relevantPerkGroupIdsByCategory = new Map<
+    LegendsDynamicBackgroundCategoryName,
+    Set<string>
+  >()
+
+  for (const categoryName of dynamicBackgroundCategoryNames) {
+    relevantPerkGroupIdsByCategory.set(categoryName, new Set())
+  }
+
+  for (const pickedPerk of pickedPerks) {
+    for (const placement of pickedPerk.placements) {
+      if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
+        continue
+      }
+
+      relevantPerkGroupIdsByCategory.get(placement.categoryName)?.add(placement.perkGroupId)
+    }
+  }
+
+  return relevantPerkGroupIdsByCategory
+}
+
+function getRelevantPerkGroupKeys({
+  categoryName,
+  perkGroupIds,
+  relevantPerkGroupIds,
+}: {
+  categoryName: LegendsDynamicBackgroundCategoryName
+  perkGroupIds: Iterable<string>
+  relevantPerkGroupIds: ReadonlySet<string>
+}): string[] {
+  const relevantPerkGroupKeys: string[] = []
+
+  for (const perkGroupId of perkGroupIds) {
+    if (relevantPerkGroupIds.has(perkGroupId)) {
+      relevantPerkGroupKeys.push(getPerkGroupProbabilityKey(categoryName, perkGroupId))
+    }
+  }
+
+  return relevantPerkGroupKeys
+}
+
+function getDeterministicCategoryOutcomeDistribution({
+  categoryDefinition,
+  categoryName,
+  poolPerkGroupIds,
+  relevantPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  poolPerkGroupIds: string[]
+  relevantPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const randomPerkGroupCount = getAdditionalRandomPerkGroupCount(
+    categoryDefinition,
+    remainingPerkGroupIds.length,
+  )
+  const totalCombinationCount = countCombinations(
+    remainingPerkGroupIds.length,
+    randomPerkGroupCount,
+  )
+
+  if (totalCombinationCount === 0) {
+    return outcomeDistribution
+  }
+
+  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+    categoryName,
+    perkGroupIds: explicitPerkGroupIdSet,
+    relevantPerkGroupIds,
+  })
+
+  forEachSubsetOfSize(remainingPerkGroupIds, randomPerkGroupCount, (perkGroupSubset) => {
+    addOutcomeProbability(
+      outcomeDistribution,
+      [
+        ...explicitRelevantPerkGroupKeys,
+        ...getRelevantPerkGroupKeys({
+          categoryName,
+          perkGroupIds: perkGroupSubset,
+          relevantPerkGroupIds,
+        }),
+      ],
+      1 / totalCombinationCount,
+    )
+  })
+
+  return outcomeDistribution
+}
+
+function getChanceCategoryOutcomeDistribution({
+  categoryDefinition,
+  categoryName,
+  poolPerkGroupIds,
+  relevantPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  poolPerkGroupIds: string[]
+  relevantPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const selectedCountDistribution = getChanceSelectedCountDistribution(
+    getChanceAttemptCount(categoryDefinition),
+    clampProbability(categoryDefinition.chance ?? 0),
+    remainingPerkGroupIds.length,
+  )
+  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+    categoryName,
+    perkGroupIds: explicitPerkGroupIdSet,
+    relevantPerkGroupIds,
+  })
+
+  for (const [
+    selectedPerkGroupCount,
+    selectedPerkGroupCountProbability,
+  ] of selectedCountDistribution) {
+    const totalCombinationCount = countCombinations(
+      remainingPerkGroupIds.length,
+      selectedPerkGroupCount,
+    )
+
+    if (totalCombinationCount === 0) {
+      continue
+    }
+
+    forEachSubsetOfSize(remainingPerkGroupIds, selectedPerkGroupCount, (perkGroupSubset) => {
+      addOutcomeProbability(
+        outcomeDistribution,
+        [
+          ...explicitRelevantPerkGroupKeys,
+          ...getRelevantPerkGroupKeys({
+            categoryName,
+            perkGroupIds: perkGroupSubset,
+            relevantPerkGroupIds,
+          }),
+        ],
+        selectedPerkGroupCountProbability / totalCombinationCount,
+      )
+    })
+  }
+
+  return outcomeDistribution
+}
+
+function getExplicitOnlyCategoryOutcomeDistribution({
+  categoryDefinition,
+  categoryName,
+  relevantPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  relevantPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+
+  addOutcomeProbability(
+    outcomeDistribution,
+    getRelevantPerkGroupKeys({
+      categoryName,
+      perkGroupIds: categoryDefinition.perkGroupIds,
+      relevantPerkGroupIds,
+    }),
+    1,
+  )
+
+  return outcomeDistribution
+}
+
+function getDeterministicFullCategoryOutcomes(
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition,
+  poolPerkGroupIds: string[],
+): FullCategoryOutcome[] {
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const remainingPerkGroupIds = getRemainingPerkGroupIds(poolPerkGroupIds, explicitPerkGroupIdSet)
+  const randomPerkGroupCount = getAdditionalRandomPerkGroupCount(
+    categoryDefinition,
+    remainingPerkGroupIds.length,
+  )
+  const totalCombinationCount = countCombinations(
+    remainingPerkGroupIds.length,
+    randomPerkGroupCount,
+  )
+  const fullCategoryOutcomes: FullCategoryOutcome[] = []
+
+  if (totalCombinationCount === 0) {
+    return fullCategoryOutcomes
+  }
+
+  forEachSubsetOfSize(remainingPerkGroupIds, randomPerkGroupCount, (perkGroupSubset) => {
+    fullCategoryOutcomes.push({
+      perkGroupIds: new Set([...explicitPerkGroupIdSet, ...perkGroupSubset]),
+      probability: 1 / totalCombinationCount,
+    })
+  })
+
+  return fullCategoryOutcomes
+}
+
+function getClassOutcomeDistributionForWeaponOutcome({
+  categoryDefinition,
+  classWeaponDependencyByClassPerkGroupId,
+  poolPerkGroupIds,
+  relevantPerkGroupIds,
+  weaponPerkGroupIds,
+}: {
+  categoryDefinition: LegendsBackgroundFitCategoryDefinition
+  classWeaponDependencyByClassPerkGroupId: ClassWeaponDependencyByClassPerkGroupId
+  poolPerkGroupIds: string[]
+  relevantPerkGroupIds: ReadonlySet<string>
+  weaponPerkGroupIds: ReadonlySet<string>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const explicitPerkGroupIdSet = new Set(categoryDefinition.perkGroupIds)
+  const eligibleRemainingClassPerkGroupIds = getEligibleRemainingClassPerkGroupIds(
+    poolPerkGroupIds,
+    explicitPerkGroupIdSet,
+    new Set(weaponPerkGroupIds),
+    classWeaponDependencyByClassPerkGroupId,
+  )
+  const selectedCountDistribution = getChanceSelectedCountDistribution(
+    getChanceAttemptCount(categoryDefinition),
+    clampProbability(categoryDefinition.chance ?? 0),
+    eligibleRemainingClassPerkGroupIds.length,
+  )
+  const explicitRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+    categoryName: 'Class',
+    perkGroupIds: explicitPerkGroupIdSet,
+    relevantPerkGroupIds,
+  })
+
+  for (const [
+    selectedPerkGroupCount,
+    selectedPerkGroupCountProbability,
+  ] of selectedCountDistribution) {
+    const totalCombinationCount = countCombinations(
+      eligibleRemainingClassPerkGroupIds.length,
+      selectedPerkGroupCount,
+    )
+
+    if (totalCombinationCount === 0) {
+      continue
+    }
+
+    forEachSubsetOfSize(
+      eligibleRemainingClassPerkGroupIds,
+      selectedPerkGroupCount,
+      (perkGroupSubset) => {
+        addOutcomeProbability(
+          outcomeDistribution,
+          [
+            ...explicitRelevantPerkGroupKeys,
+            ...getRelevantPerkGroupKeys({
+              categoryName: 'Class',
+              perkGroupIds: perkGroupSubset,
+              relevantPerkGroupIds,
+            }),
+          ],
+          selectedPerkGroupCountProbability / totalCombinationCount,
+        )
+      },
+    )
+  }
+
+  return outcomeDistribution
+}
+
+function getWeaponAndClassOutcomeDistribution({
+  backgroundDefinition,
+  context,
+  relevantPerkGroupIdsByCategory,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  context: BackgroundProbabilityContext
+  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+}): BackgroundOutcomeDistribution {
+  const outcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const weaponCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Weapon')
+  const weaponPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Weapon') ?? []
+  const classCategoryDefinition = getCategoryDefinition(backgroundDefinition, 'Class')
+  const classPoolPerkGroupIds = context.perkGroupIdsByCategory.get('Class') ?? []
+  const relevantWeaponPerkGroupIds = relevantPerkGroupIdsByCategory.get('Weapon') ?? new Set()
+  const relevantClassPerkGroupIds = relevantPerkGroupIdsByCategory.get('Class') ?? new Set()
+
+  for (const weaponOutcome of getDeterministicFullCategoryOutcomes(
+    weaponCategoryDefinition,
+    weaponPoolPerkGroupIds,
+  )) {
+    const weaponRelevantPerkGroupKeys = getRelevantPerkGroupKeys({
+      categoryName: 'Weapon',
+      perkGroupIds: weaponOutcome.perkGroupIds,
+      relevantPerkGroupIds: relevantWeaponPerkGroupIds,
+    })
+    const classOutcomeDistribution = getClassOutcomeDistributionForWeaponOutcome({
+      categoryDefinition: classCategoryDefinition,
+      classWeaponDependencyByClassPerkGroupId: context.classWeaponDependencyByClassPerkGroupId,
+      poolPerkGroupIds: classPoolPerkGroupIds,
+      relevantPerkGroupIds: relevantClassPerkGroupIds,
+      weaponPerkGroupIds: weaponOutcome.perkGroupIds,
+    })
+
+    for (const [classOutcomeDistributionKey, classOutcomeProbability] of classOutcomeDistribution) {
+      addOutcomeProbability(
+        outcomeDistribution,
+        [
+          ...weaponRelevantPerkGroupKeys,
+          ...parseOutcomeDistributionKey(classOutcomeDistributionKey),
+        ],
+        weaponOutcome.probability * classOutcomeProbability,
+      )
+    }
+  }
+
+  return outcomeDistribution
+}
+
+function getCategoryOutcomeDistribution({
+  backgroundDefinition,
+  categoryName,
+  context,
+  relevantPerkGroupIdsByCategory,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  categoryName: LegendsDynamicBackgroundCategoryName
+  context: BackgroundProbabilityContext
+  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+}): BackgroundOutcomeDistribution {
+  const categoryDefinition = getCategoryDefinition(backgroundDefinition, categoryName)
+  const poolPerkGroupIds = context.perkGroupIdsByCategory.get(categoryName) ?? []
+  const relevantPerkGroupIds = relevantPerkGroupIdsByCategory.get(categoryName) ?? new Set()
+
+  if (deterministicDynamicBackgroundCategoryNameSet.has(categoryName)) {
+    return getDeterministicCategoryOutcomeDistribution({
+      categoryDefinition,
+      categoryName,
+      poolPerkGroupIds,
+      relevantPerkGroupIds,
+    })
+  }
+
+  if (chanceDynamicBackgroundCategoryNameSet.has(categoryName)) {
+    return getChanceCategoryOutcomeDistribution({
+      categoryDefinition,
+      categoryName,
+      poolPerkGroupIds,
+      relevantPerkGroupIds,
+    })
+  }
+
+  return getExplicitOnlyCategoryOutcomeDistribution({
+    categoryDefinition,
+    categoryName,
+    relevantPerkGroupIds,
+  })
+}
+
+function getBackgroundNativeOutcomeDistribution({
+  backgroundDefinition,
+  context,
+  relevantPerkGroupIdsByCategory,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  context: BackgroundProbabilityContext
+  relevantPerkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, Set<string>>
+}): BackgroundOutcomeDistribution {
+  let outcomeDistribution = getWeaponAndClassOutcomeDistribution({
+    backgroundDefinition,
+    context,
+    relevantPerkGroupIdsByCategory,
+  })
+
+  for (const categoryName of dynamicBackgroundCategoryNames) {
+    if (categoryName === 'Weapon' || categoryName === 'Class') {
+      continue
+    }
+
+    outcomeDistribution = combineOutcomeDistributions(
+      outcomeDistribution,
+      getCategoryOutcomeDistribution({
+        backgroundDefinition,
+        categoryName,
+        context,
+        relevantPerkGroupIdsByCategory,
+      }),
+    )
+  }
+
+  return outcomeDistribution
+}
+
+function calculateNativeOutcomeSummary({
+  nativeOutcomeDistribution,
+  studyResourceCoverageProfile,
+}: {
+  nativeOutcomeDistribution: BackgroundOutcomeDistribution
+  studyResourceCoverageProfile: StudyResourceCoverageProfile
+}): {
+  buildReachabilityProbability: number
+  maximumNativeCoveredPickedPerkCount: number
+} {
+  let buildReachabilityProbability = 0
+  let maximumNativeCoveredPickedPerkCount = 0
+
+  /*
+   * Native outcome keys are exact intersections between one complete background roll and the
+   * perk groups the picked build can use. Those outcomes are disjoint, so full-build probability is
+   * the direct sum of outcomes where native groups plus the allowed study resources cover every
+   * picked perk. The best-native-roll metric is the maximum picked-perk count covered by any one of
+   * those same legal outcomes, which keeps mutually exclusive optional groups from being merged.
+   */
+  for (const [
+    nativeOutcomeDistributionKey,
+    nativeOutcomeProbability,
+  ] of nativeOutcomeDistribution) {
+    const nativeRequirementKeys = parseOutcomeDistributionKey(nativeOutcomeDistributionKey)
+    const nativeCoveredPickedPerkMask =
+      studyResourceCoverageProfile.getNativeCoveredPickedPerkMask(nativeRequirementKeys)
+
+    maximumNativeCoveredPickedPerkCount = Math.max(
+      maximumNativeCoveredPickedPerkCount,
+      studyResourceCoverageProfile.getCoveredPickedPerkCount(nativeCoveredPickedPerkMask),
+    )
+
+    if (studyResourceCoverageProfile.canCoverBuild(nativeCoveredPickedPerkMask)) {
+      buildReachabilityProbability += nativeOutcomeProbability
+    }
+  }
+
+  return {
+    buildReachabilityProbability: clampProbability(buildReachabilityProbability),
+    maximumNativeCoveredPickedPerkCount,
+  }
 }
 
 function hasEveryPerkGroup(
@@ -1123,7 +1687,7 @@ function getMaximumCategoryPerkGroupCount(
     )
   }
 
-  // In Legends 19.3.17, GetDynamicPerkTree's magic loop never appends random perk groups.
+  // In Legends 19.3.20, GetDynamicPerkTree's magic loop never appends random perk groups.
   return explicitPerkGroupCount
 }
 
@@ -1353,8 +1917,35 @@ export function getCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number
   return new Set(matches.flatMap((match) => match.pickedPerkIds)).size
 }
 
+function getCoveredPickedPerkCountForPerkIds(
+  matches: BackgroundFitMatch[],
+  pickedPerkIds: ReadonlySet<string>,
+): number {
+  const coveredPickedPerkIds = new Set<string>()
+
+  for (const match of matches) {
+    for (const pickedPerkId of match.pickedPerkIds) {
+      if (pickedPerkIds.has(pickedPerkId)) {
+        coveredPickedPerkIds.add(pickedPerkId)
+      }
+    }
+  }
+
+  return coveredPickedPerkIds.size
+}
+
 export function getGuaranteedCoveredPickedPerkCount(matches: BackgroundFitMatch[]): number {
   return getCoveredPickedPerkCount(matches.filter((match) => match.isGuaranteed))
+}
+
+function getGuaranteedCoveredPickedPerkCountForPerkIds(
+  matches: BackgroundFitMatch[],
+  pickedPerkIds: ReadonlySet<string>,
+): number {
+  return getCoveredPickedPerkCountForPerkIds(
+    matches.filter((match) => match.isGuaranteed),
+    pickedPerkIds,
+  )
 }
 
 function compareRankedBackgroundFits(
@@ -1367,14 +1958,46 @@ function compareRankedBackgroundFits(
   const rightGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
     rightBackgroundFit.matches,
   )
-  const leftCoveredPickedPerkCount = getCoveredPickedPerkCount(leftBackgroundFit.matches)
-  const rightCoveredPickedPerkCount = getCoveredPickedPerkCount(rightBackgroundFit.matches)
 
   return (
+    (rightBackgroundFit.buildReachabilityProbability ?? 0) -
+      (leftBackgroundFit.buildReachabilityProbability ?? 0) ||
+    (rightBackgroundFit.fullBuildReachabilityProbability ?? 0) -
+      (leftBackgroundFit.fullBuildReachabilityProbability ?? 0) ||
+    rightBackgroundFit.expectedCoveredMustHavePerkCount -
+      leftBackgroundFit.expectedCoveredMustHavePerkCount ||
+    rightBackgroundFit.guaranteedCoveredMustHavePerkCount -
+      leftBackgroundFit.guaranteedCoveredMustHavePerkCount ||
+    rightBackgroundFit.expectedCoveredOptionalPerkCount -
+      leftBackgroundFit.expectedCoveredOptionalPerkCount ||
+    rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
+    rightBackgroundFit.maximumNativeCoveredPickedPerkCount -
+      leftBackgroundFit.maximumNativeCoveredPickedPerkCount ||
+    leftBackgroundFit.backgroundName.localeCompare(rightBackgroundFit.backgroundName) ||
+    leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId) ||
+    leftBackgroundFit.sourceFilePath.localeCompare(rightBackgroundFit.sourceFilePath)
+  )
+}
+
+function compareBackgroundFitSummaries(
+  leftBackgroundFit: BackgroundFitSummary,
+  rightBackgroundFit: BackgroundFitSummary,
+): number {
+  const leftGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
+    leftBackgroundFit.matches,
+  )
+  const rightGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
+    rightBackgroundFit.matches,
+  )
+
+  return (
+    rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
     rightBackgroundFit.expectedCoveredPickedPerkCount -
       leftBackgroundFit.expectedCoveredPickedPerkCount ||
-    rightGuaranteedCoveredPickedPerkCount - leftGuaranteedCoveredPickedPerkCount ||
-    rightCoveredPickedPerkCount - leftCoveredPickedPerkCount ||
+    rightBackgroundFit.guaranteedMatchedPerkGroupCount -
+      leftBackgroundFit.guaranteedMatchedPerkGroupCount ||
+    rightBackgroundFit.expectedMatchedPerkGroupCount -
+      leftBackgroundFit.expectedMatchedPerkGroupCount ||
     leftBackgroundFit.backgroundName.localeCompare(rightBackgroundFit.backgroundName) ||
     leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId) ||
     leftBackgroundFit.sourceFilePath.localeCompare(rightBackgroundFit.sourceFilePath)
@@ -1388,6 +2011,57 @@ function getBackgroundDisambiguator(
     backgroundDefinition.sourceFilePath.split('/').at(-1) ?? backgroundDefinition.backgroundId
 
   return sourceFileName.replace(/_background\.nut$/, '').replace(/\.nut$/, '')
+}
+
+function getPickedPerksCacheKey(pickedPerks: LegendsPerkRecord[]): string {
+  return pickedPerks.map((pickedPerk) => pickedPerk.id).join('\u0000')
+}
+
+function getBackgroundFitScopeCacheKey(
+  prefix: string,
+  pickedPerks: LegendsPerkRecord[],
+  studyResourceFilterCacheKey?: string,
+): string {
+  return [prefix, studyResourceFilterCacheKey ?? '', getPickedPerksCacheKey(pickedPerks)].join(
+    '\u0001',
+  )
+}
+
+function getStudyResourceFilterCacheKey(
+  studyResourceFilter: BackgroundStudyResourceFilter | undefined,
+): string {
+  if (studyResourceFilter === undefined) {
+    return nativeOnlySummaryCacheKey
+  }
+
+  return [
+    studyResourceFilter.shouldAllowBook ? 'book' : 'no-book',
+    studyResourceFilter.shouldAllowScroll ? 'scroll' : 'no-scroll',
+    studyResourceFilter.shouldAllowSecondScroll ? 'second-scroll' : 'one-scroll',
+  ].join('|')
+}
+
+function getRequirementSubsetCacheKey(requirements: StudyReachabilityRequirement[]): string {
+  return requirements
+    .map((requirement) =>
+      getPerkGroupProbabilityKey(requirement.categoryName, requirement.perkGroupId),
+    )
+    .toSorted()
+    .join(',')
+}
+
+function trimBackgroundFitBuildCache(
+  backgroundFitBuildCacheByPickedPerksKey: Map<string, BackgroundFitBuildCache>,
+): void {
+  while (backgroundFitBuildCacheByPickedPerksKey.size > maximumBackgroundFitBuildCacheEntries) {
+    const oldestCacheKey = backgroundFitBuildCacheByPickedPerksKey.keys().next().value
+
+    if (oldestCacheKey === undefined) {
+      return
+    }
+
+    backgroundFitBuildCacheByPickedPerksKey.delete(oldestCacheKey)
+  }
 }
 
 export function createBackgroundFitEngine(dataset: LegendsPerksDataset): BackgroundFitEngine {
@@ -1426,6 +2100,259 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       backgroundProbabilityRecord,
     ]),
   )
+  const backgroundFitBuildCacheByPickedPerksKey = new Map<string, BackgroundFitBuildCache>()
+
+  function getBackgroundFitBuildCache(pickedPerks: LegendsPerkRecord[]): BackgroundFitBuildCache {
+    const pickedPerksCacheKey = getPickedPerksCacheKey(pickedPerks)
+    const cachedBackgroundFitBuildCache =
+      backgroundFitBuildCacheByPickedPerksKey.get(pickedPerksCacheKey)
+
+    if (cachedBackgroundFitBuildCache) {
+      backgroundFitBuildCacheByPickedPerksKey.delete(pickedPerksCacheKey)
+      backgroundFitBuildCacheByPickedPerksKey.set(
+        pickedPerksCacheKey,
+        cachedBackgroundFitBuildCache,
+      )
+
+      return cachedBackgroundFitBuildCache
+    }
+
+    const { supportedBuildTargetPerkGroups, unsupportedBuildTargetPerkGroups } =
+      getBuildTargetPerkGroups(pickedPerks)
+    const backgroundFitBuildCache: BackgroundFitBuildCache = {
+      cachedBackgroundFitRecords: backgroundProbabilityRecords.map(
+        (backgroundProbabilityRecord) => ({
+          backgroundProbabilityRecord,
+          baseBackgroundFit: null,
+          expectedCoveredPickedPerkCountByScopeKey: new Map(),
+          nativeOutcomeDistribution: null,
+          nativeOutcomeSummaryByFilterKey: new Map(),
+          nativeRequirementReachabilityByKey: new Map(),
+          studyResourceRequirementByFilterKey: new Map(),
+        }),
+      ),
+      relevantPerkGroupIdsByCategory: getRelevantPerkGroupIdsByCategory(pickedPerks),
+      supportedBuildTargetPerkGroups,
+      unsupportedBuildTargetPerkGroups,
+    }
+
+    backgroundFitBuildCacheByPickedPerksKey.set(pickedPerksCacheKey, backgroundFitBuildCache)
+    trimBackgroundFitBuildCache(backgroundFitBuildCacheByPickedPerksKey)
+
+    return backgroundFitBuildCache
+  }
+
+  function getCachedNativeOutcomeDistribution(
+    backgroundFitBuildCache: BackgroundFitBuildCache,
+    cachedBackgroundFitRecord: CachedBackgroundFitRecord,
+  ): BackgroundOutcomeDistribution {
+    if (cachedBackgroundFitRecord.nativeOutcomeDistribution) {
+      return cachedBackgroundFitRecord.nativeOutcomeDistribution
+    }
+
+    cachedBackgroundFitRecord.nativeOutcomeDistribution = getBackgroundNativeOutcomeDistribution({
+      backgroundDefinition:
+        cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition,
+      context: backgroundProbabilityContext,
+      relevantPerkGroupIdsByCategory: backgroundFitBuildCache.relevantPerkGroupIdsByCategory,
+    })
+
+    return cachedBackgroundFitRecord.nativeOutcomeDistribution
+  }
+
+  function getCachedNativeOutcomeSummary({
+    backgroundFitBuildCache,
+    cachedBackgroundFitRecord,
+    studyResourceCoverageProfile,
+    studyResourceFilterCacheKey,
+  }: {
+    backgroundFitBuildCache: BackgroundFitBuildCache
+    cachedBackgroundFitRecord: CachedBackgroundFitRecord
+    studyResourceCoverageProfile: StudyResourceCoverageProfile
+    studyResourceFilterCacheKey: string
+  }): NativeOutcomeSummary {
+    const cachedNativeOutcomeSummary =
+      cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.get(studyResourceFilterCacheKey)
+
+    if (cachedNativeOutcomeSummary) {
+      return cachedNativeOutcomeSummary
+    }
+
+    const nativeOutcomeSummary = calculateNativeOutcomeSummary({
+      nativeOutcomeDistribution: getCachedNativeOutcomeDistribution(
+        backgroundFitBuildCache,
+        cachedBackgroundFitRecord,
+      ),
+      studyResourceCoverageProfile,
+    })
+
+    cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.set(
+      studyResourceFilterCacheKey,
+      nativeOutcomeSummary,
+    )
+
+    return nativeOutcomeSummary
+  }
+
+  function getCachedStudyResourceRequirement({
+    cachedBackgroundFitRecord,
+    pickedPerks,
+    studyResourceFilter,
+    studyResourceRequirementCacheKey,
+  }: {
+    cachedBackgroundFitRecord: CachedBackgroundFitRecord
+    pickedPerks: LegendsPerkRecord[]
+    studyResourceFilter: BackgroundStudyResourceFilter
+    studyResourceRequirementCacheKey: string
+  }): StudyResourceRequirementProfile | null {
+    if (
+      cachedBackgroundFitRecord.studyResourceRequirementByFilterKey.has(
+        studyResourceRequirementCacheKey,
+      )
+    ) {
+      return (
+        cachedBackgroundFitRecord.studyResourceRequirementByFilterKey.get(
+          studyResourceRequirementCacheKey,
+        ) ?? null
+      )
+    }
+
+    const backgroundDefinition =
+      cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition
+    const studyResourceRequirement = getMinimumStudyResourceRequirementProfile({
+      canUseNativeRequirements: (requirements) => {
+        const requirementSubsetCacheKey = getRequirementSubsetCacheKey(requirements)
+        const cachedNativeRequirementReachability =
+          cachedBackgroundFitRecord.nativeRequirementReachabilityByKey.get(
+            requirementSubsetCacheKey,
+          )
+
+        if (cachedNativeRequirementReachability !== undefined) {
+          return cachedNativeRequirementReachability
+        }
+
+        const nativeRequirementReachability =
+          getRequirementSubsetProbability({
+            backgroundDefinition,
+            context: backgroundProbabilityContext,
+            requirements,
+          }) > 0
+
+        cachedBackgroundFitRecord.nativeRequirementReachabilityByKey.set(
+          requirementSubsetCacheKey,
+          nativeRequirementReachability,
+        )
+
+        return nativeRequirementReachability
+      },
+      filter: studyResourceFilter,
+      pickedPerks,
+    })
+
+    cachedBackgroundFitRecord.studyResourceRequirementByFilterKey.set(
+      studyResourceRequirementCacheKey,
+      studyResourceRequirement,
+    )
+
+    return studyResourceRequirement
+  }
+
+  function getCachedBackgroundFitBase({
+    cachedBackgroundFitRecord,
+    pickedPerks,
+    supportedBuildTargetPerkGroups,
+  }: {
+    cachedBackgroundFitRecord: CachedBackgroundFitRecord
+    pickedPerks: LegendsPerkRecord[]
+    supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+  }): BackgroundFitSummary {
+    if (cachedBackgroundFitRecord.baseBackgroundFit) {
+      return cachedBackgroundFitRecord.baseBackgroundFit
+    }
+
+    const { backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupKey } =
+      cachedBackgroundFitRecord.backgroundProbabilityRecord
+    const matches = normalizeBackgroundFitMatches(
+      supportedBuildTargetPerkGroups
+        .flatMap((buildTargetPerkGroup) => {
+          const probability =
+            probabilitiesByPerkGroupKey.get(
+              getPerkGroupProbabilityKey(
+                buildTargetPerkGroup.categoryName,
+                buildTargetPerkGroup.perkGroupId,
+              ),
+            ) ?? 0
+
+          if (probability <= 0) {
+            return []
+          }
+
+          return [
+            {
+              ...buildTargetPerkGroup,
+              isGuaranteed: probability >= 1,
+              probability: Math.min(1, probability),
+            },
+          ]
+        })
+        .toSorted(compareBackgroundFitMatches),
+    )
+
+    cachedBackgroundFitRecord.baseBackgroundFit = {
+      backgroundId: backgroundDefinition.backgroundId,
+      backgroundName: backgroundDefinition.backgroundName,
+      disambiguator:
+        (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
+          ? getBackgroundDisambiguator(backgroundDefinition)
+          : null,
+      expectedCoveredPickedPerkCount: calculateExpectedCoveredPickedPerkCount(
+        backgroundDefinition,
+        pickedPerks,
+        backgroundProbabilityContext,
+      ),
+      expectedMatchedPerkGroupCount: matches.reduce(
+        (expectedPerkGroupCount, match) => expectedPerkGroupCount + match.probability,
+        0,
+      ),
+      guaranteedMatchedPerkGroupCount: matches.filter((match) => match.isGuaranteed).length,
+      iconPath: backgroundDefinition.iconPath ?? null,
+      maximumTotalPerkGroupCount,
+      matches,
+      sourceFilePath: backgroundDefinition.sourceFilePath,
+    }
+
+    return cachedBackgroundFitRecord.baseBackgroundFit
+  }
+
+  function getCachedExpectedCoveredPickedPerkCount({
+    cachedBackgroundFitRecord,
+    pickedPerks,
+    scopeCacheKey,
+  }: {
+    cachedBackgroundFitRecord: CachedBackgroundFitRecord
+    pickedPerks: LegendsPerkRecord[]
+    scopeCacheKey: string
+  }): number {
+    const cachedExpectedCoveredPickedPerkCount =
+      cachedBackgroundFitRecord.expectedCoveredPickedPerkCountByScopeKey.get(scopeCacheKey)
+
+    if (cachedExpectedCoveredPickedPerkCount !== undefined) {
+      return cachedExpectedCoveredPickedPerkCount
+    }
+
+    const expectedCoveredPickedPerkCount = calculateExpectedCoveredPickedPerkCount(
+      cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition,
+      pickedPerks,
+      backgroundProbabilityContext,
+    )
+
+    cachedBackgroundFitRecord.expectedCoveredPickedPerkCountByScopeKey.set(
+      scopeCacheKey,
+      expectedCoveredPickedPerkCount,
+    )
+
+    return expectedCoveredPickedPerkCount
+  }
 
   return {
     getBackgroundPerkGroupProbability(backgroundId, categoryName, perkGroupId) {
@@ -1436,6 +2363,24 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
             getPerkGroupProbabilityKey(categoryName, perkGroupId),
           ) ?? 0
       )
+    },
+    getBackgroundFitSummaryView(pickedPerks) {
+      const backgroundFitBuildCache = getBackgroundFitBuildCache(pickedPerks)
+
+      return {
+        rankedBackgroundFitSummaries: backgroundFitBuildCache.cachedBackgroundFitRecords
+          .map((cachedBackgroundFitRecord) =>
+            getCachedBackgroundFitBase({
+              cachedBackgroundFitRecord,
+              pickedPerks,
+              supportedBuildTargetPerkGroups:
+                backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+            }),
+          )
+          .toSorted(compareBackgroundFitSummaries),
+        supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+        unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
+      }
     },
     getPerkBackgroundSources(perk) {
       const dynamicPlacements = getUniqueDynamicPerkPlacements(perk)
@@ -1468,69 +2413,175 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         )
         .toSorted(comparePerkBackgroundSources)
     },
-    getBackgroundFitView(pickedPerks) {
-      const { supportedBuildTargetPerkGroups, unsupportedBuildTargetPerkGroups } =
-        getBuildTargetPerkGroups(pickedPerks)
+    getBackgroundFitView(pickedPerks, studyResourceFilter, options = {}) {
+      const backgroundFitBuildCache = getBackgroundFitBuildCache(pickedPerks)
+      const studyResourceFilterCacheKey = getStudyResourceFilterCacheKey(studyResourceFilter)
+      const optionalPickedPerkIdSet = options.optionalPickedPerkIds ?? new Set<string>()
+      /*
+       * Background eligibility is based only on must-have perks. Optional perks are still scored
+       * against the same native outcome distribution, but they are not allowed to exclude a
+       * background that can satisfy the required part of the build. Keeping the split here avoids
+       * leaking display concepts into the combinatorics code that calculates legal native rolls,
+       * books, and scrolls.
+       */
+      const mustHavePickedPerks = pickedPerks.filter(
+        (pickedPerk) => !optionalPickedPerkIdSet.has(pickedPerk.id),
+      )
+      const optionalPickedPerks = pickedPerks.filter((pickedPerk) =>
+        optionalPickedPerkIdSet.has(pickedPerk.id),
+      )
+      const mustHavePickedPerkIdSet = new Set(
+        mustHavePickedPerks.map((pickedPerk) => pickedPerk.id),
+      )
+      const effectiveOptionalPickedPerkIdSet = new Set(
+        optionalPickedPerks.map((pickedPerk) => pickedPerk.id),
+      )
+      const totalScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'total',
+        pickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const mustHaveScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'must-have',
+        mustHavePickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const optionalScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'optional',
+        optionalPickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const totalStudyResourceCoverageProfile = createStudyResourceCoverageProfile({
+        filter: studyResourceFilter ?? null,
+        pickedPerks,
+      })
+      const mustHaveStudyResourceCoverageProfile =
+        optionalPickedPerks.length === 0
+          ? totalStudyResourceCoverageProfile
+          : createStudyResourceCoverageProfile({
+              filter: studyResourceFilter ?? null,
+              pickedPerks: mustHavePickedPerks,
+            })
 
       return {
-        rankedBackgroundFits: backgroundProbabilityRecords
-          .map(
-            ({ backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupKey }) => {
-              const matches = normalizeBackgroundFitMatches(
-                supportedBuildTargetPerkGroups
-                  .flatMap((buildTargetPerkGroup) => {
-                    const probability =
-                      probabilitiesByPerkGroupKey.get(
-                        getPerkGroupProbabilityKey(
-                          buildTargetPerkGroup.categoryName,
-                          buildTargetPerkGroup.perkGroupId,
-                        ),
-                      ) ?? 0
-
-                    if (probability <= 0) {
-                      return []
-                    }
-
-                    return [
-                      {
-                        ...buildTargetPerkGroup,
-                        isGuaranteed: probability >= 1,
-                        probability: Math.min(1, probability),
-                      },
-                    ]
+        rankedBackgroundFits: backgroundFitBuildCache.cachedBackgroundFitRecords
+          .flatMap((cachedBackgroundFitRecord): RankedBackgroundFit[] => {
+            const mustHaveStudyResourceRequirement =
+              studyResourceFilter === undefined
+                ? null
+                : getCachedStudyResourceRequirement({
+                    cachedBackgroundFitRecord,
+                    pickedPerks: mustHavePickedPerks,
+                    studyResourceFilter,
+                    studyResourceRequirementCacheKey: mustHaveScopeCacheKey,
                   })
-                  .toSorted(compareBackgroundFitMatches),
-              )
 
-              return {
-                backgroundId: backgroundDefinition.backgroundId,
-                backgroundName: backgroundDefinition.backgroundName,
-                disambiguator:
-                  (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ??
-                    0) > 1
-                    ? getBackgroundDisambiguator(backgroundDefinition)
-                    : null,
-                expectedCoveredPickedPerkCount: calculateExpectedCoveredPickedPerkCount(
-                  backgroundDefinition,
-                  pickedPerks,
-                  backgroundProbabilityContext,
+            if (
+              studyResourceFilter !== undefined &&
+              mustHavePickedPerks.length > 0 &&
+              !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(
+                mustHaveScopeCacheKey,
+              ) &&
+              mustHaveStudyResourceRequirement === null
+            ) {
+              return []
+            }
+
+            const mustHaveNativeOutcomeSummary = getCachedNativeOutcomeSummary({
+              backgroundFitBuildCache,
+              cachedBackgroundFitRecord,
+              studyResourceCoverageProfile: mustHaveStudyResourceCoverageProfile,
+              studyResourceFilterCacheKey: mustHaveScopeCacheKey,
+            })
+            const totalNativeOutcomeSummary =
+              optionalPickedPerks.length === 0
+                ? mustHaveNativeOutcomeSummary
+                : getCachedNativeOutcomeSummary({
+                    backgroundFitBuildCache,
+                    cachedBackgroundFitRecord,
+                    studyResourceCoverageProfile: totalStudyResourceCoverageProfile,
+                    studyResourceFilterCacheKey: totalScopeCacheKey,
+                  })
+
+            if (
+              studyResourceFilter !== undefined &&
+              mustHavePickedPerks.length > 0 &&
+              mustHaveNativeOutcomeSummary.buildReachabilityProbability <= 0
+            ) {
+              return []
+            }
+
+            const fullBuildStudyResourceRequirement =
+              studyResourceFilter === undefined ||
+              totalNativeOutcomeSummary.buildReachabilityProbability <= 0
+                ? null
+                : optionalPickedPerks.length === 0
+                  ? mustHaveStudyResourceRequirement
+                  : getCachedStudyResourceRequirement({
+                      cachedBackgroundFitRecord,
+                      pickedPerks,
+                      studyResourceFilter,
+                      studyResourceRequirementCacheKey: totalScopeCacheKey,
+                    })
+            const backgroundFitBase = getCachedBackgroundFitBase({
+              cachedBackgroundFitRecord,
+              pickedPerks,
+              supportedBuildTargetPerkGroups:
+                backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+            })
+
+            return [
+              {
+                ...backgroundFitBase,
+                buildReachabilityProbability:
+                  studyResourceFilter === undefined
+                    ? null
+                    : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
+                expectedCoveredMustHavePerkCount:
+                  optionalPickedPerks.length === 0
+                    ? backgroundFitBase.expectedCoveredPickedPerkCount
+                    : getCachedExpectedCoveredPickedPerkCount({
+                        cachedBackgroundFitRecord,
+                        pickedPerks: mustHavePickedPerks,
+                        scopeCacheKey: mustHaveScopeCacheKey,
+                      }),
+                expectedCoveredOptionalPerkCount:
+                  optionalPickedPerks.length === 0
+                    ? 0
+                    : getCachedExpectedCoveredPickedPerkCount({
+                        cachedBackgroundFitRecord,
+                        pickedPerks: optionalPickedPerks,
+                        scopeCacheKey: optionalScopeCacheKey,
+                      }),
+                fullBuildStudyResourceRequirement,
+                fullBuildReachabilityProbability:
+                  studyResourceFilter === undefined
+                    ? null
+                    : totalNativeOutcomeSummary.buildReachabilityProbability,
+                guaranteedCoveredMustHavePerkCount: getGuaranteedCoveredPickedPerkCountForPerkIds(
+                  backgroundFitBase.matches,
+                  mustHavePickedPerkIdSet,
                 ),
-                expectedMatchedPerkGroupCount: matches.reduce(
-                  (expectedPerkGroupCount, match) => expectedPerkGroupCount + match.probability,
-                  0,
-                ),
-                guaranteedMatchedPerkGroupCount: matches.filter((match) => match.isGuaranteed)
-                  .length,
-                iconPath: backgroundDefinition.iconPath ?? null,
-                maximumTotalPerkGroupCount,
-                matches,
-                sourceFilePath: backgroundDefinition.sourceFilePath,
-              }
-            },
-          )
+                guaranteedCoveredOptionalPerkCount:
+                  optionalPickedPerks.length === 0
+                    ? 0
+                    : getGuaranteedCoveredPickedPerkCountForPerkIds(
+                        backgroundFitBase.matches,
+                        effectiveOptionalPickedPerkIdSet,
+                      ),
+                maximumNativeCoveredPickedPerkCount:
+                  totalNativeOutcomeSummary.maximumNativeCoveredPickedPerkCount,
+                mustHaveBuildReachabilityProbability:
+                  studyResourceFilter === undefined
+                    ? null
+                    : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
+                mustHaveStudyResourceRequirement,
+              },
+            ]
+          })
           .toSorted(compareRankedBackgroundFits),
-        supportedBuildTargetPerkGroups,
-        unsupportedBuildTargetPerkGroups,
+        supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+        unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
       }
     },
   }

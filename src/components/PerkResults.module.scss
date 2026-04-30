@@ -183,6 +183,10 @@
     &:focus-visible {
       @include focus-ring;
     }
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-4rem);
+    }
   }
 
   .perkPlacementIcon {
@@ -212,6 +216,37 @@
     pointer-events: auto;
   }
 
+  .showMoreResultsItem {
+    display: flex;
+    justify-content: center;
+    padding: var(--space-sm) 0 var(--space-xs);
+  }
+
+  .showMoreResultsButton {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--control-height-lg);
+    border-radius: var(--radius-lg);
+    padding: var(--space-sm) var(--space-xl);
+    color: var(--text-primary);
+    font: inherit;
+    cursor: pointer;
+
+    @include control-surface;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--border-strong);
+      background: var(--surface-result-active);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
   @include compact-desktop {
     .resultsPanel {
       gap: var(--space-sm);
@@ -224,8 +259,8 @@
     }
 
     .perkRow {
-      padding: var(--space-sm) var(--primitive-length-2-72rem)
-        var(--primitive-length-1-72rem) var(--space-md);
+      padding: var(--space-sm) var(--primitive-length-2-72rem) var(--primitive-length-1-72rem)
+        var(--space-md);
     }
 
     .perkRowLayout {
@@ -271,6 +306,7 @@
     .resultsPanel {
       height: auto;
       min-height: 0;
+      order: 1;
       overflow: visible;
     }
 
@@ -284,17 +320,14 @@
   }
 
   @include mobile {
-    .resultsPanel {
-      order: 1;
-    }
-
     .perkRowTopline {
       flex-direction: column;
       align-items: flex-start;
     }
 
     .perkRow {
-      padding-right: var(--space-xl);
+      padding-right: var(--primitive-length-3-7rem);
+      padding-bottom: var(--primitive-length-3-25rem);
     }
 
     .perkRowLayout {
@@ -303,6 +336,22 @@
 
     .perkRowContextSlot {
       grid-column: 1;
+    }
+
+    .resultsList {
+      max-height: none;
+      min-height: 0;
+      overflow: visible;
+      padding-right: 0;
+    }
+
+    .perkPlacementChip {
+      min-height: var(--primitive-length-2-72rem);
+    }
+
+    .showMoreResultsButton {
+      width: 100%;
+      min-height: var(--primitive-length-2-72rem);
     }
   }
 }

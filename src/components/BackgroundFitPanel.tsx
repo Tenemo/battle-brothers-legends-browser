@@ -1,11 +1,18 @@
 import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
 import type { BackgroundFitView } from '../lib/background-fit'
 import { isOriginBackgroundFit } from '../lib/background-origin'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
+import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
+
+const emptyBackgroundFitView: BackgroundFitView = {
+  rankedBackgroundFits: [],
+  supportedBuildTargetPerkGroups: [],
+  unsupportedBuildTargetPerkGroups: [],
+}
 
 export function BackgroundFitPanel({
   backgroundFitView,
@@ -15,6 +22,7 @@ export function BackgroundFitPanel({
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
   isExpanded,
+  isLoadingBackgroundFitView,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onClearPerkGroupHover,
@@ -24,19 +32,28 @@ export function BackgroundFitPanel({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
+  onBackgroundStudyBookChange,
+  onBackgroundStudyScrollChange,
   onOriginBackgroundsChange,
   onSearchActivityChange,
+  onSecondBackgroundStudyScrollChange,
   onToggleExpanded,
+  mustHavePickedPerkCount,
+  optionalPickedPerkCount,
   pickedPerkCount,
+  shouldAllowBackgroundStudyBook,
+  shouldAllowBackgroundStudyScroll,
+  shouldAllowSecondBackgroundStudyScroll,
   shouldIncludeOriginBackgrounds,
 }: {
-  backgroundFitView: BackgroundFitView
+  backgroundFitView: BackgroundFitView | null
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
   isExpanded: boolean
+  isLoadingBackgroundFitView: boolean
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onClearPerkGroupHover: () => void
@@ -46,15 +63,31 @@ export function BackgroundFitPanel({
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onBackgroundStudyBookChange: (shouldAllowBackgroundStudyBook: boolean) => void
+  onBackgroundStudyScrollChange: (shouldAllowBackgroundStudyScroll: boolean) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
+  onSecondBackgroundStudyScrollChange: (shouldAllowSecondBackgroundStudyScroll: boolean) => void
   onToggleExpanded: () => void
+  mustHavePickedPerkCount: number
+  optionalPickedPerkCount: number
   pickedPerkCount: number
+  shouldAllowBackgroundStudyBook: boolean
+  shouldAllowBackgroundStudyScroll: boolean
+  shouldAllowSecondBackgroundStudyScroll: boolean
   shouldIncludeOriginBackgrounds: boolean
 }) {
+  const effectiveBackgroundFitView = backgroundFitView ?? emptyBackgroundFitView
   const [backgroundFitInputValue, setBackgroundFitInputValue] = useState('')
   const [isBackgroundFilterMenuOpen, setIsBackgroundFilterMenuOpen] = useState(false)
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitInputValue)
@@ -70,14 +103,27 @@ export function BackgroundFitPanel({
   const backgroundFitFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const hasPickedPerks = pickedPerkCount > 0
   const hasSupportedBackgroundFitTargets =
-    backgroundFitView.supportedBuildTargetPerkGroups.length > 0
+    effectiveBackgroundFitView.supportedBuildTargetPerkGroups.length > 0
   const hasUnsupportedBackgroundFitTargets =
-    backgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
+    effectiveBackgroundFitView.unsupportedBuildTargetPerkGroups.length > 0
+  const hasBuildReachabilityProbability = effectiveBackgroundFitView.rankedBackgroundFits.some(
+    (backgroundFit) => backgroundFit.buildReachabilityProbability !== null,
+  )
+  const hasActiveBackgroundFilter =
+    shouldIncludeOriginBackgrounds ||
+    !shouldAllowBackgroundStudyBook ||
+    !shouldAllowBackgroundStudyScroll ||
+    shouldAllowSecondBackgroundStudyScroll
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
+  const shouldShowBackgroundFitTargetSummary = hasPickedPerks && !isLoadingBackgroundFitView
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
+  const backgroundFitEmptyResultTarget =
+    normalizedBackgroundFitQuery.length > 0
+      ? `"${deferredBackgroundFitQuery.trim()}"`
+      : 'the selected filters'
   const visibleRankedBackgroundFits = useMemo(
     () =>
-      backgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
+      effectiveBackgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
         if (!shouldIncludeOriginBackgrounds && isOriginBackgroundFit(backgroundFit)) {
           return false
         }
@@ -87,24 +133,24 @@ export function BackgroundFitPanel({
           getBackgroundFitSearchText(backgroundFit).includes(normalizedBackgroundFitQuery)
         )
       }),
-    [backgroundFitView, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds],
+    [effectiveBackgroundFitView, normalizedBackgroundFitQuery, shouldIncludeOriginBackgrounds],
   )
   const rankedBackgroundFitIndexByKey = useMemo(
     () =>
       new Map(
-        backgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => [
+        effectiveBackgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => [
           getBackgroundFitKey(backgroundFit),
           backgroundFitIndex,
         ]),
       ),
-    [backgroundFitView],
+    [effectiveBackgroundFitView],
   )
   const rankedBackgroundFitKeySignature = useMemo(
     () =>
-      backgroundFitView.rankedBackgroundFits
+      effectiveBackgroundFitView.rankedBackgroundFits
         .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
         .join('|'),
-    [backgroundFitView],
+    [effectiveBackgroundFitView],
   )
   const expandedBackgroundFitKey =
     backgroundFitAccordionState.rankedBackgroundFitKeySignature === rankedBackgroundFitKeySignature
@@ -195,7 +241,7 @@ export function BackgroundFitPanel({
             testId="background-fit-search-field"
             trailingControl={
               <div
-                className={styles.backgroundFitFilterMenu}
+                className={sharedStyles.filterMenu}
                 onKeyDown={(event) => {
                   if (event.key !== 'Escape') {
                     return
@@ -213,8 +259,8 @@ export function BackgroundFitPanel({
                   aria-controls={backgroundFitFilterMenuId}
                   aria-expanded={isBackgroundFilterMenuOpen}
                   aria-label="Filter backgrounds"
-                  className={styles.backgroundFitFilterButton}
-                  data-active-filter={shouldIncludeOriginBackgrounds}
+                  className={sharedStyles.filterButton}
+                  data-active-filter={hasActiveBackgroundFilter}
                   data-background-fit-filter-button="true"
                   data-testid="background-fit-filter-button"
                   onClick={() => {
@@ -226,19 +272,19 @@ export function BackgroundFitPanel({
                   type="button"
                 >
                   <FunnelIcon
-                    className={styles.backgroundFitFilterIcon}
-                    isFilled={shouldIncludeOriginBackgrounds}
+                    className={sharedStyles.filterIcon}
+                    isFilled={hasActiveBackgroundFilter}
                     testId="background-fit-filter-icon"
                   />
                 </button>
                 {isBackgroundFilterMenuOpen ? (
                   <div
                     aria-label="Background filters"
-                    className={styles.backgroundFitFilterPopover}
+                    className={sharedStyles.filterPopover}
                     id={backgroundFitFilterMenuId}
                     role="group"
                   >
-                    <label className={styles.backgroundFitFilterOption}>
+                    <label className={sharedStyles.filterOption}>
                       <input
                         checked={shouldIncludeOriginBackgrounds}
                         data-testid="origin-backgrounds-checkbox"
@@ -250,19 +296,60 @@ export function BackgroundFitPanel({
                       />
                       <span>Origin backgrounds</span>
                     </label>
+                    <label className={sharedStyles.filterOption}>
+                      <input
+                        checked={shouldAllowBackgroundStudyBook}
+                        data-testid="background-study-book-checkbox"
+                        onChange={(event) => {
+                          clearBackgroundFitInteractiveHover()
+                          onBackgroundStudyBookChange(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Allow a book</span>
+                    </label>
+                    <label className={sharedStyles.filterOption}>
+                      <input
+                        checked={shouldAllowBackgroundStudyScroll}
+                        data-testid="background-study-scroll-checkbox"
+                        onChange={(event) => {
+                          clearBackgroundFitInteractiveHover()
+                          onBackgroundStudyScrollChange(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Allow a scroll</span>
+                    </label>
+                    <label className={sharedStyles.filterOption}>
+                      <input
+                        checked={
+                          shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll
+                        }
+                        data-testid="background-study-second-scroll-checkbox"
+                        disabled={!shouldAllowBackgroundStudyScroll}
+                        onChange={(event) => {
+                          clearBackgroundFitInteractiveHover()
+                          onSecondBackgroundStudyScrollChange(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Allow two scrolls</span>
+                    </label>
                   </div>
                 ) : null}
               </div>
             }
             value={backgroundFitInputValue}
           />
-          {!hasPickedPerks ? null : hasSupportedBackgroundFitTargets ? (
+          {!shouldShowBackgroundFitTargetSummary ? null : hasSupportedBackgroundFitTargets ? (
             <p
               className={styles.backgroundFitRankingSummary}
               data-testid="background-fit-ranking-summary"
               hidden={hasActiveBackgroundFitSearch}
             >
-              Ranked by expected perks pickable first.
+              {hasBuildReachabilityProbability
+                ? 'Ranked by must-have build chance.'
+                : 'Ranked by expected perks pickable.'}
             </p>
           ) : (
             <div className={styles.backgroundFitEmptyState}>
@@ -279,7 +366,7 @@ export function BackgroundFitPanel({
                     Profession, and Magic.
                   </p>
                   <ul className={styles.backgroundFitTargetList} data-unsupported="true">
-                    {backgroundFitView.unsupportedBuildTargetPerkGroups.map(
+                    {effectiveBackgroundFitView.unsupportedBuildTargetPerkGroups.map(
                       (buildTargetPerkGroup) => (
                         <BackgroundFitTargetPerkGroup
                           buildTargetPerkGroup={buildTargetPerkGroup}
@@ -294,7 +381,7 @@ export function BackgroundFitPanel({
           )}
           <div
             aria-hidden={!isExpanded}
-            className={cx(styles.backgroundFitResultsScroll, 'app-scrollbar')}
+            className={joinClassNames(styles.backgroundFitResultsScroll, 'app-scrollbar')}
             data-scroll-container="true"
             data-testid="background-fit-panel-body"
             onScrollCapture={() => {
@@ -302,7 +389,11 @@ export function BackgroundFitPanel({
             }}
             ref={backgroundFitResultsScrollRef}
           >
-            {visibleRankedBackgroundFits.length > 0 ? (
+            {isLoadingBackgroundFitView ? (
+              <div className={styles.backgroundFitEmptyState}>
+                <p className={styles.backgroundFitSummaryCopy}>Calculating background fits.</p>
+              </div>
+            ) : visibleRankedBackgroundFits.length > 0 ? (
               <ol className={styles.backgroundFitRanking} data-testid="background-fit-ranking">
                 {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
                   <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
@@ -331,12 +422,19 @@ export function BackgroundFitPanel({
                           rankedBackgroundFitKeySignature,
                         })
                       }}
+                      mustHavePickedPerkCount={mustHavePickedPerkCount}
+                      optionalPickedPerkCount={optionalPickedPerkCount}
                       pickedPerkCount={pickedPerkCount}
                       query={deferredBackgroundFitQuery}
                       rank={
                         rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
                         backgroundFitIndex
                       }
+                      studyResourceFilter={{
+                        shouldAllowBook: shouldAllowBackgroundStudyBook,
+                        shouldAllowScroll: shouldAllowBackgroundStudyScroll,
+                        shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
+                      }}
                     />
                   </li>
                 ))}
@@ -344,7 +442,7 @@ export function BackgroundFitPanel({
             ) : (
               <div className={styles.backgroundFitEmptyState}>
                 <p className={styles.backgroundFitSummaryCopy}>
-                  No backgrounds match "{deferredBackgroundFitQuery.trim()}".
+                  No backgrounds match {backgroundFitEmptyResultTarget}.
                 </p>
                 <p className={styles.backgroundFitSummaryCopy}>
                   Try a different background name or clear the search.

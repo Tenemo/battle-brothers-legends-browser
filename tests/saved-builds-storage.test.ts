@@ -18,15 +18,16 @@ describe('saved builds storage records', () => {
         '',
         '   ',
       ],
-      referenceVersion: '19.3.17',
+      referenceVersion: '19.3.20',
     })
 
     expect(savedBuild).toEqual({
       createdAt: '2026-04-26T10:20:30.000Z',
       id: 'saved-build-1',
       name: 'Calm focus',
+      optionalPerkIds: [],
       pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
-      referenceVersion: '19.3.17',
+      referenceVersion: '19.3.20',
       schemaVersion: 1,
       updatedAt: '2026-04-26T10:20:30.000Z',
     })
@@ -39,9 +40,27 @@ describe('saved builds storage records', () => {
         name: 'Empty',
         now: new Date('2026-04-26T10:20:30.000Z'),
         pickedPerkIds: ['', '  '],
-        referenceVersion: '19.3.17',
+        referenceVersion: '19.3.20',
       }),
     ).toThrow('A saved build needs at least one perk.')
+  })
+
+  test('stores only optional perks that still belong to the saved build', () => {
+    const savedBuild = createSavedBuildRecord({
+      id: 'saved-build-optional',
+      name: 'Optional build',
+      now: new Date('2026-04-26T10:20:30.000Z'),
+      optionalPerkIds: [
+        'perk.legend_perfect_focus',
+        'perk.legend_unknown',
+        'perk.legend_perfect_focus',
+        ' ',
+      ],
+      pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
+      referenceVersion: '19.3.20',
+    })
+
+    expect(savedBuild.optionalPerkIds).toEqual(['perk.legend_perfect_focus'])
   })
 
   test('reads valid records defensively and normalizes recoverable fields', () => {
@@ -50,8 +69,15 @@ describe('saved builds storage records', () => {
         createdAt: '2026-04-25T09:00:00.000Z',
         id: ' saved-build-2 ',
         name: '   ',
+        optionalPerkIds: [
+          'perk.legend_unknown',
+          'perk.legend_clarity',
+          'perk.legend_clarity',
+          12,
+          null,
+        ],
         pickedPerkIds: ['perk.legend_clarity', 'perk.legend_clarity', 12, null],
-        referenceVersion: '19.3.17',
+        referenceVersion: '19.3.20',
         schemaVersion: 1,
         updatedAt: '2026-04-26T09:00:00.000Z',
       }),
@@ -59,8 +85,9 @@ describe('saved builds storage records', () => {
       createdAt: '2026-04-25T09:00:00.000Z',
       id: 'saved-build-2',
       name: 'Untitled build',
+      optionalPerkIds: ['perk.legend_clarity'],
       pickedPerkIds: ['perk.legend_clarity'],
-      referenceVersion: '19.3.17',
+      referenceVersion: '19.3.20',
       schemaVersion: 1,
       updatedAt: '2026-04-26T09:00:00.000Z',
     })
@@ -75,7 +102,7 @@ describe('saved builds storage records', () => {
         id: 'saved-build-old-schema',
         name: 'Old',
         pickedPerkIds: ['perk.legend_clarity'],
-        referenceVersion: '19.3.17',
+        referenceVersion: '19.3.20',
         schemaVersion: 0,
         updatedAt: '2026-04-26T09:00:00.000Z',
       },
@@ -84,7 +111,7 @@ describe('saved builds storage records', () => {
         id: 'saved-build-bad-date',
         name: 'Bad date',
         pickedPerkIds: ['perk.legend_clarity'],
-        referenceVersion: '19.3.17',
+        referenceVersion: '19.3.20',
         schemaVersion: 1,
         updatedAt: '2026-04-26T09:00:00.000Z',
       },
@@ -93,7 +120,7 @@ describe('saved builds storage records', () => {
         id: 'saved-build-no-perks',
         name: 'No perks',
         pickedPerkIds: [],
-        referenceVersion: '19.3.17',
+        referenceVersion: '19.3.20',
         schemaVersion: 1,
         updatedAt: '2026-04-26T09:00:00.000Z',
       },
@@ -108,21 +135,21 @@ describe('saved builds storage records', () => {
       name: 'A build',
       now: new Date('2026-04-25T10:00:00.000Z'),
       pickedPerkIds: ['perk.legend_clarity'],
-      referenceVersion: '19.3.17',
+      referenceVersion: '19.3.20',
     })
     const secondSavedBuild = createSavedBuildRecord({
       id: 'saved-build-2',
       name: 'B build',
       now: new Date('2026-04-26T10:00:00.000Z'),
       pickedPerkIds: ['perk.legend_perfect_focus'],
-      referenceVersion: '19.3.17',
+      referenceVersion: '19.3.20',
     })
     const thirdSavedBuild = createSavedBuildRecord({
       id: 'saved-build-3',
       name: 'C build',
       now: new Date('2026-04-26T10:00:00.000Z'),
       pickedPerkIds: ['perk.legend_steadfast'],
-      referenceVersion: '19.3.17',
+      referenceVersion: '19.3.20',
     })
 
     expect(sortSavedBuildRecords([firstSavedBuild, thirdSavedBuild, secondSavedBuild])).toEqual([

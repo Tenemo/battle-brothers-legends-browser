@@ -115,7 +115,7 @@ describe('SEO metadata', () => {
     expect(metadata.canonicalUrl).toBe('https://battlebrothers.academy/')
     expect(metadata.url).toBe('https://battlebrothers.academy/?build=Clarity,Perfect+Focus')
     expect(metadata.image.url).toBe(
-      'https://battlebrothers.academy/social/builds/19.3.17/Clarity%2CPerfect%20Focus.png',
+      'https://battlebrothers.academy/social/builds/19.3.20/Clarity%2CPerfect%20Focus.png',
     )
   })
 
@@ -131,7 +131,7 @@ describe('SEO metadata', () => {
       'https://battlebrothers.academy/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
     expect(metadata.image.url).toBe(
-      'https://battlebrothers.academy/social/builds/19.3.17/Chain%20Lightning--perk.legend_chain_lightning%2CChain%20Lightning--perk.legend_magic_chain_lightning.png',
+      'https://battlebrothers.academy/social/builds/19.3.20/Chain%20Lightning--perk.legend_chain_lightning%2CChain%20Lightning--perk.legend_magic_chain_lightning.png',
     )
   })
 

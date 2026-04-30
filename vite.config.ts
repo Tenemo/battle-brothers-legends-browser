@@ -13,6 +13,9 @@ if (typeof plannerVersion !== 'string' || plannerVersion.length === 0) {
 }
 
 export default defineConfig({
+  build: {
+    chunkSizeWarningLimit: 2500,
+  },
   define: {
     __PLANNER_VERSION__: JSON.stringify(plannerVersion),
   },
@@ -25,6 +28,19 @@ export default defineConfig({
       },
     },
   ],
+  server: {
+    watch: {
+      ignored: [
+        '**/.cache/**',
+        '**/.netlify/**',
+        '**/dist/**',
+        '**/netlify/generated-edge-functions/**',
+        '**/playwright-report/**',
+        '**/public/game-icons-staging/**',
+        '**/test-results/**',
+      ],
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: false,

@@ -11,6 +11,11 @@
   }
 
   .panelHeading {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    min-height: var(--primitive-length-1-8rem);
     margin-bottom: var(--space-md);
 
     h2 {
@@ -26,6 +31,12 @@
     }
   }
 
+  .categoryClearButton {
+    position: static;
+    flex: 0 0 auto;
+    transform: none;
+  }
+
   .categoryCard {
     margin-bottom: var(--space-2xs);
     border: var(--primitive-length-1px) solid transparent;
@@ -39,6 +50,7 @@
 
   .categoryChip,
   .perkGroupChip {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -152,6 +164,10 @@
     background: var(--primitive-color-rgb-21-17-14-alpha-0-9);
     color: var(--text-secondary);
     font-size: var(--font-size-base);
+
+    &[data-ancient-scroll-perk-group='true'] {
+      padding-right: var(--primitive-length-1-4rem);
+    }
   }
 
   @keyframes fade-in {
@@ -170,13 +186,15 @@
     .sidebar {
       height: auto;
       min-height: 0;
+      order: 3;
       overflow: visible;
     }
   }
 
   @include mobile {
-    .sidebar {
-      order: 3;
+    .categoryChip,
+    .perkGroupChip {
+      min-height: var(--primitive-length-2-72rem);
     }
   }
 }

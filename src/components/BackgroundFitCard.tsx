@@ -1,49 +1,98 @@
-import {
-  getCoveredPickedPerkCount,
-  getGuaranteedCoveredPickedPerkCount,
-  type BackgroundFitMatch,
-  type BuildTargetPerkGroup,
-  type RankedBackgroundFit,
+import type {
+  BackgroundFitMatch,
+  BuildTargetPerkGroup,
+  RankedBackgroundFit,
 } from '../lib/background-fit'
 import {
   formatBackgroundFitExpectedBuildPerksLabel,
+  formatBackgroundFitBuildReachabilityLabel,
+  formatBackgroundFitBestNativeRollLabel,
   formatBackgroundFitGuaranteedPerksLabel,
-  formatBackgroundFitPickablePerksLabel,
   formatBackgroundFitProbabilityLabel,
+  formatBackgroundFitScoreLabel,
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
   getVisibleBackgroundPillLabel,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
-import { cx } from '../lib/class-names'
+import { joinClassNames } from '../lib/class-names'
+import {
+  backgroundStudyResourceBadgesTestId,
+  backgroundStudyResourceBadgeTestId,
+  getBackgroundStudyResourceBadgeDisplay,
+} from '../lib/background-study-resource-display'
+import type { BackgroundStudyResourceFilter } from '../lib/background-study-reachability'
+import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
+import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
 import { BackgroundFitAccordionChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
 
-function getBackgroundFitPickablePerksSummaryCopy(
-  coveredPickedPerkCount: number,
+function getBackgroundFitBestNativeRollSummaryCopy(
+  maximumNativeCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Best-case picked-perk coverage: up to ${coveredPickedPerkCount} of ${pickedPerkCount} picked perks can be covered if every relevant optional perk group appears.`
+  return `One legal native background roll can cover ${maximumNativeCoveredPickedPerkCount} of ${pickedPerkCount} total picked perks. Books and scrolls are not included.`
 }
 
 function getBackgroundFitGuaranteedPerksSummaryCopy(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel: string,
 ): string {
-  return `Guaranteed picked-perk coverage: ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} picked perks are covered before optional rolls.`
+  return `Groups this background always has cover ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} ${scopeLabel}. Optional rolls, books, and scrolls are not included.`
 }
 
 function getBackgroundFitExpectedBuildPerksSummaryCopy(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel: string,
 ): string {
-  return `Expected picked-perk coverage: ${formatBackgroundFitExpectedBuildPerksLabel(
+  return `After dynamic background rolls, this background covers an average of ${formatBackgroundFitScoreLabel(
     expectedCoveredPickedPerkCount,
-    pickedPerkCount,
-  )} after dynamic perk group rolls.`
+  )} of ${pickedPerkCount} ${scopeLabel}. Alternate perk-group placements count once per picked perk. Books and scrolls are not included.`
+}
+
+function getBackgroundFitBuildReachabilitySummaryCopy(
+  probability: number,
+  buildScopeLabel: string,
+  studyResourceFilter: BackgroundStudyResourceFilter,
+): string {
+  const studyResourceFilterPhrase = getBackgroundFitStudyResourceFilterPhrase(studyResourceFilter)
+
+  if (probability <= 0) {
+    return `No legal native background roll ${studyResourceFilterPhrase} can cover every picked perk for ${buildScopeLabel}.`
+  }
+
+  return `One legal native background roll ${studyResourceFilterPhrase} can cover every picked perk with a ${formatBackgroundFitProbabilityLabel(
+    probability,
+  )} chance for ${buildScopeLabel}.`
+}
+
+function getBackgroundFitStudyResourceFilterPhrase(
+  studyResourceFilter: BackgroundStudyResourceFilter,
+): string {
+  const enabledStudyResources: string[] = []
+
+  if (studyResourceFilter.shouldAllowBook) {
+    enabledStudyResources.push('up to one skill book')
+  }
+
+  if (studyResourceFilter.shouldAllowScroll) {
+    enabledStudyResources.push(
+      studyResourceFilter.shouldAllowSecondScroll
+        ? 'up to two ancient scrolls if Bright is available'
+        : 'up to one ancient scroll',
+    )
+  }
+
+  if (enabledStudyResources.length === 0) {
+    return 'without books or scrolls'
+  }
+
+  return `plus ${enabledStudyResources.join(' and ')}`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -51,19 +100,26 @@ export function BackgroundFitTargetPerkGroup({
 }: {
   buildTargetPerkGroup: BuildTargetPerkGroup
 }) {
+  const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(
+    buildTargetPerkGroup.perkGroupId,
+  )
+
   return (
-    <li className={styles.backgroundFitTarget}>
+    <li
+      className={styles.backgroundFitTarget}
+      data-ancient-scroll-perk-group={isAncientScrollPerkGroup}
+    >
       <div className={styles.backgroundFitPerkGroupMain}>
-        {renderGameIcon({
-          className: cx(
+        <PerkGroupIcon
+          className={joinClassNames(
             sharedStyles.perkIcon,
             sharedStyles.perkIconGroup,
             styles.backgroundFitPerkGroupIcon,
-          ),
-          iconPath: buildTargetPerkGroup.perkGroupIconPath,
-          label: `${buildTargetPerkGroup.perkGroupName} perk group icon`,
-          testId: 'background-fit-perk-group-icon',
-        })}
+          )}
+          iconPath={buildTargetPerkGroup.perkGroupIconPath}
+          label={`${buildTargetPerkGroup.perkGroupName} perk group icon`}
+          testId="background-fit-perk-group-icon"
+        />
         <div>
           <strong>{buildTargetPerkGroup.perkGroupName}</strong>
           <p className={styles.backgroundFitTargetSupport}>
@@ -74,6 +130,7 @@ export function BackgroundFitTargetPerkGroup({
       <span className={styles.backgroundFitTargetBadge} data-testid="background-fit-target-badge">
         {formatPickedPerkCountLabel(buildTargetPerkGroup.pickedPerkCount)}
       </span>
+      {isAncientScrollPerkGroup ? <AncientScrollPerkGroupMarker /> : null}
     </li>
   )
 }
@@ -108,8 +165,15 @@ function BackgroundFitMatchRow({
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
 }) {
   return (
@@ -155,25 +219,103 @@ function BackgroundFitMatchRow({
   )
 }
 
-function BackgroundFitMetricBadge({
-  className = '',
-  label,
-  tooltip,
-}: {
-  className?: string
+type BackgroundFitMetric = {
+  accessibleLabel: string
   label: string
   tooltip: string
-}) {
+  value: string
+}
+
+function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: BackgroundFitMetric) {
   return (
-    <span
-      aria-label={`${label}. ${tooltip}`}
-      className={cx(styles.backgroundFitMetricBadge, className)}
-      data-testid="background-fit-summary-badge"
+    <div
+      aria-label={`${accessibleLabel}. ${tooltip}`}
+      className={styles.backgroundFitMetricRow}
+      data-testid="background-fit-summary-metric"
+      role="listitem"
       title={tooltip}
     >
-      {label}
+      <span className={styles.backgroundFitMetricLabel} data-testid="background-fit-summary-label">
+        {label}
+      </span>
+      <span className={styles.backgroundFitMetricValue} data-testid="background-fit-summary-value">
+        {value}
+      </span>
+    </div>
+  )
+}
+
+function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMetric[] }) {
+  return (
+    <div
+      aria-label="Background fit summary"
+      className={styles.backgroundFitMetricTable}
+      data-testid="background-fit-summary-table"
+      role="list"
+    >
+      {metrics.map((metric) => (
+        <BackgroundFitMetricRow
+          accessibleLabel={metric.accessibleLabel}
+          key={metric.accessibleLabel}
+          label={metric.label}
+          tooltip={metric.tooltip}
+          value={metric.value}
+        />
+      ))}
+    </div>
+  )
+}
+
+function BackgroundFitStudyResourceBadges({
+  backgroundFit,
+}: {
+  backgroundFit: RankedBackgroundFit
+}) {
+  const studyResourceBadgeDisplay = getBackgroundStudyResourceBadgeDisplay({
+    fullBuildStudyResourceRequirement: backgroundFit.fullBuildStudyResourceRequirement,
+    mustHaveStudyResourceRequirement: backgroundFit.mustHaveStudyResourceRequirement,
+  })
+
+  if (studyResourceBadgeDisplay === null) {
+    return null
+  }
+
+  return (
+    <span
+      aria-label={studyResourceBadgeDisplay.accessibleLabel}
+      className={styles.backgroundFitStudyResourceBadges}
+      data-testid={backgroundStudyResourceBadgesTestId}
+    >
+      {studyResourceBadgeDisplay.badges.map((studyResourceBadge, studyResourceBadgeIndex) => (
+        <img
+          alt={`${studyResourceBadge.label} requirement`}
+          className={joinClassNames(
+            styles.backgroundFitStudyResourceBadge,
+            studyResourceBadge.isOptionalOnly && styles.backgroundFitStudyResourceBadgeOptionalOnly,
+          )}
+          data-optional-only={studyResourceBadge.isOptionalOnly}
+          data-study-resource-kind={studyResourceBadge.kind}
+          data-testid={backgroundStudyResourceBadgeTestId}
+          decoding="async"
+          key={`${studyResourceBadge.kind}-${studyResourceBadgeIndex}`}
+          loading="lazy"
+          src={`/game-icons/${studyResourceBadge.iconPath}`}
+          title={studyResourceBadge.title}
+        />
+      ))}
     </span>
   )
+}
+
+function createRatioValue(coveredPerkCount: number, pickedPerkCount: number): string {
+  return `${coveredPerkCount}/${pickedPerkCount}`
+}
+
+function createExpectedRatioValue(
+  expectedCoveredPickedPerkCount: number,
+  pickedPerkCount: number,
+): string {
+  return `${formatBackgroundFitScoreLabel(expectedCoveredPickedPerkCount)}/${pickedPerkCount}`
 }
 
 export function BackgroundFitCard({
@@ -194,9 +336,12 @@ export function BackgroundFitCard({
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
   onToggle,
+  mustHavePickedPerkCount,
+  optionalPickedPerkCount,
   pickedPerkCount,
   query,
   rank,
+  studyResourceFilter,
 }: {
   backgroundFit: RankedBackgroundFit
   emphasizedCategoryNames: ReadonlySet<string>
@@ -214,25 +359,159 @@ export function BackgroundFitCard({
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) => void
-  onOpenBuildPerkHover: (perkId: string) => void
-  onOpenBuildPerkTooltip: (perkId: string, currentTarget: HTMLElement) => void
+  onOpenBuildPerkHover: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onToggle: (backgroundFitKey: string) => void
+  mustHavePickedPerkCount: number
+  optionalPickedPerkCount: number
   pickedPerkCount: number
   query: string
   rank: number
+  studyResourceFilter: BackgroundStudyResourceFilter
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
-  const coveredPickedPerkCount = getCoveredPickedPerkCount(backgroundFit.matches)
-  const guaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
-    backgroundFit.matches,
-  )
   const isExpanded = expandedBackgroundFitKey === backgroundFitKey
   const accordionButtonId = `background-fit-card-button-${rank}`
   const accordionPanelId = `background-fit-card-panel-${rank}`
+  const summaryMetrics = [
+    ...(optionalPickedPerkCount > 0 && backgroundFit.fullBuildReachabilityProbability !== null
+      ? [
+          {
+            accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
+              backgroundFit.fullBuildReachabilityProbability,
+              'Full build',
+            ),
+            label: 'Full build',
+            tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
+              backgroundFit.fullBuildReachabilityProbability,
+              'the full build, including optional perks',
+              studyResourceFilter,
+            ),
+            value: formatBackgroundFitProbabilityLabel(
+              backgroundFit.fullBuildReachabilityProbability,
+            ),
+          },
+        ]
+      : []),
+    ...(backgroundFit.mustHaveBuildReachabilityProbability === null
+      ? []
+      : [
+          {
+            accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
+              backgroundFit.mustHaveBuildReachabilityProbability,
+              'Must-have build',
+            ),
+            label: 'Must-have build',
+            tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
+              backgroundFit.mustHaveBuildReachabilityProbability,
+              'the must-have build',
+              studyResourceFilter,
+            ),
+            value: formatBackgroundFitProbabilityLabel(
+              backgroundFit.mustHaveBuildReachabilityProbability,
+            ),
+          },
+        ]),
+    {
+      accessibleLabel: formatBackgroundFitExpectedBuildPerksLabel(
+        backgroundFit.expectedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have perks',
+      ),
+      label: 'Expected must-have perks pickable',
+      tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
+        backgroundFit.expectedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have picked perks',
+      ),
+      value: createExpectedRatioValue(
+        backgroundFit.expectedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+      ),
+    },
+    ...(optionalPickedPerkCount > 0
+      ? [
+          {
+            accessibleLabel: formatBackgroundFitExpectedBuildPerksLabel(
+              backgroundFit.expectedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional perks',
+            ),
+            label: 'Expected optional perks pickable',
+            tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
+              backgroundFit.expectedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional picked perks',
+            ),
+            value: createExpectedRatioValue(
+              backgroundFit.expectedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+            ),
+          },
+        ]
+      : []),
+    {
+      accessibleLabel: formatBackgroundFitGuaranteedPerksLabel(
+        backgroundFit.guaranteedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have perks',
+      ),
+      label: 'Guaranteed must-have perks pickable',
+      tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
+        backgroundFit.guaranteedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have picked perks',
+      ),
+      value: createRatioValue(
+        backgroundFit.guaranteedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+      ),
+    },
+    ...(optionalPickedPerkCount > 0
+      ? [
+          {
+            accessibleLabel: formatBackgroundFitGuaranteedPerksLabel(
+              backgroundFit.guaranteedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional perks',
+            ),
+            label: 'Guaranteed optional perks pickable',
+            tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
+              backgroundFit.guaranteedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional picked perks',
+            ),
+            value: createRatioValue(
+              backgroundFit.guaranteedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+            ),
+          },
+        ]
+      : []),
+    {
+      accessibleLabel: formatBackgroundFitBestNativeRollLabel(
+        backgroundFit.maximumNativeCoveredPickedPerkCount,
+        pickedPerkCount,
+      ),
+      label: 'Best native roll covers total perks',
+      tooltip: getBackgroundFitBestNativeRollSummaryCopy(
+        backgroundFit.maximumNativeCoveredPickedPerkCount,
+        pickedPerkCount,
+      ),
+      value: createRatioValue(backgroundFit.maximumNativeCoveredPickedPerkCount, pickedPerkCount),
+    },
+  ]
 
   return (
     <article
@@ -262,7 +541,7 @@ export function BackgroundFitCard({
                 {rank + 1}
               </span>
               {renderGameIcon({
-                className: cx(sharedStyles.perkIcon, styles.backgroundFitIcon),
+                className: joinClassNames(sharedStyles.perkIcon, styles.backgroundFitIcon),
                 iconPath: backgroundFit.iconPath,
                 label: `${backgroundFit.backgroundName} background icon`,
                 testId: 'background-fit-icon',
@@ -292,6 +571,8 @@ export function BackgroundFitCard({
               </div>
             </div>
 
+            <BackgroundFitStudyResourceBadges backgroundFit={backgroundFit} />
+
             <span aria-hidden="true" className={styles.backgroundFitAccordionChevronFrame}>
               <BackgroundFitAccordionChevron
                 className={styles.backgroundFitAccordionChevron}
@@ -305,39 +586,7 @@ export function BackgroundFitCard({
               className={styles.backgroundFitAccordionSummaryRow}
               data-testid="background-fit-accordion-summary-row"
             >
-              <BackgroundFitMetricBadge
-                className={styles.backgroundFitSummaryBadge}
-                label={formatBackgroundFitExpectedBuildPerksLabel(
-                  backgroundFit.expectedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-                tooltip={getBackgroundFitExpectedBuildPerksSummaryCopy(
-                  backgroundFit.expectedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                className={styles.backgroundFitSummaryBadge}
-                label={formatBackgroundFitGuaranteedPerksLabel(
-                  guaranteedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-                tooltip={getBackgroundFitGuaranteedPerksSummaryCopy(
-                  guaranteedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                className={styles.backgroundFitSummaryBadge}
-                label={formatBackgroundFitPickablePerksLabel(
-                  coveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-                tooltip={getBackgroundFitPickablePerksSummaryCopy(
-                  coveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-              />
+              <BackgroundFitMetricTable metrics={summaryMetrics} />
             </div>
           </div>
         </div>

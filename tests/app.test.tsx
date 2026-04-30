@@ -9,7 +9,13 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
     'apprentice_background.nut',
     'paladin_background.nut',
   ]),
-  perkNamesForAppTests: new Set(['Berserk', 'Magic Missile']),
+  perkNamesForAppTests: new Set([
+    'Ammunition Binding',
+    'Berserk',
+    'Hold Out',
+    'Killing Frenzy',
+    'Magic Missile',
+  ]),
 }))
 
 vi.mock('../src/data/legends-perks.json', async () => {
@@ -63,7 +69,7 @@ describe('app', () => {
     expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
     expect(within(hero).getByText('Mod version')).toBeInTheDocument()
-    expect(within(hero).getByText('19.3.17')).toBeInTheDocument()
+    expect(within(hero).getByText('19.3.20')).toBeInTheDocument()
     expect(within(hero).getByText('Planner version')).toBeInTheDocument()
     expect(within(hero).getByText(packageJson.version)).toBeInTheDocument()
     expect(
@@ -105,7 +111,7 @@ describe('app', () => {
     expect(perkSearchInput).toHaveFocus()
   })
 
-  test('excludes origin and ancient scroll perk groups from perk results by default', async () => {
+  test('splits origin and ancient scroll perk search filters', async () => {
     const user = userEvent.setup()
     render(<App />)
     const perkSearchInput = screen.getByLabelText('Search perks')
@@ -122,22 +128,58 @@ describe('app', () => {
     ).toHaveTextContent('Vicious')
     expect(
       within(berserkResultRow as HTMLElement).getByTestId('perk-placement-list'),
-    ).not.toHaveTextContent('Berserker')
+    ).toHaveTextContent('Berserker')
 
     await user.clear(perkSearchInput)
-    await user.type(perkSearchInput, 'Magic Missile')
+    await user.type(perkSearchInput, 'Ammunition Binding')
 
     expect(screen.getByText('No perks found')).toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Filter perks' }))
 
-    const restrictedPerkGroupsCheckbox = screen.getByRole('checkbox', {
-      name: 'Origin and ancient scroll perk groups',
+    const getOriginPerkGroupsCheckbox = () =>
+      screen.getByRole('checkbox', {
+        name: 'Origin perks',
+      })
+    const getAncientScrollPerkGroupsCheckbox = () =>
+      screen.getByRole('checkbox', {
+        name: 'Ancient scroll perks',
+      })
+
+    expect(getOriginPerkGroupsCheckbox()).not.toBeChecked()
+    expect(getAncientScrollPerkGroupsCheckbox()).toBeChecked()
+    expect(window.location.search).not.toContain('ancient-scroll-perk-groups')
+
+    await user.click(getAncientScrollPerkGroupsCheckbox())
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('ancient-scroll-perk-groups=false')
+    })
+    expect(getOriginPerkGroupsCheckbox()).not.toBeChecked()
+    expect(getAncientScrollPerkGroupsCheckbox()).not.toBeChecked()
+
+    await user.click(getOriginPerkGroupsCheckbox())
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('results-list')).getByRole('button', {
+          name: 'Inspect Ammunition Binding',
+        }),
+      ).toBeInTheDocument()
+    })
+    await waitFor(() => {
+      expect(window.location.search).toContain('origin-perk-groups=true')
+    })
+    expect(window.location.search).toContain('ancient-scroll-perk-groups=false')
+
+    await user.click(getAncientScrollPerkGroupsCheckbox())
+
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('ancient-scroll-perk-groups')
     })
 
-    expect(restrictedPerkGroupsCheckbox).not.toBeChecked()
-
-    await user.click(restrictedPerkGroupsCheckbox)
+    await user.clear(perkSearchInput)
+    await user.type(perkSearchInput, 'Magic Missile')
 
     await waitFor(() => {
       expect(
@@ -146,8 +188,45 @@ describe('app', () => {
         }),
       ).toBeInTheDocument()
     })
+    expect(window.location.search).toContain('origin-perk-groups=true')
+
+    await user.click(screen.getByRole('button', { name: 'Filter perks' }))
+    await user.click(getOriginPerkGroupsCheckbox())
+
     await waitFor(() => {
-      expect(window.location.search).toContain('origin-scroll-perk-groups=true')
+      expect(window.location.search).not.toContain('origin-perk-groups')
+    })
+    expect(window.location.search).not.toContain('ancient-scroll-perk-groups')
+  })
+
+  test('keeps hidden origin perk groups out of the build planner until enabled', async () => {
+    const user = userEvent.setup()
+
+    window.history.replaceState({}, '', '/?build=Killing+Frenzy,Hold+Out')
+    render(<App />)
+
+    await waitFor(() => {
+      expect(screen.getByText('2 perks picked.')).toBeInTheDocument()
+    })
+
+    const sharedPerkGroups = screen.getByTestId('build-shared-groups-list')
+
+    expect(
+      within(sharedPerkGroups).queryByRole('button', {
+        name: 'Select perk group Cutthroat',
+      }),
+    ).not.toBeInTheDocument()
+    expect(within(sharedPerkGroups).queryByText('Cutthroat')).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Filter perks' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Origin perks' }))
+
+    await waitFor(() => {
+      expect(
+        within(sharedPerkGroups).getByRole('button', {
+          name: 'Select perk group Cutthroat',
+        }),
+      ).toBeInTheDocument()
     })
   })
 
@@ -194,6 +273,54 @@ describe('app', () => {
     ).not.toBeInTheDocument()
     expect(backgroundFitPanel.querySelector('[data-search-highlight="true"]')).toBeNull()
     expect(backgroundSearchInput).toHaveFocus()
+  })
+
+  test('keeps default background study filters out of the url and serializes changes', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
+
+    await user.click(within(backgroundFitPanel).getByRole('button', { name: 'Filter backgrounds' }))
+
+    const allowBookCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Allow a book',
+    })
+    const allowScrollCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Allow a scroll',
+    })
+    const allowTwoScrollsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+      name: 'Allow two scrolls',
+    })
+
+    expect(allowBookCheckbox).toBeChecked()
+    expect(allowScrollCheckbox).toBeChecked()
+    expect(allowTwoScrollsCheckbox).not.toBeChecked()
+    expect(window.location.search).not.toContain('background-book')
+    expect(window.location.search).not.toContain('background-scroll')
+    expect(window.location.search).not.toContain('background-two-scrolls')
+
+    await user.click(allowBookCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('background-book=false')
+    })
+
+    await user.click(allowScrollCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).toContain('background-scroll=false')
+    })
+    expect(allowTwoScrollsCheckbox).toBeDisabled()
+    expect(allowTwoScrollsCheckbox).not.toBeChecked()
+
+    await user.click(allowScrollCheckbox)
+    await user.click(allowTwoScrollsCheckbox)
+
+    await waitFor(() => {
+      expect(window.location.search).not.toContain('background-scroll=false')
+    })
+    expect(window.location.search).toContain('background-book=false')
+    expect(window.location.search).toContain('background-two-scrolls=true')
   })
 
   test('updates visible state when browser history restores a shared url', async () => {

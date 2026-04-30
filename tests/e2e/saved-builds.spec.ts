@@ -3,9 +3,9 @@ import {
   addPerkToBuildFromResults,
   expectNoDocumentHorizontalOverflow,
   getBuildPerksBar,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   searchPerks,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 async function clearBuildWithConfirmation(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Clear build' }).click()
@@ -28,7 +28,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
       },
     })
   })
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Perfect Focus')
   await addPerkToBuildFromResults(page, 'Perfect Focus')
@@ -73,7 +73,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
 })
 
 test('keeps local save and load controls usable on mobile', async ({ page }) => {
-  await gotoPerksBrowser(page, { width: 390, height: 760 })
+  await gotoBuildPlanner(page, { width: 390, height: 760 })
 
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
@@ -100,7 +100,7 @@ test('keeps local save and load controls usable on mobile', async ({ page }) => 
 })
 
 test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')
@@ -137,7 +137,7 @@ test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => 
 })
 
 test('deletes saved builds from local storage', async ({ page }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
   await addPerkToBuildFromResults(page, 'Clarity')

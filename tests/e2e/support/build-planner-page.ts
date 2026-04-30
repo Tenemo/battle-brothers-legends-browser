@@ -1,19 +1,96 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
-type PerksBrowserViewport = {
+type BuildPlannerViewport = {
   height: number
   width: number
 }
 
-const defaultPerksBrowserViewport = {
+const defaultBuildPlannerViewport = {
   height: 720,
   width: 900,
 } as const
 
-export const mediumPerksBrowserViewport = {
+export const mediumBuildPlannerViewport = {
   height: 720,
   width: 820,
 } as const
+
+type CssRgbColorParts = {
+  alpha: number
+  blue: number
+  green: number
+  red: number
+}
+
+export function getParsedCssRgbColor(cssColor: string): CssRgbColorParts {
+  const colorMatch = cssColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(0|1|0?\.\d+))?\)$/u)
+
+  if (!colorMatch) {
+    throw new Error(`Unable to parse CSS rgb color: ${cssColor}`)
+  }
+
+  return {
+    alpha: colorMatch[4] === undefined ? 1 : Number(colorMatch[4]),
+    blue: Number(colorMatch[3]),
+    green: Number(colorMatch[2]),
+    red: Number(colorMatch[1]),
+  }
+}
+
+function doCssRgbColorsMatch(actualColor: string, expectedColor: string): boolean {
+  const actualColorParts = getParsedCssRgbColor(actualColor)
+  const expectedColorParts = getParsedCssRgbColor(expectedColor)
+
+  return (
+    actualColorParts.red === expectedColorParts.red &&
+    actualColorParts.green === expectedColorParts.green &&
+    actualColorParts.blue === expectedColorParts.blue &&
+    Math.abs(actualColorParts.alpha - expectedColorParts.alpha) <= 0.001
+  )
+}
+
+export function expectCssRgbColorsToMatch(actualColor: string, expectedColor: string): void {
+  expect(doCssRgbColorsMatch(actualColor, expectedColor)).toBe(true)
+}
+
+export async function waitForCssRgbColor(
+  getCssColor: () => Promise<string>,
+  expectedColor: string,
+): Promise<void> {
+  await expect.poll(async () => doCssRgbColorsMatch(await getCssColor(), expectedColor)).toBe(true)
+}
+
+export async function getResolvedCssBackgroundColor(
+  page: Page,
+  cssBackgroundValue: string,
+): Promise<string> {
+  return page.evaluate((backgroundValue) => {
+    const colorProbe = document.createElement('div')
+    colorProbe.style.background = backgroundValue
+    document.body.append(colorProbe)
+    const resolvedColor = window.getComputedStyle(colorProbe).backgroundColor
+
+    colorProbe.remove()
+
+    return resolvedColor
+  }, cssBackgroundValue)
+}
+
+export async function getResolvedCssBorderColor(
+  page: Page,
+  cssBorderColorValue: string,
+): Promise<string> {
+  return page.evaluate((borderColorValue) => {
+    const colorProbe = document.createElement('div')
+    colorProbe.style.borderTopColor = borderColorValue
+    document.body.append(colorProbe)
+    const resolvedColor = window.getComputedStyle(colorProbe).borderTopColor
+
+    colorProbe.remove()
+
+    return resolvedColor
+  }, cssBorderColorValue)
+}
 
 export function getBuildIndividualGroupsList(page: Page): Locator {
   return page.getByTestId('build-individual-groups-list')
@@ -49,9 +126,9 @@ export function getSidebarPerkGroupButton(page: Page, perkGroupName: string): Lo
   })
 }
 
-export async function gotoPerksBrowser(
+export async function gotoBuildPlanner(
   page: Page,
-  viewport: PerksBrowserViewport = defaultPerksBrowserViewport,
+  viewport: BuildPlannerViewport = defaultBuildPlannerViewport,
 ): Promise<void> {
   await page.setViewportSize(viewport)
   await page.goto('/')
@@ -69,7 +146,9 @@ export async function expectViewportLocked(page: Page): Promise<void> {
         const detailPanelBody = document.querySelector(
           '[data-testid="perk-detail-panel-body"]',
         ) as HTMLElement | null
-        const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+        const resultsList = document.querySelector(
+          '[data-testid="results-list"]',
+        ) as HTMLElement | null
 
         return {
           detailPanelIsScrollable:

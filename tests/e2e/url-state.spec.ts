@@ -5,16 +5,16 @@ import {
   getBuildPerksBar,
   getBuildSharedGroupsList,
   getSidebarPerkGroupButton,
-  gotoPerksBrowser,
+  gotoBuildPlanner,
   inspectPerkFromResults,
   searchPerks,
   selectPerkGroup,
-} from './support/perks-browser'
+} from './support/build-planner-page'
 
 test('stores readable filters and build state in the url and restores them on a shared link', async ({
   page,
 }) => {
-  await gotoPerksBrowser(page)
+  await gotoBuildPlanner(page)
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
   await selectPerkGroup(page, 'Calm')
@@ -54,7 +54,10 @@ test('stores readable filters and build state in the url and restores them on a 
     await expect(sharedPage.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
     await expect(sharedPage.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
     await expect(getSidebarPerkGroupButton(sharedPage, 'Calm')).toHaveCount(0)
-    await expect(getSidebarPerkGroupButton(sharedPage, 'Deadeye')).toHaveAttribute('aria-pressed', 'false')
+    await expect(getSidebarPerkGroupButton(sharedPage, 'Deadeye')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
     await expect(getBuildPerksBar(sharedPage).getByText('Perfect Focus')).toBeVisible()
     await expect(getBuildPerksBar(sharedPage).getByText('Clarity')).toBeVisible()
     await expect(

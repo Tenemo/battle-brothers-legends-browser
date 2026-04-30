@@ -1,8 +1,16 @@
-import { spawn } from 'node:child_process'
-import { access, copyFile, cp, mkdir, mkdtemp, readFile, readdir, rm } from 'node:fs/promises'
+import {
+  copyFile,
+  cp as copyDirectory,
+  mkdir,
+  mkdtemp,
+  readFile,
+  readdir,
+  rm as removePath,
+} from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { pathExists, runCommand, sortUniqueStrings } from './script-utils.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -19,6 +27,7 @@ const defaultStagingIconOutputDirectoryPath = path.join(
   'public',
   'game-icons-staging',
 )
+const appRequiredGameIconPaths = ['ui/items/trade/scroll.png']
 const defaultSteamRootDirectoryPaths = [
   process.env.BATTLE_BROTHERS_STEAM_ROOT,
   process.env['PROGRAMFILES(X86)'] ? path.join(process.env['PROGRAMFILES(X86)'], 'Steam') : null,
@@ -27,21 +36,6 @@ const defaultSteamRootDirectoryPaths = [
 
 function normalizeRelativeIconPath(relativeIconPath) {
   return relativeIconPath.replaceAll('\\', '/').replace(/^\/+/, '')
-}
-
-function sortUniqueStrings(values) {
-  return [...new Set(values.filter(Boolean))].toSorted((leftValue, rightValue) =>
-    leftValue.localeCompare(rightValue),
-  )
-}
-
-async function pathExists(targetPath) {
-  try {
-    await access(targetPath)
-    return true
-  } catch {
-    return false
-  }
 }
 
 function chunkValues(values, maximumChunkLength) {
@@ -54,43 +48,8 @@ function chunkValues(values, maximumChunkLength) {
   return chunks
 }
 
-function runCommand(commandName, commandArguments) {
-  return new Promise((resolve, reject) => {
-    const childProcess = spawn(commandName, commandArguments, {
-      shell: false,
-      stdio: ['ignore', 'pipe', 'pipe'],
-      windowsHide: true,
-    })
-    let standardOutput = ''
-    let standardError = ''
-
-    childProcess.stdout.on('data', (chunk) => {
-      standardOutput += chunk.toString()
-    })
-
-    childProcess.stderr.on('data', (chunk) => {
-      standardError += chunk.toString()
-    })
-
-    childProcess.on('error', reject)
-
-    childProcess.on('close', (exitCode) => {
-      if (exitCode === 0) {
-        resolve(standardOutput)
-        return
-      }
-
-      reject(
-        new Error(
-          `Command failed: ${commandName} ${commandArguments.join(' ')}\n${standardError.trim()}`,
-        ),
-      )
-    })
-  })
-}
-
 export function collectRequiredGameIconPaths(dataset) {
-  const iconPaths = new Set()
+  const iconPaths = new Set(appRequiredGameIconPaths.map(normalizeRelativeIconPath))
 
   for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
     if (backgroundFitBackground.iconPath) {
@@ -318,7 +277,7 @@ export async function syncLegendsIcons({
       ? defaultStagingIconOutputDirectoryPath
       : `${outputDirectoryPath}-staging`
 
-  await rm(stagingOutputDirectoryPath, { force: true, recursive: true })
+  await removePath(stagingOutputDirectoryPath, { force: true, recursive: true })
   await mkdir(stagingOutputDirectoryPath, { recursive: true })
 
   try {
@@ -332,8 +291,8 @@ export async function syncLegendsIcons({
       outputDirectoryPath: stagingOutputDirectoryPath,
     })
 
-    await rm(outputDirectoryPath, { force: true, recursive: true })
-    await cp(stagingOutputDirectoryPath, outputDirectoryPath, { recursive: true })
+    await removePath(outputDirectoryPath, { force: true, recursive: true })
+    await copyDirectory(stagingOutputDirectoryPath, outputDirectoryPath, { recursive: true })
 
     return {
       archivePaths,
@@ -343,7 +302,7 @@ export async function syncLegendsIcons({
       outputDirectoryPath,
     }
   } finally {
-    await rm(extractionDirectoryPath, { force: true, recursive: true })
-    await rm(stagingOutputDirectoryPath, { force: true, recursive: true })
+    await removePath(extractionDirectoryPath, { force: true, recursive: true })
+    await removePath(stagingOutputDirectoryPath, { force: true, recursive: true })
   }
 }
