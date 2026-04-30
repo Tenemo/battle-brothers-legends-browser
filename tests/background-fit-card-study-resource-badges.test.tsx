@@ -46,8 +46,8 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
   }
 }
 
-function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit) {
-  render(
+function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit, rank = 0) {
+  return render(
     <BackgroundFitCard
       backgroundFit={backgroundFit}
       emphasizedCategoryNames={new Set()}
@@ -70,7 +70,7 @@ function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit) {
       optionalPickedPerkCount={1}
       pickedPerkCount={2}
       query=""
-      rank={0}
+      rank={rank}
       studyResourceFilter={{
         shouldAllowBook: true,
         shouldAllowScroll: true,
@@ -246,6 +246,38 @@ describe('background fit card study resource badges', () => {
     expect(veteranPerkBadge).toHaveAttribute(
       'title',
       'After level 12, this background gains 1 perk point every 3 veteran levels. The first veteran perk point is at level 15.',
+    )
+  })
+
+  test('shows the rank badge with a native tooltip', () => {
+    const { unmount } = renderBackgroundFitCard(createBackgroundFit(), 2)
+
+    const rankedByBuildChanceBadge = screen.getByTestId('background-fit-rank')
+
+    expect(rankedByBuildChanceBadge).toHaveTextContent('3')
+    expect(rankedByBuildChanceBadge).toHaveAccessibleName('Background fit rank 3')
+    expect(rankedByBuildChanceBadge).toHaveAttribute(
+      'title',
+      'Background fit rank 3. Ranked first by must-have build chance, then full-build chance, perk coverage, and background name.',
+    )
+
+    unmount()
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        buildReachabilityProbability: null,
+        fullBuildReachabilityProbability: null,
+        mustHaveBuildReachabilityProbability: null,
+      }),
+      4,
+    )
+
+    const rankedByPerkCoverageBadge = screen.getByTestId('background-fit-rank')
+
+    expect(rankedByPerkCoverageBadge).toHaveTextContent('5')
+    expect(rankedByPerkCoverageBadge).toHaveAccessibleName('Background fit rank 5')
+    expect(rankedByPerkCoverageBadge).toHaveAttribute(
+      'title',
+      'Background fit rank 5. Ranked by expected perks pickable, guaranteed perks, best native roll, and background name.',
     )
   })
 })

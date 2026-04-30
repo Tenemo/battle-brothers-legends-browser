@@ -329,9 +329,10 @@
   .backgroundFitVeteranPerkBadge {
     flex: 0 0 auto;
     max-width: 100%;
-    padding: var(--primitive-length-0-05rem) var(--primitive-length-0-34rem);
+    min-height: var(--target-size-compact);
+    padding: var(--space-3xs) var(--space-sm);
     color: var(--accent-soft);
-    font-size: var(--font-size-3xs);
+    font-size: var(--font-size-xs);
     letter-spacing: 0;
     line-height: 1;
     white-space: nowrap;

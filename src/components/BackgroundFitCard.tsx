@@ -75,6 +75,16 @@ function getBackgroundFitBuildReachabilitySummaryCopy(
   )} chance for ${buildScopeLabel}.`
 }
 
+function getBackgroundFitRankTitle(backgroundFit: RankedBackgroundFit, rank: number): string {
+  const rankLabel = rank + 1
+
+  if (backgroundFit.buildReachabilityProbability !== null) {
+    return `Background fit rank ${rankLabel}. Ranked first by must-have build chance, then full-build chance, perk coverage, and background name.`
+  }
+
+  return `Background fit rank ${rankLabel}. Ranked by expected perks pickable, guaranteed perks, best native roll, and background name.`
+}
+
 function getBackgroundFitStudyResourceFilterPhrase(
   studyResourceFilter: BackgroundStudyResourceFilter,
 ): string {
@@ -394,6 +404,7 @@ export function BackgroundFitCard({
   const isExpanded = expandedBackgroundFitKey === backgroundFitKey
   const accordionButtonId = `background-fit-card-button-${rank}`
   const accordionPanelId = `background-fit-card-panel-${rank}`
+  const rankTitle = getBackgroundFitRankTitle(backgroundFit, rank)
   const summaryMetrics = [
     ...(optionalPickedPerkCount > 0 && backgroundFit.fullBuildReachabilityProbability !== null
       ? [
@@ -547,7 +558,12 @@ export function BackgroundFitCard({
         <div className={styles.backgroundFitCardHeader}>
           <div className={styles.backgroundFitCardHeaderMain}>
             <div className={styles.backgroundFitCardHeading}>
-              <span className={styles.backgroundFitRank} data-testid="background-fit-rank">
+              <span
+                aria-label={`Background fit rank ${rank + 1}`}
+                className={styles.backgroundFitRank}
+                data-testid="background-fit-rank"
+                title={rankTitle}
+              >
                 {rank + 1}
               </span>
               {renderGameIcon({
