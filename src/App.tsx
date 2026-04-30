@@ -12,13 +12,14 @@ import {
   type SavedBuildOperationStatus,
 } from './components/BuildPlanner'
 import { CategorySidebar } from './components/CategorySidebar'
-import { PerkDetail } from './components/PerkDetail'
+import { DetailsPanel } from './components/PerkDetail'
 import { PerkResults } from './components/PerkResults'
 import { GitHubIcon } from './components/SharedControls'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import {
   createBackgroundFitEngine,
   type BackgroundFitCalculationProgress,
+  type RankedBackgroundFit,
   type BackgroundFitView,
 } from './lib/background-fit'
 import { getBuildPlannerGroups } from './lib/build-planner'
@@ -34,7 +35,11 @@ import {
 } from './lib/category-filter-model'
 import { compareCategoryNames } from './lib/dynamic-background-categories'
 import { createSharedBuildUrlSearch } from './lib/build-planner-url-state'
-import { groupBackgroundSources, normalizeSearchPhrase } from './lib/perk-display'
+import {
+  getBackgroundFitKey,
+  groupBackgroundSources,
+  normalizeSearchPhrase,
+} from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
@@ -67,6 +72,7 @@ const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
 const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
+const backgroundFitCompletionProgressMinimumDurationMs = 700
 const plannerVersion = __PLANNER_VERSION__
 
 const allCategoryCounts = getCategoryCounts(allPerks)
@@ -99,6 +105,15 @@ type BackgroundFitProgressState = {
   key: string
   progress: BackgroundFitCalculationProgress
 }
+
+type ActiveDetailSelection =
+  | {
+      type: 'background'
+      backgroundFitKey: string
+    }
+  | {
+      type: 'perk'
+    }
 
 function createPickedBuildPerkState(
   pickedPerkIds: string[],
@@ -251,6 +266,18 @@ export default function App() {
     useState<BackgroundFitProgressState | null>(null)
   const backgroundFitWorkerClientRef = useRef<BackgroundFitWorkerClient | null>(null)
   const latestBackgroundFitRequestIdRef = useRef(0)
+  const backgroundFitProgressByViewKeyRef = useRef(
+    new Map<string, BackgroundFitCalculationProgress>(),
+  )
+  const backgroundFitCompletionProgressTimeoutRef = useRef<number | null>(null)
+  const clearBackgroundFitCompletionProgressTimeout = useCallback(() => {
+    if (backgroundFitCompletionProgressTimeoutRef.current === null) {
+      return
+    }
+
+    window.clearTimeout(backgroundFitCompletionProgressTimeoutRef.current)
+    backgroundFitCompletionProgressTimeoutRef.current = null
+  }, [])
   const getBackgroundFitWorkerClient = useCallback(() => {
     backgroundFitWorkerClientRef.current ??= createBackgroundFitWorkerClient({
       calculateOnMainThread(
@@ -286,10 +313,11 @@ export default function App() {
   }, [])
   useEffect(
     () => () => {
+      clearBackgroundFitCompletionProgressTimeout()
       backgroundFitWorkerClientRef.current?.dispose()
       backgroundFitWorkerClientRef.current = null
     },
-    [],
+    [clearBackgroundFitCompletionProgressTimeout],
   )
   const {
     clearAllHover,
@@ -368,6 +396,9 @@ export default function App() {
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(
     () => visiblePerks[0]?.id ?? null,
   )
+  const [activeDetailSelection, setActiveDetailSelection] = useState<ActiveDetailSelection>({
+    type: 'perk',
+  })
   const selectedPerk = useMemo(
     () => visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null,
     [selectedPerkId, visiblePerks],
@@ -482,10 +513,38 @@ export default function App() {
     backgroundFitProgressState?.key === backgroundFitViewKey
       ? backgroundFitProgressState.progress
       : null
+  const isBackgroundFitProgressVisible =
+    backgroundFitProgress !== null && backgroundFitProgress.totalBackgroundCount > 0
   const isBackgroundFitViewLoading =
     shouldLoadBackgroundFitView &&
     completedBackgroundFitView === null &&
     backgroundFitErrorMessage === null
+  const backgroundFitDetail = useMemo<{
+    backgroundFit: RankedBackgroundFit
+    rank: number
+  } | null>(() => {
+    if (activeDetailSelection.type !== 'background' || backgroundFitView === null) {
+      return null
+    }
+
+    const backgroundFitIndex = backgroundFitView.rankedBackgroundFits.findIndex(
+      (rankedBackgroundFit) =>
+        getBackgroundFitKey(rankedBackgroundFit) === activeDetailSelection.backgroundFitKey,
+    )
+
+    if (backgroundFitIndex === -1) {
+      return null
+    }
+
+    return {
+      backgroundFit: backgroundFitView.rankedBackgroundFits[backgroundFitIndex],
+      rank: backgroundFitIndex,
+    }
+  }, [activeDetailSelection, backgroundFitView])
+  const activeDetailType: 'background' | 'perk' =
+    backgroundFitDetail === null ? 'perk' : 'background'
+  const selectedBackgroundFitKey =
+    backgroundFitDetail === null ? null : getBackgroundFitKey(backgroundFitDetail.backgroundFit)
 
   useEffect(() => {
     if (
@@ -497,6 +556,7 @@ export default function App() {
     }
 
     let isCancelled = false
+    clearBackgroundFitCompletionProgressTimeout()
     const backgroundFitWorkerClient = getBackgroundFitWorkerClient()
     let requestId = 0
     const backgroundFitCalculation = backgroundFitWorkerClient.calculateBackgroundFitView(
@@ -515,6 +575,8 @@ export default function App() {
             return
           }
 
+          backgroundFitProgressByViewKeyRef.current.set(backgroundFitViewKey, progress)
+
           startTransition(() => {
             setBackgroundFitProgressState({
               key: backgroundFitViewKey,
@@ -530,6 +592,8 @@ export default function App() {
           if (isCancelled || latestBackgroundFitRequestIdRef.current !== requestId) {
             return
           }
+
+          backgroundFitProgressByViewKeyRef.current.set(backgroundFitViewKey, progress)
 
           startTransition(() => {
             setBackgroundFitProgressState({
@@ -550,15 +614,48 @@ export default function App() {
           return
         }
 
+        const latestProgress = backgroundFitProgressByViewKeyRef.current.get(backgroundFitViewKey)
+        const completionProgress =
+          latestProgress && latestProgress.totalBackgroundCount > 0
+            ? {
+                checkedBackgroundCount: latestProgress.totalBackgroundCount,
+                totalBackgroundCount: latestProgress.totalBackgroundCount,
+              }
+            : null
+
         startTransition(() => {
           setBackgroundFitErrorState(null)
           setBackgroundFitPartialViewState(null)
-          setBackgroundFitProgressState(null)
+          setBackgroundFitProgressState(
+            completionProgress === null
+              ? null
+              : {
+                  key: backgroundFitViewKey,
+                  progress: completionProgress,
+                },
+          )
           setBackgroundFitViewState({
             key: backgroundFitViewKey,
             view: nextBackgroundFitView,
           })
         })
+
+        if (completionProgress !== null) {
+          backgroundFitCompletionProgressTimeoutRef.current = window.setTimeout(() => {
+            backgroundFitCompletionProgressTimeoutRef.current = null
+
+            if (latestBackgroundFitRequestIdRef.current !== requestId) {
+              return
+            }
+
+            startTransition(() => {
+              setBackgroundFitProgressState((currentProgressState) =>
+                currentProgressState?.key === backgroundFitViewKey ? null : currentProgressState,
+              )
+            })
+            backgroundFitProgressByViewKeyRef.current.delete(backgroundFitViewKey)
+          }, backgroundFitCompletionProgressMinimumDurationMs)
+        }
       })
       .catch((error: unknown) => {
         if (isCancelled || latestBackgroundFitRequestIdRef.current !== requestId) {
@@ -580,6 +677,7 @@ export default function App() {
     backgroundFitErrorMessage,
     completedBackgroundFitView,
     backgroundFitViewKey,
+    clearBackgroundFitCompletionProgressTimeout,
     getBackgroundFitWorkerClient,
     optionalPickedPerkIds,
     pickedPerkIds,
@@ -690,6 +788,7 @@ export default function App() {
         setSelectedBackgroundVeteranPerkLevelIntervals(
           urlState.selectedBackgroundVeteranPerkLevelIntervals,
         )
+        setActiveDetailSelection({ type: 'perk' })
         clearAllHover()
         resetShareBuildStatus()
       })
@@ -793,6 +892,15 @@ export default function App() {
         resetCategoryFiltersToAll()
       })
     }
+  }
+
+  function handleSelectPerk(perkId: string) {
+    setSelectedPerkId(perkId)
+    setActiveDetailSelection({ type: 'perk' })
+  }
+
+  function handleSelectBackgroundFit(backgroundFitKey: string) {
+    setActiveDetailSelection({ backgroundFitKey, type: 'background' })
   }
 
   function handleOriginPerkGroupsChange(shouldIncludeNextOriginPerkGroups: boolean) {
@@ -908,6 +1016,7 @@ export default function App() {
   function handleClearBuild() {
     startTransition(() => {
       setPickedBuildPerks([])
+      setActiveDetailSelection({ type: 'perk' })
       clearAllHover()
       resetShareBuildStatus()
     })
@@ -943,6 +1052,7 @@ export default function App() {
       setPickedBuildPerks(
         createPickedBuildPerkState(savedBuild.availablePerkIds, savedBuild.optionalPerkIds),
       )
+      setActiveDetailSelection({ type: 'perk' })
       clearAllHover()
       resetShareBuildStatus()
     })
@@ -1006,6 +1116,7 @@ export default function App() {
     startTransition(() => {
       setQuery('')
       setSelectedPerkId(perkId)
+      setActiveDetailSelection({ type: 'perk' })
       selectPerkGroup(nextPerkGroupSelection)
     })
   }
@@ -1193,22 +1304,15 @@ export default function App() {
           backgroundFitView={backgroundFitView}
           backgroundFitErrorMessage={backgroundFitErrorMessage}
           backgroundFitProgress={backgroundFitProgress}
-          emphasizedCategoryNames={emphasizedCategoryNames}
-          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
-          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
           hoveredPerkId={hoveredPerkId}
           isExpanded={isBackgroundFitPanelExpanded}
-          isLoadingBackgroundFitView={isBackgroundFitViewLoading}
+          isLoadingBackgroundFitView={
+            isBackgroundFitViewLoading || isBackgroundFitProgressVisible
+          }
           onCloseBuildPerkHover={closeBuildPerkHover}
           onCloseBuildPerkTooltip={closeBuildPerkTooltip}
           onClearPerkGroupHover={clearPerkGroupHover}
-          onClosePerkGroupHover={closePerkGroupHover}
-          onInspectPerkGroup={handleInspectPerkGroup}
-          onInspectPlannerPerk={handleInspectPlannerPerk}
-          onOpenBuildPerkHover={openBuildPerkHover}
-          onOpenBuildPerkTooltip={openBuildPerkTooltip}
-          onOpenPerkGroupHover={openPerkGroupHover}
+          onSelectBackgroundFit={handleSelectBackgroundFit}
           onBackgroundStudyBookChange={setShouldAllowBackgroundStudyBook}
           onBackgroundStudyScrollChange={handleBackgroundStudyScrollChange}
           onBackgroundVeteranPerkLevelIntervalChange={
@@ -1228,10 +1332,13 @@ export default function App() {
             availableBackgroundVeteranPerkLevelIntervals
           }
           selectedBackgroundVeteranPerkLevelIntervals={selectedBackgroundVeteranPerkLevelIntervals}
+          selectedBackgroundFitKey={selectedBackgroundFitKey}
           shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 
-        <PerkDetail
+        <DetailsPanel
+          activeDetailType={activeDetailType}
+          backgroundFitDetail={backgroundFitDetail}
           emphasizedCategoryNames={emphasizedCategoryNames}
           emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           groupedBackgroundSources={groupedBackgroundSources}
@@ -1248,7 +1355,15 @@ export default function App() {
           onOpenBuildPerkTooltip={openBuildPerkTooltip}
           onOpenPerkGroupHover={openPerkGroupHover}
           onTogglePerkPicked={handleTogglePerkPicked}
+          mustHavePickedPerkCount={mustHavePickedPerks.length}
+          optionalPickedPerkCount={optionalPickedPerkIds.length}
+          pickedPerkCount={pickedPerks.length}
           selectedPerk={selectedPerk}
+          studyResourceFilter={{
+            shouldAllowBook: shouldAllowBackgroundStudyBook,
+            shouldAllowScroll: shouldAllowBackgroundStudyScroll,
+            shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
+          }}
         />
 
         <PerkResults
@@ -1262,7 +1377,7 @@ export default function App() {
           onOriginPerkGroupsChange={handleOriginPerkGroupsChange}
           onOpenPerkGroupHover={openPerkGroupHover}
           onOpenResultsPerkHover={openResultsPerkHover}
-          onSelectPerk={setSelectedPerkId}
+          onSelectPerk={handleSelectPerk}
           onTogglePerkPicked={handleTogglePerkPicked}
           pickedPerkOrderById={pickedPerkOrderById}
           query={query}

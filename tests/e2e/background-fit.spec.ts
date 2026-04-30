@@ -6,6 +6,7 @@ import {
   getBackgroundFitPanel,
   getBuildPerksBar,
   getBuildIndividualGroupsList,
+  getPerkDetailPanel,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -33,6 +34,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const detailPanel = getPerkDetailPanel(page)
   const backgroundFitResultsScroll = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
   const apprenticeCard = backgroundFitPanel
@@ -53,9 +55,25 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
+  const backgroundFitProgressBar = backgroundFitPanel.getByRole('progressbar', {
+    name: 'Background fit progress',
+  })
+
+  await expect(backgroundFitProgressBar).toBeVisible()
+  await expect
+    .poll(async () => {
+      const checkedBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuenow')
+      const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
+
+      return checkedBackgroundCount === totalBackgroundCount
+        ? 'complete'
+        : `${checkedBackgroundCount}/${totalBackgroundCount}`
+    })
+    .toBe('complete')
+  await expect(backgroundFitProgressBar).toBeVisible()
   await expect(backgroundFitPanel.getByText(/Ranked by must-have build chance./i)).toBeVisible()
   await expect(
-    backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
+    backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }),
   ).toBeVisible()
   const apprenticeBackgroundIcon = apprenticeCard.getByRole('img', {
     name: 'Apprentice background icon',
@@ -198,10 +216,9 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     apprenticeSummaryMetrics.filter({ hasText: /Best native roll covers total perks/i }),
   ).toHaveCount(0)
-  await expect(apprenticeCard.getByTestId('background-fit-card-panel')).toHaveAttribute(
-    'aria-hidden',
-    'true',
-  )
+  await expect(
+    apprenticeCard.getByRole('button', { name: /Inspect background Apprentice/ }),
+  ).toHaveAttribute('aria-pressed', 'false')
   await expect
     .poll(async () =>
       page.evaluate(() => {
@@ -236,24 +253,20 @@ test('shows the background fit panel for a picked build and keeps the shell view
     element.scrollTop = 0
   })
 
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
-  await expect(apprenticeCard.getByTestId('background-fit-card-panel')).toHaveAttribute(
-    'aria-hidden',
-    'false',
-  )
-  await expect
-    .poll(async () =>
-      apprenticeCard
-        .getByTestId('background-fit-card-panel')
-        .evaluate((element) => getComputedStyle(element).transitionDuration),
-    )
-    .toBe('0s')
+  await backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }).click()
+  await expect(
+    apprenticeCard.getByRole('button', { name: /Inspect background Apprentice/ }),
+  ).toHaveAttribute('aria-pressed', 'true')
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
+  await expect(
+    detailPanel.getByRole('heading', { level: 3, name: 'Matched perk groups' }),
+  ).toBeVisible()
 
-  const axeMatchButton = apprenticeCard.getByRole('button', { name: 'Select perk group Axe' })
+  const axeMatchButton = detailPanel.getByRole('button', { name: 'Select perk group Axe' })
   const axeMatchRow = axeMatchButton.locator(
     'xpath=ancestor::*[@data-testid="planner-group-card"][1]',
   )
-  const axePerkPill = apprenticeCard.getByRole('button', { name: 'Axe Mastery' })
+  const axePerkPill = detailPanel.getByRole('button', { name: 'Axe Mastery' })
   const axeResultRow = getResultsList(page)
     .getByRole('button', { name: 'Inspect Axe Mastery' })
     .locator('xpath=ancestor::*[@data-testid="perk-row"][1]')
@@ -354,6 +367,8 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
+  await page.getByRole('button', { name: 'Inspect Axe Mastery' }).click()
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
 
   await expectViewportLocked(page)
 })
@@ -434,7 +449,7 @@ test('filters the background fit list with the background search field', async (
     name: 'Oathtaker',
   })
   const oathtakerToggle = backgroundFitPanel.getByRole('button', {
-    name: 'Expand background Oathtaker',
+    name: 'Inspect background Oathtaker',
   })
 
   await expect(oathtakerHeading).toBeVisible()
@@ -490,7 +505,7 @@ test('filters the background fit list with the background search field', async (
     .toBeLessThanOrEqual(1)
   await expect(
     backgroundFitPanel.getByRole('button', {
-      name: 'Expand background Apprentice',
+      name: 'Inspect background Apprentice',
     }),
   ).toHaveCount(0)
 
@@ -646,29 +661,28 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await addPerkToBuildFromResults(page, 'Danger Pay')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const detailPanel = getPerkDetailPanel(page)
   const apprenticeCard = backgroundFitPanel
     .getByTestId('background-fit-card')
     .filter({ hasText: 'Apprentice' })
     .first()
-  const apprenticePanel = apprenticeCard.getByTestId('background-fit-card-panel')
   const apprenticeToggle = apprenticeCard.getByRole('button', {
-    name: 'Expand background Apprentice',
+    name: 'Inspect background Apprentice',
   })
 
   await apprenticeCard.scrollIntoViewIfNeeded()
   await apprenticeToggle.click()
-  await expect(apprenticePanel).toHaveAttribute('aria-hidden', 'false')
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
-  await expect(apprenticePanel).toHaveAttribute('aria-hidden', 'false')
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
 
-  const barterMatchButton = apprenticeCard.getByRole('button', {
+  const barterMatchButton = detailPanel.getByRole('button', {
     name: 'Select perk group Barter',
   })
   const barterMatchRow = barterMatchButton.locator(
     'xpath=ancestor::*[@data-testid="planner-group-card"][1]',
   )
 
-  await expect(apprenticeCard.getByText('Possible', { exact: true })).toBeVisible()
+  await expect(detailPanel.getByText('Possible', { exact: true })).toBeVisible()
   await expect(barterMatchButton).toBeVisible()
   await expect(barterMatchRow).toHaveAttribute('data-testid', 'planner-group-card')
   await expect(barterMatchRow.getByTestId('background-fit-category-badge')).toHaveCount(0)
@@ -747,7 +761,7 @@ test('keeps zero-match backgrounds after matching backgrounds in the full ranked
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
   await expect(
-    backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
+    backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }),
   ).toBeVisible()
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
 
@@ -786,13 +800,14 @@ test('keeps dense background names readable from a shared build url and starts c
     .filter({ hasText: denseSharedBuildSearchBackgroundName })
     .first()
   const denseBuildBackgroundHeading = denseBuildBackgroundCard.locator('h3')
-  const denseBuildBackgroundPanel = denseBuildBackgroundCard.getByTestId(
-    'background-fit-card-panel',
-  )
 
   await denseBuildBackgroundHeading.scrollIntoViewIfNeeded()
   await expect(denseBuildBackgroundHeading).toBeVisible()
-  await expect(denseBuildBackgroundPanel).toHaveAttribute('aria-hidden', 'true')
+  await expect(
+    denseBuildBackgroundCard.getByRole('button', {
+      name: new RegExp(`Inspect background ${denseSharedBuildSearchBackgroundName}`),
+    }),
+  ).toHaveAttribute('aria-pressed', 'false')
   await expect
     .poll(async () => {
       const denseBuildBackgroundBoundingBox = await denseBuildBackgroundHeading.boundingBox()

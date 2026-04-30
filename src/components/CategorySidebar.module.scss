@@ -10,6 +10,8 @@
       translateX(var(--font-size-xl)),
       translateY(var(--primitive-length-0-45rem))
     );
+
+    flex-direction: row-reverse;
   }
 
   .sidebarBody {
@@ -20,7 +22,7 @@
   }
 
   .categorySidebarRailButton {
-    border-right: var(--primitive-length-1px) solid var(--border-muted);
+    border-left: var(--primitive-length-1px) solid var(--border-muted);
 
     @include rail-button;
   }
@@ -322,7 +324,7 @@
     }
 
     .categorySidebarRailButton {
-      border-right: 0;
+      border-left: 0;
 
       @include mobile-rail;
     }

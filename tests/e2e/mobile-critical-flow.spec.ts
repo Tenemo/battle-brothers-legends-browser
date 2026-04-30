@@ -23,10 +23,6 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const perkDetailPanel = getPerkDetailPanel(page)
-  const apprenticeCard = backgroundFitPanel
-    .getByTestId('background-fit-card')
-    .filter({ hasText: 'Apprentice' })
-    .first()
 
   await expect
     .poll(async () =>
@@ -58,8 +54,8 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
     'aria-expanded',
     'true',
   )
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
-  await apprenticeCard.getByRole('button', { name: 'Select perk group Axe' }).click()
+  await backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }).click()
+  await perkDetailPanel.getByRole('button', { name: 'Select perk group Axe' }).click()
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()

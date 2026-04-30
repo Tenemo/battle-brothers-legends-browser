@@ -778,15 +778,13 @@ test('keeps mobile background fit cards compact while preserving tap targets', a
       .slice(0, 5)
       .map((card) => {
         const header = card.querySelector<HTMLElement>('[class*="backgroundFitCardHeaderMain"]')
-        const chevronFrame = card.querySelector<HTMLElement>(
-          '[class*="backgroundFitAccordionChevronFrame"]',
-        )
+        const inspectButton = card.querySelector<HTMLElement>('button')
         const cardRectangle = card.getBoundingClientRect()
-        const chevronFrameRectangle = chevronFrame?.getBoundingClientRect()
+        const inspectButtonRectangle = inspectButton?.getBoundingClientRect()
 
         return {
-          chevronFrameHeight: chevronFrameRectangle?.height ?? 0,
-          chevronFrameWidth: chevronFrameRectangle?.width ?? 0,
+          inspectButtonHeight: inspectButtonRectangle?.height ?? 0,
+          inspectButtonWidth: inspectButtonRectangle?.width ?? 0,
           headerDirection: header === null ? '' : window.getComputedStyle(header).flexDirection,
           height: cardRectangle.height,
         }
@@ -808,8 +806,8 @@ test('keeps mobile background fit cards compact while preserving tap targets', a
   for (const cardMetric of backgroundFitCardMetrics.cards) {
     expect(cardMetric.height).toBeLessThanOrEqual(130)
     expect(cardMetric.headerDirection).toBe('row')
-    expect(cardMetric.chevronFrameHeight).toBeGreaterThanOrEqual(40)
-    expect(cardMetric.chevronFrameWidth).toBeGreaterThanOrEqual(40)
+    expect(cardMetric.inspectButtonHeight).toBeGreaterThanOrEqual(40)
+    expect(cardMetric.inspectButtonWidth).toBeGreaterThanOrEqual(40)
   }
 })
 
@@ -843,4 +841,70 @@ test('keeps collapsed background fit content out of the keyboard order', async (
   }
 
   expect(hiddenFocusHits).toEqual([])
+})
+
+test('keeps desktop rail bodies mounted and anchored for open and close animation', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, { height: 900, width: 1440 })
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitRailButton = backgroundFitPanel.getByRole('button', {
+    name: 'Collapse background fit',
+  })
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-content')
+  const categorySidebar = page.getByTestId('category-sidebar')
+  const categorySidebarBody = page.getByTestId('category-sidebar-body')
+  const categorySidebarRailButton = page.getByRole('button', {
+    name: 'Collapse category filters',
+  })
+
+  await expect
+    .poll(async () =>
+      categorySidebar.evaluate((element) => {
+        const sidebarBox = element.getBoundingClientRect()
+        const bodyBox = element
+          .querySelector('[data-testid="category-sidebar-body"]')
+          ?.getBoundingClientRect()
+        const buttonBox = element
+          .querySelector('button[aria-label="Collapse category filters"]')
+          ?.getBoundingClientRect()
+
+        if (!bodyBox || !buttonBox) {
+          return false
+        }
+
+        return (
+          Math.abs(buttonBox.right - sidebarBox.right) <= 1 &&
+          bodyBox.right <= buttonBox.left + 1
+        )
+      }),
+    )
+    .toBe(true)
+  await expect
+    .poll(async () =>
+      backgroundFitPanel.evaluate((element) => {
+        const bodyBox = element
+          .querySelector('[data-testid="background-fit-panel-content"]')
+          ?.getBoundingClientRect()
+        const buttonBox = element
+          .querySelector('button[aria-label="Collapse background fit"]')
+          ?.getBoundingClientRect()
+
+        return bodyBox && buttonBox ? bodyBox.right <= buttonBox.left + 1 : false
+      }),
+    )
+    .toBe(true)
+
+  await categorySidebarRailButton.click()
+  await backgroundFitRailButton.click()
+
+  await expect(categorySidebarBody).toHaveAttribute('aria-hidden', 'true')
+  await expect(categorySidebarBody).toHaveAttribute('inert', '')
+  await expect(categorySidebarBody).not.toHaveAttribute('hidden')
+  await expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'true')
+  await expect(backgroundFitPanelBody).toHaveAttribute('inert', '')
+  await expect(backgroundFitPanelBody).not.toHaveAttribute('hidden')
 })

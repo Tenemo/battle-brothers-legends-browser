@@ -111,7 +111,7 @@ export function CategorySidebar({
         className={joinClassNames(styles.sidebarBody, 'app-scrollbar')}
         data-scroll-container="true"
         data-testid="category-sidebar-body"
-        hidden={!isExpanded}
+        inert={isExpanded ? undefined : true}
       >
         <div className={styles.panelHeading}>
           <h2>Categories</h2>

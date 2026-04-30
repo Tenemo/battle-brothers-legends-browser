@@ -125,25 +125,26 @@
   }
 
   .backgroundFitProgressBar {
+    position: relative;
     width: 100%;
     height: var(--primitive-length-0-42rem);
     overflow: hidden;
     border: var(--primitive-length-1px) solid var(--border-muted);
     border-radius: var(--radius-pill);
     background: var(--surface-control);
+  }
 
-    &::-webkit-progress-bar {
-      background: var(--surface-control);
-    }
+  .backgroundFitProgressBarValue {
+    width: var(--background-fit-progress-value, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-soft);
+    transition: width var(--motion-entry-duration) cubic-bezier(0.22, 1, 0.36, 1);
+  }
 
-    &::-webkit-progress-value {
-      border-radius: inherit;
-      background: var(--accent-soft);
-    }
-
-    &::-moz-progress-bar {
-      border-radius: inherit;
-      background: var(--accent-soft);
+  @media (prefers-reduced-motion: reduce) {
+    .backgroundFitProgressBarValue {
+      transition: none;
     }
   }
 
@@ -204,19 +205,9 @@
       opacity: 0.76;
     }
 
-    &[data-expanded='true'] {
+    &[data-selected='true'] {
+      border-color: var(--primitive-color-rgb-204-155-84-alpha-0-38);
       background: var(--surface-result-active);
-
-      .backgroundFitAccordionChevron {
-        color: var(--accent-soft);
-        transform: rotate(90deg);
-      }
-
-      .backgroundFitCardPanel {
-        grid-template-rows: 1fr;
-        border-top-color: var(--border-subtle);
-        opacity: 1;
-      }
     }
   }
 
@@ -395,7 +386,6 @@
   }
 
   .backgroundFitAccordionSummary,
-  .backgroundFitCardContent,
   .backgroundFitMatchSection,
   .backgroundFitLoadingState,
   .backgroundFitEmptyState {
@@ -430,7 +420,7 @@
 
   .backgroundFitMetricValue {
     color: var(--accent-soft);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     font-weight: 400;
     line-height: 1.05;
     text-align: left;
@@ -440,48 +430,9 @@
   .backgroundFitMetricLabel {
     min-width: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     line-height: 1.1;
     text-align: left;
-  }
-
-  .backgroundFitAccordionChevronFrame {
-    display: inline-flex;
-    flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-
-    @include size(var(--control-height-sm));
-
-    border: var(--primitive-length-1px) solid var(--border-muted);
-    border-radius: var(--radius-pill);
-    background: var(--primitive-color-rgb-20-17-14-alpha-0-78);
-    color: var(--text-muted);
-  }
-
-  .backgroundFitAccordionChevron {
-    @include size(var(--icon-size-sm));
-  }
-
-  .backgroundFitCardPanel {
-    display: grid;
-    grid-template-rows: 0fr;
-    border-top: var(--primitive-length-1px) solid transparent;
-    opacity: 0;
-
-    &[hidden] {
-      display: none !important;
-    }
-  }
-
-  .backgroundFitCardPanelInner {
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .backgroundFitCardContent {
-    gap: var(--space-lg);
-    padding: var(--space-lg) var(--space-control-inline) var(--space-control-inline);
   }
 
   .backgroundFitMatchSection {
@@ -580,13 +531,8 @@
       gap: var(--space-2xs);
     }
 
-    .backgroundFitRailButton,
-    .backgroundFitAccordionChevronFrame {
+    .backgroundFitRailButton {
       min-height: var(--primitive-length-2-72rem);
-    }
-
-    .backgroundFitAccordionChevronFrame {
-      @include size(var(--primitive-length-2-72rem));
     }
 
     .backgroundFitCardHeading,
@@ -622,7 +568,7 @@
 
     .backgroundFitMetricValue,
     .backgroundFitMetricLabel {
-      font-size: var(--font-size-xs);
+      font-size: var(--font-size-sm);
     }
 
     .backgroundFitTarget,

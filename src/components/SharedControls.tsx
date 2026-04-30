@@ -168,23 +168,6 @@ export function FunnelIcon({
   )
 }
 
-export function BackgroundFitAccordionChevron({
-  className,
-  isExpanded,
-}: {
-  className: string
-  isExpanded: boolean
-}) {
-  return (
-    <ChevronRight
-      aria-hidden="true"
-      className={className}
-      data-expanded={isExpanded}
-      strokeWidth={1.8}
-    />
-  )
-}
-
 export function BuildStar({
   className,
   isPicked,

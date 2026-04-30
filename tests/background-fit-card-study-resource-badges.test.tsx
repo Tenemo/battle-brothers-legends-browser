@@ -50,23 +50,10 @@ function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit, rank = 0) {
   return render(
     <BackgroundFitCard
       backgroundFit={backgroundFit}
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
-      expandedBackgroundFitKey={null}
-      hoveredBuildPerkId={null}
-      hoveredBuildPerkTooltipId={undefined}
-      hoveredPerkId={null}
+      isSelected={false}
       mustHavePickedPerkCount={1}
       onClearPerkGroupHover={vi.fn()}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onClosePerkGroupHover={vi.fn()}
-      onInspectPerkGroup={vi.fn()}
-      onInspectPlannerPerk={vi.fn()}
-      onOpenBuildPerkHover={vi.fn()}
-      onOpenBuildPerkTooltip={vi.fn()}
-      onOpenPerkGroupHover={vi.fn()}
-      onToggle={vi.fn()}
+      onSelect={vi.fn()}
       optionalPickedPerkCount={1}
       pickedPerkCount={2}
       query=""
@@ -86,23 +73,10 @@ function renderBackgroundFitCardWithStudyResourceFilter(
   return render(
     <BackgroundFitCard
       backgroundFit={createBackgroundFit()}
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
-      expandedBackgroundFitKey={null}
-      hoveredBuildPerkId={null}
-      hoveredBuildPerkTooltipId={undefined}
-      hoveredPerkId={null}
+      isSelected={false}
       mustHavePickedPerkCount={1}
       onClearPerkGroupHover={vi.fn()}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onClosePerkGroupHover={vi.fn()}
-      onInspectPerkGroup={vi.fn()}
-      onInspectPlannerPerk={vi.fn()}
-      onOpenBuildPerkHover={vi.fn()}
-      onOpenBuildPerkTooltip={vi.fn()}
-      onOpenPerkGroupHover={vi.fn()}
-      onToggle={vi.fn()}
+      onSelect={vi.fn()}
       optionalPickedPerkCount={0}
       pickedPerkCount={1}
       query=""

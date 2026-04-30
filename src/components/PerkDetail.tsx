@@ -1,13 +1,25 @@
 import {
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
+  getVisibleBackgroundPillLabel,
   getPerkDisplayIconPath,
   renderGameIcon,
   type GroupedBackgroundSource,
 } from '../lib/perk-display'
+import type { RankedBackgroundFit } from '../lib/background-fit'
+import type { BackgroundStudyResourceFilter } from '../lib/background-study-reachability'
+import {
+  formatBackgroundVeteranPerkLevelIntervalBadge,
+  formatBackgroundVeteranPerkLevelIntervalTitle,
+} from '../lib/background-veteran-perks'
 import { joinClassNames } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
 import type { LegendsFavouredEnemyTarget, LegendsPerkRecord } from '../types/legends-perks'
+import {
+  BackgroundFitMatchSections,
+  BackgroundFitMetricSummary,
+  BackgroundFitStudyResourceBadges,
+} from './BackgroundFitCard'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton } from './SharedControls'
@@ -15,6 +27,8 @@ import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkDetail.module.scss'
 
 type PerkDetailProps = {
+  activeDetailType: 'background' | 'perk'
+  backgroundFitDetail: { backgroundFit: RankedBackgroundFit; rank: number } | null
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   groupedBackgroundSources: GroupedBackgroundSource[]
@@ -35,7 +49,11 @@ type PerkDetailProps = {
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onTogglePerkPicked: (perkId: string) => void
+  mustHavePickedPerkCount: number
+  optionalPickedPerkCount: number
+  pickedPerkCount: number
   selectedPerk: LegendsPerkRecord | null
+  studyResourceFilter: BackgroundStudyResourceFilter
 }
 
 function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
@@ -71,7 +89,9 @@ function renderFavouredEnemyTarget(favouredEnemyTarget: LegendsFavouredEnemyTarg
   )
 }
 
-export function PerkDetail({
+export function DetailsPanel({
+  activeDetailType,
+  backgroundFitDetail,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
   groupedBackgroundSources,
@@ -88,20 +108,49 @@ export function PerkDetail({
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
   onTogglePerkPicked,
+  mustHavePickedPerkCount,
+  optionalPickedPerkCount,
+  pickedPerkCount,
   selectedPerk,
+  studyResourceFilter,
 }: PerkDetailProps) {
+  const selectedBackgroundFitDetail =
+    activeDetailType === 'background' ? backgroundFitDetail : null
+
   return (
-    <aside aria-label="Perk details" className={styles.detailPanel} data-testid="perk-detail-panel">
+    <aside aria-label="Details" className={styles.detailPanel} data-testid="perk-detail-panel">
       <div
         aria-live="polite"
         className={joinClassNames(styles.detailPanelBody, 'app-scrollbar')}
         data-scroll-container="true"
         data-testid="perk-detail-panel-body"
       >
-        {selectedPerk === null ? (
+        {selectedBackgroundFitDetail ? (
+          <BackgroundDetail
+            backgroundFit={selectedBackgroundFitDetail.backgroundFit}
+            emphasizedCategoryNames={emphasizedCategoryNames}
+            emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+            hoveredBuildPerkId={hoveredBuildPerkId}
+            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+            hoveredPerkId={hoveredPerkId}
+            mustHavePickedPerkCount={mustHavePickedPerkCount}
+            onCloseBuildPerkHover={onCloseBuildPerkHover}
+            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+            onClosePerkGroupHover={onClosePerkGroupHover}
+            onInspectPerk={onInspectPerk}
+            onInspectPerkGroup={onInspectPerkGroup}
+            onOpenBuildPerkHover={onOpenBuildPerkHover}
+            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+            onOpenPerkGroupHover={onOpenPerkGroupHover}
+            optionalPickedPerkCount={optionalPickedPerkCount}
+            pickedPerkCount={pickedPerkCount}
+            rank={selectedBackgroundFitDetail.rank}
+            studyResourceFilter={studyResourceFilter}
+          />
+        ) : selectedPerk === null ? (
           <div className={sharedStyles.emptyState} data-testid="empty-state">
-            <h2>Select a perk</h2>
-            <p>Pick any entry from the list to inspect its placement, sources, and overlays.</p>
+            <h2>Select a perk or background</h2>
+            <p>Pick any perk or background to inspect its details.</p>
           </div>
         ) : (
           <>
@@ -246,5 +295,130 @@ export function PerkDetail({
         )}
       </div>
     </aside>
+  )
+}
+
+export const PerkDetail = DetailsPanel
+
+function BackgroundDetail({
+  backgroundFit,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
+  hoveredPerkId,
+  mustHavePickedPerkCount,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
+  onClosePerkGroupHover,
+  onInspectPerk,
+  onInspectPerkGroup,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
+  onOpenPerkGroupHover,
+  optionalPickedPerkCount,
+  pickedPerkCount,
+  rank,
+  studyResourceFilter,
+}: {
+  backgroundFit: RankedBackgroundFit
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  hoveredBuildPerkId: string | null
+  hoveredBuildPerkTooltipId: string | undefined
+  hoveredPerkId: string | null
+  mustHavePickedPerkCount: number
+  onCloseBuildPerkHover: (perkId: string) => void
+  onCloseBuildPerkTooltip: () => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: BuildPerkPillSelection,
+  ) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  optionalPickedPerkCount: number
+  pickedPerkCount: number
+  rank: number
+  studyResourceFilter: BackgroundStudyResourceFilter
+}) {
+  const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
+  const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
+    backgroundFit.veteranPerkLevelInterval,
+  )
+  const veteranPerkLevelIntervalTitle = formatBackgroundVeteranPerkLevelIntervalTitle(
+    backgroundFit.veteranPerkLevelInterval,
+  )
+  return (
+    <>
+      <div className={styles.detailHeader}>
+        <div className={styles.detailHeaderMain}>
+          {renderGameIcon({
+            className: joinClassNames(sharedStyles.perkIcon, sharedStyles.perkIconLarge),
+            iconPath: backgroundFit.iconPath,
+            label: `${backgroundFit.backgroundName} background icon`,
+            testId: 'detail-background-icon',
+          })}
+          <div>
+            <p className={styles.eyebrow}>Background rank {rank + 1}</p>
+            <h2>{backgroundFit.backgroundName}</h2>
+            <div className={styles.detailBadgeRow}>
+              {backgroundPillLabel ? (
+                <span className={styles.detailBadge} data-testid="detail-background-pill">
+                  {backgroundPillLabel}
+                </span>
+              ) : null}
+              <span
+                aria-label={`${veteranPerkLevelIntervalLabel} veteran perk interval`}
+                className={styles.detailBadge}
+                data-testid="detail-background-veteran-perk-badge"
+                title={veteranPerkLevelIntervalTitle}
+              >
+                {veteranPerkLevelIntervalLabel}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className={styles.detailHeaderActions}>
+          <BackgroundFitStudyResourceBadges backgroundFit={backgroundFit} />
+        </div>
+      </div>
+
+      <div className={styles.detailSection} data-testid="detail-section">
+        <h3>Background fit</h3>
+        <BackgroundFitMetricSummary
+          backgroundFit={backgroundFit}
+          mustHavePickedPerkCount={mustHavePickedPerkCount}
+          optionalPickedPerkCount={optionalPickedPerkCount}
+          pickedPerkCount={pickedPerkCount}
+          studyResourceFilter={studyResourceFilter}
+        />
+      </div>
+
+      <div className={styles.detailSection} data-testid="detail-section">
+        <h3>Matched perk groups</h3>
+        <div className={styles.detailBackgroundFitMatches}>
+          <BackgroundFitMatchSections
+            backgroundFit={backgroundFit}
+            emphasizedCategoryNames={emphasizedCategoryNames}
+            emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+            hoveredBuildPerkId={hoveredBuildPerkId}
+            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+            hoveredPerkId={hoveredPerkId}
+            onCloseBuildPerkHover={onCloseBuildPerkHover}
+            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+            onClosePerkGroupHover={onClosePerkGroupHover}
+            onInspectPerkGroup={onInspectPerkGroup}
+            onInspectPlannerPerk={onInspectPerk}
+            onOpenBuildPerkHover={onOpenBuildPerkHover}
+            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+            onOpenPerkGroupHover={onOpenPerkGroupHover}
+          />
+        </div>
+      </div>
+    </>
   )
 }
