@@ -9305,7 +9305,7 @@
       }
     ]
   },
-  "generatedAt": "2026-04-27T17:53:59.538Z",
+  "generatedAt": "2026-04-30T01:29:13.665Z",
   "perkCount": 367,
   "perks": [
     {
@@ -30945,7 +30945,7 @@
       ],
       "descriptionParagraphs": [
         "Become one with your weapon and go for the weak spots!",
-        "Passive: • When holding a Buckler, Mummy Shield or Parrying Dagger in your offhand an extra +25% of damage ignores armor on Melee Attacks.",
+        "Passive: • When holding a Buckler or Mummy Shield in your offhand an extra +25% of damage ignores armor on Melee Attacks.",
         "Active: Unlocks the Flourish skill, which will increase fatigue cost by 50% and as long as you are faster than your target grants a chance on each attack to ignore armor completely based on the initiative difference between you and your target. As long as you are faster than the target, any attack that inflicts at least 1 point of damage to Hitpoints triggers a morale check for the opponent with a penalty equal to 20% of the Initiative difference between you and the target."
       ],
       "categoryNames": [
@@ -30966,7 +30966,7 @@
       ],
       "primaryCategoryName": "Weapon",
       "scenarioSources": [],
-      "searchText": "Duelist Weapon Weapon Become one with your weapon and go for the weak spots! Passive: • When holding a Buckler, Mummy Shield or Parrying Dagger in your offhand an extra +25% of damage ignores armor on Melee Attacks. Active: Unlocks the Flourish skill, which will increase fatigue cost by 50% and as long as you are faster than your target grants a chance on each attack to ignore armor completely based on the initiative difference between you and your target. As long as you are faster than the target, any attack that inflicts at least 1 point of damage to Hitpoints triggers a morale check for the opponent with a penalty equal to 20% of the Initiative difference between you and the target. Weapon Sword Adventurous Noble Weapon Sword Anatomist Weapon Sword Apprentice Weapon Sword Assassin Weapon Sword Assassin Weapon Sword Auxiliary Weapon Sword Bastard Weapon Sword Belly Dancer Weapon Sword Berserker Weapon Sword Bladedancer Weapon Sword Bounty Hunter Weapon Sword Cannibal Weapon Sword Caravan Hand Weapon Sword Centurion Weapon Sword Companion Weapon Sword Companion Weapon Sword Companion Weapon Sword Conscript Weapon Sword Conscript Gunner Weapon Sword Courser Weapon Sword Crusader Weapon Sword Dervish Weapon Sword Destrier Weapon Sword Disowned Noble Weapon Sword Donkey Weapon Sword Druid Weapon Sword Druid Commander Weapon Sword Foot Soldier Weapon Sword Framed Beggar Weapon Sword Framed Beggar Weapon Sword Gladiator Weapon Sword Gladiator Weapon Sword Gladiator Prizefighter Weapon Sword Hashassin Weapon Sword Hedge Knight Weapon Sword Herbalist / Apothecaries Weapon Sword Holy Crusader Weapon Sword Honour Guard Weapon Sword Horse Weapon Sword Horse Rider Weapon Sword Hunter Weapon Sword Ironmonger Weapon Sword Killer on the Run Weapon Sword King's Guard Weapon Sword Leech Peddler Weapon Sword Legate Weapon Sword Legionary Weapon Sword Lone Wolf Weapon Sword Mage Weapon Sword Magister Weapon Sword Man-At-Arms Weapon Sword Manhunter Weapon Sword Master Archer Weapon Sword Master Necromancer Weapon Sword Necrosavant Weapon Sword Noble Usurper Weapon Sword Nomad Weapon Sword Oathtaker Weapon Sword Orc Slayer Weapon Sword Prefect Weapon Sword Preserver Weapon Sword Puppet Master Weapon Sword Qiyan Weapon Sword Retired Soldier Weapon Sword Rouncey Weapon Sword Sellsword Weapon Sword Servus Weapon Sword Shieldmaiden Weapon Sword Squire Weapon Sword Summoner Weapon Sword Swordmaster Weapon Sword Tailor Weapon Sword Taxidermist Weapon Sword Thief Weapon Sword Trader Weapon Sword Trader Weapon Sword Warlock Weapon Sword Warrior Weapon Sword Witchhunter Weapon Sword Youngblood Weapon Sword"
+      "searchText": "Duelist Weapon Weapon Become one with your weapon and go for the weak spots! Passive: • When holding a Buckler or Mummy Shield in your offhand an extra +25% of damage ignores armor on Melee Attacks. Active: Unlocks the Flourish skill, which will increase fatigue cost by 50% and as long as you are faster than your target grants a chance on each attack to ignore armor completely based on the initiative difference between you and your target. As long as you are faster than the target, any attack that inflicts at least 1 point of damage to Hitpoints triggers a morale check for the opponent with a penalty equal to 20% of the Initiative difference between you and the target. Weapon Sword Adventurous Noble Weapon Sword Anatomist Weapon Sword Apprentice Weapon Sword Assassin Weapon Sword Assassin Weapon Sword Auxiliary Weapon Sword Bastard Weapon Sword Belly Dancer Weapon Sword Berserker Weapon Sword Bladedancer Weapon Sword Bounty Hunter Weapon Sword Cannibal Weapon Sword Caravan Hand Weapon Sword Centurion Weapon Sword Companion Weapon Sword Companion Weapon Sword Companion Weapon Sword Conscript Weapon Sword Conscript Gunner Weapon Sword Courser Weapon Sword Crusader Weapon Sword Dervish Weapon Sword Destrier Weapon Sword Disowned Noble Weapon Sword Donkey Weapon Sword Druid Weapon Sword Druid Commander Weapon Sword Foot Soldier Weapon Sword Framed Beggar Weapon Sword Framed Beggar Weapon Sword Gladiator Weapon Sword Gladiator Weapon Sword Gladiator Prizefighter Weapon Sword Hashassin Weapon Sword Hedge Knight Weapon Sword Herbalist / Apothecaries Weapon Sword Holy Crusader Weapon Sword Honour Guard Weapon Sword Horse Weapon Sword Horse Rider Weapon Sword Hunter Weapon Sword Ironmonger Weapon Sword Killer on the Run Weapon Sword King's Guard Weapon Sword Leech Peddler Weapon Sword Legate Weapon Sword Legionary Weapon Sword Lone Wolf Weapon Sword Mage Weapon Sword Magister Weapon Sword Man-At-Arms Weapon Sword Manhunter Weapon Sword Master Archer Weapon Sword Master Necromancer Weapon Sword Necrosavant Weapon Sword Noble Usurper Weapon Sword Nomad Weapon Sword Oathtaker Weapon Sword Orc Slayer Weapon Sword Prefect Weapon Sword Preserver Weapon Sword Puppet Master Weapon Sword Qiyan Weapon Sword Retired Soldier Weapon Sword Rouncey Weapon Sword Sellsword Weapon Sword Servus Weapon Sword Shieldmaiden Weapon Sword Squire Weapon Sword Summoner Weapon Sword Swordmaster Weapon Sword Tailor Weapon Sword Taxidermist Weapon Sword Thief Weapon Sword Trader Weapon Sword Trader Weapon Sword Warlock Weapon Sword Warrior Weapon Sword Witchhunter Weapon Sword Youngblood Weapon Sword"
     },
     {
       "backgroundSources": [
@@ -42171,6 +42171,7 @@
         "• When activated imbues a tile and its surrounding tiles with the Sanctified Ground effect for two turns.",
         "• Human allies within the area become Sanctified, gaining immunity to Injuries, Bleeding, Poisoned, and Morale checks when taking damage.",
         "• Cultists and Undead become Consecrated, taking 10 to 20 damage each turn, and lose any immunity to Injuries, Bleeding, and Poison.",
+        "• Consecrated Wichts will lose Battle Forged.",
         "• Additionally, Undead cannot resurrect in the area while the flame is active.",
         "• Costs 7 AP and 30 Fatigue."
       ],
@@ -42192,7 +42193,7 @@
       ],
       "primaryCategoryName": "Class",
       "scenarioSources": [],
-      "searchText": "Holy Flame Class Class The old gods have allowed you to wield their light. Active: • Unlocks the Holy Flame skill. • When activated imbues a tile and its surrounding tiles with the Sanctified Ground effect for two turns. • Human allies within the area become Sanctified, gaining immunity to Injuries, Bleeding, Poisoned, and Morale checks when taking damage. • Cultists and Undead become Consecrated, taking 10 to 20 damage each turn, and lose any immunity to Injuries, Bleeding, and Poison. • Additionally, Undead cannot resurrect in the area while the flame is active. • Costs 7 AP and 30 Fatigue. Class Faith Battle Sister Class Faith Crusader Magic Faith Dervish Class Faith Flagellant Class Faith Holy Crusader Class Faith Monk Class Faith Monk turned Flagellant Class Faith Pacified Flagellant Class Faith Pilgrim Class Faith Youngblood Class Faith"
+      "searchText": "Holy Flame Class Class The old gods have allowed you to wield their light. Active: • Unlocks the Holy Flame skill. • When activated imbues a tile and its surrounding tiles with the Sanctified Ground effect for two turns. • Human allies within the area become Sanctified, gaining immunity to Injuries, Bleeding, Poisoned, and Morale checks when taking damage. • Cultists and Undead become Consecrated, taking 10 to 20 damage each turn, and lose any immunity to Injuries, Bleeding, and Poison. • Consecrated Wichts will lose Battle Forged. • Additionally, Undead cannot resurrect in the area while the flame is active. • Costs 7 AP and 30 Fatigue. Class Faith Battle Sister Class Faith Crusader Magic Faith Dervish Class Faith Flagellant Class Faith Holy Crusader Class Faith Monk Class Faith Monk turned Flagellant Class Faith Pacified Flagellant Class Faith Pilgrim Class Faith Youngblood Class Faith"
     },
     {
       "backgroundSources": [
@@ -82950,7 +82951,7 @@
     }
   ],
   "referenceRoot": ".cache/legends-public/current/mod_legends",
-  "referenceVersion": "19.3.17",
+  "referenceVersion": "19.3.20",
   "sourceFiles": [
     {
       "path": ".cache/legends-public/current/mod_legends/!!config/_global.nut",

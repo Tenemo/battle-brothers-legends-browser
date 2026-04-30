@@ -27,6 +27,7 @@ const defaultStagingIconOutputDirectoryPath = path.join(
   'public',
   'game-icons-staging',
 )
+const appRequiredGameIconPaths = ['ui/items/trade/scroll.png']
 const defaultSteamRootDirectoryPaths = [
   process.env.BATTLE_BROTHERS_STEAM_ROOT,
   process.env['PROGRAMFILES(X86)'] ? path.join(process.env['PROGRAMFILES(X86)'], 'Steam') : null,
@@ -48,7 +49,7 @@ function chunkValues(values, maximumChunkLength) {
 }
 
 export function collectRequiredGameIconPaths(dataset) {
-  const iconPaths = new Set()
+  const iconPaths = new Set(appRequiredGameIconPaths.map(normalizeRelativeIconPath))
 
   for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
     if (backgroundFitBackground.iconPath) {

@@ -24,7 +24,7 @@ The current committed dataset in this repository contains:
 - `367` perks
 - `116` perk groups
 - `225` parsed source files
-- Legends reference version `19.3.17`
+- Legends reference version `19.3.20`
 
 These values change whenever `pnpm sync:perks` is run against a newer or different Legends reference.
 
@@ -44,7 +44,7 @@ The app also keeps the current search, selected categories, selected perk groups
 
 The background-fit sidebar is driven only by the current picked build. It collapses the picked perks into unique perk group targets, treats only the Legends dynamic background categories as matchable (`Weapon`, `Defense`, `Traits`, `Enemy`, `Class`, `Profession`, and `Magic`), and shows unsupported build perk groups such as `Other` separately instead of forcing them into the ranking. By default it keeps backgrounds that can reach the build natively, with one skill book, with one ancient scroll, or with both. The background filter can also disable books, disable scrolls, allow a second scroll, or include origin backgrounds. Backgrounds are ranked by exact full-build reachability chance first, then expected native picked-perk coverage, guaranteed native picked-perk coverage, exact best-native-roll picked-perk coverage, and stable background name/source ordering.
 
-The probability model is exact and deterministic. Explicit perk groups on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy` and `Profession` use the same chance-attempt loops as the Legends source. `Magic` only contributes explicit perk groups because the Legends 19.3.17 magic loop does not append random perk groups. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-perk-group probabilities change when a background can or cannot produce the required weapon perk groups.
+The probability model is exact and deterministic. Explicit perk groups on a background are always guaranteed. `Weapon`, `Defense`, and `Traits` use exact without-replacement fill-to-minimum math. `Enemy` and `Profession` use the same chance-attempt loops as the Legends source. `Magic` only contributes explicit perk groups because the Legends 19.3.20 magic loop does not append random perk groups. `Class` uses the chance-attempt logic plus the parsed class-to-weapon dependency pairs from `config/perks_tree.nut`, so class-perk-group probabilities change when a background can or cannot produce the required weapon perk groups.
 
 The detail panel can show:
 

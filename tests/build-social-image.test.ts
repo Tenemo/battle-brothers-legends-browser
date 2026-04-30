@@ -18,7 +18,7 @@ const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
 const buildSocialImageContext = {
   params: {
     buildSlug: 'Clarity',
-    reference: 'reference-mod_19.3.17',
+    reference: 'reference-mod_19.3.20',
   },
 } as unknown as Context
 
@@ -150,7 +150,7 @@ describe('build social image', () => {
 
   test('extracts canonical build search params from the path route', () => {
     const searchParams = createBuildSocialImageSearchParamsFromPathname(
-      '/social/builds/reference-mod_19.3.17/Clarity%2CPerfect%20Focus.png',
+      '/social/builds/reference-mod_19.3.20/Clarity%2CPerfect%20Focus.png',
     )
 
     expect(searchParams?.get('build')).toBe('Clarity,Perfect Focus')
@@ -159,7 +159,7 @@ describe('build social image', () => {
   test('extracts canonical build search params from Netlify route params', () => {
     const searchParams = createBuildSocialImageSearchParamsFromRouteParams({
       buildSlug: 'Browbeater%27s%20Bludgeon%2CBlacksmiths%20Technique',
-      reference: '19.3.17',
+      reference: '19.3.20',
     })
 
     expect(searchParams?.get('build')).toBe("Browbeater's Bludgeon,Blacksmiths Technique")
@@ -177,7 +177,7 @@ describe('build social image', () => {
         },
         routeParams: {
           buildSlug: 'Clarity%2CPerfect%20Focus',
-          reference: 'reference-mod_19.3.17',
+          reference: 'reference-mod_19.3.20',
         },
       },
     )
@@ -213,7 +213,7 @@ describe('build social image', () => {
     }
 
     await createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Student.png'),
+      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Student.png'),
       {
         previewOptions: {
           shouldIncludeTopBackgroundFits: false,
@@ -222,7 +222,7 @@ describe('build social image', () => {
       },
     )
     await createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Colossus.png'),
+      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Colossus.png'),
       {
         previewOptions: {
           shouldIncludeTopBackgroundFits: false,
@@ -237,7 +237,7 @@ describe('build social image', () => {
   test('returns a PNG with durable cache headers for a valid build', async () => {
     const response = await createBuildSocialImageResponse(
       new URL(
-        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity%2CPerfect%20Focus.png',
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Clarity%2CPerfect%20Focus.png',
       ),
     )
 
@@ -252,7 +252,7 @@ describe('build social image', () => {
   test('uses shorter cache headers when the renderer falls back to the generic image', async () => {
     let renderAttemptCount = 0
     const response = await createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png'),
+      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Clarity.png'),
       {
         renderPng: () => {
           renderAttemptCount += 1
@@ -276,7 +276,7 @@ describe('build social image', () => {
   test('serves HEAD without a response body and rejects unsupported methods', async () => {
     const headResponse = await buildSocialImage(
       new Request(
-        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png',
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Clarity.png',
         {
           method: 'HEAD',
         },
@@ -285,7 +285,7 @@ describe('build social image', () => {
     )
     const postResponse = await buildSocialImage(
       new Request(
-        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png',
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Clarity.png',
         {
           method: 'POST',
         },
@@ -311,7 +311,7 @@ describe('build social image', () => {
     try {
       const response = await handler(
         new Request(
-          'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity.png',
+          'https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Clarity.png',
         ),
         buildSocialImageContext,
       )
@@ -343,7 +343,7 @@ describe('build social image', () => {
 
     const response = await handler(
       new Request(
-        'https://battlebrothers.academy/social/builds/reference-mod_19.3.17/Clarity%2CPerfect%20Focus.png',
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.20/Clarity%2CPerfect%20Focus.png',
       ),
     )
 
