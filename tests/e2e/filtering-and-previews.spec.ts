@@ -533,9 +533,9 @@ test('keeps category hover and disclosure styling separate from perk group highl
 
     return {
       backgroundColor: computedStyle.backgroundColor,
+      borderLeftColor: computedStyle.borderLeftColor,
       borderRightColor: computedStyle.borderRightColor,
       borderRightWidth: computedStyle.borderRightWidth,
-      boxShadow: computedStyle.boxShadow,
     }
   })
 
@@ -554,14 +554,14 @@ test('keeps category hover and disclosure styling separate from perk group highl
 
     return {
       backgroundColor: computedStyle.backgroundColor,
+      borderLeftColor: computedStyle.borderLeftColor,
       borderRightColor: computedStyle.borderRightColor,
-      boxShadow: computedStyle.boxShadow,
     }
   })
 
   expect(disclosureHoverStyles.backgroundColor).not.toBe(disclosureBaseStyles.backgroundColor)
+  expect(disclosureHoverStyles.borderLeftColor).not.toBe(disclosureBaseStyles.borderLeftColor)
   expect(disclosureHoverStyles.borderRightColor).not.toBe(disclosureBaseStyles.borderRightColor)
-  expect(disclosureHoverStyles.boxShadow).not.toBe(disclosureBaseStyles.boxShadow)
   await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
 })
 
