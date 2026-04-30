@@ -302,9 +302,15 @@
     }
 
     .plannerSlotPerkInspect {
+      justify-content: center;
       align-items: center;
       min-height: calc(var(--planner-requirement-legend-slot-height) - var(--primitive-length-2px));
       padding: var(--primitive-length-2px) var(--space-xs);
+      text-align: center;
+    }
+
+    .plannerPickedPerkName {
+      text-align: center;
     }
 
     .plannerSlotRequirementChain {

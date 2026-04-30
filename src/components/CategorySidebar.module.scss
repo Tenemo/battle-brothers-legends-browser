@@ -100,7 +100,6 @@
 
     @include control-transition;
 
-    &:hover,
     &[data-highlighted='true'],
     &[data-selected='true'] {
       border-color: var(--accent-color);
@@ -127,8 +126,24 @@
     display: grid;
     place-items: center;
     flex: 0 0 var(--primitive-length-1-5rem);
+    border-right: var(--primitive-length-2px) solid var(--border-subtle);
     padding: 0 var(--space-xs);
     border-radius: var(--radius-control) 0 0 var(--radius-control);
+    box-shadow: inset 0 0 0 var(--primitive-length-1px) transparent;
+    color: var(--text-muted);
+    transition:
+      border-color var(--motion-fast),
+      background-color var(--motion-fast),
+      box-shadow var(--motion-fast),
+      color var(--motion-fast);
+
+    &:hover,
+    &:focus-visible {
+      border-right-color: var(--accent-color);
+      background: var(--primitive-color-rgb-204-155-84-alpha-0-11);
+      box-shadow: inset 0 0 0 var(--primitive-length-1px) var(--accent-color);
+      color: var(--accent-soft);
+    }
   }
 
   .categorySelectButton {
@@ -141,6 +156,10 @@
     padding: var(--primitive-length-0-3rem) var(--primitive-length-0-46rem)
       var(--primitive-length-0-3rem) var(--space-xs);
     text-align: left;
+  }
+
+  .categoryChipFrame[data-selected='true'] .categoryDisclosureButton {
+    border-right-color: var(--primitive-color-rgb-204-155-84-alpha-0-28);
   }
 
   .categoryChipStart,

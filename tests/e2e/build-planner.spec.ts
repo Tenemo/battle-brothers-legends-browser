@@ -1843,8 +1843,8 @@ test('marks picked perks as optional and separates them from must-have perks', a
       requirementLegendTileLayoutMetrics!.mustHaveTop,
     ),
   ).toBeLessThan(0.5)
-  expect(requirementLegendTileLayoutMetrics!.mustHaveNameTextAlign).toBe('left')
-  expect(requirementLegendTileLayoutMetrics!.optionalNameTextAlign).toBe('left')
+  expect(requirementLegendTileLayoutMetrics!.mustHaveNameTextAlign).toBe('center')
+  expect(requirementLegendTileLayoutMetrics!.optionalNameTextAlign).toBe('center')
   expect(requirementLegendTileLayoutMetrics!.mustHaveTransform).toBe('none')
   expect(requirementLegendTileLayoutMetrics!.optionalTransform).toBe('none')
   const clarityPickedPerkTile = buildPerksBar

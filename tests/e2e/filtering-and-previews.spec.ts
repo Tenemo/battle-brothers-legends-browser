@@ -100,8 +100,10 @@ test('keeps only one selected perk group when another group is selected', async 
 
   await selectPerkGroup(page, 'Deadeye')
 
-  await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'true')
-  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
+  await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('Magic')
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBeNull()
 })
 
 test('resets category drilldown when typing a perk search', async ({ page }) => {
@@ -512,6 +514,55 @@ test('keeps category disclosure separate from category and perk group selection'
   await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Axe')).toHaveAttribute('aria-pressed', 'true')
   await expect.poll(() => new URL(page.url()).searchParams.get('group-weapon')).toBe('Axe')
+})
+
+test('keeps category hover and disclosure styling separate from perk group highlights', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await expandCategory(page, 'Magic')
+  await page.mouse.move(1, 1)
+
+  const magicCategoryButton = page.getByRole('button', { name: 'Enable category Magic' })
+  const magicDisclosureButton = page.getByRole('button', { name: 'Collapse category Magic' })
+  const alchemyGroupButton = getSidebarPerkGroupButton(page, 'Alchemy')
+  const deadeyeGroupButton = getSidebarPerkGroupButton(page, 'Deadeye')
+  const disclosureBaseStyles = await magicDisclosureButton.evaluate((button) => {
+    const computedStyle = window.getComputedStyle(button)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderRightColor: computedStyle.borderRightColor,
+      borderRightWidth: computedStyle.borderRightWidth,
+      boxShadow: computedStyle.boxShadow,
+    }
+  })
+
+  expect(disclosureBaseStyles.borderRightWidth).toBe('2px')
+
+  await magicCategoryButton.hover()
+
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(alchemyGroupButton).toHaveAttribute('data-highlighted', 'false')
+  await expect(deadeyeGroupButton).toHaveAttribute('data-highlighted', 'false')
+
+  await magicDisclosureButton.hover()
+
+  const disclosureHoverStyles = await magicDisclosureButton.evaluate((button) => {
+    const computedStyle = window.getComputedStyle(button)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderRightColor: computedStyle.borderRightColor,
+      boxShadow: computedStyle.boxShadow,
+    }
+  })
+
+  expect(disclosureHoverStyles.backgroundColor).not.toBe(disclosureBaseStyles.backgroundColor)
+  expect(disclosureHoverStyles.borderRightColor).not.toBe(disclosureBaseStyles.borderRightColor)
+  expect(disclosureHoverStyles.boxShadow).not.toBe(disclosureBaseStyles.boxShadow)
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
 })
 
 test('places ancient scroll markers next to sidebar perk group names', async ({ page }) => {

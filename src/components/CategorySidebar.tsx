@@ -147,8 +147,6 @@ export function CategorySidebar({
 
                 onCloseCategoryHover(availableCategoryName)
               }}
-              onFocusCapture={() => onOpenCategoryHover(availableCategoryName)}
-              onMouseEnter={() => onOpenCategoryHover(availableCategoryName)}
               onMouseLeave={(event) => {
                 const activeElement = event.currentTarget.ownerDocument.activeElement
 
@@ -164,6 +162,8 @@ export function CategorySidebar({
                 aria-label={`${isExpanded ? 'Collapse' : 'Expand'} category ${availableCategoryName}`}
                 className={styles.categoryDisclosureButton}
                 onClick={() => onCategoryExpandToggle(availableCategoryName)}
+                onFocus={() => onCloseCategoryHover(availableCategoryName)}
+                onMouseEnter={() => onCloseCategoryHover(availableCategoryName)}
                 type="button"
               >
                 <CategoryChevron className={styles.categoryChevron} isExpanded={isExpanded} />
@@ -174,6 +174,8 @@ export function CategorySidebar({
                 className={styles.categorySelectButton}
                 data-highlighted={shouldHighlightCategory}
                 onClick={() => onCategoryToggle(availableCategoryName)}
+                onFocus={() => onOpenCategoryHover(availableCategoryName)}
+                onMouseEnter={() => onOpenCategoryHover(availableCategoryName)}
                 type="button"
               >
                 <span className={styles.categoryChipStart}>
@@ -220,9 +222,7 @@ export function CategorySidebar({
                     categoryName: availableCategoryName,
                     perkGroupId: perkGroupOption.perkGroupId,
                   })
-                  const isPerkGroupHighlighted =
-                    emphasizedPerkGroupKeys.has(perkGroupKey) ||
-                    emphasizedCategoryNames.has(availableCategoryName)
+                  const isPerkGroupHighlighted = emphasizedPerkGroupKeys.has(perkGroupKey)
                   const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(
                     perkGroupOption.perkGroupId,
                   )

@@ -946,8 +946,9 @@ export default function App() {
       const isSelected = selectedCategoryNames.includes(nextCategoryName)
 
       requestPerkResultListScrollReset()
+      setQuery('')
 
-      if (isSelected && query.length === 0) {
+      if (isSelected) {
         setExpandedCategoryNames([])
         setSelectedCategoryNames([])
         setSelectedPerkGroupIdsByCategory({})
@@ -955,7 +956,6 @@ export default function App() {
       }
 
       // Category chips are a drilldown control, so opening one category replaces the previous category and nested perk group filters.
-      setQuery('')
       setExpandedCategoryNames([nextCategoryName])
       setSelectedCategoryNames([nextCategoryName])
       setSelectedPerkGroupIdsByCategory({})
@@ -974,7 +974,19 @@ export default function App() {
 
   function handlePerkGroupSelect(categoryName: string, perkGroupId: string) {
     startTransition(() => {
+      const isSelectedPerkGroup =
+        selectedPerkGroupIdsByCategory[categoryName]?.includes(perkGroupId) ?? false
+
       setQuery('')
+
+      if (isSelectedPerkGroup) {
+        requestPerkResultListScrollReset()
+        setExpandedCategoryNames([categoryName])
+        setSelectedCategoryNames([categoryName])
+        setSelectedPerkGroupIdsByCategory({})
+        return
+      }
+
       selectPerkGroup({ categoryName, perkGroupId })
     })
   }
