@@ -1313,6 +1313,14 @@ test('visually highlights optional picked perks from matching group hover', asyn
     page,
     'var(--surface-result-active)',
   )
+  const activeOptionalPlannerSurfaceColor = await getResolvedCssBackgroundColor(
+    page,
+    'var(--surface-planner-optional-active)',
+  )
+  const activeOptionalPlannerBorderColor = await getResolvedCssBorderColor(
+    page,
+    'var(--border-planner-optional-active)',
+  )
   const buildPerksBar = getBuildPerksBar(page)
   const brawnyPickedPerkTile = buildPerksBar
     .getByTestId('planner-slot-perk')
@@ -1354,13 +1362,21 @@ test('visually highlights optional picked perks from matching group hover', asyn
   await expect(optionalBrawnyPickedPerkTile).toHaveAttribute('data-requirement', 'optional')
   await expect(optionalBrawnyPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
   expect(optionalBrawnyBaseBackgroundColor).not.toBe(activePlannerSurfaceColor)
+  expect(activeOptionalPlannerSurfaceColor).not.toBe(activePlannerSurfaceColor)
   await expect
     .poll(() =>
       optionalBrawnyPickedPerkTile.evaluate(
         (element) => window.getComputedStyle(element).backgroundColor,
       ),
     )
-    .toBe(activePlannerSurfaceColor)
+    .toBe(activeOptionalPlannerSurfaceColor)
+  await waitForCssRgbColor(
+    () =>
+      optionalBrawnyPickedPerkTile.evaluate(
+        (element) => window.getComputedStyle(element).borderTopColor,
+      ),
+    activeOptionalPlannerBorderColor,
+  )
 })
 
 test('keeps long planner group names compact without category text', async ({ page }) => {

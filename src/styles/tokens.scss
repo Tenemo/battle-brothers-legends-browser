@@ -328,6 +328,7 @@ $primitive-rgb-colors: (
     --surface-result-active: var(--surface-control-active);
     --surface-result-muted: rgb(18 15 13 / 0.58);
     --surface-planner-optional: rgb(26 26 26 / 0.92);
+    --surface-planner-optional-active: rgb(62 62 62 / 0.94);
     --surface-card: rgb(18 15 13 / 0.88);
     --surface-card-background: var(--surface-card);
     --surface-overlay: rgb(17 13 11 / 0.98);
@@ -339,6 +340,7 @@ $primitive-rgb-colors: (
     --border-subtle: rgb(204 155 84 / 0.12);
     --border-muted: rgb(204 155 84 / 0.14);
     --border-planner-optional: rgb(119 119 119 / 0.24);
+    --border-planner-optional-active: rgb(176 176 176 / 0.5);
     --border-strong: var(--accent-color);
     --border-overlay: rgb(204 155 84 / 0.18);
     --border-danger: rgb(190 80 64 / 0.54);
@@ -358,6 +360,7 @@ $primitive-rgb-colors: (
     --shadow-chain-drop: 0 2px 2px rgb(0 0 0 / 0.42);
     --shadow-tooltip-indicator: 0 0 10px rgb(221 176 123 / 0.32);
     --shadow-selected-ring: inset 0 0 0 1px rgb(204 155 84 / 0.12);
+    --shadow-planner-optional-active: inset 0 0 0 1px rgb(255 255 255 / 0.08);
     --shadow-planner-option: 0 0 0 1px rgb(221 176 123 / 0.18), 0 0 12px rgb(221 176 123 / 0.26);
     --highlight-white-subtle: rgb(255 255 255 / 0.04);
     --control-height-sm: 1.9rem;
