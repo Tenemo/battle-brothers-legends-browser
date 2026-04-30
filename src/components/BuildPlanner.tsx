@@ -179,9 +179,11 @@ export function BuildPlanner({
   const {
     activeTooltipIndicatorPerkId,
     clearPendingTooltip,
+    clearPointerPreviewSuppression,
     clearTooltipCloseTimer,
     closeTooltipPreview,
     openTooltipPreview,
+    suppressTooltipPreviewUntilPointerMove,
   } = useBuildPerkTooltipPreview({
     hoveredBuildPerkId: hoveredBuildPerk?.id ?? null,
     onCloseHover: onCloseBuildPerkHover,
@@ -320,10 +322,12 @@ export function BuildPlanner({
           onTogglePickedPerkOptional={onTogglePickedPerkOptional}
           onToggleIndividualPerkGroupsSection={handleToggleIndividualPerkGroupsSection}
           onToggleSharedPerkGroupsSection={handleToggleSharedPerkGroupsSection}
+          clearBuildPerkTooltipPointerPreviewSuppression={clearPointerPreviewSuppression}
           openBuildPerkTooltipPreview={openTooltipPreview}
           pickedPerks={pickedPerks}
           plannerBoardRef={plannerBoardRef}
           sharedPerkGroups={sharedPerkGroups}
+          suppressBuildPerkTooltipPreviewUntilPointerMove={suppressTooltipPreviewUntilPointerMove}
         />
       </section>
 

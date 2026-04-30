@@ -151,8 +151,10 @@ export async function expectViewportLocked(page: Page): Promise<void> {
         ) as HTMLElement | null
 
         return {
-          detailPanelIsScrollable:
-            detailPanelBody !== null && detailPanelBody.scrollHeight > detailPanelBody.clientHeight,
+          detailPanelScrollStateIsValid:
+            detailPanelBody !== null &&
+            (detailPanelBody.querySelector('[data-testid="empty-state"]') !== null ||
+              detailPanelBody.scrollHeight > detailPanelBody.clientHeight),
           documentScrollHeight: document.documentElement.scrollHeight,
           resultsListIsScrollable:
             resultsList !== null && resultsList.scrollHeight > resultsList.clientHeight,
@@ -161,7 +163,7 @@ export async function expectViewportLocked(page: Page): Promise<void> {
       }),
     )
     .toMatchObject({
-      detailPanelIsScrollable: true,
+      detailPanelScrollStateIsValid: true,
       resultsListIsScrollable: true,
     })
 

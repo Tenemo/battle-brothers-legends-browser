@@ -23,6 +23,16 @@ function readBackgroundSourceProbabilityLabel(label: string): number {
   return Number(chanceMatch[1]) / 100
 }
 
+test('starts with an empty detail panel until a perk or background is selected', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Select a perk or background' }),
+  ).toBeVisible()
+  await expect(page.getByTestId('perk-row').first()).toBeVisible()
+  await expect(page.locator('[data-testid="perk-row"][data-selected="true"]')).toHaveCount(0)
+})
+
 test('groups repeated background sources in the detail panel', async ({ page }) => {
   await gotoBuildPlanner(page)
 
@@ -190,4 +200,11 @@ test('keeps raw perk group flavour strings out of perk details', async ({ page }
     'aria-pressed',
     'true',
   )
+
+  await civilizationPlacementTile
+    .getByRole('button', { name: 'Select perk group Civilization' })
+    .click()
+
+  await expect(page.getByRole('button', { name: 'Enable category Enemy' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Civilization')).toHaveCount(0)
 })

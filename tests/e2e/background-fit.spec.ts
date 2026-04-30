@@ -20,10 +20,29 @@ const denseSharedBuildUrl =
 const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
 const denseSharedBuildSearchBackgroundQuery = 'disowned'
 
-async function expectBackgroundFitCalculationComplete(backgroundFitPanel: Locator) {
-  await expect(
-    backgroundFitPanel.getByRole('progressbar', { name: 'Background fit progress' }),
-  ).toHaveCount(0)
+async function expectBackgroundFitCalculationComplete(
+  backgroundFitPanel: Locator,
+  options: { shouldObserveProgress?: boolean } = {},
+) {
+  const backgroundFitProgressBar = backgroundFitPanel.getByRole('progressbar', {
+    name: 'Background fit progress',
+  })
+
+  if (options.shouldObserveProgress) {
+    await expect(backgroundFitProgressBar).toBeVisible()
+    await expect
+      .poll(async () => {
+        const checkedBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuenow')
+        const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
+
+        return checkedBackgroundCount === totalBackgroundCount
+          ? 'complete'
+          : `${checkedBackgroundCount}/${totalBackgroundCount}`
+      })
+      .toBe('complete')
+  }
+
+  await expect(backgroundFitProgressBar).toHaveCount(0)
 }
 
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
@@ -261,6 +280,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     detailPanel.getByRole('heading', { level: 3, name: 'Matched perk groups' }),
   ).toBeVisible()
+  await expect(detailPanel.getByRole('heading', { level: 4, name: 'Must-have' })).toBeVisible()
+  await expect(detailPanel.getByRole('heading', { level: 4, name: 'Optional' })).toBeVisible()
+  await expect(detailPanel.getByText('Learn with book/scrolls')).toHaveCount(2)
+  await expect(detailPanel.getByText('No optional perks in this build.')).toBeVisible()
 
   const axeMatchButton = detailPanel.getByRole('button', { name: 'Select perk group Axe' })
   const axeMatchRow = axeMatchButton.locator(
@@ -387,6 +410,9 @@ test('filters the background fit list with the background search field', async (
     .first()
 
   await expect(backgroundSearchInput).toBeVisible()
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel, {
+    shouldObserveProgress: true,
+  })
   await expect(
     oathtakerCard.getByTestId('background-fit-summary-value').filter({ hasText: '0.3/1' }),
   ).toBeVisible()

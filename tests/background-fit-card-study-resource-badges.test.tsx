@@ -11,13 +11,34 @@ import {
 } from '../src/lib/background-study-resource-display'
 import { ancientScrollIconPath } from '../src/lib/ancient-scroll-perk-group-display'
 import type { RankedBackgroundFit } from '../src/lib/background-fit'
-import type { BackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
+import type {
+  BackgroundStudyResourceFilter,
+  StudyReachabilityRequirement,
+  StudyResourceRequirementProfile,
+} from '../src/lib/background-study-reachability'
 
 const nativeStudyResourceRequirement = {
+  bookRequirement: null,
   requiredScrollCount: 0,
   requiresBook: false,
   requiresBright: false,
-} as const
+  scrollRequirements: [],
+} satisfies StudyResourceRequirementProfile
+
+const skillBookRequirement = {
+  categoryName: 'Traits',
+  perkGroupId: 'CalmTree',
+} satisfies StudyReachabilityRequirement
+
+const firstScrollRequirement = {
+  categoryName: 'Magic',
+  perkGroupId: 'BerserkerMagicTree',
+} satisfies StudyReachabilityRequirement
+
+const secondScrollRequirement = {
+  categoryName: 'Magic',
+  perkGroupId: 'EvocationMagicTree',
+} satisfies StudyReachabilityRequirement
 
 function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): RankedBackgroundFit {
   return {
@@ -91,14 +112,18 @@ describe('background fit card study resource badges', () => {
     renderBackgroundFitCard(
       createBackgroundFit({
         fullBuildStudyResourceRequirement: {
+          bookRequirement: skillBookRequirement,
           requiredScrollCount: 2,
           requiresBook: true,
           requiresBright: true,
+          scrollRequirements: [firstScrollRequirement, secondScrollRequirement],
         },
         mustHaveStudyResourceRequirement: {
+          bookRequirement: skillBookRequirement,
           requiredScrollCount: 1,
           requiresBook: true,
           requiresBright: false,
+          scrollRequirements: [firstScrollRequirement],
         },
       }),
     )
@@ -155,9 +180,11 @@ describe('background fit card study resource badges', () => {
         fullBuildReachabilityProbability: 0,
         fullBuildStudyResourceRequirement: null,
         mustHaveStudyResourceRequirement: {
+          bookRequirement: skillBookRequirement,
           requiredScrollCount: 1,
           requiresBook: true,
           requiresBright: false,
+          scrollRequirements: [firstScrollRequirement],
         },
       }),
     )

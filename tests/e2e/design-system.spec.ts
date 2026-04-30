@@ -35,7 +35,9 @@ function getPrimitiveStyleSnapshot() {
     buildPlannerInfoButton: getElementStyle('[aria-label="Show build planner guidance"]'),
     categorySidebarRailChevron: getElementStyle('[aria-label="Collapse category filters"] svg'),
     detailPanel: getElementStyle('[data-testid="perk-detail-panel"]'),
-    detailBadge: getElementStyle('[data-testid="detail-badge"]'),
+    detailBadge: getElementStyle(
+      '[data-testid="detail-badge"], [data-testid="detail-background-veteran-perk-badge"]',
+    ),
     perkPlacementChip: getElementStyle('[data-testid="perk-placement-chip"]'),
     perkRow: getElementStyle(
       '[data-testid="perk-row"][data-picked="false"][data-selected="false"]',
@@ -54,7 +56,11 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
   await page.getByRole('button', { name: 'Expand background fit' }).click()
-  await expect(page.getByRole('button', { name: 'Inspect background Apprentice' })).toBeVisible()
+  await expect(
+    page.getByRole('button', { name: 'Inspect background Apprentice' }),
+  ).toBeVisible()
+  await page.getByRole('button', { name: 'Inspect Axe Mastery' }).click()
+  await expect(page.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
   await page.mouse.move(0, 0)
 
   const styles = await page.evaluate(getPrimitiveStyleSnapshot)

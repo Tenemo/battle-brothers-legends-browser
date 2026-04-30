@@ -1233,14 +1233,36 @@ describe('background fit', () => {
         backgroundId: 'background.empty',
         buildReachabilityProbability: 1,
         fullBuildStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 2,
           requiresBook: false,
           requiresBright: true,
+          scrollRequirements: [
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'BerserkerMagicTree',
+            },
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'EvocationMagicTree',
+            },
+          ],
         },
         mustHaveStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 2,
           requiresBook: false,
           requiresBright: true,
+          scrollRequirements: [
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'BerserkerMagicTree',
+            },
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'EvocationMagicTree',
+            },
+          ],
         },
       }),
     )
@@ -1284,15 +1306,24 @@ describe('background fit', () => {
         backgroundId: 'background.calm_only',
         fullBuildReachabilityProbability: 1,
         fullBuildStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 1,
           requiresBook: false,
           requiresBright: false,
+          scrollRequirements: [
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'BerserkerMagicTree',
+            },
+          ],
         },
         mustHaveBuildReachabilityProbability: 1,
         mustHaveStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 0,
           requiresBook: false,
           requiresBright: false,
+          scrollRequirements: [],
         },
       }),
     )

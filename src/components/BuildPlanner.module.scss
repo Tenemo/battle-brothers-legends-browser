@@ -718,7 +718,8 @@
   .plannerGroupCardInspect {
     position: absolute;
     z-index: var(--z-index-base);
-    inset: 0;
+    inset: 0 0 auto;
+    height: max(var(--target-size-compact), calc(var(--control-height-sm) + var(--space-md)));
     appearance: none;
     border: 0;
     border-radius: inherit;

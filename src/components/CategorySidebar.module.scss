@@ -73,13 +73,16 @@
 
   .categoryCard {
     margin-bottom: 0;
+    border: var(--primitive-length-1px) solid var(--border-muted);
     border-radius: var(--radius-control);
-    outline: var(--primitive-length-1px) solid transparent;
-    outline-offset: var(--primitive-length-negative-1px);
     background: var(--primitive-color-rgb-16-13-11-alpha-0-24);
 
+    + .categoryCard {
+      margin-top: var(--primitive-length-2px);
+    }
+
     &[data-active='true'] {
-      outline-color: var(--primitive-color-rgb-204-155-84-alpha-0-22);
+      border-color: var(--primitive-color-rgb-204-155-84-alpha-0-22);
     }
   }
 

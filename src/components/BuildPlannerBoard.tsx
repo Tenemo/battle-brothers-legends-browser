@@ -267,6 +267,7 @@ function renderPlannerGroupCard({
 export function BuildPlannerBoard({
   activeBuildPerkTooltipIndicatorPerkId,
   buildPerkHighlightPerkGroupKeys,
+  clearBuildPerkTooltipPointerPreviewSuppression,
   clearPendingBuildPerkTooltip,
   closeBuildPerkTooltipPreview,
   emphasizedCategoryNames,
@@ -293,9 +294,11 @@ export function BuildPlannerBoard({
   pickedPerks,
   plannerBoardRef,
   sharedPerkGroups,
+  suppressBuildPerkTooltipPreviewUntilPointerMove,
 }: {
   activeBuildPerkTooltipIndicatorPerkId: string | null
   buildPerkHighlightPerkGroupKeys: ReadonlySet<string>
+  clearBuildPerkTooltipPointerPreviewSuppression: () => void
   clearPendingBuildPerkTooltip: () => void
   closeBuildPerkTooltipPreview: (perkId: string, relatedTarget?: EventTarget | null) => void
   emphasizedCategoryNames: ReadonlySet<string>
@@ -330,6 +333,7 @@ export function BuildPlannerBoard({
   pickedPerks: BuildPlannerPickedPerk[]
   plannerBoardRef: RefObject<HTMLDivElement | null>
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
+  suppressBuildPerkTooltipPreviewUntilPointerMove: () => void
 }) {
   const sharedPerkGroupsToggleId = useId()
   const sharedPerkGroupsSectionId = useId()
@@ -441,6 +445,8 @@ export function BuildPlannerBoard({
                       closeBuildPerkTooltipPreview(pickedPerk.id, event.relatedTarget)
                     }
                     onMouseMove={(event) => {
+                      clearBuildPerkTooltipPointerPreviewSuppression()
+
                       if (
                         hoveredBuildPerkId === pickedPerk.id ||
                         activeBuildPerkTooltipIndicatorPerkId === pickedPerk.id
@@ -499,7 +505,7 @@ export function BuildPlannerBoard({
                         )}
                         data-testid="planner-slot-optional-button"
                         onClick={() => {
-                          clearPendingBuildPerkTooltip()
+                          suppressBuildPerkTooltipPreviewUntilPointerMove()
                           onCloseBuildPerkTooltip()
                           onCloseBuildPerkHover(pickedPerk.id)
                           onTogglePickedPerkOptional(pickedPerk.id)

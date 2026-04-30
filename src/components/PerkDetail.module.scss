@@ -117,6 +117,108 @@
     margin-top: var(--space-sm);
   }
 
+  .detailBackgroundFitMatchColumns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+    min-width: 0;
+    margin-top: var(--space-sm);
+  }
+
+  .detailBackgroundFitMatchColumn {
+    display: grid;
+    align-content: start;
+    gap: var(--space-md);
+    min-width: 0;
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    background: var(--primitive-color-rgb-18-15-13-alpha-0-56);
+  }
+
+  .detailBackgroundFitMatchColumnHeader {
+    display: flex;
+    align-items: center;
+    min-width: 0;
+
+    h4 {
+      display: inline-flex;
+      gap: var(--space-xs);
+      align-items: center;
+      margin: 0;
+      font-family: var(--heading-font-family);
+      font-size: var(--font-size-xl);
+      line-height: 1.05;
+    }
+  }
+
+  .detailRequirementChainIconFrame {
+    position: relative;
+    display: inline-grid;
+    place-items: center;
+    flex: 0 0 auto;
+    border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-22);
+    border-radius: var(--radius-pill);
+    background: var(--primitive-color-rgb-204-155-84-alpha-0-11);
+
+    @include size(var(--primitive-length-1-35rem));
+  }
+
+  .detailRequirementChainIcon {
+    display: block;
+
+    @include size(var(--icon-size-xs));
+  }
+
+  .detailMatchSectionLabel {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--primitive-length-0-66rem);
+    letter-spacing: var(--primitive-length-0-12em);
+    text-transform: uppercase;
+  }
+
+  .detailStudyResourceSection {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  .detailStudyResourceList {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: grid;
+      grid-template-columns: var(--primitive-length-1-65rem) minmax(0, 1fr);
+      gap: var(--space-sm);
+      align-items: center;
+      min-width: 0;
+      border: var(--primitive-length-1px) solid var(--border-subtle);
+      border-radius: var(--radius-control);
+      padding: var(--space-sm);
+      background: var(--primitive-color-rgb-16-13-11-alpha-0-46);
+    }
+  }
+
+  .detailStudyResourceIcon {
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(var(--shadow-chain-drop));
+
+    @include size(var(--primitive-length-1-35rem));
+  }
+
+  .detailBackgroundFitEmptyMessage {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-base);
+  }
+
   .detailPlacementTierBadge {
     color: var(--accent-soft);
   }
@@ -198,6 +300,15 @@
       gap: var(--space-sm);
     }
 
+    .detailBackgroundFitMatchColumns {
+      gap: var(--space-md);
+    }
+
+    .detailBackgroundFitMatchColumn {
+      gap: var(--space-sm);
+      padding: var(--space-sm);
+    }
+
     .detailSupport {
       margin-top: var(--space-2xs);
     }
@@ -235,6 +346,10 @@
 
     .detailHeaderActions {
       align-items: flex-start;
+    }
+
+    .detailBackgroundFitMatchColumns {
+      grid-template-columns: 1fr;
     }
   }
 }

@@ -389,6 +389,10 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
 
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expect(page.getByLabel('Search perks')).toBeVisible()
+    await getBuildPerksBar(page)
+      .getByRole('button', { name: 'View Axe Mastery from build planner' })
+      .click()
+    await expect(page.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
     await expectViewportLocked(page)
     await expectNoDocumentHorizontalOverflow(page)
     await expectNoWorkspaceHorizontalClip(page)

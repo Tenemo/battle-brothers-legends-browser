@@ -114,6 +114,7 @@
   }
 
   .backgroundFitResultsScroll {
+    position: relative;
     display: grid;
     flex: 1 1 auto;
     align-content: start;
@@ -443,6 +444,20 @@
   .backgroundFitEmptyState {
     align-content: start;
     gap: var(--space-md);
+  }
+
+  .backgroundFitLoadingState {
+    position: absolute;
+    z-index: var(--z-index-raised);
+    top: 0;
+    right: var(--primitive-length-0-18rem);
+    left: 0;
+    padding: var(--space-md);
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-lg);
+    background: color-mix(in srgb, var(--surface-panel) 92%, transparent);
+    box-shadow: var(--shadow-panel);
+    pointer-events: none;
   }
 
   .backgroundFitSearchField {

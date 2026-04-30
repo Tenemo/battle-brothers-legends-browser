@@ -608,10 +608,10 @@ test('places ancient scroll markers next to sidebar perk group names', async ({ 
   expect(markerMetrics!.verticalCenterOffset).toBeLessThanOrEqual(2)
 })
 
-test('keeps category rows flush in the sidebar', async ({ page }) => {
+test('keeps category rows compact with bordered separation in the sidebar', async ({ page }) => {
   await gotoBuildPlanner(page)
 
-  const categoryGapMetrics = await page.getByTestId('category-sidebar').evaluate((sidebar) => {
+  const categoryMetrics = await page.getByTestId('category-sidebar').evaluate((sidebar) => {
     const categoryButtons = Array.from(
       sidebar.querySelectorAll('button[aria-label^="Enable category "]'),
     ).slice(0, 4)
@@ -623,24 +623,32 @@ test('keeps category rows flush in the sidebar', async ({ page }) => {
         return []
       }
 
-      const categoryFrame = categoryButton.parentElement
-      const nextCategoryFrame = nextCategoryButton.parentElement
+      const categoryCard = categoryButton.closest('[data-active]')
+      const nextCategoryCard = nextCategoryButton.closest('[data-active]')
 
-      if (!(categoryFrame instanceof HTMLElement) || !(nextCategoryFrame instanceof HTMLElement)) {
+      if (!(categoryCard instanceof HTMLElement) || !(nextCategoryCard instanceof HTMLElement)) {
         return []
       }
 
-      const categoryFrameRectangle = categoryFrame.getBoundingClientRect()
-      const nextCategoryFrameRectangle = nextCategoryFrame.getBoundingClientRect()
+      const categoryCardRectangle = categoryCard.getBoundingClientRect()
+      const nextCategoryCardRectangle = nextCategoryCard.getBoundingClientRect()
+      const computedStyle = window.getComputedStyle(categoryCard)
 
-      return [nextCategoryFrameRectangle.top - categoryFrameRectangle.bottom]
+      return [
+        {
+          borderTopWidth: computedStyle.borderTopWidth,
+          gap: nextCategoryCardRectangle.top - categoryCardRectangle.bottom,
+        },
+      ]
     })
   })
 
-  expect(categoryGapMetrics.length).toBeGreaterThanOrEqual(3)
+  expect(categoryMetrics.length).toBeGreaterThanOrEqual(3)
 
-  for (const categoryGap of categoryGapMetrics) {
-    expect(categoryGap).toBeLessThanOrEqual(1)
+  for (const categoryMetric of categoryMetrics) {
+    expect(categoryMetric.borderTopWidth).toBe('1px')
+    expect(categoryMetric.gap).toBeGreaterThanOrEqual(1.5)
+    expect(categoryMetric.gap).toBeLessThanOrEqual(2.5)
   }
 })
 

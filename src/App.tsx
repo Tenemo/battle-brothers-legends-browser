@@ -394,14 +394,12 @@ export default function App() {
       visiblePerks.length,
     ],
   )
-  const [selectedPerkId, setSelectedPerkId] = useState<string | null>(
-    () => visiblePerks[0]?.id ?? null,
-  )
+  const [selectedPerkId, setSelectedPerkId] = useState<string | null>(null)
   const [activeDetailSelection, setActiveDetailSelection] = useState<ActiveDetailSelection>({
     type: 'perk',
   })
   const selectedPerk = useMemo(
-    () => visiblePerks.find((perk) => perk.id === selectedPerkId) ?? visiblePerks[0] ?? null,
+    () => visiblePerks.find((perk) => perk.id === selectedPerkId) ?? null,
     [selectedPerkId, visiblePerks],
   )
   const pickedPerkIds = useMemo(() => getPickedBuildPerkIds(pickedBuildPerks), [pickedBuildPerks])
@@ -421,6 +419,10 @@ export default function App() {
   const mustHavePickedPerks = useMemo(
     () => pickedPerks.filter((pickedPerk) => !pickedPerk.isOptional),
     [pickedPerks],
+  )
+  const mustHavePickedPerkIds = useMemo(
+    () => mustHavePickedPerks.map((pickedPerk) => pickedPerk.id),
+    [mustHavePickedPerks],
   )
   const plannerGroupPerks = useMemo(
     () =>
@@ -1124,8 +1126,11 @@ export default function App() {
 
   function handleInspectPerkGroup(categoryName: string, perkGroupId: string) {
     startTransition(() => {
+      const isSelectedPerkGroup =
+        selectedPerkGroupIdsByCategory[categoryName]?.includes(perkGroupId) ?? false
+
       setQuery('')
-      selectPerkGroup({ categoryName, perkGroupId })
+      selectPerkGroup(isSelectedPerkGroup ? null : { categoryName, perkGroupId })
     })
   }
 
@@ -1192,16 +1197,8 @@ export default function App() {
   }
 
   useEffect(() => {
-    if (visiblePerks.length === 0) {
-      if (selectedPerkId !== null) {
-        startTransition(() => setSelectedPerkId(null))
-      }
-
-      return
-    }
-
-    if (!visiblePerks.some((perk) => perk.id === selectedPerkId)) {
-      startTransition(() => setSelectedPerkId(visiblePerks[0].id))
+    if (selectedPerkId !== null && !visiblePerks.some((perk) => perk.id === selectedPerkId)) {
+      startTransition(() => setSelectedPerkId(null))
     }
   }, [selectedPerkId, visiblePerks])
 
@@ -1356,6 +1353,7 @@ export default function App() {
           hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
           hoveredPerkId={hoveredPerkId}
           isSelectedPerkPicked={isSelectedPerkPicked}
+          mustHavePickedPerkIds={mustHavePickedPerkIds}
           onCloseBuildPerkHover={closeBuildPerkHover}
           onCloseBuildPerkTooltip={closeBuildPerkTooltip}
           onClosePerkGroupHover={closePerkGroupHover}
@@ -1365,6 +1363,7 @@ export default function App() {
           onOpenBuildPerkTooltip={openBuildPerkTooltip}
           onOpenPerkGroupHover={openPerkGroupHover}
           onTogglePerkPicked={handleTogglePerkPicked}
+          optionalPickedPerkIds={optionalPickedPerkIds}
           mustHavePickedPerkCount={mustHavePickedPerks.length}
           optionalPickedPerkCount={optionalPickedPerkIds.length}
           pickedPerkCount={pickedPerks.length}
@@ -1374,6 +1373,7 @@ export default function App() {
             shouldAllowScroll: shouldAllowBackgroundStudyScroll,
             shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
           }}
+          supportedBuildTargetPerkGroups={backgroundFitView?.supportedBuildTargetPerkGroups ?? []}
         />
 
         <PerkResults
