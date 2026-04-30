@@ -9,7 +9,7 @@ import {
   selectPerkGroup,
 } from './support/build-planner-page'
 
-test('copies a canonical build-only link from an active filtered workspace', async ({ page }) => {
+test('copies a canonical build-only link from a searched workspace', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
@@ -36,8 +36,12 @@ test('copies a canonical build-only link from an active filtered workspace', asy
 
   await expect(getBuildPerksBar(page).getByTestId('planner-slot-perk')).toHaveCount(2)
   await expect(page.getByLabel('Search perks')).toHaveValue('Clarity')
-  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
-  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
+  await expect(page.getByRole('button', { name: 'Reset all category filters' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
   await expect(page.getByText(/Filtered to /i)).toHaveCount(0)
 
   await copyBuildLinkButton.click()

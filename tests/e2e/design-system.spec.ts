@@ -30,7 +30,7 @@ function getPrimitiveStyleSnapshot() {
 
   return {
     backgroundFitCard: getElementStyle('[data-testid="background-fit-card"]'),
-    backgroundFitMetricBadge: getElementStyle('[data-testid="background-fit-summary-badge"]'),
+    backgroundFitMetricTable: getElementStyle('[data-testid="background-fit-summary-table"]'),
     backgroundFitPanel: getElementStyle('[data-testid="background-fit-panel"]'),
     buildPlannerInfoButton: getElementStyle('[aria-label="Show build planner guidance"]'),
     detailPanelRailChevron: getElementStyle('[aria-label="Collapse perk details"] svg'),
@@ -60,7 +60,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   expect(styles.perkRow).not.toBeNull()
   expect(styles.backgroundFitCard).not.toBeNull()
   expect(styles.detailBadge).not.toBeNull()
-  expect(styles.backgroundFitMetricBadge).not.toBeNull()
+  expect(styles.backgroundFitMetricTable).not.toBeNull()
   expect(styles.perkPlacementChip).not.toBeNull()
   expect(styles.plannerPill).not.toBeNull()
   expect(styles.backgroundFitPanel).not.toBeNull()
@@ -78,12 +78,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
     borderRadius: styles.backgroundFitCard?.borderRadius,
     boxShadow: styles.backgroundFitCard?.boxShadow,
   })
-  expect(styles.detailBadge).toMatchObject({
-    backgroundColor: styles.backgroundFitMetricBadge?.backgroundColor,
-    borderColor: styles.backgroundFitMetricBadge?.borderColor,
-    borderRadius: styles.backgroundFitMetricBadge?.borderRadius,
-    color: styles.backgroundFitMetricBadge?.color,
-  })
+  expect(styles.backgroundFitMetricTable?.width).not.toBe('0px')
   expect(styles.perkPlacementChip?.borderRadius).toBe(styles.plannerPill?.borderRadius)
   expect(styles.perkPlacementChip?.borderColor).not.toBe('rgba(0, 0, 0, 0)')
   expect(styles.plannerPill?.borderColor).not.toBe('rgba(0, 0, 0, 0)')

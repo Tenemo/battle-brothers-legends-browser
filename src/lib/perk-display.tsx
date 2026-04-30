@@ -318,27 +318,32 @@ export function formatBackgroundFitBestNativeRollLabel(
   maximumNativeCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `Best native roll covers ${maximumNativeCoveredPickedPerkCount}/${pickedPerkCount}`
+  return `Best native roll covers ${maximumNativeCoveredPickedPerkCount}/${pickedPerkCount} total perks`
 }
 
 export function formatBackgroundFitExpectedBuildPerksLabel(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel = 'perks',
 ): string {
   return `Expected ${formatBackgroundFitScoreLabel(
     expectedCoveredPickedPerkCount,
-  )}/${pickedPerkCount} perks pickable`
+  )}/${pickedPerkCount} ${scopeLabel} pickable`
 }
 
 export function formatBackgroundFitGuaranteedPerksLabel(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel = 'perks',
 ): string {
-  return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} perks pickable`
+  return `Guaranteed ${guaranteedCoveredPickedPerkCount}/${pickedPerkCount} ${scopeLabel} pickable`
 }
 
-export function formatBackgroundFitBuildReachabilityLabel(probability: number): string {
-  return `Full build ${formatBackgroundFitProbabilityLabel(probability)}`
+export function formatBackgroundFitBuildReachabilityLabel(
+  probability: number,
+  scopeLabel = 'Full build',
+): string {
+  return `${scopeLabel} ${formatBackgroundFitProbabilityLabel(probability)}`
 }
 
 export function getPerkGroupHoverKey({ categoryName, perkGroupId }: PerkGroupHoverTarget): string {

@@ -31,6 +31,8 @@ export function BackgroundFitPanel({
   onSearchActivityChange,
   onSecondBackgroundStudyScrollChange,
   onToggleExpanded,
+  mustHavePickedPerkCount,
+  optionalPickedPerkCount,
   pickedPerkCount,
   shouldAllowBackgroundStudyBook,
   shouldAllowBackgroundStudyScroll,
@@ -69,6 +71,8 @@ export function BackgroundFitPanel({
   onSearchActivityChange: (hasActiveSearch: boolean) => void
   onSecondBackgroundStudyScrollChange: (shouldAllowSecondBackgroundStudyScroll: boolean) => void
   onToggleExpanded: () => void
+  mustHavePickedPerkCount: number
+  optionalPickedPerkCount: number
   pickedPerkCount: number
   shouldAllowBackgroundStudyBook: boolean
   shouldAllowBackgroundStudyScroll: boolean
@@ -334,7 +338,7 @@ export function BackgroundFitPanel({
               hidden={hasActiveBackgroundFitSearch}
             >
               {hasBuildReachabilityProbability
-                ? 'Ranked by full build chance.'
+                ? 'Ranked by must-have build chance.'
                 : 'Ranked by expected perks pickable.'}
             </p>
           ) : (
@@ -404,6 +408,8 @@ export function BackgroundFitPanel({
                           rankedBackgroundFitKeySignature,
                         })
                       }}
+                      mustHavePickedPerkCount={mustHavePickedPerkCount}
+                      optionalPickedPerkCount={optionalPickedPerkCount}
                       pickedPerkCount={pickedPerkCount}
                       query={deferredBackgroundFitQuery}
                       rank={

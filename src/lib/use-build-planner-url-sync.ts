@@ -22,6 +22,7 @@ export function useBuildPlannerUrlSync(
 ): void {
   const { availableCategoryNames, perkGroupOptionsByCategory, perksById } = options
   const {
+    optionalPerkIds,
     pickedPerkIds,
     query,
     selectedCategoryNames,
@@ -41,6 +42,7 @@ export function useBuildPlannerUrlSync(
 
     const nextSearch = createBuildPlannerUrlSearch(
       {
+        optionalPerkIds,
         pickedPerkIds,
         query,
         selectedCategoryNames,
@@ -70,6 +72,7 @@ export function useBuildPlannerUrlSync(
     )
   }, [
     availableCategoryNames,
+    optionalPerkIds,
     perkGroupOptionsByCategory,
     perksById,
     pickedPerkIds,

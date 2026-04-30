@@ -23,13 +23,19 @@ function createBackgroundFit({
     backgroundName,
     buildReachabilityProbability: null,
     disambiguator,
+    expectedCoveredMustHavePerkCount: 0,
+    expectedCoveredOptionalPerkCount: 0,
     expectedCoveredPickedPerkCount: 0,
     expectedMatchedPerkGroupCount: 0,
+    fullBuildReachabilityProbability: null,
+    guaranteedCoveredMustHavePerkCount: 0,
+    guaranteedCoveredOptionalPerkCount: 0,
     guaranteedMatchedPerkGroupCount: 0,
     iconPath: null,
     matches: [],
     maximumNativeCoveredPickedPerkCount: 0,
     maximumTotalPerkGroupCount: 0,
+    mustHaveBuildReachabilityProbability: null,
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
   }
 }
@@ -58,12 +64,18 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
         (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
           ? getBackgroundSourceFileLabel(backgroundDefinition.sourceFilePath)
           : null,
+      expectedCoveredMustHavePerkCount: 0,
+      expectedCoveredOptionalPerkCount: 0,
       expectedCoveredPickedPerkCount: 0,
       expectedMatchedPerkGroupCount: 0,
+      fullBuildReachabilityProbability: null,
+      guaranteedCoveredMustHavePerkCount: 0,
+      guaranteedCoveredOptionalPerkCount: 0,
       guaranteedMatchedPerkGroupCount: 0,
       matches: [],
       maximumNativeCoveredPickedPerkCount: 0,
       maximumTotalPerkGroupCount: 0,
+      mustHaveBuildReachabilityProbability: null,
     }),
   )
 }
@@ -442,12 +454,18 @@ describe('background origin detection', () => {
           ...backgroundFit,
           buildReachabilityProbability: null,
           disambiguator: null,
+          expectedCoveredMustHavePerkCount: 0,
+          expectedCoveredOptionalPerkCount: 0,
           expectedCoveredPickedPerkCount: 0,
           expectedMatchedPerkGroupCount: 0,
+          fullBuildReachabilityProbability: null,
+          guaranteedCoveredMustHavePerkCount: 0,
+          guaranteedCoveredOptionalPerkCount: 0,
           guaranteedMatchedPerkGroupCount: 0,
           matches: [],
           maximumNativeCoveredPickedPerkCount: 0,
           maximumTotalPerkGroupCount: 0,
+          mustHaveBuildReachabilityProbability: null,
         }),
       )
 

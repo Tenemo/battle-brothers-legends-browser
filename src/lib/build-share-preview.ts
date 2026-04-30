@@ -1,5 +1,5 @@
 import legendsPerksDatasetJson from '../data/legends-perks.json'
-import type { RankedBackgroundFit } from './background-fit'
+import type { BackgroundFitSummary } from './background-fit'
 import { createBackgroundFitEngine, getGuaranteedCoveredPickedPerkCount } from './background-fit'
 import { isOriginBackgroundFit } from './background-origin'
 import { createSharedBuildUrlSearch, readBuildPlannerUrlState } from './build-planner-url-state'
@@ -82,7 +82,7 @@ function formatPerkListForSentence(perkNames: string[], maxVisiblePerks: number)
 }
 
 function createBackgroundFitPreview(
-  backgroundFit: RankedBackgroundFit,
+  backgroundFit: BackgroundFitSummary,
 ): BuildSharePreviewBackgroundFit {
   return {
     backgroundName: backgroundFit.backgroundName,
@@ -93,7 +93,7 @@ function createBackgroundFitPreview(
 }
 
 function getTopBackgroundFits(
-  rankedBackgroundFits: RankedBackgroundFit[],
+  rankedBackgroundFits: BackgroundFitSummary[],
 ): BuildSharePreviewBackgroundFit[] {
   return rankedBackgroundFits
     .filter(
@@ -163,7 +163,7 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
 
   const topBackgroundFits = shouldIncludeTopBackgroundFits
     ? getTopBackgroundFits(
-        backgroundFitEngine.getBackgroundFitView(pickedPerks).rankedBackgroundFits,
+        backgroundFitEngine.getBackgroundFitSummaryView(pickedPerks).rankedBackgroundFitSummaries,
       )
     : []
   const canonicalSearch = buildShareSearchFromPickedPerkIds(

@@ -3,6 +3,7 @@ import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
   expectCssRgbColorsToMatch,
+  getBackgroundFitPanel,
   expectNoDocumentHorizontalOverflow,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
@@ -330,26 +331,43 @@ test('build planner splits shared and individual perk groups without layout drif
 
   const infoButton = page.getByRole('button', { name: 'Show build planner guidance' })
   const infoButtonText = await infoButton.textContent()
+  const infoButtonGlyph = infoButton.getByTestId('build-planner-info-glyph')
   const infoButtonStyle = await infoButton.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
 
     return {
-      fontFamily: computedStyle.fontFamily,
       cursor: computedStyle.cursor,
       textTransform: computedStyle.textTransform,
+    }
+  })
+  const infoButtonGlyphStyle = await infoButtonGlyph.evaluate((element) => {
+    const computedStyle = window.getComputedStyle(element)
+
+    return {
+      fontFamily: computedStyle.fontFamily,
+      fontStyle: computedStyle.fontStyle,
+      transform: computedStyle.transform,
     }
   })
 
   expect(infoButtonText).toBe('i')
   expect(infoButtonStyle.cursor).toBe('help')
   expect(infoButtonStyle.textTransform).toBe('none')
+  expect(infoButtonGlyphStyle.fontFamily).toContain('Georgia')
+  expect(infoButtonGlyphStyle.fontStyle).toBe('italic')
+  expect(infoButtonGlyphStyle.transform).not.toBe('none')
 
   await infoButton.hover()
-  const infoTooltipLeft = await page
-    .getByTestId('build-planner-info-tooltip')
-    .evaluate((element) => element.getBoundingClientRect().left)
+  const infoTooltip = page.getByTestId('build-planner-info-tooltip')
+  const infoTooltipLeft = await infoTooltip.evaluate(
+    (element) => element.getBoundingClientRect().left,
+  )
 
   expect(infoTooltipLeft).toBeGreaterThanOrEqual(0)
+  await expect(infoTooltip).toContainText(/picked perks start as must-have/i)
+  await expect(infoTooltip).toContainText(/marked with a chain/i)
+  await expect(infoTooltip).toContainText(/mark it optional/i)
+  await expect(infoTooltip).toContainText(/scored separately from must-have perks/i)
   await page.mouse.move(1, 1)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
 
@@ -1008,13 +1026,12 @@ test('resets perk result scrolling when selecting the same build planner perk gr
 
   await berserkerGroupCard.click({ position: exposedGroupCardPosition })
   await expect(page.getByLabel('Search perks')).toHaveValue('')
-  await expect(getSidebarPerkGroupButton(page, 'Berserker')).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  )
+  await expect(getSidebarPerkGroupButton(page, 'Berserker')).toHaveAttribute('aria-pressed', 'true')
   await expect(resultsList.getByRole('button', { name: 'Inspect Berserker Rage' })).toBeVisible()
   await expect
-    .poll(async () => resultsList.evaluate((element) => element.scrollHeight - element.clientHeight))
+    .poll(async () =>
+      resultsList.evaluate((element) => element.scrollHeight - element.clientHeight),
+    )
     .toBeGreaterThan(50)
 
   await resultsList.evaluate((element) => {
@@ -1313,7 +1330,13 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   )
 
   const pickedPerkMetrics = await ammunitionBundlesPickedPerkTile.evaluate((pickedPerkTile) => {
+    const pickedPerkActionPanel = pickedPerkTile.querySelector(
+      '[data-testid="planner-slot-action-panel"]',
+    )
     const pickedPerkName = pickedPerkTile.querySelector('[data-testid="planner-picked-perk-name"]')
+    const pickedPerkOptionalButton = pickedPerkTile.querySelector(
+      '[data-testid="planner-slot-optional-button"]',
+    )
     const pickedPerkRemoveButton = pickedPerkTile.querySelector(
       '[data-testid="planner-slot-remove-button"]',
     )
@@ -1323,7 +1346,9 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
     const buildPlanner = pickedPerkTile.closest('[aria-label="Build planner"]')
 
     if (
+      !(pickedPerkActionPanel instanceof HTMLElement) ||
       !(pickedPerkName instanceof HTMLElement) ||
+      !(pickedPerkOptionalButton instanceof HTMLElement) ||
       !(pickedPerkRemoveButton instanceof HTMLElement) ||
       !(pickedPerkInspectButton instanceof HTMLElement) ||
       !(buildPlanner instanceof HTMLElement)
@@ -1332,7 +1357,11 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
     }
 
     const pickedPerkTileRectangle = pickedPerkTile.getBoundingClientRect()
+    const pickedPerkActionPanelRectangle = pickedPerkActionPanel.getBoundingClientRect()
+    const pickedPerkActionPanelStyle = window.getComputedStyle(pickedPerkActionPanel)
     const pickedPerkInspectButtonRectangle = pickedPerkInspectButton.getBoundingClientRect()
+    const pickedPerkOptionalButtonRectangle = pickedPerkOptionalButton.getBoundingClientRect()
+    const pickedPerkOptionalButtonStyle = window.getComputedStyle(pickedPerkOptionalButton)
     const pickedPerkRemoveButtonRectangle = pickedPerkRemoveButton.getBoundingClientRect()
     const pickedPerkRemoveButtonStyle = window.getComputedStyle(pickedPerkRemoveButton)
     const computedStyle = window.getComputedStyle(pickedPerkTile)
@@ -1351,6 +1380,20 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
     )
 
     return {
+      actionPanelBottomOffset: Math.abs(
+        pickedPerkActionPanelRectangle.bottom - pickedPerkTileRectangle.bottom,
+      ),
+      actionPanelBorderRadius: pickedPerkActionPanelStyle.borderRadius,
+      actionPanelPosition: pickedPerkActionPanelStyle.position,
+      actionPanelRightOffset: Math.abs(
+        pickedPerkActionPanelRectangle.right - pickedPerkTileRectangle.right,
+      ),
+      actionPanelTopOffset: Math.abs(
+        pickedPerkActionPanelRectangle.top - pickedPerkTileRectangle.top,
+      ),
+      actionPanelTransitionProperty: pickedPerkActionPanelStyle.transitionProperty,
+      actionPanelVisibility: pickedPerkActionPanelStyle.visibility,
+      actionPanelWidthRatio: pickedPerkActionPanelRectangle.width / pickedPerkTileRectangle.width,
       nameHeight: pickedPerkNameRectangle.height,
       nameHorizontalOverflow: pickedPerkName.scrollWidth - pickedPerkName.clientWidth,
       nameHyphens: pickedPerkNameStyle.hyphens,
@@ -1363,18 +1406,30 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
       nameVerticalOverflow: pickedPerkName.scrollHeight - pickedPerkName.clientHeight,
       nameWhiteSpace: pickedPerkNameStyle.whiteSpace,
       nameWordBreak: pickedPerkNameStyle.wordBreak,
+      optionalBottomOffset: Math.abs(
+        pickedPerkOptionalButtonRectangle.bottom -
+          (pickedPerkTileRectangle.top + pickedPerkTileRectangle.height / 2),
+      ),
+      optionalBorderBottomWidth: pickedPerkOptionalButtonStyle.borderBottomWidth,
+      optionalBorderRadius: pickedPerkOptionalButtonStyle.borderRadius,
+      optionalHeightRatio:
+        pickedPerkOptionalButtonRectangle.height / pickedPerkTileRectangle.height,
+      optionalTopOffset: Math.abs(
+        pickedPerkOptionalButtonRectangle.top - pickedPerkTileRectangle.top,
+      ),
       pickedPerkSlotWidth: plannerPickedPerkSlotWidth * rootFontSize,
       removeBottomOffset: Math.abs(
         pickedPerkRemoveButtonRectangle.bottom - pickedPerkTileRectangle.bottom,
       ),
-      removeOpacity: pickedPerkRemoveButtonStyle.opacity,
-      removePosition: pickedPerkRemoveButtonStyle.position,
+      removeBorderRadius: pickedPerkRemoveButtonStyle.borderRadius,
       removeRightOffset: Math.abs(
         pickedPerkRemoveButtonRectangle.right - pickedPerkTileRectangle.right,
       ),
-      removeTopOffset: Math.abs(pickedPerkRemoveButtonRectangle.top - pickedPerkTileRectangle.top),
-      removeTransitionProperty: pickedPerkRemoveButtonStyle.transitionProperty,
-      removeVisibility: pickedPerkRemoveButtonStyle.visibility,
+      removeHeightRatio: pickedPerkRemoveButtonRectangle.height / pickedPerkTileRectangle.height,
+      removeTopOffset: Math.abs(
+        pickedPerkRemoveButtonRectangle.top -
+          (pickedPerkTileRectangle.top + pickedPerkTileRectangle.height / 2),
+      ),
       removeWidthRatio: pickedPerkRemoveButtonRectangle.width / pickedPerkTileRectangle.width,
       slotWidth: plannerSlotWidth * rootFontSize,
       inspectButtonWidth: pickedPerkInspectButtonRectangle.width,
@@ -1395,16 +1450,15 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
 
   await ammunitionBundlesPickedPerkTile.hover()
 
-  const pickedPerkRemoveButtonStyleAfterHover = await ammunitionBundlesRemoveButton.evaluate(
-    (pickedPerkRemoveButton) => {
-      const pickedPerkRemoveButtonStyle = window.getComputedStyle(pickedPerkRemoveButton)
+  const pickedPerkActionPanelStyleAfterHover = await ammunitionBundlesPickedPerkTile
+    .getByTestId('planner-slot-action-panel')
+    .evaluate((pickedPerkActionPanel) => {
+      const pickedPerkActionPanelStyle = window.getComputedStyle(pickedPerkActionPanel)
 
       return {
-        opacity: pickedPerkRemoveButtonStyle.opacity,
-        visibility: pickedPerkRemoveButtonStyle.visibility,
+        visibility: pickedPerkActionPanelStyle.visibility,
       }
-    },
-  )
+    })
   const pickedPerkNameSizeAfterHover = await ammunitionBundlesPickedPerkTile
     .getByTestId('planner-picked-perk-name')
     .evaluate((pickedPerkName) => {
@@ -1465,20 +1519,37 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   expect(pickedPerkMetrics!.nameHeight).toBeLessThanOrEqual(
     pickedPerkMetrics!.nameLineHeight * 2 + 1,
   )
-  expect(pickedPerkMetrics!.removePosition).toBe('absolute')
-  expect(pickedPerkMetrics!.removeOpacity).toBe('1')
-  expect(pickedPerkMetrics!.removeTransitionProperty).not.toContain('opacity')
-  expect(pickedPerkMetrics!.removeVisibility).toBe('hidden')
-  expect(pickedPerkRemoveButtonStyleAfterHover.opacity).toBe('1')
-  expect(pickedPerkRemoveButtonStyleAfterHover.visibility).toBe('visible')
+  expect(pickedPerkMetrics!.actionPanelPosition).toBe('absolute')
+  expect(pickedPerkMetrics!.actionPanelBorderRadius).toBe('0px')
+  expect(pickedPerkMetrics!.actionPanelTransitionProperty).not.toContain('opacity')
+  expect(pickedPerkMetrics!.actionPanelVisibility).toBe('hidden')
+  expect(pickedPerkActionPanelStyleAfterHover.visibility).toBe('visible')
+  expect(pickedPerkMetrics!.actionPanelRightOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.actionPanelTopOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.actionPanelBottomOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.actionPanelWidthRatio).toBeGreaterThanOrEqual(0.31)
+  expect(pickedPerkMetrics!.actionPanelWidthRatio).toBeLessThanOrEqual(0.33)
+  expect(pickedPerkMetrics!.optionalTopOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.optionalBottomOffset).toBeLessThanOrEqual(1)
+  expect(pickedPerkMetrics!.optionalBorderBottomWidth).toBe('1px')
+  expect(pickedPerkMetrics!.optionalBorderRadius).toBe('0px')
+  expect(pickedPerkMetrics!.optionalHeightRatio).toBeGreaterThanOrEqual(0.46)
+  expect(pickedPerkMetrics!.optionalHeightRatio).toBeLessThanOrEqual(0.52)
   expect(pickedPerkMetrics!.removeRightOffset).toBeLessThanOrEqual(1)
   expect(pickedPerkMetrics!.removeTopOffset).toBeLessThanOrEqual(1)
   expect(pickedPerkMetrics!.removeBottomOffset).toBeLessThanOrEqual(1)
-  expect(pickedPerkMetrics!.removeWidthRatio).toBeGreaterThanOrEqual(0.31)
+  expect(pickedPerkMetrics!.removeBorderRadius).toBe('0px')
+  expect(pickedPerkMetrics!.removeHeightRatio).toBeGreaterThanOrEqual(0.46)
+  expect(pickedPerkMetrics!.removeHeightRatio).toBeLessThanOrEqual(0.52)
+  expect(pickedPerkMetrics!.removeWidthRatio).toBeGreaterThanOrEqual(0.3)
   expect(pickedPerkMetrics!.removeWidthRatio).toBeLessThanOrEqual(0.33)
   expect(pickedPerkMetrics!.inspectButtonWidth).toBeGreaterThan(pickedPerkMetrics!.tileWidth * 0.95)
-  expect(Math.abs(pickedPerkNameSizeAfterHover.width - pickedPerkNameSizeBeforeHover.width)).toBeLessThanOrEqual(1)
-  expect(Math.abs(pickedPerkNameSizeAfterHover.height - pickedPerkNameSizeBeforeHover.height)).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(pickedPerkNameSizeAfterHover.width - pickedPerkNameSizeBeforeHover.width),
+  ).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(pickedPerkNameSizeAfterHover.height - pickedPerkNameSizeBeforeHover.height),
+  ).toBeLessThanOrEqual(1)
   expect(
     Math.abs(pickedPerkMetrics!.tileWidth - pickedPerkMetrics!.pickedPerkSlotWidth),
   ).toBeLessThanOrEqual(1)
@@ -1496,6 +1567,117 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   expect(plannerGroupCardMetrics!.groupNameHeight).toBeLessThanOrEqual(
     plannerGroupCardMetrics!.groupNameLineHeight + 1,
   )
+})
+
+test('marks picked perks as optional and separates them from must-have perks', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
+  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const buildPerksBar = getBuildPerksBar(page)
+  const clarityPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Clarity' })
+  const perfectFocusPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Perfect Focus' })
+
+  await expect(clarityPickedPerkTile).toHaveAttribute('data-requirement', 'must-have')
+  await expect(perfectFocusPickedPerkTile).toHaveAttribute('data-requirement', 'must-have')
+  await expect(clarityPickedPerkTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
+  await expect(
+    perfectFocusPickedPerkTile.getByTestId('planner-slot-requirement-chain'),
+  ).toHaveCount(1)
+  const mustHaveChainMetrics = await clarityPickedPerkTile.evaluate((pickedPerkTile) => {
+    const requirementChain = pickedPerkTile.querySelector(
+      '[data-testid="planner-slot-requirement-chain"]',
+    )
+
+    if (!(requirementChain instanceof HTMLElement)) {
+      return null
+    }
+
+    const tileRectangle = pickedPerkTile.getBoundingClientRect()
+    const chainRectangle = requirementChain.getBoundingClientRect()
+
+    return {
+      chainBottom: chainRectangle.bottom,
+      chainLeft: chainRectangle.left,
+      chainLinkCount: requirementChain.childElementCount,
+      chainRight: chainRectangle.right,
+      chainTop: chainRectangle.top,
+      tileBottom: tileRectangle.bottom,
+      tileLeft: tileRectangle.left,
+      tileWidth: tileRectangle.width,
+    }
+  })
+
+  expect(mustHaveChainMetrics).not.toBeNull()
+  expect(mustHaveChainMetrics!.chainLinkCount).toBe(7)
+  expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft)
+  expect(mustHaveChainMetrics!.chainRight).toBeGreaterThan(
+    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.35,
+  )
+  expect(mustHaveChainMetrics!.chainTop).toBeLessThan(mustHaveChainMetrics!.tileBottom)
+  expect(mustHaveChainMetrics!.chainBottom).toBeGreaterThan(mustHaveChainMetrics!.tileBottom)
+  await expect(buildPerksBar.getByTestId('planner-picked-perk-name')).toHaveText([
+    'Clarity',
+    'Perfect Focus',
+    'Student',
+  ])
+
+  const mustHaveBackgroundColor = await perfectFocusPickedPerkTile.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
+
+  await clarityPickedPerkTile.hover()
+  await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
+
+  const optionalClarityPickedPerkTile = buildPerksBar
+    .getByTestId('planner-slot-perk')
+    .filter({ hasText: 'Clarity' })
+
+  await expect(buildPerksBar.getByTestId('planner-picked-perk-name')).toHaveText([
+    'Perfect Focus',
+    'Student',
+    'Clarity',
+  ])
+  await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-requirement', 'optional')
+  await expect(
+    optionalClarityPickedPerkTile.getByTestId('planner-slot-requirement-chain'),
+  ).toHaveCount(0)
+  await expect(
+    optionalClarityPickedPerkTile.getByTestId('planner-slot-optional-button'),
+  ).toHaveAttribute('title', 'Mark Clarity as must-have')
+  await expect(page).toHaveURL(/optional=Clarity/u)
+
+  const optionalBackgroundColor = await optionalClarityPickedPerkTile.evaluate(
+    (element) => window.getComputedStyle(element).backgroundColor,
+  )
+
+  expect(optionalBackgroundColor).not.toBe(mustHaveBackgroundColor)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-label')
+      .filter({ hasText: 'Full build' })
+      .first(),
+  ).toBeVisible()
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-label')
+      .filter({ hasText: 'Must-have build' })
+      .first(),
+  ).toBeVisible()
+  await expect(
+    backgroundFitPanel
+      .getByTestId('background-fit-summary-metric')
+      .filter({ hasText: /Expected optional perks pickable\s*[\d.]+\/1/i })
+      .first(),
+  ).toBeVisible()
 })
 
 test('keeps picked perk word layout unchanged on hover', async ({ page }) => {

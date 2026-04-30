@@ -150,19 +150,9 @@
   }
 
   .backgroundFitMatchProbabilityBadge,
-  .backgroundFitMetricBadge,
   .backgroundFitDisambiguator,
   .backgroundFitRank {
     @include badge-surface;
-  }
-
-  .backgroundFitMetricBadge {
-    padding: var(--primitive-length-0-14rem) var(--space-md);
-    cursor: help;
-  }
-
-  .backgroundFitSummaryBadge {
-    max-width: 100%;
   }
 
   .backgroundFitCard {
@@ -235,9 +225,12 @@
 
   .backgroundFitCardHeaderMain,
   .backgroundFitCardHeading,
-  .backgroundFitCardTitleRow,
-  .backgroundFitAccordionSummaryRow {
+  .backgroundFitCardTitleRow {
     display: flex;
+    min-width: 0;
+  }
+
+  .backgroundFitAccordionSummaryRow {
     min-width: 0;
   }
 
@@ -315,10 +308,42 @@
     gap: var(--space-sm);
   }
 
-  .backgroundFitAccordionSummaryRow {
-    flex-wrap: wrap;
-    justify-content: flex-start;
-    gap: var(--space-sm);
+  .backgroundFitMetricTable {
+    display: grid;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .backgroundFitMetricRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
+    gap: var(--space-md);
+    align-items: baseline;
+    min-width: 0;
+    padding: var(--primitive-length-0-12rem) 0;
+    text-align: left;
+    cursor: help;
+
+    + .backgroundFitMetricRow {
+      border-top: var(--primitive-length-1px) solid var(--border-subtle);
+    }
+  }
+
+  .backgroundFitMetricValue {
+    color: var(--accent-soft);
+    font-size: var(--font-size-sm);
+    font-weight: 400;
+    line-height: 1.05;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  .backgroundFitMetricLabel {
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    text-align: left;
   }
 
   .backgroundFitAccordionChevronFrame {
@@ -451,8 +476,7 @@
     }
 
     .backgroundFitCardHeader,
-    .backgroundFitAccordionSummary,
-    .backgroundFitAccordionSummaryRow {
+    .backgroundFitAccordionSummary {
       gap: var(--space-2xs);
     }
 
@@ -490,10 +514,15 @@
       align-items: center;
     }
 
-    .backgroundFitMetricBadge {
-      padding: 0 var(--space-xs);
+    .backgroundFitMetricRow {
+      grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
+      gap: var(--space-xs);
+      padding: var(--primitive-length-0-08rem) 0;
+    }
+
+    .backgroundFitMetricValue,
+    .backgroundFitMetricLabel {
       font-size: var(--font-size-xs);
-      line-height: 1.1;
     }
 
     .backgroundFitTarget,

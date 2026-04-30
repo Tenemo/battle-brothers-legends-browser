@@ -25,6 +25,7 @@ describe('saved builds storage records', () => {
       createdAt: '2026-04-26T10:20:30.000Z',
       id: 'saved-build-1',
       name: 'Calm focus',
+      optionalPerkIds: [],
       pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
       referenceVersion: '19.3.17',
       schemaVersion: 1,
@@ -44,12 +45,37 @@ describe('saved builds storage records', () => {
     ).toThrow('A saved build needs at least one perk.')
   })
 
+  test('stores only optional perks that still belong to the saved build', () => {
+    const savedBuild = createSavedBuildRecord({
+      id: 'saved-build-optional',
+      name: 'Optional build',
+      now: new Date('2026-04-26T10:20:30.000Z'),
+      optionalPerkIds: [
+        'perk.legend_perfect_focus',
+        'perk.legend_unknown',
+        'perk.legend_perfect_focus',
+        ' ',
+      ],
+      pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus'],
+      referenceVersion: '19.3.17',
+    })
+
+    expect(savedBuild.optionalPerkIds).toEqual(['perk.legend_perfect_focus'])
+  })
+
   test('reads valid records defensively and normalizes recoverable fields', () => {
     expect(
       readSavedBuildRecord({
         createdAt: '2026-04-25T09:00:00.000Z',
         id: ' saved-build-2 ',
         name: '   ',
+        optionalPerkIds: [
+          'perk.legend_unknown',
+          'perk.legend_clarity',
+          'perk.legend_clarity',
+          12,
+          null,
+        ],
         pickedPerkIds: ['perk.legend_clarity', 'perk.legend_clarity', 12, null],
         referenceVersion: '19.3.17',
         schemaVersion: 1,
@@ -59,6 +85,7 @@ describe('saved builds storage records', () => {
       createdAt: '2026-04-25T09:00:00.000Z',
       id: 'saved-build-2',
       name: 'Untitled build',
+      optionalPerkIds: ['perk.legend_clarity'],
       pickedPerkIds: ['perk.legend_clarity'],
       referenceVersion: '19.3.17',
       schemaVersion: 1,

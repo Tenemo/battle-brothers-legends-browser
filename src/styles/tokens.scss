@@ -342,6 +342,10 @@ $primitive-rgb-colors: (
     --shadow-checkbox: inset 0 1px 0 rgb(255 255 255 / 0.04), 0 0 0 1px rgb(0 0 0 / 0.16);
     --shadow-checkbox-hover:
       inset 0 1px 0 rgb(255 255 255 / 0.05), 0 0 0 1px rgb(204 155 84 / 0.12);
+    --shadow-chain-drop: 0 2px 2px rgb(0 0 0 / 0.42);
+    --shadow-chain-link:
+      inset 0 1px 0 rgb(255 255 255 / 0.18), inset 0 -1px 0 rgb(0 0 0 / 0.72),
+      0 1px 2px rgb(0 0 0 / 0.48);
     --shadow-tooltip-indicator: 0 0 10px rgb(221 176 123 / 0.32);
     --shadow-selected-ring: inset 0 0 0 1px rgb(204 155 84 / 0.12);
     --shadow-planner-option: 0 0 0 1px rgb(221 176 123 / 0.18), 0 0 12px rgb(221 176 123 / 0.26);

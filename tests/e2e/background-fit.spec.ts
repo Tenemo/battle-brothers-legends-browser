@@ -47,7 +47,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
-  await expect(backgroundFitPanel.getByText(/Ranked by full build chance./i)).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Ranked by must-have build chance./i)).toBeVisible()
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }),
   ).toBeVisible()
@@ -67,41 +67,120 @@ test('shows the background fit panel for a picked build and keeps the shell view
       ),
     )
     .toBeGreaterThan(0)
-  await expect(apprenticeCard.getByText('Expected 1/1 perks pickable')).toBeVisible()
-  await expect(apprenticeCard.getByText('Guaranteed 1/1 perks pickable')).toBeVisible()
-  await expect(apprenticeCard.getByText('Best native roll covers 1/1')).toBeVisible()
+  const apprenticeSummaryMetrics = apprenticeCard.getByTestId('background-fit-summary-metric')
+
+  await expect(apprenticeCard.getByTestId('background-fit-summary-value')).toHaveText([
+    '100%',
+    '1/1',
+    '1/1',
+    '1/1',
+  ])
+  await expect(apprenticeCard.getByTestId('background-fit-summary-label')).toHaveText([
+    'Must-have build',
+    'Expected must-have perks pickable',
+    'Guaranteed must-have perks pickable',
+    'Best native roll covers total perks',
+  ])
   await expect(apprenticeCard.getByTestId('background-fit-accordion-summary-row')).toHaveCount(1)
   await expect(apprenticeCard).not.toHaveAttribute('title', /.+/)
-  const expectedBuildPerksBadge = apprenticeCard
-    .getByTestId('background-fit-summary-badge')
-    .filter({ hasText: 'Expected 1/1 perks pickable' })
-  const guaranteedBuildPerksBadge = apprenticeCard
-    .getByTestId('background-fit-summary-badge')
-    .filter({ hasText: 'Guaranteed 1/1 perks pickable' })
-  const bestNativeRollBadge = apprenticeCard
-    .getByTestId('background-fit-summary-badge')
-    .filter({ hasText: 'Best native roll covers 1/1' })
-  const fullBuildBadge = apprenticeCard
-    .getByTestId('background-fit-summary-badge')
-    .filter({ hasText: /Full build/i })
+  const metricTableGeometry = await apprenticeCard
+    .getByTestId('background-fit-summary-table')
+    .evaluate((metricTable) => {
+      const metricRows = [
+        ...metricTable.querySelectorAll('[data-testid="background-fit-summary-metric"]'),
+      ]
+      const metricLabels = [
+        ...metricTable.querySelectorAll('[data-testid="background-fit-summary-label"]'),
+      ]
+      const metricValues = [
+        ...metricTable.querySelectorAll('[data-testid="background-fit-summary-value"]'),
+      ]
+      const metricTableRectangle = metricTable.getBoundingClientRect()
+      const valueLeftOffsets = metricValues.map((metricValue) =>
+        Math.round(metricValue.getBoundingClientRect().left - metricTableRectangle.left),
+      )
+
+      return {
+        headerCount: metricTable.querySelectorAll('th, thead').length,
+        isLabelBeforeValue: metricRows.every((metricRow) => {
+          const metricLabel = metricRow.querySelector(
+            '[data-testid="background-fit-summary-label"]',
+          )
+          const metricValue = metricRow.querySelector(
+            '[data-testid="background-fit-summary-value"]',
+          )
+
+          return (
+            metricLabel !== null &&
+            metricValue !== null &&
+            (metricLabel.compareDocumentPosition(metricValue) &
+              Node.DOCUMENT_POSITION_FOLLOWING) !==
+              0
+          )
+        }),
+        labelTextAligns: metricLabels.map(
+          (metricLabel) => window.getComputedStyle(metricLabel).textAlign,
+        ),
+        rowBorderTopWidths: metricRows.map(
+          (metricRow) => window.getComputedStyle(metricRow).borderTopWidth,
+        ),
+        valueFontWeights: metricValues.map(
+          (metricValue) => window.getComputedStyle(metricValue).fontWeight,
+        ),
+        valueLeftOffsets,
+        valueTextAligns: metricValues.map(
+          (metricValue) => window.getComputedStyle(metricValue).textAlign,
+        ),
+      }
+    })
+  const expectedBuildPerksBadge = apprenticeSummaryMetrics.filter({
+    hasText: /Expected must-have perks pickable\s*1\/1/i,
+  })
+  const guaranteedBuildPerksBadge = apprenticeSummaryMetrics.filter({
+    hasText: /Guaranteed must-have perks pickable\s*1\/1/i,
+  })
+  const bestNativeRollBadge = apprenticeSummaryMetrics.filter({
+    hasText: /Best native roll covers total perks\s*1\/1/i,
+  })
+  const fullBuildBadges = apprenticeSummaryMetrics.filter({ hasText: /Full build/i })
+  const mustHaveBuildBadge = apprenticeSummaryMetrics
+    .filter({ hasText: /Must-have build\s*100%/i })
     .first()
 
-  await expect(fullBuildBadge).toHaveAttribute('title', /one legal native background roll/i)
-  await expect(fullBuildBadge).toHaveAttribute('title', /selected book and scroll filters/i)
-  await expect(fullBuildBadge).not.toHaveAttribute('title', /Full build:/i)
-  await expect(expectedBuildPerksBadge).toHaveAttribute('title', /average of 1 of 1 picked perks/i)
+  expect(metricTableGeometry.headerCount).toBe(0)
+  expect(metricTableGeometry.isLabelBeforeValue).toBe(true)
+  expect(metricTableGeometry.labelTextAligns).toEqual(['left', 'left', 'left', 'left'])
+  expect(metricTableGeometry.rowBorderTopWidths).toEqual(['0px', '1px', '1px', '1px'])
+  expect(metricTableGeometry.valueFontWeights.every((fontWeight) => Number(fontWeight) < 600)).toBe(
+    true,
+  )
+  expect(metricTableGeometry.valueLeftOffsets).toEqual([
+    metricTableGeometry.valueLeftOffsets[0],
+    metricTableGeometry.valueLeftOffsets[0],
+    metricTableGeometry.valueLeftOffsets[0],
+    metricTableGeometry.valueLeftOffsets[0],
+  ])
+  expect(metricTableGeometry.valueTextAligns).toEqual(['left', 'left', 'left', 'left'])
+  await expect(fullBuildBadges).toHaveCount(0)
+  await expect(mustHaveBuildBadge).toHaveAttribute('title', /one legal native background roll/i)
+  await expect(mustHaveBuildBadge).toHaveAttribute('title', /selected book and scroll filters/i)
+  await expect(mustHaveBuildBadge).not.toHaveAttribute('title', /Must-have build:/i)
+  await expect(expectedBuildPerksBadge).toHaveAttribute(
+    'title',
+    /average of 1 of 1 must-have picked perks/i,
+  )
   await expect(expectedBuildPerksBadge).toHaveAttribute('title', /Alternate perk-group placements/i)
   await expect(expectedBuildPerksBadge).not.toHaveAttribute(
     'title',
-    /Expected 1\/1 perks pickable/i,
+    /Expected 1\/1 must-have perks pickable/i,
   )
   await expect(expectedBuildPerksBadge).toHaveAttribute(
     'aria-label',
-    /Expected 1\/1 perks pickable/i,
+    /Expected 1\/1 must-have perks pickable/i,
   )
   await expect(expectedBuildPerksBadge).toHaveAttribute(
     'aria-label',
-    /average of 1 of 1 picked perks/i,
+    /average of 1 of 1 must-have picked perks/i,
   )
   await expect(guaranteedBuildPerksBadge).toHaveAttribute('title', /always has/i)
   await expect(guaranteedBuildPerksBadge).not.toHaveAttribute('title', /Guaranteed 1\/1/i)
@@ -282,14 +361,21 @@ test('filters the background fit list with the background search field', async (
     .first()
 
   await expect(backgroundSearchInput).toBeVisible()
-  await expect(oathtakerCard.getByText('Expected 0.3/1 perks pickable')).toBeVisible()
+  await expect(
+    oathtakerCard.getByTestId('background-fit-summary-value').filter({ hasText: '0.3/1' }),
+  ).toBeVisible()
+  await expect(
+    oathtakerCard
+      .getByTestId('background-fit-summary-label')
+      .filter({ hasText: 'Expected must-have perks pickable' }),
+  ).toBeVisible()
   const oathtakerExpectedBuildPerksBadge = oathtakerCard
-    .getByTestId('background-fit-summary-badge')
-    .filter({ hasText: 'Expected 0.3/1 perks pickable' })
+    .getByTestId('background-fit-summary-metric')
+    .filter({ hasText: /Expected must-have perks pickable\s*0\.3\/1/i })
 
   await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
     'title',
-    /average of 0\.3 of 1 picked perks/i,
+    /average of 0\.3 of 1 must-have picked perks/i,
   )
   await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
     'title',
@@ -297,11 +383,11 @@ test('filters the background fit list with the background search field', async (
   )
   await expect(oathtakerExpectedBuildPerksBadge).not.toHaveAttribute(
     'title',
-    /Expected 0\.3\/1 perks pickable/i,
+    /Expected 0\.3\/1 must-have perks pickable/i,
   )
   await expect(oathtakerExpectedBuildPerksBadge).toHaveAttribute(
     'aria-label',
-    /Expected 0\.3\/1 perks pickable/i,
+    /Expected 0\.3\/1 must-have perks pickable/i,
   )
   const oathtakerRankBeforeFiltering = await page.evaluate(() => {
     const oathtakerCard = [
@@ -673,7 +759,7 @@ test('keeps dense background names readable from a shared build url and starts c
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
-  await expect(backgroundFitPanel.getByText(/Ranked by full build chance./i)).toBeVisible()
+  await expect(backgroundFitPanel.getByText(/Ranked by must-have build chance./i)).toBeVisible()
 
   const denseBuildBackgroundCard = backgroundFitPanel
     .getByTestId('background-fit-card')

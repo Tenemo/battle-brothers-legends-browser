@@ -6,6 +6,7 @@ export type BuildPlannerUrlPerkGroupOption = {
 }
 
 export type BuildPlannerUrlState = {
+  optionalPerkIds: string[]
   pickedPerkIds: string[]
   query: string
   selectedCategoryNames: string[]
@@ -41,6 +42,7 @@ const categoryParamName = 'category'
 const ancientScrollPerkGroupsParamName = 'ancient-scroll-perk-groups'
 const backgroundStudyBookParamName = 'background-book'
 const backgroundStudyScrollParamName = 'background-scroll'
+const optionalPerksParamName = 'optional'
 const secondBackgroundStudyScrollParamName = 'background-two-scrolls'
 const originBackgroundsParamName = 'origin-backgrounds'
 const originPerkGroupsParamName = 'origin-perk-groups'
@@ -163,8 +165,27 @@ function appendGroupedQueryEntry(entries: string[], key: string, values: string[
   )
 }
 
+function createPerkUrlLabels(
+  perkIds: string[],
+  perksById: Map<string, LegendsPerkRecord>,
+  perkNameCountByLookupValue: Map<string, number>,
+): string[] {
+  const perkLabels: string[] = []
+
+  for (const perkId of perkIds) {
+    const perk = perksById.get(perkId)
+
+    if (perk) {
+      perkLabels.push(createPerkUrlLabel(perk, perkNameCountByLookupValue))
+    }
+  }
+
+  return perkLabels
+}
+
 function createDefaultUrlState(): BuildPlannerUrlState {
   return {
+    optionalPerkIds: [],
     pickedPerkIds: [],
     query: '',
     selectedCategoryNames: [],
@@ -224,6 +245,8 @@ export function readBuildPlannerUrlState(
   const selectedCategoryNameSet = new Set<string>()
   const pickedPerkIdSet = new Set<string>()
   const pickedPerkIds: string[] = []
+  const optionalPerkIdSet = new Set<string>()
+  const optionalPerkIds: string[] = []
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   let selectedPerkGroupCategoryName: string | null = null
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
@@ -303,7 +326,20 @@ export function readBuildPlannerUrlState(
     pickedPerkIds.push(perkId)
   }
 
+  for (const optionalValue of getGroupedParamValues(params, optionalPerksParamName)) {
+    const lookupValue = normalizeLookupValue(optionalValue)
+    const perkId = perkIdByLookupValue.get(lookupValue)
+
+    if (!perkId || !pickedPerkIdSet.has(perkId) || optionalPerkIdSet.has(perkId)) {
+      continue
+    }
+
+    optionalPerkIdSet.add(perkId)
+    optionalPerkIds.push(perkId)
+  }
+
   return {
+    optionalPerkIds,
     pickedPerkIds,
     query,
     selectedCategoryNames: options.availableCategoryNames.filter((categoryName) =>
@@ -396,17 +432,20 @@ export function createBuildPlannerUrlSearch(
   }
 
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
-  const pickedPerkLabels: string[] = []
-
-  for (const pickedPerkId of urlState.pickedPerkIds) {
-    const perk = options.perksById.get(pickedPerkId)
-
-    if (perk) {
-      pickedPerkLabels.push(createPerkUrlLabel(perk, perkNameCountByLookupValue))
-    }
-  }
+  const pickedPerkIdSet = new Set(urlState.pickedPerkIds)
+  const pickedPerkLabels = createPerkUrlLabels(
+    urlState.pickedPerkIds,
+    options.perksById,
+    perkNameCountByLookupValue,
+  )
+  const optionalPerkLabels = createPerkUrlLabels(
+    urlState.optionalPerkIds.filter((optionalPerkId) => pickedPerkIdSet.has(optionalPerkId)),
+    options.perksById,
+    perkNameCountByLookupValue,
+  )
 
   appendGroupedQueryEntry(entries, buildParamName, pickedPerkLabels)
+  appendGroupedQueryEntry(entries, optionalPerksParamName, optionalPerkLabels)
 
   const searchString = entries.join('&')
   return searchString ? `?${searchString}` : ''
@@ -415,9 +454,11 @@ export function createBuildPlannerUrlSearch(
 export function createSharedBuildUrlSearch(
   pickedPerkIds: string[],
   perksById: Map<string, LegendsPerkRecord>,
+  optionalPerkIds: string[] = [],
 ): string {
   return createBuildPlannerUrlSearch(
     {
+      optionalPerkIds,
       pickedPerkIds,
       query: '',
       selectedCategoryNames: [],

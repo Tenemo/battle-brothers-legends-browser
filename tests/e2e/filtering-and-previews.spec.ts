@@ -103,6 +103,31 @@ test('keeps only one selected perk group when another group is selected', async 
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
 })
 
+test('resets category drilldown when typing a perk search', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await enableCategory(page, 'Traits')
+  await selectPerkGroup(page, 'Calm')
+
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
+
+  await searchPerks(page, 'Axe')
+
+  await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
+  await expect(page.getByRole('button', { name: 'Reset all category filters' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
+  await expect(
+    getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
+  ).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+})
+
 test('resets the perk result scroll when category filters change', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
 

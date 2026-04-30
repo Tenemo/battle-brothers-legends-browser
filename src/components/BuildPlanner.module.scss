@@ -139,6 +139,19 @@
     }
   }
 
+  .buildPlannerInfoGlyph {
+    display: block;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: var(--font-size-xl);
+    font-style: italic;
+    font-weight: 700;
+    line-height: 1;
+    transform: translate(
+      var(--primitive-length-negative-0-02rem),
+      var(--primitive-length-negative-0-05rem)
+    );
+  }
+
   .buildPlannerInfoTooltip,
   .buildPerkTooltip {
     @include tooltip-surface;
@@ -399,7 +412,7 @@
     padding: 0;
     color: inherit;
     isolation: isolate;
-    overflow: hidden;
+    overflow: visible;
 
     @include surface-transition;
 
@@ -440,9 +453,19 @@
 
     &:hover,
     &:focus-within {
-      .plannerSlotRemoveButton {
+      .plannerSlotActionPanel {
         visibility: visible;
         pointer-events: auto;
+      }
+    }
+
+    &[data-requirement='optional'] {
+      border-color: var(--border-muted);
+      background: var(--primitive-color-rgb-204-155-84-alpha-0-08);
+      color: var(--text-secondary);
+
+      .plannerPickedPerkName {
+        color: var(--text-secondary);
       }
     }
   }
@@ -469,24 +492,93 @@
     }
   }
 
-  .plannerSlotRemoveButton {
-    appearance: none;
+  .plannerSlotRequirementChain {
+    position: absolute;
+    bottom: var(--primitive-length-negative-0-16rem);
+    left: var(--primitive-length-negative-0-9rem);
+    z-index: var(--z-index-raised);
+    display: inline-flex;
+    align-items: center;
+    width: max-content;
+    transform: rotate(-26deg);
+    transform-origin: left center;
+    filter: drop-shadow(var(--shadow-chain-drop));
+    pointer-events: none;
+  }
+
+  .plannerSlotRequirementLink {
+    position: relative;
+    display: block;
+    flex: 0 0 auto;
+    width: var(--primitive-length-1-35rem);
+    height: var(--primitive-length-0-68rem);
+    margin-bottom: var(--primitive-length-0-24rem);
+    margin-left: var(--primitive-length-negative-0-45rem);
+    border: var(--primitive-length-0-18rem) solid var(--primitive-color-rgb-14-11-10-alpha-0-88);
+    border-top-color: var(--primitive-color-rgb-53-39-30-alpha-0-95);
+    border-right-color: var(--primitive-color-rgb-28-23-20-alpha-0-95);
+    border-radius: var(--radius-pill);
+    background: transparent;
+    box-shadow: var(--shadow-chain-link);
+    transform: rotate(34deg);
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: var(--primitive-length-0-08rem);
+      border: var(--primitive-length-1px) solid var(--primitive-color-rgb-255-255-255-alpha-0-06);
+      border-radius: inherit;
+      pointer-events: none;
+    }
+
+    &:nth-child(even) {
+      z-index: var(--z-index-base);
+      margin-top: var(--primitive-length-0-34rem);
+      margin-bottom: 0;
+      transform: rotate(-34deg);
+    }
+
+    &:nth-child(odd) {
+      z-index: var(--z-index-raised);
+    }
+  }
+
+  .plannerSlotActionIcon {
+    @include size(var(--icon-size-xs));
+
+    stroke-width: 2.2;
+  }
+
+  .plannerSlotActionPanel {
     position: absolute;
     inset: 0 0 0 auto;
     z-index: var(--z-index-interactive);
+    display: grid;
+    grid-template-rows: 1fr 1fr;
+    width: 32%;
+    border-left: var(--primitive-length-1px) solid var(--border-overlay);
+    border-radius: 0;
+    overflow: hidden;
+    box-shadow: var(--shadow-selected-ring);
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  .plannerSlotOverlayButton {
+    appearance: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 32%;
     border: 0;
-    border-left: var(--primitive-length-1px) solid var(--border-overlay);
-    border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+    border-radius: 0;
     padding: 0;
     background: var(--surface-overlay-raised);
     color: var(--text-primary);
     cursor: pointer;
-    visibility: hidden;
-    pointer-events: none;
     transition:
       background-color var(--motion-fast-duration) ease,
       color var(--motion-fast-duration) ease;
@@ -502,8 +594,8 @@
     }
   }
 
-  .plannerSlotPerk .plannerSlotRemoveButton {
-    box-shadow: var(--shadow-selected-ring);
+  .plannerSlotOptionalButton {
+    border-bottom: var(--primitive-length-1px) solid var(--border-overlay);
   }
 
   .plannerSlotPlaceholder {

@@ -92,6 +92,7 @@ const perkGroupOptionsByCategory = new Map([
 ])
 const perksById = new Map(samplePerks.map((perk) => [perk.id, perk]))
 const defaultBackgroundStudyUrlState = {
+  optionalPerkIds: [],
   shouldAllowBackgroundStudyBook: true,
   shouldAllowBackgroundStudyScroll: true,
   shouldAllowSecondBackgroundStudyScroll: false,
@@ -146,6 +147,56 @@ describe('build planner url state', () => {
     expect(search).toBe(
       '?search=Perfect+Focus&category=Traits,Magic&group-traits=Calm&build=Clarity,Perfect+Focus',
     )
+  })
+
+  test('serializes and restores optional picked perks', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        pickedPerkIds: [
+          'perk.legend_clarity',
+          'perk.legend_perfect_focus',
+          'perk.legend_peaceable',
+        ],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
+        optionalPerkIds: ['perk.legend_perfect_focus', 'perk.legend_peaceable'],
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?build=Clarity,Perfect+Focus,Peaceable&optional=Perfect+Focus,Peaceable')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }),
+    ).toMatchObject({
+      optionalPerkIds: ['perk.legend_perfect_focus', 'perk.legend_peaceable'],
+      pickedPerkIds: ['perk.legend_clarity', 'perk.legend_perfect_focus', 'perk.legend_peaceable'],
+    })
+  })
+
+  test('ignores optional perks that are not in the current build', () => {
+    expect(
+      readBuildPlannerUrlState('?build=Clarity&optional=Perfect+Focus,Clarity,Missing,Clarity', {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }),
+    ).toMatchObject({
+      optionalPerkIds: ['perk.legend_clarity'],
+      pickedPerkIds: ['perk.legend_clarity'],
+    })
   })
 
   test('parses only one grouped readable perk group param', () => {
@@ -286,6 +337,7 @@ describe('build planner url state', () => {
   test('serializes and restores non-default background study resource filters', () => {
     const search = createBuildPlannerUrlSearch(
       {
+        optionalPerkIds: [],
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
@@ -321,6 +373,7 @@ describe('build planner url state', () => {
   test('normalizes impossible background study scroll combinations', () => {
     const search = createBuildPlannerUrlSearch(
       {
+        optionalPerkIds: [],
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],

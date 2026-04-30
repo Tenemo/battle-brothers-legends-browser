@@ -1,0 +1,56 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" width="840" height="840" viewBox="0 0 840 840" role="img" aria-label="Interlinked chain variant 5">
+  <defs>
+    <linearGradient id="metal" x1="-30" y1="-26" x2="34" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff9ef"/>
+      <stop offset="0.14" stop-color="#8a8178"/>
+      <stop offset="0.45" stop-color="#272422"/>
+      <stop offset="0.74" stop-color="#c3b8ac"/>
+      <stop offset="1" stop-color="#0b0a09"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-45%" y="-45%" width="190%" height="190%">
+      <feDropShadow dx="0" dy="8" stdDeviation="5" flood-color="#000000" flood-opacity="0.5"/>
+    </filter>
+    <g id="link-back-top">
+      <path d="M -45 0 A 45 18 0 0 1 45 0" fill="none" stroke="#070606" stroke-width="16" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 1 45 0" fill="none" stroke="url(#metal)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 1 45 0" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" opacity="0.18"/>
+    </g>
+    <g id="link-back-bottom">
+      <path d="M -45 0 A 45 18 0 0 0 45 0" fill="none" stroke="#070606" stroke-width="16" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 0 45 0" fill="none" stroke="url(#metal)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 0 45 0" fill="none" stroke="#000000" stroke-width="3.8" stroke-linecap="round" opacity="0.28"/>
+    </g>
+    <g id="link-front-top">
+      <path d="M -45 0 A 45 18 0 0 1 45 0" fill="none" stroke="#070606" stroke-width="16" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 1 45 0" fill="none" stroke="url(#metal)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 1 45 0" fill="none" stroke="#ffffff" stroke-width="2.8" stroke-linecap="round" opacity="0.34"/>
+    </g>
+    <g id="link-front-bottom">
+      <path d="M -45 0 A 45 18 0 0 0 45 0" fill="none" stroke="#070606" stroke-width="16" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 0 45 0" fill="none" stroke="url(#metal)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M -45 0 A 45 18 0 0 0 45 0" fill="none" stroke="#000000" stroke-width="3.8" stroke-linecap="round" opacity="0.42"/>
+    </g>
+  </defs>
+  <g transform="scale(2)">
+    <g filter="url(#soft-shadow)" transform="translate(210 210) rotate(-135) translate(-316 -88)">
+      <g>
+      <use href="#link-back-bottom" transform="translate(133 112) rotate(30) scale(1.03)"/>
+      <use href="#link-back-top" transform="translate(192 86) rotate(-25) scale(1)"/>
+      <use href="#link-back-bottom" transform="translate(254 69) rotate(20) scale(0.98)"/>
+      <use href="#link-back-top" transform="translate(318 63) rotate(-13) scale(0.97)"/>
+      <use href="#link-back-bottom" transform="translate(382 67) rotate(8) scale(0.99)"/>
+      <use href="#link-back-top" transform="translate(444 85) rotate(-18) scale(1.03)"/>
+      <use href="#link-back-bottom" transform="translate(501 111) rotate(27) scale(1.07)"/>
+      </g>
+      <g>
+      <use href="#link-front-top" transform="translate(133 112) rotate(30) scale(1.03)"/>
+      <use href="#link-front-bottom" transform="translate(192 86) rotate(-25) scale(1)"/>
+      <use href="#link-front-top" transform="translate(254 69) rotate(20) scale(0.98)"/>
+      <use href="#link-front-bottom" transform="translate(318 63) rotate(-13) scale(0.97)"/>
+      <use href="#link-front-top" transform="translate(382 67) rotate(8) scale(0.99)"/>
+      <use href="#link-front-bottom" transform="translate(444 85) rotate(-18) scale(1.03)"/>
+      <use href="#link-front-top" transform="translate(501 111) rotate(27) scale(1.07)"/>
+      </g>
+    </g>
+  </g>
+</svg>

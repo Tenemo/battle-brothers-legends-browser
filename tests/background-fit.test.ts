@@ -8,7 +8,9 @@ import {
 import legendsPerksDatasetJson from '../src/data/legends-perks.json'
 import {
   formatBackgroundFitBestNativeRollLabel,
+  formatBackgroundFitBuildReachabilityLabel,
   formatBackgroundFitExpectedBuildPerksLabel,
+  formatBackgroundFitGuaranteedPerksLabel,
   formatBackgroundFitProbabilityLabel,
   formatBackgroundSourceProbabilityLabel,
 } from '../src/lib/perk-display'
@@ -361,10 +363,21 @@ describe('background fit', () => {
     expect(formatBackgroundFitExpectedBuildPerksLabel(0.25, 1)).toBe(
       'Expected 0.3/1 perks pickable',
     )
+    expect(formatBackgroundFitExpectedBuildPerksLabel(2, 3, 'must-have perks')).toBe(
+      'Expected 2/3 must-have perks pickable',
+    )
+    expect(formatBackgroundFitGuaranteedPerksLabel(1, 3, 'optional perks')).toBe(
+      'Guaranteed 1/3 optional perks pickable',
+    )
+    expect(formatBackgroundFitBuildReachabilityLabel(0.25, 'Must-have build')).toBe(
+      'Must-have build 25%',
+    )
   })
 
   test('formats exact best native roll coverage separately from pickable overlap', () => {
-    expect(formatBackgroundFitBestNativeRollLabel(2, 4)).toBe('Best native roll covers 2/4')
+    expect(formatBackgroundFitBestNativeRollLabel(2, 4)).toBe(
+      'Best native roll covers 2/4 total perks',
+    )
   })
 
   test('formats background source probabilities without internal minimum labels', () => {
@@ -1155,6 +1168,74 @@ describe('background fit', () => {
     )
   })
 
+  test('filters backgrounds by must-have perks while scoring optional perks separately', () => {
+    const berserkerPerk = createPerk({
+      id: 'perk.magic.actual_berserker',
+      perkConstName: 'LegendActualBerserker',
+      perkName: 'Actual berserker',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+          perkGroupName: 'Berserker',
+        }),
+      ],
+    })
+    const evocationPerk = createPerk({
+      id: 'perk.magic.actual_evocation',
+      perkConstName: 'LegendActualEvocation',
+      perkName: 'Actual evocation',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'EvocationMagicTree',
+          perkGroupName: 'Evocation',
+        }),
+      ],
+    })
+    const calmOnlyBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_only',
+      backgroundName: 'Calm only',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [calmOnlyBackground],
+      perks: [...samplePerks, berserkerPerk, evocationPerk],
+    })
+
+    expect(
+      engine.getBackgroundFitView(
+        [samplePerks[4], berserkerPerk, evocationPerk],
+        defaultStudyResources,
+      ).rankedBackgroundFits,
+    ).toEqual([])
+
+    expect(
+      engine.getBackgroundFitView(
+        [samplePerks[4], berserkerPerk, evocationPerk],
+        defaultStudyResources,
+        {
+          optionalPickedPerkIds: new Set([berserkerPerk.id, evocationPerk.id]),
+        },
+      ).rankedBackgroundFits[0],
+    ).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.calm_only',
+        buildReachabilityProbability: 1,
+        expectedCoveredMustHavePerkCount: 1,
+        expectedCoveredOptionalPerkCount: 0,
+        fullBuildReachabilityProbability: 0,
+        guaranteedCoveredMustHavePerkCount: 1,
+        guaranteedCoveredOptionalPerkCount: 0,
+        maximumNativeCoveredPickedPerkCount: 1,
+        mustHaveBuildReachabilityProbability: 1,
+      }),
+    )
+  })
+
   test('calculates small non-zero full build chances for dense real background fits', () => {
     const denseBuildPerkNames = [
       'Student',
@@ -1185,9 +1266,7 @@ describe('background fit', () => {
       'Tactical Maneuvers',
       'Perfect Focus',
     ]
-    const perksByName = new Map(
-      legendsPerksDataset.perks.map((perk) => [perk.perkName, perk]),
-    )
+    const perksByName = new Map(legendsPerksDataset.perks.map((perk) => [perk.perkName, perk]))
     const denseBuildPerks = denseBuildPerkNames.map((perkName) => {
       const perk = perksByName.get(perkName)
 
@@ -1201,13 +1280,9 @@ describe('background fit', () => {
     const backgroundsByName = new Map(
       engine
         .getBackgroundFitView(denseBuildPerks, defaultStudyResources)
-        .rankedBackgroundFits.map((backgroundFit) => [
-          backgroundFit.backgroundName,
-          backgroundFit,
-        ]),
+        .rankedBackgroundFits.map((backgroundFit) => [backgroundFit.backgroundName, backgroundFit]),
     )
-    const bastardBuildChance =
-      backgroundsByName.get('Bastard')?.buildReachabilityProbability ?? 0
+    const bastardBuildChance = backgroundsByName.get('Bastard')?.buildReachabilityProbability ?? 0
     const footSoldierBuildChance =
       backgroundsByName.get('Foot Soldier')?.buildReachabilityProbability ?? 0
 

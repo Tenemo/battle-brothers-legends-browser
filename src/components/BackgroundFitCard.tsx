@@ -1,8 +1,7 @@
-import {
-  getGuaranteedCoveredPickedPerkCount,
-  type BackgroundFitMatch,
-  type BuildTargetPerkGroup,
-  type RankedBackgroundFit,
+import type {
+  BackgroundFitMatch,
+  BuildTargetPerkGroup,
+  RankedBackgroundFit,
 } from '../lib/background-fit'
 import {
   formatBackgroundFitExpectedBuildPerksLabel,
@@ -27,29 +26,34 @@ function getBackgroundFitBestNativeRollSummaryCopy(
   maximumNativeCoveredPickedPerkCount: number,
   pickedPerkCount: number,
 ): string {
-  return `One legal native background roll can cover ${maximumNativeCoveredPickedPerkCount} of ${pickedPerkCount} picked perks. Books and scrolls are not included.`
+  return `One legal native background roll can cover ${maximumNativeCoveredPickedPerkCount} of ${pickedPerkCount} total picked perks. Books and scrolls are not included.`
 }
 
 function getBackgroundFitGuaranteedPerksSummaryCopy(
   guaranteedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel: string,
 ): string {
-  return `Groups this background always has cover ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} picked perks. Optional rolls, books, and scrolls are not included.`
+  return `Groups this background always has cover ${guaranteedCoveredPickedPerkCount} of ${pickedPerkCount} ${scopeLabel}. Optional rolls, books, and scrolls are not included.`
 }
 
 function getBackgroundFitExpectedBuildPerksSummaryCopy(
   expectedCoveredPickedPerkCount: number,
   pickedPerkCount: number,
+  scopeLabel: string,
 ): string {
   return `After dynamic background rolls, this background covers an average of ${formatBackgroundFitScoreLabel(
     expectedCoveredPickedPerkCount,
-  )} of ${pickedPerkCount} picked perks. Alternate perk-group placements count once per picked perk. Books and scrolls are not included.`
+  )} of ${pickedPerkCount} ${scopeLabel}. Alternate perk-group placements count once per picked perk. Books and scrolls are not included.`
 }
 
-function getBackgroundFitBuildReachabilitySummaryCopy(probability: number): string {
+function getBackgroundFitBuildReachabilitySummaryCopy(
+  probability: number,
+  scopeLabel: string,
+): string {
   return `One legal native background roll plus the selected book and scroll filters can cover every picked perk with a ${formatBackgroundFitProbabilityLabel(
     probability,
-  )} chance.`
+  )} chance for ${scopeLabel}.`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -168,25 +172,62 @@ function BackgroundFitMatchRow({
   )
 }
 
-function BackgroundFitMetricBadge({
-  className = '',
-  label,
-  tooltip,
-}: {
-  className?: string
+type BackgroundFitMetric = {
+  accessibleLabel: string
   label: string
   tooltip: string
-}) {
+  value: string
+}
+
+function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: BackgroundFitMetric) {
   return (
-    <span
-      aria-label={`${label}. ${tooltip}`}
-      className={joinClassNames(styles.backgroundFitMetricBadge, className)}
-      data-testid="background-fit-summary-badge"
+    <div
+      aria-label={`${accessibleLabel}. ${tooltip}`}
+      className={styles.backgroundFitMetricRow}
+      data-testid="background-fit-summary-metric"
+      role="listitem"
       title={tooltip}
     >
-      {label}
-    </span>
+      <span className={styles.backgroundFitMetricLabel} data-testid="background-fit-summary-label">
+        {label}
+      </span>
+      <span className={styles.backgroundFitMetricValue} data-testid="background-fit-summary-value">
+        {value}
+      </span>
+    </div>
   )
+}
+
+function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMetric[] }) {
+  return (
+    <div
+      aria-label="Background fit summary"
+      className={styles.backgroundFitMetricTable}
+      data-testid="background-fit-summary-table"
+      role="list"
+    >
+      {metrics.map((metric) => (
+        <BackgroundFitMetricRow
+          accessibleLabel={metric.accessibleLabel}
+          key={metric.accessibleLabel}
+          label={metric.label}
+          tooltip={metric.tooltip}
+          value={metric.value}
+        />
+      ))}
+    </div>
+  )
+}
+
+function createRatioValue(coveredPerkCount: number, pickedPerkCount: number): string {
+  return `${coveredPerkCount}/${pickedPerkCount}`
+}
+
+function createExpectedRatioValue(
+  expectedCoveredPickedPerkCount: number,
+  pickedPerkCount: number,
+): string {
+  return `${formatBackgroundFitScoreLabel(expectedCoveredPickedPerkCount)}/${pickedPerkCount}`
 }
 
 export function BackgroundFitCard({
@@ -207,6 +248,8 @@ export function BackgroundFitCard({
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
   onToggle,
+  mustHavePickedPerkCount,
+  optionalPickedPerkCount,
   pickedPerkCount,
   query,
   rank,
@@ -238,6 +281,8 @@ export function BackgroundFitCard({
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onToggle: (backgroundFitKey: string) => void
+  mustHavePickedPerkCount: number
+  optionalPickedPerkCount: number
   pickedPerkCount: number
   query: string
   rank: number
@@ -246,12 +291,135 @@ export function BackgroundFitCard({
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
   const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
-  const guaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
-    backgroundFit.matches,
-  )
   const isExpanded = expandedBackgroundFitKey === backgroundFitKey
   const accordionButtonId = `background-fit-card-button-${rank}`
   const accordionPanelId = `background-fit-card-panel-${rank}`
+  const summaryMetrics = [
+    ...(optionalPickedPerkCount > 0 && backgroundFit.fullBuildReachabilityProbability !== null
+      ? [
+          {
+            accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
+              backgroundFit.fullBuildReachabilityProbability,
+              'Full build',
+            ),
+            label: 'Full build',
+            tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
+              backgroundFit.fullBuildReachabilityProbability,
+              'the full build, including optional perks',
+            ),
+            value: formatBackgroundFitProbabilityLabel(
+              backgroundFit.fullBuildReachabilityProbability,
+            ),
+          },
+        ]
+      : []),
+    ...(backgroundFit.mustHaveBuildReachabilityProbability === null
+      ? []
+      : [
+          {
+            accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
+              backgroundFit.mustHaveBuildReachabilityProbability,
+              'Must-have build',
+            ),
+            label: 'Must-have build',
+            tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
+              backgroundFit.mustHaveBuildReachabilityProbability,
+              'must-have perks',
+            ),
+            value: formatBackgroundFitProbabilityLabel(
+              backgroundFit.mustHaveBuildReachabilityProbability,
+            ),
+          },
+        ]),
+    {
+      accessibleLabel: formatBackgroundFitExpectedBuildPerksLabel(
+        backgroundFit.expectedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have perks',
+      ),
+      label: 'Expected must-have perks pickable',
+      tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
+        backgroundFit.expectedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have picked perks',
+      ),
+      value: createExpectedRatioValue(
+        backgroundFit.expectedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+      ),
+    },
+    ...(optionalPickedPerkCount > 0
+      ? [
+          {
+            accessibleLabel: formatBackgroundFitExpectedBuildPerksLabel(
+              backgroundFit.expectedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional perks',
+            ),
+            label: 'Expected optional perks pickable',
+            tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
+              backgroundFit.expectedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional picked perks',
+            ),
+            value: createExpectedRatioValue(
+              backgroundFit.expectedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+            ),
+          },
+        ]
+      : []),
+    {
+      accessibleLabel: formatBackgroundFitGuaranteedPerksLabel(
+        backgroundFit.guaranteedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have perks',
+      ),
+      label: 'Guaranteed must-have perks pickable',
+      tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
+        backgroundFit.guaranteedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+        'must-have picked perks',
+      ),
+      value: createRatioValue(
+        backgroundFit.guaranteedCoveredMustHavePerkCount,
+        mustHavePickedPerkCount,
+      ),
+    },
+    ...(optionalPickedPerkCount > 0
+      ? [
+          {
+            accessibleLabel: formatBackgroundFitGuaranteedPerksLabel(
+              backgroundFit.guaranteedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional perks',
+            ),
+            label: 'Guaranteed optional perks pickable',
+            tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
+              backgroundFit.guaranteedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+              'optional picked perks',
+            ),
+            value: createRatioValue(
+              backgroundFit.guaranteedCoveredOptionalPerkCount,
+              optionalPickedPerkCount,
+            ),
+          },
+        ]
+      : []),
+    {
+      accessibleLabel: formatBackgroundFitBestNativeRollLabel(
+        backgroundFit.maximumNativeCoveredPickedPerkCount,
+        pickedPerkCount,
+      ),
+      label: 'Best native roll covers total perks',
+      tooltip: getBackgroundFitBestNativeRollSummaryCopy(
+        backgroundFit.maximumNativeCoveredPickedPerkCount,
+        pickedPerkCount,
+      ),
+      value: createRatioValue(backgroundFit.maximumNativeCoveredPickedPerkCount, pickedPerkCount),
+    },
+  ]
 
   return (
     <article
@@ -324,50 +492,7 @@ export function BackgroundFitCard({
               className={styles.backgroundFitAccordionSummaryRow}
               data-testid="background-fit-accordion-summary-row"
             >
-              {backgroundFit.buildReachabilityProbability === null ? null : (
-                <BackgroundFitMetricBadge
-                  className={styles.backgroundFitSummaryBadge}
-                  label={formatBackgroundFitBuildReachabilityLabel(
-                    backgroundFit.buildReachabilityProbability,
-                  )}
-                  tooltip={getBackgroundFitBuildReachabilitySummaryCopy(
-                    backgroundFit.buildReachabilityProbability,
-                  )}
-                />
-              )}
-              <BackgroundFitMetricBadge
-                className={styles.backgroundFitSummaryBadge}
-                label={formatBackgroundFitExpectedBuildPerksLabel(
-                  backgroundFit.expectedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-                tooltip={getBackgroundFitExpectedBuildPerksSummaryCopy(
-                  backgroundFit.expectedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                className={styles.backgroundFitSummaryBadge}
-                label={formatBackgroundFitGuaranteedPerksLabel(
-                  guaranteedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-                tooltip={getBackgroundFitGuaranteedPerksSummaryCopy(
-                  guaranteedCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-              />
-              <BackgroundFitMetricBadge
-                className={styles.backgroundFitSummaryBadge}
-                label={formatBackgroundFitBestNativeRollLabel(
-                  backgroundFit.maximumNativeCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-                tooltip={getBackgroundFitBestNativeRollSummaryCopy(
-                  backgroundFit.maximumNativeCoveredPickedPerkCount,
-                  pickedPerkCount,
-                )}
-              />
+              <BackgroundFitMetricTable metrics={summaryMetrics} />
             </div>
           </div>
         </div>

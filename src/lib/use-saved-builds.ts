@@ -18,6 +18,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
   deleteSavedBuild: (savedBuildId: string) => Promise<void>
   isSavedBuildsLoading: boolean
   saveCurrentBuild: (options: {
+    optionalPerkIds?: string[]
     name: string
     pickedPerkIds: string[]
   }) => Promise<SavedBuildRecord>
@@ -52,9 +53,11 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
   const saveCurrentBuild = useCallback(
     async ({
       name,
+      optionalPerkIds,
       pickedPerkIds,
     }: {
       name: string
+      optionalPerkIds?: string[]
       pickedPerkIds: string[]
     }): Promise<SavedBuildRecord> => {
       try {
@@ -63,6 +66,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
 
         const savedBuild = createSavedBuildRecord({
           name,
+          optionalPerkIds,
           pickedPerkIds,
           referenceVersion,
         })

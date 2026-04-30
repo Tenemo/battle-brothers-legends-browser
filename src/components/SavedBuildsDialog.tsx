@@ -3,8 +3,11 @@ import { Copy, Download, Save, Trash2, X } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
 import { useModalBackgroundInert } from '../lib/use-modal-background-inert'
-import type { LegendsPerkRecord } from '../types/legends-perks'
-import type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
+import type {
+  BuildPlannerPickedPerk,
+  BuildPlannerSavedBuild,
+  SavedBuildOperationStatus,
+} from './build-planner-types'
 import plannerStyles from './BuildPlanner.module.scss'
 import styles from './SavedBuildsDialog.module.scss'
 
@@ -141,7 +144,7 @@ export function SavedBuildsDialog({
   onDeleteSavedBuild: (savedBuildId: string) => Promise<void>
   onLoadSavedBuild: (savedBuildId: string) => void
   onSaveCurrentBuild: (name: string) => Promise<void>
-  pickedPerks: LegendsPerkRecord[]
+  pickedPerks: BuildPlannerPickedPerk[]
   savedBuildOperationStatus: SavedBuildOperationStatus
   savedBuildPersistenceState: SavedBuildPersistenceState
   savedBuilds: BuildPlannerSavedBuild[]

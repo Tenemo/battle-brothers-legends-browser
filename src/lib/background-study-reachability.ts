@@ -311,7 +311,10 @@ function getCoveredPickedPerkMask({
 }): bigint {
   let coveredPickedPerkMask = 0n
 
-  for (const [pickedPerkIndex, requirementKeyOptions] of pickedPerkRequirementKeyOptions.entries()) {
+  for (const [
+    pickedPerkIndex,
+    requirementKeyOptions,
+  ] of pickedPerkRequirementKeyOptions.entries()) {
     if (requirementKeyOptions.some((requirementKey) => requirementKeys.has(requirementKey))) {
       coveredPickedPerkMask |= getPickedPerkMask(pickedPerkIndex)
     }
