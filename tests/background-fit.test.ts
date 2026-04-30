@@ -394,7 +394,8 @@ describe('background fit', () => {
     expect(formatBackgroundFitProbabilityLabel(1 / 3)).toBe('33.3%')
     expect(formatBackgroundFitProbabilityLabel(0.0075)).toBe('0.75%')
     expect(formatBackgroundFitProbabilityLabel(0.000303)).toBe('0.03%')
-    expect(formatBackgroundFitProbabilityLabel(0.0000001)).toBe('<0.01%')
+    expect(formatBackgroundFitProbabilityLabel(0.000016666666666666647)).toBe('0.0017%')
+    expect(formatBackgroundFitProbabilityLabel(0.0000001)).toBe('<0.0001%')
   })
 
   test('derives shared supported targets and separates unsupported categories', () => {
@@ -1164,6 +1165,68 @@ describe('background fit', () => {
       expect.objectContaining({
         backgroundId: 'background.empty',
         buildReachabilityProbability: 1,
+        fullBuildStudyResourceRequirement: {
+          requiredScrollCount: 2,
+          requiresBook: false,
+          requiresBright: true,
+        },
+        mustHaveStudyResourceRequirement: {
+          requiredScrollCount: 2,
+          requiresBook: false,
+          requiresBright: true,
+        },
+      }),
+    )
+  })
+
+  test('reports full-build study resources separately from must-have resources', () => {
+    const berserkerPerk = createPerk({
+      id: 'perk.magic.actual_berserker',
+      perkConstName: 'LegendActualBerserker',
+      perkName: 'Actual berserker',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+          perkGroupName: 'Berserker',
+        }),
+      ],
+    })
+    const calmOnlyBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_only',
+      backgroundName: 'Calm only',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [calmOnlyBackground],
+      perks: [...samplePerks, berserkerPerk],
+    })
+    const backgroundFit = engine.getBackgroundFitView(
+      [samplePerks[4], berserkerPerk],
+      defaultStudyResources,
+      {
+        optionalPickedPerkIds: new Set([berserkerPerk.id]),
+      },
+    ).rankedBackgroundFits[0]
+
+    expect(backgroundFit).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.calm_only',
+        fullBuildReachabilityProbability: 1,
+        fullBuildStudyResourceRequirement: {
+          requiredScrollCount: 1,
+          requiresBook: false,
+          requiresBright: false,
+        },
+        mustHaveBuildReachabilityProbability: 1,
+        mustHaveStudyResourceRequirement: {
+          requiredScrollCount: 0,
+          requiresBook: false,
+          requiresBright: false,
+        },
       }),
     )
   })
@@ -1291,6 +1354,48 @@ describe('background fit', () => {
     expect(bastardBuildChance).toBeGreaterThan(footSoldierBuildChance)
     expect(bastardBuildChance).toBeLessThan(0.01)
     expect(footSoldierBuildChance).toBeLessThan(0.01)
+  })
+
+  test('keeps tiny must-have chances in raw probability order', () => {
+    const betterTinyChanceBackground = createBackgroundDefinition({
+      backgroundId: 'background.better_tiny_chance',
+      backgroundName: 'Better tiny chance',
+      overrides: {
+        Enemy: { chance: 0.0000083334, minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const worseTinyChanceBackground = createBackgroundDefinition({
+      backgroundId: 'background.worse_tiny_chance',
+      backgroundName: 'Worse tiny chance',
+      overrides: {
+        Enemy: { chance: 0.0000060607, minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [worseTinyChanceBackground, betterTinyChanceBackground],
+      perkCount: 1,
+      perks: [samplePerks[7]],
+    })
+    const backgroundFitView = engine.getBackgroundFitView([samplePerks[7]], noStudyResources)
+    const orderedBackgroundNames = backgroundFitView.rankedBackgroundFits.map(
+      (backgroundFit) => backgroundFit.backgroundName,
+    )
+    const backgroundsByName = new Map(
+      backgroundFitView.rankedBackgroundFits.map((backgroundFit) => [
+        backgroundFit.backgroundName,
+        backgroundFit,
+      ]),
+    )
+    const betterMustHaveChance =
+      backgroundsByName.get('Better tiny chance')?.mustHaveBuildReachabilityProbability ?? 0
+    const worseMustHaveChance =
+      backgroundsByName.get('Worse tiny chance')?.mustHaveBuildReachabilityProbability ?? 0
+
+    expect(orderedBackgroundNames).toEqual(['Better tiny chance', 'Worse tiny chance'])
+    expect(betterMustHaveChance).toBeGreaterThan(worseMustHaveChance)
+    expect(formatBackgroundFitProbabilityLabel(betterMustHaveChance)).toBe('0.0017%')
+    expect(formatBackgroundFitProbabilityLabel(worseMustHaveChance)).toBe('0.0012%')
   })
 
   test('ranks backgrounds by expected covered picked perks first and disambiguates duplicate names', () => {

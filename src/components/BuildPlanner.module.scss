@@ -495,7 +495,7 @@
   .plannerSlotRequirementChain {
     position: absolute;
     top: 50%;
-    left: 0;
+    left: var(--primitive-length-negative-5px);
     z-index: var(--z-index-raised);
     display: block;
     width: calc(var(--primitive-length-1-4rem) * 1.5);

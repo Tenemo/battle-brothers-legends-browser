@@ -28,6 +28,7 @@ function createBackgroundFit({
     expectedCoveredPickedPerkCount: 0,
     expectedMatchedPerkGroupCount: 0,
     fullBuildReachabilityProbability: null,
+    fullBuildStudyResourceRequirement: null,
     guaranteedCoveredMustHavePerkCount: 0,
     guaranteedCoveredOptionalPerkCount: 0,
     guaranteedMatchedPerkGroupCount: 0,
@@ -36,6 +37,7 @@ function createBackgroundFit({
     maximumNativeCoveredPickedPerkCount: 0,
     maximumTotalPerkGroupCount: 0,
     mustHaveBuildReachabilityProbability: null,
+    mustHaveStudyResourceRequirement: null,
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
   }
 }
@@ -69,6 +71,7 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
       expectedCoveredPickedPerkCount: 0,
       expectedMatchedPerkGroupCount: 0,
       fullBuildReachabilityProbability: null,
+      fullBuildStudyResourceRequirement: null,
       guaranteedCoveredMustHavePerkCount: 0,
       guaranteedCoveredOptionalPerkCount: 0,
       guaranteedMatchedPerkGroupCount: 0,
@@ -76,6 +79,7 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
       maximumNativeCoveredPickedPerkCount: 0,
       maximumTotalPerkGroupCount: 0,
       mustHaveBuildReachabilityProbability: null,
+      mustHaveStudyResourceRequirement: null,
     }),
   )
 }
@@ -459,6 +463,7 @@ describe('background origin detection', () => {
           expectedCoveredPickedPerkCount: 0,
           expectedMatchedPerkGroupCount: 0,
           fullBuildReachabilityProbability: null,
+          fullBuildStudyResourceRequirement: null,
           guaranteedCoveredMustHavePerkCount: 0,
           guaranteedCoveredOptionalPerkCount: 0,
           guaranteedMatchedPerkGroupCount: 0,
@@ -466,6 +471,7 @@ describe('background origin detection', () => {
           maximumNativeCoveredPickedPerkCount: 0,
           maximumTotalPerkGroupCount: 0,
           mustHaveBuildReachabilityProbability: null,
+          mustHaveStudyResourceRequirement: null,
         }),
       )
 

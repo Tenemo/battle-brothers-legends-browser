@@ -15,11 +15,28 @@ export type StudyReachabilityRequirement = {
   perkGroupId: string
 }
 
+export type StudyResourceRequirementProfile = {
+  requiresBook: boolean
+  requiredScrollCount: 0 | 1 | 2
+  requiresBright: boolean
+}
+
+type StudyResourceAssignmentCandidate = {
+  assignedBookRequirementKey: string | null
+  assignedScrollRequirementKeys: string[]
+}
+
 export type StudyResourceCoverageProfile = {
   canCoverBuild: (nativeCoveredPickedPerkMask: bigint) => boolean
   getCoveredPickedPerkCount: (coveredPickedPerkMask: bigint) => number
   getNativeCoveredPickedPerkMask: (nativeRequirementKeys: ReadonlySet<string>) => bigint
 }
+
+const nativeStudyResourceRequirementProfile = {
+  requiredScrollCount: 0,
+  requiresBook: false,
+  requiresBright: false,
+} as const satisfies StudyResourceRequirementProfile
 
 export const defaultBackgroundStudyResourceFilter = {
   shouldAllowBook: true,
@@ -288,6 +305,100 @@ function getScrollRequirementKeySets(
   return scrollRequirementKeySets
 }
 
+function getStudyResourceAssignmentResourceCount(
+  studyResourceAssignmentCandidate: StudyResourceAssignmentCandidate,
+): number {
+  return (
+    (studyResourceAssignmentCandidate.assignedBookRequirementKey === null ? 0 : 1) +
+    studyResourceAssignmentCandidate.assignedScrollRequirementKeys.length
+  )
+}
+
+function getStudyResourceAssignmentSortKey(
+  studyResourceAssignmentCandidate: StudyResourceAssignmentCandidate,
+): string {
+  return [
+    studyResourceAssignmentCandidate.assignedBookRequirementKey ?? '',
+    ...studyResourceAssignmentCandidate.assignedScrollRequirementKeys,
+  ].join('|')
+}
+
+function compareStudyResourceAssignmentCandidates(
+  leftAssignmentCandidate: StudyResourceAssignmentCandidate,
+  rightAssignmentCandidate: StudyResourceAssignmentCandidate,
+): number {
+  const scrollCountDifference =
+    leftAssignmentCandidate.assignedScrollRequirementKeys.length -
+    rightAssignmentCandidate.assignedScrollRequirementKeys.length
+
+  if (scrollCountDifference !== 0) {
+    return scrollCountDifference
+  }
+
+  const resourceCountDifference =
+    getStudyResourceAssignmentResourceCount(leftAssignmentCandidate) -
+    getStudyResourceAssignmentResourceCount(rightAssignmentCandidate)
+
+  if (resourceCountDifference !== 0) {
+    return resourceCountDifference
+  }
+
+  return getStudyResourceAssignmentSortKey(leftAssignmentCandidate).localeCompare(
+    getStudyResourceAssignmentSortKey(rightAssignmentCandidate),
+  )
+}
+
+function getStudyResourceAssignmentCandidates({
+  bookRequirementKeys,
+  scrollRequirementKeySets,
+}: {
+  bookRequirementKeys: (string | null)[]
+  scrollRequirementKeySets: string[][]
+}): StudyResourceAssignmentCandidate[] {
+  const studyResourceAssignmentCandidates: StudyResourceAssignmentCandidate[] = []
+
+  for (const assignedBookRequirementKey of bookRequirementKeys) {
+    for (const assignedScrollRequirementKeys of scrollRequirementKeySets) {
+      studyResourceAssignmentCandidates.push({
+        assignedBookRequirementKey,
+        assignedScrollRequirementKeys,
+      })
+    }
+  }
+
+  return studyResourceAssignmentCandidates.toSorted(compareStudyResourceAssignmentCandidates)
+}
+
+function createStudyResourceRequirementProfile(
+  studyResourceAssignmentCandidate: StudyResourceAssignmentCandidate,
+): StudyResourceRequirementProfile {
+  const requiredScrollCount = studyResourceAssignmentCandidate.assignedScrollRequirementKeys
+    .length as StudyResourceRequirementProfile['requiredScrollCount']
+
+  if (
+    studyResourceAssignmentCandidate.assignedBookRequirementKey === null &&
+    requiredScrollCount === 0
+  ) {
+    return nativeStudyResourceRequirementProfile
+  }
+
+  return {
+    requiredScrollCount,
+    requiresBook: studyResourceAssignmentCandidate.assignedBookRequirementKey !== null,
+    requiresBright: requiredScrollCount === 2,
+  }
+}
+
+export function isNativeStudyResourceRequirementProfile(
+  studyResourceRequirementProfile: StudyResourceRequirementProfile,
+): boolean {
+  return (
+    !studyResourceRequirementProfile.requiresBook &&
+    studyResourceRequirementProfile.requiredScrollCount === 0 &&
+    !studyResourceRequirementProfile.requiresBright
+  )
+}
+
 function getPickedPerkMask(pickedPerkIndex: number): bigint {
   return 1n << BigInt(pickedPerkIndex)
 }
@@ -437,11 +548,25 @@ export function isBuildReachableWithStudyResources({
   filter: BackgroundStudyResourceFilter
   pickedPerks: LegendsPerkRecord[]
 }): boolean {
-  const pickedPerkRequirementOptions = getPickedPerkRequirementOptions(pickedPerks)
+  return (
+    getMinimumStudyResourceRequirementProfile({
+      canUseNativeRequirements,
+      filter,
+      pickedPerks,
+    }) !== null
+  )
+}
 
-  if (pickedPerkRequirementOptions.length === 0) {
-    return true
-  }
+export function getMinimumStudyResourceRequirementProfile({
+  canUseNativeRequirements,
+  filter,
+  pickedPerks,
+}: {
+  canUseNativeRequirements: (requirements: StudyReachabilityRequirement[]) => boolean
+  filter: BackgroundStudyResourceFilter
+  pickedPerks: LegendsPerkRecord[]
+}): StudyResourceRequirementProfile | null {
+  const pickedPerkRequirementOptions = getPickedPerkRequirementOptions(pickedPerks)
 
   const scrollSlotCount = getScrollSlotCount(filter)
   const nativeRequirementResultByKey = new Map<string, boolean>()
@@ -464,6 +589,10 @@ export function isBuildReachableWithStudyResources({
           scrollSlotCount,
         )
       : [[]]
+  const studyResourceAssignmentCandidates = getStudyResourceAssignmentCandidates({
+    bookRequirementKeys,
+    scrollRequirementKeySets,
+  })
 
   function canUseNativeRequirementMap(
     nativeRequirementMap: Map<string, StudyReachabilityRequirement>,
@@ -589,18 +718,11 @@ export function isBuildReachableWithStudyResources({
    * exact chosen requirement set. This keeps alternate placements from becoming simultaneous
    * requirements and avoids branching over every picked perk's book and scroll choices.
    */
-  for (const assignedBookRequirementKey of bookRequirementKeys) {
-    for (const assignedScrollRequirementKeys of scrollRequirementKeySets) {
-      if (
-        canStudyAssignmentsReachBuild({
-          assignedBookRequirementKey,
-          assignedScrollRequirementKeys,
-        })
-      ) {
-        return true
-      }
+  for (const studyResourceAssignmentCandidate of studyResourceAssignmentCandidates) {
+    if (canStudyAssignmentsReachBuild(studyResourceAssignmentCandidate)) {
+      return createStudyResourceRequirementProfile(studyResourceAssignmentCandidate)
     }
   }
 
-  return false
+  return null
 }

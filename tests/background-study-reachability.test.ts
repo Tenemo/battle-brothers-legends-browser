@@ -1,7 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import {
   defaultBackgroundStudyResourceFilter,
+  getMinimumStudyResourceRequirementProfile,
   isBuildReachableWithStudyResources,
+  isNativeStudyResourceRequirementProfile,
   type BackgroundStudyResourceFilter,
   type StudyReachabilityRequirement,
 } from '../src/lib/background-study-reachability'
@@ -107,6 +109,87 @@ const evocationPlacement = createPlacement({
 })
 
 describe('background study reachability', () => {
+  test('reports native coverage without a study resource requirement', () => {
+    const pickedPerks = [createPerk('calm perk', [calmPlacement])]
+    const calmNativeGroups = createNativeRequirementChecker([['Traits::CalmTree']])
+    const studyResourceRequirementProfile = getMinimumStudyResourceRequirementProfile({
+      canUseNativeRequirements: calmNativeGroups,
+      filter: noStudyResources,
+      pickedPerks,
+    })
+
+    expect(studyResourceRequirementProfile).toEqual({
+      requiredScrollCount: 0,
+      requiresBook: false,
+      requiresBright: false,
+    })
+    expect(isNativeStudyResourceRequirementProfile(studyResourceRequirementProfile!)).toBe(true)
+  })
+
+  test('reports the minimum book and scroll requirement profile', () => {
+    const pickedPerks = [
+      createPerk('calm perk', [calmPlacement]),
+      createPerk('berserker perk', [berserkerPlacement]),
+    ]
+    const noNativeGroups = createNativeRequirementChecker([[]])
+
+    expect(
+      getMinimumStudyResourceRequirementProfile({
+        canUseNativeRequirements: noNativeGroups,
+        filter: defaultBackgroundStudyResourceFilter,
+        pickedPerks,
+      }),
+    ).toEqual({
+      requiredScrollCount: 1,
+      requiresBook: true,
+      requiresBright: false,
+    })
+  })
+
+  test('reports Bright when the minimum profile needs two ancient scrolls', () => {
+    const pickedPerks = [
+      createPerk('berserker perk', [berserkerPlacement]),
+      createPerk('evocation perk', [evocationPlacement]),
+    ]
+    const noNativeGroups = createNativeRequirementChecker([[]])
+
+    expect(
+      getMinimumStudyResourceRequirementProfile({
+        canUseNativeRequirements: noNativeGroups,
+        filter: twoScrollsOnly,
+        pickedPerks,
+      }),
+    ).toEqual({
+      requiredScrollCount: 2,
+      requiresBook: false,
+      requiresBright: true,
+    })
+    expect(
+      getMinimumStudyResourceRequirementProfile({
+        canUseNativeRequirements: noNativeGroups,
+        filter: defaultBackgroundStudyResourceFilter,
+        pickedPerks,
+      }),
+    ).toBeNull()
+  })
+
+  test('prefers a book over a scroll when either resource can cover an alternate placement', () => {
+    const flexiblePerk = createPerk('calm or berserker perk', [calmPlacement, berserkerPlacement])
+    const noNativeGroups = createNativeRequirementChecker([[]])
+
+    expect(
+      getMinimumStudyResourceRequirementProfile({
+        canUseNativeRequirements: noNativeGroups,
+        filter: defaultBackgroundStudyResourceFilter,
+        pickedPerks: [flexiblePerk],
+      }),
+    ).toEqual({
+      requiredScrollCount: 0,
+      requiresBook: true,
+      requiresBright: false,
+    })
+  })
+
   test('covers one book group and one scroll group with the default filter', () => {
     const pickedPerks = [
       createPerk('calm perk', [calmPlacement]),

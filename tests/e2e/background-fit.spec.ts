@@ -163,7 +163,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
   expect(metricTableGeometry.valueTextAligns).toEqual(['left', 'left', 'left', 'left'])
   await expect(fullBuildBadges).toHaveCount(0)
   await expect(mustHaveBuildBadge).toHaveAttribute('title', /one legal native background roll/i)
-  await expect(mustHaveBuildBadge).toHaveAttribute('title', /selected book and scroll filters/i)
+  await expect(mustHaveBuildBadge).toHaveAttribute(
+    'title',
+    /up to one skill book and up to one ancient scroll/i,
+  )
   await expect(mustHaveBuildBadge).not.toHaveAttribute('title', /Must-have build:/i)
   await expect(expectedBuildPerksBadge).toHaveAttribute(
     'title',

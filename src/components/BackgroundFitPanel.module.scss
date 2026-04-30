@@ -272,6 +272,30 @@
     transform: translateY(var(--primitive-length-0-12rem));
   }
 
+  .backgroundFitStudyResourceBadges {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: var(--space-2xs);
+    align-items: center;
+    justify-content: flex-end;
+  }
+
+  .backgroundFitStudyResourceBadge {
+    flex: 0 0 auto;
+    object-fit: contain;
+    filter: drop-shadow(var(--shadow-chain-drop));
+    cursor: help;
+    pointer-events: auto;
+
+    @include size(var(--primitive-length-1-35rem));
+  }
+
+  .backgroundFitStudyResourceBadgeOptionalOnly {
+    filter: drop-shadow(var(--shadow-chain-drop))
+      drop-shadow(0 0 var(--primitive-length-0-24rem) var(--border-success))
+      drop-shadow(0 0 var(--primitive-length-0-06rem) var(--text-success));
+  }
+
   .backgroundFitRank {
     flex-shrink: 0;
     min-width: var(--primitive-length-1-75rem);

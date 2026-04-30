@@ -115,8 +115,7 @@ export function BackgroundFitPanel({
     !shouldAllowBackgroundStudyScroll ||
     shouldAllowSecondBackgroundStudyScroll
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
-  const shouldShowBackgroundFitTargetSummary =
-    hasPickedPerks && !isLoadingBackgroundFitView
+  const shouldShowBackgroundFitTargetSummary = hasPickedPerks && !isLoadingBackgroundFitView
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
   const backgroundFitEmptyResultTarget =
     normalizedBackgroundFitQuery.length > 0
@@ -139,12 +138,10 @@ export function BackgroundFitPanel({
   const rankedBackgroundFitIndexByKey = useMemo(
     () =>
       new Map(
-        effectiveBackgroundFitView.rankedBackgroundFits.map(
-          (backgroundFit, backgroundFitIndex) => [
-            getBackgroundFitKey(backgroundFit),
-            backgroundFitIndex,
-          ],
-        ),
+        effectiveBackgroundFitView.rankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => [
+          getBackgroundFitKey(backgroundFit),
+          backgroundFitIndex,
+        ]),
       ),
     [effectiveBackgroundFitView],
   )
@@ -433,6 +430,11 @@ export function BackgroundFitPanel({
                         rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
                         backgroundFitIndex
                       }
+                      studyResourceFilter={{
+                        shouldAllowBook: shouldAllowBackgroundStudyBook,
+                        shouldAllowScroll: shouldAllowBackgroundStudyScroll,
+                        shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
+                      }}
                     />
                   </li>
                 ))}

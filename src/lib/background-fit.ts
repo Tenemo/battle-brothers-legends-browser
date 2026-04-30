@@ -17,9 +17,10 @@ import {
 } from './dynamic-background-categories'
 import {
   createStudyResourceCoverageProfile,
-  isBuildReachableWithStudyResources,
+  getMinimumStudyResourceRequirementProfile,
   type BackgroundStudyResourceFilter,
   type StudyResourceCoverageProfile,
+  type StudyResourceRequirementProfile,
   type StudyReachabilityRequirement,
 } from './background-study-reachability'
 
@@ -56,6 +57,8 @@ export type BackgroundFitSummary = Omit<
   | 'guaranteedCoveredOptionalPerkCount'
   | 'maximumNativeCoveredPickedPerkCount'
   | 'mustHaveBuildReachabilityProbability'
+  | 'fullBuildStudyResourceRequirement'
+  | 'mustHaveStudyResourceRequirement'
 >
 
 type CachedBackgroundFitRecord = {
@@ -65,7 +68,7 @@ type CachedBackgroundFitRecord = {
   nativeOutcomeDistribution: BackgroundOutcomeDistribution | null
   nativeOutcomeSummaryByFilterKey: Map<string, NativeOutcomeSummary>
   nativeRequirementReachabilityByKey: Map<string, boolean>
-  studyResourceReachabilityByFilterKey: Map<string, boolean>
+  studyResourceRequirementByFilterKey: Map<string, StudyResourceRequirementProfile | null>
 }
 
 type BackgroundFitBuildCache = {
@@ -120,6 +123,7 @@ export type RankedBackgroundFit = {
   expectedCoveredOptionalPerkCount: number
   expectedCoveredPickedPerkCount: number
   expectedMatchedPerkGroupCount: number
+  fullBuildStudyResourceRequirement: StudyResourceRequirementProfile | null
   fullBuildReachabilityProbability: number | null
   guaranteedCoveredMustHavePerkCount: number
   guaranteedCoveredOptionalPerkCount: number
@@ -129,6 +133,7 @@ export type RankedBackgroundFit = {
   maximumTotalPerkGroupCount: number
   matches: BackgroundFitMatch[]
   mustHaveBuildReachabilityProbability: number | null
+  mustHaveStudyResourceRequirement: StudyResourceRequirementProfile | null
   sourceFilePath: string
 }
 
@@ -2123,7 +2128,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
           nativeOutcomeDistribution: null,
           nativeOutcomeSummaryByFilterKey: new Map(),
           nativeRequirementReachabilityByKey: new Map(),
-          studyResourceReachabilityByFilterKey: new Map(),
+          studyResourceRequirementByFilterKey: new Map(),
         }),
       ),
       relevantPerkGroupIdsByCategory: getRelevantPerkGroupIdsByCategory(pickedPerks),
@@ -2189,29 +2194,32 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
     return nativeOutcomeSummary
   }
 
-  function getCachedStudyResourceReachability({
+  function getCachedStudyResourceRequirement({
     cachedBackgroundFitRecord,
     pickedPerks,
     studyResourceFilter,
-    studyResourceFilterCacheKey,
+    studyResourceRequirementCacheKey,
   }: {
     cachedBackgroundFitRecord: CachedBackgroundFitRecord
     pickedPerks: LegendsPerkRecord[]
     studyResourceFilter: BackgroundStudyResourceFilter
-    studyResourceFilterCacheKey: string
-  }): boolean {
-    const cachedStudyResourceReachability =
-      cachedBackgroundFitRecord.studyResourceReachabilityByFilterKey.get(
-        studyResourceFilterCacheKey,
+    studyResourceRequirementCacheKey: string
+  }): StudyResourceRequirementProfile | null {
+    if (
+      cachedBackgroundFitRecord.studyResourceRequirementByFilterKey.has(
+        studyResourceRequirementCacheKey,
       )
-
-    if (cachedStudyResourceReachability !== undefined) {
-      return cachedStudyResourceReachability
+    ) {
+      return (
+        cachedBackgroundFitRecord.studyResourceRequirementByFilterKey.get(
+          studyResourceRequirementCacheKey,
+        ) ?? null
+      )
     }
 
     const backgroundDefinition =
       cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition
-    const studyResourceReachability = isBuildReachableWithStudyResources({
+    const studyResourceRequirement = getMinimumStudyResourceRequirementProfile({
       canUseNativeRequirements: (requirements) => {
         const requirementSubsetCacheKey = getRequirementSubsetCacheKey(requirements)
         const cachedNativeRequirementReachability =
@@ -2241,12 +2249,12 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       pickedPerks,
     })
 
-    cachedBackgroundFitRecord.studyResourceReachabilityByFilterKey.set(
-      studyResourceFilterCacheKey,
-      studyResourceReachability,
+    cachedBackgroundFitRecord.studyResourceRequirementByFilterKey.set(
+      studyResourceRequirementCacheKey,
+      studyResourceRequirement,
     )
 
-    return studyResourceReachability
+    return studyResourceRequirement
   }
 
   function getCachedBackgroundFitBase({
@@ -2458,18 +2466,23 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       return {
         rankedBackgroundFits: backgroundFitBuildCache.cachedBackgroundFitRecords
           .flatMap((cachedBackgroundFitRecord): RankedBackgroundFit[] => {
+            const mustHaveStudyResourceRequirement =
+              studyResourceFilter === undefined
+                ? null
+                : getCachedStudyResourceRequirement({
+                    cachedBackgroundFitRecord,
+                    pickedPerks: mustHavePickedPerks,
+                    studyResourceFilter,
+                    studyResourceRequirementCacheKey: mustHaveScopeCacheKey,
+                  })
+
             if (
               studyResourceFilter !== undefined &&
               mustHavePickedPerks.length > 0 &&
               !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(
                 mustHaveScopeCacheKey,
               ) &&
-              !getCachedStudyResourceReachability({
-                cachedBackgroundFitRecord,
-                pickedPerks: mustHavePickedPerks,
-                studyResourceFilter,
-                studyResourceFilterCacheKey: mustHaveScopeCacheKey,
-              })
+              mustHaveStudyResourceRequirement === null
             ) {
               return []
             }
@@ -2498,6 +2511,18 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
               return []
             }
 
+            const fullBuildStudyResourceRequirement =
+              studyResourceFilter === undefined ||
+              totalNativeOutcomeSummary.buildReachabilityProbability <= 0
+                ? null
+                : optionalPickedPerks.length === 0
+                  ? mustHaveStudyResourceRequirement
+                  : getCachedStudyResourceRequirement({
+                      cachedBackgroundFitRecord,
+                      pickedPerks,
+                      studyResourceFilter,
+                      studyResourceRequirementCacheKey: totalScopeCacheKey,
+                    })
             const backgroundFitBase = getCachedBackgroundFitBase({
               cachedBackgroundFitRecord,
               pickedPerks,
@@ -2528,6 +2553,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                         pickedPerks: optionalPickedPerks,
                         scopeCacheKey: optionalScopeCacheKey,
                       }),
+                fullBuildStudyResourceRequirement,
                 fullBuildReachabilityProbability:
                   studyResourceFilter === undefined
                     ? null
@@ -2549,6 +2575,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
                   studyResourceFilter === undefined
                     ? null
                     : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
+                mustHaveStudyResourceRequirement,
               },
             ]
           })

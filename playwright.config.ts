@@ -2,6 +2,7 @@ import { defineConfig } from '@playwright/test'
 
 const developmentServerCommand =
   process.platform === 'win32' ? 'pnpm.cmd run dev:test' : 'pnpm run dev:test'
+const playwrightWorkerCount = process.env.CI ? 2 : 6
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -10,7 +11,7 @@ export default defineConfig({
     headless: true,
     trace: 'on-first-retry',
   },
-  workers: 6,
+  workers: playwrightWorkerCount,
   webServer: {
     command: developmentServerCommand,
     port: 4173,

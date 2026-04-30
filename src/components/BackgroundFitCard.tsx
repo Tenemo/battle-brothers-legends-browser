@@ -17,6 +17,12 @@ import {
   renderHighlightedText,
 } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import {
+  backgroundStudyResourceBadgesTestId,
+  backgroundStudyResourceBadgeTestId,
+  getBackgroundStudyResourceBadgeDisplay,
+} from '../lib/background-study-resource-display'
+import type { BackgroundStudyResourceFilter } from '../lib/background-study-reachability'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
@@ -51,11 +57,42 @@ function getBackgroundFitExpectedBuildPerksSummaryCopy(
 
 function getBackgroundFitBuildReachabilitySummaryCopy(
   probability: number,
-  scopeLabel: string,
+  buildScopeLabel: string,
+  studyResourceFilter: BackgroundStudyResourceFilter,
 ): string {
-  return `One legal native background roll plus the selected book and scroll filters can cover every picked perk with a ${formatBackgroundFitProbabilityLabel(
+  const studyResourceFilterPhrase = getBackgroundFitStudyResourceFilterPhrase(studyResourceFilter)
+
+  if (probability <= 0) {
+    return `No legal native background roll ${studyResourceFilterPhrase} can cover every picked perk for ${buildScopeLabel}.`
+  }
+
+  return `One legal native background roll ${studyResourceFilterPhrase} can cover every picked perk with a ${formatBackgroundFitProbabilityLabel(
     probability,
-  )} chance for ${scopeLabel}.`
+  )} chance for ${buildScopeLabel}.`
+}
+
+function getBackgroundFitStudyResourceFilterPhrase(
+  studyResourceFilter: BackgroundStudyResourceFilter,
+): string {
+  const enabledStudyResources: string[] = []
+
+  if (studyResourceFilter.shouldAllowBook) {
+    enabledStudyResources.push('up to one skill book')
+  }
+
+  if (studyResourceFilter.shouldAllowScroll) {
+    enabledStudyResources.push(
+      studyResourceFilter.shouldAllowSecondScroll
+        ? 'up to two ancient scrolls if Bright is available'
+        : 'up to one ancient scroll',
+    )
+  }
+
+  if (enabledStudyResources.length === 0) {
+    return 'without books or scrolls'
+  }
+
+  return `plus ${enabledStudyResources.join(' and ')}`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -229,6 +266,47 @@ function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMetric[] 
   )
 }
 
+function BackgroundFitStudyResourceBadges({
+  backgroundFit,
+}: {
+  backgroundFit: RankedBackgroundFit
+}) {
+  const studyResourceBadgeDisplay = getBackgroundStudyResourceBadgeDisplay({
+    fullBuildStudyResourceRequirement: backgroundFit.fullBuildStudyResourceRequirement,
+    mustHaveStudyResourceRequirement: backgroundFit.mustHaveStudyResourceRequirement,
+  })
+
+  if (studyResourceBadgeDisplay === null) {
+    return null
+  }
+
+  return (
+    <span
+      aria-label={studyResourceBadgeDisplay.accessibleLabel}
+      className={styles.backgroundFitStudyResourceBadges}
+      data-testid={backgroundStudyResourceBadgesTestId}
+    >
+      {studyResourceBadgeDisplay.badges.map((studyResourceBadge, studyResourceBadgeIndex) => (
+        <img
+          alt={`${studyResourceBadge.label} requirement`}
+          className={joinClassNames(
+            styles.backgroundFitStudyResourceBadge,
+            studyResourceBadge.isOptionalOnly && styles.backgroundFitStudyResourceBadgeOptionalOnly,
+          )}
+          data-optional-only={studyResourceBadge.isOptionalOnly}
+          data-study-resource-kind={studyResourceBadge.kind}
+          data-testid={backgroundStudyResourceBadgeTestId}
+          decoding="async"
+          key={`${studyResourceBadge.kind}-${studyResourceBadgeIndex}`}
+          loading="lazy"
+          src={`/game-icons/${studyResourceBadge.iconPath}`}
+          title={studyResourceBadge.title}
+        />
+      ))}
+    </span>
+  )
+}
+
 function createRatioValue(coveredPerkCount: number, pickedPerkCount: number): string {
   return `${coveredPerkCount}/${pickedPerkCount}`
 }
@@ -263,6 +341,7 @@ export function BackgroundFitCard({
   pickedPerkCount,
   query,
   rank,
+  studyResourceFilter,
 }: {
   backgroundFit: RankedBackgroundFit
   emphasizedCategoryNames: ReadonlySet<string>
@@ -296,6 +375,7 @@ export function BackgroundFitCard({
   pickedPerkCount: number
   query: string
   rank: number
+  studyResourceFilter: BackgroundStudyResourceFilter
 }) {
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
@@ -316,6 +396,7 @@ export function BackgroundFitCard({
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.fullBuildReachabilityProbability,
               'the full build, including optional perks',
+              studyResourceFilter,
             ),
             value: formatBackgroundFitProbabilityLabel(
               backgroundFit.fullBuildReachabilityProbability,
@@ -334,7 +415,8 @@ export function BackgroundFitCard({
             label: 'Must-have build',
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.mustHaveBuildReachabilityProbability,
-              'must-have perks',
+              'the must-have build',
+              studyResourceFilter,
             ),
             value: formatBackgroundFitProbabilityLabel(
               backgroundFit.mustHaveBuildReachabilityProbability,
@@ -488,6 +570,8 @@ export function BackgroundFitCard({
                 ) : null}
               </div>
             </div>
+
+            <BackgroundFitStudyResourceBadges backgroundFit={backgroundFit} />
 
             <span aria-hidden="true" className={styles.backgroundFitAccordionChevronFrame}>
               <BackgroundFitAccordionChevron

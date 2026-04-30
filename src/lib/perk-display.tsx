@@ -203,7 +203,9 @@ export function formatBackgroundFitProbabilityLabel(probability: number): string
   const percentage = probability * 100
 
   if (percentage > 0 && percentage < 0.01) {
-    return '<0.01%'
+    const roundedTinyPercentage = Math.round(percentage * 10000) / 10000
+
+    return roundedTinyPercentage > 0 ? `${roundedTinyPercentage}%` : '<0.0001%'
   }
 
   if (percentage < 1) {

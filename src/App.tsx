@@ -391,8 +391,7 @@ export default function App() {
       shouldAllowSecondBackgroundStudyScroll,
     ],
   )
-  const shouldLoadBackgroundFitView =
-    isBackgroundFitPanelExpanded || hasActiveBackgroundFitSearch
+  const shouldLoadBackgroundFitView = isBackgroundFitPanelExpanded || hasActiveBackgroundFitSearch
   const backgroundFitView =
     backgroundFitViewState?.key === backgroundFitViewKey ? backgroundFitViewState.view : null
   const isBackgroundFitViewLoading = shouldLoadBackgroundFitView && backgroundFitView === null
