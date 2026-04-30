@@ -208,9 +208,11 @@ test('build planner splits shared and individual perk groups without layout drif
     .evaluate((element) => element.getBoundingClientRect().height)
   const headerHeightSubpixelTolerance = 2
 
-  await expect(page.getByRole('heading', { level: 2, name: 'Build planner' })).toBeVisible()
+  await expect(
+    page.getByTestId('build-planner-header').getByRole('heading', { name: 'Build planner' }),
+  ).toHaveCount(0)
   await expect(page.getByTestId('build-planner-summary')).toHaveCount(0)
-  expect(initialHeaderHeight).toBeLessThanOrEqual(40)
+  expect(initialHeaderHeight).toBeLessThanOrEqual(64)
 
   await searchPerks(page, 'Clarity')
   await inspectPerkFromResults(page, 'Clarity')
@@ -295,12 +297,7 @@ test('build planner splits shared and individual perk groups without layout drif
       fontSizeProbe.style.fontSize = 'var(--font-size-sm)'
       document.body.append(fontSizeProbe)
       const bodyFontFamily = window.getComputedStyle(document.body).fontFamily
-      const buildPlannerTitle = document.querySelector('[aria-label="Build planner"] h2')
       const expectedFontSize = window.getComputedStyle(fontSizeProbe).fontSize
-      const titleFontSize =
-        buildPlannerTitle instanceof HTMLElement
-          ? window.getComputedStyle(buildPlannerTitle).fontSize
-          : ''
       fontSizeProbe.remove()
 
       return toggles.map((toggle) => {
@@ -313,7 +310,6 @@ test('build planner splits shared and individual perk groups without layout drif
           fontSize: computedStyle.fontSize,
           fontWeight: computedStyle.fontWeight,
           textTransform: computedStyle.textTransform,
-          titleFontSize,
         }
       })
     })
@@ -322,9 +318,6 @@ test('build planner splits shared and individual perk groups without layout drif
   for (const toggleTypography of plannerSectionToggleTypography) {
     expect(toggleTypography.fontFamily).toBe(toggleTypography.bodyFontFamily)
     expect(toggleTypography.fontSize).toBe(toggleTypography.expectedFontSize)
-    expect(Number.parseFloat(toggleTypography.fontSize)).toBeLessThan(
-      Number.parseFloat(toggleTypography.titleFontSize),
-    )
     expect(Number(toggleTypography.fontWeight)).toBeGreaterThanOrEqual(600)
     expect(toggleTypography.textTransform).toBe('uppercase')
   }
@@ -334,17 +327,28 @@ test('build planner splits shared and individual perk groups without layout drif
   const infoButtonGlyph = infoButton.getByTestId('build-planner-info-glyph')
   const infoButtonStyle = await infoButton.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
+    const rootStyle = window.getComputedStyle(document.documentElement)
+    const compactTargetSize = Number.parseFloat(rootStyle.getPropertyValue('--target-size-compact'))
+    const rootFontSize = Number.parseFloat(rootStyle.fontSize)
 
     return {
       cursor: computedStyle.cursor,
+      expectedSize: compactTargetSize * rootFontSize * 1.5,
+      height: Number.parseFloat(computedStyle.height),
       textTransform: computedStyle.textTransform,
+      width: Number.parseFloat(computedStyle.width),
     }
   })
   const infoButtonGlyphStyle = await infoButtonGlyph.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
+    const rootStyle = window.getComputedStyle(document.documentElement)
+    const baseGlyphFontSize = Number.parseFloat(rootStyle.getPropertyValue('--font-size-xl'))
+    const rootFontSize = Number.parseFloat(rootStyle.fontSize)
 
     return {
+      expectedFontSize: baseGlyphFontSize * rootFontSize * 1.5,
       fontFamily: computedStyle.fontFamily,
+      fontSize: Number.parseFloat(computedStyle.fontSize),
       fontStyle: computedStyle.fontStyle,
       transform: computedStyle.transform,
     }
@@ -352,8 +356,13 @@ test('build planner splits shared and individual perk groups without layout drif
 
   expect(infoButtonText).toBe('i')
   expect(infoButtonStyle.cursor).toBe('help')
+  expect(Math.abs(infoButtonStyle.height - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
+  expect(Math.abs(infoButtonStyle.width - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(infoButtonStyle.textTransform).toBe('none')
   expect(infoButtonGlyphStyle.fontFamily).toContain('Georgia')
+  expect(Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize)).toBeLessThan(
+    0.5,
+  )
   expect(infoButtonGlyphStyle.fontStyle).toBe('italic')
   expect(infoButtonGlyphStyle.transform).not.toBe('none')
 
@@ -1593,38 +1602,59 @@ test('marks picked perks as optional and separates them from must-have perks', a
   const requirementLegendPlacementMetrics = await page
     .getByTestId('build-planner-header')
     .evaluate((buildPlannerHeader) => {
-      const heading = buildPlannerHeader.querySelector('h2')
+      const actionButton = buildPlannerHeader.querySelector('[aria-label="Copy build link"]')
+      const infoButton = buildPlannerHeader.querySelector(
+        '[aria-label="Show build planner guidance"]',
+      )
       const requirementLegend = buildPlannerHeader.querySelector(
         '[data-testid="planner-requirement-legend"]',
       )
 
-      if (!(heading instanceof HTMLElement) || !(requirementLegend instanceof HTMLElement)) {
+      if (
+        !(actionButton instanceof HTMLElement) ||
+        !(infoButton instanceof HTMLElement) ||
+        !(requirementLegend instanceof HTMLElement)
+      ) {
         return null
       }
 
+      const actionButtonRectangle = actionButton.getBoundingClientRect()
       const headerRectangle = buildPlannerHeader.getBoundingClientRect()
-      const headingRectangle = heading.getBoundingClientRect()
+      const infoButtonRectangle = infoButton.getBoundingClientRect()
       const legendRectangle = requirementLegend.getBoundingClientRect()
+      const getCenterY = (rectangle: DOMRect) => rectangle.top + rectangle.height / 2
 
       return {
-        headingRight: headingRectangle.right,
+        actionButtonCenterY: getCenterY(actionButtonRectangle),
         headerBottom: headerRectangle.bottom,
         headerTop: headerRectangle.top,
         legendBottom: legendRectangle.bottom,
+        legendCenterY: getCenterY(legendRectangle),
         legendLeft: legendRectangle.left,
         legendTop: legendRectangle.top,
+        infoButtonCenterY: getCenterY(infoButtonRectangle),
+        infoButtonRight: infoButtonRectangle.right,
       }
     })
 
   expect(requirementLegendPlacementMetrics).not.toBeNull()
   expect(requirementLegendPlacementMetrics!.legendLeft).toBeGreaterThan(
-    requirementLegendPlacementMetrics!.headingRight + 16,
+    requirementLegendPlacementMetrics!.infoButtonRight + 16,
   )
+  expect(
+    Math.abs(
+      requirementLegendPlacementMetrics!.legendCenterY -
+        requirementLegendPlacementMetrics!.infoButtonCenterY,
+    ),
+  ).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(
+      requirementLegendPlacementMetrics!.legendCenterY -
+        requirementLegendPlacementMetrics!.actionButtonCenterY,
+    ),
+  ).toBeLessThanOrEqual(1)
   expect(requirementLegendPlacementMetrics!.legendTop).toBeGreaterThanOrEqual(
     requirementLegendPlacementMetrics!.headerTop - 1,
-  )
-  expect(requirementLegendPlacementMetrics!.legendTop).toBeLessThan(
-    requirementLegendPlacementMetrics!.headerTop + 8,
   )
   expect(requirementLegendPlacementMetrics!.legendBottom).toBeLessThanOrEqual(
     requirementLegendPlacementMetrics!.headerBottom + 1,
@@ -1644,14 +1674,37 @@ test('marks picked perks as optional and separates them from must-have perks', a
       return null
     }
 
+    const mustHaveName = mustHaveTile.querySelector('[data-testid="planner-picked-perk-name"]')
+    const optionalName = optionalTile.querySelector('[data-testid="planner-picked-perk-name"]')
+
+    if (!(mustHaveName instanceof HTMLElement) || !(optionalName instanceof HTMLElement)) {
+      return null
+    }
+
     const mustHaveRectangle = mustHaveTile.getBoundingClientRect()
     const optionalRectangle = optionalTile.getBoundingClientRect()
+    const mustHaveNameRange = document.createRange()
+    mustHaveNameRange.selectNodeContents(mustHaveName)
+    const mustHaveNameLineRectangles = [...mustHaveNameRange.getClientRects()]
+    mustHaveNameRange.detach()
+    const mustHaveTextLeft = Math.min(
+      ...mustHaveNameLineRectangles.map((rectangle) => rectangle.left),
+    )
+    const mustHaveTextRight = Math.max(
+      ...mustHaveNameLineRectangles.map((rectangle) => rectangle.right),
+    )
 
     return {
+      mustHaveNameTextAlign: window.getComputedStyle(mustHaveName).textAlign,
       mustHaveRight: mustHaveRectangle.right,
+      mustHaveTextLeftInset: mustHaveTextLeft - mustHaveRectangle.left,
+      mustHaveTextRightInset: mustHaveRectangle.right - mustHaveTextRight,
       mustHaveTop: mustHaveRectangle.top,
+      mustHaveTransform: window.getComputedStyle(mustHaveTile).transform,
       optionalLeft: optionalRectangle.left,
+      optionalNameTextAlign: window.getComputedStyle(optionalName).textAlign,
       optionalTop: optionalRectangle.top,
+      optionalTransform: window.getComputedStyle(optionalTile).transform,
     }
   })
 
@@ -1662,9 +1715,16 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(
     Math.abs(
       requirementLegendTileLayoutMetrics!.optionalTop -
-        requirementLegendTileLayoutMetrics!.mustHaveTop,
+      requirementLegendTileLayoutMetrics!.mustHaveTop,
     ),
   ).toBeLessThan(0.5)
+  expect(requirementLegendTileLayoutMetrics!.mustHaveNameTextAlign).toBe('right')
+  expect(requirementLegendTileLayoutMetrics!.optionalNameTextAlign).toBe('left')
+  expect(requirementLegendTileLayoutMetrics!.mustHaveTextRightInset).toBeLessThan(
+    requirementLegendTileLayoutMetrics!.mustHaveTextLeftInset,
+  )
+  expect(requirementLegendTileLayoutMetrics!.mustHaveTransform).toBe('none')
+  expect(requirementLegendTileLayoutMetrics!.optionalTransform).toBe('none')
   const clarityPickedPerkTile = buildPerksBar
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Clarity' })
@@ -1733,7 +1793,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(mustHaveChainMetrics!.chainImageClipPath).toContain('70% 68%')
   expect(mustHaveChainMetrics!.chainImageClipPath).toContain('66.7% 96%')
   expect(mustHaveChainMetrics!.chainImageClipPath).not.toBe('none')
-  expect(mustHaveChainMetrics!.chainOpacity).toBe('0.6')
+  expect(mustHaveChainMetrics!.chainOpacity).toBe('0.4')
   expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft)
   expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft - 7)
   expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
@@ -1768,27 +1828,34 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(mustHaveLegendBackgroundColor).toBe(mustHaveBackgroundColor)
   const mustHaveTileDimensions = await perfectFocusPickedPerkTile.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()
+    const perkName = element.querySelector('[data-testid="planner-picked-perk-name"]')
 
     return {
+      fontSize:
+        perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
       height: rectangle.height,
       width: rectangle.width,
     }
   })
   const mustHaveLegendTileDimensions = await mustHaveLegendTile.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()
+    const perkName = element.querySelector('[data-testid="planner-picked-perk-name"]')
 
     return {
+      fontSize:
+        perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
       height: rectangle.height,
       width: rectangle.width,
     }
   })
 
-  expect(Math.abs(mustHaveLegendTileDimensions.height - mustHaveTileDimensions.height * 0.65)).toBeLessThan(
-    0.75,
-  )
-  expect(Math.abs(mustHaveLegendTileDimensions.width - mustHaveTileDimensions.width * 0.65)).toBeLessThan(
-    0.75,
-  )
+  expect(mustHaveLegendTileDimensions.fontSize).toBe(mustHaveTileDimensions.fontSize)
+  expect(
+    Math.abs(mustHaveLegendTileDimensions.height - mustHaveTileDimensions.height * 0.7),
+  ).toBeLessThan(0.75)
+  expect(
+    Math.abs(mustHaveLegendTileDimensions.width - mustHaveTileDimensions.width * 0.7),
+  ).toBeLessThan(0.75)
 
   await clarityPickedPerkTile.hover()
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
@@ -1830,13 +1897,13 @@ test('marks picked perks as optional and separates them from must-have perks', a
   await expect(
     backgroundFitPanel
       .getByTestId('background-fit-summary-label')
-      .filter({ hasText: 'Full build' })
+      .filter({ hasText: 'Full build chance' })
       .first(),
   ).toBeVisible()
   await expect(
     backgroundFitPanel
       .getByTestId('background-fit-summary-label')
-      .filter({ hasText: 'Must-have build' })
+      .filter({ hasText: 'Must-have build chance' })
       .first(),
   ).toBeVisible()
   await expect(
@@ -1918,6 +1985,45 @@ test('keeps picked perk word layout unchanged on hover', async ({ page }) => {
   await anticipationPickedPerkTile.hover()
   const removeButton = anticipationPickedPerkTile.getByTestId('planner-slot-remove-button')
   await expect(removeButton).toBeVisible()
+  const actionPanelFrameMetrics = await anticipationPickedPerkTile.evaluate((pickedPerkTile) => {
+    const actionPanel = pickedPerkTile.querySelector('[data-testid="planner-slot-action-panel"]')
+
+    if (!(actionPanel instanceof HTMLElement)) {
+      throw new Error('Unable to find picked perk action panel.')
+    }
+
+    const actionPanelRectangle = actionPanel.getBoundingClientRect()
+    const pickedPerkTileRectangle = pickedPerkTile.getBoundingClientRect()
+    const pickedPerkTileStyle = window.getComputedStyle(pickedPerkTile)
+
+    return {
+      bottomBorderWidth: Number.parseFloat(pickedPerkTileStyle.borderBottomWidth),
+      bottomInset: pickedPerkTileRectangle.bottom - actionPanelRectangle.bottom,
+      rightBorderWidth: Number.parseFloat(pickedPerkTileStyle.borderRightWidth),
+      rightInset: pickedPerkTileRectangle.right - actionPanelRectangle.right,
+      topBorderWidth: Number.parseFloat(pickedPerkTileStyle.borderTopWidth),
+      topInset: actionPanelRectangle.top - pickedPerkTileRectangle.top,
+    }
+  })
+
+  expect(actionPanelFrameMetrics.topInset).toBeGreaterThanOrEqual(
+    actionPanelFrameMetrics.topBorderWidth,
+  )
+  expect(actionPanelFrameMetrics.topInset).toBeLessThanOrEqual(
+    actionPanelFrameMetrics.topBorderWidth + 0.5,
+  )
+  expect(actionPanelFrameMetrics.rightInset).toBeGreaterThanOrEqual(
+    actionPanelFrameMetrics.rightBorderWidth,
+  )
+  expect(actionPanelFrameMetrics.rightInset).toBeLessThanOrEqual(
+    actionPanelFrameMetrics.rightBorderWidth + 0.5,
+  )
+  expect(actionPanelFrameMetrics.bottomInset).toBeGreaterThanOrEqual(
+    actionPanelFrameMetrics.bottomBorderWidth,
+  )
+  expect(actionPanelFrameMetrics.bottomInset).toBeLessThanOrEqual(
+    actionPanelFrameMetrics.bottomBorderWidth + 0.5,
+  )
   const removeButtonBackgroundColor = await removeButton.evaluate(
     (element) => window.getComputedStyle(element).backgroundColor,
   )

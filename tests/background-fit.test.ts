@@ -370,8 +370,8 @@ describe('background fit', () => {
     expect(formatBackgroundFitGuaranteedPerksLabel(1, 3, 'optional perks')).toBe(
       'Guaranteed 1/3 optional perks pickable',
     )
-    expect(formatBackgroundFitBuildReachabilityLabel(0.25, 'Must-have build')).toBe(
-      'Must-have build 25%',
+    expect(formatBackgroundFitBuildReachabilityLabel(0.25, 'Must-have build chance')).toBe(
+      'Must-have build chance 25%',
     )
   })
 

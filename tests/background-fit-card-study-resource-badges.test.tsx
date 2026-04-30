@@ -201,7 +201,7 @@ describe('background fit card study resource badges', () => {
     expect(badges[0]).toHaveAttribute('data-optional-only', 'false')
     expect(badges[1]).toHaveAttribute('title', 'Must-have build requires an ancient scroll')
     expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
-    expect(screen.getByText('Full build').closest('[title]')).toHaveAttribute(
+    expect(screen.getByText('Full build chance').closest('[title]')).toHaveAttribute(
       'title',
       'No legal native background roll plus up to one skill book and up to one ancient scroll can cover every picked perk for the full build, including optional perks.',
     )
@@ -214,7 +214,7 @@ describe('background fit card study resource badges', () => {
       shouldAllowSecondScroll: true,
     })
 
-    expect(screen.getByText('Must-have build').closest('[title]')).toHaveAttribute(
+    expect(screen.getByText('Must-have build chance').closest('[title]')).toHaveAttribute(
       'title',
       'One legal native background roll plus up to one skill book and up to two ancient scrolls if Bright is available can cover every picked perk with a 100% chance for the must-have build.',
     )
@@ -226,7 +226,7 @@ describe('background fit card study resource badges', () => {
       shouldAllowSecondScroll: false,
     })
 
-    expect(screen.getByText('Must-have build').closest('[title]')).toHaveAttribute(
+    expect(screen.getByText('Must-have build chance').closest('[title]')).toHaveAttribute(
       'title',
       'One legal native background roll without books or scrolls can cover every picked perk with a 100% chance for the must-have build.',
     )

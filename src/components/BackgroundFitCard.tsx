@@ -232,6 +232,9 @@ type BackgroundFitMetric = {
   value: string
 }
 
+const fullBuildChanceMetricLabel = 'Full build chance'
+const mustHaveBuildChanceMetricLabel = 'Must-have build chance'
+
 function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: BackgroundFitMetric) {
   return (
     <div
@@ -406,9 +409,9 @@ export function BackgroundFitCard({
           {
             accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
               backgroundFit.fullBuildReachabilityProbability,
-              'Full build',
+              fullBuildChanceMetricLabel,
             ),
-            label: 'Full build',
+            label: fullBuildChanceMetricLabel,
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.fullBuildReachabilityProbability,
               'the full build, including optional perks',
@@ -426,9 +429,9 @@ export function BackgroundFitCard({
           {
             accessibleLabel: formatBackgroundFitBuildReachabilityLabel(
               backgroundFit.mustHaveBuildReachabilityProbability,
-              'Must-have build',
+              mustHaveBuildChanceMetricLabel,
             ),
-            label: 'Must-have build',
+            label: mustHaveBuildChanceMetricLabel,
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.mustHaveBuildReachabilityProbability,
               'the must-have build',

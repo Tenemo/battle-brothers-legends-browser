@@ -75,7 +75,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
     '1/1',
   ])
   await expect(apprenticeCard.getByTestId('background-fit-summary-label')).toHaveText([
-    'Must-have build',
+    'Must-have build chance',
     'Expected must-have perks pickable',
     'Guaranteed perks pickable',
   ])
@@ -137,9 +137,9 @@ test('shows the background fit panel for a picked build and keeps the shell view
   const guaranteedBuildPerksBadge = apprenticeSummaryMetrics.filter({
     hasText: /Guaranteed perks pickable\s*1\/1/i,
   })
-  const fullBuildBadges = apprenticeSummaryMetrics.filter({ hasText: /Full build/i })
+  const fullBuildBadges = apprenticeSummaryMetrics.filter({ hasText: /Full build chance/i })
   const mustHaveBuildBadge = apprenticeSummaryMetrics
-    .filter({ hasText: /Must-have build\s*100%/i })
+    .filter({ hasText: /Must-have build chance\s*100%/i })
     .first()
 
   expect(metricTableGeometry.headerCount).toBe(0)
@@ -161,7 +161,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
     'title',
     /up to one skill book and up to one ancient scroll/i,
   )
-  await expect(mustHaveBuildBadge).not.toHaveAttribute('title', /Must-have build:/i)
+  await expect(mustHaveBuildBadge).not.toHaveAttribute('title', /Must-have build chance:/i)
   await expect(expectedBuildPerksBadge).toHaveAttribute(
     'title',
     /average of 1 of 1 must-have picked perks/i,

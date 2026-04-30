@@ -73,7 +73,7 @@
   .buildPlannerTitleRow {
     flex: 1 1 auto;
     flex-wrap: nowrap;
-    gap: var(--space-xl);
+    gap: var(--primitive-length-2rem);
     align-items: center;
     min-width: 0;
   }
@@ -108,7 +108,7 @@
   .buildPlannerInfoButton {
     position: relative;
 
-    @include size(var(--target-size-compact));
+    @include size(calc(var(--target-size-compact) * 1.5));
 
     border-radius: var(--radius-pill);
     color: var(--accent-soft);
@@ -128,7 +128,7 @@
   .buildPlannerInfoGlyph {
     display: block;
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: var(--font-size-xl);
+    font-size: calc(var(--font-size-xl) * 1.5);
     font-style: italic;
     font-weight: 700;
     line-height: 1;
@@ -286,12 +286,45 @@
   }
 
   .plannerRequirementLegend {
+    --planner-requirement-legend-chain-size: calc(
+      (var(--primitive-length-1-4rem) * 2.25) * 0.7
+    );
+    --planner-requirement-legend-slot-height: calc(var(--planner-perk-row-min-height) * 0.7);
+    --planner-requirement-legend-slot-width: calc(var(--planner-picked-perk-slot-width) * 0.7);
+
     display: flex;
     flex: 0 1 auto;
     flex-wrap: nowrap;
     gap: var(--space-sm);
     align-items: center;
     pointer-events: none;
+
+    .plannerSlotPerk {
+      width: min(var(--planner-requirement-legend-slot-width), 100%);
+      height: var(--planner-requirement-legend-slot-height);
+
+      &[data-requirement='must-have'] {
+        .plannerSlotPerkInspect {
+          justify-content: flex-end;
+          text-align: right;
+        }
+
+        .plannerPickedPerkName {
+          text-align: right;
+        }
+      }
+    }
+
+    .plannerSlotPerkInspect {
+      align-items: center;
+      min-height: calc(var(--planner-requirement-legend-slot-height) - var(--primitive-length-2px));
+      padding: var(--primitive-length-2px) var(--space-xs);
+    }
+
+    .plannerSlotRequirementChain {
+      width: var(--planner-requirement-legend-chain-size);
+      height: var(--planner-requirement-legend-chain-size);
+    }
   }
 
   .plannerSectionToggle {
@@ -501,7 +534,7 @@
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
     margin-top: calc(var(--primitive-length-12px) * -1);
-    opacity: 0.6;
+    opacity: 0.4;
     pointer-events: none;
     transform: translate(
       calc(var(--primitive-length-0-12rem) * -1),
@@ -533,7 +566,6 @@
     border-left: var(--primitive-length-1px) solid var(--border-overlay);
     border-radius: 0;
     overflow: hidden;
-    box-shadow: var(--shadow-selected-ring);
     visibility: hidden;
     pointer-events: none;
   }
@@ -952,6 +984,16 @@
     .buildPlannerTitleRow {
       flex-wrap: wrap;
       gap: var(--space-md);
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .plannerRequirementLegend {
+      --planner-requirement-legend-mobile-width: calc((var(--planner-requirement-legend-slot-width) * 2) + var(--space-sm) + var(--primitive-length-8px));
+
+      flex: 0 0 auto;
+      width: var(--planner-requirement-legend-mobile-width);
+      padding-left: var(--primitive-length-8px);
     }
 
     .buildPlannerActions {
