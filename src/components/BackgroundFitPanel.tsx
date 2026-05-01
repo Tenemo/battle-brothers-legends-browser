@@ -22,56 +22,121 @@ const emptyBackgroundFitView: BackgroundFitView = {
   supportedBuildTargetPerkGroups: [],
   unsupportedBuildTargetPerkGroups: [],
 }
+const backgroundFitProgressCountMinimumStepDurationMs = 10
 
-function BackgroundFitProgressBar({ progress }: { progress: BackgroundFitCalculationProgress }) {
-  const targetProgressPercent =
+function getClampedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
+  return Math.min(
+    progress.totalBackgroundCount,
+    Math.max(0, Math.floor(progress.checkedBackgroundCount)),
+  )
+}
+
+function useDisplayedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
+  const targetCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
+  const [displayedCheckedBackgroundCount, setDisplayedCheckedBackgroundCount] = useState(0)
+  const animationStartedAtMsRef = useRef<number | null>(null)
+  const animationStartCheckedBackgroundCountRef = useRef(0)
+
+  useEffect(() => {
+    let nextTimeoutId: number | null = null
+    const effectStartedAtMs = Date.now()
+
+    function advanceDisplayedBackgroundCount() {
+      setDisplayedCheckedBackgroundCount((currentCheckedBackgroundCount) => {
+        if (targetCheckedBackgroundCount < currentCheckedBackgroundCount) {
+          animationStartedAtMsRef.current = null
+          animationStartCheckedBackgroundCountRef.current = targetCheckedBackgroundCount
+          return targetCheckedBackgroundCount
+        }
+
+        if (currentCheckedBackgroundCount >= targetCheckedBackgroundCount) {
+          animationStartedAtMsRef.current = null
+          animationStartCheckedBackgroundCountRef.current = currentCheckedBackgroundCount
+          return currentCheckedBackgroundCount
+        }
+
+        if (animationStartedAtMsRef.current === null) {
+          animationStartedAtMsRef.current = effectStartedAtMs
+          animationStartCheckedBackgroundCountRef.current = currentCheckedBackgroundCount
+        }
+
+        const elapsedAnimationTimeMs = Date.now() - animationStartedAtMsRef.current
+        const elapsedProgressSteps = Math.floor(
+          elapsedAnimationTimeMs / backgroundFitProgressCountMinimumStepDurationMs,
+        )
+        const nextCheckedBackgroundCount = Math.min(
+          targetCheckedBackgroundCount,
+          animationStartCheckedBackgroundCountRef.current + elapsedProgressSteps,
+        )
+
+        if (nextCheckedBackgroundCount < targetCheckedBackgroundCount) {
+          nextTimeoutId = window.setTimeout(
+            advanceDisplayedBackgroundCount,
+            backgroundFitProgressCountMinimumStepDurationMs,
+          )
+        } else {
+          animationStartedAtMsRef.current = null
+          animationStartCheckedBackgroundCountRef.current = nextCheckedBackgroundCount
+        }
+
+        return nextCheckedBackgroundCount
+      })
+    }
+
+    nextTimeoutId = window.setTimeout(
+      advanceDisplayedBackgroundCount,
+      backgroundFitProgressCountMinimumStepDurationMs,
+    )
+
+    return () => {
+      if (nextTimeoutId !== null) {
+        window.clearTimeout(nextTimeoutId)
+      }
+    }
+  }, [targetCheckedBackgroundCount])
+
+  return displayedCheckedBackgroundCount
+}
+
+function BackgroundFitProgressIndicator({
+  progress,
+}: {
+  progress: BackgroundFitCalculationProgress
+}) {
+  const displayedCheckedBackgroundCount = useDisplayedCheckedBackgroundCount(progress)
+  const actualCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
+  const displayedProgressPercent =
     progress.totalBackgroundCount > 0
       ? Math.min(
           100,
-          Math.max(0, (progress.checkedBackgroundCount / progress.totalBackgroundCount) * 100),
+          Math.max(0, (displayedCheckedBackgroundCount / progress.totalBackgroundCount) * 100),
         )
       : 0
-  const [displayedProgressPercent, setDisplayedProgressPercent] = useState(0)
   const progressBarStyle = {
     '--background-fit-progress-value': `${displayedProgressPercent}%`,
   } as CSSProperties
 
-  useEffect(() => {
-    const animationFrameId =
-      typeof window.requestAnimationFrame === 'function'
-        ? window.requestAnimationFrame(() => {
-            setDisplayedProgressPercent(targetProgressPercent)
-          })
-        : window.setTimeout(() => {
-            setDisplayedProgressPercent(targetProgressPercent)
-          }, 16)
-
-    return () => {
-      if (typeof window.cancelAnimationFrame === 'function') {
-        window.cancelAnimationFrame(animationFrameId)
-        return
-      }
-
-      window.clearTimeout(animationFrameId)
-    }
-  }, [targetProgressPercent])
-
   return (
-    <div
-      aria-label="Background fit progress"
-      aria-valuemax={progress.totalBackgroundCount}
-      aria-valuemin={0}
-      aria-valuenow={progress.checkedBackgroundCount}
-      aria-valuetext={`${progress.checkedBackgroundCount}/${progress.totalBackgroundCount} backgrounds checked`}
-      className={styles.backgroundFitProgressBar}
-      role="progressbar"
-    >
+    <>
+      <p className={styles.backgroundFitProgressText}>
+        Checking backgrounds {displayedCheckedBackgroundCount}/{progress.totalBackgroundCount}.
+      </p>
       <div
-        aria-hidden="true"
-        className={styles.backgroundFitProgressBarValue}
-        style={progressBarStyle}
-      />
-    </div>
+        aria-label="Background fit progress"
+        aria-valuemax={progress.totalBackgroundCount}
+        aria-valuemin={0}
+        aria-valuenow={actualCheckedBackgroundCount}
+        aria-valuetext={`${actualCheckedBackgroundCount}/${progress.totalBackgroundCount} backgrounds checked`}
+        className={styles.backgroundFitProgressBar}
+        role="progressbar"
+      >
+        <div
+          aria-hidden="true"
+          className={styles.backgroundFitProgressBarValue}
+          style={progressBarStyle}
+        />
+      </div>
+    </>
   )
 }
 
@@ -167,10 +232,6 @@ export function BackgroundFitPanel({
     isLoadingBackgroundFitView || hasBuildReachabilityProbability
       ? 'Ranked by must-have build chance.'
       : 'Ranked by expected perks pickable.'
-  const backgroundFitProgressLabel =
-    backgroundFitProgress && backgroundFitProgress.totalBackgroundCount > 0
-      ? `Checking backgrounds ${backgroundFitProgress.checkedBackgroundCount}/${backgroundFitProgress.totalBackgroundCount}.`
-      : 'Calculating background fits.'
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
   const backgroundFitEmptyResultTarget =
     normalizedBackgroundFitQuery.length > 0
@@ -424,17 +485,13 @@ export function BackgroundFitPanel({
               data-testid="background-fit-status"
               data-loading={isLoadingBackgroundFitView}
             >
-              <div className={styles.backgroundFitStatusHeader}>
-                <p
-                  className={styles.backgroundFitRankingSummary}
-                  data-testid="background-fit-ranking-summary"
-                >
-                  {backgroundFitRankingSummaryText}
-                </p>
-                {isLoadingBackgroundFitView ? (
-                  <p className={styles.backgroundFitProgressText}>{backgroundFitProgressLabel}</p>
-                ) : null}
-              </div>
+              <p
+                aria-hidden={isLoadingBackgroundFitView}
+                className={styles.backgroundFitRankingSummary}
+                data-testid="background-fit-ranking-summary"
+              >
+                {backgroundFitRankingSummaryText}
+              </p>
               <div
                 aria-hidden={!isLoadingBackgroundFitView}
                 className={styles.backgroundFitLoadingSlot}
@@ -443,7 +500,9 @@ export function BackgroundFitPanel({
                 {isLoadingBackgroundFitView &&
                 backgroundFitProgress &&
                 backgroundFitProgress.totalBackgroundCount > 0 ? (
-                  <BackgroundFitProgressBar progress={backgroundFitProgress} />
+                  <BackgroundFitProgressIndicator progress={backgroundFitProgress} />
+                ) : isLoadingBackgroundFitView ? (
+                  <p className={styles.backgroundFitProgressText}>Calculating background fits.</p>
                 ) : null}
               </div>
             </div>

@@ -19,7 +19,7 @@ const denseSharedBuildUrl =
   '/?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Fortified+Mind,Hold+Out,Underdog,Assured+Conquest'
 const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
 const denseSharedBuildSearchBackgroundQuery = 'disowned'
-const backgroundFitCalculationTimeoutMs = 20_000
+const backgroundFitCalculationTimeoutMs = 30_000
 
 async function expectBackgroundFitCalculationComplete(
   backgroundFitPanel: Locator,
@@ -138,7 +138,9 @@ test('shows the background fit panel for a picked build and keeps the shell view
   })
 
   expect(loadingLayout).not.toBeNull()
-  expect(loadingLayout!.loadingStateTop).toBeGreaterThan(loadingLayout!.rankingSummaryTop)
+  expect(
+    Math.abs(loadingLayout!.loadingStateTop - loadingLayout!.rankingSummaryTop),
+  ).toBeLessThanOrEqual(1)
   expect(loadingLayout!.loadingStateBottom).toBeLessThanOrEqual(
     loadingLayout!.firstBackgroundCardTop,
   )

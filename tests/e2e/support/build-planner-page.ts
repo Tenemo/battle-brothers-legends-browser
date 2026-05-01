@@ -252,6 +252,7 @@ export async function selectPerkGroup(page: Page, perkGroupName: string): Promis
 
 export async function inspectPerkFromResults(page: Page, perkName: string): Promise<void> {
   const inspectButton = getResultsList(page).getByRole('button', {
+    exact: true,
     name: `Inspect ${perkName}`,
   })
 

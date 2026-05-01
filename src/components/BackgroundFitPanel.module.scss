@@ -127,16 +127,16 @@
 
   .backgroundFitStatus {
     display: grid;
+    position: relative;
     flex: 0 0 auto;
-    gap: var(--space-xs);
     min-width: 0;
   }
 
-  .backgroundFitStatusHeader {
-    display: flex;
-    justify-content: space-between;
-    gap: var(--space-md);
-    align-items: baseline;
+  .backgroundFitStatus[data-loading='true'] .backgroundFitRankingSummary {
+    visibility: hidden;
+  }
+
+  .backgroundFitRankingSummary {
     min-width: 0;
   }
 
@@ -151,11 +151,16 @@
 
   .backgroundFitLoadingSlot {
     display: grid;
+    position: absolute;
+    inset: 0;
+    grid-template-rows: auto auto;
+    row-gap: var(--space-2xs);
     align-items: start;
-    min-height: var(--primitive-length-0-42rem);
     min-width: 0;
+    pointer-events: none;
 
     &[aria-hidden='true'] {
+      opacity: 0;
       visibility: hidden;
     }
   }
@@ -441,10 +446,9 @@
 
   .backgroundFitMetricTable {
     display: grid;
-    grid-template-columns: var(--icon-size-xs) minmax(0, 15.625rem) max-content;
+    grid-template-columns: var(--icon-size-xs) minmax(0, 15.625rem) max-content minmax(0, 1fr);
     column-gap: var(--space-2xs);
-    width: fit-content;
-    max-width: 100%;
+    width: 100%;
     min-width: 0;
   }
 

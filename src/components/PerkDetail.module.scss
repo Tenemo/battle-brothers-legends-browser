@@ -52,6 +52,45 @@
     align-items: flex-end;
   }
 
+  .detailHistoryNavigation {
+    display: inline-flex;
+    gap: var(--space-2xs);
+    align-items: center;
+  }
+
+  .detailHistoryButton {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-pill);
+    padding: 0;
+    background: var(--surface-control);
+    color: var(--text-muted);
+    cursor: pointer;
+
+    @include size(var(--target-size));
+    @include control-transition;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--border-strong);
+      background: var(--surface-result-active);
+      color: var(--accent-soft);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .detailHistoryIcon {
+    width: var(--primitive-length-1rem);
+    height: var(--primitive-length-1rem);
+    stroke-width: 2.1;
+  }
+
   .detailBadgeRow {
     display: flex;
     flex-wrap: wrap;
@@ -386,6 +425,10 @@
 
     .detailHeaderActions {
       align-items: flex-start;
+    }
+
+    .detailHistoryButton {
+      @include size(var(--primitive-length-2-72rem));
     }
 
     .detailBackgroundFitMatchColumns {

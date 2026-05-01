@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { DetailsPanel } from '../src/components/PerkDetail'
 import type { RankedBackgroundFit } from '../src/lib/background-fit'
+import { backgroundStudyResourceBadgesTestId } from '../src/lib/background-study-resource-display'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
 
 const skillBookRequirementProfile = {
@@ -61,6 +62,7 @@ describe('background details study resources', () => {
         onClosePerkGroupHover={vi.fn()}
         onInspectPerk={vi.fn()}
         onInspectPerkGroup={vi.fn()}
+        onNavigateDetailHistory={vi.fn()}
         onOpenBuildPerkHover={vi.fn()}
         onOpenBuildPerkTooltip={vi.fn()}
         onOpenPerkGroupHover={vi.fn()}
@@ -89,6 +91,19 @@ describe('background details study resources', () => {
     )
 
     expect(screen.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
+    const detailBadgeRow = screen.getByTestId('detail-badge-row')
+    const veteranPerkIntervalBadge = within(detailBadgeRow).getByTestId(
+      'detail-background-veteran-perk-badge',
+    )
+    const studyResourceBadges = within(detailBadgeRow).getByTestId(
+      backgroundStudyResourceBadgesTestId,
+    )
+
+    expect(studyResourceBadges).toBeVisible()
+    expect(
+      veteranPerkIntervalBadge.compareDocumentPosition(studyResourceBadges) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0)
 
     const [mustHaveStudyResourceSection] = screen.getAllByTestId('detail-study-resource-section')
     const studyResourceTile = within(mustHaveStudyResourceSection).getByTestId('planner-group-card')

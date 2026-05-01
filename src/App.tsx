@@ -41,6 +41,7 @@ import { compareCategoryNames } from './lib/dynamic-background-categories'
 import {
   createSharedBuildUrlSearch,
   type BuildPlannerDetailSelection,
+  type BuildPlannerUrlState,
 } from './lib/build-planner-url-state'
 import {
   createBackgroundFitKey,
@@ -84,6 +85,10 @@ const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser
 const personalProjectsUrl = 'https://piech.dev/projects'
 const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width: 1439px)'
 const backgroundFitCompletionProgressMinimumDurationMs = 700
+const backgroundFitProgressCountMinimumStepDurationMs = 10
+const backgroundFitProgressCompletionPaddingMs = 550
+const detailHistoryNavigationFallbackDelayMs = 350
+const maximumDetailHistoryNavigationSkippedEntries = 50
 const plannerVersion = __PLANNER_VERSION__
 
 const allCategoryCounts = getCategoryCounts(allPerks)
@@ -132,6 +137,15 @@ type ActiveDetailSelection =
       type: 'perk'
     }
 
+type DetailHistoryNavigationDirection = -1 | 1
+
+type PendingDetailHistoryNavigation = {
+  direction: DetailHistoryNavigationDirection
+  originDetailKey: string
+  skippedEntryCount: number
+  skippedUrlState: BuildPlannerUrlState | null
+}
+
 function createActiveDetailSelectionFromUrl(
   detailSelection: BuildPlannerDetailSelection,
 ): ActiveDetailSelection {
@@ -147,6 +161,20 @@ function createActiveDetailSelectionFromUrl(
 
 function getSelectedPerkIdFromUrl(detailSelection: BuildPlannerDetailSelection): string | null {
   return detailSelection.type === 'perk' ? detailSelection.perkId : null
+}
+
+function getDetailSelectionHistoryKey(
+  detailSelection: BuildPlannerDetailSelection,
+): string | null {
+  if (detailSelection.type === 'perk') {
+    return `perk\u0000${detailSelection.perkId}`
+  }
+
+  if (detailSelection.type === 'background') {
+    return `background\u0000${detailSelection.backgroundId}\u0000${detailSelection.sourceFilePath}`
+  }
+
+  return null
 }
 
 function createUrlDetailSelection({
@@ -333,6 +361,8 @@ export default function App() {
     new Map<string, BackgroundFitCalculationProgress>(),
   )
   const backgroundFitCompletionProgressTimeoutRef = useRef<number | null>(null)
+  const pendingDetailHistoryNavigationRef = useRef<PendingDetailHistoryNavigation | null>(null)
+  const detailHistoryNavigationFallbackTimeoutRef = useRef<number | null>(null)
   const clearBackgroundFitCompletionProgressTimeout = useCallback(() => {
     if (backgroundFitCompletionProgressTimeoutRef.current === null) {
       return
@@ -340,6 +370,14 @@ export default function App() {
 
     window.clearTimeout(backgroundFitCompletionProgressTimeoutRef.current)
     backgroundFitCompletionProgressTimeoutRef.current = null
+  }, [])
+  const clearDetailHistoryNavigationFallbackTimeout = useCallback(() => {
+    if (detailHistoryNavigationFallbackTimeoutRef.current === null) {
+      return
+    }
+
+    window.clearTimeout(detailHistoryNavigationFallbackTimeoutRef.current)
+    detailHistoryNavigationFallbackTimeoutRef.current = null
   }, [])
   const getBackgroundFitWorkerClient = useCallback(() => {
     backgroundFitWorkerClientRef.current ??= createBackgroundFitWorkerClient({
@@ -377,10 +415,11 @@ export default function App() {
   useEffect(
     () => () => {
       clearBackgroundFitCompletionProgressTimeout()
+      clearDetailHistoryNavigationFallbackTimeout()
       backgroundFitWorkerClientRef.current?.dispose()
       backgroundFitWorkerClientRef.current = null
     },
-    [clearBackgroundFitCompletionProgressTimeout],
+    [clearBackgroundFitCompletionProgressTimeout, clearDetailHistoryNavigationFallbackTimeout],
   )
   const {
     clearAllHover,
@@ -474,8 +513,8 @@ export default function App() {
     createActiveDetailSelectionFromUrl(initialUrlState.detailSelection),
   )
   const selectedPerk = useMemo(
-    () => visiblePerks.find((perk) => perk.id === selectedPerkId) ?? null,
-    [selectedPerkId, visiblePerks],
+    () => (selectedPerkId === null ? null : allPerksById.get(selectedPerkId) ?? null),
+    [selectedPerkId],
   )
   const pickedPerkIds = useMemo(() => getPickedBuildPerkIds(pickedBuildPerks), [pickedBuildPerks])
   const optionalPickedPerkIds = useMemo(
@@ -731,6 +770,13 @@ export default function App() {
         })
 
         if (completionProgress !== null) {
+          const completionProgressDurationMs = Math.max(
+            backgroundFitCompletionProgressMinimumDurationMs,
+            completionProgress.totalBackgroundCount *
+              backgroundFitProgressCountMinimumStepDurationMs +
+              backgroundFitProgressCompletionPaddingMs,
+          )
+
           backgroundFitCompletionProgressTimeoutRef.current = window.setTimeout(() => {
             backgroundFitCompletionProgressTimeoutRef.current = null
             backgroundFitProgressByViewKey.delete(backgroundFitViewKey)
@@ -744,7 +790,7 @@ export default function App() {
                 currentProgressState?.key === backgroundFitViewKey ? null : currentProgressState,
               )
             })
-          }, backgroundFitCompletionProgressMinimumDurationMs)
+          }, completionProgressDurationMs)
         }
       })
       .catch((error: unknown) => {
@@ -861,8 +907,8 @@ export default function App() {
         : [],
     [selectedPerk],
   )
-  const handleUrlStateChange = useCallback(
-    (urlState: typeof initialUrlState) => {
+  const applyUrlState = useCallback(
+    (urlState: BuildPlannerUrlState) => {
       urlHistoryWriteModeRef.current = 'replace'
       startTransition(() => {
         setQuery(urlState.query)
@@ -895,6 +941,53 @@ export default function App() {
       })
     },
     [clearAllHover, resetShareBuildStatus],
+  )
+  const scheduleDetailHistoryNavigationFallback = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    clearDetailHistoryNavigationFallbackTimeout()
+    detailHistoryNavigationFallbackTimeoutRef.current = window.setTimeout(() => {
+      detailHistoryNavigationFallbackTimeoutRef.current = null
+      const pendingDetailHistoryNavigation = pendingDetailHistoryNavigationRef.current
+      pendingDetailHistoryNavigationRef.current = null
+
+      if (pendingDetailHistoryNavigation?.skippedUrlState) {
+        applyUrlState(pendingDetailHistoryNavigation.skippedUrlState)
+      }
+    }, detailHistoryNavigationFallbackDelayMs)
+  }, [applyUrlState, clearDetailHistoryNavigationFallbackTimeout])
+  const handleUrlStateChange = useCallback(
+    (urlState: BuildPlannerUrlState) => {
+      const pendingDetailHistoryNavigation = pendingDetailHistoryNavigationRef.current
+
+      if (pendingDetailHistoryNavigation) {
+        const nextDetailHistoryKey = getDetailSelectionHistoryKey(urlState.detailSelection)
+
+        if (
+          nextDetailHistoryKey === pendingDetailHistoryNavigation.originDetailKey &&
+          pendingDetailHistoryNavigation.skippedEntryCount <
+            maximumDetailHistoryNavigationSkippedEntries
+        ) {
+          pendingDetailHistoryNavigation.skippedEntryCount += 1
+          pendingDetailHistoryNavigation.skippedUrlState = urlState
+          scheduleDetailHistoryNavigationFallback()
+          window.history.go(pendingDetailHistoryNavigation.direction)
+          return
+        }
+
+        clearDetailHistoryNavigationFallbackTimeout()
+        pendingDetailHistoryNavigationRef.current = null
+      }
+
+      applyUrlState(urlState)
+    },
+    [
+      applyUrlState,
+      clearDetailHistoryNavigationFallbackTimeout,
+      scheduleDetailHistoryNavigationFallback,
+    ],
   )
 
   useBuildPlannerUrlSync(
@@ -1030,6 +1123,28 @@ export default function App() {
   function handleSelectBackgroundFit(backgroundFitKey: string) {
     requestNextUrlHistoryEntry()
     setActiveDetailSelection({ backgroundFitKey, type: 'background' })
+  }
+
+  function handleNavigateDetailHistory(direction: DetailHistoryNavigationDirection) {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const originDetailKey = getDetailSelectionHistoryKey(detailSelection)
+
+    if (originDetailKey === null) {
+      return
+    }
+
+    clearDetailHistoryNavigationFallbackTimeout()
+    pendingDetailHistoryNavigationRef.current = {
+      direction,
+      originDetailKey,
+      skippedEntryCount: 0,
+      skippedUrlState: null,
+    }
+    scheduleDetailHistoryNavigationFallback()
+    window.history.go(direction)
   }
 
   function handleOriginPerkGroupsChange(shouldIncludeNextOriginPerkGroups: boolean) {
@@ -1368,12 +1483,6 @@ export default function App() {
     }
   }, [activeDetailSelection, completedBackgroundFitView])
 
-  useEffect(() => {
-    if (selectedPerkId !== null && !visiblePerks.some((perk) => perk.id === selectedPerkId)) {
-      startTransition(() => setSelectedPerkId(null))
-    }
-  }, [selectedPerkId, visiblePerks])
-
   return (
     <div className={styles.appShell} data-testid="app-shell">
       <div className={styles.backgroundRunes} aria-hidden="true" />
@@ -1536,6 +1645,7 @@ export default function App() {
           onClosePerkGroupHover={closePerkGroupHover}
           onInspectPerk={handleInspectPlannerPerk}
           onInspectPerkGroup={handleInspectPerkGroup}
+          onNavigateDetailHistory={handleNavigateDetailHistory}
           onOpenBuildPerkHover={openBuildPerkHover}
           onOpenBuildPerkTooltip={openBuildPerkTooltip}
           onOpenPerkGroupHover={openPerkGroupHover}

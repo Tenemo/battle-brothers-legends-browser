@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Split } from 'lucide-react'
+import { ArrowLeft, ArrowRight, Split } from 'lucide-react'
 import {
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
@@ -57,6 +57,7 @@ type PerkDetailProps = {
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onNavigateDetailHistory: (direction: -1 | 1) => void
   onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onOpenBuildPerkTooltip: (
     perkId: string,
@@ -134,6 +135,7 @@ export function DetailsPanel({
   onClosePerkGroupHover,
   onInspectPerk,
   onInspectPerkGroup,
+  onNavigateDetailHistory,
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
@@ -173,6 +175,7 @@ export function DetailsPanel({
             onClosePerkGroupHover={onClosePerkGroupHover}
             onInspectPerk={onInspectPerk}
             onInspectPerkGroup={onInspectPerkGroup}
+            onNavigateDetailHistory={onNavigateDetailHistory}
             onOpenBuildPerkHover={onOpenBuildPerkHover}
             onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
             onOpenPerkGroupHover={onOpenPerkGroupHover}
@@ -203,6 +206,7 @@ export function DetailsPanel({
               iconLabel={`${selectedPerk.perkName} icon`}
               iconPath={getPerkDisplayIconPath(selectedPerk)}
               iconTestId="detail-perk-icon"
+              onNavigateHistory={onNavigateDetailHistory}
               title={selectedPerk.perkName}
             />
 
@@ -338,6 +342,7 @@ function DetailHeader({
   iconLabel,
   iconPath,
   iconTestId,
+  onNavigateHistory,
   title,
 }: {
   actions?: ReactNode
@@ -346,6 +351,7 @@ function DetailHeader({
   iconLabel: string
   iconPath: string | null
   iconTestId: string
+  onNavigateHistory: (direction: -1 | 1) => void
   title: string
 }) {
   return (
@@ -363,7 +369,39 @@ function DetailHeader({
           {badgeRow}
         </div>
       </div>
-      {actions ? <div className={styles.detailHeaderActions}>{actions}</div> : null}
+      <div className={styles.detailHeaderActions}>
+        <DetailHistoryNavigation onNavigateHistory={onNavigateHistory} />
+        {actions}
+      </div>
+    </div>
+  )
+}
+
+function DetailHistoryNavigation({
+  onNavigateHistory,
+}: {
+  onNavigateHistory: (direction: -1 | 1) => void
+}) {
+  return (
+    <div className={styles.detailHistoryNavigation} aria-label="Detail history navigation">
+      <button
+        aria-label="Show previous detail"
+        className={styles.detailHistoryButton}
+        onClick={() => onNavigateHistory(-1)}
+        title="Show previous detail"
+        type="button"
+      >
+        <ArrowLeft aria-hidden="true" className={styles.detailHistoryIcon} />
+      </button>
+      <button
+        aria-label="Show next detail"
+        className={styles.detailHistoryButton}
+        onClick={() => onNavigateHistory(1)}
+        title="Show next detail"
+        type="button"
+      >
+        <ArrowRight aria-hidden="true" className={styles.detailHistoryIcon} />
+      </button>
     </div>
   )
 }
@@ -639,6 +677,7 @@ function BackgroundDetail({
   onClosePerkGroupHover,
   onInspectPerk,
   onInspectPerkGroup,
+  onNavigateDetailHistory,
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
@@ -664,6 +703,7 @@ function BackgroundDetail({
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onNavigateDetailHistory: (direction: -1 | 1) => void
   onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onOpenBuildPerkTooltip: (
     perkId: string,
@@ -707,9 +747,8 @@ function BackgroundDetail({
   return (
     <>
       <DetailHeader
-        actions={<BackgroundFitStudyResourceBadges backgroundFit={backgroundFit} />}
         badgeRow={
-          <div className={styles.detailBadgeRow}>
+          <div className={styles.detailBadgeRow} data-testid="detail-badge-row">
             {backgroundPillLabel ? (
               <span className={styles.detailBadge} data-testid="detail-background-pill">
                 {backgroundPillLabel}
@@ -723,12 +762,14 @@ function BackgroundDetail({
             >
               {veteranPerkLevelIntervalLabel}
             </span>
+            <BackgroundFitStudyResourceBadges backgroundFit={backgroundFit} />
           </div>
         }
         eyebrow={`Background rank ${rank + 1}`}
         iconLabel={`${backgroundFit.backgroundName} background icon`}
         iconPath={backgroundFit.iconPath}
         iconTestId="detail-background-icon"
+        onNavigateHistory={onNavigateDetailHistory}
         title={backgroundFit.backgroundName}
       />
 

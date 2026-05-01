@@ -393,6 +393,40 @@ describe('app', () => {
     })
   })
 
+  test('keeps selected perk details when a perk group filter hides the selected perk', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const perkSearchInput = screen.getByLabelText('Search perks')
+
+    await user.type(perkSearchInput, 'Berserk')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Berserk' }),
+    )
+
+    expect(
+      within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+        level: 2,
+        name: 'Berserk',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Expand category Magic' }))
+    await user.click(screen.getByRole('button', { name: 'Select perk group Evocation' }))
+
+    await waitFor(() => {
+      expect(perkSearchInput).toHaveValue('')
+    })
+    expect(
+      within(screen.getByTestId('results-list')).queryByRole('button', { name: 'Inspect Berserk' }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+        level: 2,
+        name: 'Berserk',
+      }),
+    ).toBeInTheDocument()
+  })
+
   test('loads background fit when browser history restores background detail url state', async () => {
     render(<App />)
 
