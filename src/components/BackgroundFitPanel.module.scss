@@ -125,6 +125,41 @@
     padding-right: var(--primitive-length-0-18rem);
   }
 
+  .backgroundFitStatus {
+    display: grid;
+    flex: 0 0 auto;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+
+  .backgroundFitStatusHeader {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-md);
+    align-items: baseline;
+    min-width: 0;
+  }
+
+  .backgroundFitProgressText {
+    flex: 0 0 auto;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .backgroundFitLoadingSlot {
+    display: grid;
+    align-items: start;
+    min-height: var(--primitive-length-0-42rem);
+    min-width: 0;
+
+    &[aria-hidden='true'] {
+      visibility: hidden;
+    }
+  }
+
   .backgroundFitProgressBar {
     position: relative;
     width: 100%;
@@ -414,8 +449,8 @@
 
   .backgroundFitMetricRow {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
-    gap: var(--space-md);
+    grid-template-columns: var(--icon-size-xs) minmax(0, 1fr) var(--primitive-length-4rem);
+    column-gap: var(--space-2xs);
     align-items: baseline;
     min-width: 0;
     padding: var(--primitive-length-0-12rem) 0;
@@ -427,7 +462,19 @@
     }
   }
 
+  .backgroundFitMetricIconCell {
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    width: var(--icon-size-xs);
+    min-width: 0;
+    color: var(--accent-soft);
+    line-height: 0;
+  }
+
   .backgroundFitMetricValue {
+    margin-left: var(--space-sm);
     color: var(--accent-soft);
     font-size: var(--font-size-base);
     font-weight: 400;
@@ -437,9 +484,6 @@
   }
 
   .backgroundFitMetricLabel {
-    display: inline-flex;
-    gap: var(--space-2xs);
-    align-items: center;
     min-width: 0;
     color: var(--text-secondary);
     font-size: var(--font-size-sm);
@@ -449,8 +493,8 @@
 
   .backgroundFitMetricMustHaveIcon {
     flex: 0 0 auto;
-    width: var(--icon-size-xs);
-    height: var(--icon-size-xs);
+    width: calc(var(--icon-size-xs) * 0.8);
+    height: calc(var(--icon-size-xs) * 0.8);
     color: var(--accent-soft);
     stroke-width: 2.2;
   }
@@ -459,24 +503,9 @@
     gap: var(--space-sm);
   }
 
-  .backgroundFitLoadingState,
   .backgroundFitEmptyState {
     align-content: start;
     gap: var(--space-md);
-  }
-
-  .backgroundFitLoadingState {
-    position: absolute;
-    z-index: var(--z-index-raised);
-    top: 0;
-    right: var(--primitive-length-0-18rem);
-    left: 0;
-    padding: var(--space-md);
-    border: var(--primitive-length-1px) solid var(--border-muted);
-    border-radius: var(--radius-lg);
-    background: color-mix(in srgb, var(--surface-panel) 92%, transparent);
-    box-shadow: var(--shadow-panel);
-    pointer-events: none;
   }
 
   .backgroundFitSearchField {
@@ -595,8 +624,8 @@
     }
 
     .backgroundFitMetricRow {
-      grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
-      gap: var(--space-xs);
+      grid-template-columns: var(--icon-size-xs) minmax(0, 1fr) var(--primitive-length-4rem);
+      column-gap: var(--space-2xs);
       padding: var(--primitive-length-0-08rem) 0;
     }
 

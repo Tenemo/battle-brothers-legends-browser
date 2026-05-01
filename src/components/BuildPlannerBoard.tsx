@@ -19,6 +19,11 @@ import type { BuildPlannerPickedPerk, PlannerPerkGroupSelection } from './build-
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
 
+const mustHaveLegendTileTitle =
+  'This is how must-have perks look in the build. Background fit uses must-have perks for the main build chance.'
+const optionalLegendTileTitle =
+  'This is how optional perks look in the build. Optional perks stay visible for full-build coverage and are scored separately.'
+
 function getPlannerGroupLabel(perkGroupOptions: BuildPlannerPerkGroupRequirementOption[]): string {
   return [
     ...new Set(perkGroupOptions.map((perkGroupOption) => perkGroupOption.perkGroupLabel)),
@@ -141,6 +146,7 @@ export function BuildPlannerRequirementLegend() {
         className={joinClassNames(styles.plannerSlot, styles.plannerSlotPerk)}
         data-requirement="must-have"
         data-testid="planner-requirement-legend-tile"
+        title={mustHaveLegendTileTitle}
       >
         <PlannerSlotRequirementChain />
         <div className={styles.plannerSlotPerkInspect}>
@@ -153,6 +159,7 @@ export function BuildPlannerRequirementLegend() {
         className={joinClassNames(styles.plannerSlot, styles.plannerSlotPerk)}
         data-requirement="optional"
         data-testid="planner-requirement-legend-tile"
+        title={optionalLegendTileTitle}
       >
         <div className={styles.plannerSlotPerkInspect}>
           <span className={styles.plannerPickedPerkName} data-testid="planner-picked-perk-name">

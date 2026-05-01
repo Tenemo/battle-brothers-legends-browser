@@ -10,10 +10,7 @@ import {
 import { joinClassNames } from '../lib/class-names'
 import type { BackgroundFitCalculationProgress, BackgroundFitView } from '../lib/background-fit'
 import { isOriginBackgroundFit } from '../lib/background-origin'
-import {
-  areBackgroundVeteranPerkLevelIntervalsDefault,
-  formatBackgroundVeteranPerkLevelIntervalFilterLabel,
-} from '../lib/background-veteran-perks'
+import { formatBackgroundVeteranPerkLevelIntervalFilterLabel } from '../lib/background-veteran-perks'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
@@ -26,11 +23,7 @@ const emptyBackgroundFitView: BackgroundFitView = {
   unsupportedBuildTargetPerkGroups: [],
 }
 
-function BackgroundFitProgressBar({
-  progress,
-}: {
-  progress: BackgroundFitCalculationProgress
-}) {
+function BackgroundFitProgressBar({ progress }: { progress: BackgroundFitCalculationProgress }) {
   const targetProgressPercent =
     progress.totalBackgroundCount > 0
       ? Math.min(
@@ -163,15 +156,17 @@ export function BackgroundFitPanel({
   )
   const hasActiveBackgroundFilter =
     shouldIncludeOriginBackgrounds ||
-    !shouldAllowBackgroundStudyBook ||
-    !shouldAllowBackgroundStudyScroll ||
-    shouldAllowSecondBackgroundStudyScroll ||
-    !areBackgroundVeteranPerkLevelIntervalsDefault(
-      selectedBackgroundVeteranPerkLevelIntervals,
-      availableBackgroundVeteranPerkLevelIntervals,
-    )
+    shouldAllowBackgroundStudyBook ||
+    shouldAllowBackgroundStudyScroll ||
+    (shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll) ||
+    selectedBackgroundVeteranPerkLevelIntervals.length > 0
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
-  const shouldShowBackgroundFitTargetSummary = hasPickedPerks && !isLoadingBackgroundFitView
+  const shouldShowBackgroundFitRankingStatus =
+    hasPickedPerks && (isLoadingBackgroundFitView || hasSupportedBackgroundFitTargets)
+  const backgroundFitRankingSummaryText =
+    isLoadingBackgroundFitView || hasBuildReachabilityProbability
+      ? 'Ranked by must-have build chance.'
+      : 'Ranked by expected perks pickable.'
   const backgroundFitProgressLabel =
     backgroundFitProgress && backgroundFitProgress.totalBackgroundCount > 0
       ? `Checking backgrounds ${backgroundFitProgress.checkedBackgroundCount}/${backgroundFitProgress.totalBackgroundCount}.`
@@ -423,17 +418,36 @@ export function BackgroundFitPanel({
             }
             value={backgroundFitInputValue}
           />
-          {!shouldShowBackgroundFitTargetSummary ? null : hasSupportedBackgroundFitTargets ? (
-            <p
-              className={styles.backgroundFitRankingSummary}
-              data-testid="background-fit-ranking-summary"
-              hidden={hasActiveBackgroundFitSearch}
+          {shouldShowBackgroundFitRankingStatus ? (
+            <div
+              className={styles.backgroundFitStatus}
+              data-testid="background-fit-status"
+              data-loading={isLoadingBackgroundFitView}
             >
-              {hasBuildReachabilityProbability
-                ? 'Ranked by must-have build chance.'
-                : 'Ranked by expected perks pickable.'}
-            </p>
-          ) : (
+              <div className={styles.backgroundFitStatusHeader}>
+                <p
+                  className={styles.backgroundFitRankingSummary}
+                  data-testid="background-fit-ranking-summary"
+                >
+                  {backgroundFitRankingSummaryText}
+                </p>
+                {isLoadingBackgroundFitView ? (
+                  <p className={styles.backgroundFitProgressText}>{backgroundFitProgressLabel}</p>
+                ) : null}
+              </div>
+              <div
+                aria-hidden={!isLoadingBackgroundFitView}
+                className={styles.backgroundFitLoadingSlot}
+                data-testid="background-fit-loading-slot"
+              >
+                {isLoadingBackgroundFitView &&
+                backgroundFitProgress &&
+                backgroundFitProgress.totalBackgroundCount > 0 ? (
+                  <BackgroundFitProgressBar progress={backgroundFitProgress} />
+                ) : null}
+              </div>
+            </div>
+          ) : !hasPickedPerks || hasSupportedBackgroundFitTargets ? null : (
             <div className={styles.backgroundFitEmptyState}>
               <p className={styles.backgroundFitSummaryCopy}>
                 {hasUnsupportedBackgroundFitTargets
@@ -477,14 +491,6 @@ export function BackgroundFitPanel({
               </div>
             ) : (
               <>
-                {isLoadingBackgroundFitView ? (
-                  <div className={styles.backgroundFitLoadingState}>
-                    <p className={styles.backgroundFitSummaryCopy}>{backgroundFitProgressLabel}</p>
-                    {backgroundFitProgress && backgroundFitProgress.totalBackgroundCount > 0 ? (
-                      <BackgroundFitProgressBar progress={backgroundFitProgress} />
-                    ) : null}
-                  </div>
-                ) : null}
                 {visibleRankedBackgroundFits.length > 0 ? (
                   <ol className={styles.backgroundFitRanking} data-testid="background-fit-ranking">
                     {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
@@ -496,7 +502,9 @@ export function BackgroundFitPanel({
                             clearBackgroundFitInteractiveHover()
                             onSelectBackgroundFit(backgroundFitKey)
                           }}
-                          isSelected={selectedBackgroundFitKey === getBackgroundFitKey(backgroundFit)}
+                          isSelected={
+                            selectedBackgroundFitKey === getBackgroundFitKey(backgroundFit)
+                          }
                           mustHavePickedPerkCount={mustHavePickedPerkCount}
                           optionalPickedPerkCount={optionalPickedPerkCount}
                           pickedPerkCount={pickedPerkCount}

@@ -250,7 +250,11 @@ function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: Back
       role="listitem"
       title={tooltip}
     >
-      <span className={styles.backgroundFitMetricLabel} data-testid="background-fit-summary-label">
+      <span
+        aria-hidden="true"
+        className={styles.backgroundFitMetricIconCell}
+        data-testid="background-fit-summary-icon-cell"
+      >
         {shouldShowMustHaveIcon ? (
           <Link
             aria-hidden="true"
@@ -258,6 +262,8 @@ function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: Back
             data-testid="background-fit-summary-must-have-icon"
           />
         ) : null}
+      </span>
+      <span className={styles.backgroundFitMetricLabel} data-testid="background-fit-summary-label">
         {label}
       </span>
       <span className={styles.backgroundFitMetricValue} data-testid="background-fit-summary-value">

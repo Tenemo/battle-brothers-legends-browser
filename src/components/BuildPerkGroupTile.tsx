@@ -181,14 +181,14 @@ export function BuildPerkGroupTile({
         perkGroupId: primaryPerkGroupOption.perkGroupId,
       }
     : undefined
+  const inspectPrimaryPerkGroup = primaryPerkGroupOption
+    ? () =>
+        onInspectPerkGroup(primaryPerkGroupOption.categoryName, primaryPerkGroupOption.perkGroupId)
+    : undefined
   const markerPointerHandlers = primaryPerkGroupOption
     ? {
         onBlur: () => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption)),
-        onClick: () =>
-          onInspectPerkGroup(
-            primaryPerkGroupOption.categoryName,
-            primaryPerkGroupOption.perkGroupId,
-          ),
+        onClick: inspectPrimaryPerkGroup,
         onFocus: () =>
           onOpenPerkGroupHover(
             primaryPerkGroupOption.categoryName,
@@ -218,12 +218,7 @@ export function BuildPerkGroupTile({
           aria-label={`Select perk group ${groupLabel}`}
           className={styles.plannerGroupCardInspect}
           onBlur={() => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption))}
-          onClick={() =>
-            onInspectPerkGroup(
-              primaryPerkGroupOption.categoryName,
-              primaryPerkGroupOption.perkGroupId,
-            )
-          }
+          onClick={inspectPrimaryPerkGroup}
           onFocus={() =>
             onOpenPerkGroupHover(
               primaryPerkGroupOption.categoryName,
@@ -279,7 +274,20 @@ export function BuildPerkGroupTile({
           </div>
         </div>
       </div>
-      <div className={styles.plannerPillList} data-testid="planner-pill-list">
+      <div
+        className={styles.plannerPillList}
+        data-testid="planner-pill-list"
+        onClick={(event) => {
+          if (
+            inspectPrimaryPerkGroup === undefined ||
+            (event.target instanceof Element && event.target.closest('button') !== null)
+          ) {
+            return
+          }
+
+          inspectPrimaryPerkGroup()
+        }}
+      >
         {perks.map((perk) =>
           perk.perkId ? (
             <BuildPerkPill

@@ -528,11 +528,16 @@
   }
 
   .plannerSlotRequirementChain {
+    --planner-slot-requirement-chain-left-offset: calc(
+      var(--primitive-length-negative-5px) - var(--primitive-length-3px)
+    );
     --planner-slot-requirement-chain-scale: 1;
 
     position: absolute;
     top: 50%;
-    left: calc((var(--primitive-length-negative-5px) - var(--primitive-length-3px)) * var(--planner-slot-requirement-chain-scale));
+    left: calc(
+      var(--planner-slot-requirement-chain-left-offset) * var(--planner-slot-requirement-chain-scale)
+    );
     z-index: var(--z-index-raised);
     display: block;
     width: calc(
@@ -818,7 +823,7 @@
     flex-wrap: wrap;
     gap: var(--space-xs);
     margin-top: var(--space-md);
-    pointer-events: none;
+    pointer-events: auto;
   }
 
   .plannerPill {
@@ -1003,9 +1008,13 @@
     }
 
     .plannerRequirementLegend {
-      --planner-requirement-legend-mobile-width: calc(
-        (var(--planner-requirement-legend-slot-width) * 2) + var(--space-md) + var(--primitive-length-8px)
+      --planner-requirement-legend-mobile-gutter: calc(
+        var(--space-md) + var(--primitive-length-8px)
       );
+      --planner-requirement-legend-slot-pair-width: calc(
+        var(--planner-requirement-legend-slot-width) * 2
+      );
+      --planner-requirement-legend-mobile-width: calc(var(--planner-requirement-legend-slot-pair-width) + var(--planner-requirement-legend-mobile-gutter));
 
       flex: 0 0 auto;
       width: var(--planner-requirement-legend-mobile-width);

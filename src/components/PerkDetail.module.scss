@@ -138,7 +138,8 @@
     isolation: isolate;
     overflow: hidden;
 
-    &[data-requirement-scope='must-have'] {
+    &[data-requirement-scope='must-have'],
+    &[data-requirement-scope='optional'] {
       padding-top: var(--space-lg);
     }
   }
@@ -162,16 +163,16 @@
   .detailRequirementChainOverlay {
     position: absolute;
     top: var(--space-2xs);
-    left: var(--space-2xs);
+    right: var(--space-2xs);
     z-index: var(--z-index-base);
     display: block;
-    width: calc(var(--primitive-length-5-5rem) * 0.6);
-    height: calc(var(--primitive-length-5-5rem) * 0.6);
+    width: calc(var(--primitive-length-5-5rem) * 0.3);
+    height: calc(var(--primitive-length-5-5rem) * 0.3);
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
     opacity: 0.8;
     pointer-events: none;
-    transform: rotate(-70deg);
+    transform: rotate(-90deg);
   }
 
   .detailRequirementChainImage {
@@ -179,6 +180,26 @@
     width: 100%;
     height: 100%;
     user-select: none;
+  }
+
+  .detailRequirementOptionalOverlay {
+    position: absolute;
+    top: var(--space-2xs);
+    right: var(--space-2xs);
+    z-index: var(--z-index-base);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    line-height: 0;
+    opacity: 0.8;
+    pointer-events: none;
+  }
+
+  .detailRequirementOptionalIcon {
+    @include size(var(--icon-size-md));
+
+    stroke-width: 2.2;
   }
 
   .detailMatchSectionLabel {

@@ -1713,6 +1713,14 @@ test('marks picked perks as optional and separates them from must-have perks', a
   ])
   await expect(mustHaveLegendTile).toHaveAttribute('data-requirement', 'must-have')
   await expect(optionalLegendTile).toHaveAttribute('data-requirement', 'optional')
+  await expect(mustHaveLegendTile).toHaveAttribute(
+    'title',
+    'This is how must-have perks look in the build. Background fit uses must-have perks for the main build chance.',
+  )
+  await expect(optionalLegendTile).toHaveAttribute(
+    'title',
+    'This is how optional perks look in the build. Optional perks stay visible for full-build coverage and are scored separately.',
+  )
   await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
   await expect(optionalLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(0)
   const requirementLegendPlacementMetrics = await page

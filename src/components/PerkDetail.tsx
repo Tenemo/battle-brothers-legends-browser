@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { Split } from 'lucide-react'
 import {
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
@@ -783,7 +784,16 @@ function BackgroundDetail({
               onOpenPerkGroupHover={onOpenPerkGroupHover}
             />
           </div>
-          <div className={styles.detailBackgroundFitMatchColumn}>
+          <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="optional">
+            <span
+              aria-label="Optional perk groups"
+              className={styles.detailRequirementOptionalOverlay}
+              data-testid="detail-requirement-optional-overlay"
+              role="img"
+              title="Optional perk groups"
+            >
+              <Split aria-hidden="true" className={styles.detailRequirementOptionalIcon} />
+            </span>
             <div className={styles.detailBackgroundFitMatchColumnHeader}>
               <h4>Optional</h4>
             </div>

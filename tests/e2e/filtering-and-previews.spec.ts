@@ -581,19 +581,20 @@ test('keeps category hover and disclosure styling separate from perk group highl
 
   await magicDisclosureButton.hover()
 
-  const disclosureHoverStyles = await magicDisclosureButton.evaluate((button) => {
-    const computedStyle = window.getComputedStyle(button)
+  await expect
+    .poll(async () =>
+      magicDisclosureButton.evaluate((button, baseStyles) => {
+        const computedStyle = window.getComputedStyle(button)
 
-    return {
-      backgroundColor: computedStyle.backgroundColor,
-      borderLeftColor: computedStyle.borderLeftColor,
-      borderRightColor: computedStyle.borderRightColor,
-    }
-  })
-
-  expect(disclosureHoverStyles.backgroundColor).not.toBe(disclosureBaseStyles.backgroundColor)
-  expect(disclosureHoverStyles.borderLeftColor).not.toBe(disclosureBaseStyles.borderLeftColor)
-  expect(disclosureHoverStyles.borderRightColor).not.toBe(disclosureBaseStyles.borderRightColor)
+        return (
+          button.matches(':hover') &&
+          computedStyle.backgroundColor !== baseStyles.backgroundColor &&
+          computedStyle.borderLeftColor !== baseStyles.borderLeftColor &&
+          computedStyle.borderRightColor !== baseStyles.borderRightColor
+        )
+      }, disclosureBaseStyles),
+    )
+    .toBe(true)
   await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
 })
 
