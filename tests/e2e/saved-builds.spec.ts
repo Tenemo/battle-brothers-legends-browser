@@ -106,6 +106,10 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
   await addPerkToBuildFromResults(page, 'Clarity')
 
   await page.getByRole('button', { name: 'Save / Load build' }).click()
+  await expect(page.getByRole('dialog', { name: 'Saved builds' }).locator('p[title]')).toHaveCSS(
+    'cursor',
+    'help',
+  )
   await page.getByLabel('Build name').fill('Overwrite target')
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
   await expect(page.getByRole('status')).toHaveText('Saved build')

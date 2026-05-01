@@ -700,10 +700,6 @@
       @include active-corner-ornaments;
     }
 
-    &[data-ancient-scroll-perk-group='true'] {
-      padding-right: var(--primitive-length-1-65rem);
-    }
-
     &[data-wide='true'] {
       flex: 1 1 100%;
       width: 100%;
@@ -835,6 +831,12 @@
     gap: var(--space-xs);
     margin-top: var(--space-md);
     pointer-events: none;
+  }
+
+  .plannerGroupCard[data-ancient-scroll-perk-group='true'] .plannerPillList {
+    padding-right: calc(
+      var(--ancient-scroll-marker-size, var(--primitive-length-1-4rem)) + var(--space-2xs)
+    );
   }
 
   .plannerPill {

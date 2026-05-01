@@ -191,7 +191,9 @@
     }
 
     &[data-ancient-scroll-perk-group='true'] {
-      padding-right: var(--primitive-length-1-4rem);
+      --ancient-scroll-marker-size: var(--primitive-length-1-05rem);
+
+      padding-right: calc(var(--ancient-scroll-marker-size) + var(--primitive-length-0-48rem));
     }
   }
 

@@ -5,6 +5,7 @@ import {
   expectCssRgbColorsToMatch,
   getBackgroundFitPanel,
   expectNoDocumentHorizontalOverflow,
+  expectRawAncientScrollMarker,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
@@ -1472,6 +1473,60 @@ test('keeps long planner group names compact without category text', async ({ pa
   expect(plannerGroupCardMetrics!.cardHeight).toBeLessThanOrEqual(
     plannerGroupCardMetrics!.cardMinimumHeight + 1,
   )
+})
+
+test('keeps ancient scroll group tile markers from reserving header space', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await searchPerks(page, 'Magic Missile Focus')
+  await addPerkToBuildFromResults(page, 'Magic Missile Focus')
+
+  const plannerGroupCard = getBuildIndividualGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Evocation' })
+  const ancientScrollMarker = plannerGroupCard.getByTestId('ancient-scroll-perk-group-marker')
+
+  await expect(plannerGroupCard).toBeVisible()
+  await expect(ancientScrollMarker).toBeVisible()
+  await expectRawAncientScrollMarker(ancientScrollMarker)
+
+  const plannerGroupCardMetrics = await plannerGroupCard.evaluate((card) => {
+    const groupCount = card.querySelector('[data-testid="planner-slot-group-count"]')
+    const marker = card.querySelector('[data-testid="ancient-scroll-perk-group-marker"]')
+
+    if (!(groupCount instanceof HTMLElement) || !(marker instanceof HTMLElement)) {
+      return null
+    }
+
+    const cardRectangle = card.getBoundingClientRect()
+    const groupCountRectangle = groupCount.getBoundingClientRect()
+    const markerRectangle = marker.getBoundingClientRect()
+    const rootFontSize = Number.parseFloat(
+      window.getComputedStyle(document.documentElement).fontSize,
+    )
+    const cardPaddingRight = Number.parseFloat(window.getComputedStyle(card).paddingRight)
+
+    return {
+      cardPaddingRight,
+      groupCountRightGap: cardRectangle.right - groupCountRectangle.right,
+      markerWidth: markerRectangle.width,
+      expectedMarkerWidth: rootFontSize * 1.4,
+      previousMarkerWidth: rootFontSize * 1.12,
+    }
+  })
+
+  expect(plannerGroupCardMetrics).not.toBeNull()
+  expect(plannerGroupCardMetrics!.groupCountRightGap).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.cardPaddingRight + 1,
+  )
+  expect(plannerGroupCardMetrics!.markerWidth).toBeGreaterThanOrEqual(
+    plannerGroupCardMetrics!.previousMarkerWidth * 1.24,
+  )
+  expect(
+    Math.abs(
+      plannerGroupCardMetrics!.markerWidth - plannerGroupCardMetrics!.expectedMarkerWidth,
+    ),
+  ).toBeLessThanOrEqual(1)
 })
 
 test('wraps picked perk names at spaces inside compact fixed tiles', async ({ page }) => {

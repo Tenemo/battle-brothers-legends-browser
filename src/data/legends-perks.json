@@ -8961,8 +8961,7 @@
           "perkGroupIds": [
             "ValaChantMagicTree",
             "ValaTranceMagicTree",
-            "ValaSpiritMagicTree",
-            "StavesMagicTree"
+            "ValaSpiritMagicTree"
           ]
         }
       },
@@ -9462,7 +9461,7 @@
       }
     ]
   },
-  "generatedAt": "2026-04-30T14:02:42.675Z",
+  "generatedAt": "2026-05-01T23:36:13.002Z",
   "perkCount": 367,
   "perks": [
     {
@@ -30337,7 +30336,7 @@
         "Master the art of following up for devastating effects.",
         "Passive: • After landing a hit, the next attack this turn does 25% overall damage and it costs 20% less Fatigue than normal.",
         "• If the attack misses, the effect is lost.",
-        "• When Dual Wielding daggers, if the offhand attack successfully hits, the next mainhand attack costs -1 AP and deals +10% damage."
+        "• When Dual Wielding daggers, if both weapons successfully hit, the next mainhand attack costs -1 AP and deals +10% damage."
       ],
       "categoryNames": [
         "Weapon"
@@ -30357,7 +30356,7 @@
       ],
       "primaryCategoryName": "Weapon",
       "scenarioSources": [],
-      "searchText": "Double Strike Weapon Weapon Master the art of following up for devastating effects. Passive: • After landing a hit, the next attack this turn does 25% overall damage and it costs 20% less Fatigue than normal. • If the attack misses, the effect is lost. • When Dual Wielding daggers, if the offhand attack successfully hits, the next mainhand attack costs -1 AP and deals +10% damage. Weapon Dagger Adventurous Noble Weapon Dagger Arbalester Weapon Dagger Assassin Weapon Dagger Assassin Weapon Dagger Auxiliary Weapon Dagger Beggar Weapon Dagger Belly Dancer Weapon Dagger Bladedancer Weapon Dagger Bounty Hunter Weapon Dagger Bowyer Weapon Dagger Brawler Weapon Dagger Butcher Weapon Dagger Centurion Weapon Dagger Companion Weapon Dagger Companion Weapon Dagger Conjurer Weapon Dagger Cripple Weapon Dagger Disowned Noble Weapon Dagger Diviner Weapon Dagger Enchanter Weapon Dagger Eunuch Weapon Dagger Evoker Weapon Dagger Fisherman Weapon Dagger Gambler Weapon Dagger Gladiator Weapon Dagger Gladiator Weapon Dagger Gladiator Prizefighter Weapon Dagger Hashassin Weapon Dagger Historian Weapon Dagger Honour Guard Weapon Dagger Illusionist Weapon Dagger Inventor Weapon Dagger Juggler Weapon Dagger Killer on the Run Weapon Dagger Legate Weapon Dagger Legionary Weapon Dagger Medium Weapon Dagger Merchant Weapon Dagger Messenger Weapon Dagger Minstrel Weapon Dagger Muladí Weapon Dagger Necromancer Weapon Dagger Necrosavant Weapon Dagger Noble Usurper Weapon Dagger Peddler Weapon Dagger Pimp Weapon Dagger Poacher Weapon Dagger Prefect Weapon Dagger Qiyan Weapon Dagger Ranger Weapon Dagger Ranger Weapon Dagger Servant Weapon Dagger Servus Weapon Dagger Surgeon Weapon Dagger Swordmaster Weapon Dagger Tailor Weapon Dagger Taxidermist Weapon Dagger Thief Weapon Dagger Transmuter Weapon Dagger Warlock Weapon Dagger Weidermancer Weapon Dagger Witchhunter Weapon Dagger Youngblood Weapon Dagger"
+      "searchText": "Double Strike Weapon Weapon Master the art of following up for devastating effects. Passive: • After landing a hit, the next attack this turn does 25% overall damage and it costs 20% less Fatigue than normal. • If the attack misses, the effect is lost. • When Dual Wielding daggers, if both weapons successfully hit, the next mainhand attack costs -1 AP and deals +10% damage. Weapon Dagger Adventurous Noble Weapon Dagger Arbalester Weapon Dagger Assassin Weapon Dagger Assassin Weapon Dagger Auxiliary Weapon Dagger Beggar Weapon Dagger Belly Dancer Weapon Dagger Bladedancer Weapon Dagger Bounty Hunter Weapon Dagger Bowyer Weapon Dagger Brawler Weapon Dagger Butcher Weapon Dagger Centurion Weapon Dagger Companion Weapon Dagger Companion Weapon Dagger Conjurer Weapon Dagger Cripple Weapon Dagger Disowned Noble Weapon Dagger Diviner Weapon Dagger Enchanter Weapon Dagger Eunuch Weapon Dagger Evoker Weapon Dagger Fisherman Weapon Dagger Gambler Weapon Dagger Gladiator Weapon Dagger Gladiator Weapon Dagger Gladiator Prizefighter Weapon Dagger Hashassin Weapon Dagger Historian Weapon Dagger Honour Guard Weapon Dagger Illusionist Weapon Dagger Inventor Weapon Dagger Juggler Weapon Dagger Killer on the Run Weapon Dagger Legate Weapon Dagger Legionary Weapon Dagger Medium Weapon Dagger Merchant Weapon Dagger Messenger Weapon Dagger Minstrel Weapon Dagger Muladí Weapon Dagger Necromancer Weapon Dagger Necrosavant Weapon Dagger Noble Usurper Weapon Dagger Peddler Weapon Dagger Pimp Weapon Dagger Poacher Weapon Dagger Prefect Weapon Dagger Qiyan Weapon Dagger Ranger Weapon Dagger Ranger Weapon Dagger Servant Weapon Dagger Servus Weapon Dagger Surgeon Weapon Dagger Swordmaster Weapon Dagger Tailor Weapon Dagger Taxidermist Weapon Dagger Thief Weapon Dagger Transmuter Weapon Dagger Warlock Weapon Dagger Weidermancer Weapon Dagger Witchhunter Weapon Dagger Youngblood Weapon Dagger"
     },
     {
       "backgroundSources": [],
@@ -41675,7 +41674,7 @@
       ],
       "descriptionParagraphs": [
         "Knowledge of an animal's physiology allows for better diet, exercise and care.",
-        "Passive: • Increases Hitpoints by 25% for each donkey in the company and their carrying capacity by +12.",
+        "Passive: • Increases Hitpoints by 25% donkeys in the company and their carrying capacity by +12.",
         "• Does not stack with the same perk on multiple mercenaries."
       ],
       "categoryNames": [
@@ -41703,7 +41702,7 @@
       ],
       "primaryCategoryName": "Profession",
       "scenarioSources": [],
-      "searchText": "Hippology Profession Profession Knowledge of an animal's physiology allows for better diet, exercise and care. Passive: • Increases Hitpoints by 25% for each donkey in the company and their carrying capacity by +12. • Does not stack with the same perk on multiple mercenaries. Profession Caravaneering Profession Dog Breeder Caravan Hand Profession Caravaneering Houndmaster Profession Dog Breeder Inventor Profession Caravaneering Merchant Profession Caravaneering"
+      "searchText": "Hippology Profession Profession Knowledge of an animal's physiology allows for better diet, exercise and care. Passive: • Increases Hitpoints by 25% donkeys in the company and their carrying capacity by +12. • Does not stack with the same perk on multiple mercenaries. Profession Caravaneering Profession Dog Breeder Caravan Hand Profession Caravaneering Houndmaster Profession Dog Breeder Inventor Profession Caravaneering Merchant Profession Caravaneering"
     },
     {
       "backgroundSources": [
@@ -48459,15 +48458,6 @@
           "perkGroupName": "Staves"
         },
         {
-          "backgroundId": "background.legend_vala",
-          "backgroundName": "Vala",
-          "categoryName": "Magic",
-          "chance": 0,
-          "minimumPerkGroups": 1,
-          "perkGroupId": "StavesMagicTree",
-          "perkGroupName": "Staves"
-        },
-        {
           "backgroundId": "background.legend_warlock",
           "backgroundName": "Warlock",
           "categoryName": "Magic",
@@ -48510,7 +48500,7 @@
       ],
       "primaryCategoryName": "Magic",
       "scenarioSources": [],
-      "searchText": "Magic Staff Mastery Magic Magic Learn to channel your energy through staves and deliver powerful spells. Passive: • Build up 25% less Fatigue when using Chain Lightning, Firefield, Magic Missile or Root. • Reduces AP cost of Chain Lightning, Firefield, Magic Missile or Root by 1. • Increases the maximum range of Magic Missile by 1. Magic Staves Conjurer Magic Staves Diviner Magic Staves Druid Magic Staves Enchanter Magic Staves Entrancer Magic Staves Evoker Magic Staves Illusionist Magic Staves Medium Magic Staves Necromancer Magic Staves Seer Magic Staves Transmuter Magic Staves Vala Magic Staves Warlock Magic Staves Weidermancer Magic Staves"
+      "searchText": "Magic Staff Mastery Magic Magic Learn to channel your energy through staves and deliver powerful spells. Passive: • Build up 25% less Fatigue when using Chain Lightning, Firefield, Magic Missile or Root. • Reduces AP cost of Chain Lightning, Firefield, Magic Missile or Root by 1. • Increases the maximum range of Magic Missile by 1. Magic Staves Conjurer Magic Staves Diviner Magic Staves Druid Magic Staves Enchanter Magic Staves Entrancer Magic Staves Evoker Magic Staves Illusionist Magic Staves Medium Magic Staves Necromancer Magic Staves Seer Magic Staves Transmuter Magic Staves Warlock Magic Staves Weidermancer Magic Staves"
     },
     {
       "backgroundSources": [
@@ -74414,15 +74404,6 @@
           "perkGroupName": "Staff Defense"
         },
         {
-          "backgroundId": "background.legend_vala",
-          "backgroundName": "Vala",
-          "categoryName": "Magic",
-          "chance": 0,
-          "minimumPerkGroups": 1,
-          "perkGroupId": "StavesMagicTree",
-          "perkGroupName": "Staves"
-        },
-        {
           "backgroundId": "background.legend_warlock",
           "backgroundName": "Warlock",
           "categoryName": "Magic",
@@ -74472,7 +74453,7 @@
       ],
       "primaryCategoryName": "Class",
       "scenarioSources": [],
-      "searchText": "Stick Fighting Class Class Magic Twist and thrust with your staff to deflect blows and intercept strikes. Passive: • Gain +16 Melee Skill and +16 Defense while wielding a staves or magic staves. • When wielding slingstaves, musical instruments and other hybrid staves the bonus is only +8. Class Staff Defense Magic Staves Conjurer Magic Staves Diviner Magic Staves Druid Magic Staves Enchanter Magic Staves Entrancer Magic Staves Evoker Magic Staves Illusionist Magic Staves Medium Magic Staves Necromancer Magic Staves Seer Magic Staves Transmuter Magic Staves Vala Class Staff Defense Vala Magic Staves Warlock Magic Staves Weidermancer Magic Staves"
+      "searchText": "Stick Fighting Class Class Magic Twist and thrust with your staff to deflect blows and intercept strikes. Passive: • Gain +16 Melee Skill and +16 Defense while wielding a staves or magic staves. • When wielding slingstaves, musical instruments and other hybrid staves the bonus is only +8. Class Staff Defense Magic Staves Conjurer Magic Staves Diviner Magic Staves Druid Magic Staves Enchanter Magic Staves Entrancer Magic Staves Evoker Magic Staves Illusionist Magic Staves Medium Magic Staves Necromancer Magic Staves Seer Magic Staves Transmuter Magic Staves Vala Class Staff Defense Warlock Magic Staves Weidermancer Magic Staves"
     },
     {
       "backgroundSources": [
@@ -80600,7 +80581,7 @@
       ],
       "descriptionParagraphs": [
         "Make use of your acrobatic skill to dodge attacks and move out of trouble.",
-        "Passive: • As long as there's a free tile adjacent any attack against you will be rerolled. If the attack is ranged you will use your Melee Defense and if the attack is Melee you will use your Ranged Defense for the reroll."
+        "Passive: • As long as there's a free tile adjacent any attack against you has a chance to be rerolled. If the attack is ranged you will use your Melee Defense and if the attack is Melee you will use your Ranged Defense for the reroll."
       ],
       "categoryNames": [
         "Class"
@@ -80620,7 +80601,7 @@
       ],
       "primaryCategoryName": "Class",
       "scenarioSources": [],
-      "searchText": "Tumble Class Class Make use of your acrobatic skill to dodge attacks and move out of trouble. Passive: • As long as there's a free tile adjacent any attack against you will be rerolled. If the attack is ranged you will use your Melee Defense and if the attack is Melee you will use your Ranged Defense for the reroll. Class Juggler Assassin Class Juggler Belly Dancer Class Juggler Gladiator Class Juggler Juggler Class Juggler Minstrel Class Juggler"
+      "searchText": "Tumble Class Class Make use of your acrobatic skill to dodge attacks and move out of trouble. Passive: • As long as there's a free tile adjacent any attack against you has a chance to be rerolled. If the attack is ranged you will use your Melee Defense and if the attack is Melee you will use your Ranged Defense for the reroll. Class Juggler Assassin Class Juggler Belly Dancer Class Juggler Gladiator Class Juggler Juggler Class Juggler Minstrel Class Juggler"
     },
     {
       "backgroundSources": [
@@ -83108,7 +83089,7 @@
     }
   ],
   "referenceRoot": ".cache/legends-public/current/mod_legends",
-  "referenceVersion": "19.3.20",
+  "referenceVersion": "19.3.21",
   "sourceFiles": [
     {
       "path": ".cache/legends-public/current/mod_legends/!!config/_global.nut",

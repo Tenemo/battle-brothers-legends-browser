@@ -1753,7 +1753,7 @@ function getMaximumCategoryPerkGroupCount(
     )
   }
 
-  // In Legends 19.3.20, GetDynamicPerkTree's magic loop never appends random perk groups.
+  // GetDynamicPerkTree's magic loop never appends random perk groups.
   return explicitPerkGroupCount
 }
 

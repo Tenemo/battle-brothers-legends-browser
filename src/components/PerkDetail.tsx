@@ -117,6 +117,24 @@ function renderFavouredEnemyTarget(favouredEnemyTarget: LegendsFavouredEnemyTarg
   )
 }
 
+function renderPerkDescriptionParagraph(paragraph: string): ReactNode {
+  const effectHeadingMatch = paragraph
+    .trim()
+    .match(/^(Passive|Active|Specialist Weapon Perk):\s+(.+)$/u)
+
+  if (!effectHeadingMatch) {
+    return paragraph
+  }
+
+  return (
+    <>
+      <span data-testid="perk-description-effect-heading">{effectHeadingMatch[1]}:</span>
+      <br />
+      {effectHeadingMatch[2]}
+    </>
+  )
+}
+
 export function DetailsPanel({
   activeDetailType,
   backgroundFitDetail,
@@ -213,8 +231,13 @@ export function DetailsPanel({
             <div className={styles.detailSection} data-testid="detail-section">
               <h3>Details</h3>
               {selectedPerk.descriptionParagraphs.length > 0 ? (
-                selectedPerk.descriptionParagraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
+                selectedPerk.descriptionParagraphs.map((paragraph, paragraphIndex) => (
+                  <p
+                    data-testid="perk-description-paragraph"
+                    key={`${paragraphIndex}-${paragraph}`}
+                  >
+                    {renderPerkDescriptionParagraph(paragraph)}
+                  </p>
                 ))
               ) : (
                 <p>No perk description is available in the local strings file.</p>

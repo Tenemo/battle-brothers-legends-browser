@@ -318,6 +318,10 @@
     text-align: right;
 
     @include badge-surface;
+
+    &[title] {
+      cursor: help;
+    }
   }
 
   .eyebrow {

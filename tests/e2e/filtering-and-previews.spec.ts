@@ -4,6 +4,7 @@ import {
   disableCategory,
   enableCategory,
   expandCategory,
+  expectRawAncientScrollMarker,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -233,6 +234,9 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
   await expect(defaultMagicMissileFocusResultRow).toBeVisible()
   await expect(defaultMagicMissileFocusPlacementList).toContainText('Evocation')
   await expect(defaultMagicMissileFocusPlacementList).not.toContainText('Seer')
+  await expectRawAncientScrollMarker(
+    defaultMagicMissileFocusPlacementList.getByTestId('ancient-scroll-perk-group-marker'),
+  )
 
   await searchPerks(page, 'Berserk')
 
@@ -649,6 +653,10 @@ test('places ancient scroll markers next to sidebar perk group names', async ({ 
   expect(markerMetrics!.spaceBeforeCount).toBeGreaterThan(0)
   expect(markerMetrics!.markerRight).toBeLessThan(markerMetrics!.countLeft)
   expect(markerMetrics!.verticalCenterOffset).toBeLessThanOrEqual(2)
+
+  await expectRawAncientScrollMarker(
+    getSidebarPerkGroupButton(page, 'Evocation').getByTestId('ancient-scroll-perk-group-marker'),
+  )
 })
 
 test('keeps category rows compact with bordered separation in the sidebar', async ({ page }) => {

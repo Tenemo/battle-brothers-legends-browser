@@ -7,14 +7,12 @@
     bottom: var(--primitive-length-0-16rem);
     z-index: var(--z-index-indicator);
 
-    @include size(clamp(0.72rem, 46%, var(--primitive-length-1-12rem)));
+    @include size(var(--ancient-scroll-marker-size, var(--primitive-length-1-4rem)));
 
-    border: var(--primitive-length-1px) solid rgb(221 176 123 / 0.55);
-    border-radius: var(--radius-pill);
-    background:
-      linear-gradient(180deg, rgb(255 255 255 / 0.1), transparent),
-      var(--primitive-color-rgb-20-17-14-alpha-0-92);
-    box-shadow: var(--shadow-selected-ring);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    filter: drop-shadow(var(--shadow-chain-drop));
     cursor: help;
     object-fit: contain;
     pointer-events: auto;
@@ -23,7 +21,7 @@
   button.ancientScrollMarker {
     appearance: none;
     padding: 0;
-    cursor: pointer;
+    cursor: help;
 
     &:focus-visible {
       @include focus-ring;
