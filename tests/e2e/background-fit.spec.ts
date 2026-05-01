@@ -225,9 +225,9 @@ test('shows the background fit panel for a picked build and keeps the shell view
         headerCount: metricTable.querySelectorAll('th, thead').length,
         mustHaveIconLabels: metricMustHaveIcons.map(
           (metricMustHaveIcon) =>
-            metricMustHaveIcon.closest('[data-testid="background-fit-summary-metric"]')
-              ?.querySelector('[data-testid="background-fit-summary-label"]')
-              ?.textContent ?? '',
+            metricMustHaveIcon
+              .closest('[data-testid="background-fit-summary-metric"]')
+              ?.querySelector('[data-testid="background-fit-summary-label"]')?.textContent ?? '',
         ),
         iconCellLeftOffsets,
         iconCellWidths,
@@ -513,6 +513,70 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
 
   await expectViewportLocked(page)
+})
+
+test('restores build and detail state with browser back and forward', async ({ page }) => {
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const detailPanel = getPerkDetailPanel(page)
+
+  await expect(page.getByText('1 perk picked.')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('build')).toBe('Axe Mastery')
+
+  await page.goBack()
+  await expect(page.getByText('No perks picked yet.')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('build')).toBeNull()
+
+  await page.goForward()
+  await expect(page.getByText('1 perk picked.')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('build')).toBe('Axe Mastery')
+
+  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+
+  if (await expandBackgroundFitButton.isVisible()) {
+    await expandBackgroundFitButton.click()
+  }
+
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
+  ).toBeVisible()
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
+  await backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }).click()
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBe('background')
+
+  await detailPanel.getByRole('button', { name: 'Axe Mastery' }).click()
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBe('perk')
+
+  await page.goBack()
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBe('background')
+  const restoredBackgroundDetailUrl = page.url()
+
+  await page.goForward()
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBe('perk')
+
+  const sharedPage = await page.context().newPage()
+
+  try {
+    await sharedPage.setViewportSize(mediumBuildPlannerViewport)
+    await sharedPage.goto(restoredBackgroundDetailUrl)
+    await expect(
+      getPerkDetailPanel(sharedPage).getByRole('heading', {
+        level: 2,
+        name: 'Apprentice',
+      }),
+    ).toBeVisible()
+  } finally {
+    await sharedPage.close()
+  }
 })
 
 test('filters the background fit list with the background search field', async ({ page }) => {

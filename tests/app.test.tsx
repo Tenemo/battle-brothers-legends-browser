@@ -374,4 +374,44 @@ describe('app', () => {
       }),
     ).toBeInTheDocument()
   })
+
+  test('updates selected perk details when browser history restores detail url state', async () => {
+    render(<App />)
+
+    act(() => {
+      window.history.pushState({}, '', '/?detail=perk&perk=Berserk&search=Berserk&build=Berserk')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+          level: 2,
+          name: 'Berserk',
+        }),
+      ).toBeInTheDocument()
+    })
+  })
+
+  test('loads background fit when browser history restores background detail url state', async () => {
+    render(<App />)
+
+    act(() => {
+      window.history.pushState(
+        {},
+        '',
+        '/?detail=background&background=background.apprentice&background-source=apprentice&build=Berserk',
+      )
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+          level: 2,
+          name: 'Apprentice',
+        }),
+      ).toBeInTheDocument()
+    })
+  })
 })

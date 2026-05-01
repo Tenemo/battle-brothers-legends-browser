@@ -14,8 +14,28 @@ export type BuildPlannerUrlPerkGroupOption = {
   perkGroupName: string
 }
 
+export type BuildPlannerUrlBackgroundOption = {
+  backgroundId: string
+  sourceFilePath: string
+}
+
+export type BuildPlannerDetailSelection =
+  | {
+      type: 'none'
+    }
+  | {
+      type: 'perk'
+      perkId: string
+    }
+  | {
+      type: 'background'
+      backgroundId: string
+      sourceFilePath: string
+    }
+
 export type BuildPlannerUrlState = {
   categoryFilterMode?: CategoryFilterMode
+  detailSelection: BuildPlannerDetailSelection
   optionalPerkIds: string[]
   pickedPerkIds: string[]
   query: string
@@ -33,6 +53,7 @@ export type BuildPlannerUrlState = {
 export type BuildPlannerUrlStateReadOptions = {
   availableCategoryNames: string[]
   availableBackgroundVeteranPerkLevelIntervals?: number[]
+  backgrounds?: BuildPlannerUrlBackgroundOption[]
   perks: LegendsPerkRecord[]
   perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
 }
@@ -40,6 +61,7 @@ export type BuildPlannerUrlStateReadOptions = {
 export type BuildPlannerUrlStateWriteOptions = {
   availableCategoryNames: string[]
   availableBackgroundVeteranPerkLevelIntervals?: number[]
+  backgrounds?: BuildPlannerUrlBackgroundOption[]
   perksById: Map<string, LegendsPerkRecord>
   perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
   shouldWriteBackgroundStudyBookParam?: boolean
@@ -57,7 +79,11 @@ const ancientScrollPerkGroupsParamName = 'ancient-scroll-perk-groups'
 const backgroundStudyBookParamName = 'background-book'
 const backgroundStudyScrollParamName = 'background-scroll'
 const backgroundVeteranPerkLevelIntervalsParamName = 'background-veteran-perks'
+const backgroundDetailParamName = 'background'
+const backgroundDetailSourceParamName = 'background-source'
+const detailParamName = 'detail'
 const optionalPerksParamName = 'optional'
+const perkDetailParamName = 'perk'
 const secondBackgroundStudyScrollParamName = 'background-two-scrolls'
 const originBackgroundsParamName = 'origin-backgrounds'
 const originPerkGroupsParamName = 'origin-perk-groups'
@@ -66,6 +92,9 @@ const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
 const allCategoriesParamValue = 'all'
 const emptyBackgroundVeteranPerkLevelIntervalsParamValue = 'none'
+const backgroundDetailParamValue = 'background'
+const perkDetailParamValue = 'perk'
+const noDetailSelection = { type: 'none' } as const satisfies BuildPlannerDetailSelection
 
 function normalizeBackgroundStudyScrollState({
   shouldAllowBackgroundStudyScroll,
@@ -124,6 +153,13 @@ function createPerkGroupParamKey(categoryName: string): string {
   return `${perkGroupParamKeyPrefix}${createUrlToken(categoryName)}`
 }
 
+function createBackgroundSourceFileToken(sourceFilePath: string): string {
+  const sourceFileName = sourceFilePath.split(/[\\/]/u).at(-1) ?? sourceFilePath
+  const sourceFileBaseName = sourceFileName.replace(/\.nut$/u, '').replace(/_background$/u, '')
+
+  return createUrlToken(sourceFileBaseName)
+}
+
 function createPerkNameCountByLookupValue(perks: Iterable<LegendsPerkRecord>): Map<string, number> {
   const perkNameCountByLookupValue = new Map<string, number>()
 
@@ -164,6 +200,77 @@ function createPerkIdByLookupValue(perks: LegendsPerkRecord[]): Map<string, stri
   }
 
   return perkIdByLookupValue
+}
+
+function createBackgroundOptionsByIdLookupValue(
+  backgrounds: readonly BuildPlannerUrlBackgroundOption[] | undefined,
+): Map<string, BuildPlannerUrlBackgroundOption[]> {
+  const backgroundOptionsByIdLookupValue = new Map<string, BuildPlannerUrlBackgroundOption[]>()
+
+  for (const background of backgrounds ?? []) {
+    const backgroundIdLookupValue = normalizeLookupValue(background.backgroundId)
+    const backgroundOptions = backgroundOptionsByIdLookupValue.get(backgroundIdLookupValue) ?? []
+
+    backgroundOptions.push(background)
+    backgroundOptionsByIdLookupValue.set(backgroundIdLookupValue, backgroundOptions)
+  }
+
+  return backgroundOptionsByIdLookupValue
+}
+
+function readDetailSelectionSearchParam({
+  backgroundOptionsByIdLookupValue,
+  params,
+  perkIdByLookupValue,
+}: {
+  backgroundOptionsByIdLookupValue: ReadonlyMap<string, BuildPlannerUrlBackgroundOption[]>
+  params: URLSearchParams
+  perkIdByLookupValue: ReadonlyMap<string, string>
+}): BuildPlannerDetailSelection {
+  const detailType = normalizeLookupValue(params.get(detailParamName) ?? '')
+
+  if (detailType === perkDetailParamValue) {
+    const perkId = perkIdByLookupValue.get(
+      normalizeLookupValue(params.get(perkDetailParamName) ?? ''),
+    )
+
+    return perkId ? { perkId, type: 'perk' } : noDetailSelection
+  }
+
+  if (detailType !== backgroundDetailParamValue) {
+    return noDetailSelection
+  }
+
+  const backgroundOptions =
+    backgroundOptionsByIdLookupValue.get(
+      normalizeLookupValue(params.get(backgroundDetailParamName) ?? ''),
+    ) ?? []
+
+  if (backgroundOptions.length === 0) {
+    return noDetailSelection
+  }
+
+  const backgroundSourceLookupValue = normalizeLookupValue(
+    params.get(backgroundDetailSourceParamName) ?? '',
+  )
+  const selectedBackground =
+    backgroundOptions.find(
+      (backgroundOption) =>
+        normalizeLookupValue(createBackgroundSourceFileToken(backgroundOption.sourceFilePath)) ===
+          backgroundSourceLookupValue ||
+        normalizeLookupValue(backgroundOption.sourceFilePath) === backgroundSourceLookupValue,
+    ) ??
+    (backgroundOptions.length === 1 && backgroundSourceLookupValue.length === 0
+      ? backgroundOptions[0]
+      : null)
+
+  return selectedBackground
+    ? {
+        backgroundId: selectedBackground.backgroundId,
+        sourceFilePath: selectedBackground.sourceFilePath,
+        type: 'background',
+      }
+    : noDetailSelection
 }
 
 function encodeQueryValue(value: string): string {
@@ -218,6 +325,7 @@ function createPerkUrlLabels(
 function createDefaultUrlState(): BuildPlannerUrlState {
   return {
     categoryFilterMode: 'none',
+    detailSelection: noDetailSelection,
     optionalPerkIds: [],
     pickedPerkIds: [],
     query: '',
@@ -305,6 +413,9 @@ export function readBuildPlannerUrlState(
     ]),
   )
   const perkIdByLookupValue = createPerkIdByLookupValue(options.perks)
+  const backgroundOptionsByIdLookupValue = createBackgroundOptionsByIdLookupValue(
+    options.backgrounds,
+  )
   const perkGroupIdByLookupValueByGroup = new Map(
     [...options.perkGroupOptionsByCategory.entries()].map(([categoryName, perkGroupOptions]) => [
       categoryName,
@@ -432,6 +543,11 @@ export function readBuildPlannerUrlState(
         : hasAllCategoriesParamValue
           ? 'all'
           : 'none',
+    detailSelection: readDetailSelectionSearchParam({
+      backgroundOptionsByIdLookupValue,
+      params,
+      perkIdByLookupValue,
+    }),
     optionalPerkIds,
     pickedPerkIds,
     query,
@@ -474,9 +590,32 @@ export function createBuildPlannerUrlSearch(
     options.shouldWriteSecondBackgroundStudyScrollParam ?? true
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
   const shouldWriteOriginPerkGroupsParam = options.shouldWriteOriginPerkGroupsParam ?? true
+  const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
+  const detailSelection = urlState.detailSelection
 
   if (normalizedQuery) {
     appendScalarQueryEntry(entries, searchParamName, normalizedQuery)
+  }
+
+  if (detailSelection.type === 'perk') {
+    const selectedPerk = options.perksById.get(detailSelection.perkId)
+
+    if (selectedPerk) {
+      appendScalarQueryEntry(entries, detailParamName, perkDetailParamValue)
+      appendScalarQueryEntry(
+        entries,
+        perkDetailParamName,
+        createPerkUrlLabel(selectedPerk, perkNameCountByLookupValue),
+      )
+    }
+  } else if (detailSelection.type === 'background') {
+    appendScalarQueryEntry(entries, detailParamName, backgroundDetailParamValue)
+    appendScalarQueryEntry(entries, backgroundDetailParamName, detailSelection.backgroundId)
+    appendScalarQueryEntry(
+      entries,
+      backgroundDetailSourceParamName,
+      createBackgroundSourceFileToken(detailSelection.sourceFilePath),
+    )
   }
 
   if (shouldWriteOriginPerkGroupsParam && urlState.shouldIncludeOriginPerkGroups) {
@@ -560,7 +699,6 @@ export function createBuildPlannerUrlSearch(
     hasWrittenPerkGroup = selectedPerkGroupNames.length > 0
   }
 
-  const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
   const pickedPerkIdSet = new Set(urlState.pickedPerkIds)
   const pickedPerkLabels = createPerkUrlLabels(
     urlState.pickedPerkIds,
@@ -589,6 +727,7 @@ export function createSharedBuildUrlSearch(
     {
       categoryFilterMode: 'none',
       optionalPerkIds,
+      detailSelection: noDetailSelection,
       pickedPerkIds,
       query: '',
       selectedCategoryNames: [],

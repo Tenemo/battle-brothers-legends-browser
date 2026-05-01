@@ -91,13 +91,32 @@ const perkGroupOptionsByCategory = new Map([
   ['Enemy', [{ perkGroupId: 'BeastTree', perkGroupName: 'Beasts' }]],
 ])
 const perksById = new Map(samplePerks.map((perk) => [perk.id, perk]))
+const noDetailSelection = { type: 'none' } as const
 const defaultBackgroundStudyUrlState = {
+  detailSelection: noDetailSelection,
   optionalPerkIds: [],
   selectedBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
   shouldAllowBackgroundStudyBook: true,
   shouldAllowBackgroundStudyScroll: true,
   shouldAllowSecondBackgroundStudyScroll: false,
 }
+const sampleBackgrounds = [
+  {
+    backgroundId: 'background.apprentice',
+    sourceFilePath:
+      '.cache/legends-public/current/mod_legends/hooks/skills/backgrounds/apprentice_background.nut',
+  },
+  {
+    backgroundId: 'background.companion',
+    sourceFilePath:
+      '.cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_1h_background.nut',
+  },
+  {
+    backgroundId: 'background.companion',
+    sourceFilePath:
+      '.cache/legends-public/current/mod_legends/hooks/skills/backgrounds/companion_ranged_background.nut',
+  },
+]
 const duplicateNamePerks: LegendsPerkRecord[] = [
   ...samplePerks,
   {
@@ -198,6 +217,113 @@ describe('build planner url state', () => {
       optionalPerkIds: ['perk.legend_clarity'],
       pickedPerkIds: ['perk.legend_clarity'],
     })
+  })
+
+  test('serializes and restores selected perk details', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
+        detailSelection: {
+          perkId: 'perk.legend_perfect_focus',
+          type: 'perk',
+        },
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?detail=perk&perk=Perfect+Focus')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).detailSelection,
+    ).toEqual({
+      perkId: 'perk.legend_perfect_focus',
+      type: 'perk',
+    })
+  })
+
+  test('serializes and restores selected background details with duplicate ids', () => {
+    const companionRangedBackground = sampleBackgrounds.find((background) =>
+      background.sourceFilePath.includes('companion_ranged'),
+    )
+
+    if (!companionRangedBackground) {
+      throw new Error('Expected companion ranged background fixture.')
+    }
+
+    const search = createBuildPlannerUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
+        detailSelection: {
+          backgroundId: companionRangedBackground.backgroundId,
+          sourceFilePath: companionRangedBackground.sourceFilePath,
+          type: 'background',
+        },
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe(
+      '?detail=background&background=background.companion&background-source=companion-ranged',
+    )
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        backgrounds: sampleBackgrounds,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).detailSelection,
+    ).toEqual({
+      backgroundId: companionRangedBackground.backgroundId,
+      sourceFilePath: companionRangedBackground.sourceFilePath,
+      type: 'background',
+    })
+  })
+
+  test('ignores invalid selected detail params', () => {
+    expect(
+      readBuildPlannerUrlState('?detail=perk&perk=Missing&build=Clarity&category=Traits', {
+        availableCategoryNames,
+        backgrounds: sampleBackgrounds,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).detailSelection,
+    ).toEqual(noDetailSelection)
+    expect(
+      readBuildPlannerUrlState(
+        '?detail=background&background=background.companion&background-source=missing',
+        {
+          availableCategoryNames,
+          backgrounds: sampleBackgrounds,
+          perks: samplePerks,
+          perkGroupOptionsByCategory,
+        },
+      ).detailSelection,
+    ).toEqual(noDetailSelection)
   })
 
   test('parses only one grouped readable perk group param', () => {
@@ -375,6 +501,7 @@ describe('build planner url state', () => {
     const search = createBuildPlannerUrlSearch(
       {
         optionalPerkIds: [],
+        detailSelection: noDetailSelection,
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
@@ -412,6 +539,7 @@ describe('build planner url state', () => {
     const search = createBuildPlannerUrlSearch(
       {
         optionalPerkIds: [],
+        detailSelection: noDetailSelection,
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
@@ -447,6 +575,7 @@ describe('build planner url state', () => {
     const search = createBuildPlannerUrlSearch(
       {
         optionalPerkIds: [],
+        detailSelection: noDetailSelection,
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
@@ -483,6 +612,7 @@ describe('build planner url state', () => {
     const defaultSearch = createBuildPlannerUrlSearch(
       {
         optionalPerkIds: [],
+        detailSelection: noDetailSelection,
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
@@ -526,6 +656,7 @@ describe('build planner url state', () => {
     const search = createBuildPlannerUrlSearch(
       {
         optionalPerkIds: [],
+        detailSelection: noDetailSelection,
         pickedPerkIds: [],
         query: '',
         selectedCategoryNames: [],
