@@ -408,4 +408,22 @@ describe('background study reachability', () => {
       }),
     ).toBe(false)
   })
+
+  test('rejects malformed requirement keys instead of truncating them', () => {
+    const malformedPerk = createPerk('malformed perk', [
+      createPlacement({
+        categoryName: 'Traits',
+        perkGroupId: 'CalmTree::UnexpectedSuffix',
+        perkGroupName: 'Malformed calm',
+      }),
+    ])
+
+    expect(() =>
+      getMinimumStudyResourceRequirementProfile({
+        canUseNativeRequirements: createNativeRequirementChecker([[]]),
+        filter: defaultBackgroundStudyResourceFilter,
+        pickedPerks: [malformedPerk],
+      }),
+    ).toThrow(/Invalid study resource requirement key parts/u)
+  })
 })

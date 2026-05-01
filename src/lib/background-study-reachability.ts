@@ -152,13 +152,23 @@ function createPerkGroupKey(
   categoryName: LegendsDynamicBackgroundCategoryName,
   perkGroupId: string,
 ): string {
+  if (categoryName.includes('::') || perkGroupId.includes('::')) {
+    throw new Error(`Invalid study resource requirement key parts: ${categoryName}::${perkGroupId}`)
+  }
+
   return `${categoryName}::${perkGroupId}`
 }
 
 function getStudyReachabilityRequirementFromKey(
   requirementKey: string,
 ): StudyReachabilityRequirement {
-  const [categoryName, perkGroupId] = requirementKey.split('::')
+  const requirementKeyParts = requirementKey.split('::')
+
+  if (requirementKeyParts.length !== 2) {
+    throw new Error(`Invalid study resource requirement key: ${requirementKey}`)
+  }
+
+  const [categoryName, perkGroupId] = requirementKeyParts
 
   if (!categoryName || !perkGroupId || !isDynamicBackgroundCategoryName(categoryName)) {
     throw new Error(`Invalid study resource requirement key: ${requirementKey}`)

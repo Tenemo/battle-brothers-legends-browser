@@ -1397,7 +1397,7 @@ describe('background fit', () => {
     )
   })
 
-  test('reports sorted partial progress while dropping zero must-have matches', () => {
+  test('reports sorted partial views and throttles progress while dropping zero must-have matches', () => {
     const progressLabels: string[] = []
     const partialViewBackgroundIds: string[][] = []
     const calmZuluBackground = createBackgroundDefinition({
@@ -1424,6 +1424,31 @@ describe('background fit', () => {
       backgroundName: 'Second empty',
       overrides: {},
     })
+    const thirdEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.third_empty',
+      backgroundName: 'Third empty',
+      overrides: {},
+    })
+    const fourthEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.fourth_empty',
+      backgroundName: 'Fourth empty',
+      overrides: {},
+    })
+    const fifthEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.fifth_empty',
+      backgroundName: 'Fifth empty',
+      overrides: {},
+    })
+    const sixthEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.sixth_empty',
+      backgroundName: 'Sixth empty',
+      overrides: {},
+    })
+    const seventhEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.seventh_empty',
+      backgroundName: 'Seventh empty',
+      overrides: {},
+    })
     const calmBetaBackground = createBackgroundDefinition({
       backgroundId: 'background.calm_beta',
       backgroundName: 'Calm beta',
@@ -1439,6 +1464,11 @@ describe('background fit', () => {
         calmAlphaBackground,
         calmBetaBackground,
         secondEmptyBackground,
+        thirdEmptyBackground,
+        fourthEmptyBackground,
+        fifthEmptyBackground,
+        sixthEmptyBackground,
+        seventhEmptyBackground,
       ],
     })
 
@@ -1456,7 +1486,7 @@ describe('background fit', () => {
       partialViewChunkSize: 1,
     })
 
-    expect(progressLabels).toEqual(['0/5', '1/5', '2/5', '3/5', '4/5', '5/5'])
+    expect(progressLabels).toEqual(['0/10', '8/10', '10/10'])
     expect(partialViewBackgroundIds).toEqual([
       ['background.calm_zulu'],
       ['background.calm_alpha', 'background.calm_zulu'],
