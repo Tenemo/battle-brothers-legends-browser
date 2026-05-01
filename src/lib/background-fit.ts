@@ -2044,26 +2044,6 @@ function compareRankedBackgroundFits(
   )
 }
 
-function insertRankedBackgroundFit(
-  rankedBackgroundFits: RankedBackgroundFit[],
-  nextBackgroundFit: RankedBackgroundFit,
-) {
-  let lowerIndex = 0
-  let upperIndex = rankedBackgroundFits.length
-
-  while (lowerIndex < upperIndex) {
-    const middleIndex = Math.floor((lowerIndex + upperIndex) / 2)
-
-    if (compareRankedBackgroundFits(nextBackgroundFit, rankedBackgroundFits[middleIndex]) < 0) {
-      upperIndex = middleIndex
-    } else {
-      lowerIndex = middleIndex + 1
-    }
-  }
-
-  rankedBackgroundFits.splice(lowerIndex, 0, nextBackgroundFit)
-}
-
 function compareBackgroundFitSummaries(
   leftBackgroundFit: BackgroundFitSummary,
   rightBackgroundFit: BackgroundFitSummary,
@@ -2639,6 +2619,8 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
             })
 
       const rankedBackgroundFits: RankedBackgroundFit[] = []
+      let sortedRankedBackgroundFitsSnapshot: RankedBackgroundFit[] = []
+      let sortedSnapshotSourceLength = -1
       const totalBackgroundCount = backgroundFitBuildCache.cachedBackgroundFitRecords.length
       let checkedBackgroundCount = 0
       let lastPartialViewCheckedBackgroundCount = 0
@@ -2648,8 +2630,17 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       const partialViewChunkSize = Number.isFinite(requestedPartialViewChunkSize)
         ? Math.max(1, Math.floor(requestedPartialViewChunkSize))
         : defaultBackgroundFitPartialViewChunkSize
+      const getSortedRankedBackgroundFits = (): RankedBackgroundFit[] => {
+        if (sortedSnapshotSourceLength !== rankedBackgroundFits.length) {
+          sortedRankedBackgroundFitsSnapshot =
+            rankedBackgroundFits.toSorted(compareRankedBackgroundFits)
+          sortedSnapshotSourceLength = rankedBackgroundFits.length
+        }
+
+        return sortedRankedBackgroundFitsSnapshot
+      }
       const getCurrentBackgroundFitView = (): BackgroundFitView => ({
-        rankedBackgroundFits: rankedBackgroundFits.slice(),
+        rankedBackgroundFits: getSortedRankedBackgroundFits().slice(),
         supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
         unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
       })
@@ -2806,7 +2797,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
           mustHaveStudyResourceRequirement,
         }
 
-        insertRankedBackgroundFit(rankedBackgroundFits, rankedBackgroundFit)
+        rankedBackgroundFits.push(rankedBackgroundFit)
 
         reportCheckedBackground()
       }

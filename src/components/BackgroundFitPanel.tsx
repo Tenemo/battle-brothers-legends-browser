@@ -31,69 +31,84 @@ function getClampedCheckedBackgroundCount(progress: BackgroundFitCalculationProg
   )
 }
 
+function areNumberSetsEqual(leftValues: readonly number[], rightValues: readonly number[]): boolean {
+  const leftSet = new Set(leftValues)
+  const rightSet = new Set(rightValues)
+
+  if (leftSet.size !== rightSet.size) {
+    return false
+  }
+
+  return [...leftSet].every((value) => rightSet.has(value))
+}
+
 function useDisplayedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
   const targetCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
   const [displayedCheckedBackgroundCount, setDisplayedCheckedBackgroundCount] = useState(0)
-  const animationStartedAtMsRef = useRef<number | null>(null)
-  const animationStartCheckedBackgroundCountRef = useRef(0)
+  const displayedCheckedBackgroundCountRef = useRef(0)
+  const progressIntervalIdRef = useRef<number | null>(null)
+  const targetCheckedBackgroundCountRef = useRef(targetCheckedBackgroundCount)
 
   useEffect(() => {
-    let nextTimeoutId: number | null = null
-    const effectStartedAtMs = Date.now()
+    function clearProgressInterval() {
+      if (progressIntervalIdRef.current === null) {
+        return
+      }
 
-    function advanceDisplayedBackgroundCount() {
+      window.clearInterval(progressIntervalIdRef.current)
+      progressIntervalIdRef.current = null
+    }
+
+    targetCheckedBackgroundCountRef.current = Math.max(
+      displayedCheckedBackgroundCountRef.current,
+      targetCheckedBackgroundCount,
+    )
+
+    if (
+      displayedCheckedBackgroundCountRef.current >= targetCheckedBackgroundCountRef.current ||
+      progressIntervalIdRef.current !== null
+    ) {
+      return
+    }
+
+    progressIntervalIdRef.current = window.setInterval(() => {
+      let shouldClearProgressInterval = false
+
       setDisplayedCheckedBackgroundCount((currentCheckedBackgroundCount) => {
-        if (targetCheckedBackgroundCount < currentCheckedBackgroundCount) {
-          animationStartedAtMsRef.current = null
-          animationStartCheckedBackgroundCountRef.current = targetCheckedBackgroundCount
-          return targetCheckedBackgroundCount
-        }
+        if (currentCheckedBackgroundCount >= targetCheckedBackgroundCountRef.current) {
+          displayedCheckedBackgroundCountRef.current = currentCheckedBackgroundCount
+          shouldClearProgressInterval = true
 
-        if (currentCheckedBackgroundCount >= targetCheckedBackgroundCount) {
-          animationStartedAtMsRef.current = null
-          animationStartCheckedBackgroundCountRef.current = currentCheckedBackgroundCount
           return currentCheckedBackgroundCount
         }
 
-        if (animationStartedAtMsRef.current === null) {
-          animationStartedAtMsRef.current = effectStartedAtMs
-          animationStartCheckedBackgroundCountRef.current = currentCheckedBackgroundCount
-        }
-
-        const elapsedAnimationTimeMs = Date.now() - animationStartedAtMsRef.current
-        const elapsedProgressSteps = Math.floor(
-          elapsedAnimationTimeMs / backgroundFitProgressCountMinimumStepDurationMs,
-        )
         const nextCheckedBackgroundCount = Math.min(
-          targetCheckedBackgroundCount,
-          animationStartCheckedBackgroundCountRef.current + elapsedProgressSteps,
+          currentCheckedBackgroundCount + 1,
+          targetCheckedBackgroundCountRef.current,
         )
 
-        if (nextCheckedBackgroundCount < targetCheckedBackgroundCount) {
-          nextTimeoutId = window.setTimeout(
-            advanceDisplayedBackgroundCount,
-            backgroundFitProgressCountMinimumStepDurationMs,
-          )
-        } else {
-          animationStartedAtMsRef.current = null
-          animationStartCheckedBackgroundCountRef.current = nextCheckedBackgroundCount
-        }
+        displayedCheckedBackgroundCountRef.current = nextCheckedBackgroundCount
+        shouldClearProgressInterval =
+          nextCheckedBackgroundCount >= targetCheckedBackgroundCountRef.current
 
         return nextCheckedBackgroundCount
       })
-    }
 
-    nextTimeoutId = window.setTimeout(
-      advanceDisplayedBackgroundCount,
-      backgroundFitProgressCountMinimumStepDurationMs,
-    )
-
-    return () => {
-      if (nextTimeoutId !== null) {
-        window.clearTimeout(nextTimeoutId)
+      if (shouldClearProgressInterval) {
+        clearProgressInterval()
       }
-    }
+    }, backgroundFitProgressCountMinimumStepDurationMs)
   }, [targetCheckedBackgroundCount])
+
+  useEffect(
+    () => () => {
+      if (progressIntervalIdRef.current !== null) {
+        window.clearInterval(progressIntervalIdRef.current)
+        progressIntervalIdRef.current = null
+      }
+    },
+    [],
+  )
 
   return displayedCheckedBackgroundCount
 }
@@ -219,12 +234,20 @@ export function BackgroundFitPanel({
     () => new Set(selectedBackgroundVeteranPerkLevelIntervals),
     [selectedBackgroundVeteranPerkLevelIntervals],
   )
+  const hasNonDefaultBackgroundVeteranPerkLevelIntervals = useMemo(
+    () =>
+      !areNumberSetsEqual(
+        selectedBackgroundVeteranPerkLevelIntervals,
+        availableBackgroundVeteranPerkLevelIntervals,
+      ),
+    [availableBackgroundVeteranPerkLevelIntervals, selectedBackgroundVeteranPerkLevelIntervals],
+  )
   const hasActiveBackgroundFilter =
     shouldIncludeOriginBackgrounds ||
-    shouldAllowBackgroundStudyBook ||
-    shouldAllowBackgroundStudyScroll ||
-    (shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll) ||
-    selectedBackgroundVeteranPerkLevelIntervals.length > 0
+    !shouldAllowBackgroundStudyBook ||
+    !shouldAllowBackgroundStudyScroll ||
+    shouldAllowSecondBackgroundStudyScroll ||
+    hasNonDefaultBackgroundVeteranPerkLevelIntervals
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
   const shouldShowBackgroundFitRankingStatus =
     hasPickedPerks && (isLoadingBackgroundFitView || hasSupportedBackgroundFitTargets)

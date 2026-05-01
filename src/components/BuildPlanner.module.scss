@@ -832,7 +832,7 @@
     flex-wrap: wrap;
     gap: var(--space-xs);
     margin-top: var(--space-md);
-    pointer-events: auto;
+    pointer-events: none;
   }
 
   .plannerPill {
@@ -897,6 +897,7 @@
 
   .plannerPickedPerkName {
     display: -webkit-box;
+    flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     -webkit-box-orient: vertical;

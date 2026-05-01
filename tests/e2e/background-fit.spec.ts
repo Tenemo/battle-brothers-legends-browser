@@ -748,10 +748,10 @@ test('filters origin backgrounds from the background search menu', async ({ page
   })
 
   await expect(filterBackgroundsButton).toBeVisible()
-  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
-    'currentColor',
+    'none',
   )
   await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
   await backgroundSearchInput.fill('origin: crusader')
@@ -861,34 +861,36 @@ test('filters origin backgrounds from the background search menu', async ({ page
   await expect(
     backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
   ).toBeVisible()
-  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
-    'currentColor',
+    'none',
   )
 
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a book' }).uncheck()
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a scroll' }).uncheck()
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 2 veteran levels' }).uncheck()
   await backgroundFitPanel.getByRole('checkbox', { name: 'Every 3 veteran levels' }).uncheck()
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 4 veteran levels' }).uncheck()
-  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
-  await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
-    'fill',
-    'none',
-  )
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 3 veteran levels' }).check()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
     'currentColor',
   )
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 3 veteran levels' }).uncheck()
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 3 veteran levels' }).check()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
     'none',
   )
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a book' }).uncheck()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a book' }).check()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a scroll' }).uncheck()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a scroll' }).check()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow two scrolls' }).check()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Allow two scrolls' }).uncheck()
+  await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
 
   await page.getByLabel('Search perks').click()
   await expect(filterBackgroundsButton).toHaveAttribute('aria-expanded', 'false')
