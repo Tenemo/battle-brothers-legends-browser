@@ -221,6 +221,8 @@ function renderPlannerGroupCard({
   onOpenHover,
   onOpenTooltip,
   onOpenPerkGroupHover,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
 }: {
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
@@ -241,6 +243,8 @@ function renderPlannerGroupCard({
     perkGroupSelection?: PlannerPerkGroupSelection,
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
 
@@ -267,6 +271,8 @@ function renderPlannerGroupCard({
         perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
         perkName,
       }))}
+      selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+      selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
     />
   )
 }
@@ -300,6 +306,9 @@ export function BuildPlannerBoard({
   openBuildPerkTooltipPreview,
   pickedPerks,
   plannerBoardRef,
+  selectedBuildPlannerPerkId,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   sharedPerkGroups,
   suppressBuildPerkTooltipPreviewUntilPointerMove,
 }: {
@@ -339,6 +348,9 @@ export function BuildPlannerBoard({
   ) => void
   pickedPerks: BuildPlannerPickedPerk[]
   plannerBoardRef: RefObject<HTMLDivElement | null>
+  selectedBuildPlannerPerkId: string | null
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
   suppressBuildPerkTooltipPreviewUntilPointerMove: () => void
 }) {
@@ -351,6 +363,12 @@ export function BuildPlannerBoard({
   const highlightedBuildPerkIdsForEmphasis = getHighlightedBuildPerkIdsForEmphasis({
     buildPerkHighlightPerkGroupKeys,
     emphasizedCategoryNames,
+    individualPerkGroups,
+    sharedPerkGroups,
+  })
+  const selectedHighlightedBuildPerkIdsForEmphasis = getHighlightedBuildPerkIdsForEmphasis({
+    buildPerkHighlightPerkGroupKeys: selectedEmphasisPerkGroupKeys,
+    emphasizedCategoryNames: selectedEmphasisCategoryNames,
     individualPerkGroups,
     sharedPerkGroups,
   })
@@ -413,6 +431,9 @@ export function BuildPlannerBoard({
                 const isHighlighted =
                   hoveredPerkId === pickedPerk.id ||
                   highlightedBuildPerkIdsForEmphasis.has(pickedPerk.id)
+                const isSelectedHighlighted =
+                  selectedBuildPlannerPerkId === pickedPerk.id ||
+                  selectedHighlightedBuildPerkIdsForEmphasis.has(pickedPerk.id)
                 const isTooltipIndicatorActive =
                   activeBuildPerkTooltipIndicatorPerkId === pickedPerk.id
 
@@ -422,6 +443,7 @@ export function BuildPlannerBoard({
                     data-highlighted={isHighlighted}
                     data-planner-item="picked-perk"
                     data-requirement={pickedPerk.isOptional ? 'optional' : 'must-have'}
+                    data-selected={isSelectedHighlighted}
                     data-testid="planner-slot-perk"
                     data-tooltip-pending={isTooltipIndicatorActive}
                     key={pickedPerk.id}
@@ -619,6 +641,8 @@ export function BuildPlannerBoard({
                     onOpenHover: onOpenBuildPerkHover,
                     onOpenTooltip: onOpenBuildPerkTooltip,
                     onOpenPerkGroupHover,
+                    selectedEmphasisCategoryNames,
+                    selectedEmphasisPerkGroupKeys,
                   }),
                 )}
               </div>
@@ -685,6 +709,8 @@ export function BuildPlannerBoard({
                       onOpenHover: onOpenBuildPerkHover,
                       onOpenTooltip: onOpenBuildPerkTooltip,
                       onOpenPerkGroupHover,
+                      selectedEmphasisCategoryNames,
+                      selectedEmphasisPerkGroupKeys,
                     }),
                   )}
                 </div>

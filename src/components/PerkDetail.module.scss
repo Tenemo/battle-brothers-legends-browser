@@ -162,8 +162,8 @@
 
   .detailRequirementChainOverlay {
     position: absolute;
-    top: calc(var(--primitive-length-negative-0-9rem) - var(--primitive-length-2rem) + 15px);
-    right: calc(var(--primitive-length-negative-0-15rem) - var(--primitive-length-3-25rem));
+    top: calc(var(--primitive-length-negative-0-9rem) - var(--primitive-length-2rem) + 20px);
+    right: calc(var(--primitive-length-negative-0-15rem) - var(--primitive-length-3-25rem) - 30px);
     z-index: var(--z-index-base);
     display: block;
     width: var(--primitive-length-8-7rem);
@@ -185,8 +185,8 @@
 
   .detailRequirementOptionalOverlay {
     position: absolute;
-    top: var(--space-2xs);
-    right: var(--space-2xs);
+    top: var(--space-md);
+    right: var(--space-md);
     z-index: var(--z-index-base);
     display: inline-flex;
     align-items: center;
@@ -198,7 +198,7 @@
   }
 
   .detailRequirementOptionalIcon {
-    @include size(1rem);
+    @include size(2rem);
 
     stroke-width: 2.2;
   }

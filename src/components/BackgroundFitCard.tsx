@@ -144,6 +144,8 @@ export function BackgroundFitTargetPerkGroup({
 function BackgroundFitMatchRow({
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
@@ -159,6 +161,8 @@ function BackgroundFitMatchRow({
 }: {
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
@@ -189,6 +193,8 @@ function BackgroundFitMatchRow({
         className={styles.backgroundFitMatch}
         emphasizedCategoryNames={emphasizedCategoryNames}
         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
         groupLabel={match.perkGroupName}
         groupOptions={[
           {
@@ -231,17 +237,24 @@ function BackgroundFitMatchRow({
 
 export type BackgroundFitMetric = {
   accessibleLabel: string
+  icon: 'must-have' | null
   label: string
   tooltip: string
   value: string
 }
 
 const fullBuildChanceMetricLabel = 'Full build chance'
+const mustHaveMetricIcon: BackgroundFitMetric['icon'] = 'must-have'
 const mustHaveBuildChanceMetricLabel = 'Must-have build chance'
+const noMetricIcon: BackgroundFitMetric['icon'] = null
 
-function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: BackgroundFitMetric) {
-  const shouldShowMustHaveIcon = label.toLowerCase().includes('must-have')
-
+function BackgroundFitMetricRow({
+  accessibleLabel,
+  icon,
+  label,
+  tooltip,
+  value,
+}: BackgroundFitMetric) {
   return (
     <div
       aria-label={`${accessibleLabel}. ${tooltip}`}
@@ -255,7 +268,7 @@ function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: Back
         className={styles.backgroundFitMetricIconCell}
         data-testid="background-fit-summary-icon-cell"
       >
-        {shouldShowMustHaveIcon ? (
+        {icon === 'must-have' ? (
           <Link
             aria-hidden="true"
             className={styles.backgroundFitMetricMustHaveIcon}
@@ -284,6 +297,7 @@ export function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMe
       {metrics.map((metric) => (
         <BackgroundFitMetricRow
           accessibleLabel={metric.accessibleLabel}
+          icon={metric.icon}
           key={metric.accessibleLabel}
           label={metric.label}
           tooltip={metric.tooltip}
@@ -372,6 +386,7 @@ function getBackgroundFitDetailsMetrics({
               backgroundFit.mustHaveBuildReachabilityProbability,
               mustHaveBuildChanceMetricLabel,
             ),
+            icon: mustHaveMetricIcon,
             label: mustHaveBuildChanceMetricLabel,
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.mustHaveBuildReachabilityProbability,
@@ -390,6 +405,7 @@ function getBackgroundFitDetailsMetrics({
               backgroundFit.fullBuildReachabilityProbability,
               fullBuildChanceMetricLabel,
             ),
+            icon: noMetricIcon,
             label: fullBuildChanceMetricLabel,
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.fullBuildReachabilityProbability,
@@ -408,6 +424,7 @@ function getBackgroundFitDetailsMetrics({
         mustHavePickedPerkCount,
         'must-have perks',
       ),
+      icon: mustHaveMetricIcon,
       label: 'Expected must-have perks pickable',
       tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
         backgroundFit.expectedCoveredMustHavePerkCount,
@@ -427,6 +444,7 @@ function getBackgroundFitDetailsMetrics({
               optionalPickedPerkCount,
               'optional perks',
             ),
+            icon: noMetricIcon,
             label: 'Expected optional perks pickable',
             tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
               backgroundFit.expectedCoveredOptionalPerkCount,
@@ -446,6 +464,7 @@ function getBackgroundFitDetailsMetrics({
         pickedPerkCount,
         'perks',
       ),
+      icon: noMetricIcon,
       label: 'Guaranteed perks pickable',
       tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
         guaranteedCoveredPickedPerkCount,
@@ -487,6 +506,8 @@ export function BackgroundFitMatchSections({
   backgroundFit,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
@@ -502,6 +523,8 @@ export function BackgroundFitMatchSections({
   backgroundFit: RankedBackgroundFit
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
@@ -537,6 +560,8 @@ export function BackgroundFitMatchSections({
               <BackgroundFitMatchRow
                 emphasizedCategoryNames={emphasizedCategoryNames}
                 emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+                selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
                 hoveredBuildPerkId={hoveredBuildPerkId}
                 hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
                 hoveredPerkId={hoveredPerkId}
@@ -564,6 +589,8 @@ export function BackgroundFitMatchSections({
               <BackgroundFitMatchRow
                 emphasizedCategoryNames={emphasizedCategoryNames}
                 emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+                selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
                 hoveredBuildPerkId={hoveredBuildPerkId}
                 hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
                 hoveredPerkId={hoveredPerkId}

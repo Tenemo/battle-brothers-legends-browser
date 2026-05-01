@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { act, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { SavedBuildsDialog } from '../src/components/SavedBuildsDialog'
@@ -234,6 +234,69 @@ describe('saved builds dialog', () => {
     await waitFor(() => {
       expect(screen.getByRole('button', { name: 'Delete saved build Calm focus' })).toBeEnabled()
       expect(screen.getByRole('button', { name: 'Save current' })).toBeEnabled()
+    })
+  })
+
+  test('prevents competing saved build actions before disabled controls rerender', async () => {
+    let resolveCopySavedBuildLink: () => void = () => {}
+    const onCopySavedBuildLink = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveCopySavedBuildLink = resolve
+        }),
+    )
+    const onDeleteSavedBuild = vi.fn(async () => undefined)
+    const onOverwriteSavedBuild = vi.fn(async () => undefined)
+    const onSaveCurrentBuild = vi.fn(async () => undefined)
+
+    render(
+      <SavedBuildsDialog
+        isSavedBuildsLoading={false}
+        onClose={vi.fn()}
+        onCopySavedBuildLink={onCopySavedBuildLink}
+        onDeleteSavedBuild={onDeleteSavedBuild}
+        onLoadSavedBuild={vi.fn()}
+        onOverwriteSavedBuild={onOverwriteSavedBuild}
+        onSaveCurrentBuild={onSaveCurrentBuild}
+        pickedPerks={[pickedPerk]}
+        savedBuildOperationStatus="idle"
+        savedBuildPersistenceState="best-effort"
+        savedBuilds={[savedBuild]}
+        savedBuildsErrorMessage={null}
+      />,
+    )
+
+    const copySavedBuildLinkButton = screen.getByRole('button', {
+      name: 'Copy saved build Calm focus link',
+    })
+    const deleteSavedBuildButton = screen.getByRole('button', {
+      name: 'Delete saved build Calm focus',
+    })
+    const overwriteSavedBuildButton = screen.getByRole('button', {
+      name: 'Overwrite saved build Calm focus',
+    })
+    const saveCurrentBuildButton = screen.getByRole('button', { name: 'Save current' })
+
+    act(() => {
+      copySavedBuildLinkButton.click()
+      deleteSavedBuildButton.click()
+      overwriteSavedBuildButton.click()
+      saveCurrentBuildButton.click()
+    })
+
+    expect(onCopySavedBuildLink).toHaveBeenCalledTimes(1)
+    expect(onDeleteSavedBuild).not.toHaveBeenCalled()
+    expect(onOverwriteSavedBuild).not.toHaveBeenCalled()
+    expect(onSaveCurrentBuild).not.toHaveBeenCalled()
+    expect(
+      screen.queryByRole('button', { name: 'Confirm overwrite saved build Calm focus' }),
+    ).not.toBeInTheDocument()
+
+    resolveCopySavedBuildLink()
+
+    await waitFor(() => {
+      expect(deleteSavedBuildButton).toBeEnabled()
+      expect(saveCurrentBuildButton).toBeEnabled()
     })
   })
 })

@@ -10,7 +10,13 @@ import {
   ancientScrollPerkGroupMarkerTestId,
 } from '../src/lib/ancient-scroll-perk-group-display'
 
-function renderBuildPerkGroupTile(perkGroupId: string) {
+function renderBuildPerkGroupTile(
+  perkGroupId: string,
+  options: {
+    emphasizedPerkGroupKeys?: ReadonlySet<string>
+    selectedEmphasisPerkGroupKeys?: ReadonlySet<string>
+  } = {},
+) {
   const onClosePerkGroupHover = vi.fn()
   const onInspectPerkGroup = vi.fn()
   const onOpenPerkGroupHover = vi.fn()
@@ -18,7 +24,9 @@ function renderBuildPerkGroupTile(perkGroupId: string) {
   render(
     <BuildPerkGroupTile
       emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
+      emphasizedPerkGroupKeys={options.emphasizedPerkGroupKeys ?? new Set()}
+      selectedEmphasisCategoryNames={new Set()}
+      selectedEmphasisPerkGroupKeys={options.selectedEmphasisPerkGroupKeys ?? new Set()}
       groupLabel="Vala Chant"
       groupOptions={[
         {
@@ -89,6 +97,20 @@ describe('perk group icon', () => {
     expect(onClosePerkGroupHover).toHaveBeenCalledWith('Magic::ValaChantMagicTree')
   })
 
+  test('activates the primary perk group action from keyboard focus', async () => {
+    const user = userEvent.setup()
+    const { onInspectPerkGroup, onOpenPerkGroupHover } = renderBuildPerkGroupTile('AxeTree')
+    const primaryPerkGroupButton = screen.getByRole('button', {
+      name: 'Select perk group Vala Chant',
+    })
+
+    primaryPerkGroupButton.focus()
+    await user.keyboard('{Enter}')
+
+    expect(onOpenPerkGroupHover).toHaveBeenCalledWith('Magic', 'AxeTree')
+    expect(onInspectPerkGroup).toHaveBeenCalledWith('Magic', 'AxeTree')
+  })
+
   test('keeps passive ancient scroll markers as images', () => {
     render(<AncientScrollPerkGroupMarker />)
 
@@ -112,5 +134,30 @@ describe('perk group icon', () => {
       '/game-icons/ui/perks/fire_circle.png',
     )
     expect(screen.queryByTestId(ancientScrollPerkGroupMarkerTestId)).not.toBeInTheDocument()
+  })
+
+  test('separates hover-only and selected perk group emphasis', () => {
+    const perkGroupKey = 'Magic::AxeTree'
+
+    renderBuildPerkGroupTile('AxeTree', {
+      emphasizedPerkGroupKeys: new Set([perkGroupKey]),
+    })
+
+    expect(screen.getByTestId('planner-group-card')).toHaveAttribute('data-highlighted', 'true')
+    expect(screen.getByTestId('planner-group-card')).toHaveAttribute(
+      'data-selected-highlighted',
+      'false',
+    )
+  })
+
+  test('marks clicked perk group emphasis separately for persistent ornaments', () => {
+    renderBuildPerkGroupTile('AxeTree', {
+      selectedEmphasisPerkGroupKeys: new Set(['Magic::AxeTree']),
+    })
+
+    expect(screen.getByTestId('planner-group-card')).toHaveAttribute(
+      'data-selected-highlighted',
+      'true',
+    )
   })
 })

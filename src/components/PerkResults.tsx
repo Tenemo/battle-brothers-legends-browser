@@ -31,6 +31,8 @@ function renderPerkPlacementChip({
   emphasizedPerkGroupKeys,
   keyPrefix,
   perk,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   onClosePerkGroupHover,
   onInspectPerkGroup,
   onOpenPerkGroupHover,
@@ -41,6 +43,8 @@ function renderPerkPlacementChip({
   emphasizedPerkGroupKeys: ReadonlySet<string>
   keyPrefix: string
   perk: LegendsPerkRecord
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
@@ -51,6 +55,9 @@ function renderPerkPlacementChip({
   const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(placement.perkGroupId)
   const isHighlighted =
     emphasizedPerkGroupKeys.has(perkGroupKey) || emphasizedCategoryNames.has(placement.categoryName)
+  const isSelectedHighlighted =
+    selectedEmphasisPerkGroupKeys.has(perkGroupKey) ||
+    selectedEmphasisCategoryNames.has(placement.categoryName)
 
   return (
     <button
@@ -58,6 +65,7 @@ function renderPerkPlacementChip({
       className={styles.perkPlacementChip}
       data-ancient-scroll-perk-group={isAncientScrollPerkGroup}
       data-highlighted={isHighlighted}
+      data-selected-highlighted={isSelectedHighlighted}
       data-testid="perk-placement-chip"
       key={keyPrefix}
       onBlur={() => onClosePerkGroupHover(perkGroupKey)}
@@ -96,6 +104,8 @@ function renderPerkPlacementChip({
 function renderPerkPlacements({
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   onClosePerkGroupHover,
   onInspectPerkGroup,
   onOpenPerkGroupHover,
@@ -104,6 +114,8 @@ function renderPerkPlacements({
 }: {
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
@@ -129,6 +141,8 @@ function renderPerkPlacements({
       perk,
       placement,
       query,
+      selectedEmphasisCategoryNames,
+      selectedEmphasisPerkGroupKeys,
     }),
   )
 }
@@ -149,6 +163,8 @@ export function PerkResults({
   perkResultListScrollResetKey,
   query,
   selectedPerk,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   setQuery,
   shouldIncludeAncientScrollPerkGroups,
   shouldIncludeOriginPerkGroups,
@@ -172,6 +188,8 @@ export function PerkResults({
   perkResultListScrollResetKey: number
   query: string
   selectedPerk: LegendsPerkRecord | null
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   setQuery: (query: string) => void
   shouldIncludeAncientScrollPerkGroups: boolean
   shouldIncludeOriginPerkGroups: boolean
@@ -433,6 +451,8 @@ export function PerkResults({
                           onOpenPerkGroupHover,
                           perk,
                           query,
+                          selectedEmphasisCategoryNames,
+                          selectedEmphasisPerkGroupKeys,
                         })}
                       </div>
                       <div className={styles.perkPreview} data-testid="perk-preview">

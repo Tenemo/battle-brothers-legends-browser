@@ -180,6 +180,7 @@ export function SavedBuildsDialog({
     string | null
   >(null)
   const [pendingSavedBuildId, setPendingSavedBuildId] = useState<string | null>(null)
+  const savedBuildActionInFlightRef = useRef(false)
   const hasPickedPerks = pickedPerks.length > 0
   const defaultSavedBuildName = getDefaultSavedBuildName(savedBuilds)
   const isSavedBuildActionPending = isSaving || pendingSavedBuildId !== null
@@ -202,10 +203,23 @@ export function SavedBuildsDialog({
     firstFocusableElement?.focus()
   }, [])
 
+  function beginSavedBuildAction(): boolean {
+    if (isSavedBuildActionPending || savedBuildActionInFlightRef.current) {
+      return false
+    }
+
+    savedBuildActionInFlightRef.current = true
+    return true
+  }
+
+  function finishSavedBuildAction() {
+    savedBuildActionInFlightRef.current = false
+  }
+
   async function handleSaveCurrentBuild(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    if (!hasPickedPerks || isSavedBuildActionPending) {
+    if (!hasPickedPerks || !beginSavedBuildAction()) {
       return
     }
 
@@ -218,11 +232,12 @@ export function SavedBuildsDialog({
       // The storage hook exposes the error message in the dialog status area.
     } finally {
       setIsSaving(false)
+      finishSavedBuildAction()
     }
   }
 
   async function handleCopySavedBuildLink(savedBuildId: string) {
-    if (isSavedBuildActionPending) {
+    if (!beginSavedBuildAction()) {
       return
     }
 
@@ -234,11 +249,12 @@ export function SavedBuildsDialog({
       // The copy handler exposes the failure state in the dialog status area.
     } finally {
       setPendingSavedBuildId(null)
+      finishSavedBuildAction()
     }
   }
 
   async function handleDeleteSavedBuild(savedBuildId: string) {
-    if (isSavedBuildActionPending) {
+    if (!beginSavedBuildAction()) {
       return
     }
 
@@ -250,16 +266,21 @@ export function SavedBuildsDialog({
       // The storage hook exposes the error message in the dialog status area.
     } finally {
       setPendingSavedBuildId(null)
+      finishSavedBuildAction()
     }
   }
 
   async function handleOverwriteSavedBuild(savedBuildId: string) {
-    if (!hasPickedPerks || isSavedBuildActionPending) {
+    if (!hasPickedPerks || isSavedBuildActionPending || savedBuildActionInFlightRef.current) {
       return
     }
 
     if (confirmingOverwriteSavedBuildId !== savedBuildId) {
       setConfirmingOverwriteSavedBuildId(savedBuildId)
+      return
+    }
+
+    if (!beginSavedBuildAction()) {
       return
     }
 
@@ -271,6 +292,7 @@ export function SavedBuildsDialog({
       // The storage hook exposes the error message in the dialog status area.
     } finally {
       setPendingSavedBuildId(null)
+      finishSavedBuildAction()
     }
   }
 

@@ -104,11 +104,18 @@
     }
 
     &:hover,
-    &[data-highlighted='true'],
+    &[data-highlighted='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+    }
+
     &[aria-pressed='true'] {
       border-color: var(--accent-color);
       background: var(--button-background-active);
       color: var(--text-primary);
+
+      @include active-corner-ornaments(0, var(--primitive-length-0-9rem));
     }
   }
 
@@ -127,6 +134,7 @@
   }
 
   .categoryChipFrame {
+    position: relative;
     display: flex;
     align-items: stretch;
     width: 100%;
@@ -138,11 +146,18 @@
 
     @include control-transition;
 
-    &[data-highlighted='true'],
+    &[data-highlighted='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+    }
+
     &[data-selected='true'] {
       border-color: var(--accent-color);
       background: var(--button-background-active);
       color: var(--text-primary);
+
+      @include active-corner-ornaments(0, var(--primitive-length-0-9rem));
     }
   }
 

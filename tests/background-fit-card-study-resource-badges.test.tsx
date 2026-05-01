@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
-import { BackgroundFitCard } from '../src/components/BackgroundFitCard'
+import { BackgroundFitCard, BackgroundFitMetricTable } from '../src/components/BackgroundFitCard'
 import {
   backgroundStudyResourceBadgesTestId,
   backgroundStudyResourceBadgeTestId,
@@ -231,6 +231,36 @@ describe('background fit card study resource badges', () => {
       'title',
       'One legal native background roll without books or scrolls can cover every picked perk with a 100% chance for the must-have build.',
     )
+  })
+
+  test('renders must-have metric icons from explicit metadata', () => {
+    render(
+      <BackgroundFitMetricTable
+        metrics={[
+          {
+            accessibleLabel: 'Required build chance 100%',
+            icon: 'must-have',
+            label: 'Required build chance',
+            tooltip: 'A renamed required-build metric still uses the must-have icon.',
+            value: '100%',
+          },
+          {
+            accessibleLabel: 'Must-have wording without icon 1/1',
+            icon: null,
+            label: 'Must-have wording without icon',
+            tooltip: 'Label text alone should not opt into the must-have icon.',
+            value: '1/1',
+          },
+        ]}
+      />,
+    )
+
+    const metricRows = screen.getAllByTestId('background-fit-summary-metric')
+
+    expect(within(metricRows[0]).getByTestId('background-fit-summary-must-have-icon')).toBeVisible()
+    expect(
+      within(metricRows[1]).queryByTestId('background-fit-summary-must-have-icon'),
+    ).not.toBeInTheDocument()
   })
 
   test('shows the veteran perk interval badge with a native tooltip', () => {

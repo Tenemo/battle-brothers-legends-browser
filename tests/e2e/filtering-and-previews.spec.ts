@@ -157,6 +157,10 @@ test('leaves no category selected when deselecting a scoped perk group from an e
     'aria-pressed',
     'false',
   )
+  await expect(page.getByRole('button', { name: 'Show all perk groups' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
   await expect(getSidebarPerkGroupButton(page, 'Beasts')).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByText('No perks found')).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
@@ -595,6 +599,12 @@ test('keeps category hover and disclosure styling separate from perk group highl
       }, disclosureBaseStyles),
     )
     .toBe(true)
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
+
+  await alchemyGroupButton.hover()
+
+  await expect(alchemyGroupButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(deadeyeGroupButton).toHaveAttribute('data-highlighted', 'false')
   await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
 })
 

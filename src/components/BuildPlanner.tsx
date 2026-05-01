@@ -119,6 +119,9 @@ export function BuildPlanner({
   savedBuildPersistenceState,
   savedBuilds,
   savedBuildsErrorMessage,
+  selectedBuildPlannerPerkId,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   shareBuildStatus,
   sharedPerkGroups,
 }: {
@@ -158,6 +161,9 @@ export function BuildPlanner({
   savedBuildPersistenceState: SavedBuildPersistenceState
   savedBuilds: BuildPlannerSavedBuild[]
   savedBuildsErrorMessage: string | null
+  selectedBuildPlannerPerkId: string | null
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   shareBuildStatus: 'copied' | 'error' | 'idle'
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }) {
@@ -326,6 +332,9 @@ export function BuildPlanner({
           openBuildPerkTooltipPreview={openTooltipPreview}
           pickedPerks={pickedPerks}
           plannerBoardRef={plannerBoardRef}
+          selectedBuildPlannerPerkId={selectedBuildPlannerPerkId}
+          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           sharedPerkGroups={sharedPerkGroups}
           suppressBuildPerkTooltipPreviewUntilPointerMove={suppressTooltipPreviewUntilPointerMove}
         />

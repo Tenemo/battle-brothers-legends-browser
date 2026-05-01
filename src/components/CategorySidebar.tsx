@@ -23,7 +23,9 @@ type CategorySidebarProps = {
   onCategoryToggle: (categoryName: string) => void
   onClearCategorySelection: () => void
   onCloseCategoryHover: (categoryName: string) => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
   onOpenCategoryHover: (categoryName: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onResetCategoryPerkGroups: (categoryName: string) => void
   onPerkGroupSelect: (categoryName: string, perkGroupId: string) => void
   onSelectAllCategories: () => void
@@ -69,7 +71,9 @@ export function CategorySidebar({
   onCategoryToggle,
   onClearCategorySelection,
   onCloseCategoryHover,
+  onClosePerkGroupHover,
   onOpenCategoryHover,
+  onOpenPerkGroupHover,
   onResetCategoryPerkGroups,
   onPerkGroupSelect,
   onSelectAllCategories,
@@ -151,6 +155,7 @@ export function CategorySidebar({
           const pickedPerkCountInCategory =
             pickedPerkCountsByCategory.get(availableCategoryName) ?? 0
           const selectedPerkGroupIds = selectedPerkGroupIdsByCategory[availableCategoryName] ?? []
+          const isAllPerkGroupsSelectionActive = isActive && selectedPerkGroupIds.length === 0
           const isHoveredCategory =
             hoveredPerkGroupKey?.startsWith(`${availableCategoryName}::`) ?? false
           const hasVisibleHoveredPerkGroup =
@@ -247,7 +252,7 @@ export function CategorySidebar({
                   </p>
                   <button
                     aria-label="Show all perk groups"
-                    aria-pressed={selectedPerkGroupIds.length === 0}
+                    aria-pressed={isAllPerkGroupsSelectionActive}
                     className={styles.perkGroupChip}
                     onClick={() => onResetCategoryPerkGroups(availableCategoryName)}
                     type="button"
@@ -279,9 +284,17 @@ export function CategorySidebar({
                         data-ancient-scroll-perk-group={isAncientScrollPerkGroup}
                         data-highlighted={isPerkGroupHighlighted}
                         key={perkGroupOption.perkGroupId}
+                        onBlur={() => onClosePerkGroupHover(perkGroupKey)}
                         onClick={() =>
                           onPerkGroupSelect(availableCategoryName, perkGroupOption.perkGroupId)
                         }
+                        onFocus={() =>
+                          onOpenPerkGroupHover(availableCategoryName, perkGroupOption.perkGroupId)
+                        }
+                        onMouseEnter={() =>
+                          onOpenPerkGroupHover(availableCategoryName, perkGroupOption.perkGroupId)
+                        }
+                        onMouseLeave={() => onClosePerkGroupHover(perkGroupKey)}
                         type="button"
                       >
                         <span className={styles.perkGroupChipStart}>

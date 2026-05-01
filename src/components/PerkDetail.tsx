@@ -44,6 +44,8 @@ type PerkDetailProps = {
   backgroundFitDetail: { backgroundFit: RankedBackgroundFit; rank: number } | null
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   groupedBackgroundSources: GroupedBackgroundSource[]
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
@@ -119,6 +121,8 @@ export function DetailsPanel({
   backgroundFitDetail,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   groupedBackgroundSources,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
@@ -157,6 +161,8 @@ export function DetailsPanel({
             backgroundFit={selectedBackgroundFitDetail.backgroundFit}
             emphasizedCategoryNames={emphasizedCategoryNames}
             emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+            selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+            selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
             hoveredBuildPerkId={hoveredBuildPerkId}
             hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
             hoveredPerkId={hoveredPerkId}
@@ -223,6 +229,8 @@ export function DetailsPanel({
                         className={styles.detailPlacementTile}
                         emphasizedCategoryNames={emphasizedCategoryNames}
                         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+                        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
                         groupLabel={placement.perkGroupName}
                         groupOptions={[
                           {
@@ -477,6 +485,8 @@ function StudyResourceRequirementList({
   emptyMessage,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   entries,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
@@ -494,6 +504,8 @@ function StudyResourceRequirementList({
   emptyMessage: string
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   entries: StudyResourceRequirementEntry[]
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
@@ -541,6 +553,8 @@ function StudyResourceRequirementList({
                     className={styles.detailStudyResourceTile}
                     emphasizedCategoryNames={emphasizedCategoryNames}
                     emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                    selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+                    selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
                     groupLabel={buildTargetPerkGroup?.perkGroupName ?? entry.label}
                     groupOptions={getStudyResourceTileOptions(entry, buildTargetPerkGroup)}
                     hoveredBuildPerkId={hoveredBuildPerkId}
@@ -613,6 +627,8 @@ function BackgroundDetail({
   backgroundFit,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
@@ -636,6 +652,8 @@ function BackgroundDetail({
   backgroundFit: RankedBackgroundFit
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
@@ -751,6 +769,8 @@ function BackgroundDetail({
               backgroundFit={mustHaveBackgroundFit}
               emphasizedCategoryNames={emphasizedCategoryNames}
               emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
               hoveredBuildPerkId={hoveredBuildPerkId}
               hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
               hoveredPerkId={hoveredPerkId}
@@ -768,6 +788,8 @@ function BackgroundDetail({
               emptyMessage="No book or scroll needed for must-have perks."
               emphasizedCategoryNames={emphasizedCategoryNames}
               emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
               entries={getStudyResourceRequirementEntries(
                 backgroundFit.mustHaveStudyResourceRequirement,
               )}
@@ -801,6 +823,8 @@ function BackgroundDetail({
               backgroundFit={optionalBackgroundFit}
               emphasizedCategoryNames={emphasizedCategoryNames}
               emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
               hoveredBuildPerkId={hoveredBuildPerkId}
               hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
               hoveredPerkId={hoveredPerkId}
@@ -822,6 +846,8 @@ function BackgroundDetail({
               }
               emphasizedCategoryNames={emphasizedCategoryNames}
               emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
               entries={optionalStudyResourceRequirementEntries}
               hoveredBuildPerkId={hoveredBuildPerkId}
               hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}

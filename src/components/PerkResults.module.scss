@@ -64,6 +64,8 @@
     &[data-selected='true'] {
       background: var(--button-background-active);
 
+      @include active-corner-ornaments;
+
       &:not([data-picked='true'], [data-highlighted='true']) {
         border-color: transparent;
       }
@@ -178,6 +180,10 @@
       .perkPlacementLabel {
         color: var(--text-primary);
       }
+    }
+
+    &[data-selected-highlighted='true'] {
+      @include active-corner-ornaments(0, var(--primitive-length-0-9rem));
     }
 
     &:focus-visible {

@@ -28,7 +28,7 @@ function createStatus({
       contentType: homepageOk ? 'text/html; charset=utf-8' : 'application/json',
       missingSnippet: homepageOk ? null : '<title>Battle Brothers Legends build planner</title>',
       ok: homepageOk,
-      statusCode: homepageOk ? 200 : 200,
+      statusCode: homepageOk ? 200 : 503,
       url: 'https://battlebrothers.academy/',
     },
     version: {
@@ -165,7 +165,12 @@ describe('wait for production deploy', () => {
   })
 
   test('formats readiness diagnostics with missing markers and version details', () => {
-    expect(formatProductionReadinessStatus(createStatus({ homepageOk: false }))).toContain(
+    const failedHomepageStatus = formatProductionReadinessStatus(createStatus({ homepageOk: false }))
+
+    expect(failedHomepageStatus).toContain(
+      'homepage: status=503, contentType=application/json',
+    )
+    expect(failedHomepageStatus).toContain(
       'markers=missing <title>Battle Brothers Legends build planner</title>',
     )
     expect(

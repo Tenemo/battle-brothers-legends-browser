@@ -405,6 +405,8 @@ export default function App() {
     openBuildPerkTooltip,
     openPerkGroupHover,
     openResultsPerkHover,
+    selectedEmphasisCategoryNames,
+    selectedEmphasisPerkGroupKeys,
   } = usePerkInteractionState({
     allPerksById,
     selectedCategoryNames,
@@ -1466,6 +1468,11 @@ export default function App() {
         savedBuildPersistenceState={savedBuildPersistenceState}
         savedBuilds={savedBuildViews}
         savedBuildsErrorMessage={savedBuildsErrorMessage}
+        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+        selectedBuildPlannerPerkId={
+          activeDetailType === 'perk' && selectedPerk !== null ? selectedPerk.id : null
+        }
         shareBuildStatus={shareBuildStatus}
         sharedPerkGroups={buildPlannerGroups.sharedPerkGroups}
       />
@@ -1520,6 +1527,8 @@ export default function App() {
           hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
           hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
           hoveredPerkId={hoveredPerkId}
+          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           isSelectedPerkPicked={isSelectedPerkPicked}
           mustHavePickedPerkIds={mustHavePickedPerkIds}
           onCloseBuildPerkHover={closeBuildPerkHover}
@@ -1560,6 +1569,8 @@ export default function App() {
           pickedPerkOrderById={pickedPerkOrderById}
           query={query}
           selectedPerk={selectedPerk}
+          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           setQuery={handlePerkSearchChange}
           shouldIncludeAncientScrollPerkGroups={shouldIncludeAncientScrollPerkGroups}
           shouldIncludeOriginPerkGroups={shouldIncludeOriginPerkGroups}
@@ -1583,7 +1594,9 @@ export default function App() {
           onCategoryToggle={handleCategoryToggle}
           onClearCategorySelection={handleClearCategorySelection}
           onCloseCategoryHover={closeCategoryHover}
+          onClosePerkGroupHover={closePerkGroupHover}
           onOpenCategoryHover={openCategoryHover}
+          onOpenPerkGroupHover={openPerkGroupHover}
           onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
           onPerkGroupSelect={handlePerkGroupSelect}
           onSelectAllCategories={handleSelectAllCategories}

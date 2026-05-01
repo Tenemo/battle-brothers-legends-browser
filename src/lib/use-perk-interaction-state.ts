@@ -300,6 +300,14 @@ export function usePerkInteractionState({
       }),
     [selectedCategoryNames, selectedPerkGroupIdsByCategory, state.hoveredCategoryName],
   )
+  const selectedEmphasisCategoryNames = useMemo(
+    () =>
+      getCategoryOnlyEmphasisNames({
+        selectedCategoryNames,
+        selectedPerkGroupIdsByCategory,
+      }),
+    [selectedCategoryNames, selectedPerkGroupIdsByCategory],
+  )
   const emphasizedPerkGroupKeys = useMemo(
     () =>
       getEmphasizedPerkGroupKeys({
@@ -307,6 +315,10 @@ export function usePerkInteractionState({
         selectedPerkGroupIdsByCategory,
       }),
     [selectedPerkGroupIdsByCategory, state.hoveredPerkGroupReference],
+  )
+  const selectedEmphasisPerkGroupKeys = useMemo(
+    () => getSelectedPerkGroupKeys(selectedPerkGroupIdsByCategory),
+    [selectedPerkGroupIdsByCategory],
   )
   const buildPerkHighlightPerkGroupKeys = useMemo(
     () =>
@@ -441,5 +453,7 @@ export function usePerkInteractionState({
     openBuildPerkTooltip,
     openPerkGroupHover,
     openResultsPerkHover,
+    selectedEmphasisCategoryNames,
+    selectedEmphasisPerkGroupKeys,
   }
 }
