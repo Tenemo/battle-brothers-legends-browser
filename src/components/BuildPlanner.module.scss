@@ -2,11 +2,11 @@
 
 @layer components {
   .buildPlanner {
-    --planner-group-row-min-height: var(--primitive-length-4-7rem);
+    --planner-group-row-min-height: 4.7rem;
     --planner-perk-row-min-height: var(--primitive-length-3-45rem);
-    --planner-picked-perk-slot-width: var(--primitive-length-8-04rem);
-    --planner-row-label-width: var(--primitive-length-10-4rem);
-    --planner-slot-width: var(--planner-tile-width);
+    --planner-picked-perk-slot-width: 8.04rem;
+    --planner-row-label-width: 10.4rem;
+    --planner-slot-width: var(--primitive-length-14rem);
     --planner-track-gap: var(--space-md);
     --planner-tile-width: var(--primitive-length-14rem);
     --planner-placeholder-width: var(--primitive-length-15rem);
@@ -37,7 +37,7 @@
     &[data-scroll-constrained='true'] {
       @include constrained-desktop {
         flex: 0 1 auto;
-        max-height: var(--primitive-length-16rem);
+        max-height: 16rem;
         min-height: 0;
         overflow: hidden;
 
@@ -132,10 +132,7 @@
     font-style: italic;
     font-weight: 700;
     line-height: 1;
-    transform: translate(
-      var(--primitive-length-negative-0-02rem),
-      var(--primitive-length-negative-0-05rem)
-    );
+    transform: translate(-0.02rem, var(--primitive-length-negative-0-05rem));
   }
 
   .buildPlannerInfoTooltip,
@@ -147,10 +144,7 @@
     position: absolute;
     top: calc(100% + var(--space-md));
     left: 0;
-    width: min(
-      var(--primitive-length-24rem),
-      calc(var(--primitive-length-100vw) - var(--control-height-md))
-    );
+    width: min(var(--primitive-length-24rem), calc(100vw - var(--control-height-md)));
     padding: var(--space-lg) var(--space-xl);
     font-size: var(--font-size-md);
     font-weight: 400;
@@ -207,7 +201,7 @@
   }
 
   .savedBuildActionButton {
-    min-width: var(--primitive-length-5-9rem);
+    min-width: 5.9rem;
   }
 
   .clearBuildActionButton {
@@ -438,6 +432,10 @@
 
     @include surface-transition;
 
+    &[data-selected='true'] {
+      @include active-corner-ornaments(0, var(--primitive-length-0-98rem));
+    }
+
     &::after,
     .plannerPill::after {
       content: '';
@@ -528,21 +526,24 @@
   }
 
   .plannerSlotRequirementChain {
+    --planner-slot-requirement-chain-left-offset: -11px;
     --planner-slot-requirement-chain-scale: 1;
 
     position: absolute;
     top: 50%;
-    left: calc((var(--primitive-length-negative-5px) - var(--primitive-length-3px)) * var(--planner-slot-requirement-chain-scale));
+    left: calc(var(--planner-slot-requirement-chain-left-offset) * var(--planner-slot-requirement-chain-scale));
     z-index: var(--z-index-raised);
     display: block;
-    width: calc((var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale));
-    height: calc((var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale));
+    width: calc(
+      (var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale)
+    );
+    height: calc(
+      (var(--primitive-length-1-4rem) * 2.25) * var(--planner-slot-requirement-chain-scale)
+    );
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
-    margin-top: calc(
-      (var(--primitive-length-12px) * -1) * var(--planner-slot-requirement-chain-scale)
-    );
-    opacity: 0.4;
+    margin-top: calc((12px * -1) * var(--planner-slot-requirement-chain-scale));
+    opacity: 0.8;
     pointer-events: none;
     transform: translate(
       calc((var(--primitive-length-0-12rem) * -1) * var(--planner-slot-requirement-chain-scale)),
@@ -693,6 +694,10 @@
       box-shadow: var(--shadow-selected-ring);
     }
 
+    &[data-selected-highlighted='true'] {
+      @include active-corner-ornaments;
+    }
+
     &[data-ancient-scroll-perk-group='true'] {
       padding-right: var(--primitive-length-1-65rem);
     }
@@ -715,16 +720,26 @@
     }
   }
 
+  .plannerGroupCardPointerTarget,
   .plannerGroupCardInspect {
     position: absolute;
-    z-index: var(--z-index-base);
-    inset: 0;
     appearance: none;
     border: 0;
     border-radius: inherit;
     padding: 0;
     background: transparent;
     cursor: pointer;
+  }
+
+  .plannerGroupCardPointerTarget {
+    z-index: var(--z-index-base);
+    inset: 0;
+  }
+
+  .plannerGroupCardInspect {
+    z-index: var(--z-index-raised);
+    inset: 0 0 auto;
+    height: max(var(--target-size-compact), calc(var(--control-height-sm) + var(--space-md)));
 
     &:focus-visible {
       @include focus-ring(var(--primitive-length-negative-2px));
@@ -795,6 +810,10 @@
         box-shadow: var(--shadow-planner-option);
       }
     }
+
+    &[data-selected-highlighted='true'] {
+      @include active-corner-ornaments(0, var(--primitive-length-0-98rem));
+    }
   }
 
   .plannerGroupOptionIcon {
@@ -835,7 +854,7 @@
     &::before {
       content: '';
       position: absolute;
-      inset: var(--primitive-length-negative-0-16rem) var(--primitive-length-negative-0-08rem);
+      inset: -0.16rem -0.08rem;
     }
 
     &::after {
@@ -872,8 +891,13 @@
     }
   }
 
+  .plannerStaticPill {
+    pointer-events: none;
+  }
+
   .plannerPickedPerkName {
     display: -webkit-box;
+    flex: 1 1 0;
     min-width: 0;
     overflow: hidden;
     -webkit-box-orient: vertical;
@@ -916,7 +940,8 @@
     .buildPlanner {
       --planner-group-row-min-height: var(--primitive-length-3-7rem);
       --planner-perk-row-min-height: var(--primitive-length-2-72rem);
-      --planner-row-label-width: var(--primitive-length-8-4rem);
+      --planner-row-label-width: 8.4rem;
+      --planner-slot-width: var(--primitive-length-11-4rem);
       --planner-track-gap: var(--primitive-length-0-34rem);
       --planner-tile-width: var(--primitive-length-11-4rem);
       --planner-placeholder-width: var(--primitive-length-12rem);
@@ -998,7 +1023,13 @@
     }
 
     .plannerRequirementLegend {
-      --planner-requirement-legend-mobile-width: calc((var(--planner-requirement-legend-slot-width) * 2) + var(--space-md) + var(--primitive-length-8px));
+      --planner-requirement-legend-mobile-gutter: calc(
+        var(--space-md) + var(--primitive-length-8px)
+      );
+      --planner-requirement-legend-slot-pair-width: calc(
+        var(--planner-requirement-legend-slot-width) * 2
+      );
+      --planner-requirement-legend-mobile-width: calc(var(--planner-requirement-legend-slot-pair-width) + var(--planner-requirement-legend-mobile-gutter));
 
       flex: 0 0 auto;
       width: var(--planner-requirement-legend-mobile-width);

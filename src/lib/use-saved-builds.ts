@@ -17,6 +17,13 @@ function getSavedBuildErrorMessage(error: unknown): string {
 export function useSavedBuilds({ referenceVersion }: { referenceVersion: string }): {
   deleteSavedBuild: (savedBuildId: string) => Promise<void>
   isSavedBuildsLoading: boolean
+  overwriteSavedBuild: (
+    savedBuildId: string,
+    options: {
+      optionalPerkIds?: string[]
+      pickedPerkIds: string[]
+    },
+  ) => Promise<SavedBuildRecord>
   saveCurrentBuild: (options: {
     optionalPerkIds?: string[]
     name: string
@@ -84,6 +91,53 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
     [referenceVersion, reloadSavedBuilds],
   )
 
+  const overwriteSavedBuild = useCallback(
+    async (
+      savedBuildId: string,
+      {
+        optionalPerkIds,
+        pickedPerkIds,
+      }: {
+        optionalPerkIds?: string[]
+        pickedPerkIds: string[]
+      },
+    ): Promise<SavedBuildRecord> => {
+      try {
+        setSavedBuildsErrorMessage(null)
+        setSavedBuildPersistenceState(await requestSavedBuildPersistence())
+
+        const savedBuildToOverwrite = savedBuilds.find(
+          (savedBuild) => savedBuild.id === savedBuildId,
+        )
+
+        if (!savedBuildToOverwrite) {
+          throw new Error('Saved build was not found.')
+        }
+
+        const overwrittenSavedBuild = {
+          ...createSavedBuildRecord({
+            id: savedBuildToOverwrite.id,
+            name: savedBuildToOverwrite.name,
+            optionalPerkIds,
+            pickedPerkIds,
+            referenceVersion,
+          }),
+          createdAt: savedBuildToOverwrite.createdAt,
+        }
+
+        await saveSavedBuildRecord(overwrittenSavedBuild)
+        await reloadSavedBuilds()
+
+        return overwrittenSavedBuild
+      } catch (error) {
+        const errorMessage = getSavedBuildErrorMessage(error)
+        setSavedBuildsErrorMessage(errorMessage)
+        throw new Error(errorMessage)
+      }
+    },
+    [referenceVersion, reloadSavedBuilds, savedBuilds],
+  )
+
   const deleteSavedBuild = useCallback(
     async (savedBuildId: string): Promise<void> => {
       try {
@@ -141,6 +195,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
   return {
     deleteSavedBuild,
     isSavedBuildsLoading,
+    overwriteSavedBuild,
     saveCurrentBuild,
     savedBuildPersistenceState,
     savedBuilds,

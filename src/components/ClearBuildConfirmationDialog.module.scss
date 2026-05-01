@@ -8,7 +8,7 @@
   .clearBuildDialog {
     grid-template-columns: auto minmax(0, 1fr);
     align-items: start;
-    width: min(var(--primitive-length-30rem), 100%);
+    width: min(30rem, 100%);
 
     @include dialog-surface;
 
@@ -23,7 +23,7 @@
     justify-content: center;
     align-items: center;
 
-    @include size(var(--primitive-length-2-15rem));
+    @include size(2.15rem);
 
     border: var(--primitive-length-1px) solid var(--border-danger);
     border-radius: var(--radius-lg);

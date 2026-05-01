@@ -62,7 +62,6 @@
 </defs>
 
 <g filter="url(#smoothForged)">
-    <g transform="translate(120.00, 120.00) rotate(76.57)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
     <g transform="translate(197.57, 384.72) rotate(69.89)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
     <g transform="translate(323.90, 628.88) rotate(51.91)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
     <g transform="translate(559.51, 743.49) rotate(-10.24)"><use href="#link_V" clip-path="url(#clip_V_back)"/></g>
@@ -72,7 +71,6 @@
     <g transform="translate(426.29, 720.01) rotate(28.70)"><use href="#link_H" /></g>
     <g transform="translate(680.00, 680.00) rotate(-42.26)"><use href="#link_H" /></g>
 
-    <g transform="translate(120.00, 120.00) rotate(76.57)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
     <g transform="translate(197.57, 384.72) rotate(69.89)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
     <g transform="translate(323.90, 628.88) rotate(51.91)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>
     <g transform="translate(559.51, 743.49) rotate(-10.24)"><use href="#link_V" clip-path="url(#clip_V_front)"/></g>

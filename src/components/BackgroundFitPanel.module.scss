@@ -14,7 +14,7 @@
 
   .backgroundFitPanelBody {
     @include rail-panel-body(
-      var(--space-xl) var(--space-control-inline) var(--space-xl) var(--primitive-length-0-76rem),
+      var(--space-xl) var(--space-control-inline) var(--space-xl) 0.76rem,
       hidden
     );
   }
@@ -84,7 +84,7 @@
     border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-11);
     border-radius: var(--radius-lg);
     padding: var(--primitive-length-0-46rem) var(--space-md);
-    background: var(--primitive-color-rgb-18-15-13-alpha-0-76);
+    background: rgb(18 15 13 / 0.76);
 
     > div {
       flex: 1 1 auto;
@@ -114,6 +114,7 @@
   }
 
   .backgroundFitResultsScroll {
+    position: relative;
     display: grid;
     flex: 1 1 auto;
     align-content: start;
@@ -122,6 +123,70 @@
     min-height: 0;
     overflow: hidden auto;
     padding-right: var(--primitive-length-0-18rem);
+  }
+
+  .backgroundFitStatus {
+    display: grid;
+    position: relative;
+    flex: 0 0 auto;
+    min-width: 0;
+  }
+
+  .backgroundFitStatus[data-loading='true'] .backgroundFitRankingSummary {
+    visibility: hidden;
+  }
+
+  .backgroundFitRankingSummary {
+    min-width: 0;
+  }
+
+  .backgroundFitProgressText {
+    flex: 0 0 auto;
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .backgroundFitLoadingSlot {
+    display: grid;
+    position: absolute;
+    inset: 0;
+    grid-template-rows: auto auto;
+    row-gap: var(--space-2xs);
+    align-items: start;
+    min-width: 0;
+    pointer-events: none;
+
+    &[aria-hidden='true'] {
+      opacity: 0;
+      visibility: hidden;
+    }
+  }
+
+  .backgroundFitProgressBar {
+    position: relative;
+    width: 100%;
+    height: var(--primitive-length-0-42rem);
+    overflow: hidden;
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-pill);
+    background: var(--surface-control);
+  }
+
+  .backgroundFitProgressBarValue {
+    width: var(--background-fit-progress-value, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--accent-soft);
+    transition: width var(--motion-entry-duration) cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .backgroundFitProgressBarValue {
+      transition: none;
+    }
   }
 
   .backgroundFitPerkGroupMain {
@@ -154,6 +219,14 @@
     }
   }
 
+  .backgroundFitMatchGuaranteedText {
+    color: var(--accent-soft);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    text-align: right;
+    white-space: normal;
+  }
+
   .backgroundFitMatchProbabilityBadge,
   .backgroundFitDisambiguator,
   .backgroundFitRank,
@@ -181,19 +254,11 @@
       opacity: 0.76;
     }
 
-    &[data-expanded='true'] {
+    &[data-selected='true'] {
+      border-color: rgb(204 155 84 / 0.38);
       background: var(--surface-result-active);
 
-      .backgroundFitAccordionChevron {
-        color: var(--accent-soft);
-        transform: rotate(90deg);
-      }
-
-      .backgroundFitCardPanel {
-        grid-template-rows: 1fr;
-        border-top-color: var(--border-subtle);
-        opacity: 1;
-      }
+      @include active-corner-ornaments;
     }
   }
 
@@ -215,7 +280,7 @@
 
     &:hover,
     &:focus-visible {
-      background: var(--primitive-color-rgb-28-23-20-alpha-0-42);
+      background: rgb(28 23 20 / 0.42);
     }
 
     &:focus-visible {
@@ -259,7 +324,7 @@
     h3 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--primitive-length-0-94rem);
+      font-size: 0.94rem;
       line-height: 1.08;
     }
   }
@@ -294,7 +359,7 @@
   .backgroundFitStudyResourceBadgeOptionalOnly {
     filter: drop-shadow(var(--shadow-chain-drop))
       drop-shadow(0 0 var(--primitive-length-0-24rem) var(--border-success))
-      drop-shadow(0 0 var(--primitive-length-0-06rem) var(--text-success));
+      drop-shadow(0 0 0.06rem var(--text-success));
   }
 
   .backgroundFitRank {
@@ -318,7 +383,7 @@
     flex: 0 0 auto;
     max-width: 100%;
     margin-top: 0;
-    padding: var(--primitive-length-0-05rem) var(--primitive-length-0-3rem);
+    padding: 0.05rem var(--primitive-length-0-3rem);
     color: var(--text-secondary);
     font-size: var(--font-size-3xs);
     letter-spacing: 0;
@@ -347,19 +412,15 @@
     cursor: help;
 
     &[data-veteran-perk-interval='2'] {
-      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-236-196-95-alpha-0-82);
-      --background-fit-veteran-perk-badge-background: var(
-        --primitive-color-rgb-161-112-39-alpha-0-3
-      );
-      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-255-224-143);
+      --background-fit-veteran-perk-badge-border: rgb(236 196 95 / 0.82);
+      --background-fit-veteran-perk-badge-background: rgb(161 112 39 / 0.3);
+      --background-fit-veteran-perk-badge-color: rgb(255 224 143);
     }
 
     &[data-veteran-perk-interval='3'] {
-      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-194-198-203-alpha-0-74);
-      --background-fit-veteran-perk-badge-background: var(
-        --primitive-color-rgb-114-119-126-alpha-0-24
-      );
-      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-232-235-238);
+      --background-fit-veteran-perk-badge-border: rgb(194 198 203 / 0.74);
+      --background-fit-veteran-perk-badge-background: rgb(114 119 126 / 0.24);
+      --background-fit-veteran-perk-badge-color: rgb(232 235 238);
     }
 
     &[data-veteran-perk-interval='4'] {
@@ -372,8 +433,8 @@
   }
 
   .backgroundFitAccordionSummary,
-  .backgroundFitCardContent,
   .backgroundFitMatchSection,
+  .backgroundFitLoadingState,
   .backgroundFitEmptyState {
     display: grid;
     min-width: 0;
@@ -385,14 +446,16 @@
 
   .backgroundFitMetricTable {
     display: grid;
+    grid-template-columns: var(--icon-size-xs) minmax(0, 15.625rem) max-content minmax(0, 1fr);
+    column-gap: var(--space-2xs);
     width: 100%;
     min-width: 0;
   }
 
   .backgroundFitMetricRow {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
-    gap: var(--space-md);
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
     align-items: baseline;
     min-width: 0;
     padding: var(--primitive-length-0-12rem) 0;
@@ -404,9 +467,20 @@
     }
   }
 
+  .backgroundFitMetricIconCell {
+    display: inline-flex;
+    align-self: center;
+    align-items: center;
+    justify-content: center;
+    width: var(--icon-size-xs);
+    min-width: 0;
+    color: var(--accent-soft);
+    line-height: 0;
+  }
+
   .backgroundFitMetricValue {
     color: var(--accent-soft);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     font-weight: 400;
     line-height: 1.05;
     text-align: left;
@@ -416,48 +490,17 @@
   .backgroundFitMetricLabel {
     min-width: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-sm);
     line-height: 1.1;
     text-align: left;
   }
 
-  .backgroundFitAccordionChevronFrame {
-    display: inline-flex;
+  .backgroundFitMetricMustHaveIcon {
     flex: 0 0 auto;
-    align-items: center;
-    justify-content: center;
-
-    @include size(var(--control-height-sm));
-
-    border: var(--primitive-length-1px) solid var(--border-muted);
-    border-radius: var(--radius-pill);
-    background: var(--primitive-color-rgb-20-17-14-alpha-0-78);
-    color: var(--text-muted);
-  }
-
-  .backgroundFitAccordionChevron {
-    @include size(var(--icon-size-sm));
-  }
-
-  .backgroundFitCardPanel {
-    display: grid;
-    grid-template-rows: 0fr;
-    border-top: var(--primitive-length-1px) solid transparent;
-    opacity: 0;
-
-    &[hidden] {
-      display: none !important;
-    }
-  }
-
-  .backgroundFitCardPanelInner {
-    min-height: 0;
-    overflow: hidden;
-  }
-
-  .backgroundFitCardContent {
-    gap: var(--space-lg);
-    padding: var(--space-lg) var(--space-control-inline) var(--space-control-inline);
+    width: calc(var(--icon-size-xs) * 0.8);
+    height: calc(var(--icon-size-xs) * 0.8);
+    color: var(--accent-soft);
+    stroke-width: 2.2;
   }
 
   .backgroundFitMatchSection {
@@ -475,7 +518,7 @@
 
   @include desktop {
     .backgroundFitCardHeading h3 {
-      min-width: var(--primitive-length-5-8rem);
+      min-width: 5.8rem;
     }
   }
 
@@ -555,13 +598,8 @@
       gap: var(--space-2xs);
     }
 
-    .backgroundFitRailButton,
-    .backgroundFitAccordionChevronFrame {
+    .backgroundFitRailButton {
       min-height: var(--primitive-length-2-72rem);
-    }
-
-    .backgroundFitAccordionChevronFrame {
-      @include size(var(--primitive-length-2-72rem));
     }
 
     .backgroundFitCardHeading,
@@ -590,14 +628,12 @@
     }
 
     .backgroundFitMetricRow {
-      grid-template-columns: minmax(0, 1fr) var(--primitive-length-4rem);
-      gap: var(--space-xs);
-      padding: var(--primitive-length-0-08rem) 0;
+      padding: 0.08rem 0;
     }
 
     .backgroundFitMetricValue,
     .backgroundFitMetricLabel {
-      font-size: var(--font-size-xs);
+      font-size: var(--font-size-sm);
     }
 
     .backgroundFitTarget,

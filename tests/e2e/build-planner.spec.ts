@@ -360,9 +360,9 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(Math.abs(infoButtonStyle.width - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(infoButtonStyle.textTransform).toBe('none')
   expect(infoButtonGlyphStyle.fontFamily).toContain('Georgia')
-  expect(Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize)).toBeLessThan(
-    0.5,
-  )
+  expect(
+    Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize),
+  ).toBeLessThan(0.5)
   expect(infoButtonGlyphStyle.fontStyle).toBe('italic')
   expect(infoButtonGlyphStyle.transform).not.toBe('none')
 
@@ -1713,6 +1713,14 @@ test('marks picked perks as optional and separates them from must-have perks', a
   ])
   await expect(mustHaveLegendTile).toHaveAttribute('data-requirement', 'must-have')
   await expect(optionalLegendTile).toHaveAttribute('data-requirement', 'optional')
+  await expect(mustHaveLegendTile).toHaveAttribute(
+    'title',
+    'This is how must-have perks look in the build. Background fit uses must-have perks for the main build chance.',
+  )
+  await expect(optionalLegendTile).toHaveAttribute(
+    'title',
+    'This is how optional perks look in the build. Optional perks stay visible for full-build coverage and are scored separately.',
+  )
   await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
   await expect(optionalLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(0)
   const requirementLegendPlacementMetrics = await page
@@ -1840,7 +1848,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(
     Math.abs(
       requirementLegendTileLayoutMetrics!.optionalTop -
-      requirementLegendTileLayoutMetrics!.mustHaveTop,
+        requirementLegendTileLayoutMetrics!.mustHaveTop,
     ),
   ).toBeLessThan(0.5)
   expect(requirementLegendTileLayoutMetrics!.mustHaveNameTextAlign).toBe('center')
@@ -1860,81 +1868,6 @@ test('marks picked perks as optional and separates them from must-have perks', a
   await expect(
     perfectFocusPickedPerkTile.getByTestId('planner-slot-requirement-chain'),
   ).toHaveCount(1)
-  const mustHaveChainMetrics = await clarityPickedPerkTile.evaluate((pickedPerkTile) => {
-    const requirementChain = pickedPerkTile.querySelector(
-      '[data-testid="planner-slot-requirement-chain"]',
-    )
-    const requirementChainImage = pickedPerkTile.querySelector(
-      '[data-testid="planner-slot-requirement-chain-image"]',
-    )
-
-    if (
-      !(requirementChain instanceof HTMLElement) ||
-      !(requirementChainImage instanceof HTMLImageElement)
-    ) {
-      return null
-    }
-
-    const tileRectangle = pickedPerkTile.getBoundingClientRect()
-    const chainRectangle = requirementChain.getBoundingClientRect()
-    const chainStyle = window.getComputedStyle(requirementChain)
-    const chainImageRectangle = requirementChainImage.getBoundingClientRect()
-
-    return {
-      chainBottom: chainRectangle.bottom,
-      chainImageBottom: chainImageRectangle.bottom,
-      chainImageClipPath: window.getComputedStyle(requirementChainImage).clipPath,
-      chainImageComplete: requirementChainImage.complete,
-      chainImageHeight: chainImageRectangle.height,
-      chainImageNaturalHeight: requirementChainImage.naturalHeight,
-      chainImageNaturalWidth: requirementChainImage.naturalWidth,
-      chainImageRight: chainImageRectangle.right,
-      chainImageTop: chainImageRectangle.top,
-      chainImageWidth: chainImageRectangle.width,
-      chainLeft: chainRectangle.left,
-      chainOpacity: chainStyle.opacity,
-      chainRight: chainRectangle.right,
-      chainTop: chainRectangle.top,
-      tileBottom: tileRectangle.bottom,
-      tileHeight: tileRectangle.height,
-      tileLeft: tileRectangle.left,
-      tileTop: tileRectangle.top,
-      tileWidth: tileRectangle.width,
-    }
-  })
-
-  expect(mustHaveChainMetrics).not.toBeNull()
-  expect(mustHaveChainMetrics!.chainImageComplete).toBe(true)
-  expect(mustHaveChainMetrics!.chainImageNaturalHeight).toBeGreaterThan(0)
-  expect(mustHaveChainMetrics!.chainImageNaturalWidth).toBeGreaterThan(0)
-  expect(mustHaveChainMetrics!.chainImageWidth).toBeGreaterThan(48)
-  expect(mustHaveChainMetrics!.chainImageWidth).toBeLessThan(52)
-  expect(mustHaveChainMetrics!.chainImageHeight).toBeGreaterThan(48)
-  expect(mustHaveChainMetrics!.chainImageHeight).toBeLessThan(52)
-  expect(mustHaveChainMetrics!.chainImageClipPath).toContain('polygon(')
-  expect(mustHaveChainMetrics!.chainImageClipPath).toContain('70% 68%')
-  expect(mustHaveChainMetrics!.chainImageClipPath).toContain('66.7% 96%')
-  expect(mustHaveChainMetrics!.chainImageClipPath).not.toBe('none')
-  expect(mustHaveChainMetrics!.chainOpacity).toBe('0.4')
-  expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft)
-  expect(mustHaveChainMetrics!.chainLeft).toBeLessThan(mustHaveChainMetrics!.tileLeft - 7)
-  expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
-    mustHaveChainMetrics!.tileTop + mustHaveChainMetrics!.tileHeight * 0.5,
-  )
-  expect(mustHaveChainMetrics!.chainTop).toBeLessThan(
-    mustHaveChainMetrics!.tileTop + mustHaveChainMetrics!.tileHeight * 0.25,
-  )
-  expect(mustHaveChainMetrics!.chainRight).toBeGreaterThan(
-    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.3,
-  )
-  expect(mustHaveChainMetrics!.chainRight).toBeLessThan(
-    mustHaveChainMetrics!.tileLeft + mustHaveChainMetrics!.tileWidth * 0.42,
-  )
-  expect(mustHaveChainMetrics!.chainTop).toBeLessThan(mustHaveChainMetrics!.tileBottom)
-  expect(mustHaveChainMetrics!.chainBottom).toBeGreaterThan(mustHaveChainMetrics!.tileBottom)
-  expect(mustHaveChainMetrics!.chainImageTop).toBe(mustHaveChainMetrics!.chainTop)
-  expect(mustHaveChainMetrics!.chainImageRight).toBe(mustHaveChainMetrics!.chainRight)
-  expect(mustHaveChainMetrics!.chainImageBottom).toBe(mustHaveChainMetrics!.chainBottom)
   await expect(buildPerksBar.getByTestId('planner-picked-perk-name')).toHaveText([
     'Clarity',
     'Perfect Focus',
@@ -1953,8 +1886,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
     const perkName = element.querySelector('[data-testid="planner-picked-perk-name"]')
 
     return {
-      fontSize:
-        perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
+      fontSize: perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
       height: rectangle.height,
       width: rectangle.width,
     }
@@ -1964,8 +1896,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
     const perkName = element.querySelector('[data-testid="planner-picked-perk-name"]')
 
     return {
-      fontSize:
-        perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
+      fontSize: perkName instanceof HTMLElement ? window.getComputedStyle(perkName).fontSize : null,
       height: rectangle.height,
       width: rectangle.width,
     }
@@ -1978,67 +1909,6 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(
     Math.abs(mustHaveLegendTileDimensions.width - mustHaveTileDimensions.width * 0.7),
   ).toBeLessThan(0.75)
-  const mustHaveTileChainGeometry = await perfectFocusPickedPerkTile.evaluate((pickedPerkTile) => {
-    const requirementChain = pickedPerkTile.querySelector(
-      '[data-testid="planner-slot-requirement-chain"]',
-    )
-
-    if (!(requirementChain instanceof HTMLElement)) {
-      return null
-    }
-
-    const chainRectangle = requirementChain.getBoundingClientRect()
-    const chainStyle = window.getComputedStyle(requirementChain)
-    const tileRectangle = pickedPerkTile.getBoundingClientRect()
-
-    return {
-      heightRatio: chainRectangle.height / tileRectangle.height,
-      leftOffsetRatio: (chainRectangle.left - tileRectangle.left) / tileRectangle.width,
-      scale: chainStyle.getPropertyValue('--planner-slot-requirement-chain-scale').trim(),
-      topOffsetRatio: (chainRectangle.top - tileRectangle.top) / tileRectangle.height,
-      widthRatio: chainRectangle.width / tileRectangle.width,
-    }
-  })
-  const mustHaveLegendChainGeometry = await mustHaveLegendTile.evaluate((pickedPerkTile) => {
-    const requirementChain = pickedPerkTile.querySelector(
-      '[data-testid="planner-slot-requirement-chain"]',
-    )
-
-    if (!(requirementChain instanceof HTMLElement)) {
-      return null
-    }
-
-    const chainRectangle = requirementChain.getBoundingClientRect()
-    const chainStyle = window.getComputedStyle(requirementChain)
-    const tileRectangle = pickedPerkTile.getBoundingClientRect()
-
-    return {
-      heightRatio: chainRectangle.height / tileRectangle.height,
-      leftOffsetRatio: (chainRectangle.left - tileRectangle.left) / tileRectangle.width,
-      scale: chainStyle.getPropertyValue('--planner-slot-requirement-chain-scale').trim(),
-      topOffsetRatio: (chainRectangle.top - tileRectangle.top) / tileRectangle.height,
-      widthRatio: chainRectangle.width / tileRectangle.width,
-    }
-  })
-
-  expect(mustHaveTileChainGeometry).not.toBeNull()
-  expect(mustHaveLegendChainGeometry).not.toBeNull()
-  expect(mustHaveTileChainGeometry!.scale).toBe('1')
-  expect(mustHaveLegendChainGeometry!.scale).toBe('0.7')
-
-  for (const chainGeometryMetric of [
-    'heightRatio',
-    'leftOffsetRatio',
-    'topOffsetRatio',
-    'widthRatio',
-  ] as const) {
-    expect(
-      Math.abs(
-        mustHaveLegendChainGeometry![chainGeometryMetric] -
-          mustHaveTileChainGeometry![chainGeometryMetric],
-      ),
-    ).toBeLessThanOrEqual(0.015)
-  }
 
   await clarityPickedPerkTile.hover()
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()

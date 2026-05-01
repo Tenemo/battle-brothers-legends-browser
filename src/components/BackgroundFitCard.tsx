@@ -1,3 +1,4 @@
+import { Link } from 'lucide-react'
 import type {
   BackgroundFitMatch,
   BuildTargetPerkGroup,
@@ -29,7 +30,6 @@ import type { BackgroundStudyResourceFilter } from '../lib/background-study-reac
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
-import { BackgroundFitAccordionChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BackgroundFitPanel.module.scss'
 
@@ -144,6 +144,8 @@ export function BackgroundFitTargetPerkGroup({
 function BackgroundFitMatchRow({
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
@@ -159,6 +161,8 @@ function BackgroundFitMatchRow({
 }: {
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
@@ -189,6 +193,8 @@ function BackgroundFitMatchRow({
         className={styles.backgroundFitMatch}
         emphasizedCategoryNames={emphasizedCategoryNames}
         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
         groupLabel={match.perkGroupName}
         groupOptions={[
           {
@@ -202,7 +208,11 @@ function BackgroundFitMatchRow({
         hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
         hoveredPerkId={hoveredPerkId}
         isWide
-        metaClassName={styles.backgroundFitMatchProbabilityBadge}
+        metaClassName={
+          match.isGuaranteed
+            ? styles.backgroundFitMatchGuaranteedText
+            : styles.backgroundFitMatchProbabilityBadge
+        }
         metaLabel={
           match.isGuaranteed ? 'Guaranteed' : formatBackgroundFitProbabilityLabel(match.probability)
         }
@@ -225,17 +235,26 @@ function BackgroundFitMatchRow({
   )
 }
 
-type BackgroundFitMetric = {
+export type BackgroundFitMetric = {
   accessibleLabel: string
+  icon: 'must-have' | null
   label: string
   tooltip: string
   value: string
 }
 
 const fullBuildChanceMetricLabel = 'Full build chance'
+const mustHaveMetricIcon: BackgroundFitMetric['icon'] = 'must-have'
 const mustHaveBuildChanceMetricLabel = 'Must-have build chance'
+const noMetricIcon: BackgroundFitMetric['icon'] = null
 
-function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: BackgroundFitMetric) {
+function BackgroundFitMetricRow({
+  accessibleLabel,
+  icon,
+  label,
+  tooltip,
+  value,
+}: BackgroundFitMetric) {
   return (
     <div
       aria-label={`${accessibleLabel}. ${tooltip}`}
@@ -244,6 +263,19 @@ function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: Back
       role="listitem"
       title={tooltip}
     >
+      <span
+        aria-hidden="true"
+        className={styles.backgroundFitMetricIconCell}
+        data-testid="background-fit-summary-icon-cell"
+      >
+        {icon === 'must-have' ? (
+          <Link
+            aria-hidden="true"
+            className={styles.backgroundFitMetricMustHaveIcon}
+            data-testid="background-fit-summary-must-have-icon"
+          />
+        ) : null}
+      </span>
       <span className={styles.backgroundFitMetricLabel} data-testid="background-fit-summary-label">
         {label}
       </span>
@@ -254,7 +286,7 @@ function BackgroundFitMetricRow({ accessibleLabel, label, tooltip, value }: Back
   )
 }
 
-function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMetric[] }) {
+export function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMetric[] }) {
   return (
     <div
       aria-label="Background fit summary"
@@ -265,6 +297,7 @@ function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMetric[] 
       {metrics.map((metric) => (
         <BackgroundFitMetricRow
           accessibleLabel={metric.accessibleLabel}
+          icon={metric.icon}
           key={metric.accessibleLabel}
           label={metric.label}
           tooltip={metric.tooltip}
@@ -275,7 +308,7 @@ function BackgroundFitMetricTable({ metrics }: { metrics: BackgroundFitMetric[] 
   )
 }
 
-function BackgroundFitStudyResourceBadges({
+export function BackgroundFitStudyResourceBadges({
   backgroundFit,
 }: {
   backgroundFit: RankedBackgroundFit
@@ -327,83 +360,24 @@ function createExpectedRatioValue(
   return `${formatBackgroundFitScoreLabel(expectedCoveredPickedPerkCount)}/${pickedPerkCount}`
 }
 
-export function BackgroundFitCard({
+function getBackgroundFitDetailsMetrics({
   backgroundFit,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  expandedBackgroundFitKey,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClearPerkGroupHover,
-  onClosePerkGroupHover,
-  onInspectPerkGroup,
-  onInspectPlannerPerk,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
-  onToggle,
   mustHavePickedPerkCount,
   optionalPickedPerkCount,
   pickedPerkCount,
-  query,
-  rank,
   studyResourceFilter,
 }: {
   backgroundFit: RankedBackgroundFit
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  expandedBackgroundFitKey: string | null
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClearPerkGroupHover: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
-  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onInspectPlannerPerk: (
-    perkId: string,
-    perkGroupSelection?: { categoryName: string; perkGroupId: string },
-  ) => void
-  onOpenBuildPerkHover: (
-    perkId: string,
-    perkGroupSelection?: { categoryName: string; perkGroupId: string },
-  ) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: { categoryName: string; perkGroupId: string },
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  onToggle: (backgroundFitKey: string) => void
   mustHavePickedPerkCount: number
   optionalPickedPerkCount: number
   pickedPerkCount: number
-  query: string
-  rank: number
   studyResourceFilter: BackgroundStudyResourceFilter
-}) {
-  const backgroundFitKey = getBackgroundFitKey(backgroundFit)
-  const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
-  const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
-    backgroundFit.veteranPerkLevelInterval,
-  )
-  const veteranPerkLevelIntervalTitle = formatBackgroundVeteranPerkLevelIntervalTitle(
-    backgroundFit.veteranPerkLevelInterval,
-  )
-  const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
-  const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
-  const isExpanded = expandedBackgroundFitKey === backgroundFitKey
-  const accordionButtonId = `background-fit-card-button-${rank}`
-  const accordionPanelId = `background-fit-card-panel-${rank}`
-  const rankTitle = getBackgroundFitRankTitle(backgroundFit, rank)
+}): BackgroundFitMetric[] {
   const guaranteedCoveredPickedPerkCount =
     backgroundFit.guaranteedCoveredMustHavePerkCount +
     backgroundFit.guaranteedCoveredOptionalPerkCount
-  const summaryMetrics = [
+
+  return [
     ...(backgroundFit.mustHaveBuildReachabilityProbability === null
       ? []
       : [
@@ -412,6 +386,7 @@ export function BackgroundFitCard({
               backgroundFit.mustHaveBuildReachabilityProbability,
               mustHaveBuildChanceMetricLabel,
             ),
+            icon: mustHaveMetricIcon,
             label: mustHaveBuildChanceMetricLabel,
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.mustHaveBuildReachabilityProbability,
@@ -430,6 +405,7 @@ export function BackgroundFitCard({
               backgroundFit.fullBuildReachabilityProbability,
               fullBuildChanceMetricLabel,
             ),
+            icon: noMetricIcon,
             label: fullBuildChanceMetricLabel,
             tooltip: getBackgroundFitBuildReachabilitySummaryCopy(
               backgroundFit.fullBuildReachabilityProbability,
@@ -448,6 +424,7 @@ export function BackgroundFitCard({
         mustHavePickedPerkCount,
         'must-have perks',
       ),
+      icon: mustHaveMetricIcon,
       label: 'Expected must-have perks pickable',
       tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
         backgroundFit.expectedCoveredMustHavePerkCount,
@@ -467,6 +444,7 @@ export function BackgroundFitCard({
               optionalPickedPerkCount,
               'optional perks',
             ),
+            icon: noMetricIcon,
             label: 'Expected optional perks pickable',
             tooltip: getBackgroundFitExpectedBuildPerksSummaryCopy(
               backgroundFit.expectedCoveredOptionalPerkCount,
@@ -486,6 +464,7 @@ export function BackgroundFitCard({
         pickedPerkCount,
         'perks',
       ),
+      icon: noMetricIcon,
       label: 'Guaranteed perks pickable',
       tooltip: getBackgroundFitGuaranteedPerksSummaryCopy(
         guaranteedCoveredPickedPerkCount,
@@ -495,25 +474,205 @@ export function BackgroundFitCard({
       value: createRatioValue(guaranteedCoveredPickedPerkCount, pickedPerkCount),
     },
   ]
+}
+
+export function BackgroundFitMetricSummary({
+  backgroundFit,
+  mustHavePickedPerkCount,
+  optionalPickedPerkCount,
+  pickedPerkCount,
+  studyResourceFilter,
+}: {
+  backgroundFit: RankedBackgroundFit
+  mustHavePickedPerkCount: number
+  optionalPickedPerkCount: number
+  pickedPerkCount: number
+  studyResourceFilter: BackgroundStudyResourceFilter
+}) {
+  return (
+    <BackgroundFitMetricTable
+      metrics={getBackgroundFitDetailsMetrics({
+        backgroundFit,
+        mustHavePickedPerkCount,
+        optionalPickedPerkCount,
+        pickedPerkCount,
+        studyResourceFilter,
+      })}
+    />
+  )
+}
+
+export function BackgroundFitMatchSections({
+  backgroundFit,
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
+  hoveredPerkId,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
+  onClosePerkGroupHover,
+  onInspectPerkGroup,
+  onInspectPlannerPerk,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
+  onOpenPerkGroupHover,
+}: {
+  backgroundFit: RankedBackgroundFit
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
+  hoveredBuildPerkId: string | null
+  hoveredBuildPerkTooltipId: string | undefined
+  hoveredPerkId: string | null
+  onCloseBuildPerkHover: (perkId: string) => void
+  onCloseBuildPerkTooltip: () => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onInspectPlannerPerk: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkHover: (
+    perkId: string,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: { categoryName: string; perkGroupId: string },
+  ) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+}) {
+  const guaranteedMatches = backgroundFit.matches.filter((match) => match.isGuaranteed)
+  const probabilisticMatches = backgroundFit.matches.filter((match) => !match.isGuaranteed)
+
+  return (
+    <>
+      {guaranteedMatches.length > 0 ? (
+        <div className={styles.backgroundFitMatchSection}>
+          <p className={styles.backgroundFitSectionLabel}>Guaranteed</p>
+          <ul className={styles.backgroundFitMatchList}>
+            {guaranteedMatches.map((match) => (
+              <BackgroundFitMatchRow
+                emphasizedCategoryNames={emphasizedCategoryNames}
+                emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+                selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+                hoveredBuildPerkId={hoveredBuildPerkId}
+                hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+                hoveredPerkId={hoveredPerkId}
+                key={`${match.categoryName}-${match.perkGroupId}`}
+                match={match}
+                onCloseBuildPerkHover={onCloseBuildPerkHover}
+                onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+                onClosePerkGroupHover={onClosePerkGroupHover}
+                onInspectPerkGroup={onInspectPerkGroup}
+                onInspectPlannerPerk={onInspectPlannerPerk}
+                onOpenBuildPerkHover={onOpenBuildPerkHover}
+                onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+                onOpenPerkGroupHover={onOpenPerkGroupHover}
+              />
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {probabilisticMatches.length > 0 ? (
+        <div className={styles.backgroundFitMatchSection}>
+          <p className={styles.backgroundFitSectionLabel}>Possible</p>
+          <ul className={styles.backgroundFitMatchList}>
+            {probabilisticMatches.map((match) => (
+              <BackgroundFitMatchRow
+                emphasizedCategoryNames={emphasizedCategoryNames}
+                emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+                selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+                selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+                hoveredBuildPerkId={hoveredBuildPerkId}
+                hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+                hoveredPerkId={hoveredPerkId}
+                key={`${match.categoryName}-${match.perkGroupId}`}
+                match={match}
+                onCloseBuildPerkHover={onCloseBuildPerkHover}
+                onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+                onClosePerkGroupHover={onClosePerkGroupHover}
+                onInspectPerkGroup={onInspectPerkGroup}
+                onInspectPlannerPerk={onInspectPlannerPerk}
+                onOpenBuildPerkHover={onOpenBuildPerkHover}
+                onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+                onOpenPerkGroupHover={onOpenPerkGroupHover}
+              />
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {backgroundFit.matches.length === 0 ? (
+        <p className={styles.backgroundFitEmptyCard}>No supported build perk group overlap.</p>
+      ) : null}
+    </>
+  )
+}
+
+export function BackgroundFitCard({
+  backgroundFit,
+  onClearPerkGroupHover,
+  onSelect,
+  isSelected,
+  mustHavePickedPerkCount,
+  optionalPickedPerkCount,
+  pickedPerkCount,
+  query,
+  rank,
+  studyResourceFilter,
+}: {
+  backgroundFit: RankedBackgroundFit
+  onClearPerkGroupHover: () => void
+  onSelect: (backgroundFitKey: string) => void
+  isSelected: boolean
+  mustHavePickedPerkCount: number
+  optionalPickedPerkCount: number
+  pickedPerkCount: number
+  query: string
+  rank: number
+  studyResourceFilter: BackgroundStudyResourceFilter
+}) {
+  const backgroundFitKey = getBackgroundFitKey(backgroundFit)
+  const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
+  const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
+    backgroundFit.veteranPerkLevelInterval,
+  )
+  const veteranPerkLevelIntervalTitle = formatBackgroundVeteranPerkLevelIntervalTitle(
+    backgroundFit.veteranPerkLevelInterval,
+  )
+  const rankTitle = getBackgroundFitRankTitle(backgroundFit, rank)
+  const summaryMetrics = getBackgroundFitDetailsMetrics({
+    backgroundFit,
+    mustHavePickedPerkCount,
+    optionalPickedPerkCount,
+    pickedPerkCount,
+    studyResourceFilter,
+  })
 
   return (
     <article
       className={styles.backgroundFitCard}
       data-empty={backgroundFit.matches.length === 0}
-      data-expanded={isExpanded}
+      data-selected={isSelected}
       data-testid="background-fit-card"
     >
       <button
-        aria-controls={accordionPanelId}
-        aria-expanded={isExpanded}
-        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} background ${backgroundFit.backgroundName}${
+        aria-label={`Inspect background ${backgroundFit.backgroundName}${
           backgroundPillLabel ? ` (${backgroundPillLabel})` : ''
         } (${veteranPerkLevelIntervalLabel} veteran perk interval)`}
+        aria-pressed={isSelected}
         className={styles.backgroundFitAccordionTrigger}
-        id={accordionButtonId}
         onClick={() => {
           onClearPerkGroupHover()
-          onToggle(backgroundFitKey)
+          onSelect(backgroundFitKey)
         }}
         type="button"
       >
@@ -569,13 +728,6 @@ export function BackgroundFitCard({
             </div>
 
             <BackgroundFitStudyResourceBadges backgroundFit={backgroundFit} />
-
-            <span aria-hidden="true" className={styles.backgroundFitAccordionChevronFrame}>
-              <BackgroundFitAccordionChevron
-                className={styles.backgroundFitAccordionChevron}
-                isExpanded={isExpanded}
-              />
-            </span>
           </div>
 
           <div className={styles.backgroundFitAccordionSummary}>
@@ -588,80 +740,6 @@ export function BackgroundFitCard({
           </div>
         </div>
       </button>
-
-      <div
-        aria-hidden={!isExpanded}
-        aria-labelledby={accordionButtonId}
-        className={styles.backgroundFitCardPanel}
-        data-testid="background-fit-card-panel"
-        hidden={!isExpanded}
-        id={accordionPanelId}
-        role="region"
-      >
-        <div className={styles.backgroundFitCardPanelInner}>
-          <div className={styles.backgroundFitCardContent}>
-            {guaranteedMatches.length > 0 ? (
-              <div className={styles.backgroundFitMatchSection}>
-                <p className={styles.backgroundFitSectionLabel}>Guaranteed</p>
-                <ul className={styles.backgroundFitMatchList}>
-                  {guaranteedMatches.map((match) => (
-                    <BackgroundFitMatchRow
-                      emphasizedCategoryNames={emphasizedCategoryNames}
-                      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-                      hoveredBuildPerkId={hoveredBuildPerkId}
-                      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                      hoveredPerkId={hoveredPerkId}
-                      key={`${match.categoryName}-${match.perkGroupId}`}
-                      match={match}
-                      onCloseBuildPerkHover={onCloseBuildPerkHover}
-                      onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-                      onClosePerkGroupHover={onClosePerkGroupHover}
-                      onInspectPerkGroup={onInspectPerkGroup}
-                      onInspectPlannerPerk={onInspectPlannerPerk}
-                      onOpenBuildPerkHover={onOpenBuildPerkHover}
-                      onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-                      onOpenPerkGroupHover={onOpenPerkGroupHover}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {probabilisticMatches.length > 0 ? (
-              <div className={styles.backgroundFitMatchSection}>
-                <p className={styles.backgroundFitSectionLabel}>Possible</p>
-                <ul className={styles.backgroundFitMatchList}>
-                  {probabilisticMatches.map((match) => (
-                    <BackgroundFitMatchRow
-                      emphasizedCategoryNames={emphasizedCategoryNames}
-                      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-                      hoveredBuildPerkId={hoveredBuildPerkId}
-                      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                      hoveredPerkId={hoveredPerkId}
-                      key={`${match.categoryName}-${match.perkGroupId}`}
-                      match={match}
-                      onCloseBuildPerkHover={onCloseBuildPerkHover}
-                      onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-                      onClosePerkGroupHover={onClosePerkGroupHover}
-                      onInspectPerkGroup={onInspectPerkGroup}
-                      onInspectPlannerPerk={onInspectPlannerPerk}
-                      onOpenBuildPerkHover={onOpenBuildPerkHover}
-                      onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-                      onOpenPerkGroupHover={onOpenPerkGroupHover}
-                    />
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {backgroundFit.matches.length === 0 ? (
-              <p className={styles.backgroundFitEmptyCard}>
-                No supported build perk group overlap.
-              </p>
-            ) : null}
-          </div>
-        </div>
-      </div>
     </article>
   )
 }

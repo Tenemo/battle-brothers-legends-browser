@@ -16,9 +16,11 @@ export type StudyReachabilityRequirement = {
 }
 
 export type StudyResourceRequirementProfile = {
+  bookRequirement: StudyReachabilityRequirement | null
   requiresBook: boolean
   requiredScrollCount: 0 | 1 | 2
   requiresBright: boolean
+  scrollRequirements: StudyReachabilityRequirement[]
 }
 
 type StudyResourceAssignmentCandidate = {
@@ -38,9 +40,11 @@ export type StudyResourceMaskCoverageProfile = {
 }
 
 const nativeStudyResourceRequirementProfile = {
+  bookRequirement: null,
   requiredScrollCount: 0,
   requiresBook: false,
   requiresBright: false,
+  scrollRequirements: [] as StudyReachabilityRequirement[],
 } as const satisfies StudyResourceRequirementProfile
 
 export const defaultBackgroundStudyResourceFilter = {
@@ -149,6 +153,21 @@ function createPerkGroupKey(
   perkGroupId: string,
 ): string {
   return `${categoryName}::${perkGroupId}`
+}
+
+function getStudyReachabilityRequirementFromKey(
+  requirementKey: string,
+): StudyReachabilityRequirement {
+  const [categoryName, perkGroupId] = requirementKey.split('::')
+
+  if (!categoryName || !perkGroupId || !isDynamicBackgroundCategoryName(categoryName)) {
+    throw new Error(`Invalid study resource requirement key: ${requirementKey}`)
+  }
+
+  return {
+    categoryName,
+    perkGroupId,
+  }
 }
 
 function createPerkGroupKeys(
@@ -388,9 +407,18 @@ function createStudyResourceRequirementProfile(
   }
 
   return {
+    bookRequirement:
+      studyResourceAssignmentCandidate.assignedBookRequirementKey === null
+        ? null
+        : getStudyReachabilityRequirementFromKey(
+            studyResourceAssignmentCandidate.assignedBookRequirementKey,
+          ),
     requiredScrollCount,
     requiresBook: studyResourceAssignmentCandidate.assignedBookRequirementKey !== null,
     requiresBright: requiredScrollCount === 2,
+    scrollRequirements: studyResourceAssignmentCandidate.assignedScrollRequirementKeys.map(
+      getStudyReachabilityRequirementFromKey,
+    ),
   }
 }
 
@@ -399,8 +427,10 @@ export function isNativeStudyResourceRequirementProfile(
 ): boolean {
   return (
     !studyResourceRequirementProfile.requiresBook &&
+    studyResourceRequirementProfile.bookRequirement === null &&
     studyResourceRequirementProfile.requiredScrollCount === 0 &&
-    !studyResourceRequirementProfile.requiresBright
+    !studyResourceRequirementProfile.requiresBright &&
+    studyResourceRequirementProfile.scrollRequirements.length === 0
   )
 }
 

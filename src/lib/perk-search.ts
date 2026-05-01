@@ -1,6 +1,11 @@
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
+import {
+  getCategoryFilterModeFromSelection,
+  type CategoryFilterMode,
+} from './category-filter-state'
 
 type PerkSearchFilters = {
+  categoryFilterMode?: CategoryFilterMode
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
@@ -149,8 +154,12 @@ function comparePerksAlphabetically(
   )
 }
 
-function perkMatchesFilters(perk: LegendsPerkRecord, filters: PerkSearchFilters): boolean {
-  if (filters.selectedCategoryNames.length > 0) {
+function perkMatchesFilters(
+  perk: LegendsPerkRecord,
+  filters: PerkSearchFilters,
+  categoryFilterMode: CategoryFilterMode,
+): boolean {
+  if (categoryFilterMode === 'selection' && filters.selectedCategoryNames.length > 0) {
     const matchingSelectedCategoryNames = filters.selectedCategoryNames.filter((categoryName) =>
       perk.categoryNames.includes(categoryName),
     )
@@ -241,8 +250,19 @@ export function filterAndSortPerks(
   perks: LegendsPerkRecord[],
   filters: PerkSearchFilters,
 ): LegendsPerkRecord[] {
-  const visiblePerks = perks.filter((perk) => perkMatchesFilters(perk, filters))
   const normalizedQuery = normalizeSearchValue(filters.query)
+  const categoryFilterMode =
+    filters.categoryFilterMode ??
+    getCategoryFilterModeFromSelection({
+      selectedCategoryNames: filters.selectedCategoryNames,
+      selectedPerkGroupIdsByCategory: filters.selectedPerkGroupIdsByCategory,
+    })
+
+  if (categoryFilterMode === 'none' && !normalizedQuery) {
+    return []
+  }
+
+  const visiblePerks = perks.filter((perk) => perkMatchesFilters(perk, filters, categoryFilterMode))
 
   if (!normalizedQuery) {
     return visiblePerks.toSorted(comparePerksAlphabetically)

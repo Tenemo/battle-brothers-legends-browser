@@ -119,9 +119,11 @@ describe('background study reachability', () => {
     })
 
     expect(studyResourceRequirementProfile).toEqual({
+      bookRequirement: null,
       requiredScrollCount: 0,
       requiresBook: false,
       requiresBright: false,
+      scrollRequirements: [],
     })
     expect(isNativeStudyResourceRequirementProfile(studyResourceRequirementProfile!)).toBe(true)
   })
@@ -140,9 +142,19 @@ describe('background study reachability', () => {
         pickedPerks,
       }),
     ).toEqual({
+      bookRequirement: {
+        categoryName: 'Traits',
+        perkGroupId: 'CalmTree',
+      },
       requiredScrollCount: 1,
       requiresBook: true,
       requiresBright: false,
+      scrollRequirements: [
+        {
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+        },
+      ],
     })
   })
 
@@ -160,9 +172,20 @@ describe('background study reachability', () => {
         pickedPerks,
       }),
     ).toEqual({
+      bookRequirement: null,
       requiredScrollCount: 2,
       requiresBook: false,
       requiresBright: true,
+      scrollRequirements: [
+        {
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+        },
+        {
+          categoryName: 'Magic',
+          perkGroupId: 'EvocationMagicTree',
+        },
+      ],
     })
     expect(
       getMinimumStudyResourceRequirementProfile({
@@ -184,9 +207,14 @@ describe('background study reachability', () => {
         pickedPerks: [flexiblePerk],
       }),
     ).toEqual({
+      bookRequirement: {
+        categoryName: 'Traits',
+        perkGroupId: 'CalmTree',
+      },
       requiredScrollCount: 0,
       requiresBook: true,
       requiresBright: false,
+      scrollRequirements: [],
     })
   })
 

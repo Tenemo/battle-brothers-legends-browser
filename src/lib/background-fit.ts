@@ -158,6 +158,22 @@ export type BackgroundFitSummaryView = {
   unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }
 
+export type BackgroundFitCalculationProgress = {
+  checkedBackgroundCount: number
+  totalBackgroundCount: number
+}
+
+export type BackgroundFitPartialView = BackgroundFitCalculationProgress & {
+  view: BackgroundFitView
+}
+
+export type BackgroundFitViewOptions = {
+  onPartialView?: (partialView: BackgroundFitPartialView) => void
+  onProgress?: (progress: BackgroundFitCalculationProgress) => void
+  partialViewChunkSize?: number
+  optionalPickedPerkIds?: ReadonlySet<string>
+}
+
 type BackgroundFitEngine = {
   getBackgroundPerkGroupProbability: (
     backgroundId: string,
@@ -167,13 +183,13 @@ type BackgroundFitEngine = {
   getBackgroundFitView: (
     pickedPerks: LegendsPerkRecord[],
     studyResourceFilter?: BackgroundStudyResourceFilter,
-    options?: {
-      optionalPickedPerkIds?: ReadonlySet<string>
-    },
+    options?: BackgroundFitViewOptions,
   ) => BackgroundFitView
   getBackgroundFitSummaryView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitSummaryView
   getPerkBackgroundSources: (perk: LegendsPerkRecord) => LegendsPerkBackgroundSource[]
 }
+
+const defaultBackgroundFitPartialViewChunkSize = 8
 
 function compareBuildTargetPerkGroups(
   leftPerkGroup: BuildTargetPerkGroup,
@@ -2001,12 +2017,12 @@ function compareRankedBackgroundFits(
   leftBackgroundFit: RankedBackgroundFit,
   rightBackgroundFit: RankedBackgroundFit,
 ): number {
-  const leftGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
-    leftBackgroundFit.matches,
-  )
-  const rightGuaranteedCoveredPickedPerkCount = getGuaranteedCoveredPickedPerkCount(
-    rightBackgroundFit.matches,
-  )
+  const leftGuaranteedCoveredPickedPerkCount =
+    leftBackgroundFit.guaranteedCoveredMustHavePerkCount +
+    leftBackgroundFit.guaranteedCoveredOptionalPerkCount
+  const rightGuaranteedCoveredPickedPerkCount =
+    rightBackgroundFit.guaranteedCoveredMustHavePerkCount +
+    rightBackgroundFit.guaranteedCoveredOptionalPerkCount
 
   return (
     (rightBackgroundFit.buildReachabilityProbability ?? 0) -
@@ -2515,6 +2531,12 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
     getBackgroundFitView(pickedPerks, studyResourceFilter, options = {}) {
       if (pickedPerks.length === 0) {
         const buildReachabilityProbability = studyResourceFilter === undefined ? null : 1
+        const totalBackgroundCount = backgroundProbabilityRecords.length
+
+        options.onProgress?.({
+          checkedBackgroundCount: totalBackgroundCount,
+          totalBackgroundCount,
+        })
 
         return {
           rankedBackgroundFits: getEmptyBackgroundFitSummaries()
@@ -2596,129 +2618,191 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
               ),
             })
 
-      return {
-        rankedBackgroundFits: backgroundFitBuildCache.cachedBackgroundFitRecords
-          .flatMap((cachedBackgroundFitRecord): RankedBackgroundFit[] => {
-            const mustHaveStudyResourceRequirement =
-              studyResourceFilter === undefined
-                ? null
-                : getCachedStudyResourceRequirement({
-                    cachedBackgroundFitRecord,
-                    pickedPerks: mustHavePickedPerks,
-                    studyResourceFilter,
-                    studyResourceRequirementCacheKey: mustHaveScopeCacheKey,
-                  })
+      const rankedBackgroundFits: RankedBackgroundFit[] = []
+      let sortedRankedBackgroundFitsSnapshot: RankedBackgroundFit[] = []
+      let sortedSnapshotSourceLength = -1
+      const totalBackgroundCount = backgroundFitBuildCache.cachedBackgroundFitRecords.length
+      let checkedBackgroundCount = 0
+      let lastPartialViewCheckedBackgroundCount = 0
+      let lastPartialViewRankedBackgroundFitCount = 0
+      const requestedPartialViewChunkSize =
+        options.partialViewChunkSize ?? defaultBackgroundFitPartialViewChunkSize
+      const partialViewChunkSize = Number.isFinite(requestedPartialViewChunkSize)
+        ? Math.max(1, Math.floor(requestedPartialViewChunkSize))
+        : defaultBackgroundFitPartialViewChunkSize
+      const getSortedRankedBackgroundFits = (): RankedBackgroundFit[] => {
+        if (sortedSnapshotSourceLength !== rankedBackgroundFits.length) {
+          sortedRankedBackgroundFitsSnapshot =
+            rankedBackgroundFits.toSorted(compareRankedBackgroundFits)
+          sortedSnapshotSourceLength = rankedBackgroundFits.length
+        }
 
-            if (
-              studyResourceFilter !== undefined &&
-              mustHavePickedPerks.length > 0 &&
-              !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(
-                mustHaveScopeCacheKey,
-              ) &&
-              mustHaveStudyResourceRequirement === null
-            ) {
-              return []
-            }
-
-            const mustHaveNativeOutcomeSummary = getCachedNativeOutcomeSummary({
-              backgroundFitBuildCache,
-              cachedBackgroundFitRecord,
-              studyResourceCoverageProfile: mustHaveStudyResourceCoverageProfile,
-              studyResourceFilterCacheKey: mustHaveScopeCacheKey,
-            })
-            const totalNativeOutcomeSummary =
-              optionalPickedPerks.length === 0
-                ? mustHaveNativeOutcomeSummary
-                : getCachedNativeOutcomeSummary({
-                    backgroundFitBuildCache,
-                    cachedBackgroundFitRecord,
-                    studyResourceCoverageProfile: totalStudyResourceCoverageProfile,
-                    studyResourceFilterCacheKey: totalScopeCacheKey,
-                  })
-
-            if (
-              studyResourceFilter !== undefined &&
-              mustHavePickedPerks.length > 0 &&
-              mustHaveNativeOutcomeSummary.buildReachabilityProbability <= 0
-            ) {
-              return []
-            }
-
-            const fullBuildStudyResourceRequirement =
-              studyResourceFilter === undefined ||
-              totalNativeOutcomeSummary.buildReachabilityProbability <= 0
-                ? null
-                : optionalPickedPerks.length === 0
-                  ? mustHaveStudyResourceRequirement
-                  : getCachedStudyResourceRequirement({
-                      cachedBackgroundFitRecord,
-                      pickedPerks,
-                      studyResourceFilter,
-                      studyResourceRequirementCacheKey: totalScopeCacheKey,
-                    })
-            const backgroundFitBase = getCachedBackgroundFitBase({
-              backgroundFitBuildCache,
-              cachedBackgroundFitRecord,
-              pickedPerks,
-              supportedBuildTargetPerkGroups:
-                backgroundFitBuildCache.supportedBuildTargetPerkGroups,
-            })
-
-            return [
-              {
-                ...backgroundFitBase,
-                buildReachabilityProbability:
-                  studyResourceFilter === undefined
-                    ? null
-                    : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
-                expectedCoveredMustHavePerkCount:
-                  optionalPickedPerks.length === 0
-                    ? backgroundFitBase.expectedCoveredPickedPerkCount
-                    : getCachedExpectedCoveredPickedPerkCount({
-                        backgroundFitBuildCache,
-                        cachedBackgroundFitRecord,
-                        pickedPerks: mustHavePickedPerks,
-                        scopeCacheKey: mustHaveScopeCacheKey,
-                      }),
-                expectedCoveredOptionalPerkCount:
-                  optionalPickedPerks.length === 0
-                    ? 0
-                    : getCachedExpectedCoveredPickedPerkCount({
-                        backgroundFitBuildCache,
-                        cachedBackgroundFitRecord,
-                        pickedPerks: optionalPickedPerks,
-                        scopeCacheKey: optionalScopeCacheKey,
-                      }),
-                fullBuildStudyResourceRequirement,
-                fullBuildReachabilityProbability:
-                  studyResourceFilter === undefined
-                    ? null
-                    : totalNativeOutcomeSummary.buildReachabilityProbability,
-                guaranteedCoveredMustHavePerkCount: getGuaranteedCoveredPickedPerkCountForPerkIds(
-                  backgroundFitBase.matches,
-                  mustHavePickedPerkIdSet,
-                ),
-                guaranteedCoveredOptionalPerkCount:
-                  optionalPickedPerks.length === 0
-                    ? 0
-                    : getGuaranteedCoveredPickedPerkCountForPerkIds(
-                        backgroundFitBase.matches,
-                        effectiveOptionalPickedPerkIdSet,
-                      ),
-                maximumNativeCoveredPickedPerkCount:
-                  totalNativeOutcomeSummary.maximumNativeCoveredPickedPerkCount,
-                mustHaveBuildReachabilityProbability:
-                  studyResourceFilter === undefined
-                    ? null
-                    : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
-                mustHaveStudyResourceRequirement,
-              },
-            ]
-          })
-          .toSorted(compareRankedBackgroundFits),
+        return sortedRankedBackgroundFitsSnapshot
+      }
+      const getCurrentBackgroundFitView = (): BackgroundFitView => ({
+        rankedBackgroundFits: getSortedRankedBackgroundFits().slice(),
         supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
         unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
+      })
+      const reportProgress = () => {
+        options.onProgress?.({
+          checkedBackgroundCount,
+          totalBackgroundCount,
+        })
       }
+      const reportPartialView = () => {
+        if (
+          !options.onPartialView ||
+          checkedBackgroundCount >= totalBackgroundCount ||
+          rankedBackgroundFits.length === 0 ||
+          rankedBackgroundFits.length === lastPartialViewRankedBackgroundFitCount
+        ) {
+          return
+        }
+
+        if (
+          lastPartialViewRankedBackgroundFitCount > 0 &&
+          checkedBackgroundCount - lastPartialViewCheckedBackgroundCount < partialViewChunkSize
+        ) {
+          return
+        }
+
+        lastPartialViewCheckedBackgroundCount = checkedBackgroundCount
+        lastPartialViewRankedBackgroundFitCount = rankedBackgroundFits.length
+        options.onPartialView({
+          checkedBackgroundCount,
+          totalBackgroundCount,
+          view: getCurrentBackgroundFitView(),
+        })
+      }
+      const reportCheckedBackground = () => {
+        checkedBackgroundCount += 1
+        reportProgress()
+        reportPartialView()
+      }
+
+      reportProgress()
+
+      for (const cachedBackgroundFitRecord of backgroundFitBuildCache.cachedBackgroundFitRecords) {
+        const mustHaveStudyResourceRequirement =
+          studyResourceFilter === undefined
+            ? null
+            : getCachedStudyResourceRequirement({
+                cachedBackgroundFitRecord,
+                pickedPerks: mustHavePickedPerks,
+                studyResourceFilter,
+                studyResourceRequirementCacheKey: mustHaveScopeCacheKey,
+              })
+
+        if (
+          studyResourceFilter !== undefined &&
+          mustHavePickedPerks.length > 0 &&
+          !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(mustHaveScopeCacheKey) &&
+          mustHaveStudyResourceRequirement === null
+        ) {
+          reportCheckedBackground()
+          continue
+        }
+
+        const mustHaveNativeOutcomeSummary = getCachedNativeOutcomeSummary({
+          backgroundFitBuildCache,
+          cachedBackgroundFitRecord,
+          studyResourceCoverageProfile: mustHaveStudyResourceCoverageProfile,
+          studyResourceFilterCacheKey: mustHaveScopeCacheKey,
+        })
+
+        if (
+          studyResourceFilter !== undefined &&
+          mustHavePickedPerks.length > 0 &&
+          mustHaveNativeOutcomeSummary.buildReachabilityProbability <= 0
+        ) {
+          reportCheckedBackground()
+          continue
+        }
+
+        const totalNativeOutcomeSummary =
+          optionalPickedPerks.length === 0
+            ? mustHaveNativeOutcomeSummary
+            : getCachedNativeOutcomeSummary({
+                backgroundFitBuildCache,
+                cachedBackgroundFitRecord,
+                studyResourceCoverageProfile: totalStudyResourceCoverageProfile,
+                studyResourceFilterCacheKey: totalScopeCacheKey,
+              })
+        const fullBuildStudyResourceRequirement =
+          studyResourceFilter === undefined ||
+          totalNativeOutcomeSummary.buildReachabilityProbability <= 0
+            ? null
+            : optionalPickedPerks.length === 0
+              ? mustHaveStudyResourceRequirement
+              : getCachedStudyResourceRequirement({
+                  cachedBackgroundFitRecord,
+                  pickedPerks,
+                  studyResourceFilter,
+                  studyResourceRequirementCacheKey: totalScopeCacheKey,
+                })
+        const backgroundFitBase = getCachedBackgroundFitBase({
+          backgroundFitBuildCache,
+          cachedBackgroundFitRecord,
+          pickedPerks,
+          supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+        })
+
+        const rankedBackgroundFit: RankedBackgroundFit = {
+          ...backgroundFitBase,
+          buildReachabilityProbability:
+            studyResourceFilter === undefined
+              ? null
+              : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
+          expectedCoveredMustHavePerkCount:
+            optionalPickedPerks.length === 0
+              ? backgroundFitBase.expectedCoveredPickedPerkCount
+              : getCachedExpectedCoveredPickedPerkCount({
+                  backgroundFitBuildCache,
+                  cachedBackgroundFitRecord,
+                  pickedPerks: mustHavePickedPerks,
+                  scopeCacheKey: mustHaveScopeCacheKey,
+                }),
+          expectedCoveredOptionalPerkCount:
+            optionalPickedPerks.length === 0
+              ? 0
+              : getCachedExpectedCoveredPickedPerkCount({
+                  backgroundFitBuildCache,
+                  cachedBackgroundFitRecord,
+                  pickedPerks: optionalPickedPerks,
+                  scopeCacheKey: optionalScopeCacheKey,
+                }),
+          fullBuildStudyResourceRequirement,
+          fullBuildReachabilityProbability:
+            studyResourceFilter === undefined
+              ? null
+              : totalNativeOutcomeSummary.buildReachabilityProbability,
+          guaranteedCoveredMustHavePerkCount: getGuaranteedCoveredPickedPerkCountForPerkIds(
+            backgroundFitBase.matches,
+            mustHavePickedPerkIdSet,
+          ),
+          guaranteedCoveredOptionalPerkCount:
+            optionalPickedPerks.length === 0
+              ? 0
+              : getGuaranteedCoveredPickedPerkCountForPerkIds(
+                  backgroundFitBase.matches,
+                  effectiveOptionalPickedPerkIdSet,
+                ),
+          maximumNativeCoveredPickedPerkCount:
+            totalNativeOutcomeSummary.maximumNativeCoveredPickedPerkCount,
+          mustHaveBuildReachabilityProbability:
+            studyResourceFilter === undefined
+              ? null
+              : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
+          mustHaveStudyResourceRequirement,
+        }
+
+        rankedBackgroundFits.push(rankedBackgroundFit)
+
+        reportCheckedBackground()
+      }
+
+      return getCurrentBackgroundFitView()
     },
   }
 }

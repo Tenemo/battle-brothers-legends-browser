@@ -101,8 +101,13 @@ test('keeps only one selected perk group when another group is selected', async 
   await selectPerkGroup(page, 'Deadeye')
 
   await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'false')
-  await expect(page.getByRole('button', { name: 'Disable category Magic' })).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('Magic')
+  await expect(page.getByRole('button', { name: 'Enable category Magic' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByText('No perks found')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBeNull()
 })
 
@@ -118,9 +123,9 @@ test('resets category drilldown when typing a perk search', async ({ page }) => 
   await searchPerks(page, 'Axe')
 
   await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
-  await expect(page.getByRole('button', { name: 'Reset all category filters' })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
     'aria-pressed',
-    'true',
+    'false',
   )
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
@@ -129,6 +134,37 @@ test('resets category drilldown when typing a perk search', async ({ page }) => 
   ).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
   await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+})
+
+test('leaves no category selected when deselecting a scoped perk group from an expanded category', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await expandCategory(page, 'Enemy')
+  await selectPerkGroup(page, 'Beasts')
+
+  await expect(page.getByRole('button', { name: 'Disable category Enemy' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Beasts')).toHaveAttribute('aria-pressed', 'true')
+  await expect(
+    getResultsList(page).getByRole('button', { name: 'Inspect Favoured Enemy - Beasts' }),
+  ).toBeVisible()
+
+  await selectPerkGroup(page, 'Beasts')
+
+  await expect(page.getByRole('button', { name: 'Enable category Enemy' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByRole('button', { name: 'Show all perk groups' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(getSidebarPerkGroupButton(page, 'Beasts')).toHaveAttribute('aria-pressed', 'false')
+  await expect(page.getByText('No perks found')).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('group-enemy')).toBeNull()
 })
 
 test('resets the perk result scroll when category filters change', async ({ page }) => {
@@ -549,19 +585,26 @@ test('keeps category hover and disclosure styling separate from perk group highl
 
   await magicDisclosureButton.hover()
 
-  const disclosureHoverStyles = await magicDisclosureButton.evaluate((button) => {
-    const computedStyle = window.getComputedStyle(button)
+  await expect
+    .poll(async () =>
+      magicDisclosureButton.evaluate((button, baseStyles) => {
+        const computedStyle = window.getComputedStyle(button)
 
-    return {
-      backgroundColor: computedStyle.backgroundColor,
-      borderLeftColor: computedStyle.borderLeftColor,
-      borderRightColor: computedStyle.borderRightColor,
-    }
-  })
+        return (
+          button.matches(':hover') &&
+          computedStyle.backgroundColor !== baseStyles.backgroundColor &&
+          computedStyle.borderLeftColor !== baseStyles.borderLeftColor &&
+          computedStyle.borderRightColor !== baseStyles.borderRightColor
+        )
+      }, disclosureBaseStyles),
+    )
+    .toBe(true)
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
 
-  expect(disclosureHoverStyles.backgroundColor).not.toBe(disclosureBaseStyles.backgroundColor)
-  expect(disclosureHoverStyles.borderLeftColor).not.toBe(disclosureBaseStyles.borderLeftColor)
-  expect(disclosureHoverStyles.borderRightColor).not.toBe(disclosureBaseStyles.borderRightColor)
+  await alchemyGroupButton.hover()
+
+  await expect(alchemyGroupButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(deadeyeGroupButton).toHaveAttribute('data-highlighted', 'false')
   await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
 })
 
@@ -606,6 +649,53 @@ test('places ancient scroll markers next to sidebar perk group names', async ({ 
   expect(markerMetrics!.spaceBeforeCount).toBeGreaterThan(0)
   expect(markerMetrics!.markerRight).toBeLessThan(markerMetrics!.countLeft)
   expect(markerMetrics!.verticalCenterOffset).toBeLessThanOrEqual(2)
+})
+
+test('keeps category rows compact with bordered separation in the sidebar', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  const categoryMetrics = await page.getByTestId('category-sidebar').evaluate((sidebar) => {
+    const categoryButtons = Array.from(
+      sidebar.querySelectorAll('button[aria-label^="Enable category "]'),
+    ).slice(0, 4)
+
+    return categoryButtons.flatMap((categoryButton, categoryIndex) => {
+      const nextCategoryButton = categoryButtons[categoryIndex + 1]
+
+      if (
+        !(categoryButton instanceof HTMLElement) ||
+        !(nextCategoryButton instanceof HTMLElement)
+      ) {
+        return []
+      }
+
+      const categoryCard = categoryButton.closest('[data-active]')
+      const nextCategoryCard = nextCategoryButton.closest('[data-active]')
+
+      if (!(categoryCard instanceof HTMLElement) || !(nextCategoryCard instanceof HTMLElement)) {
+        return []
+      }
+
+      const categoryCardRectangle = categoryCard.getBoundingClientRect()
+      const nextCategoryCardRectangle = nextCategoryCard.getBoundingClientRect()
+      const computedStyle = window.getComputedStyle(categoryCard)
+
+      return [
+        {
+          borderTopWidth: computedStyle.borderTopWidth,
+          gap: nextCategoryCardRectangle.top - categoryCardRectangle.bottom,
+        },
+      ]
+    })
+  })
+
+  expect(categoryMetrics.length).toBeGreaterThanOrEqual(3)
+
+  for (const categoryMetric of categoryMetrics) {
+    expect(categoryMetric.borderTopWidth).toBe('1px')
+    expect(categoryMetric.gap).toBeGreaterThanOrEqual(1.5)
+    expect(categoryMetric.gap).toBeLessThanOrEqual(2.5)
+  }
 })
 
 test('highlights the searched perk phrase in the visible perk results', async ({ page }) => {

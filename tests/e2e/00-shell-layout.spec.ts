@@ -92,7 +92,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
 
 const desktopScrollbarTargets = [
   '[data-testid="background-fit-panel-body"]',
-  '[data-testid="category-sidebar"]',
+  '[data-testid="category-sidebar-body"]',
   '[data-testid="results-list"]',
   '[data-testid="perk-detail-panel-body"]',
   '[data-testid="planner-board"]',
@@ -234,7 +234,7 @@ async function readRailControlMetrics(page: Page) {
 
     return {
       backgroundFit: readButtonMetric('background fit'),
-      perkDetails: readButtonMetric('perk details'),
+      categoryFilters: readButtonMetric('category filters'),
     }
   })
 }
@@ -278,7 +278,7 @@ async function readMobileTouchTargetMetrics(page: Page) {
         selector: '[data-testid="planner-section-toggle"]',
       },
       { name: 'category filter', selector: 'button[aria-label="Enable category Weapon"]' },
-      { name: 'perk details rail', selector: 'button[aria-label="Collapse perk details"]' },
+      { name: 'category filters rail', selector: 'button[aria-label="Collapse category filters"]' },
       { name: 'background fit rail', selector: 'button[aria-label="Collapse background fit"]' },
     ]
 
@@ -304,6 +304,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   page,
 }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
+  await page.getByRole('button', { name: 'Show all categories' }).click()
   await expectViewportLocked(page)
   const buildPlanner = page.getByLabel('Build planner')
 
@@ -389,6 +390,10 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
 
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expect(page.getByLabel('Search perks')).toBeVisible()
+    await getBuildPerksBar(page)
+      .getByRole('button', { name: 'View Axe Mastery from build planner' })
+      .click()
+    await expect(page.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
     await expectViewportLocked(page)
     await expectNoDocumentHorizontalOverflow(page)
     await expectNoWorkspaceHorizontalClip(page)
@@ -449,26 +454,26 @@ test('keeps desktop side rails thin and mobile rails touchable', async ({ page }
   expect(desktopRailMetrics.backgroundFit.buttonWidth).toBeLessThanOrEqual(
     desktopRailMetrics.backgroundFit.originalDesktopRailThickness * 0.72,
   )
-  expect(desktopRailMetrics.perkDetails.buttonWidth).toBeLessThanOrEqual(
-    desktopRailMetrics.perkDetails.originalDesktopRailThickness * 0.72,
+  expect(desktopRailMetrics.categoryFilters.buttonWidth).toBeLessThanOrEqual(
+    desktopRailMetrics.categoryFilters.originalDesktopRailThickness * 0.72,
   )
   expect(desktopRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
-  expect(desktopRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(desktopRailMetrics.categoryFilters.chevronWidth).toBeGreaterThanOrEqual(16)
   expect(desktopRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
-  expect(desktopRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(desktopRailMetrics.categoryFilters.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 
   await gotoBuildPlanner(page, { height: 844, width: 390 })
 
   const mobileRailMetrics = await readRailControlMetrics(page)
 
   expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeGreaterThanOrEqual(40)
-  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeGreaterThanOrEqual(40)
+  expect(mobileRailMetrics.categoryFilters.buttonHeight).toBeGreaterThanOrEqual(40)
   expect(mobileRailMetrics.backgroundFit.buttonHeight).toBeLessThanOrEqual(48)
-  expect(mobileRailMetrics.perkDetails.buttonHeight).toBeLessThanOrEqual(48)
+  expect(mobileRailMetrics.categoryFilters.buttonHeight).toBeLessThanOrEqual(48)
   expect(mobileRailMetrics.backgroundFit.chevronWidth).toBeGreaterThanOrEqual(16)
-  expect(mobileRailMetrics.perkDetails.chevronWidth).toBeGreaterThanOrEqual(16)
+  expect(mobileRailMetrics.categoryFilters.chevronWidth).toBeGreaterThanOrEqual(16)
   expect(mobileRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
-  expect(mobileRailMetrics.perkDetails.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+  expect(mobileRailMetrics.categoryFilters.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
 })
 
 test('uses one app scrollbar style across desktop viewport sizes', async ({ page }) => {
@@ -598,6 +603,7 @@ test('limits unfiltered phone results without restoring the nested scroll trap',
   page,
 }) => {
   await gotoBuildPlanner(page, { height: 844, width: 390 })
+  await page.getByRole('button', { name: 'Show all categories' }).click()
   await expectNoDocumentHorizontalOverflow(page)
 
   await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toBeVisible()
@@ -641,6 +647,7 @@ test('limits unfiltered phone results without restoring the nested scroll trap',
   await expect(page.getByTestId('results-list').getByTestId('perk-row')).toHaveCount(1)
 
   await gotoBuildPlanner(page, { height: 740, width: 761 })
+  await page.getByRole('button', { name: 'Show all categories' }).click()
   await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
   await expect
     .poll(async () =>
@@ -757,6 +764,7 @@ test('lets the mobile document scroll when the pointer is over results', async (
 
 test('keeps key mobile touch targets large enough', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 844, width: 390 })
+  await searchPerks(page, 'Blacksmiths Technique')
 
   const touchTargetMetrics = await readMobileTouchTargetMetrics(page)
 
@@ -778,15 +786,13 @@ test('keeps mobile background fit cards compact while preserving tap targets', a
       .slice(0, 5)
       .map((card) => {
         const header = card.querySelector<HTMLElement>('[class*="backgroundFitCardHeaderMain"]')
-        const chevronFrame = card.querySelector<HTMLElement>(
-          '[class*="backgroundFitAccordionChevronFrame"]',
-        )
+        const inspectButton = card.querySelector<HTMLElement>('button')
         const cardRectangle = card.getBoundingClientRect()
-        const chevronFrameRectangle = chevronFrame?.getBoundingClientRect()
+        const inspectButtonRectangle = inspectButton?.getBoundingClientRect()
 
         return {
-          chevronFrameHeight: chevronFrameRectangle?.height ?? 0,
-          chevronFrameWidth: chevronFrameRectangle?.width ?? 0,
+          inspectButtonHeight: inspectButtonRectangle?.height ?? 0,
+          inspectButtonWidth: inspectButtonRectangle?.width ?? 0,
           headerDirection: header === null ? '' : window.getComputedStyle(header).flexDirection,
           height: cardRectangle.height,
         }
@@ -808,8 +814,8 @@ test('keeps mobile background fit cards compact while preserving tap targets', a
   for (const cardMetric of backgroundFitCardMetrics.cards) {
     expect(cardMetric.height).toBeLessThanOrEqual(130)
     expect(cardMetric.headerDirection).toBe('row')
-    expect(cardMetric.chevronFrameHeight).toBeGreaterThanOrEqual(40)
-    expect(cardMetric.chevronFrameWidth).toBeGreaterThanOrEqual(40)
+    expect(cardMetric.inspectButtonHeight).toBeGreaterThanOrEqual(40)
+    expect(cardMetric.inspectButtonWidth).toBeGreaterThanOrEqual(40)
   }
 })
 
@@ -843,4 +849,69 @@ test('keeps collapsed background fit content out of the keyboard order', async (
   }
 
   expect(hiddenFocusHits).toEqual([])
+})
+
+test('keeps desktop rail bodies mounted and anchored for open and close animation', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, { height: 900, width: 1440 })
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitRailButton = backgroundFitPanel.getByRole('button', {
+    name: 'Collapse background fit',
+  })
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-content')
+  const categorySidebar = page.getByTestId('category-sidebar')
+  const categorySidebarBody = page.getByTestId('category-sidebar-body')
+  const categorySidebarRailButton = page.getByRole('button', {
+    name: 'Collapse category filters',
+  })
+
+  await expect
+    .poll(async () =>
+      categorySidebar.evaluate((element) => {
+        const sidebarBox = element.getBoundingClientRect()
+        const bodyBox = element
+          .querySelector('[data-testid="category-sidebar-body"]')
+          ?.getBoundingClientRect()
+        const buttonBox = element
+          .querySelector('button[aria-label="Collapse category filters"]')
+          ?.getBoundingClientRect()
+
+        if (!bodyBox || !buttonBox) {
+          return false
+        }
+
+        return (
+          Math.abs(buttonBox.right - sidebarBox.right) <= 1 && bodyBox.right <= buttonBox.left + 1
+        )
+      }),
+    )
+    .toBe(true)
+  await expect
+    .poll(async () =>
+      backgroundFitPanel.evaluate((element) => {
+        const bodyBox = element
+          .querySelector('[data-testid="background-fit-panel-content"]')
+          ?.getBoundingClientRect()
+        const buttonBox = element
+          .querySelector('button[aria-label="Collapse background fit"]')
+          ?.getBoundingClientRect()
+
+        return bodyBox && buttonBox ? bodyBox.right <= buttonBox.left + 1 : false
+      }),
+    )
+    .toBe(true)
+
+  await categorySidebarRailButton.click()
+  await backgroundFitRailButton.click()
+
+  await expect(categorySidebarBody).toHaveAttribute('aria-hidden', 'true')
+  await expect(categorySidebarBody).toHaveAttribute('inert', '')
+  await expect(categorySidebarBody).not.toHaveAttribute('hidden')
+  await expect(backgroundFitPanelBody).toHaveAttribute('aria-hidden', 'true')
+  await expect(backgroundFitPanelBody).toHaveAttribute('inert', '')
+  await expect(backgroundFitPanelBody).not.toHaveAttribute('hidden')
 })

@@ -1233,14 +1233,36 @@ describe('background fit', () => {
         backgroundId: 'background.empty',
         buildReachabilityProbability: 1,
         fullBuildStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 2,
           requiresBook: false,
           requiresBright: true,
+          scrollRequirements: [
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'BerserkerMagicTree',
+            },
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'EvocationMagicTree',
+            },
+          ],
         },
         mustHaveStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 2,
           requiresBook: false,
           requiresBright: true,
+          scrollRequirements: [
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'BerserkerMagicTree',
+            },
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'EvocationMagicTree',
+            },
+          ],
         },
       }),
     )
@@ -1284,15 +1306,24 @@ describe('background fit', () => {
         backgroundId: 'background.calm_only',
         fullBuildReachabilityProbability: 1,
         fullBuildStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 1,
           requiresBook: false,
           requiresBright: false,
+          scrollRequirements: [
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'BerserkerMagicTree',
+            },
+          ],
         },
         mustHaveBuildReachabilityProbability: 1,
         mustHaveStudyResourceRequirement: {
+          bookRequirement: null,
           requiredScrollCount: 0,
           requiresBook: false,
           requiresBright: false,
+          scrollRequirements: [],
         },
       }),
     )
@@ -1364,6 +1395,75 @@ describe('background fit', () => {
         mustHaveBuildReachabilityProbability: 1,
       }),
     )
+  })
+
+  test('reports sorted partial progress while dropping zero must-have matches', () => {
+    const progressLabels: string[] = []
+    const partialViewBackgroundIds: string[][] = []
+    const calmZuluBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_zulu',
+      backgroundName: 'Calm zulu',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const emptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.empty',
+      backgroundName: 'Empty',
+      overrides: {},
+    })
+    const calmAlphaBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_alpha',
+      backgroundName: 'Calm alpha',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const secondEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.second_empty',
+      backgroundName: 'Second empty',
+      overrides: {},
+    })
+    const calmBetaBackground = createBackgroundDefinition({
+      backgroundId: 'background.calm_beta',
+      backgroundName: 'Calm beta',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [
+        calmZuluBackground,
+        emptyBackground,
+        calmAlphaBackground,
+        calmBetaBackground,
+        secondEmptyBackground,
+      ],
+    })
+
+    const backgroundFitView = engine.getBackgroundFitView([samplePerks[4]], noStudyResources, {
+      onPartialView(partialView) {
+        partialViewBackgroundIds.push(
+          partialView.view.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId),
+        )
+      },
+      onProgress(progress) {
+        progressLabels.push(
+          `${progress.checkedBackgroundCount}/${progress.totalBackgroundCount}`,
+        )
+      },
+      partialViewChunkSize: 1,
+    })
+
+    expect(progressLabels).toEqual(['0/5', '1/5', '2/5', '3/5', '4/5', '5/5'])
+    expect(partialViewBackgroundIds).toEqual([
+      ['background.calm_zulu'],
+      ['background.calm_alpha', 'background.calm_zulu'],
+      ['background.calm_alpha', 'background.calm_beta', 'background.calm_zulu'],
+    ])
+    expect(backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId))
+      .toEqual(['background.calm_alpha', 'background.calm_beta', 'background.calm_zulu'])
   })
 
   test('calculates small non-zero full build chances for dense real background fits', () => {

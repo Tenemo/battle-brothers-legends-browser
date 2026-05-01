@@ -109,6 +109,7 @@ export function BuildPlanner({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
+  onOverwriteSavedBuild,
   onRemovePickedPerk,
   onTogglePickedPerkOptional,
   onSaveCurrentBuild,
@@ -118,6 +119,9 @@ export function BuildPlanner({
   savedBuildPersistenceState,
   savedBuilds,
   savedBuildsErrorMessage,
+  selectedBuildPlannerPerkId,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
   shareBuildStatus,
   sharedPerkGroups,
 }: {
@@ -147,6 +151,7 @@ export function BuildPlanner({
     perkGroupSelection?: PlannerPerkGroupSelection,
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onOverwriteSavedBuild: (savedBuildId: string) => Promise<void>
   onRemovePickedPerk: (perkId: string) => void
   onTogglePickedPerkOptional: (perkId: string) => void
   onSaveCurrentBuild: (name: string) => Promise<void>
@@ -156,6 +161,9 @@ export function BuildPlanner({
   savedBuildPersistenceState: SavedBuildPersistenceState
   savedBuilds: BuildPlannerSavedBuild[]
   savedBuildsErrorMessage: string | null
+  selectedBuildPlannerPerkId: string | null
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   shareBuildStatus: 'copied' | 'error' | 'idle'
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }) {
@@ -177,9 +185,11 @@ export function BuildPlanner({
   const {
     activeTooltipIndicatorPerkId,
     clearPendingTooltip,
+    clearPointerPreviewSuppression,
     clearTooltipCloseTimer,
     closeTooltipPreview,
     openTooltipPreview,
+    suppressTooltipPreviewUntilPointerMove,
   } = useBuildPerkTooltipPreview({
     hoveredBuildPerkId: hoveredBuildPerk?.id ?? null,
     onCloseHover: onCloseBuildPerkHover,
@@ -318,10 +328,15 @@ export function BuildPlanner({
           onTogglePickedPerkOptional={onTogglePickedPerkOptional}
           onToggleIndividualPerkGroupsSection={handleToggleIndividualPerkGroupsSection}
           onToggleSharedPerkGroupsSection={handleToggleSharedPerkGroupsSection}
+          clearBuildPerkTooltipPointerPreviewSuppression={clearPointerPreviewSuppression}
           openBuildPerkTooltipPreview={openTooltipPreview}
           pickedPerks={pickedPerks}
           plannerBoardRef={plannerBoardRef}
+          selectedBuildPlannerPerkId={selectedBuildPlannerPerkId}
+          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           sharedPerkGroups={sharedPerkGroups}
+          suppressBuildPerkTooltipPreviewUntilPointerMove={suppressTooltipPreviewUntilPointerMove}
         />
       </section>
 
@@ -332,6 +347,7 @@ export function BuildPlanner({
           onCopySavedBuildLink={onCopySavedBuildLink}
           onDeleteSavedBuild={onDeleteSavedBuild}
           onLoadSavedBuild={onLoadSavedBuild}
+          onOverwriteSavedBuild={onOverwriteSavedBuild}
           onSaveCurrentBuild={onSaveCurrentBuild}
           pickedPerks={pickedPerks}
           savedBuildOperationStatus={savedBuildOperationStatus}

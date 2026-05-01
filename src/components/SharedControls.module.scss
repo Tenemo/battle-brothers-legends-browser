@@ -20,7 +20,7 @@
       min-height: var(--control-height-lg);
       border: var(--primitive-length-1px) solid var(--border-color);
       border-radius: var(--radius-xl);
-      padding: var(--primitive-length-0-54rem) var(--space-control-inline);
+      padding: 0.54rem var(--space-control-inline);
       background: var(--input-background);
       color: var(--text-primary);
       font: inherit;
@@ -43,11 +43,11 @@
     }
 
     &[data-has-trailing-control='true'][data-has-clear-button='true'] .searchInputControl > input {
-      padding-right: var(--primitive-length-4-84rem);
+      padding-right: 4.84rem;
     }
 
     &[data-has-trailing-control='true'] .searchClearButton {
-      right: var(--primitive-length-2-34rem);
+      right: 2.34rem;
     }
   }
 
@@ -180,11 +180,11 @@
     z-index: var(--z-index-popover);
     top: calc(100% + var(--space-md));
     right: 0;
-    min-width: var(--primitive-length-12-2rem);
+    min-width: 12.2rem;
     border: var(--primitive-length-1px) solid var(--border-overlay);
     border-radius: var(--radius-lg);
     padding: var(--primitive-length-0-46rem);
-    background: var(--primitive-color-rgb-20-17-14-alpha-0-98);
+    background: rgb(20 17 14 / 0.98);
     box-shadow: var(--shadow-filter-popover);
   }
 
@@ -225,7 +225,7 @@
       padding: 0;
       background:
         linear-gradient(180deg, var(--highlight-white-subtle), transparent),
-        var(--primitive-color-rgb-18-15-13-alpha-0-92);
+        rgb(18 15 13 / 0.92);
       box-shadow: var(--shadow-checkbox);
       color: var(--accent-soft);
       cursor: pointer;
@@ -259,10 +259,10 @@
         background:
           linear-gradient(
             180deg,
-            var(--primitive-color-rgb-204-155-84-alpha-0-24),
+            rgb(204 155 84 / 0.24),
             var(--primitive-color-rgb-204-155-84-alpha-0-08)
           ),
-          var(--primitive-color-rgb-28-23-20-alpha-0-98);
+          rgb(28 23 20 / 0.98);
 
         &::before {
           opacity: 1;
@@ -276,7 +276,7 @@
       border-color: var(--accent-color);
       background:
         linear-gradient(180deg, var(--primitive-color-rgb-255-255-255-alpha-0-06), transparent),
-        var(--primitive-color-rgb-28-23-20-alpha-0-96);
+        rgb(28 23 20 / 0.96);
       box-shadow: var(--shadow-checkbox-hover);
     }
   }
@@ -294,7 +294,7 @@
   }
 
   .perkIconTiny {
-    @include size(var(--primitive-length-1-95rem));
+    @include size(1.95rem);
 
     border-radius: var(--primitive-length-0-5rem);
   }
@@ -308,7 +308,7 @@
   .emptyState {
     display: grid;
     place-items: center;
-    min-height: var(--primitive-length-10rem);
+    min-height: 10rem;
     text-align: center;
   }
 
@@ -338,7 +338,7 @@
       @include size(var(--control-height-sm));
 
       .buildStar {
-        @include size(var(--primitive-length-0-95rem));
+        @include size(0.95rem);
       }
     }
   }

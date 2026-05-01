@@ -42,6 +42,32 @@ function calculateBackgroundFitView(request: BackgroundFitWorkerRequest) {
   })
 
   return backgroundFitEngine.getBackgroundFitView(pickedPerks, request.studyResourceFilter, {
+    onPartialView(partialView) {
+      if (request.requestId !== latestRequestId) {
+        return
+      }
+
+      postBackgroundFitResponse({
+        progress: {
+          checkedBackgroundCount: partialView.checkedBackgroundCount,
+          totalBackgroundCount: partialView.totalBackgroundCount,
+        },
+        requestId: request.requestId,
+        type: 'background-fit-partial-view',
+        view: partialView.view,
+      })
+    },
+    onProgress(progress) {
+      if (request.requestId !== latestRequestId) {
+        return
+      }
+
+      postBackgroundFitResponse({
+        progress,
+        requestId: request.requestId,
+        type: 'background-fit-progress',
+      })
+    },
     optionalPickedPerkIds: new Set(request.optionalPickedPerkIds),
   })
 }

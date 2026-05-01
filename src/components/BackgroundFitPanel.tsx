@@ -1,11 +1,16 @@
-import { useDeferredValue, useEffect, useId, useMemo, useRef, useState } from 'react'
-import { joinClassNames } from '../lib/class-names'
-import type { BackgroundFitView } from '../lib/background-fit'
-import { isOriginBackgroundFit } from '../lib/background-origin'
 import {
-  areBackgroundVeteranPerkLevelIntervalsDefault,
-  formatBackgroundVeteranPerkLevelIntervalFilterLabel,
-} from '../lib/background-veteran-perks'
+  useDeferredValue,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
+import { joinClassNames } from '../lib/class-names'
+import type { BackgroundFitCalculationProgress, BackgroundFitView } from '../lib/background-fit'
+import { isOriginBackgroundFit } from '../lib/background-origin'
+import { formatBackgroundVeteranPerkLevelIntervalFilterLabel } from '../lib/background-veteran-perks'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
@@ -17,26 +22,150 @@ const emptyBackgroundFitView: BackgroundFitView = {
   supportedBuildTargetPerkGroups: [],
   unsupportedBuildTargetPerkGroups: [],
 }
+const backgroundFitProgressCountMinimumStepDurationMs = 10
+
+function getClampedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
+  return Math.min(
+    progress.totalBackgroundCount,
+    Math.max(0, Math.floor(progress.checkedBackgroundCount)),
+  )
+}
+
+function areNumberSetsEqual(leftValues: readonly number[], rightValues: readonly number[]): boolean {
+  const leftSet = new Set(leftValues)
+  const rightSet = new Set(rightValues)
+
+  if (leftSet.size !== rightSet.size) {
+    return false
+  }
+
+  return [...leftSet].every((value) => rightSet.has(value))
+}
+
+function useDisplayedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
+  const targetCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
+  const [displayedCheckedBackgroundCount, setDisplayedCheckedBackgroundCount] = useState(0)
+  const displayedCheckedBackgroundCountRef = useRef(0)
+  const progressIntervalIdRef = useRef<number | null>(null)
+  const targetCheckedBackgroundCountRef = useRef(targetCheckedBackgroundCount)
+
+  useEffect(() => {
+    function clearProgressInterval() {
+      if (progressIntervalIdRef.current === null) {
+        return
+      }
+
+      window.clearInterval(progressIntervalIdRef.current)
+      progressIntervalIdRef.current = null
+    }
+
+    targetCheckedBackgroundCountRef.current = Math.max(
+      displayedCheckedBackgroundCountRef.current,
+      targetCheckedBackgroundCount,
+    )
+
+    if (
+      displayedCheckedBackgroundCountRef.current >= targetCheckedBackgroundCountRef.current ||
+      progressIntervalIdRef.current !== null
+    ) {
+      return
+    }
+
+    progressIntervalIdRef.current = window.setInterval(() => {
+      let shouldClearProgressInterval = false
+
+      setDisplayedCheckedBackgroundCount((currentCheckedBackgroundCount) => {
+        if (currentCheckedBackgroundCount >= targetCheckedBackgroundCountRef.current) {
+          displayedCheckedBackgroundCountRef.current = currentCheckedBackgroundCount
+          shouldClearProgressInterval = true
+
+          return currentCheckedBackgroundCount
+        }
+
+        const nextCheckedBackgroundCount = Math.min(
+          currentCheckedBackgroundCount + 1,
+          targetCheckedBackgroundCountRef.current,
+        )
+
+        displayedCheckedBackgroundCountRef.current = nextCheckedBackgroundCount
+        shouldClearProgressInterval =
+          nextCheckedBackgroundCount >= targetCheckedBackgroundCountRef.current
+
+        return nextCheckedBackgroundCount
+      })
+
+      if (shouldClearProgressInterval) {
+        clearProgressInterval()
+      }
+    }, backgroundFitProgressCountMinimumStepDurationMs)
+  }, [targetCheckedBackgroundCount])
+
+  useEffect(
+    () => () => {
+      if (progressIntervalIdRef.current !== null) {
+        window.clearInterval(progressIntervalIdRef.current)
+        progressIntervalIdRef.current = null
+      }
+    },
+    [],
+  )
+
+  return displayedCheckedBackgroundCount
+}
+
+function BackgroundFitProgressIndicator({
+  progress,
+}: {
+  progress: BackgroundFitCalculationProgress
+}) {
+  const displayedCheckedBackgroundCount = useDisplayedCheckedBackgroundCount(progress)
+  const actualCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
+  const displayedProgressPercent =
+    progress.totalBackgroundCount > 0
+      ? Math.min(
+          100,
+          Math.max(0, (displayedCheckedBackgroundCount / progress.totalBackgroundCount) * 100),
+        )
+      : 0
+  const progressBarStyle = {
+    '--background-fit-progress-value': `${displayedProgressPercent}%`,
+  } as CSSProperties
+
+  return (
+    <>
+      <p className={styles.backgroundFitProgressText}>
+        Checking backgrounds {displayedCheckedBackgroundCount}/{progress.totalBackgroundCount}.
+      </p>
+      <div
+        aria-label="Background fit progress"
+        aria-valuemax={progress.totalBackgroundCount}
+        aria-valuemin={0}
+        aria-valuenow={actualCheckedBackgroundCount}
+        aria-valuetext={`${actualCheckedBackgroundCount}/${progress.totalBackgroundCount} backgrounds checked`}
+        className={styles.backgroundFitProgressBar}
+        role="progressbar"
+      >
+        <div
+          aria-hidden="true"
+          className={styles.backgroundFitProgressBarValue}
+          style={progressBarStyle}
+        />
+      </div>
+    </>
+  )
+}
 
 export function BackgroundFitPanel({
   backgroundFitView,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
   hoveredPerkId,
   backgroundFitErrorMessage,
+  backgroundFitProgress,
   isExpanded,
   isLoadingBackgroundFitView,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onClearPerkGroupHover,
-  onClosePerkGroupHover,
-  onInspectPerkGroup,
-  onInspectPlannerPerk,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
+  onSelectBackgroundFit,
   onBackgroundStudyBookChange,
   onBackgroundStudyScrollChange,
   onBackgroundVeteranPerkLevelIntervalChange,
@@ -52,36 +181,19 @@ export function BackgroundFitPanel({
   shouldAllowSecondBackgroundStudyScroll,
   availableBackgroundVeteranPerkLevelIntervals,
   selectedBackgroundVeteranPerkLevelIntervals,
+  selectedBackgroundFitKey,
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView | null
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
   backgroundFitErrorMessage: string | null
+  backgroundFitProgress: BackgroundFitCalculationProgress | null
   isExpanded: boolean
   isLoadingBackgroundFitView: boolean
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onClearPerkGroupHover: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
-  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onInspectPlannerPerk: (
-    perkId: string,
-    perkGroupSelection?: { categoryName: string; perkGroupId: string },
-  ) => void
-  onOpenBuildPerkHover: (
-    perkId: string,
-    perkGroupSelection?: { categoryName: string; perkGroupId: string },
-  ) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: { categoryName: string; perkGroupId: string },
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onSelectBackgroundFit: (backgroundFitKey: string) => void
   onBackgroundStudyBookChange: (shouldAllowBackgroundStudyBook: boolean) => void
   onBackgroundStudyScrollChange: (shouldAllowBackgroundStudyScroll: boolean) => void
   onBackgroundVeteranPerkLevelIntervalChange: (
@@ -100,6 +212,7 @@ export function BackgroundFitPanel({
   shouldAllowSecondBackgroundStudyScroll: boolean
   availableBackgroundVeteranPerkLevelIntervals: number[]
   selectedBackgroundVeteranPerkLevelIntervals: number[]
+  selectedBackgroundFitKey: string | null
   shouldIncludeOriginBackgrounds: boolean
 }) {
   const effectiveBackgroundFitView = backgroundFitView ?? emptyBackgroundFitView
@@ -107,13 +220,6 @@ export function BackgroundFitPanel({
   const [isBackgroundFilterMenuOpen, setIsBackgroundFilterMenuOpen] = useState(false)
   const deferredBackgroundFitQuery = useDeferredValue(backgroundFitInputValue)
   const backgroundFitFilterMenuId = useId()
-  const [backgroundFitAccordionState, setBackgroundFitAccordionState] = useState<{
-    expandedBackgroundFitKey: string | null
-    rankedBackgroundFitKeySignature: string
-  }>({
-    expandedBackgroundFitKey: null,
-    rankedBackgroundFitKeySignature: '',
-  })
   const backgroundFitResultsScrollRef = useRef<HTMLDivElement | null>(null)
   const backgroundFitFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const hasPickedPerks = pickedPerkCount > 0
@@ -128,17 +234,27 @@ export function BackgroundFitPanel({
     () => new Set(selectedBackgroundVeteranPerkLevelIntervals),
     [selectedBackgroundVeteranPerkLevelIntervals],
   )
+  const hasNonDefaultBackgroundVeteranPerkLevelIntervals = useMemo(
+    () =>
+      !areNumberSetsEqual(
+        selectedBackgroundVeteranPerkLevelIntervals,
+        availableBackgroundVeteranPerkLevelIntervals,
+      ),
+    [availableBackgroundVeteranPerkLevelIntervals, selectedBackgroundVeteranPerkLevelIntervals],
+  )
   const hasActiveBackgroundFilter =
     shouldIncludeOriginBackgrounds ||
     !shouldAllowBackgroundStudyBook ||
     !shouldAllowBackgroundStudyScroll ||
     shouldAllowSecondBackgroundStudyScroll ||
-    !areBackgroundVeteranPerkLevelIntervalsDefault(
-      selectedBackgroundVeteranPerkLevelIntervals,
-      availableBackgroundVeteranPerkLevelIntervals,
-    )
+    hasNonDefaultBackgroundVeteranPerkLevelIntervals
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
-  const shouldShowBackgroundFitTargetSummary = hasPickedPerks && !isLoadingBackgroundFitView
+  const shouldShowBackgroundFitRankingStatus =
+    hasPickedPerks && (isLoadingBackgroundFitView || hasSupportedBackgroundFitTargets)
+  const backgroundFitRankingSummaryText =
+    isLoadingBackgroundFitView || hasBuildReachabilityProbability
+      ? 'Ranked by must-have build chance.'
+      : 'Ranked by expected perks pickable.'
   const normalizedBackgroundFitQuery = deferredBackgroundFitQuery.trim().toLowerCase()
   const backgroundFitEmptyResultTarget =
     normalizedBackgroundFitQuery.length > 0
@@ -179,17 +295,6 @@ export function BackgroundFitPanel({
       ),
     [effectiveBackgroundFitView],
   )
-  const rankedBackgroundFitKeySignature = useMemo(
-    () =>
-      effectiveBackgroundFitView.rankedBackgroundFits
-        .map((backgroundFit) => getBackgroundFitKey(backgroundFit))
-        .join('|'),
-    [effectiveBackgroundFitView],
-  )
-  const expandedBackgroundFitKey =
-    backgroundFitAccordionState.rankedBackgroundFitKeySignature === rankedBackgroundFitKeySignature
-      ? backgroundFitAccordionState.expandedBackgroundFitKey
-      : null
 
   function clearBackgroundFitInteractiveHover() {
     onClearPerkGroupHover()
@@ -265,7 +370,7 @@ export function BackgroundFitPanel({
           aria-hidden={!isExpanded}
           className={styles.backgroundFitPanelBody}
           data-testid="background-fit-panel-content"
-          hidden={!isExpanded}
+          inert={isExpanded ? undefined : true}
         >
           <ClearableSearchField
             className={styles.backgroundFitSearchField}
@@ -397,17 +502,34 @@ export function BackgroundFitPanel({
             }
             value={backgroundFitInputValue}
           />
-          {!shouldShowBackgroundFitTargetSummary ? null : hasSupportedBackgroundFitTargets ? (
-            <p
-              className={styles.backgroundFitRankingSummary}
-              data-testid="background-fit-ranking-summary"
-              hidden={hasActiveBackgroundFitSearch}
+          {shouldShowBackgroundFitRankingStatus ? (
+            <div
+              className={styles.backgroundFitStatus}
+              data-testid="background-fit-status"
+              data-loading={isLoadingBackgroundFitView}
             >
-              {hasBuildReachabilityProbability
-                ? 'Ranked by must-have build chance.'
-                : 'Ranked by expected perks pickable.'}
-            </p>
-          ) : (
+              <p
+                aria-hidden={isLoadingBackgroundFitView}
+                className={styles.backgroundFitRankingSummary}
+                data-testid="background-fit-ranking-summary"
+              >
+                {backgroundFitRankingSummaryText}
+              </p>
+              <div
+                aria-hidden={!isLoadingBackgroundFitView}
+                className={styles.backgroundFitLoadingSlot}
+                data-testid="background-fit-loading-slot"
+              >
+                {isLoadingBackgroundFitView &&
+                backgroundFitProgress &&
+                backgroundFitProgress.totalBackgroundCount > 0 ? (
+                  <BackgroundFitProgressIndicator progress={backgroundFitProgress} />
+                ) : isLoadingBackgroundFitView ? (
+                  <p className={styles.backgroundFitProgressText}>Calculating background fits.</p>
+                ) : null}
+              </div>
+            </div>
+          ) : !hasPickedPerks || hasSupportedBackgroundFitTargets ? null : (
             <div className={styles.backgroundFitEmptyState}>
               <p className={styles.backgroundFitSummaryCopy}>
                 {hasUnsupportedBackgroundFitTargets
@@ -449,65 +571,50 @@ export function BackgroundFitPanel({
               <div className={styles.backgroundFitEmptyState}>
                 <p className={styles.backgroundFitSummaryCopy}>{backgroundFitErrorMessage}</p>
               </div>
-            ) : isLoadingBackgroundFitView ? (
-              <div className={styles.backgroundFitEmptyState}>
-                <p className={styles.backgroundFitSummaryCopy}>Calculating background fits.</p>
-              </div>
-            ) : visibleRankedBackgroundFits.length > 0 ? (
-              <ol className={styles.backgroundFitRanking} data-testid="background-fit-ranking">
-                {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
-                  <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
-                    <BackgroundFitCard
-                      backgroundFit={backgroundFit}
-                      expandedBackgroundFitKey={expandedBackgroundFitKey}
-                      emphasizedCategoryNames={emphasizedCategoryNames}
-                      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-                      hoveredBuildPerkId={hoveredBuildPerkId}
-                      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                      hoveredPerkId={hoveredPerkId}
-                      onCloseBuildPerkHover={onCloseBuildPerkHover}
-                      onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-                      onClearPerkGroupHover={onClearPerkGroupHover}
-                      onClosePerkGroupHover={onClosePerkGroupHover}
-                      onInspectPerkGroup={onInspectPerkGroup}
-                      onInspectPlannerPerk={onInspectPlannerPerk}
-                      onOpenBuildPerkHover={onOpenBuildPerkHover}
-                      onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-                      onOpenPerkGroupHover={onOpenPerkGroupHover}
-                      onToggle={(backgroundFitKey: string) => {
-                        clearBackgroundFitInteractiveHover()
-                        setBackgroundFitAccordionState({
-                          expandedBackgroundFitKey:
-                            expandedBackgroundFitKey === backgroundFitKey ? null : backgroundFitKey,
-                          rankedBackgroundFitKeySignature,
-                        })
-                      }}
-                      mustHavePickedPerkCount={mustHavePickedPerkCount}
-                      optionalPickedPerkCount={optionalPickedPerkCount}
-                      pickedPerkCount={pickedPerkCount}
-                      query={deferredBackgroundFitQuery}
-                      rank={
-                        rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
-                        backgroundFitIndex
-                      }
-                      studyResourceFilter={{
-                        shouldAllowBook: shouldAllowBackgroundStudyBook,
-                        shouldAllowScroll: shouldAllowBackgroundStudyScroll,
-                        shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
-                      }}
-                    />
-                  </li>
-                ))}
-              </ol>
             ) : (
-              <div className={styles.backgroundFitEmptyState}>
-                <p className={styles.backgroundFitSummaryCopy}>
-                  No backgrounds match {backgroundFitEmptyResultTarget}.
-                </p>
-                <p className={styles.backgroundFitSummaryCopy}>
-                  Try a different background name or clear the search.
-                </p>
-              </div>
+              <>
+                {visibleRankedBackgroundFits.length > 0 ? (
+                  <ol className={styles.backgroundFitRanking} data-testid="background-fit-ranking">
+                    {visibleRankedBackgroundFits.map((backgroundFit, backgroundFitIndex) => (
+                      <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
+                        <BackgroundFitCard
+                          backgroundFit={backgroundFit}
+                          onClearPerkGroupHover={onClearPerkGroupHover}
+                          onSelect={(backgroundFitKey: string) => {
+                            clearBackgroundFitInteractiveHover()
+                            onSelectBackgroundFit(backgroundFitKey)
+                          }}
+                          isSelected={
+                            selectedBackgroundFitKey === getBackgroundFitKey(backgroundFit)
+                          }
+                          mustHavePickedPerkCount={mustHavePickedPerkCount}
+                          optionalPickedPerkCount={optionalPickedPerkCount}
+                          pickedPerkCount={pickedPerkCount}
+                          query={deferredBackgroundFitQuery}
+                          rank={
+                            rankedBackgroundFitIndexByKey.get(getBackgroundFitKey(backgroundFit)) ??
+                            backgroundFitIndex
+                          }
+                          studyResourceFilter={{
+                            shouldAllowBook: shouldAllowBackgroundStudyBook,
+                            shouldAllowScroll: shouldAllowBackgroundStudyScroll,
+                            shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
+                          }}
+                        />
+                      </li>
+                    ))}
+                  </ol>
+                ) : isLoadingBackgroundFitView ? null : (
+                  <div className={styles.backgroundFitEmptyState}>
+                    <p className={styles.backgroundFitSummaryCopy}>
+                      No backgrounds match {backgroundFitEmptyResultTarget}.
+                    </p>
+                    <p className={styles.backgroundFitSummaryCopy}>
+                      Try a different background name or clear the search.
+                    </p>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

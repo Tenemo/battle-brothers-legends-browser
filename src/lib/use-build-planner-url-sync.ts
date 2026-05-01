@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type MutableRefObject } from 'react'
 import {
   createBuildPlannerUrlSearch,
   readBuildPlannerUrlStateFromLocation,
@@ -6,6 +6,8 @@ import {
   type BuildPlannerUrlStateReadOptions,
   type BuildPlannerUrlStateWriteOptions,
 } from './build-planner-url-state'
+
+export type BuildPlannerUrlHistoryWriteMode = 'push' | 'replace'
 
 export function useInitialBuildPlannerUrlState(
   options: BuildPlannerUrlStateReadOptions,
@@ -19,14 +21,18 @@ export function useBuildPlannerUrlSync(
   urlState: BuildPlannerUrlState,
   options: BuildPlannerUrlStateWriteOptions,
   onUrlStateChange?: (urlState: BuildPlannerUrlState) => void,
+  historyWriteModeRef?: MutableRefObject<BuildPlannerUrlHistoryWriteMode>,
 ): void {
   const {
     availableBackgroundVeteranPerkLevelIntervals,
     availableCategoryNames,
+    backgrounds,
     perkGroupOptionsByCategory,
     perksById,
   } = options
   const {
+    categoryFilterMode,
+    detailSelection,
     optionalPerkIds,
     pickedPerkIds,
     query,
@@ -48,6 +54,8 @@ export function useBuildPlannerUrlSync(
 
     const nextSearch = createBuildPlannerUrlSearch(
       {
+        categoryFilterMode,
+        detailSelection,
         optionalPerkIds,
         pickedPerkIds,
         query,
@@ -70,17 +78,30 @@ export function useBuildPlannerUrlSync(
     )
 
     if (window.location.search === nextSearch) {
+      if (historyWriteModeRef) {
+        historyWriteModeRef.current = 'replace'
+      }
       return
     }
 
-    window.history.replaceState(
-      window.history.state,
-      '',
-      `${window.location.pathname}${nextSearch}${window.location.hash}`,
-    )
+    const nextUrl = `${window.location.pathname}${nextSearch}${window.location.hash}`
+    const writeMode = historyWriteModeRef?.current ?? 'replace'
+
+    if (historyWriteModeRef) {
+      historyWriteModeRef.current = 'replace'
+    }
+
+    if (writeMode === 'push') {
+      window.history.pushState(window.history.state, '', nextUrl)
+    } else {
+      window.history.replaceState(window.history.state, '', nextUrl)
+    }
   }, [
     availableCategoryNames,
     availableBackgroundVeteranPerkLevelIntervals,
+    categoryFilterMode,
+    detailSelection,
+    historyWriteModeRef,
     optionalPerkIds,
     perkGroupOptionsByCategory,
     perksById,
@@ -109,6 +130,7 @@ export function useBuildPlannerUrlSync(
         readBuildPlannerUrlStateFromLocation({
           availableCategoryNames,
           availableBackgroundVeteranPerkLevelIntervals,
+          backgrounds,
           perks: [...perksById.values()],
           perkGroupOptionsByCategory,
         }),
@@ -123,6 +145,7 @@ export function useBuildPlannerUrlSync(
   }, [
     availableBackgroundVeteranPerkLevelIntervals,
     availableCategoryNames,
+    backgrounds,
     onUrlStateChange,
     perkGroupOptionsByCategory,
     perksById,

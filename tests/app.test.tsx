@@ -77,6 +77,11 @@ describe('app', () => {
         name: 'Open the build planner repository on GitHub',
       }),
     ).toHaveAttribute('href', 'https://github.com/Tenemo/battle-brothers-legends-browser')
+    expect(
+      screen.getByRole('link', {
+        name: 'Open Piotr Piechowski projects',
+      }),
+    ).toHaveAttribute('href', 'https://piech.dev/projects')
     expect(screen.getByLabelText('Search perks')).toBeInTheDocument()
     expect(screen.getByTestId('build-perks-bar')).toBeInTheDocument()
     expect(screen.getByTestId('build-shared-groups-list')).toBeInTheDocument()
@@ -368,5 +373,79 @@ describe('app', () => {
         name: 'View Berserk from build planner',
       }),
     ).toBeInTheDocument()
+  })
+
+  test('updates selected perk details when browser history restores detail url state', async () => {
+    render(<App />)
+
+    act(() => {
+      window.history.pushState({}, '', '/?detail=perk&perk=Berserk&search=Berserk&build=Berserk')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+          level: 2,
+          name: 'Berserk',
+        }),
+      ).toBeInTheDocument()
+    })
+  })
+
+  test('keeps selected perk details when a perk group filter hides the selected perk', async () => {
+    const user = userEvent.setup()
+    render(<App />)
+    const perkSearchInput = screen.getByLabelText('Search perks')
+
+    await user.type(perkSearchInput, 'Berserk')
+    await user.click(
+      within(screen.getByTestId('results-list')).getByRole('button', { name: 'Inspect Berserk' }),
+    )
+
+    expect(
+      within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+        level: 2,
+        name: 'Berserk',
+      }),
+    ).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Expand category Magic' }))
+    await user.click(screen.getByRole('button', { name: 'Select perk group Evocation' }))
+
+    await waitFor(() => {
+      expect(perkSearchInput).toHaveValue('')
+    })
+    expect(
+      within(screen.getByTestId('results-list')).queryByRole('button', { name: 'Inspect Berserk' }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+        level: 2,
+        name: 'Berserk',
+      }),
+    ).toBeInTheDocument()
+  })
+
+  test('loads background fit when browser history restores background detail url state', async () => {
+    render(<App />)
+
+    act(() => {
+      window.history.pushState(
+        {},
+        '',
+        '/?detail=background&background=background.apprentice&background-source=apprentice&build=Berserk',
+      )
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+
+    await waitFor(() => {
+      expect(
+        within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+          level: 2,
+          name: 'Apprentice',
+        }),
+      ).toBeInTheDocument()
+    })
   })
 })

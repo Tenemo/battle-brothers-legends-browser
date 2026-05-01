@@ -54,7 +54,7 @@
     }
 
     &:hover:not([data-selected='true']) {
-      background: var(--primitive-color-rgb-25-20-17-alpha-0-88);
+      background: rgb(25 20 17 / 0.88);
     }
 
     &[data-picked='true'] {
@@ -63,6 +63,8 @@
 
     &[data-selected='true'] {
       background: var(--button-background-active);
+
+      @include active-corner-ornaments;
 
       &:not([data-picked='true'], [data-highlighted='true']) {
         border-color: transparent;
@@ -159,7 +161,7 @@
     border-radius: var(--radius-pill);
     padding: var(--space-2xs) var(--primitive-length-0-48rem) var(--space-2xs)
       var(--primitive-length-0-2rem);
-    background: var(--primitive-color-rgb-20-17-14-alpha-0-58);
+    background: rgb(20 17 14 / 0.58);
     color: var(--text-muted);
     font: inherit;
     vertical-align: middle;
@@ -178,6 +180,10 @@
       .perkPlacementLabel {
         color: var(--text-primary);
       }
+    }
+
+    &[data-selected-highlighted='true'] {
+      @include active-corner-ornaments(0, var(--primitive-length-0-9rem));
     }
 
     &:focus-visible {
@@ -312,7 +318,7 @@
 
     .resultsList {
       flex: 0 1 auto;
-      max-height: min(var(--primitive-length-42rem), var(--primitive-length-68vh));
+      max-height: min(var(--primitive-length-42rem), 68vh);
       min-height: var(--primitive-length-18rem);
       overflow: hidden auto;
       content-visibility: visible;

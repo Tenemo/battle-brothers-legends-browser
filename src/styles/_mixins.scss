@@ -63,13 +63,172 @@
   background: var(--surface-result);
 }
 
+@mixin active-corner-ornaments(
+  $inset: 0,
+  $size: var(--primitive-length-1-12rem),
+  $thickness: var(--primitive-length-2px)
+) {
+  $curl-size: var(--primitive-length-0-98rem);
+  $dot-offset: var(--primitive-length-0-26rem);
+  $dot-size: var(--primitive-length-0-18rem);
+  $flourish-size: var(--primitive-length-0-68rem);
+
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    z-index: var(--z-index-indicator);
+    inset: $inset;
+    border-radius: inherit;
+    background:
+      linear-gradient(
+          90deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        top left / $size $thickness no-repeat,
+      linear-gradient(
+          180deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        top left / $thickness $size no-repeat,
+      linear-gradient(
+          270deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        top right / $size $thickness no-repeat,
+      linear-gradient(
+          180deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        top right / $thickness $size no-repeat,
+      linear-gradient(
+          90deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        bottom left / $size $thickness no-repeat,
+      linear-gradient(
+          0deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        bottom left / $thickness $size no-repeat,
+      linear-gradient(
+          270deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        bottom right / $size $thickness no-repeat,
+      linear-gradient(
+          0deg,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32)
+        )
+        bottom right / $thickness $size no-repeat,
+      radial-gradient(
+          circle at 0 0,
+          transparent var(--primitive-length-0-34rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-36rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-38rem),
+          transparent var(--primitive-length-0-42rem)
+        )
+        top left / $curl-size $curl-size no-repeat,
+      radial-gradient(
+          circle at 100% 0,
+          transparent var(--primitive-length-0-34rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-36rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-38rem),
+          transparent var(--primitive-length-0-42rem)
+        )
+        top right / $curl-size $curl-size no-repeat,
+      radial-gradient(
+          circle at 0 100%,
+          transparent var(--primitive-length-0-34rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-36rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-38rem),
+          transparent var(--primitive-length-0-42rem)
+        )
+        bottom left / $curl-size $curl-size no-repeat,
+      radial-gradient(
+          circle at 100% 100%,
+          transparent var(--primitive-length-0-34rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-36rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) var(--primitive-length-0-38rem),
+          transparent var(--primitive-length-0-42rem)
+        )
+        bottom right / $curl-size $curl-size no-repeat,
+      radial-gradient(
+          circle at 60% 60%,
+          transparent var(--primitive-length-0-24rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32) var(--primitive-length-0-26rem),
+          transparent var(--primitive-length-0-28rem)
+        )
+        top left / $flourish-size $flourish-size no-repeat,
+      radial-gradient(
+          circle at 40% 60%,
+          transparent var(--primitive-length-0-24rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32) var(--primitive-length-0-26rem),
+          transparent var(--primitive-length-0-28rem)
+        )
+        top right / $flourish-size $flourish-size no-repeat,
+      radial-gradient(
+          circle at 60% 40%,
+          transparent var(--primitive-length-0-24rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32) var(--primitive-length-0-26rem),
+          transparent var(--primitive-length-0-28rem)
+        )
+        bottom left / $flourish-size $flourish-size no-repeat,
+      radial-gradient(
+          circle at 40% 40%,
+          transparent var(--primitive-length-0-24rem),
+          var(--primitive-color-rgb-221-176-123-alpha-0-32) var(--primitive-length-0-26rem),
+          transparent var(--primitive-length-0-28rem)
+        )
+        bottom right / $flourish-size $flourish-size no-repeat,
+      radial-gradient(
+          circle,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) 0 var(--primitive-length-1px),
+          transparent var(--primitive-length-0-14rem)
+        )
+        top $dot-offset left $dot-offset / $dot-size $dot-size no-repeat,
+      radial-gradient(
+          circle,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) 0 var(--primitive-length-1px),
+          transparent var(--primitive-length-0-14rem)
+        )
+        top $dot-offset right $dot-offset / $dot-size $dot-size no-repeat,
+      radial-gradient(
+          circle,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) 0 var(--primitive-length-1px),
+          transparent var(--primitive-length-0-14rem)
+        )
+        bottom $dot-offset left $dot-offset / $dot-size $dot-size no-repeat,
+      radial-gradient(
+          circle,
+          var(--primitive-color-rgb-221-176-123-alpha-0-9) 0 var(--primitive-length-1px),
+          transparent var(--primitive-length-0-14rem)
+        )
+        bottom $dot-offset right $dot-offset / $dot-size $dot-size no-repeat;
+    filter: drop-shadow(
+      0 0 var(--primitive-length-0-12rem) var(--primitive-color-rgb-204-155-84-alpha-0-18)
+    );
+    opacity: 1;
+    pointer-events: none;
+  }
+}
+
 @mixin badge-surface {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: var(--primitive-length-1px) solid var(--border-muted);
   border-radius: var(--radius-pill);
-  background: var(--primitive-color-rgb-20-17-14-alpha-0-8);
+  background: rgb(20 17 14 / 0.8);
   color: var(--accent-soft);
   font-size: var(--font-size-sm);
   line-height: 1.2;
@@ -93,7 +252,7 @@
   justify-content: center;
   align-items: center;
   padding: var(--space-3xl);
-  background: var(--primitive-color-rgb-0-0-0-alpha-0-62);
+  background: rgb(0 0 0 / 0.62);
 }
 
 @mixin dialog-surface {
@@ -207,7 +366,7 @@
   &:hover,
   &:focus-visible {
     border-color: var(--accent-color);
-    background: var(--primitive-color-rgb-28-23-20-alpha-0-95);
+    background: rgb(28 23 20 / 0.95);
   }
 
   &:focus-visible {
@@ -257,11 +416,7 @@
 
   &[data-placeholder='true'] {
     background:
-      radial-gradient(
-        circle at 30% 30%,
-        var(--primitive-color-rgb-204-155-84-alpha-0-2),
-        transparent 45%
-      ),
+      radial-gradient(circle at 30% 30%, rgb(204 155 84 / 0.2), transparent 45%),
       linear-gradient(
         180deg,
         var(--primitive-color-rgb-31-25-20-alpha-0-96),

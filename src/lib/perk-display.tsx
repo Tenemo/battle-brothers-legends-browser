@@ -289,8 +289,34 @@ export function getVisibleBackgroundPillLabel(backgroundFit: RankedBackgroundFit
   )
 }
 
+export type BackgroundFitKeyParts = {
+  backgroundId: string
+  sourceFilePath: string
+}
+
+export function createBackgroundFitKey({ backgroundId, sourceFilePath }: BackgroundFitKeyParts) {
+  return `${backgroundId}::${sourceFilePath}`
+}
+
+export function parseBackgroundFitKey(backgroundFitKey: string): BackgroundFitKeyParts | null {
+  const separatorIndex = backgroundFitKey.indexOf('::')
+
+  if (separatorIndex === -1) {
+    return null
+  }
+
+  const backgroundId = backgroundFitKey.slice(0, separatorIndex)
+  const sourceFilePath = backgroundFitKey.slice(separatorIndex + 2)
+
+  if (backgroundId.length === 0 || sourceFilePath.length === 0) {
+    return null
+  }
+
+  return { backgroundId, sourceFilePath }
+}
+
 export function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string {
-  return `${backgroundFit.backgroundId}::${backgroundFit.sourceFilePath}`
+  return createBackgroundFitKey(backgroundFit)
 }
 
 export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): string {

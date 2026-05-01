@@ -23,10 +23,6 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const perkDetailPanel = getPerkDetailPanel(page)
-  const apprenticeCard = backgroundFitPanel
-    .getByTestId('background-fit-card')
-    .filter({ hasText: 'Apprentice' })
-    .first()
 
   await expect
     .poll(async () =>
@@ -53,11 +49,13 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
       perkDetailDirection: 'column',
     })
   await expect(backgroundFitPanel.getByLabel('Search backgrounds')).toBeVisible()
-  await expect(
-    perkDetailPanel.getByRole('button', { name: 'Collapse perk details' }),
-  ).toHaveAttribute('aria-expanded', 'true')
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background Apprentice' }).click()
-  await apprenticeCard.getByRole('button', { name: 'Select perk group Axe' }).click()
+  await expect(page.getByRole('button', { name: 'Collapse perk details' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Collapse category filters' })).toHaveAttribute(
+    'aria-expanded',
+    'true',
+  )
+  await backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }).click()
+  await perkDetailPanel.getByRole('button', { name: 'Select perk group Axe' }).click()
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
@@ -68,10 +66,12 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }),
   ).toHaveAttribute('aria-expanded', 'false')
-  await perkDetailPanel.getByRole('button', { name: 'Collapse perk details' }).click()
-  await expect(
-    perkDetailPanel.getByRole('button', { name: 'Expand perk details' }),
-  ).toHaveAttribute('aria-expanded', 'false')
-  await expect(perkDetailPanel.getByTestId('perk-detail-panel-body')).toBeHidden()
+  await page.getByRole('button', { name: 'Collapse category filters' }).click()
+  await expect(page.getByRole('button', { name: 'Expand category filters' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  await expect(page.getByTestId('category-sidebar-body')).toBeHidden()
+  await expect(perkDetailPanel.getByTestId('perk-detail-panel-body')).toBeVisible()
   await expectNoDocumentHorizontalOverflow(page)
 })

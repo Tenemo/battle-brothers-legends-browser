@@ -1,8 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
-import { BackgroundFitCard } from '../src/components/BackgroundFitCard'
+import { BackgroundFitCard, BackgroundFitMetricTable } from '../src/components/BackgroundFitCard'
 import {
   backgroundStudyResourceBadgesTestId,
   backgroundStudyResourceBadgeTestId,
@@ -11,13 +11,34 @@ import {
 } from '../src/lib/background-study-resource-display'
 import { ancientScrollIconPath } from '../src/lib/ancient-scroll-perk-group-display'
 import type { RankedBackgroundFit } from '../src/lib/background-fit'
-import type { BackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
+import type {
+  BackgroundStudyResourceFilter,
+  StudyReachabilityRequirement,
+  StudyResourceRequirementProfile,
+} from '../src/lib/background-study-reachability'
 
 const nativeStudyResourceRequirement = {
+  bookRequirement: null,
   requiredScrollCount: 0,
   requiresBook: false,
   requiresBright: false,
-} as const
+  scrollRequirements: [],
+} satisfies StudyResourceRequirementProfile
+
+const skillBookRequirement = {
+  categoryName: 'Traits',
+  perkGroupId: 'CalmTree',
+} satisfies StudyReachabilityRequirement
+
+const firstScrollRequirement = {
+  categoryName: 'Magic',
+  perkGroupId: 'BerserkerMagicTree',
+} satisfies StudyReachabilityRequirement
+
+const secondScrollRequirement = {
+  categoryName: 'Magic',
+  perkGroupId: 'EvocationMagicTree',
+} satisfies StudyReachabilityRequirement
 
 function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): RankedBackgroundFit {
   return {
@@ -50,23 +71,10 @@ function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit, rank = 0) {
   return render(
     <BackgroundFitCard
       backgroundFit={backgroundFit}
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
-      expandedBackgroundFitKey={null}
-      hoveredBuildPerkId={null}
-      hoveredBuildPerkTooltipId={undefined}
-      hoveredPerkId={null}
+      isSelected={false}
       mustHavePickedPerkCount={1}
       onClearPerkGroupHover={vi.fn()}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onClosePerkGroupHover={vi.fn()}
-      onInspectPerkGroup={vi.fn()}
-      onInspectPlannerPerk={vi.fn()}
-      onOpenBuildPerkHover={vi.fn()}
-      onOpenBuildPerkTooltip={vi.fn()}
-      onOpenPerkGroupHover={vi.fn()}
-      onToggle={vi.fn()}
+      onSelect={vi.fn()}
       optionalPickedPerkCount={1}
       pickedPerkCount={2}
       query=""
@@ -86,23 +94,10 @@ function renderBackgroundFitCardWithStudyResourceFilter(
   return render(
     <BackgroundFitCard
       backgroundFit={createBackgroundFit()}
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
-      expandedBackgroundFitKey={null}
-      hoveredBuildPerkId={null}
-      hoveredBuildPerkTooltipId={undefined}
-      hoveredPerkId={null}
+      isSelected={false}
       mustHavePickedPerkCount={1}
       onClearPerkGroupHover={vi.fn()}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onClosePerkGroupHover={vi.fn()}
-      onInspectPerkGroup={vi.fn()}
-      onInspectPlannerPerk={vi.fn()}
-      onOpenBuildPerkHover={vi.fn()}
-      onOpenBuildPerkTooltip={vi.fn()}
-      onOpenPerkGroupHover={vi.fn()}
-      onToggle={vi.fn()}
+      onSelect={vi.fn()}
       optionalPickedPerkCount={0}
       pickedPerkCount={1}
       query=""
@@ -117,14 +112,18 @@ describe('background fit card study resource badges', () => {
     renderBackgroundFitCard(
       createBackgroundFit({
         fullBuildStudyResourceRequirement: {
+          bookRequirement: skillBookRequirement,
           requiredScrollCount: 2,
           requiresBook: true,
           requiresBright: true,
+          scrollRequirements: [firstScrollRequirement, secondScrollRequirement],
         },
         mustHaveStudyResourceRequirement: {
+          bookRequirement: skillBookRequirement,
           requiredScrollCount: 1,
           requiresBook: true,
           requiresBright: false,
+          scrollRequirements: [firstScrollRequirement],
         },
       }),
     )
@@ -181,9 +180,11 @@ describe('background fit card study resource badges', () => {
         fullBuildReachabilityProbability: 0,
         fullBuildStudyResourceRequirement: null,
         mustHaveStudyResourceRequirement: {
+          bookRequirement: skillBookRequirement,
           requiredScrollCount: 1,
           requiresBook: true,
           requiresBright: false,
+          scrollRequirements: [firstScrollRequirement],
         },
       }),
     )
@@ -230,6 +231,36 @@ describe('background fit card study resource badges', () => {
       'title',
       'One legal native background roll without books or scrolls can cover every picked perk with a 100% chance for the must-have build.',
     )
+  })
+
+  test('renders must-have metric icons from explicit metadata', () => {
+    render(
+      <BackgroundFitMetricTable
+        metrics={[
+          {
+            accessibleLabel: 'Required build chance 100%',
+            icon: 'must-have',
+            label: 'Required build chance',
+            tooltip: 'A renamed required-build metric still uses the must-have icon.',
+            value: '100%',
+          },
+          {
+            accessibleLabel: 'Must-have wording without icon 1/1',
+            icon: null,
+            label: 'Must-have wording without icon',
+            tooltip: 'Label text alone should not opt into the must-have icon.',
+            value: '1/1',
+          },
+        ]}
+      />,
+    )
+
+    const metricRows = screen.getAllByTestId('background-fit-summary-metric')
+
+    expect(within(metricRows[0]).getByTestId('background-fit-summary-must-have-icon')).toBeVisible()
+    expect(
+      within(metricRows[1]).queryByTestId('background-fit-summary-must-have-icon'),
+    ).not.toBeInTheDocument()
   })
 
   test('shows the veteran perk interval badge with a native tooltip', () => {

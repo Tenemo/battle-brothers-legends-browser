@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 import {
+  getPerkDetailPanel,
   getSidebarPerkGroupButton,
   getResultsList,
   gotoBuildPlanner,
@@ -22,6 +23,23 @@ function readBackgroundSourceProbabilityLabel(label: string): number {
 
   return Number(chanceMatch[1]) / 100
 }
+
+test('starts with an empty detail panel until a perk or background is selected', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await expect(
+    page.getByRole('heading', { level: 2, name: 'Select a perk or background' }),
+  ).toBeVisible()
+  await expect(page.getByRole('heading', { level: 2, name: 'No perks found' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'false',
+  )
+  await expect(page.getByTestId('perk-row')).toHaveCount(0)
+  await expect(page.locator('[data-testid="perk-row"][data-selected="true"]')).toHaveCount(0)
+})
 
 test('groups repeated background sources in the detail panel', async ({ page }) => {
   await gotoBuildPlanner(page)
@@ -49,6 +67,56 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
 
   expect(Number(backgroundSourceNamesFontWeight)).toBeLessThan(600)
   await expect(groupedBackgroundSourceRow.getByText('Guaranteed')).toBeVisible()
+})
+
+test('detail history buttons skip browser entries with the same selected detail', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page)
+
+  await searchPerks(page, 'Berserk')
+  await inspectPerkFromResults(page, 'Berserk')
+
+  const detailPanel = getPerkDetailPanel(page)
+  const previousDetailButton = detailPanel.getByRole('button', { name: 'Show previous detail' })
+  const nextDetailButton = detailPanel.getByRole('button', { name: 'Show next detail' })
+  const buildToggleButton = detailPanel.getByRole('button', { name: 'Add Berserk to build' })
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
+  await expect(previousDetailButton).toBeVisible()
+  await expect(nextDetailButton).toBeVisible()
+  await expect(buildToggleButton).toBeVisible()
+  const detailActionButtonSizes = await Promise.all(
+    [previousDetailButton, nextDetailButton, buildToggleButton].map((button) =>
+      button.evaluate((element) => {
+        const rectangle = element.getBoundingClientRect()
+
+        return {
+          height: Math.round(rectangle.height),
+          width: Math.round(rectangle.width),
+        }
+      }),
+    ),
+  )
+
+  expect(detailActionButtonSizes[0]).toEqual(detailActionButtonSizes[2])
+  expect(detailActionButtonSizes[1]).toEqual(detailActionButtonSizes[2])
+
+  await searchPerks(page, 'Hold Out')
+  await inspectPerkFromResults(page, 'Hold Out')
+  await detailPanel.getByRole('button', { name: 'Select perk group Tenacious' }).click()
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Hold Out' })).toBeVisible()
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+
+  await detailPanel.getByRole('button', { name: 'Show previous detail' }).click()
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Hold Out' })).toHaveCount(0)
+
+  await detailPanel.getByRole('button', { name: 'Show next detail' }).click()
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Hold Out' })).toBeVisible()
 })
 
 test('shows favoured enemy targets and scenario overlays for enemy perks', async ({ page }) => {
@@ -190,4 +258,11 @@ test('keeps raw perk group flavour strings out of perk details', async ({ page }
     'aria-pressed',
     'true',
   )
+
+  await civilizationPlacementTile
+    .getByRole('button', { name: 'Select perk group Civilization' })
+    .click()
+
+  await expect(page.getByRole('button', { name: 'Enable category Enemy' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Civilization')).toHaveCount(0)
 })

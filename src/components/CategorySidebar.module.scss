@@ -2,12 +2,46 @@
 
 @layer components {
   .sidebar {
+    width: 100%;
+
+    @include rail-panel-shell(
+      '.sidebarBody',
+      '.categorySidebarRailButtonLabel',
+      translateX(var(--font-size-xl)),
+      translateY(var(--primitive-length-0-45rem))
+    );
+
+    flex-direction: row-reverse;
+  }
+
+  .sidebarBody {
+    @include rail-panel-body(var(--space-xl), auto);
+
+    gap: 0;
     height: 100%;
     min-height: 0;
-    overflow: auto;
-    padding: var(--space-xl);
+  }
 
-    @include rounded-panel;
+  .categorySidebarRailButton {
+    border-left: var(--primitive-length-1px) solid var(--border-muted);
+
+    @include rail-button;
+  }
+
+  .categorySidebarRailButtonIcon {
+    @include rail-button-icon;
+  }
+
+  .categorySidebarRailChevron {
+    @include rail-chevron;
+  }
+
+  .sidebar[data-expanded='false'] .categorySidebarRailChevron {
+    transform: rotate(180deg);
+  }
+
+  .categorySidebarRailButtonLabel {
+    @include rail-label;
   }
 
   .panelHeading {
@@ -38,10 +72,14 @@
   }
 
   .categoryCard {
-    margin-bottom: var(--space-2xs);
-    border: var(--primitive-length-1px) solid transparent;
+    margin-bottom: 0;
+    border: var(--primitive-length-1px) solid var(--border-muted);
     border-radius: var(--radius-control);
-    background: var(--primitive-color-rgb-16-13-11-alpha-0-24);
+    background: rgb(16 13 11 / 0.24);
+
+    + .categoryCard {
+      margin-top: var(--primitive-length-2px);
+    }
 
     &[data-active='true'] {
       border-color: var(--primitive-color-rgb-204-155-84-alpha-0-22);
@@ -66,17 +104,24 @@
     }
 
     &:hover,
-    &[data-highlighted='true'],
+    &[data-highlighted='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+    }
+
     &[aria-pressed='true'] {
       border-color: var(--accent-color);
       background: var(--button-background-active);
       color: var(--text-primary);
+
+      @include active-corner-ornaments(0, var(--primitive-length-0-9rem));
     }
   }
 
   .categoryChip {
     gap: var(--primitive-length-0-55rem);
-    margin-bottom: var(--primitive-length-0-18rem);
+    margin-bottom: 0;
     border: var(--primitive-length-1px) solid transparent;
     border-radius: var(--radius-control);
     padding: var(--primitive-length-0-3rem) var(--primitive-length-0-46rem);
@@ -89,6 +134,7 @@
   }
 
   .categoryChipFrame {
+    position: relative;
     display: flex;
     align-items: stretch;
     width: 100%;
@@ -100,11 +146,18 @@
 
     @include control-transition;
 
-    &[data-highlighted='true'],
+    &[data-highlighted='true'] {
+      border-color: var(--accent-color);
+      background: var(--button-background-active);
+      color: var(--text-primary);
+    }
+
     &[data-selected='true'] {
       border-color: var(--accent-color);
       background: var(--button-background-active);
       color: var(--text-primary);
+
+      @include active-corner-ornaments(0, var(--primitive-length-0-9rem));
     }
   }
 
@@ -203,11 +256,14 @@
 
   .perkGroupChipStart .perkGroupAncientScrollMarker {
     position: static;
+    display: block;
     flex: 0 0 auto;
+    align-self: center;
 
     @include size(var(--icon-size-xs));
 
     margin-left: 0;
+    vertical-align: middle;
   }
 
   .categoryChevron {
@@ -237,7 +293,7 @@
   }
 
   .perkGroupHeading {
-    margin: 0 0 var(--primitive-length-0-04rem);
+    margin: 0 0 0.04rem;
     color: var(--text-muted);
     font-size: var(--font-size-xs);
     letter-spacing: var(--primitive-length-0-08em);
@@ -249,7 +305,7 @@
     border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-08);
     border-radius: var(--primitive-length-0-48rem);
     padding: var(--space-xs) var(--primitive-length-0-4rem);
-    background: var(--primitive-color-rgb-21-17-14-alpha-0-9);
+    background: rgb(21 17 14 / 0.9);
     color: var(--text-secondary);
     font-size: var(--font-size-base);
   }
@@ -268,14 +324,63 @@
 
   @include below-desktop {
     .sidebar {
+      flex-direction: column;
       height: auto;
       min-height: 0;
       order: 3;
+
+      &[data-expanded='false'] {
+        width: 100%;
+
+        .sidebarBody {
+          transform: translateY(var(--primitive-length-negative-0-45rem));
+        }
+
+        .categorySidebarRailChevron {
+          transform: none;
+        }
+      }
+
+      &[data-expanded='true'] {
+        min-height: var(--primitive-length-12rem);
+      }
+    }
+
+    .categorySidebarRailButton {
+      border-left: 0;
+
+      @include mobile-rail;
+    }
+
+    .sidebarBody {
+      order: 1;
+      max-height: min(var(--primitive-length-36rem), var(--primitive-length-70vh));
+      transform: translateY(0);
+    }
+
+    .categorySidebarRailButtonLabel,
+    .sidebar[data-expanded='true'] .categorySidebarRailButtonLabel {
+      max-height: none;
       overflow: visible;
+      opacity: 1;
+      writing-mode: horizontal-tb;
+      transform: none;
+    }
+
+    .categorySidebarRailChevron[data-expanded='true'] {
+      transform: rotate(90deg);
     }
   }
 
   @include mobile {
+    .sidebarBody {
+      max-height: var(--primitive-length-24rem);
+    }
+
+    .categorySidebarRailButton {
+      min-height: var(--primitive-length-2-72rem);
+    }
+
     .categoryChipFrame,
     .categoryDisclosureButton,
     .categorySelectButton,

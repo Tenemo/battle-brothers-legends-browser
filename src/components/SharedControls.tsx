@@ -1,5 +1,5 @@
 import { type ReactNode, useRef } from 'react'
-import { ChevronRight, Funnel, Star } from 'lucide-react'
+import { ChevronRight, Funnel, Star, UserRound } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import styles from './SharedControls.module.scss'
 
@@ -79,6 +79,10 @@ export function GitHubIcon({ className }: { className: string }) {
   )
 }
 
+export function PersonIcon({ className }: { className: string }) {
+  return <UserRound aria-hidden="true" className={className} strokeWidth={1.9} />
+}
+
 export function CategoryChevron({
   className,
   isExpanded,
@@ -130,7 +134,7 @@ export function BackgroundFitRailChevron({
   )
 }
 
-export function DetailPanelRailChevron({
+export function CategorySidebarRailChevron({
   className,
   isExpanded,
 }: {
@@ -163,23 +167,6 @@ export function FunnelIcon({
       data-testid={testId}
       fill={isFilled ? 'currentColor' : 'none'}
       stroke="currentColor"
-      strokeWidth={1.8}
-    />
-  )
-}
-
-export function BackgroundFitAccordionChevron({
-  className,
-  isExpanded,
-}: {
-  className: string
-  isExpanded: boolean
-}) {
-  return (
-    <ChevronRight
-      aria-hidden="true"
-      className={className}
-      data-expanded={isExpanded}
       strokeWidth={1.8}
     />
   )

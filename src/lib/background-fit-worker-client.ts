@@ -1,4 +1,4 @@
-import type { BackgroundFitView } from './background-fit'
+import type { BackgroundFitCalculationProgress, BackgroundFitView } from './background-fit'
 import type { BackgroundStudyResourceFilter } from './background-study-reachability'
 
 export type BackgroundFitWorkerInput = {
@@ -13,6 +13,17 @@ export type BackgroundFitWorkerRequest = BackgroundFitWorkerInput & {
 }
 
 export type BackgroundFitWorkerResponse =
+  | {
+      progress: BackgroundFitCalculationProgress
+      requestId: number
+      type: 'background-fit-progress'
+    }
+  | {
+      progress: BackgroundFitCalculationProgress
+      requestId: number
+      type: 'background-fit-partial-view'
+      view: BackgroundFitView
+    }
   | {
       requestId: number
       type: 'background-fit-view'
@@ -29,18 +40,31 @@ export type BackgroundFitWorkerCalculation = {
   requestId: number
 }
 
+export type BackgroundFitWorkerCalculationOptions = {
+  onPartialView?: (view: BackgroundFitView, progress: BackgroundFitCalculationProgress) => void
+  onProgress?: (progress: BackgroundFitCalculationProgress) => void
+}
+
 export type BackgroundFitWorkerClient = {
-  calculateBackgroundFitView: (input: BackgroundFitWorkerInput) => BackgroundFitWorkerCalculation
+  calculateBackgroundFitView: (
+    input: BackgroundFitWorkerInput,
+    options?: BackgroundFitWorkerCalculationOptions,
+  ) => BackgroundFitWorkerCalculation
   dispose: () => void
 }
 
 type PendingCalculation = {
+  onPartialView?: (view: BackgroundFitView, progress: BackgroundFitCalculationProgress) => void
+  onProgress?: (progress: BackgroundFitCalculationProgress) => void
   reject: (error: Error) => void
   resolve: (view: BackgroundFitView) => void
 }
 
 type BackgroundFitWorkerClientOptions = {
-  calculateOnMainThread?: (input: BackgroundFitWorkerInput) => BackgroundFitView
+  calculateOnMainThread?: (
+    input: BackgroundFitWorkerInput,
+    options?: BackgroundFitWorkerCalculationOptions,
+  ) => BackgroundFitView
   createWorker?: () => Worker | null
 }
 
@@ -72,6 +96,16 @@ export function createBackgroundFitWorkerClient({
         return
       }
 
+      if (response.type === 'background-fit-progress') {
+        pendingCalculation.onProgress?.(response.progress)
+        return
+      }
+
+      if (response.type === 'background-fit-partial-view') {
+        pendingCalculation.onPartialView?.(response.view, response.progress)
+        return
+      }
+
       pendingCalculationsByRequestId.delete(response.requestId)
 
       if (response.type === 'background-fit-error') {
@@ -94,7 +128,7 @@ export function createBackgroundFitWorkerClient({
   }
 
   return {
-    calculateBackgroundFitView(input) {
+    calculateBackgroundFitView(input, options = {}) {
       const requestId = (nextRequestId += 1)
 
       if (!worker) {
@@ -106,13 +140,18 @@ export function createBackgroundFitWorkerClient({
         }
 
         return {
-          promise: Promise.resolve().then(() => calculateOnMainThread(input)),
+          promise: Promise.resolve().then(() => calculateOnMainThread(input, options)),
           requestId,
         }
       }
 
       const promise = new Promise<BackgroundFitView>((resolve, reject) => {
-        pendingCalculationsByRequestId.set(requestId, { reject, resolve })
+        pendingCalculationsByRequestId.set(requestId, {
+          onPartialView: options.onPartialView,
+          onProgress: options.onProgress,
+          reject,
+          resolve,
+        })
       })
       const request = {
         ...input,

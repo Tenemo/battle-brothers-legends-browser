@@ -36,9 +36,9 @@ test('copies a canonical build-only link from a searched workspace', async ({ pa
 
   await expect(getBuildPerksBar(page).getByTestId('planner-slot-perk')).toHaveCount(2)
   await expect(page.getByLabel('Search perks')).toHaveValue('Clarity')
-  await expect(page.getByRole('button', { name: 'Reset all category filters' })).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
     'aria-pressed',
-    'true',
+    'false',
   )
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)

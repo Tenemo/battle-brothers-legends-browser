@@ -41,6 +41,7 @@ export function useBuildPerkTooltipPreview({
     null,
   )
   const pointerPreviewPerkIdRef = useRef<string | null>(null)
+  const isPointerPreviewSuppressedRef = useRef(false)
   const tooltipCloseTimeoutRef = useRef<number | null>(null)
   const tooltipOpenTimeoutRef = useRef<number | null>(null)
   const tooltipTimerDelayTimeoutRef = useRef<number | null>(null)
@@ -74,6 +75,7 @@ export function useBuildPerkTooltipPreview({
   const closeTooltipPreview = useCallback(
     (perkId: string, relatedTarget?: EventTarget | null) => {
       pointerPreviewPerkIdRef.current = null
+      isPointerPreviewSuppressedRef.current = false
       clearTooltipOpenTimers()
 
       if (hoveredBuildPerkId !== perkId) {
@@ -116,6 +118,10 @@ export function useBuildPerkTooltipPreview({
       perkGroupReference?: PerkGroupReference,
       options?: BuildPerkHoverOptions,
     ) => {
+      if (isPointerPreviewSuppressedRef.current) {
+        return
+      }
+
       pointerPreviewPerkIdRef.current = perkId
       clearTooltipCloseTimer()
       clearTooltipOpenTimers()
@@ -149,6 +155,15 @@ export function useBuildPerkTooltipPreview({
     ],
   )
 
+  const clearPointerPreviewSuppression = useCallback(() => {
+    isPointerPreviewSuppressedRef.current = false
+  }, [])
+
+  const suppressTooltipPreviewUntilPointerMove = useCallback(() => {
+    isPointerPreviewSuppressedRef.current = true
+    clearPendingTooltip()
+  }, [clearPendingTooltip])
+
   useEffect(() => {
     return () => {
       clearTooltipOpenTimers()
@@ -169,8 +184,10 @@ export function useBuildPerkTooltipPreview({
   return {
     activeTooltipIndicatorPerkId,
     clearPendingTooltip,
+    clearPointerPreviewSuppression,
     clearTooltipCloseTimer,
     closeTooltipPreview,
     openTooltipPreview,
+    suppressTooltipPreviewUntilPointerMove,
   }
 }
