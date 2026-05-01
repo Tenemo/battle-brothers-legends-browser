@@ -69,7 +69,7 @@
   justify-content: center;
   border: var(--primitive-length-1px) solid var(--border-muted);
   border-radius: var(--radius-pill);
-  background: var(--primitive-color-rgb-20-17-14-alpha-0-8);
+  background: rgb(20 17 14 / 0.8);
   color: var(--accent-soft);
   font-size: var(--font-size-sm);
   line-height: 1.2;
@@ -93,7 +93,7 @@
   justify-content: center;
   align-items: center;
   padding: var(--space-3xl);
-  background: var(--primitive-color-rgb-0-0-0-alpha-0-62);
+  background: rgb(0 0 0 / 0.62);
 }
 
 @mixin dialog-surface {
@@ -207,7 +207,7 @@
   &:hover,
   &:focus-visible {
     border-color: var(--accent-color);
-    background: var(--primitive-color-rgb-28-23-20-alpha-0-95);
+    background: rgb(28 23 20 / 0.95);
   }
 
   &:focus-visible {
@@ -259,7 +259,7 @@
     background:
       radial-gradient(
         circle at 30% 30%,
-        var(--primitive-color-rgb-204-155-84-alpha-0-2),
+        rgb(204 155 84 / 0.2),
         transparent 45%
       ),
       linear-gradient(

@@ -29,7 +29,7 @@
       font-family: var(--heading-font-family);
       font-size: clamp(
         var(--primitive-length-1-35rem),
-        var(--primitive-length-2-6vw),
+        2.6vw,
         var(--control-height-md)
       );
       font-weight: 700;
@@ -134,7 +134,7 @@
     border: var(--primitive-length-1px) solid var(--border-muted);
     border-radius: var(--radius-lg);
     padding: var(--space-md);
-    background: var(--primitive-color-rgb-18-15-13-alpha-0-56);
+    background: rgb(18 15 13 / 0.56);
     isolation: isolate;
     overflow: hidden;
 
@@ -162,17 +162,18 @@
 
   .detailRequirementChainOverlay {
     position: absolute;
-    top: var(--space-2xs);
-    right: var(--space-2xs);
+    top: calc(var(--primitive-length-negative-0-9rem) - var(--primitive-length-2rem) + 15px);
+    right: calc(var(--primitive-length-negative-0-15rem) - var(--primitive-length-3-25rem));
     z-index: var(--z-index-base);
     display: block;
-    width: calc(var(--primitive-length-5-5rem) * 0.3);
-    height: calc(var(--primitive-length-5-5rem) * 0.3);
+    width: var(--primitive-length-8-7rem);
+    height: var(--primitive-length-8-7rem);
     filter: drop-shadow(var(--shadow-chain-drop));
     line-height: 0;
     opacity: 0.8;
     pointer-events: none;
-    transform: rotate(-90deg);
+    transform-origin: top center;
+    transform: rotate(60deg) scaleX(-1);
   }
 
   .detailRequirementChainImage {
@@ -197,7 +198,7 @@
   }
 
   .detailRequirementOptionalIcon {
-    @include size(var(--icon-size-md));
+    @include size(1rem);
 
     stroke-width: 2.2;
   }
@@ -235,8 +236,8 @@
   }
 
   .detailStudyResourceTile {
-    min-height: var(--primitive-length-4-2rem);
-    padding-right: var(--primitive-length-2-65rem);
+    min-height: 4.2rem;
+    padding-right: 2.65rem;
   }
 
   .detailStudyResourceTileIcon {

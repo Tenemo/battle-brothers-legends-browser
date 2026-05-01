@@ -14,7 +14,7 @@
 
   .backgroundFitPanelBody {
     @include rail-panel-body(
-      var(--space-xl) var(--space-control-inline) var(--space-xl) var(--primitive-length-0-76rem),
+      var(--space-xl) var(--space-control-inline) var(--space-xl) 0.76rem,
       hidden
     );
   }
@@ -84,7 +84,7 @@
     border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-11);
     border-radius: var(--radius-lg);
     padding: var(--primitive-length-0-46rem) var(--space-md);
-    background: var(--primitive-color-rgb-18-15-13-alpha-0-76);
+    background: rgb(18 15 13 / 0.76);
 
     > div {
       flex: 1 1 auto;
@@ -250,7 +250,7 @@
     }
 
     &[data-selected='true'] {
-      border-color: var(--primitive-color-rgb-204-155-84-alpha-0-38);
+      border-color: rgb(204 155 84 / 0.38);
       background: var(--surface-result-active);
     }
   }
@@ -273,7 +273,7 @@
 
     &:hover,
     &:focus-visible {
-      background: var(--primitive-color-rgb-28-23-20-alpha-0-42);
+      background: rgb(28 23 20 / 0.42);
     }
 
     &:focus-visible {
@@ -317,7 +317,7 @@
     h3 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--primitive-length-0-94rem);
+      font-size: 0.94rem;
       line-height: 1.08;
     }
   }
@@ -352,7 +352,7 @@
   .backgroundFitStudyResourceBadgeOptionalOnly {
     filter: drop-shadow(var(--shadow-chain-drop))
       drop-shadow(0 0 var(--primitive-length-0-24rem) var(--border-success))
-      drop-shadow(0 0 var(--primitive-length-0-06rem) var(--text-success));
+      drop-shadow(0 0 0.06rem var(--text-success));
   }
 
   .backgroundFitRank {
@@ -376,7 +376,7 @@
     flex: 0 0 auto;
     max-width: 100%;
     margin-top: 0;
-    padding: var(--primitive-length-0-05rem) var(--primitive-length-0-3rem);
+    padding: 0.05rem var(--primitive-length-0-3rem);
     color: var(--text-secondary);
     font-size: var(--font-size-3xs);
     letter-spacing: 0;
@@ -405,19 +405,15 @@
     cursor: help;
 
     &[data-veteran-perk-interval='2'] {
-      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-236-196-95-alpha-0-82);
-      --background-fit-veteran-perk-badge-background: var(
-        --primitive-color-rgb-161-112-39-alpha-0-3
-      );
-      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-255-224-143);
+      --background-fit-veteran-perk-badge-border: rgb(236 196 95 / 0.82);
+      --background-fit-veteran-perk-badge-background: rgb(161 112 39 / 0.3);
+      --background-fit-veteran-perk-badge-color: rgb(255 224 143);
     }
 
     &[data-veteran-perk-interval='3'] {
-      --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-194-198-203-alpha-0-74);
-      --background-fit-veteran-perk-badge-background: var(
-        --primitive-color-rgb-114-119-126-alpha-0-24
-      );
-      --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-232-235-238);
+      --background-fit-veteran-perk-badge-border: rgb(194 198 203 / 0.74);
+      --background-fit-veteran-perk-badge-background: rgb(114 119 126 / 0.24);
+      --background-fit-veteran-perk-badge-color: rgb(232 235 238);
     }
 
     &[data-veteran-perk-interval='4'] {
@@ -514,7 +510,7 @@
 
   @include desktop {
     .backgroundFitCardHeading h3 {
-      min-width: var(--primitive-length-5-8rem);
+      min-width: 5.8rem;
     }
   }
 
@@ -626,7 +622,7 @@
     .backgroundFitMetricRow {
       grid-template-columns: var(--icon-size-xs) minmax(0, 1fr) var(--primitive-length-4rem);
       column-gap: var(--space-2xs);
-      padding: var(--primitive-length-0-08rem) 0;
+      padding: 0.08rem 0;
     }
 
     .backgroundFitMetricValue,

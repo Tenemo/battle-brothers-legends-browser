@@ -23,8 +23,8 @@
     html::-webkit-scrollbar-thumb,
     body::-webkit-scrollbar-thumb,
     .app-scrollbar::-webkit-scrollbar-thumb {
-      min-height: var(--primitive-length-2-4rem);
-      border: var(--primitive-length-0-13rem) solid var(--app-scrollbar-thumb-border);
+      min-height: 2.4rem;
+      border: 0.13rem solid var(--app-scrollbar-thumb-border);
       border-radius: var(--radius-pill);
       background: var(--app-scrollbar-thumb);
       background-clip: padding-box;
@@ -58,7 +58,7 @@
   }
 
   body {
-    min-width: var(--primitive-length-320px);
+    min-width: 320px;
     min-height: var(--primitive-length-100vh);
     height: 100%;
     margin: 0;

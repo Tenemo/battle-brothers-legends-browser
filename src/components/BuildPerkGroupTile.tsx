@@ -1,3 +1,4 @@
+import type { MouseEvent } from 'react'
 import { getPerkGroupHoverKey } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
 import { hasAncientScrollLearnablePerkGroup } from '../lib/ancient-scroll-perk-group-display'
@@ -21,6 +22,14 @@ type BuildPerkGroupTilePerk = {
 
 function isSelectablePerkGroupOption(perkGroupOption: BuildPerkGroupTileOption): boolean {
   return perkGroupOption.isSelectable !== false
+}
+
+function isInteractiveClickTarget(eventTarget: EventTarget | null): boolean {
+  if (!(eventTarget instanceof Element)) {
+    return false
+  }
+
+  return eventTarget.closest('a, button, input, select, textarea, [role="button"]') !== null
 }
 
 function isPerkGroupOptionEmphasized({
@@ -185,6 +194,14 @@ export function BuildPerkGroupTile({
     ? () =>
         onInspectPerkGroup(primaryPerkGroupOption.categoryName, primaryPerkGroupOption.perkGroupId)
     : undefined
+  function handleCardClick(event: MouseEvent<HTMLElement>) {
+    if (isInteractiveClickTarget(event.target)) {
+      return
+    }
+
+    inspectPrimaryPerkGroup?.()
+  }
+
   const markerPointerHandlers = primaryPerkGroupOption
     ? {
         onBlur: () => onClosePerkGroupHover(getPerkGroupHoverKey(primaryPerkGroupOption)),
@@ -212,6 +229,7 @@ export function BuildPerkGroupTile({
       data-planner-item="group-card"
       data-testid="planner-group-card"
       data-wide={isWide}
+      onClick={handleCardClick}
     >
       {primaryPerkGroupOption ? (
         <button

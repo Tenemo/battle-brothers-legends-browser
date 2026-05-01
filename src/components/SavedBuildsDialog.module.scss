@@ -8,7 +8,7 @@
   .savedBuildsDialog {
     width: min(var(--primitive-length-42rem), 100%);
     max-height: min(
-      var(--primitive-length-40rem),
+      40rem,
       calc(var(--primitive-length-100vh) - var(--control-height-md))
     );
 

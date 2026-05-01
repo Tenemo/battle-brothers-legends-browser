@@ -75,7 +75,7 @@
     margin-bottom: 0;
     border: var(--primitive-length-1px) solid var(--border-muted);
     border-radius: var(--radius-control);
-    background: var(--primitive-color-rgb-16-13-11-alpha-0-24);
+    background: rgb(16 13 11 / 0.24);
 
     + .categoryCard {
       margin-top: var(--primitive-length-2px);
@@ -278,7 +278,7 @@
   }
 
   .perkGroupHeading {
-    margin: 0 0 var(--primitive-length-0-04rem);
+    margin: 0 0 0.04rem;
     color: var(--text-muted);
     font-size: var(--font-size-xs);
     letter-spacing: var(--primitive-length-0-08em);
@@ -290,7 +290,7 @@
     border: var(--primitive-length-1px) solid var(--primitive-color-rgb-204-155-84-alpha-0-08);
     border-radius: var(--primitive-length-0-48rem);
     padding: var(--space-xs) var(--primitive-length-0-4rem);
-    background: var(--primitive-color-rgb-21-17-14-alpha-0-9);
+    background: rgb(21 17 14 / 0.9);
     color: var(--text-secondary);
     font-size: var(--font-size-base);
   }

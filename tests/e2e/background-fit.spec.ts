@@ -19,6 +19,7 @@ const denseSharedBuildUrl =
   '/?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Fortified+Mind,Hold+Out,Underdog,Assured+Conquest'
 const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
 const denseSharedBuildSearchBackgroundQuery = 'disowned'
+const backgroundFitCalculationTimeoutMs = 20_000
 
 async function expectBackgroundFitCalculationComplete(
   backgroundFitPanel: Locator,
@@ -31,14 +32,18 @@ async function expectBackgroundFitCalculationComplete(
   if (options.shouldObserveProgress) {
     await expect(backgroundFitProgressBar).toBeVisible()
     await expect
-      .poll(async () => {
-        const checkedBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuenow')
-        const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
+      .poll(
+        async () => {
+          const checkedBackgroundCount =
+            await backgroundFitProgressBar.getAttribute('aria-valuenow')
+          const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
 
-        return checkedBackgroundCount === totalBackgroundCount
-          ? 'complete'
-          : `${checkedBackgroundCount}/${totalBackgroundCount}`
-      })
+          return checkedBackgroundCount === totalBackgroundCount
+            ? 'complete'
+            : `${checkedBackgroundCount}/${totalBackgroundCount}`
+        },
+        { timeout: backgroundFitCalculationTimeoutMs },
+      )
       .toBe('complete')
   }
 
@@ -80,14 +85,17 @@ test('shows the background fit panel for a picked build and keeps the shell view
 
   await expect(backgroundFitProgressBar).toBeVisible()
   await expect
-    .poll(async () => {
-      const checkedBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuenow')
-      const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
+    .poll(
+      async () => {
+        const checkedBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuenow')
+        const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
 
-      return checkedBackgroundCount === totalBackgroundCount
-        ? 'complete'
-        : `${checkedBackgroundCount}/${totalBackgroundCount}`
-    })
+        return checkedBackgroundCount === totalBackgroundCount
+          ? 'complete'
+          : `${checkedBackgroundCount}/${totalBackgroundCount}`
+      },
+      { timeout: backgroundFitCalculationTimeoutMs },
+    )
     .toBe('complete')
   await expect(backgroundFitProgressBar).toBeVisible()
   const backgroundFitRankingSummary = backgroundFitPanel.getByTestId(
