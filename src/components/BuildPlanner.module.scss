@@ -11,6 +11,8 @@
     --planner-tile-width: var(--primitive-length-14rem);
     --planner-placeholder-width: var(--primitive-length-15rem);
     --planner-icon-frame-size: var(--primitive-length-1-72rem);
+    --planner-picked-perk-tile-scale: 1;
+    --planner-requirement-legend-tile-scale: 0.7;
 
     position: relative;
     z-index: var(--z-index-base);
@@ -308,7 +310,7 @@
     }
 
     .plannerSlotRequirementChain {
-      --planner-slot-requirement-chain-scale: 0.7;
+      --planner-slot-requirement-chain-scale: var(--planner-requirement-legend-tile-scale);
     }
   }
 
@@ -527,7 +529,7 @@
 
   .plannerSlotRequirementChain {
     --planner-slot-requirement-chain-left-offset: -11px;
-    --planner-slot-requirement-chain-scale: 1;
+    --planner-slot-requirement-chain-scale: var(--planner-picked-perk-tile-scale);
 
     position: absolute;
     top: 50%;
@@ -946,6 +948,8 @@
       --planner-tile-width: var(--primitive-length-11-4rem);
       --planner-placeholder-width: var(--primitive-length-12rem);
       --planner-icon-frame-size: var(--primitive-length-1-45rem);
+      --planner-picked-perk-tile-scale: 0.7884;
+      --planner-requirement-legend-tile-scale: 0.5519;
 
       gap: var(--space-sm);
       padding: var(--space-md);

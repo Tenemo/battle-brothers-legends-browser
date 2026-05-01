@@ -128,6 +128,50 @@ async function getPickedPerkNameLayoutMetrics(pickedPerkTile: Locator) {
   })
 }
 
+async function getRequirementChainScaleMetrics(
+  page: Page,
+  viewport: { height: number; width: number },
+) {
+  await gotoBuildPlanner(page, viewport)
+  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  return page.evaluate(() => {
+    function readRequirementChainMetrics(tileSelector: string) {
+      const tile = document.querySelector(tileSelector)
+      const chain = tile?.querySelector('[data-testid="planner-slot-requirement-chain"]')
+
+      if (!(tile instanceof HTMLElement) || !(chain instanceof HTMLElement)) {
+        throw new Error(`Unable to find requirement chain metrics for ${tileSelector}.`)
+      }
+
+      const tileRectangle = tile.getBoundingClientRect()
+      const chainRectangle = chain.getBoundingClientRect()
+
+      return {
+        chainHeight: chainRectangle.height,
+        chainHeightRatio: chainRectangle.height / tileRectangle.height,
+        chainLeftOffset: chainRectangle.left - tileRectangle.left,
+        chainLeftRatio: (chainRectangle.left - tileRectangle.left) / tileRectangle.height,
+        chainTopOffset: chainRectangle.top - tileRectangle.top,
+        chainTopRatio: (chainRectangle.top - tileRectangle.top) / tileRectangle.height,
+        chainWidth: chainRectangle.width,
+        chainWidthRatio: chainRectangle.width / tileRectangle.height,
+        tileHeight: tileRectangle.height,
+      }
+    }
+
+    return {
+      legend: readRequirementChainMetrics(
+        '[data-testid="planner-requirement-legend-tile"][data-requirement="must-have"]',
+      ),
+      picked: readRequirementChainMetrics(
+        '[data-planner-collection="picked-perks"] [data-testid="planner-slot-perk"][data-requirement="must-have"]',
+      ),
+    }
+  })
+}
+
 async function getPlannerWrapMetrics(page: Page) {
   return page.evaluate(() => {
     function getVisualRowCount(listSelector: string, itemSelector: string) {
@@ -1692,6 +1736,43 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   expect(plannerGroupCardMetrics!.groupNameHeight).toBeLessThanOrEqual(
     plannerGroupCardMetrics!.groupNameLineHeight + 1,
   )
+})
+
+test('keeps requirement chains scaled with picked perk tiles on compact desktop', async ({
+  page,
+}) => {
+  const largeDesktopMetrics = await getRequirementChainScaleMetrics(page, {
+    height: 1440,
+    width: 2560,
+  })
+  const compactDesktopMetrics = await getRequirementChainScaleMetrics(page, {
+    height: 768,
+    width: 1366,
+  })
+  const ratioKeys = [
+    'chainHeightRatio',
+    'chainLeftRatio',
+    'chainTopRatio',
+    'chainWidthRatio',
+  ] as const
+
+  expect(compactDesktopMetrics.picked.tileHeight).toBeLessThan(largeDesktopMetrics.picked.tileHeight)
+  expect(compactDesktopMetrics.picked.chainWidth).toBeLessThan(
+    largeDesktopMetrics.picked.chainWidth,
+  )
+  expect(compactDesktopMetrics.legend.tileHeight).toBeLessThan(largeDesktopMetrics.legend.tileHeight)
+  expect(compactDesktopMetrics.legend.chainWidth).toBeLessThan(
+    largeDesktopMetrics.legend.chainWidth,
+  )
+
+  for (const ratioKey of ratioKeys) {
+    expect(
+      Math.abs(compactDesktopMetrics.picked[ratioKey] - largeDesktopMetrics.picked[ratioKey]),
+    ).toBeLessThanOrEqual(0.02)
+    expect(
+      Math.abs(compactDesktopMetrics.legend[ratioKey] - largeDesktopMetrics.legend[ratioKey]),
+    ).toBeLessThanOrEqual(0.02)
+  }
 })
 
 test('marks picked perks as optional and separates them from must-have perks', async ({ page }) => {
