@@ -67,7 +67,7 @@ describe('perk detail descriptions', () => {
     expect(effectHeading).toHaveTextContent('Passive:')
     expect(descriptionParagraph.querySelector('br')).not.toBeNull()
     expect(descriptionParagraph).toHaveTextContent(
-      'Passive:• All damage inflicted is increased by 10%.',
+      'Passive:– All damage inflicted is increased by 10%.',
     )
   })
 })

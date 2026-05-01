@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, Split } from 'lucide-react'
+import { formatDisplayBulletText } from '../lib/bullet-display'
 import {
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
@@ -123,14 +124,14 @@ function renderPerkDescriptionParagraph(paragraph: string): ReactNode {
     .match(/^(Passive|Active|Specialist Weapon Perk):\s+(.+)$/u)
 
   if (!effectHeadingMatch) {
-    return paragraph
+    return formatDisplayBulletText(paragraph)
   }
 
   return (
     <>
       <span data-testid="perk-description-effect-heading">{effectHeadingMatch[1]}:</span>
       <br />
-      {effectHeadingMatch[2]}
+      {formatDisplayBulletText(effectHeadingMatch[2])}
     </>
   )
 }

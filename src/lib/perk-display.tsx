@@ -1,6 +1,7 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { RankedBackgroundFit } from './background-fit'
 import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
+import { formatDisplayBulletText } from './bullet-display'
 import type {
   LegendsPerkBackgroundSource,
   LegendsPerkRecord,
@@ -59,25 +60,26 @@ export function renderHighlightedText({
   query: string
   text: string
 }): ReactNode {
+  const displayText = formatDisplayBulletText(text)
   const trimmedQuery = query.trim()
   const normalizedSearchPhrase = normalizeSearchPhrase(trimmedQuery)
 
   if (trimmedQuery.length === 0 || normalizedSearchPhrase.length === 0) {
-    return text
+    return displayText
   }
 
-  const normalizedText = text.toLowerCase()
+  const normalizedText = displayText.toLowerCase()
   const highlightedNodes: ReactNode[] = []
   let currentIndex = 0
   let matchIndex = normalizedText.indexOf(normalizedSearchPhrase)
 
   if (matchIndex === -1) {
-    return text
+    return displayText
   }
 
   while (matchIndex !== -1) {
     if (matchIndex > currentIndex) {
-      highlightedNodes.push(text.slice(currentIndex, matchIndex))
+      highlightedNodes.push(displayText.slice(currentIndex, matchIndex))
     }
 
     const matchEndIndex = matchIndex + trimmedQuery.length
@@ -87,15 +89,15 @@ export function renderHighlightedText({
         data-search-highlight="true"
         key={`${keyPrefix}-${matchIndex}`}
       >
-        {text.slice(matchIndex, matchEndIndex)}
+        {displayText.slice(matchIndex, matchEndIndex)}
       </mark>,
     )
     currentIndex = matchEndIndex
     matchIndex = normalizedText.indexOf(normalizedSearchPhrase, currentIndex)
   }
 
-  if (currentIndex < text.length) {
-    highlightedNodes.push(text.slice(currentIndex))
+  if (currentIndex < displayText.length) {
+    highlightedNodes.push(displayText.slice(currentIndex))
   }
 
   return highlightedNodes

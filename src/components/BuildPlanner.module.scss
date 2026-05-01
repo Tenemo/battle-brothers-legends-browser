@@ -2,8 +2,10 @@
 
 @layer components {
   .buildPlanner {
+    --planner-base-perk-row-min-height: var(--primitive-length-3-45rem);
+    --planner-requirement-legend-slot-scale: 0.7;
     --planner-group-row-min-height: 4.7rem;
-    --planner-perk-row-min-height: var(--primitive-length-3-45rem);
+    --planner-perk-row-min-height: var(--planner-base-perk-row-min-height);
     --planner-picked-perk-slot-width: 8.04rem;
     --planner-row-label-width: 10.4rem;
     --planner-slot-width: var(--primitive-length-14rem);
@@ -11,8 +13,12 @@
     --planner-tile-width: var(--primitive-length-14rem);
     --planner-placeholder-width: var(--primitive-length-15rem);
     --planner-icon-frame-size: var(--primitive-length-1-72rem);
-    --planner-picked-perk-tile-scale: 1;
-    --planner-requirement-legend-tile-scale: 0.7;
+    --planner-picked-perk-tile-scale: calc(
+      var(--planner-perk-row-min-height) / var(--planner-base-perk-row-min-height)
+    );
+    --planner-requirement-legend-tile-scale: calc(
+      var(--planner-picked-perk-tile-scale) * var(--planner-requirement-legend-slot-scale)
+    );
 
     position: relative;
     z-index: var(--z-index-base);
@@ -282,8 +288,12 @@
   }
 
   .plannerRequirementLegend {
-    --planner-requirement-legend-slot-height: calc(var(--planner-perk-row-min-height) * 0.7);
-    --planner-requirement-legend-slot-width: calc(var(--planner-picked-perk-slot-width) * 0.7);
+    --planner-requirement-legend-slot-height: calc(
+      var(--planner-perk-row-min-height) * var(--planner-requirement-legend-slot-scale)
+    );
+    --planner-requirement-legend-slot-width: calc(
+      var(--planner-picked-perk-slot-width) * var(--planner-requirement-legend-slot-scale)
+    );
 
     display: flex;
     flex: 0 1 auto;
@@ -950,8 +960,6 @@
       --planner-tile-width: var(--primitive-length-11-4rem);
       --planner-placeholder-width: var(--primitive-length-12rem);
       --planner-icon-frame-size: var(--primitive-length-1-45rem);
-      --planner-picked-perk-tile-scale: 0.7884;
-      --planner-requirement-legend-tile-scale: 0.5519;
 
       gap: var(--space-sm);
       padding: var(--space-md);
