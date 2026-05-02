@@ -55,8 +55,9 @@ test('copies a canonical build-only link from a searched workspace', async ({ pa
   expect(copiedBuildLink).not.toBeNull()
 
   const copiedUrl = new URL(copiedBuildLink ?? '')
+  const expectedOrigin = new URL(page.url()).origin
 
-  expect(copiedUrl.origin).toBe('http://127.0.0.1:4173')
+  expect(copiedUrl.origin).toBe(expectedOrigin)
   expect(copiedUrl.pathname).toBe('/')
   expect(copiedUrl.searchParams.get('build')).toBe('Perfect Focus,Clarity')
   expect(copiedUrl.searchParams.has('search')).toBe(false)

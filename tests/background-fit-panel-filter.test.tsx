@@ -57,10 +57,10 @@ function getFilterBackgroundsButton() {
 }
 
 describe('background fit panel filters', () => {
-  test('marks only non-default background filters as active', () => {
+  test('marks any selected background filter as active', () => {
     const { rerender } = render(createBackgroundFitPanel())
 
-    expect(getFilterBackgroundsButton()).toHaveAttribute('data-active-filter', 'false')
+    expect(getFilterBackgroundsButton()).toHaveAttribute('data-active-filter', 'true')
 
     rerender(
       createBackgroundFitPanel({
@@ -68,12 +68,10 @@ describe('background fit panel filters', () => {
       }),
     )
 
-    expect(getFilterBackgroundsButton()).toHaveAttribute('data-active-filter', 'false')
+    expect(getFilterBackgroundsButton()).toHaveAttribute('data-active-filter', 'true')
 
-    const nonDefaultFilters: BackgroundFilterOverrides[] = [
+    const selectedFilters: BackgroundFilterOverrides[] = [
       { shouldIncludeOriginBackgrounds: true },
-      { shouldAllowBackgroundStudyBook: false },
-      { shouldAllowBackgroundStudyScroll: false },
       { shouldAllowSecondBackgroundStudyScroll: true },
       { selectedBackgroundVeteranPerkLevelIntervals: [2, 4] },
       {
@@ -82,10 +80,22 @@ describe('background fit panel filters', () => {
       },
     ]
 
-    for (const nonDefaultFilter of nonDefaultFilters) {
-      rerender(createBackgroundFitPanel(nonDefaultFilter))
+    for (const selectedFilter of selectedFilters) {
+      rerender(createBackgroundFitPanel(selectedFilter))
 
       expect(getFilterBackgroundsButton()).toHaveAttribute('data-active-filter', 'true')
     }
+
+    rerender(
+      createBackgroundFitPanel({
+        selectedBackgroundVeteranPerkLevelIntervals: [],
+        shouldAllowBackgroundStudyBook: false,
+        shouldAllowBackgroundStudyScroll: false,
+        shouldAllowSecondBackgroundStudyScroll: true,
+        shouldIncludeOriginBackgrounds: false,
+      }),
+    )
+
+    expect(getFilterBackgroundsButton()).toHaveAttribute('data-active-filter', 'false')
   })
 })

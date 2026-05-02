@@ -481,14 +481,14 @@ test('build planner splits shared and individual perk groups without layout drif
 
   const pickedPerkRemoveControl = pickedPerkTile.getByTestId('planner-slot-remove-button')
   await expect(pickedPerkRemoveControl).toBeHidden()
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 
   await pickedPerkTile.hover()
   const pickedPerkRemoveButton = pickedPerkTile.getByRole('button', {
     name: 'Remove Clarity from build',
   })
 
-  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
   const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
@@ -1271,8 +1271,12 @@ test('separates planner group card hover from icon and perk pill hover states', 
     )
     .toBe(activePlannerSurfaceColor)
 
-  await battleForgedPill.hover()
+  await page.mouse.move(1, 1)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'false')
+  await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
+
+  await battleForgedPill.hover()
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
   const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
@@ -2138,12 +2142,10 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(optionalRequirementIconPlacement!.bottomOffset).toBeGreaterThanOrEqual(-8)
   expect(optionalRequirementIconPlacement!.iconSvgWidth).not.toBeNull()
   expect(
-    optionalRequirementIconPlacement!.iconSvgWidth! /
-      optionalRequirementIconPlacement!.tileHeight,
+    optionalRequirementIconPlacement!.iconSvgWidth! / optionalRequirementIconPlacement!.tileHeight,
   ).toBeGreaterThan(0.32)
   expect(
-    optionalRequirementIconPlacement!.iconSvgWidth! /
-      optionalRequirementIconPlacement!.tileHeight,
+    optionalRequirementIconPlacement!.iconSvgWidth! / optionalRequirementIconPlacement!.tileHeight,
   ).toBeLessThan(0.35)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)

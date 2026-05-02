@@ -31,17 +31,6 @@ function getClampedCheckedBackgroundCount(progress: BackgroundFitCalculationProg
   )
 }
 
-function areNumberSetsEqual(leftValues: readonly number[], rightValues: readonly number[]): boolean {
-  const leftSet = new Set(leftValues)
-  const rightSet = new Set(rightValues)
-
-  if (leftSet.size !== rightSet.size) {
-    return false
-  }
-
-  return [...leftSet].every((value) => rightSet.has(value))
-}
-
 function useDisplayedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
   const targetCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
   const [displayedCheckedBackgroundCount, setDisplayedCheckedBackgroundCount] = useState(0)
@@ -234,20 +223,12 @@ export function BackgroundFitPanel({
     () => new Set(selectedBackgroundVeteranPerkLevelIntervals),
     [selectedBackgroundVeteranPerkLevelIntervals],
   )
-  const hasNonDefaultBackgroundVeteranPerkLevelIntervals = useMemo(
-    () =>
-      !areNumberSetsEqual(
-        selectedBackgroundVeteranPerkLevelIntervals,
-        availableBackgroundVeteranPerkLevelIntervals,
-      ),
-    [availableBackgroundVeteranPerkLevelIntervals, selectedBackgroundVeteranPerkLevelIntervals],
-  )
   const hasActiveBackgroundFilter =
     shouldIncludeOriginBackgrounds ||
-    !shouldAllowBackgroundStudyBook ||
-    !shouldAllowBackgroundStudyScroll ||
-    shouldAllowSecondBackgroundStudyScroll ||
-    hasNonDefaultBackgroundVeteranPerkLevelIntervals
+    shouldAllowBackgroundStudyBook ||
+    shouldAllowBackgroundStudyScroll ||
+    (shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll) ||
+    selectedBackgroundVeteranPerkLevelIntervalSet.size > 0
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
   const shouldShowBackgroundFitRankingStatus =
     hasPickedPerks && (isLoadingBackgroundFitView || hasSupportedBackgroundFitTargets)

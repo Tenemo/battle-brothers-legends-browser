@@ -972,6 +972,32 @@ test('shows picked categories and perk groups with requirement icons and keeps p
       .getByTestId('category-picked-requirement-icon')
       .nth(1),
   ).toHaveAttribute('data-requirement', 'optional')
+  const traitsRequirementIconColors = await page
+    .getByRole('button', { name: 'Enable category Traits' })
+    .getByTestId('category-picked-requirement-icon')
+    .evaluateAll((requirementIcons) =>
+      requirementIcons.map((requirementIcon) => {
+        const color = window.getComputedStyle(requirementIcon).color
+        const colorMatch = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(0|1|0?\.\d+))?\)$/u)
+
+        if (!colorMatch) {
+          return null
+        }
+
+        return {
+          blue: Number(colorMatch[3]),
+          color,
+          green: Number(colorMatch[2]),
+          red: Number(colorMatch[1]),
+        }
+      }),
+    )
+
+  expect(traitsRequirementIconColors).toHaveLength(2)
+  expect(traitsRequirementIconColors[0]?.color).not.toBe(traitsRequirementIconColors[1]?.color)
+  expect(traitsRequirementIconColors[1]?.red).toBe(traitsRequirementIconColors[1]?.green)
+  expect(traitsRequirementIconColors[1]?.green).toBe(traitsRequirementIconColors[1]?.blue)
+  expect(traitsRequirementIconColors[1]?.red).toBeGreaterThan(120)
   await expect(
     page
       .getByRole('button', { name: 'Enable category Magic' })

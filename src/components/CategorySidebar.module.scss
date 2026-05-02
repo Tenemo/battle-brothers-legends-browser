@@ -247,6 +247,10 @@
 
   .categoryChipPickedRequirementIcon {
     @include size(var(--primitive-length-0-66rem));
+
+    &[data-requirement='optional'] {
+      color: rgb(176 176 176 / 0.86);
+    }
   }
 
   .categoryLabel,
