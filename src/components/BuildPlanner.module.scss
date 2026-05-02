@@ -322,6 +322,12 @@
     .plannerSlotRequirementChain {
       --planner-slot-requirement-chain-scale: var(--planner-requirement-legend-tile-scale);
     }
+
+    .plannerSlotRequirementOptional {
+      --planner-slot-requirement-optional-base-scale: var(
+        --planner-requirement-legend-tile-scale
+      );
+    }
   }
 
   .plannerSectionToggle {
@@ -572,11 +578,18 @@
   }
 
   .plannerSlotRequirementOptional {
-    --planner-slot-requirement-optional-scale: var(--planner-picked-perk-tile-scale);
+    --planner-slot-requirement-optional-base-scale: var(--planner-picked-perk-tile-scale);
+    --planner-slot-requirement-optional-scale: calc(
+      var(--planner-slot-requirement-optional-base-scale) * 0.8
+    );
 
     position: absolute;
-    right: calc(var(--primitive-length-negative-0-15rem) * var(--planner-slot-requirement-optional-scale));
-    bottom: calc(var(--primitive-length-negative-0-05rem) * var(--planner-slot-requirement-optional-scale));
+    bottom: calc(
+      var(--primitive-length-0-16rem) * -1 * var(--planner-slot-requirement-optional-scale) - 2px
+    );
+    left: calc(
+      var(--primitive-length-0-16rem) * -1 * var(--planner-slot-requirement-optional-scale) - 3px
+    );
     z-index: var(--z-index-raised);
     display: inline-flex;
     align-items: center;
@@ -586,7 +599,6 @@
     line-height: 0;
     opacity: 0.82;
     pointer-events: none;
-    transform: rotate(-8deg);
 
     .plannerSlotRequirementOptionalIcon {
       width: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));

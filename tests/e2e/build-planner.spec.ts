@@ -2106,13 +2106,18 @@ test('marks picked perks as optional and separates them from must-have perks', a
       }
 
       const iconRectangle = optionalRequirementIcon.getBoundingClientRect()
+      const iconSvg = optionalRequirementIcon.querySelector('svg')
       const tileRectangle = pickedPerkTile.getBoundingClientRect()
 
       return {
         bottomOffset: tileRectangle.bottom - iconRectangle.bottom,
         iconCenterX: iconRectangle.left + iconRectangle.width / 2,
         iconCenterY: iconRectangle.top + iconRectangle.height / 2,
-        rightOffset: tileRectangle.right - iconRectangle.right,
+        iconSvgWidth:
+          iconSvg instanceof SVGElement
+            ? Number.parseFloat(window.getComputedStyle(iconSvg).width)
+            : null,
+        leftOffset: iconRectangle.left - tileRectangle.left,
         tileCenterX: tileRectangle.left + tileRectangle.width / 2,
         tileCenterY: tileRectangle.top + tileRectangle.height / 2,
         tileHeight: tileRectangle.height,
@@ -2121,14 +2126,25 @@ test('marks picked perks as optional and separates them from must-have perks', a
   )
 
   expect(optionalRequirementIconPlacement).not.toBeNull()
-  expect(optionalRequirementIconPlacement!.iconCenterX).toBeGreaterThan(
+  expect(optionalRequirementIconPlacement!.iconCenterX).toBeLessThan(
     optionalRequirementIconPlacement!.tileCenterX,
   )
   expect(optionalRequirementIconPlacement!.iconCenterY).toBeGreaterThan(
     optionalRequirementIconPlacement!.tileCenterY,
   )
-  expect(Math.abs(optionalRequirementIconPlacement!.rightOffset)).toBeLessThanOrEqual(8)
-  expect(Math.abs(optionalRequirementIconPlacement!.bottomOffset)).toBeLessThanOrEqual(8)
+  expect(optionalRequirementIconPlacement!.leftOffset).toBeLessThan(0)
+  expect(optionalRequirementIconPlacement!.leftOffset).toBeGreaterThanOrEqual(-8)
+  expect(optionalRequirementIconPlacement!.bottomOffset).toBeLessThan(0)
+  expect(optionalRequirementIconPlacement!.bottomOffset).toBeGreaterThanOrEqual(-8)
+  expect(optionalRequirementIconPlacement!.iconSvgWidth).not.toBeNull()
+  expect(
+    optionalRequirementIconPlacement!.iconSvgWidth! /
+      optionalRequirementIconPlacement!.tileHeight,
+  ).toBeGreaterThan(0.32)
+  expect(
+    optionalRequirementIconPlacement!.iconSvgWidth! /
+      optionalRequirementIconPlacement!.tileHeight,
+  ).toBeLessThan(0.35)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
