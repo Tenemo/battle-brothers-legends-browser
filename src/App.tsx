@@ -1399,6 +1399,14 @@ export default function App() {
     })
   }
 
+  function handleSelectBuildPlannerPerkGroup(categoryName: string, perkGroupId: string) {
+    requestNextUrlHistoryEntry()
+    startTransition(() => {
+      setQuery('')
+      selectPerkGroup({ categoryName, perkGroupId })
+    })
+  }
+
   function handleCategoryExpandToggle(categoryName: string) {
     startTransition(() => {
       setExpandedCategoryNames((currentExpandedCategoryNames) =>
@@ -1561,7 +1569,7 @@ export default function App() {
         onClosePerkGroupHover={closePerkGroupHover}
         onCopySavedBuildLink={handleCopySavedBuildLink}
         onDeleteSavedBuild={handleDeleteSavedBuild}
-        onInspectPerkGroup={handleInspectPerkGroup}
+        onInspectPerkGroup={handleSelectBuildPlannerPerkGroup}
         onInspectPlannerPerk={handleInspectPlannerPerk}
         onLoadSavedBuild={handleLoadSavedBuild}
         onOpenBuildPerkHover={openBuildPerkHover}
