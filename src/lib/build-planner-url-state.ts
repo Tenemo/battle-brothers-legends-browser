@@ -69,6 +69,7 @@ export type BuildPlannerUrlStateWriteOptions = {
   shouldWriteBackgroundVeteranPerkLevelIntervalsParam?: boolean
   shouldWriteSecondBackgroundStudyScrollParam?: boolean
   shouldWriteAncientScrollPerkGroupsParam?: boolean
+  shouldWriteNoCategoryParam?: boolean
   shouldWriteOriginBackgroundsParam?: boolean
   shouldWriteOriginPerkGroupsParam?: boolean
 }
@@ -91,6 +92,7 @@ const perkGroupParamKeyPrefix = 'group-'
 const disambiguatedPerkTokenSeparator = '--'
 const searchParamName = 'search'
 const allCategoriesParamValue = 'all'
+const noCategoriesParamValue = 'none'
 const emptyBackgroundVeteranPerkLevelIntervalsParamValue = 'none'
 const backgroundDetailParamValue = 'background'
 const perkDetailParamValue = 'perk'
@@ -324,7 +326,7 @@ function createPerkUrlLabels(
 
 function createDefaultUrlState(): BuildPlannerUrlState {
   return {
-    categoryFilterMode: 'none',
+    categoryFilterMode: 'all',
     detailSelection: noDetailSelection,
     optionalPerkIds: [],
     pickedPerkIds: [],
@@ -435,6 +437,7 @@ export function readBuildPlannerUrlState(
   const selectedPerkGroupIdsByCategory: Record<string, string[]> = {}
   let selectedPerkGroupCategoryName: string | null = null
   let hasAllCategoriesParamValue = false
+  let hasNoCategoriesParamValue = false
   const query = collapseWhitespace(params.get(searchParamName) ?? '')
   const shouldAllowBackgroundStudyBook = readBooleanSearchParam(
     params,
@@ -484,6 +487,8 @@ export function readBuildPlannerUrlState(
       selectedCategoryNameSet.add(categoryName)
     } else if (normalizedCategoryValue === allCategoriesParamValue) {
       hasAllCategoriesParamValue = true
+    } else if (normalizedCategoryValue === noCategoriesParamValue) {
+      hasNoCategoriesParamValue = true
     }
   }
 
@@ -542,7 +547,9 @@ export function readBuildPlannerUrlState(
         ? 'selection'
         : hasAllCategoriesParamValue
           ? 'all'
-          : 'none',
+          : hasNoCategoriesParamValue
+            ? 'none'
+            : 'all',
     detailSelection: readDetailSelectionSearchParam({
       backgroundOptionsByIdLookupValue,
       params,
@@ -573,10 +580,12 @@ export function createBuildPlannerUrlSearch(
   )
   const categoryFilterMode =
     urlState.categoryFilterMode ??
-    getCategoryFilterModeFromSelection({
+    (getCategoryFilterModeFromSelection({
       selectedCategoryNames: urlState.selectedCategoryNames,
       selectedPerkGroupIdsByCategory: urlState.selectedPerkGroupIdsByCategory,
-    })
+    }) === 'selection'
+      ? 'selection'
+      : 'all')
   let hasWrittenPerkGroup = false
   const normalizedQuery = collapseWhitespace(urlState.query)
   const shouldWriteAncientScrollPerkGroupsParam =
@@ -590,6 +599,7 @@ export function createBuildPlannerUrlSearch(
     options.shouldWriteSecondBackgroundStudyScrollParam ?? true
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
   const shouldWriteOriginPerkGroupsParam = options.shouldWriteOriginPerkGroupsParam ?? true
+  const shouldWriteNoCategoryParam = options.shouldWriteNoCategoryParam ?? true
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(options.perksById.values())
   const detailSelection = urlState.detailSelection
 
@@ -669,8 +679,8 @@ export function createBuildPlannerUrlSearch(
     appendScalarQueryEntry(entries, originBackgroundsParamName, 'true')
   }
 
-  if (categoryFilterMode === 'all') {
-    appendGroupedQueryEntry(entries, categoryParamName, [allCategoriesParamValue])
+  if (categoryFilterMode === 'none' && shouldWriteNoCategoryParam) {
+    appendGroupedQueryEntry(entries, categoryParamName, [noCategoriesParamValue])
   } else if (categoryFilterMode === 'selection') {
     appendGroupedQueryEntry(entries, categoryParamName, orderedSelectedCategoryNames)
   }
@@ -752,6 +762,7 @@ export function createSharedBuildUrlSearch(
       shouldWriteSecondBackgroundStudyScrollParam: false,
       shouldWriteOriginBackgroundsParam: false,
       shouldWriteOriginPerkGroupsParam: false,
+      shouldWriteNoCategoryParam: false,
     },
   )
 }

@@ -38,7 +38,7 @@ test('copies a canonical build-only link from a searched workspace', async ({ pa
   await expect(page.getByLabel('Search perks')).toHaveValue('Clarity')
   await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
     'aria-pressed',
-    'false',
+    'true',
   )
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)

@@ -135,6 +135,21 @@ describe('SEO metadata', () => {
     )
   })
 
+  test('keeps optional perks in shared SEO image urls', () => {
+    const metadata = resolveSeoMetadataForUrl(
+      new URL(
+        'https://battlebrothers.academy/?build=Clarity,Perfect+Focus&optional=Perfect+Focus',
+      ),
+    )
+
+    expect(metadata.url).toBe(
+      'https://battlebrothers.academy/?build=Clarity,Perfect+Focus&optional=Perfect+Focus',
+    )
+    expect(metadata.image.url).toBe(
+      'https://battlebrothers.academy/social/builds/19.3.21/Clarity%2CPerfect%20Focus.png?optional=Perfect%20Focus',
+    )
+  })
+
   test('injects request-origin root metadata into preview documents', () => {
     const html = renderDocumentHtml({
       baseHtml,

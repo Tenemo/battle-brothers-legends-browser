@@ -186,6 +186,25 @@ describe('build social image', () => {
     expect(renderedBuilds).toEqual(['Clarity,Perfect Focus'])
   })
 
+  test('keeps optional perks from the image request query', async () => {
+    const renderedSearches: string[] = []
+    const response = await createBuildSocialImageResponse(
+      new URL(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/Clarity%2CPerfect%20Focus.png?optional=Perfect%20Focus',
+      ),
+      {
+        renderPng: (payload) => {
+          renderedSearches.push(payload.canonicalSearch)
+
+          return pngSignature
+        },
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(renderedSearches).toEqual(['?build=Clarity,Perfect+Focus&optional=Perfect+Focus'])
+  })
+
   test('falls back to the generic payload for malformed path routes', async () => {
     const renderedStatuses: string[] = []
     const response = await createBuildSocialImageResponse(

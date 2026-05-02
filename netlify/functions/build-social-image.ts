@@ -280,14 +280,33 @@ export function createBuildSocialImageSearchParamsFromRouteParams(
   })
 }
 
+function applyBuildSocialImageSearchParamOverrides(
+  searchParams: URLSearchParams,
+  requestSearchParams: URLSearchParams,
+): URLSearchParams {
+  const optionalPerks = requestSearchParams.get('optional')
+
+  if (!searchParams.has('build') || optionalPerks === null) {
+    return searchParams
+  }
+
+  const nextSearchParams = new URLSearchParams(searchParams)
+
+  nextSearchParams.set('optional', optionalPerks)
+
+  return nextSearchParams
+}
+
 export async function createBuildSocialImageResponse(
   requestUrl: URL,
   { previewOptions, renderPng, routeParams }: BuildSocialImageResponseOptions = {},
 ): Promise<BuildSocialImageResponse> {
-  const searchParams =
+  const searchParams = applyBuildSocialImageSearchParamOverrides(
     createBuildSocialImageSearchParamsFromRouteParams(routeParams) ??
-    createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ??
-    new URLSearchParams()
+      createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ??
+      new URLSearchParams(),
+    requestUrl.searchParams,
+  )
   const payload = createBuildSharePreviewPayloadFromSearch(searchParams, previewOptions)
   const renderedImage = await renderBuildSocialImagePngWithFallback(payload, renderPng)
   const cachePolicy =

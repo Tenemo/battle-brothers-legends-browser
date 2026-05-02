@@ -1,8 +1,9 @@
 import legendsPerksDatasetJson from '../data/legends-perks.json'
-import type { BackgroundFitSummary } from './background-fit'
+import type { RankedBackgroundFit } from './background-fit'
 import { createBackgroundFitEngine, getGuaranteedCoveredPickedPerkCount } from './background-fit'
 import { isOriginBackgroundFit } from './background-origin'
 import { createSharedBuildUrlSearch, readBuildPlannerUrlState } from './build-planner-url-state'
+import { defaultBackgroundStudyResourceFilter } from './background-study-reachability'
 import type { LegendsPerkRecord, LegendsPerksDataset } from '../types/legends-perks'
 
 export type BuildSharePreviewPerk = {
@@ -43,6 +44,13 @@ const buildSocialImagePathPrefix = '/social/builds'
 const maxDescriptionPerks = 4
 const maxDescriptionBackgrounds = 2
 const maxPreviewBackgroundFits = 3
+export const maxBuildSharePreviewTopBackgroundFitCacheEntries = 128
+const topBackgroundFitsByCanonicalSearch = new Map<string, BuildSharePreviewBackgroundFit[]>()
+
+type BuildSharePreviewBuildState = {
+  optionalPerkIds: string[]
+  pickedPerkIds: string[]
+}
 
 function getPerksFromPickedPerkIds(pickedPerkIds: string[]): LegendsPerkRecord[] {
   return pickedPerkIds.flatMap((pickedPerkId) => {
@@ -52,18 +60,24 @@ function getPerksFromPickedPerkIds(pickedPerkIds: string[]): LegendsPerkRecord[]
   })
 }
 
-function getPickedPerkIdsFromSearch(search: string | URLSearchParams): string[] {
+function getBuildStateFromSearch(search: string | URLSearchParams): BuildSharePreviewBuildState {
   const urlState = readBuildPlannerUrlState(search.toString(), {
     availableCategoryNames: [],
     perks: allPerks,
     perkGroupOptionsByCategory: emptyPerkGroupOptionsByGroup,
   })
 
-  return urlState.pickedPerkIds
+  return {
+    optionalPerkIds: urlState.optionalPerkIds,
+    pickedPerkIds: urlState.pickedPerkIds,
+  }
 }
 
-function buildShareSearchFromPickedPerkIds(pickedPerkIds: string[]): string {
-  return createSharedBuildUrlSearch(pickedPerkIds, allPerksById)
+function buildShareSearchFromPickedPerkIds(
+  pickedPerkIds: string[],
+  optionalPerkIds: string[],
+): string {
+  return createSharedBuildUrlSearch(pickedPerkIds, allPerksById, optionalPerkIds)
 }
 
 function formatPerkListForSentence(perkNames: string[], maxVisiblePerks: number): string {
@@ -82,7 +96,7 @@ function formatPerkListForSentence(perkNames: string[], maxVisiblePerks: number)
 }
 
 function createBackgroundFitPreview(
-  backgroundFit: BackgroundFitSummary,
+  backgroundFit: RankedBackgroundFit,
 ): BuildSharePreviewBackgroundFit {
   return {
     backgroundName: backgroundFit.backgroundName,
@@ -93,7 +107,7 @@ function createBackgroundFitPreview(
 }
 
 function getTopBackgroundFits(
-  rankedBackgroundFits: BackgroundFitSummary[],
+  rankedBackgroundFits: RankedBackgroundFit[],
 ): BuildSharePreviewBackgroundFit[] {
   return rankedBackgroundFits
     .filter(
@@ -105,6 +119,55 @@ function getTopBackgroundFits(
     )
     .slice(0, maxPreviewBackgroundFits)
     .map(createBackgroundFitPreview)
+}
+
+function copyTopBackgroundFits(
+  topBackgroundFits: readonly BuildSharePreviewBackgroundFit[],
+): BuildSharePreviewBackgroundFit[] {
+  return topBackgroundFits.map((backgroundFit) => ({ ...backgroundFit }))
+}
+
+function getCachedTopBackgroundFits({
+  availableOptionalPerkIds,
+  canonicalSearch,
+  pickedPerks,
+}: {
+  availableOptionalPerkIds: string[]
+  canonicalSearch: string
+  pickedPerks: LegendsPerkRecord[]
+}): BuildSharePreviewBackgroundFit[] {
+  const cachedTopBackgroundFits = topBackgroundFitsByCanonicalSearch.get(canonicalSearch)
+
+  if (cachedTopBackgroundFits) {
+    topBackgroundFitsByCanonicalSearch.delete(canonicalSearch)
+    topBackgroundFitsByCanonicalSearch.set(canonicalSearch, cachedTopBackgroundFits)
+
+    return copyTopBackgroundFits(cachedTopBackgroundFits)
+  }
+
+  const topBackgroundFits = getTopBackgroundFits(
+    backgroundFitEngine.getBackgroundFitView(pickedPerks, defaultBackgroundStudyResourceFilter, {
+      optionalPickedPerkIds: new Set(availableOptionalPerkIds),
+    }).rankedBackgroundFits,
+  )
+
+  topBackgroundFitsByCanonicalSearch.set(canonicalSearch, copyTopBackgroundFits(topBackgroundFits))
+
+  if (
+    topBackgroundFitsByCanonicalSearch.size > maxBuildSharePreviewTopBackgroundFitCacheEntries
+  ) {
+    const oldestCanonicalSearch = topBackgroundFitsByCanonicalSearch.keys().next().value
+
+    if (oldestCanonicalSearch !== undefined) {
+      topBackgroundFitsByCanonicalSearch.delete(oldestCanonicalSearch)
+    }
+  }
+
+  return copyTopBackgroundFits(topBackgroundFits)
+}
+
+export function clearBuildSharePreviewCache(): void {
+  topBackgroundFitsByCanonicalSearch.clear()
 }
 
 function createBuildDescription(
@@ -134,17 +197,30 @@ function createBuildDescription(
 function createBuildImagePath(canonicalSearch: string): string {
   const searchParams = new URLSearchParams(canonicalSearch)
   const canonicalBuild = searchParams.get('build') ?? ''
+  const canonicalOptionalPerks = searchParams.get('optional') ?? ''
   const encodedReference = encodeURIComponent(legendsPerksDataset.referenceVersion)
   const encodedBuild = encodeURIComponent(canonicalBuild)
+  const optionalPerksSearch = canonicalOptionalPerks
+    ? `?optional=${encodeURIComponent(canonicalOptionalPerks)}`
+    : ''
 
-  return `${buildSocialImagePathPrefix}/${encodedReference}/${encodedBuild}.png`
+  return `${buildSocialImagePathPrefix}/${encodedReference}/${encodedBuild}.png${optionalPerksSearch}`
 }
 
 function createBuildSharePreviewPayloadFromPickedPerkIds(
   pickedPerkIds: string[],
+  optionalPerkIds: string[],
   { shouldIncludeTopBackgroundFits = true }: BuildSharePreviewOptions = {},
 ): BuildSharePreviewPayload {
   const pickedPerks = getPerksFromPickedPerkIds(pickedPerkIds)
+  const availablePickedPerkIds = pickedPerks.map((pickedPerk) => pickedPerk.id)
+  const availablePickedPerkIdSet = new Set(pickedPerks.map((pickedPerk) => pickedPerk.id))
+  const availableOptionalPerkIdSet = new Set(
+    optionalPerkIds.filter((optionalPerkId) => availablePickedPerkIdSet.has(optionalPerkId)),
+  )
+  const availableOptionalPerkIds = availablePickedPerkIds.filter((pickedPerkId) =>
+    availableOptionalPerkIdSet.has(pickedPerkId),
+  )
 
   if (pickedPerks.length === 0) {
     return {
@@ -161,14 +237,17 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
     }
   }
 
-  const topBackgroundFits = shouldIncludeTopBackgroundFits
-    ? getTopBackgroundFits(
-        backgroundFitEngine.getBackgroundFitSummaryView(pickedPerks).rankedBackgroundFitSummaries,
-      )
-    : []
   const canonicalSearch = buildShareSearchFromPickedPerkIds(
-    pickedPerks.map((pickedPerk) => pickedPerk.id),
+    availablePickedPerkIds,
+    availableOptionalPerkIds,
   )
+  const topBackgroundFits = shouldIncludeTopBackgroundFits
+    ? getCachedTopBackgroundFits({
+        availableOptionalPerkIds,
+        canonicalSearch,
+        pickedPerks,
+      })
+    : []
   const previewPerks = pickedPerks.map((pickedPerk) => ({
     iconPath: pickedPerk.iconPath,
     perkName: pickedPerk.perkName,
@@ -198,8 +277,11 @@ export function createBuildSharePreviewPayloadFromSearch(
   search: string | URLSearchParams,
   options?: BuildSharePreviewOptions,
 ): BuildSharePreviewPayload {
+  const buildState = getBuildStateFromSearch(search)
+
   return createBuildSharePreviewPayloadFromPickedPerkIds(
-    getPickedPerkIdsFromSearch(search),
+    buildState.pickedPerkIds,
+    buildState.optionalPerkIds,
     options,
   )
 }

@@ -1,7 +1,7 @@
 {
   "name": "battle-brothers-legends-browser",
   "private": true,
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "Battle Brothers Legends build planner for perks, backgrounds, and shareable builds.",
   "type": "module",
   "packageManager": "pnpm@10.33.0",

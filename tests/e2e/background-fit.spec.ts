@@ -1124,6 +1124,7 @@ test('keeps dense background names readable from a shared build url and starts c
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
   ).toHaveAttribute('aria-expanded', 'true')
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(backgroundFitPanel.getByText(/Ranked by must-have build chance./i)).toBeVisible()
 
   const denseBuildBackgroundCard = backgroundFitPanel

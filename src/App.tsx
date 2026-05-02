@@ -3,6 +3,7 @@ import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
 import '@fontsource/source-sans-3/700.css'
+import { plannerVersion } from 'virtual:planner-version'
 import styles from './App.module.scss'
 import { BackgroundFitPanel } from './components/BackgroundFitPanel'
 import {
@@ -71,8 +72,6 @@ import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
 
-declare const __PLANNER_VERSION__: string
-
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
 const allPerks = legendsPerksDataset.perks.map((perk) => ({
@@ -87,7 +86,6 @@ const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width
 const backgroundFitCompletionProgressMinimumDurationMs = 700
 const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFitProgressCompletionPaddingMs = 550
-const plannerVersion = __PLANNER_VERSION__
 
 const allCategoryCounts = getCategoryCounts(allPerks)
 const allPerkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
@@ -1250,9 +1248,18 @@ export default function App() {
     )
   }
 
-  function clearCategoryFilterSelection() {
+  function isSelectedPerkDetail(perkId: string) {
+    return activeDetailSelection.type === 'perk' && selectedPerkId === perkId
+  }
+
+  function clearSelectedPerkDetail() {
+    setSelectedPerkId(null)
+    setActiveDetailSelection({ type: 'perk' })
+  }
+
+  function clearCategoryFilterSelection(nextCategoryFilterMode: CategoryFilterMode = 'none') {
     requestPerkResultListScrollReset()
-    setCategoryFilterMode('none')
+    setCategoryFilterMode(nextCategoryFilterMode)
     setExpandedCategoryNames([])
     setSelectedCategoryNames([])
     setSelectedPerkGroupIdsByCategory({})
@@ -1289,13 +1296,19 @@ export default function App() {
       )
     ) {
       startTransition(() => {
-        clearCategoryFilterSelection()
+        clearCategoryFilterSelection('all')
       })
     }
   }
 
   function handleSelectPerk(perkId: string) {
     requestNextUrlHistoryEntry()
+
+    if (isSelectedPerkDetail(perkId)) {
+      clearSelectedPerkDetail()
+      return
+    }
+
     recordDetailHistoryEntry({
       ...currentUrlState,
       detailSelection: { perkId, type: 'perk' },
@@ -1559,6 +1572,7 @@ export default function App() {
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) {
+    const shouldDeselectPerk = isSelectedPerkDetail(perkId)
     const inspectedPerk = allPerksById.get(perkId)
     const nextPerkGroupSelection = perkGroupSelection ?? inspectedPerk?.placements[0] ?? null
     const nextSelectedCategoryNames =
@@ -1571,6 +1585,14 @@ export default function App() {
           }
 
     requestNextUrlHistoryEntry()
+
+    if (shouldDeselectPerk) {
+      startTransition(() => {
+        clearSelectedPerkDetail()
+      })
+      return
+    }
+
     recordDetailHistoryEntry({
       ...currentUrlState,
       categoryFilterMode: nextPerkGroupSelection === null ? 'none' : 'selection',
@@ -1601,8 +1623,11 @@ export default function App() {
   function handleSelectBuildPlannerPerkGroup(categoryName: string, perkGroupId: string) {
     requestNextUrlHistoryEntry()
     startTransition(() => {
+      const isSelectedPerkGroup =
+        selectedPerkGroupIdsByCategory[categoryName]?.includes(perkGroupId) ?? false
+
       setQuery('')
-      selectPerkGroup({ categoryName, perkGroupId })
+      selectPerkGroup(isSelectedPerkGroup ? null : { categoryName, perkGroupId })
     })
   }
 

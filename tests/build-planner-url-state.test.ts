@@ -376,7 +376,7 @@ describe('build planner url state', () => {
     })
   })
 
-  test('serializes and restores explicit all categories selection', () => {
+  test('omits and restores all categories as the default selection', () => {
     const search = createBuildPlannerUrlSearch(
       {
         categoryFilterMode: 'all',
@@ -396,7 +396,7 @@ describe('build planner url state', () => {
       },
     )
 
-    expect(search).toBe('?category=all')
+    expect(search).toBe('')
     expect(
       readBuildPlannerUrlState(search, {
         availableCategoryNames,
@@ -405,6 +405,51 @@ describe('build planner url state', () => {
       }),
     ).toMatchObject({
       categoryFilterMode: 'all',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
+    })
+    expect(
+      readBuildPlannerUrlState('?category=all', {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }),
+    ).toMatchObject({
+      categoryFilterMode: 'all',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
+    })
+  })
+
+  test('serializes and restores explicit no category selection', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        categoryFilterMode: 'none',
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?category=none')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }),
+    ).toMatchObject({
+      categoryFilterMode: 'none',
       selectedCategoryNames: [],
       selectedPerkGroupIdsByCategory: {},
     })
@@ -642,6 +687,14 @@ describe('build planner url state', () => {
         perkGroupOptionsByCategory,
       }).selectedBackgroundVeteranPerkLevelIntervals,
     ).toEqual(availableBackgroundVeteranPerkLevelIntervals)
+    expect(
+      readBuildPlannerUrlState('', {
+        availableCategoryNames,
+        availableBackgroundVeteranPerkLevelIntervals,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).categoryFilterMode,
+    ).toBe('all')
     expect(
       readBuildPlannerUrlState('?background-veteran-perks=2,missing,5', {
         availableCategoryNames,

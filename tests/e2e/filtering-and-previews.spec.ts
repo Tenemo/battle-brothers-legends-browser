@@ -23,7 +23,12 @@ test('switches active categories and scoped perk groups, then clears everything 
     (element) => element.parentElement?.getBoundingClientRect().height ?? 0,
   )
 
-  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
   await enableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveText('Perk groups')
   await expect
@@ -55,7 +60,7 @@ test('switches active categories and scoped perk groups, then clears everything 
   await page.getByRole('button', { name: 'Clear category selection' }).click()
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('none')
   await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
 
   await enableCategory(page, 'Traits')
@@ -108,7 +113,7 @@ test('keeps only one selected perk group when another group is selected', async 
     'false',
   )
   await expect(page.getByText('No perks found')).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('none')
   await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBeNull()
 })
 
@@ -126,7 +131,7 @@ test('resets category drilldown when typing a perk search', async ({ page }) => 
   await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
   await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
     'aria-pressed',
-    'false',
+    'true',
   )
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
@@ -135,6 +140,15 @@ test('resets category drilldown when typing a perk search', async ({ page }) => 
   ).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
   await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+
+  await searchPerks(page, '')
+
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(getResultsList(page).getByTestId('perk-row').first()).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
 })
 
 test('leaves no category selected when deselecting a scoped perk group from an expanded category', async ({
@@ -164,7 +178,7 @@ test('leaves no category selected when deselecting a scoped perk group from an e
   )
   await expect(getSidebarPerkGroupButton(page, 'Beasts')).toHaveAttribute('aria-pressed', 'false')
   await expect(page.getByText('No perks found')).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('none')
   await expect.poll(() => new URL(page.url()).searchParams.get('group-enemy')).toBeNull()
 })
 
@@ -533,7 +547,11 @@ test('keeps category disclosure separate from category and perk group selection'
     'aria-pressed',
     'false',
   )
-  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
 

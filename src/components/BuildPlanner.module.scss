@@ -322,6 +322,12 @@
     .plannerSlotRequirementChain {
       --planner-slot-requirement-chain-scale: var(--planner-requirement-legend-tile-scale);
     }
+
+    .plannerSlotRequirementOptional {
+      --planner-slot-requirement-optional-base-scale: var(
+        --planner-requirement-legend-tile-scale
+      );
+    }
   }
 
   .plannerSectionToggle {
@@ -569,6 +575,36 @@
     height: 100%;
     clip-path: polygon(0 0, 100% 0, 100% 68%, 70% 68%, 66.7% 96%, 55% 100%, 0 100%);
     user-select: none;
+  }
+
+  .plannerSlotRequirementOptional {
+    --planner-slot-requirement-optional-base-scale: var(--planner-picked-perk-tile-scale);
+    --planner-slot-requirement-optional-scale: calc(
+      var(--planner-slot-requirement-optional-base-scale) * 0.8
+    );
+
+    position: absolute;
+    bottom: calc(
+      var(--primitive-length-0-16rem) * -1 * var(--planner-slot-requirement-optional-scale) - 2px
+    );
+    left: calc(
+      var(--primitive-length-0-16rem) * -1 * var(--planner-slot-requirement-optional-scale) - 3px
+    );
+    z-index: var(--z-index-raised);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    filter: drop-shadow(var(--shadow-chain-drop));
+    line-height: 0;
+    opacity: 0.82;
+    pointer-events: none;
+
+    .plannerSlotRequirementOptionalIcon {
+      width: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
+      height: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
+      stroke-width: 2.2;
+    }
   }
 
   .plannerSlotActionIcon {
