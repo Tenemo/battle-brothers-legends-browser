@@ -10,6 +10,7 @@ import {
   getBuildPerksBar,
   getBuildSharedGroupsList,
   getParsedCssRgbColor,
+  getPerkDetailPanel,
   getResolvedCssBackgroundColor,
   getResolvedCssBorderColor,
   getResultsList,
@@ -2408,6 +2409,38 @@ test('keeps sidebar perk group selection emphasized in the build planner', async
   await expect(muscularityPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
 })
 
+test('deselects a picked perk group from the build planner when clicked again', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
+  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const traitsCategoryButton = page.getByRole('button', { name: 'Enable category Traits' })
+  const calmGroupCard = getBuildSharedGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Calm' })
+  const calmPlannerGroupButton = calmGroupCard.getByRole('button', {
+    name: 'Select perk group Calm',
+  })
+
+  await expect(calmGroupCard).toBeVisible()
+  await expect(traitsCategoryButton).toHaveAttribute('aria-pressed', 'false')
+  await expect(calmGroupCard).toHaveAttribute('data-selected-highlighted', 'false')
+
+  await calmPlannerGroupButton.click()
+
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toBeVisible()
+  await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveAttribute('aria-pressed', 'true')
+  await expect(calmGroupCard).toHaveAttribute('data-selected-highlighted', 'true')
+
+  await calmPlannerGroupButton.click()
+
+  await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Disable category Traits' })).toHaveCount(0)
+  await expect(calmGroupCard).toHaveAttribute('data-selected-highlighted', 'false')
+})
+
 test('links planner perk and category hover highlighting both ways', async ({ page }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
   await page.goto(createBuildUrl(['Clarity', 'Perfect Focus']))
@@ -2501,6 +2534,19 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
   await expect(page.getByText(/Build slot \d+|Not in build/)).toHaveCount(0)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
+
+  await getBuildPerksBar(page)
+    .getByRole('button', { name: 'View Clarity from build planner' })
+    .click()
+
+  await expect(page.getByText('1 perk picked.')).toBeVisible()
+  await expect(
+    getPerkDetailPanel(page).getByRole('heading', {
+      level: 2,
+      name: 'Select a perk or background',
+    }),
+  ).toBeVisible()
+  await expect(page.locator('[data-testid="perk-row"][data-selected="true"]')).toHaveCount(0)
 })
 
 test('clears the build and restores planner placeholders', async ({ page }) => {

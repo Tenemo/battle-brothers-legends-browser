@@ -41,6 +41,30 @@ test('starts with an empty detail panel until a perk or background is selected',
   await expect(page.locator('[data-testid="perk-row"][data-selected="true"]')).toHaveCount(0)
 })
 
+test('deselects an inspected result perk when it is clicked again', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await searchPerks(page, 'Berserk')
+  await inspectPerkFromResults(page, 'Berserk')
+
+  const detailPanel = getPerkDetailPanel(page)
+  const selectedResultRows = getResultsList(page).locator(
+    '[data-testid="perk-row"][data-selected="true"]',
+  )
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
+  await expect(selectedResultRows).toHaveCount(1)
+  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBe('perk')
+
+  await inspectPerkFromResults(page, 'Berserk')
+
+  await expect(
+    detailPanel.getByRole('heading', { level: 2, name: 'Select a perk or background' }),
+  ).toBeVisible()
+  await expect(selectedResultRows).toHaveCount(0)
+  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBeNull()
+})
+
 test('groups repeated background sources in the detail panel', async ({ page }) => {
   await gotoBuildPlanner(page)
 

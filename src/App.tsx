@@ -1250,6 +1250,15 @@ export default function App() {
     )
   }
 
+  function isSelectedPerkDetail(perkId: string) {
+    return activeDetailSelection.type === 'perk' && selectedPerkId === perkId
+  }
+
+  function clearSelectedPerkDetail() {
+    setSelectedPerkId(null)
+    setActiveDetailSelection({ type: 'perk' })
+  }
+
   function clearCategoryFilterSelection() {
     requestPerkResultListScrollReset()
     setCategoryFilterMode('none')
@@ -1296,6 +1305,12 @@ export default function App() {
 
   function handleSelectPerk(perkId: string) {
     requestNextUrlHistoryEntry()
+
+    if (isSelectedPerkDetail(perkId)) {
+      clearSelectedPerkDetail()
+      return
+    }
+
     recordDetailHistoryEntry({
       ...currentUrlState,
       detailSelection: { perkId, type: 'perk' },
@@ -1559,6 +1574,7 @@ export default function App() {
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) {
+    const shouldDeselectPerk = isSelectedPerkDetail(perkId)
     const inspectedPerk = allPerksById.get(perkId)
     const nextPerkGroupSelection = perkGroupSelection ?? inspectedPerk?.placements[0] ?? null
     const nextSelectedCategoryNames =
@@ -1571,6 +1587,14 @@ export default function App() {
           }
 
     requestNextUrlHistoryEntry()
+
+    if (shouldDeselectPerk) {
+      startTransition(() => {
+        clearSelectedPerkDetail()
+      })
+      return
+    }
+
     recordDetailHistoryEntry({
       ...currentUrlState,
       categoryFilterMode: nextPerkGroupSelection === null ? 'none' : 'selection',
@@ -1601,8 +1625,11 @@ export default function App() {
   function handleSelectBuildPlannerPerkGroup(categoryName: string, perkGroupId: string) {
     requestNextUrlHistoryEntry()
     startTransition(() => {
+      const isSelectedPerkGroup =
+        selectedPerkGroupIdsByCategory[categoryName]?.includes(perkGroupId) ?? false
+
       setQuery('')
-      selectPerkGroup({ categoryName, perkGroupId })
+      selectPerkGroup(isSelectedPerkGroup ? null : { categoryName, perkGroupId })
     })
   }
 
