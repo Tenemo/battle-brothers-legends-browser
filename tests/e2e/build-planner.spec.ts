@@ -501,7 +501,7 @@ test('build planner splits shared and individual perk groups without layout drif
   })
 
   expect(tooltipTimerStyle).toEqual({
-    animationDuration: '1s',
+    animationDuration: '0.5s',
     height: '2px',
     opacity: '1',
   })
@@ -1279,7 +1279,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
   })
 
   expect(pillTooltipTimerStyle).toEqual({
-    animationDuration: '1s',
+    animationDuration: '0.5s',
     height: '2px',
     opacity: '1',
   })

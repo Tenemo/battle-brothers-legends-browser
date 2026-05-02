@@ -1,7 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { DetailsPanel } from '../src/components/PerkDetail'
-import type { RankedBackgroundFit } from '../src/lib/background-fit'
+import { ancientScrollPerkGroupMarkerTestId } from '../src/lib/ancient-scroll-perk-group-display'
+import type { BuildTargetPerkGroup, RankedBackgroundFit } from '../src/lib/background-fit'
 import { backgroundStudyResourceBadgesTestId } from '../src/lib/background-study-resource-display'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
 
@@ -14,6 +15,19 @@ const skillBookRequirementProfile = {
   requiresBook: true,
   requiresBright: false,
   scrollRequirements: [],
+} satisfies StudyResourceRequirementProfile
+
+const ancientScrollRequirementProfile = {
+  bookRequirement: null,
+  requiredScrollCount: 1,
+  requiresBook: false,
+  requiresBright: false,
+  scrollRequirements: [
+    {
+      categoryName: 'Magic',
+      perkGroupId: 'AssassinMagicTree',
+    },
+  ],
 } satisfies StudyResourceRequirementProfile
 
 const backgroundFit = {
@@ -40,55 +54,69 @@ const backgroundFit = {
   veteranPerkLevelInterval: 4,
 } satisfies RankedBackgroundFit
 
+function renderBackgroundFitDetail({
+  backgroundFitDetail = backgroundFit,
+  supportedBuildTargetPerkGroups = [
+    {
+      categoryName: 'Traits',
+      pickedPerkCount: 1,
+      pickedPerkIds: ['perk.legend_clarity'],
+      pickedPerkNames: ['Clarity'],
+      perkGroupIconPath: 'ui/perks/perk_01.png',
+      perkGroupId: 'CalmTree',
+      perkGroupName: 'Calm',
+    },
+  ],
+}: {
+  backgroundFitDetail?: RankedBackgroundFit
+  supportedBuildTargetPerkGroups?: BuildTargetPerkGroup[]
+} = {}) {
+  render(
+    <DetailsPanel
+      activeDetailType="background"
+      backgroundFitDetail={{ backgroundFit: backgroundFitDetail, rank: 0 }}
+      detailHistoryNavigationAvailability={{
+        next: false,
+        previous: false,
+      }}
+      emphasizedCategoryNames={new Set()}
+      emphasizedPerkGroupKeys={new Set()}
+      selectedEmphasisCategoryNames={new Set()}
+      selectedEmphasisPerkGroupKeys={new Set()}
+      groupedBackgroundSources={[]}
+      hoveredBuildPerkId={null}
+      hoveredBuildPerkTooltipId={undefined}
+      hoveredPerkId={null}
+      isSelectedPerkPicked={false}
+      mustHavePickedPerkCount={1}
+      mustHavePickedPerkIds={['perk.legend_clarity']}
+      onCloseBuildPerkHover={vi.fn()}
+      onCloseBuildPerkTooltip={vi.fn()}
+      onClosePerkGroupHover={vi.fn()}
+      onInspectPerk={vi.fn()}
+      onInspectPerkGroup={vi.fn()}
+      onNavigateDetailHistory={vi.fn()}
+      onOpenBuildPerkHover={vi.fn()}
+      onOpenBuildPerkTooltip={vi.fn()}
+      onOpenPerkGroupHover={vi.fn()}
+      onTogglePerkPicked={vi.fn()}
+      optionalPickedPerkCount={0}
+      optionalPickedPerkIds={[]}
+      pickedPerkCount={1}
+      selectedPerk={null}
+      studyResourceFilter={{
+        shouldAllowBook: true,
+        shouldAllowScroll: true,
+        shouldAllowSecondScroll: false,
+      }}
+      supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
+    />,
+  )
+}
+
 describe('background details study resources', () => {
   test('uses planner perk group tiles for book and scroll learning requirements', () => {
-    render(
-      <DetailsPanel
-        activeDetailType="background"
-        backgroundFitDetail={{ backgroundFit, rank: 0 }}
-        emphasizedCategoryNames={new Set()}
-        emphasizedPerkGroupKeys={new Set()}
-        selectedEmphasisCategoryNames={new Set()}
-        selectedEmphasisPerkGroupKeys={new Set()}
-        groupedBackgroundSources={[]}
-        hoveredBuildPerkId={null}
-        hoveredBuildPerkTooltipId={undefined}
-        hoveredPerkId={null}
-        isSelectedPerkPicked={false}
-        mustHavePickedPerkCount={1}
-        mustHavePickedPerkIds={['perk.legend_clarity']}
-        onCloseBuildPerkHover={vi.fn()}
-        onCloseBuildPerkTooltip={vi.fn()}
-        onClosePerkGroupHover={vi.fn()}
-        onInspectPerk={vi.fn()}
-        onInspectPerkGroup={vi.fn()}
-        onNavigateDetailHistory={vi.fn()}
-        onOpenBuildPerkHover={vi.fn()}
-        onOpenBuildPerkTooltip={vi.fn()}
-        onOpenPerkGroupHover={vi.fn()}
-        onTogglePerkPicked={vi.fn()}
-        optionalPickedPerkCount={0}
-        optionalPickedPerkIds={[]}
-        pickedPerkCount={1}
-        selectedPerk={null}
-        studyResourceFilter={{
-          shouldAllowBook: true,
-          shouldAllowScroll: true,
-          shouldAllowSecondScroll: false,
-        }}
-        supportedBuildTargetPerkGroups={[
-          {
-            categoryName: 'Traits',
-            pickedPerkCount: 1,
-            pickedPerkIds: ['perk.legend_clarity'],
-            pickedPerkNames: ['Clarity'],
-            perkGroupIconPath: 'ui/perks/perk_01.png',
-            perkGroupId: 'CalmTree',
-            perkGroupName: 'Calm',
-          },
-        ]}
-      />,
-    )
+    renderBackgroundFitDetail()
 
     expect(screen.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
     const detailBadgeRow = screen.getByTestId('detail-badge-row')
@@ -116,5 +144,46 @@ describe('background details study resources', () => {
     ).toBeVisible()
     expect(within(studyResourceTile).getByRole('button', { name: 'Clarity' })).toBeVisible()
     expect(screen.queryByText('Skill book: Calm')).not.toBeInTheDocument()
+  })
+
+  test('uses only the built-in perk group tile marker for scroll learning requirements', () => {
+    const scrollBackgroundFit = {
+      ...backgroundFit,
+      fullBuildStudyResourceRequirement: ancientScrollRequirementProfile,
+      mustHaveStudyResourceRequirement: ancientScrollRequirementProfile,
+    } satisfies RankedBackgroundFit
+
+    renderBackgroundFitDetail({
+      backgroundFitDetail: scrollBackgroundFit,
+      supportedBuildTargetPerkGroups: [
+        {
+          categoryName: 'Magic',
+          pickedPerkCount: 1,
+          pickedPerkIds: ['perk.legend_assassinate'],
+          pickedPerkNames: ['Assassinate'],
+          perkGroupIconPath: 'ui/perks/perk_37.png',
+          perkGroupId: 'AssassinMagicTree',
+          perkGroupName: 'Assassin',
+        },
+      ],
+    })
+
+    const [mustHaveStudyResourceSection] = screen.getAllByTestId('detail-study-resource-section')
+    const studyResourceTileFrame = within(mustHaveStudyResourceSection).getByTestId(
+      'detail-study-resource-tile-frame',
+    )
+    const studyResourceTile = within(studyResourceTileFrame).getByTestId('planner-group-card')
+
+    expect(studyResourceTileFrame).toHaveAttribute('data-study-resource-type', 'scroll')
+    expect(studyResourceTileFrame).toHaveAttribute('data-has-resource-icon', 'false')
+    expect(
+      within(mustHaveStudyResourceSection).queryByRole('img', { name: 'Ancient scroll' }),
+    ).not.toBeInTheDocument()
+    expect(within(studyResourceTile).getByTestId(ancientScrollPerkGroupMarkerTestId)).toBeVisible()
+    expect(
+      within(studyResourceTile).getByRole('button', {
+        name: 'Learnable using an ancient scroll',
+      }),
+    ).toBeVisible()
   })
 })

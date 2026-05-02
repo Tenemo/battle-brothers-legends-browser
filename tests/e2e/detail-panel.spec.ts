@@ -69,9 +69,8 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
   await expect(groupedBackgroundSourceRow.getByText('Guaranteed')).toBeVisible()
 })
 
-test('detail history buttons skip browser entries with the same selected detail', async ({
-  page,
-}) => {
+test('detail history buttons stay inside page detail history', async ({ page }) => {
+  await page.goto('about:blank')
   await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Berserk')
@@ -85,6 +84,8 @@ test('detail history buttons skip browser entries with the same selected detail'
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
   await expect(previousDetailButton).toBeVisible()
   await expect(nextDetailButton).toBeVisible()
+  await expect(previousDetailButton).toBeDisabled()
+  await expect(nextDetailButton).toBeDisabled()
   await expect(buildToggleButton).toBeVisible()
   const detailActionButtonSizes = await Promise.all(
     [previousDetailButton, nextDetailButton, buildToggleButton].map((button) =>
@@ -101,6 +102,24 @@ test('detail history buttons skip browser entries with the same selected detail'
 
   expect(detailActionButtonSizes[0]).toEqual(detailActionButtonSizes[2])
   expect(detailActionButtonSizes[1]).toEqual(detailActionButtonSizes[2])
+  const detailActionButtonLayout = await Promise.all(
+    [previousDetailButton, nextDetailButton, buildToggleButton].map((button) =>
+      button.evaluate((element) => {
+        const rectangle = element.getBoundingClientRect()
+
+        return {
+          bottom: rectangle.bottom,
+          top: rectangle.top,
+        }
+      }),
+    ),
+  )
+  const arrowsBottom = Math.max(
+    detailActionButtonLayout[0].bottom,
+    detailActionButtonLayout[1].bottom,
+  )
+
+  expect(detailActionButtonLayout[2].top).toBeGreaterThanOrEqual(arrowsBottom)
 
   await searchPerks(page, 'Hold Out')
   await inspectPerkFromResults(page, 'Hold Out')
@@ -108,15 +127,21 @@ test('detail history buttons skip browser entries with the same selected detail'
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Hold Out' })).toBeVisible()
   await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(previousDetailButton).toBeEnabled()
+  await expect(nextDetailButton).toBeDisabled()
 
-  await detailPanel.getByRole('button', { name: 'Show previous detail' }).click()
+  await previousDetailButton.click()
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Hold Out' })).toHaveCount(0)
+  await expect(previousDetailButton).toBeDisabled()
+  await expect(nextDetailButton).toBeEnabled()
 
-  await detailPanel.getByRole('button', { name: 'Show next detail' }).click()
+  await nextDetailButton.click()
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Hold Out' })).toBeVisible()
+  await expect(previousDetailButton).toBeEnabled()
+  await expect(nextDetailButton).toBeDisabled()
 })
 
 test('shows favoured enemy targets and scenario overlays for enemy perks', async ({ page }) => {

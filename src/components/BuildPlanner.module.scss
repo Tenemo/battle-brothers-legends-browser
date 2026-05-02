@@ -470,7 +470,7 @@
     }
 
     &[data-tooltip-pending='true']::after {
-      animation: build-perk-tooltip-timer calc(var(--motion-entry-duration) * 2) linear forwards;
+      animation: build-perk-tooltip-timer var(--motion-entry-duration) linear forwards;
       opacity: 1;
     }
 
@@ -900,7 +900,7 @@
     }
 
     &[data-tooltip-pending='true']::after {
-      animation: build-perk-tooltip-timer calc(var(--motion-entry-duration) * 2) linear forwards;
+      animation: build-perk-tooltip-timer var(--motion-entry-duration) linear forwards;
       opacity: 1;
     }
   }

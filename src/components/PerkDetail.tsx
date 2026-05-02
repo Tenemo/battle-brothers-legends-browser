@@ -43,6 +43,7 @@ import styles from './PerkDetail.module.scss'
 type PerkDetailProps = {
   activeDetailType: 'background' | 'perk'
   backgroundFitDetail: { backgroundFit: RankedBackgroundFit; rank: number } | null
+  detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   selectedEmphasisCategoryNames: ReadonlySet<string>
@@ -76,12 +77,18 @@ type PerkDetailProps = {
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }
 
+type DetailHistoryNavigationAvailability = {
+  next: boolean
+  previous: boolean
+}
+
 type StudyResourceRequirementEntry = {
   iconAlt: string
   iconPath: string
   key: string
   label: string
   requirement: StudyReachabilityRequirement | null
+  resourceType: 'book' | 'bright' | 'scroll'
   support: string
 }
 
@@ -139,6 +146,7 @@ function renderPerkDescriptionParagraph(paragraph: string): ReactNode {
 export function DetailsPanel({
   activeDetailType,
   backgroundFitDetail,
+  detailHistoryNavigationAvailability,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
   selectedEmphasisCategoryNames,
@@ -184,6 +192,7 @@ export function DetailsPanel({
             emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
             selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
             selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+            detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
             hoveredBuildPerkId={hoveredBuildPerkId}
             hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
             hoveredPerkId={hoveredPerkId}
@@ -225,6 +234,7 @@ export function DetailsPanel({
               iconLabel={`${selectedPerk.perkName} icon`}
               iconPath={getPerkDisplayIconPath(selectedPerk)}
               iconTestId="detail-perk-icon"
+              navigationAvailability={detailHistoryNavigationAvailability}
               onNavigateHistory={onNavigateDetailHistory}
               title={selectedPerk.perkName}
             />
@@ -366,6 +376,7 @@ function DetailHeader({
   iconLabel,
   iconPath,
   iconTestId,
+  navigationAvailability,
   onNavigateHistory,
   title,
 }: {
@@ -375,6 +386,7 @@ function DetailHeader({
   iconLabel: string
   iconPath: string | null
   iconTestId: string
+  navigationAvailability: DetailHistoryNavigationAvailability
   onNavigateHistory: (direction: -1 | 1) => void
   title: string
 }) {
@@ -393,17 +405,27 @@ function DetailHeader({
           {badgeRow}
         </div>
       </div>
-      <div className={styles.detailHeaderActions}>
-        <DetailHistoryNavigation onNavigateHistory={onNavigateHistory} />
-        {actions}
+      <div className={styles.detailHeaderActions} data-testid="detail-header-actions">
+        <DetailHistoryNavigation
+          navigationAvailability={navigationAvailability}
+          onNavigateHistory={onNavigateHistory}
+        />
+        <div
+          className={styles.detailHeaderPrimaryAction}
+          data-testid="detail-header-primary-action"
+        >
+          {actions}
+        </div>
       </div>
     </div>
   )
 }
 
 function DetailHistoryNavigation({
+  navigationAvailability,
   onNavigateHistory,
 }: {
+  navigationAvailability: DetailHistoryNavigationAvailability
   onNavigateHistory: (direction: -1 | 1) => void
 }) {
   return (
@@ -411,6 +433,7 @@ function DetailHistoryNavigation({
       <button
         aria-label="Show previous detail"
         className={styles.detailHistoryButton}
+        disabled={!navigationAvailability.previous}
         onClick={() => onNavigateHistory(-1)}
         title="Show previous detail"
         type="button"
@@ -420,6 +443,7 @@ function DetailHistoryNavigation({
       <button
         aria-label="Show next detail"
         className={styles.detailHistoryButton}
+        disabled={!navigationAvailability.next}
         onClick={() => onNavigateHistory(1)}
         title="Show next detail"
         type="button"
@@ -492,6 +516,7 @@ function getStudyResourceRequirementEntries(
       key: `book-${getRequirementKey(studyResourceRequirementProfile.bookRequirement)}`,
       label: 'Skill book',
       requirement: studyResourceRequirementProfile.bookRequirement,
+      resourceType: 'book',
       support: 'Learn this perk group with a skill book.',
     })
   }
@@ -506,6 +531,7 @@ function getStudyResourceRequirementEntries(
       key: `scroll-${scrollIndex}-${getRequirementKey(scrollRequirement)}`,
       label: 'Ancient scroll',
       requirement: scrollRequirement,
+      resourceType: 'scroll',
       support: 'Learn this perk group with an ancient scroll.',
     })
   }
@@ -517,6 +543,7 @@ function getStudyResourceRequirementEntries(
       key: 'bright',
       label: 'Bright',
       requirement: null,
+      resourceType: 'bright',
       support: 'Needed to read a second ancient scroll.',
     })
   }
@@ -600,16 +627,20 @@ function StudyResourceRequirementList({
               <li key={entry.key}>
                 <div
                   className={styles.detailStudyResourceTileFrame}
+                  data-has-resource-icon={entry.resourceType !== 'scroll'}
+                  data-study-resource-type={entry.resourceType}
                   data-testid="detail-study-resource-tile-frame"
                 >
-                  <img
-                    alt={entry.iconAlt}
-                    className={styles.detailStudyResourceTileIcon}
-                    decoding="async"
-                    loading="lazy"
-                    src={`/game-icons/${entry.iconPath}`}
-                    title={entry.label}
-                  />
+                  {entry.resourceType === 'scroll' ? null : (
+                    <img
+                      alt={entry.iconAlt}
+                      className={styles.detailStudyResourceTileIcon}
+                      decoding="async"
+                      loading="lazy"
+                      src={`/game-icons/${entry.iconPath}`}
+                      title={entry.label}
+                    />
+                  )}
                   <BuildPerkGroupTile
                     arePerkGroupOptionsInteractive={buildTargetPerkGroup !== null}
                     className={styles.detailStudyResourceTile}
@@ -687,6 +718,7 @@ function getStudyResourceTilePerks(
 
 function BackgroundDetail({
   backgroundFit,
+  detailHistoryNavigationAvailability,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
   selectedEmphasisCategoryNames,
@@ -713,6 +745,7 @@ function BackgroundDetail({
   supportedBuildTargetPerkGroups,
 }: {
   backgroundFit: RankedBackgroundFit
+  detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   selectedEmphasisCategoryNames: ReadonlySet<string>
@@ -793,6 +826,7 @@ function BackgroundDetail({
         iconLabel={`${backgroundFit.backgroundName} background icon`}
         iconPath={backgroundFit.iconPath}
         iconTestId="detail-background-icon"
+        navigationAvailability={detailHistoryNavigationAvailability}
         onNavigateHistory={onNavigateDetailHistory}
         title={backgroundFit.backgroundName}
       />

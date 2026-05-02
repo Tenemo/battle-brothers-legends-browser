@@ -22,6 +22,10 @@ function renderPerkDetail(selectedPerk: LegendsPerkRecord) {
     <DetailsPanel
       activeDetailType="perk"
       backgroundFitDetail={null}
+      detailHistoryNavigationAvailability={{
+        next: false,
+        previous: false,
+      }}
       emphasizedCategoryNames={new Set()}
       emphasizedPerkGroupKeys={new Set()}
       selectedEmphasisCategoryNames={new Set()}

@@ -87,8 +87,6 @@ const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width
 const backgroundFitCompletionProgressMinimumDurationMs = 700
 const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFitProgressCompletionPaddingMs = 550
-const detailHistoryNavigationFallbackDelayMs = 350
-const maximumDetailHistoryNavigationSkippedEntries = 50
 const plannerVersion = __PLANNER_VERSION__
 
 const allCategoryCounts = getCategoryCounts(allPerks)
@@ -139,11 +137,14 @@ type ActiveDetailSelection =
 
 type DetailHistoryNavigationDirection = -1 | 1
 
-type PendingDetailHistoryNavigation = {
-  direction: DetailHistoryNavigationDirection
-  originDetailKey: string
-  skippedEntryCount: number
-  skippedUrlState: BuildPlannerUrlState | null
+type DetailHistoryEntry = {
+  key: string
+  urlState: BuildPlannerUrlState
+}
+
+type DetailHistoryState = {
+  entries: DetailHistoryEntry[]
+  index: number
 }
 
 function createActiveDetailSelectionFromUrl(
@@ -163,9 +164,7 @@ function getSelectedPerkIdFromUrl(detailSelection: BuildPlannerDetailSelection):
   return detailSelection.type === 'perk' ? detailSelection.perkId : null
 }
 
-function getDetailSelectionHistoryKey(
-  detailSelection: BuildPlannerDetailSelection,
-): string | null {
+function getDetailSelectionHistoryKey(detailSelection: BuildPlannerDetailSelection): string | null {
   if (detailSelection.type === 'perk') {
     return `perk\u0000${detailSelection.perkId}`
   }
@@ -177,6 +176,101 @@ function getDetailSelectionHistoryKey(
   return null
 }
 
+function createDetailHistoryEntry(urlState: BuildPlannerUrlState): DetailHistoryEntry | null {
+  const key = getDetailSelectionHistoryKey(urlState.detailSelection)
+
+  return key === null ? null : { key, urlState }
+}
+
+function createInitialDetailHistoryState(urlState: BuildPlannerUrlState): DetailHistoryState {
+  const entry = createDetailHistoryEntry(urlState)
+
+  return entry
+    ? {
+        entries: [entry],
+        index: 0,
+      }
+    : {
+        entries: [],
+        index: -1,
+      }
+}
+
+function replaceDetailHistoryEntry(
+  detailHistoryState: DetailHistoryState,
+  index: number,
+  entry: DetailHistoryEntry,
+): DetailHistoryState {
+  if (detailHistoryState.entries[index]?.urlState === entry.urlState) {
+    return detailHistoryState.index === index
+      ? detailHistoryState
+      : {
+          entries: detailHistoryState.entries,
+          index,
+        }
+  }
+
+  const entries = [...detailHistoryState.entries]
+  entries[index] = entry
+
+  return {
+    entries,
+    index,
+  }
+}
+
+function recordDetailHistoryUrlState(
+  detailHistoryState: DetailHistoryState,
+  urlState: BuildPlannerUrlState,
+): DetailHistoryState {
+  const entry = createDetailHistoryEntry(urlState)
+
+  if (entry === null) {
+    return detailHistoryState
+  }
+
+  if (detailHistoryState.entries[detailHistoryState.index]?.key === entry.key) {
+    return replaceDetailHistoryEntry(detailHistoryState, detailHistoryState.index, entry)
+  }
+
+  const retainedEntries =
+    detailHistoryState.index >= 0
+      ? detailHistoryState.entries.slice(0, detailHistoryState.index + 1)
+      : []
+
+  return {
+    entries: [...retainedEntries, entry],
+    index: retainedEntries.length,
+  }
+}
+
+function syncDetailHistoryUrlStateFromBrowser(
+  detailHistoryState: DetailHistoryState,
+  urlState: BuildPlannerUrlState,
+): DetailHistoryState {
+  const entry = createDetailHistoryEntry(urlState)
+
+  if (entry === null) {
+    return detailHistoryState
+  }
+
+  const matchingEntryIndex = detailHistoryState.entries.findIndex(
+    (detailHistoryEntry) => detailHistoryEntry.key === entry.key,
+  )
+
+  return matchingEntryIndex === -1
+    ? recordDetailHistoryUrlState(detailHistoryState, urlState)
+    : replaceDetailHistoryEntry(detailHistoryState, matchingEntryIndex, entry)
+}
+
+function createBackgroundDetailSelectionFromKey(
+  backgroundFitKey: string,
+): BuildPlannerDetailSelection {
+  const backgroundFitKeyParts = parseBackgroundFitKey(backgroundFitKey)
+
+  return backgroundFitKeyParts ? { ...backgroundFitKeyParts, type: 'background' } : { type: 'none' }
+}
+
 function createUrlDetailSelection({
   activeDetailSelection,
   selectedPerk,
@@ -185,11 +279,7 @@ function createUrlDetailSelection({
   selectedPerk: { id: string } | null
 }): BuildPlannerDetailSelection {
   if (activeDetailSelection.type === 'background') {
-    const backgroundFitKeyParts = parseBackgroundFitKey(activeDetailSelection.backgroundFitKey)
-
-    return backgroundFitKeyParts
-      ? { ...backgroundFitKeyParts, type: 'background' }
-      : { type: 'none' }
+    return createBackgroundDetailSelectionFromKey(activeDetailSelection.backgroundFitKey)
   }
 
   return selectedPerk ? { perkId: selectedPerk.id, type: 'perk' } : { type: 'none' }
@@ -361,8 +451,9 @@ export default function App() {
     new Map<string, BackgroundFitCalculationProgress>(),
   )
   const backgroundFitCompletionProgressTimeoutRef = useRef<number | null>(null)
-  const pendingDetailHistoryNavigationRef = useRef<PendingDetailHistoryNavigation | null>(null)
-  const detailHistoryNavigationFallbackTimeoutRef = useRef<number | null>(null)
+  const [detailHistoryState, setDetailHistoryState] = useState(() =>
+    createInitialDetailHistoryState(initialUrlState),
+  )
   const clearBackgroundFitCompletionProgressTimeout = useCallback(() => {
     if (backgroundFitCompletionProgressTimeoutRef.current === null) {
       return
@@ -370,14 +461,6 @@ export default function App() {
 
     window.clearTimeout(backgroundFitCompletionProgressTimeoutRef.current)
     backgroundFitCompletionProgressTimeoutRef.current = null
-  }, [])
-  const clearDetailHistoryNavigationFallbackTimeout = useCallback(() => {
-    if (detailHistoryNavigationFallbackTimeoutRef.current === null) {
-      return
-    }
-
-    window.clearTimeout(detailHistoryNavigationFallbackTimeoutRef.current)
-    detailHistoryNavigationFallbackTimeoutRef.current = null
   }, [])
   const getBackgroundFitWorkerClient = useCallback(() => {
     backgroundFitWorkerClientRef.current ??= createBackgroundFitWorkerClient({
@@ -415,11 +498,10 @@ export default function App() {
   useEffect(
     () => () => {
       clearBackgroundFitCompletionProgressTimeout()
-      clearDetailHistoryNavigationFallbackTimeout()
       backgroundFitWorkerClientRef.current?.dispose()
       backgroundFitWorkerClientRef.current = null
     },
-    [clearBackgroundFitCompletionProgressTimeout, clearDetailHistoryNavigationFallbackTimeout],
+    [clearBackgroundFitCompletionProgressTimeout],
   )
   const {
     clearAllHover,
@@ -513,7 +595,7 @@ export default function App() {
     createActiveDetailSelectionFromUrl(initialUrlState.detailSelection),
   )
   const selectedPerk = useMemo(
-    () => (selectedPerkId === null ? null : allPerksById.get(selectedPerkId) ?? null),
+    () => (selectedPerkId === null ? null : (allPerksById.get(selectedPerkId) ?? null)),
     [selectedPerkId],
   )
   const pickedPerkIds = useMemo(() => getPickedBuildPerkIds(pickedBuildPerks), [pickedBuildPerks])
@@ -672,6 +754,49 @@ export default function App() {
         selectedPerk,
       }),
     [activeDetailSelection, selectedPerk],
+  )
+  const currentUrlState = useMemo<BuildPlannerUrlState>(
+    () => ({
+      detailSelection,
+      optionalPerkIds: optionalPickedPerkIds,
+      pickedPerkIds,
+      categoryFilterMode,
+      query,
+      selectedCategoryNames,
+      selectedBackgroundVeteranPerkLevelIntervals,
+      selectedPerkGroupIdsByCategory,
+      shouldAllowBackgroundStudyBook,
+      shouldAllowBackgroundStudyScroll,
+      shouldAllowSecondBackgroundStudyScroll,
+      shouldIncludeAncientScrollPerkGroups,
+      shouldIncludeOriginBackgrounds,
+      shouldIncludeOriginPerkGroups,
+    }),
+    [
+      categoryFilterMode,
+      detailSelection,
+      optionalPickedPerkIds,
+      pickedPerkIds,
+      query,
+      selectedBackgroundVeteranPerkLevelIntervals,
+      selectedCategoryNames,
+      selectedPerkGroupIdsByCategory,
+      shouldAllowBackgroundStudyBook,
+      shouldAllowBackgroundStudyScroll,
+      shouldAllowSecondBackgroundStudyScroll,
+      shouldIncludeAncientScrollPerkGroups,
+      shouldIncludeOriginBackgrounds,
+      shouldIncludeOriginPerkGroups,
+    ],
+  )
+  const detailHistoryNavigationAvailability = useMemo(
+    () => ({
+      next:
+        detailHistoryState.index >= 0 &&
+        detailHistoryState.index < detailHistoryState.entries.length - 1,
+      previous: detailHistoryState.index > 0,
+    }),
+    [detailHistoryState],
   )
 
   useEffect(() => {
@@ -908,9 +1033,14 @@ export default function App() {
     [selectedPerk],
   )
   const applyUrlState = useCallback(
-    (urlState: BuildPlannerUrlState) => {
+    (
+      urlState: BuildPlannerUrlState,
+      options: {
+        shouldUseTransition?: boolean
+      } = {},
+    ) => {
       urlHistoryWriteModeRef.current = 'replace'
-      startTransition(() => {
+      const applyNextUrlState = () => {
         setQuery(urlState.query)
         setPickedBuildPerks(
           createPickedBuildPerkState(urlState.pickedPerkIds, urlState.optionalPerkIds),
@@ -938,75 +1068,28 @@ export default function App() {
         setActiveDetailSelection(createActiveDetailSelectionFromUrl(urlState.detailSelection))
         clearAllHover()
         resetShareBuildStatus()
-      })
+      }
+
+      if (options.shouldUseTransition === false) {
+        applyNextUrlState()
+      } else {
+        startTransition(applyNextUrlState)
+      }
     },
     [clearAllHover, resetShareBuildStatus],
   )
-  const scheduleDetailHistoryNavigationFallback = useCallback(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-
-    clearDetailHistoryNavigationFallbackTimeout()
-    detailHistoryNavigationFallbackTimeoutRef.current = window.setTimeout(() => {
-      detailHistoryNavigationFallbackTimeoutRef.current = null
-      const pendingDetailHistoryNavigation = pendingDetailHistoryNavigationRef.current
-      pendingDetailHistoryNavigationRef.current = null
-
-      if (pendingDetailHistoryNavigation?.skippedUrlState) {
-        applyUrlState(pendingDetailHistoryNavigation.skippedUrlState)
-      }
-    }, detailHistoryNavigationFallbackDelayMs)
-  }, [applyUrlState, clearDetailHistoryNavigationFallbackTimeout])
   const handleUrlStateChange = useCallback(
     (urlState: BuildPlannerUrlState) => {
-      const pendingDetailHistoryNavigation = pendingDetailHistoryNavigationRef.current
-
-      if (pendingDetailHistoryNavigation) {
-        const nextDetailHistoryKey = getDetailSelectionHistoryKey(urlState.detailSelection)
-
-        if (
-          nextDetailHistoryKey === pendingDetailHistoryNavigation.originDetailKey &&
-          pendingDetailHistoryNavigation.skippedEntryCount <
-            maximumDetailHistoryNavigationSkippedEntries
-        ) {
-          pendingDetailHistoryNavigation.skippedEntryCount += 1
-          pendingDetailHistoryNavigation.skippedUrlState = urlState
-          scheduleDetailHistoryNavigationFallback()
-          window.history.go(pendingDetailHistoryNavigation.direction)
-          return
-        }
-
-        clearDetailHistoryNavigationFallbackTimeout()
-        pendingDetailHistoryNavigationRef.current = null
-      }
-
-      applyUrlState(urlState)
+      setDetailHistoryState((currentDetailHistoryState) =>
+        syncDetailHistoryUrlStateFromBrowser(currentDetailHistoryState, urlState),
+      )
+      applyUrlState(urlState, { shouldUseTransition: false })
     },
-    [
-      applyUrlState,
-      clearDetailHistoryNavigationFallbackTimeout,
-      scheduleDetailHistoryNavigationFallback,
-    ],
+    [applyUrlState],
   )
 
   useBuildPlannerUrlSync(
-    {
-      detailSelection,
-      optionalPerkIds: optionalPickedPerkIds,
-      pickedPerkIds,
-      categoryFilterMode,
-      query,
-      selectedCategoryNames,
-      selectedBackgroundVeteranPerkLevelIntervals,
-      selectedPerkGroupIdsByCategory,
-      shouldAllowBackgroundStudyBook,
-      shouldAllowBackgroundStudyScroll,
-      shouldAllowSecondBackgroundStudyScroll,
-      shouldIncludeAncientScrollPerkGroups,
-      shouldIncludeOriginBackgrounds,
-      shouldIncludeOriginPerkGroups,
-    },
+    currentUrlState,
     {
       availableCategoryNames: allAvailableCategories,
       availableBackgroundVeteranPerkLevelIntervals,
@@ -1070,6 +1153,12 @@ export default function App() {
     urlHistoryWriteModeRef.current = 'push'
   }
 
+  function recordDetailHistoryEntry(urlState: BuildPlannerUrlState) {
+    setDetailHistoryState((currentDetailHistoryState) =>
+      recordDetailHistoryUrlState(currentDetailHistoryState, urlState),
+    )
+  }
+
   function clearCategoryFilterSelection() {
     requestPerkResultListScrollReset()
     setCategoryFilterMode('none')
@@ -1116,35 +1205,40 @@ export default function App() {
 
   function handleSelectPerk(perkId: string) {
     requestNextUrlHistoryEntry()
+    recordDetailHistoryEntry({
+      ...currentUrlState,
+      detailSelection: { perkId, type: 'perk' },
+    })
     setSelectedPerkId(perkId)
     setActiveDetailSelection({ type: 'perk' })
   }
 
   function handleSelectBackgroundFit(backgroundFitKey: string) {
     requestNextUrlHistoryEntry()
+    recordDetailHistoryEntry({
+      ...currentUrlState,
+      detailSelection: createBackgroundDetailSelectionFromKey(backgroundFitKey),
+    })
     setActiveDetailSelection({ backgroundFitKey, type: 'background' })
   }
 
   function handleNavigateDetailHistory(direction: DetailHistoryNavigationDirection) {
-    if (typeof window === 'undefined') {
+    const targetIndex = detailHistoryState.index + direction
+    const targetEntry = detailHistoryState.entries[targetIndex]
+
+    if (!targetEntry) {
       return
     }
 
-    const originDetailKey = getDetailSelectionHistoryKey(detailSelection)
-
-    if (originDetailKey === null) {
-      return
-    }
-
-    clearDetailHistoryNavigationFallbackTimeout()
-    pendingDetailHistoryNavigationRef.current = {
-      direction,
-      originDetailKey,
-      skippedEntryCount: 0,
-      skippedUrlState: null,
-    }
-    scheduleDetailHistoryNavigationFallback()
-    window.history.go(direction)
+    setDetailHistoryState((currentDetailHistoryState) =>
+      currentDetailHistoryState.entries[targetIndex]
+        ? {
+            entries: currentDetailHistoryState.entries,
+            index: targetIndex,
+          }
+        : currentDetailHistoryState,
+    )
+    applyUrlState(targetEntry.urlState, { shouldUseTransition: false })
   }
 
   function handleOriginPerkGroupsChange(shouldIncludeNextOriginPerkGroups: boolean) {
@@ -1378,8 +1472,24 @@ export default function App() {
   ) {
     const inspectedPerk = allPerksById.get(perkId)
     const nextPerkGroupSelection = perkGroupSelection ?? inspectedPerk?.placements[0] ?? null
+    const nextSelectedCategoryNames =
+      nextPerkGroupSelection === null ? [] : [nextPerkGroupSelection.categoryName]
+    const nextSelectedPerkGroupIdsByCategory =
+      nextPerkGroupSelection === null
+        ? {}
+        : {
+            [nextPerkGroupSelection.categoryName]: [nextPerkGroupSelection.perkGroupId],
+          }
 
     requestNextUrlHistoryEntry()
+    recordDetailHistoryEntry({
+      ...currentUrlState,
+      categoryFilterMode: nextPerkGroupSelection === null ? 'none' : 'selection',
+      detailSelection: { perkId, type: 'perk' },
+      query: '',
+      selectedCategoryNames: nextSelectedCategoryNames,
+      selectedPerkGroupIdsByCategory: nextSelectedPerkGroupIdsByCategory,
+    })
     startTransition(() => {
       setQuery('')
       setSelectedPerkId(perkId)
@@ -1638,6 +1748,7 @@ export default function App() {
         <DetailsPanel
           activeDetailType={activeDetailType}
           backgroundFitDetail={backgroundFitDetail}
+          detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
           emphasizedCategoryNames={emphasizedCategoryNames}
           emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           groupedBackgroundSources={groupedBackgroundSources}
