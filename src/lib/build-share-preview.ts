@@ -44,6 +44,7 @@ const buildSocialImagePathPrefix = '/social/builds'
 const maxDescriptionPerks = 4
 const maxDescriptionBackgrounds = 2
 const maxPreviewBackgroundFits = 3
+export const maxBuildSharePreviewTopBackgroundFitCacheEntries = 128
 const topBackgroundFitsByCanonicalSearch = new Map<string, BuildSharePreviewBackgroundFit[]>()
 
 type BuildSharePreviewBuildState = {
@@ -138,6 +139,9 @@ function getCachedTopBackgroundFits({
   const cachedTopBackgroundFits = topBackgroundFitsByCanonicalSearch.get(canonicalSearch)
 
   if (cachedTopBackgroundFits) {
+    topBackgroundFitsByCanonicalSearch.delete(canonicalSearch)
+    topBackgroundFitsByCanonicalSearch.set(canonicalSearch, cachedTopBackgroundFits)
+
     return copyTopBackgroundFits(cachedTopBackgroundFits)
   }
 
@@ -147,9 +151,23 @@ function getCachedTopBackgroundFits({
     }).rankedBackgroundFits,
   )
 
-  topBackgroundFitsByCanonicalSearch.set(canonicalSearch, topBackgroundFits)
+  topBackgroundFitsByCanonicalSearch.set(canonicalSearch, copyTopBackgroundFits(topBackgroundFits))
+
+  if (
+    topBackgroundFitsByCanonicalSearch.size > maxBuildSharePreviewTopBackgroundFitCacheEntries
+  ) {
+    const oldestCanonicalSearch = topBackgroundFitsByCanonicalSearch.keys().next().value
+
+    if (oldestCanonicalSearch !== undefined) {
+      topBackgroundFitsByCanonicalSearch.delete(oldestCanonicalSearch)
+    }
+  }
 
   return copyTopBackgroundFits(topBackgroundFits)
+}
+
+export function clearBuildSharePreviewCache(): void {
+  topBackgroundFitsByCanonicalSearch.clear()
 }
 
 function createBuildDescription(

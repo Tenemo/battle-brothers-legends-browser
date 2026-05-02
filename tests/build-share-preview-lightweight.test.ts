@@ -5,6 +5,8 @@ import type {
   RankedBackgroundFit,
 } from '../src/lib/background-fit'
 import { defaultBackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
+import legendsPerksDatasetJson from '../src/data/legends-perks.json'
+import type { LegendsPerkRecord, LegendsPerksDataset } from '../src/types/legends-perks'
 
 const {
   getBackgroundFitSummaryView,
@@ -32,11 +34,29 @@ vi.mock('../src/lib/background-fit', async (importOriginal) => {
   }
 })
 
-import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share-preview'
+import {
+  clearBuildSharePreviewCache,
+  createBuildSharePreviewPayloadFromSearch,
+  maxBuildSharePreviewTopBackgroundFitCacheEntries,
+} from '../src/lib/build-share-preview'
+
+const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
+const perkFixtures = legendsPerksDataset.perks
 
 beforeEach(() => {
   vi.clearAllMocks()
+  clearBuildSharePreviewCache()
 })
+
+function getRequiredPerkFixture(index: number): LegendsPerkRecord {
+  const perk = perkFixtures[index]
+
+  if (!perk) {
+    throw new Error(`Missing perk fixture at index ${index}.`)
+  }
+
+  return perk
+}
 
 function createSummary({
   backgroundId,
@@ -173,5 +193,57 @@ describe('build share preview background fits', () => {
     expect(payload.topBackgroundFits).toEqual([])
     expect(getBackgroundFitView).not.toHaveBeenCalled()
     expect(getBackgroundFitSummaryView).not.toHaveBeenCalled()
+  })
+
+  test('bounds cached top background fits and evicts the least recently used build', () => {
+    const backgroundFitView = {
+      rankedBackgroundFits: [
+        createRankedBackgroundFit({
+          backgroundId: 'background.apprentice',
+          backgroundName: 'Apprentice',
+          sourceFilePath: 'scripts/skills/backgrounds/apprentice_background.nut',
+        }),
+      ],
+      supportedBuildTargetPerkGroups: [],
+      unsupportedBuildTargetPerkGroups: [],
+    } satisfies BackgroundFitView
+    const searchForPerk = (perk: LegendsPerkRecord) =>
+      `?${new URLSearchParams({ build: perk.id }).toString()}`
+    const cachedPerk = getRequiredPerkFixture(0)
+    const evictedPerk = getRequiredPerkFixture(1)
+
+    expect(perkFixtures.length).toBeGreaterThan(maxBuildSharePreviewTopBackgroundFitCacheEntries)
+
+    const cachedSearch = searchForPerk(cachedPerk)
+    const evictedSearch = searchForPerk(evictedPerk)
+    const overflowSearches = perkFixtures
+      .slice(2, maxBuildSharePreviewTopBackgroundFitCacheEntries + 1)
+      .map(searchForPerk)
+
+    getBackgroundFitView.mockReturnValue(backgroundFitView)
+
+    createBuildSharePreviewPayloadFromSearch(cachedSearch)
+    createBuildSharePreviewPayloadFromSearch(evictedSearch)
+    createBuildSharePreviewPayloadFromSearch(cachedSearch)
+
+    for (const search of overflowSearches) {
+      createBuildSharePreviewPayloadFromSearch(search)
+    }
+
+    expect(getBackgroundFitView).toHaveBeenCalledTimes(
+      maxBuildSharePreviewTopBackgroundFitCacheEntries + 1,
+    )
+
+    createBuildSharePreviewPayloadFromSearch(cachedSearch)
+
+    expect(getBackgroundFitView).toHaveBeenCalledTimes(
+      maxBuildSharePreviewTopBackgroundFitCacheEntries + 1,
+    )
+
+    createBuildSharePreviewPayloadFromSearch(evictedSearch)
+
+    expect(getBackgroundFitView).toHaveBeenCalledTimes(
+      maxBuildSharePreviewTopBackgroundFitCacheEntries + 2,
+    )
   })
 })
