@@ -131,15 +131,24 @@ test('resets category drilldown when typing a perk search', async ({ page }) => 
   await expect(page.getByLabel('Search perks')).toHaveValue('Axe')
   await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
     'aria-pressed',
-    'false',
+    'true',
   )
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
   await expect(
     getResultsList(page).getByRole('button', { name: 'Inspect Axe Mastery' }),
   ).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('none')
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
   await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+
+  await searchPerks(page, '')
+
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(getResultsList(page).getByTestId('perk-row').first()).toBeVisible()
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
 })
 
 test('leaves no category selected when deselecting a scoped perk group from an expanded category', async ({
@@ -538,9 +547,13 @@ test('keeps category disclosure separate from category and perk group selection'
     'aria-pressed',
     'false',
   )
-  await expect(page.getByRole('button', { name: 'Clear category selection' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expect(page.getByRole('button', { name: 'Clear category selection' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Axe')).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('none')
+  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
 
   await enableCategory(page, 'Weapon')
 

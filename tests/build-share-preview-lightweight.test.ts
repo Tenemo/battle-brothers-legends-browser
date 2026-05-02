@@ -1,4 +1,4 @@
-import { describe, expect, test, vi } from 'vitest'
+import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type {
   BackgroundFitSummary,
   BackgroundFitView,
@@ -33,6 +33,10 @@ vi.mock('../src/lib/background-fit', async (importOriginal) => {
 })
 
 import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share-preview'
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 function createSummary({
   backgroundId,
@@ -137,7 +141,10 @@ describe('build share preview background fits', () => {
       throw new Error('Social previews should use the same ranking view as the app.')
     })
 
-    const payload = createBuildSharePreviewPayloadFromSearch(
+    const firstPayload = createBuildSharePreviewPayloadFromSearch(
+      '?build=Clarity,Perfect+Focus&optional=Perfect+Focus',
+    )
+    const secondPayload = createBuildSharePreviewPayloadFromSearch(
       '?build=Clarity,Perfect+Focus&optional=Perfect+Focus',
     )
 
@@ -151,9 +158,20 @@ describe('build share preview background fits', () => {
     expect(pickedPerkNames).toEqual(['Clarity', 'Perfect Focus'])
     expect(studyResourceFilter).toEqual(defaultBackgroundStudyResourceFilter)
     expect([...(options?.optionalPickedPerkIds ?? [])]).toEqual(['perk.legend_perfect_focus'])
-    expect(payload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName)).toEqual([
-      'Apprentice',
-      'Daytaler',
-    ])
+    expect(
+      firstPayload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName),
+    ).toEqual(['Apprentice', 'Daytaler'])
+    expect(secondPayload.topBackgroundFits).toEqual(firstPayload.topBackgroundFits)
+  })
+
+  test('skips background ranking work when top fits are disabled', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity', {
+      shouldIncludeTopBackgroundFits: false,
+    })
+
+    expect(payload.status).toBe('found')
+    expect(payload.topBackgroundFits).toEqual([])
+    expect(getBackgroundFitView).not.toHaveBeenCalled()
+    expect(getBackgroundFitSummaryView).not.toHaveBeenCalled()
   })
 })

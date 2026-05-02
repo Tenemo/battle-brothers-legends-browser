@@ -3,6 +3,7 @@ import '@fontsource/cinzel/700.css'
 import '@fontsource/source-sans-3/400.css'
 import '@fontsource/source-sans-3/600.css'
 import '@fontsource/source-sans-3/700.css'
+import { plannerVersion } from 'virtual:planner-version'
 import styles from './App.module.scss'
 import { BackgroundFitPanel } from './components/BackgroundFitPanel'
 import {
@@ -70,7 +71,6 @@ import {
 import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
 import type { LegendsPerksDataset } from './types/legends-perks'
-import packageJson from '../package.json'
 
 const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
 const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
@@ -86,7 +86,6 @@ const mediumDesktopBackgroundFitMediaQuery = '(min-width: 1280px) and (max-width
 const backgroundFitCompletionProgressMinimumDurationMs = 700
 const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFitProgressCompletionPaddingMs = 550
-const plannerVersion = packageJson.version
 
 const allCategoryCounts = getCategoryCounts(allPerks)
 const allPerkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
@@ -1258,9 +1257,9 @@ export default function App() {
     setActiveDetailSelection({ type: 'perk' })
   }
 
-  function clearCategoryFilterSelection() {
+  function clearCategoryFilterSelection(nextCategoryFilterMode: CategoryFilterMode = 'none') {
     requestPerkResultListScrollReset()
-    setCategoryFilterMode('none')
+    setCategoryFilterMode(nextCategoryFilterMode)
     setExpandedCategoryNames([])
     setSelectedCategoryNames([])
     setSelectedPerkGroupIdsByCategory({})
@@ -1297,7 +1296,7 @@ export default function App() {
       )
     ) {
       startTransition(() => {
-        clearCategoryFilterSelection()
+        clearCategoryFilterSelection('all')
       })
     }
   }

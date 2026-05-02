@@ -1,16 +1,25 @@
 import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
+import { normalizePath, type Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 import { injectRootSeoIntoHtml } from './src/lib/seo-metadata'
 
 const commitShaPattern = /^[0-9a-f]{7,40}$/i
-const packageJson = JSON.parse(
-  readFileSync(new URL('./package.json', import.meta.url), 'utf8'),
-) as { version?: unknown }
-const plannerVersion = packageJson.version
+const packageJsonUrl = new URL('./package.json', import.meta.url)
+const packageJsonPath = normalizePath(fileURLToPath(packageJsonUrl))
+const plannerVersionVirtualModuleId = 'virtual:planner-version'
+const resolvedPlannerVersionVirtualModuleId = `\0${plannerVersionVirtualModuleId}`
 
-if (typeof plannerVersion !== 'string' || plannerVersion.length === 0) {
-  throw new Error('package.json must define a non-empty version string.')
+function readPlannerVersion(): string {
+  const packageJson = JSON.parse(readFileSync(packageJsonUrl, 'utf8')) as { version?: unknown }
+  const plannerVersion = packageJson.version
+
+  if (typeof plannerVersion !== 'string' || plannerVersion.length === 0) {
+    throw new Error('package.json must define a non-empty version string.')
+  }
+
+  return plannerVersion
 }
 
 function getBuildCommitSha(): string | null {
@@ -29,12 +38,52 @@ function getBuildCommitSha(): string | null {
   return commitSha
 }
 
+function createPlannerVersionPlugin(): Plugin {
+  return {
+    name: 'battle-brothers-planner-version',
+    configureServer(server) {
+      server.watcher.add(packageJsonPath)
+    },
+    buildStart() {
+      this.addWatchFile(packageJsonPath)
+    },
+    resolveId(id) {
+      return id === plannerVersionVirtualModuleId ? resolvedPlannerVersionVirtualModuleId : null
+    },
+    load(id) {
+      if (id !== resolvedPlannerVersionVirtualModuleId) {
+        return null
+      }
+
+      return `export const plannerVersion = ${JSON.stringify(readPlannerVersion())};\n`
+    },
+    handleHotUpdate({ file, server }) {
+      if (normalizePath(file) !== packageJsonPath) {
+        return
+      }
+
+      const plannerVersionModule = server.moduleGraph.getModuleById(
+        resolvedPlannerVersionVirtualModuleId,
+      )
+
+      if (plannerVersionModule) {
+        server.moduleGraph.invalidateModule(plannerVersionModule)
+      }
+
+      server.ws.send({ type: 'full-reload' })
+
+      return []
+    },
+  }
+}
+
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2500,
   },
   plugins: [
     react(),
+    createPlannerVersionPlugin(),
     {
       name: 'battle-brothers-root-seo',
       transformIndexHtml(html) {
@@ -49,7 +98,7 @@ export default defineConfig({
           source: `${JSON.stringify(
             {
               commitSha: getBuildCommitSha(),
-              version: plannerVersion,
+              version: readPlannerVersion(),
             },
             null,
             2,
