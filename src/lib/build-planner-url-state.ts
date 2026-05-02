@@ -1,4 +1,4 @@
-import type { LegendsPerkRecord } from '../types/legends-perks'
+import type { LegendsPerkUrlRecord } from '../types/legends-perks'
 import {
   getCategoryFilterModeFromSelection,
   type CategoryFilterMode,
@@ -14,7 +14,7 @@ export type BuildPlannerUrlPerkGroupOption = {
   perkGroupName: string
 }
 
-export type BuildPlannerUrlBackgroundOption = {
+type BuildPlannerUrlBackgroundOption = {
   backgroundId: string
   sourceFilePath: string
 }
@@ -54,7 +54,7 @@ export type BuildPlannerUrlStateReadOptions = {
   availableCategoryNames: string[]
   availableBackgroundVeteranPerkLevelIntervals?: number[]
   backgrounds?: BuildPlannerUrlBackgroundOption[]
-  perks: LegendsPerkRecord[]
+  perks: LegendsPerkUrlRecord[]
   perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
 }
 
@@ -62,7 +62,7 @@ export type BuildPlannerUrlStateWriteOptions = {
   availableCategoryNames: string[]
   availableBackgroundVeteranPerkLevelIntervals?: number[]
   backgrounds?: BuildPlannerUrlBackgroundOption[]
-  perksById: Map<string, LegendsPerkRecord>
+  perksById: Map<string, LegendsPerkUrlRecord>
   perkGroupOptionsByCategory: Map<string, BuildPlannerUrlPerkGroupOption[]>
   shouldWriteBackgroundStudyBookParam?: boolean
   shouldWriteBackgroundStudyScrollParam?: boolean
@@ -162,7 +162,7 @@ function createBackgroundSourceFileToken(sourceFilePath: string): string {
   return createUrlToken(sourceFileBaseName)
 }
 
-function createPerkNameCountByLookupValue(perks: Iterable<LegendsPerkRecord>): Map<string, number> {
+function createPerkNameCountByLookupValue(perks: Iterable<LegendsPerkUrlRecord>): Map<string, number> {
   const perkNameCountByLookupValue = new Map<string, number>()
 
   for (const perk of perks) {
@@ -176,12 +176,12 @@ function createPerkNameCountByLookupValue(perks: Iterable<LegendsPerkRecord>): M
   return perkNameCountByLookupValue
 }
 
-function createDisambiguatedPerkUrlLabel(perk: LegendsPerkRecord): string {
+function createDisambiguatedPerkUrlLabel(perk: LegendsPerkUrlRecord): string {
   return `${perk.perkName}${disambiguatedPerkTokenSeparator}${perk.id}`
 }
 
 function createPerkUrlLabel(
-  perk: LegendsPerkRecord,
+  perk: LegendsPerkUrlRecord,
   perkNameCountByLookupValue: Map<string, number>,
 ): string {
   return (perkNameCountByLookupValue.get(normalizeLookupValue(perk.perkName)) ?? 0) > 1
@@ -189,7 +189,7 @@ function createPerkUrlLabel(
     : perk.perkName
 }
 
-function createPerkIdByLookupValue(perks: LegendsPerkRecord[]): Map<string, string> {
+function createPerkIdByLookupValue(perks: LegendsPerkUrlRecord[]): Map<string, string> {
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(perks)
   const perkIdByLookupValue = new Map<string, string>()
 
@@ -308,7 +308,7 @@ function appendGroupedQueryEntry(entries: string[], key: string, values: string[
 
 function createPerkUrlLabels(
   perkIds: string[],
-  perksById: Map<string, LegendsPerkRecord>,
+  perksById: Map<string, LegendsPerkUrlRecord>,
   perkNameCountByLookupValue: Map<string, number>,
 ): string[] {
   const perkLabels: string[] = []
@@ -730,7 +730,7 @@ export function createBuildPlannerUrlSearch(
 
 export function createSharedBuildUrlSearch(
   pickedPerkIds: string[],
-  perksById: Map<string, LegendsPerkRecord>,
+  perksById: Map<string, LegendsPerkUrlRecord>,
   optionalPerkIds: string[] = [],
 ): string {
   return createBuildPlannerUrlSearch(

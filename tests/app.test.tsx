@@ -2,7 +2,11 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import packageJson from '../package.json'
-import type { LegendsPerksDataset } from '../src/types/legends-perks'
+import type {
+  LegendsBackgroundFitDataset,
+  LegendsPerkCatalogDataset,
+  LegendsPerksDataset,
+} from '../src/types/legends-perks'
 
 const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoisted(() => ({
   backgroundFitSourceFileNamesForAppTests: new Set([
@@ -18,7 +22,7 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
   ]),
 }))
 
-vi.mock('../src/data/legends-perks.json', async () => {
+async function loadFilteredAppTestDatasets() {
   const actualDataset = (await vi.importActual(
     '../src/data/legends-perks.json',
   )) as LegendsPerksDataset
@@ -35,13 +39,42 @@ vi.mock('../src/data/legends-perks.json', async () => {
   )
 
   return {
+    actualDataset,
+    backgroundFitBackgrounds,
+    perkGroupCount,
+    perks,
+  }
+}
+
+vi.mock('../src/data/legends-perk-catalog.json', async () => {
+  const { actualDataset, perkGroupCount, perks } = await loadFilteredAppTestDatasets()
+
+  return {
     default: {
-      ...actualDataset,
-      backgroundFitBackgrounds,
+      generatedAt: actualDataset.generatedAt,
       perkCount: perks.length,
       perks,
+      referenceRoot: actualDataset.referenceRoot,
+      referenceVersion: actualDataset.referenceVersion,
+      sourceFiles: actualDataset.sourceFiles,
       perkGroupCount,
-    },
+    } satisfies LegendsPerkCatalogDataset,
+  }
+})
+
+vi.mock('../src/data/legends-background-fit.json', async () => {
+  const { actualDataset, backgroundFitBackgrounds, perks } = await loadFilteredAppTestDatasets()
+
+  return {
+    default: {
+      backgroundFitBackgrounds,
+      backgroundFitRules: actualDataset.backgroundFitRules,
+      perks: perks.map(({ id, perkName, placements }) => ({
+        id,
+        perkName,
+        placements,
+      })),
+    } satisfies LegendsBackgroundFitDataset,
   }
 })
 
@@ -144,7 +177,7 @@ describe('app', () => {
 
     const getOriginPerkGroupsCheckbox = () =>
       screen.getByRole('checkbox', {
-        name: 'Origin perks',
+        name: 'Origin perk groups',
       })
     const getAncientScrollPerkGroupsCheckbox = () =>
       screen.getByRole('checkbox', {
@@ -224,7 +257,7 @@ describe('app', () => {
     expect(within(sharedPerkGroups).queryByText('Cutthroat')).not.toBeInTheDocument()
 
     await user.click(screen.getByRole('button', { name: 'Filter perks' }))
-    await user.click(screen.getByRole('checkbox', { name: 'Origin perks' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Origin perk groups' }))
 
     await waitFor(() => {
       expect(
@@ -375,7 +408,7 @@ describe('app', () => {
     ).toBeInTheDocument()
   })
 
-  test('updates selected perk details when browser history restores detail url state', async () => {
+  test('updates selected perk detail state when browser history restores detail url state', async () => {
     render(<App />)
 
     act(() => {
@@ -385,7 +418,7 @@ describe('app', () => {
 
     await waitFor(() => {
       expect(
-        within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+        within(screen.getByTestId('detail-panel')).getByRole('heading', {
           level: 2,
           name: 'Berserk',
         }),
@@ -393,7 +426,7 @@ describe('app', () => {
     })
   })
 
-  test('keeps selected perk details when a perk group filter hides the selected perk', async () => {
+  test('keeps selected perk detail state when a perk group filter hides the selected perk', async () => {
     const user = userEvent.setup()
     render(<App />)
     const perkSearchInput = screen.getByLabelText('Search perks')
@@ -404,7 +437,7 @@ describe('app', () => {
     )
 
     expect(
-      within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+      within(screen.getByTestId('detail-panel')).getByRole('heading', {
         level: 2,
         name: 'Berserk',
       }),
@@ -420,7 +453,7 @@ describe('app', () => {
       within(screen.getByTestId('results-list')).queryByRole('button', { name: 'Inspect Berserk' }),
     ).not.toBeInTheDocument()
     expect(
-      within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+      within(screen.getByTestId('detail-panel')).getByRole('heading', {
         level: 2,
         name: 'Berserk',
       }),
@@ -441,7 +474,7 @@ describe('app', () => {
 
     await waitFor(() => {
       expect(
-        within(screen.getByTestId('perk-detail-panel')).getByRole('heading', {
+        within(screen.getByTestId('detail-panel')).getByRole('heading', {
           level: 2,
           name: 'Apprentice',
         }),

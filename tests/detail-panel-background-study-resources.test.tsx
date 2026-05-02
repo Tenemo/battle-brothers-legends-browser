@@ -1,6 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
-import { DetailsPanel } from '../src/components/PerkDetail'
+import { DetailPanel } from '../src/components/DetailPanel'
 import { ancientScrollPerkGroupMarkerTestId } from '../src/lib/ancient-scroll-perk-group-display'
 import type { BuildTargetPerkGroup, RankedBackgroundFit } from '../src/lib/background-fit'
 import { backgroundStudyResourceBadgesTestId } from '../src/lib/background-study-resource-display'
@@ -54,8 +54,8 @@ const backgroundFit = {
   veteranPerkLevelInterval: 4,
 } satisfies RankedBackgroundFit
 
-function renderBackgroundFitDetail({
-  backgroundFitDetail = backgroundFit,
+function renderSelectedBackgroundFitDetail({
+  selectedBackgroundFitDetail = backgroundFit,
   supportedBuildTargetPerkGroups = [
     {
       categoryName: 'Traits',
@@ -68,13 +68,13 @@ function renderBackgroundFitDetail({
     },
   ],
 }: {
-  backgroundFitDetail?: RankedBackgroundFit
+  selectedBackgroundFitDetail?: RankedBackgroundFit
   supportedBuildTargetPerkGroups?: BuildTargetPerkGroup[]
 } = {}) {
   render(
-    <DetailsPanel
-      activeDetailType="background"
-      backgroundFitDetail={{ backgroundFit: backgroundFitDetail, rank: 0 }}
+    <DetailPanel
+      selectedDetailType="background"
+      selectedBackgroundFitDetail={{ backgroundFit: selectedBackgroundFitDetail, rank: 0 }}
       detailHistoryNavigationAvailability={{
         next: false,
         previous: false,
@@ -117,7 +117,7 @@ function renderBackgroundFitDetail({
 
 describe('background details study resources', () => {
   test('uses planner perk group tiles for book and scroll learning requirements', () => {
-    renderBackgroundFitDetail()
+    renderSelectedBackgroundFitDetail()
 
     expect(screen.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
     const detailBadgeRow = screen.getByTestId('detail-badge-row')
@@ -154,8 +154,8 @@ describe('background details study resources', () => {
       mustHaveStudyResourceRequirement: ancientScrollRequirementProfile,
     } satisfies RankedBackgroundFit
 
-    renderBackgroundFitDetail({
-      backgroundFitDetail: scrollBackgroundFit,
+    renderSelectedBackgroundFitDetail({
+      selectedBackgroundFitDetail: scrollBackgroundFit,
       supportedBuildTargetPerkGroups: [
         {
           categoryName: 'Magic',

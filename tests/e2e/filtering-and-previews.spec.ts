@@ -5,6 +5,7 @@ import {
   enableCategory,
   expandCategory,
   expectRawAncientScrollMarker,
+  expectSearchParam,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -28,7 +29,7 @@ test('switches active categories and scoped perk groups, then clears everything 
     'true',
   )
   await expect(page.getByRole('button', { name: 'Clear category selection' })).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expectSearchParam(page, 'category', null)
   await enableCategory(page, 'Traits')
   await expect(page.getByTestId('perk-group-heading')).toHaveText('Perk groups')
   await expect
@@ -60,8 +61,8 @@ test('switches active categories and scoped perk groups, then clears everything 
   await page.getByRole('button', { name: 'Clear category selection' }).click()
   await expect(page.getByRole('button', { name: 'Enable category Traits' })).toBeVisible()
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('none')
-  await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
+  await expectSearchParam(page, 'category', 'none')
+  await expectSearchParam(page, 'group-traits', null)
 
   await enableCategory(page, 'Traits')
   await selectPerkGroup(page, 'Calm')
@@ -101,8 +102,8 @@ test('keeps only one selected perk group when another group is selected', async 
   await expect(getSidebarPerkGroupButton(page, 'Deadeye')).toHaveAttribute('aria-pressed', 'true')
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
   await expect(page.getByText(/Filtered to /i)).toHaveCount(0)
-  await expect.poll(() => new URL(page.url()).searchParams.get('group-traits')).toBeNull()
-  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBe('Deadeye')
+  await expectSearchParam(page, 'group-traits', null)
+  await expectSearchParam(page, 'group-magic', 'Deadeye')
 
   await selectPerkGroup(page, 'Deadeye')
 
@@ -113,8 +114,8 @@ test('keeps only one selected perk group when another group is selected', async 
     'false',
   )
   await expect(page.getByText('No perks found')).toBeVisible()
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBe('none')
-  await expect.poll(() => new URL(page.url()).searchParams.get('group-magic')).toBeNull()
+  await expectSearchParam(page, 'category', 'none')
+  await expectSearchParam(page, 'group-magic', null)
 })
 
 test('resets category drilldown when typing a perk search', async ({ page }) => {
@@ -268,7 +269,7 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
 
   const perkFiltersGroup = page.getByRole('group', { name: 'Perk filters' })
   const originPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
-    name: 'Origin perks',
+    name: 'Origin perk groups',
   })
   const ancientScrollPerkGroupsCheckbox = perkFiltersGroup.getByRole('checkbox', {
     name: 'Ancient scroll perks',
@@ -282,7 +283,7 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
   const filterOptions = [
     {
       checkboxControl: originPerkGroupsCheckboxControl,
-      label: perkFiltersGroup.getByText('Origin perks', { exact: true }),
+      label: perkFiltersGroup.getByText('Origin perk groups', { exact: true }),
     },
     {
       checkboxControl: ancientScrollPerkGroupsCheckboxControl,
@@ -448,7 +449,7 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
     await sharedPage.getByRole('button', { name: 'Filter perks' }).click()
     await expect(
       sharedPage.getByRole('checkbox', {
-        name: 'Origin perks',
+        name: 'Origin perk groups',
       }),
     ).not.toBeChecked()
     await expect(

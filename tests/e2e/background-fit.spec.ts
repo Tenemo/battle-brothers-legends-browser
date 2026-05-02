@@ -6,7 +6,7 @@ import {
   getBackgroundFitPanel,
   getBuildPerksBar,
   getBuildIndividualGroupsList,
-  getPerkDetailPanel,
+  getDetailPanel,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -58,7 +58,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const detailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
   const backgroundFitResultsScroll = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
   const apprenticeCard = backgroundFitPanel
@@ -403,7 +403,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(detailPanel.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
   await expect(detailPanel.getByRole('heading', { level: 4, name: 'Optional' })).toBeVisible()
   await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
-  await expect(detailPanel.getByText('Learn with book/scrolls')).toHaveCount(2)
+  await expect(detailPanel.getByText('Learn with skill books and ancient scrolls')).toHaveCount(2)
   await expect(detailPanel.getByText('No optional perks in this build.')).toBeVisible()
   await expect(detailPanel.getByTestId('detail-background-veteran-perk-badge')).toHaveCSS(
     'cursor',
@@ -527,7 +527,7 @@ test('restores build and detail state with browser back and forward', async ({ p
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const detailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
 
   await expect(page.getByText('1 perk picked.')).toBeVisible()
   await expect.poll(() => new URL(page.url()).searchParams.get('build')).toBe('Axe Mastery')
@@ -575,7 +575,7 @@ test('restores build and detail state with browser back and forward', async ({ p
     await sharedPage.setViewportSize(mediumBuildPlannerViewport)
     await sharedPage.goto(restoredBackgroundDetailUrl)
     await expect(
-      getPerkDetailPanel(sharedPage).getByRole('heading', {
+      getDetailPanel(sharedPage).getByRole('heading', {
         level: 2,
         name: 'Apprentice',
       }),
@@ -1096,7 +1096,7 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await addPerkToBuildFromResults(page, 'Danger Pay')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const detailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
   const apprenticeCard = backgroundFitPanel
     .getByTestId('background-fit-card')
     .filter({ hasText: 'Apprentice' })

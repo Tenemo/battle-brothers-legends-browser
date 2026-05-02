@@ -5,8 +5,8 @@ import type {
   LegendsDynamicBackgroundCategoryName,
   LegendsPerkBackgroundSource,
   LegendsPerkPlacement,
-  LegendsPerkRecord,
-  LegendsPerksDataset,
+  LegendsBackgroundFitPerkRecord,
+  LegendsBackgroundFitDataset,
 } from '../types/legends-perks'
 import {
   chanceDynamicBackgroundCategoryNames,
@@ -152,7 +152,7 @@ export type BackgroundFitView = {
   unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }
 
-export type BackgroundFitSummaryView = {
+type BackgroundFitSummaryView = {
   rankedBackgroundFitSummaries: BackgroundFitSummary[]
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
   unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
@@ -163,11 +163,11 @@ export type BackgroundFitCalculationProgress = {
   totalBackgroundCount: number
 }
 
-export type BackgroundFitPartialView = BackgroundFitCalculationProgress & {
+type BackgroundFitPartialView = BackgroundFitCalculationProgress & {
   view: BackgroundFitView
 }
 
-export type BackgroundFitViewOptions = {
+type BackgroundFitViewOptions = {
   onPartialView?: (partialView: BackgroundFitPartialView) => void
   onProgress?: (progress: BackgroundFitCalculationProgress) => void
   partialViewChunkSize?: number
@@ -181,12 +181,12 @@ type BackgroundFitEngine = {
     perkGroupId: string,
   ) => number
   getBackgroundFitView: (
-    pickedPerks: LegendsPerkRecord[],
+    pickedPerks: LegendsBackgroundFitPerkRecord[],
     studyResourceFilter?: BackgroundStudyResourceFilter,
     options?: BackgroundFitViewOptions,
   ) => BackgroundFitView
-  getBackgroundFitSummaryView: (pickedPerks: LegendsPerkRecord[]) => BackgroundFitSummaryView
-  getPerkBackgroundSources: (perk: LegendsPerkRecord) => LegendsPerkBackgroundSource[]
+  getBackgroundFitSummaryView: (pickedPerks: LegendsBackgroundFitPerkRecord[]) => BackgroundFitSummaryView
+  getPerkBackgroundSources: (perk: LegendsBackgroundFitPerkRecord) => LegendsPerkBackgroundSource[]
 }
 
 const defaultBackgroundFitPartialViewChunkSize = 8
@@ -304,7 +304,7 @@ function getChanceAttemptCount(categoryDefinition: LegendsBackgroundFitCategoryD
 }
 
 function buildPerkGroupIdsByCategory(
-  perks: LegendsPerkRecord[],
+  perks: LegendsBackgroundFitPerkRecord[],
 ): Map<LegendsDynamicBackgroundCategoryName, string[]> {
   const perkGroupIdsByCategory = new Map<LegendsDynamicBackgroundCategoryName, Set<string>>()
 
@@ -600,7 +600,7 @@ function getCategoryDefinition(
   )
 }
 
-function createBackgroundFitProjection(pickedPerks: LegendsPerkRecord[]): BackgroundFitProjection {
+function createBackgroundFitProjection(pickedPerks: LegendsBackgroundFitPerkRecord[]): BackgroundFitProjection {
   const groupCoverageMaskByRequirementKey = new Map<string, CoverageMask>()
   const pickedPerkMaskById = new Map<string, CoverageMask>()
   let pickedPerkIndex = 0
@@ -641,7 +641,7 @@ function createBackgroundFitProjection(pickedPerks: LegendsPerkRecord[]): Backgr
 }
 
 function getPickedPerksCoverageMask(
-  pickedPerks: LegendsPerkRecord[],
+  pickedPerks: LegendsBackgroundFitPerkRecord[],
   projection: BackgroundFitProjection,
 ): CoverageMask {
   let coverageMask = 0n
@@ -1830,7 +1830,7 @@ export function calculateBackgroundPerkGroupProbabilities(
   return probabilitiesByPerkGroupKey
 }
 
-export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
+export function getBuildTargetPerkGroups(pickedPerks: LegendsBackgroundFitPerkRecord[]): {
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
   unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 } {
@@ -1898,7 +1898,7 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsPerkRecord[]): {
   }
 }
 
-function getUniqueDynamicPerkPlacements(perk: LegendsPerkRecord): DynamicPerkPlacement[] {
+function getUniqueDynamicPerkPlacements(perk: LegendsBackgroundFitPerkRecord): DynamicPerkPlacement[] {
   const seenPlacementKeys = new Set<string>()
   const dynamicPlacements: DynamicPerkPlacement[] = []
 
@@ -2110,7 +2110,7 @@ function getBackgroundDisambiguator(
   return sourceFileName.replace(/_background\.nut$/, '').replace(/\.nut$/, '')
 }
 
-function getPickedPerksCacheKey(pickedPerks: LegendsPerkRecord[]): string {
+function getPickedPerksCacheKey(pickedPerks: LegendsBackgroundFitPerkRecord[]): string {
   return pickedPerks
     .map((pickedPerk) => pickedPerk.id)
     .toSorted()
@@ -2119,7 +2119,7 @@ function getPickedPerksCacheKey(pickedPerks: LegendsPerkRecord[]): string {
 
 function getBackgroundFitScopeCacheKey(
   prefix: string,
-  pickedPerks: LegendsPerkRecord[],
+  pickedPerks: LegendsBackgroundFitPerkRecord[],
   studyResourceFilterCacheKey?: string,
 ): string {
   return [prefix, studyResourceFilterCacheKey ?? '', getPickedPerksCacheKey(pickedPerks)].join(
@@ -2164,7 +2164,7 @@ function trimBackgroundFitBuildCache(
   }
 }
 
-export function createBackgroundFitEngine(dataset: LegendsPerksDataset): BackgroundFitEngine {
+export function createBackgroundFitEngine(dataset: LegendsBackgroundFitDataset): BackgroundFitEngine {
   const perkGroupIdsByCategory = buildPerkGroupIdsByCategory(dataset.perks)
   const classWeaponDependencyByClassPerkGroupId = buildClassWeaponDependencyByClassPerkGroupId(
     dataset.backgroundFitRules.classWeaponDependencies,
@@ -2231,7 +2231,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
       .toSorted(compareBackgroundFitSummaries)
   }
 
-  function getBackgroundFitBuildCache(pickedPerks: LegendsPerkRecord[]): BackgroundFitBuildCache {
+  function getBackgroundFitBuildCache(pickedPerks: LegendsBackgroundFitPerkRecord[]): BackgroundFitBuildCache {
     const pickedPerksCacheKey = getPickedPerksCacheKey(pickedPerks)
     const cachedBackgroundFitBuildCache =
       backgroundFitBuildCacheByPickedPerksKey.get(pickedPerksCacheKey)
@@ -2330,7 +2330,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
     studyResourceRequirementCacheKey,
   }: {
     cachedBackgroundFitRecord: CachedBackgroundFitRecord
-    pickedPerks: LegendsPerkRecord[]
+    pickedPerks: LegendsBackgroundFitPerkRecord[]
     studyResourceFilter: BackgroundStudyResourceFilter
     studyResourceRequirementCacheKey: string
   }): StudyResourceRequirementProfile | null {
@@ -2394,7 +2394,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   }: {
     backgroundFitBuildCache: BackgroundFitBuildCache
     cachedBackgroundFitRecord: CachedBackgroundFitRecord
-    pickedPerks: LegendsPerkRecord[]
+    pickedPerks: LegendsBackgroundFitPerkRecord[]
     supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
   }): BackgroundFitSummary {
     if (cachedBackgroundFitRecord.baseBackgroundFit) {
@@ -2466,7 +2466,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
   }: {
     backgroundFitBuildCache: BackgroundFitBuildCache
     cachedBackgroundFitRecord: CachedBackgroundFitRecord
-    pickedPerks: LegendsPerkRecord[]
+    pickedPerks: LegendsBackgroundFitPerkRecord[]
     scopeCacheKey: string
   }): number {
     const cachedExpectedCoveredPickedPerkCount =

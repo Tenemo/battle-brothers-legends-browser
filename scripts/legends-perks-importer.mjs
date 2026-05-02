@@ -60,7 +60,7 @@ function addImporterParseWarning(diagnosticContext, parserContext, source, error
   })
 }
 
-const favoriteEnemyPerkConstByArrayName = {
+const favouredEnemyPerkConstByArrayName = {
   FavoriteBeast: 'LegendFavouredEnemyBeast',
   FavoriteCivilization: 'LegendFavouredEnemyCivilization',
   FavoriteGreenSkins: 'LegendFavouredEnemyGreenskin',
@@ -824,7 +824,7 @@ function parseEntityNamesFile(fileSource) {
   return entityNamesByConstName
 }
 
-function parseFavoriteEnemyConfigFile(fileSource) {
+function parseFavouredEnemyConfigFile(fileSource) {
   const targetConstNamesByPerkConstName = new Map()
   const killsPerPercentBonusByEntityConstName = new Map()
 
@@ -834,7 +834,7 @@ function parseFavoriteEnemyConfigFile(fileSource) {
       statement.target.startsWith('::Const.LegendMod.Favorite')
     ) {
       const arrayName = getLastPathSegment(statement.target)
-      const perkConstName = favoriteEnemyPerkConstByArrayName[arrayName]
+      const perkConstName = favouredEnemyPerkConstByArrayName[arrayName]
 
       if (!perkConstName) {
         continue
@@ -1842,7 +1842,7 @@ function parseScenarioHookFile(fileSource, sourceFilePath, diagnostics) {
   }
 }
 
-function buildFavoriteEnemyTargets(
+function buildFavouredEnemyTargets(
   perkConstName,
   targetConstNamesByPerkConstName,
   killsPerPercentBonusByEntityConstName,
@@ -1951,7 +1951,7 @@ export async function createDataset(
     'afterHooks',
     'perk_to_perk_groups_mapping.nut',
   )
-  const favoriteEnemyConfigFilePath = path.join(
+  const favouredEnemyConfigFilePath = path.join(
     referenceRootDirectoryPath,
     'config',
     'z_legends_fav_enemies.nut',
@@ -1992,7 +1992,7 @@ export async function createDataset(
     perkDefinitionsFileSource,
     entityNamesFileSource,
     categoryOrderFileSource,
-    favoriteEnemyConfigFileSource,
+    favouredEnemyConfigFileSource,
     perkGroupRulesFileSource,
     characterBackgroundFileSource,
     playerHookFileSource,
@@ -2001,7 +2001,7 @@ export async function createDataset(
     readFile(perkDefinitionsFilePath, 'utf8'),
     readFile(entityNamesFilePath, 'utf8'),
     readFile(categoryOrderFilePath, 'utf8'),
-    readFile(favoriteEnemyConfigFilePath, 'utf8'),
+    readFile(favouredEnemyConfigFilePath, 'utf8'),
     readFile(perkGroupRulesFilePath, 'utf8'),
     readFile(characterBackgroundFilePath, 'utf8'),
     readFileIfExists(playerHookFilePath),
@@ -2125,7 +2125,7 @@ export async function createDataset(
     toPosixRelativePath(perkDefinitionsFilePath),
   )
   const entityNamesByConstName = parseEntityNamesFile(entityNamesFileSource)
-  const favoriteEnemyConfig = parseFavoriteEnemyConfigFile(favoriteEnemyConfigFileSource)
+  const favouredEnemyConfig = parseFavouredEnemyConfigFile(favouredEnemyConfigFileSource)
 
   const perkGroupDefinitions = new Map()
   const perkGroupCategoryNames = new Map()
@@ -2439,10 +2439,10 @@ export async function createDataset(
             getCategoryPriority(categoryOrder, rightCategoryName) ||
           leftCategoryName.localeCompare(rightCategoryName),
       )[0] ?? 'Other'
-    const favouredEnemyTargets = buildFavoriteEnemyTargets(
+    const favouredEnemyTargets = buildFavouredEnemyTargets(
       perkDefinition.constName,
-      favoriteEnemyConfig.targetConstNamesByPerkConstName,
-      favoriteEnemyConfig.killsPerPercentBonusByEntityConstName,
+      favouredEnemyConfig.targetConstNamesByPerkConstName,
+      favouredEnemyConfig.killsPerPercentBonusByEntityConstName,
       entityNamesByConstName,
     )
     const backgroundSources = (backgroundSourcesByPerkConstName.get(perkDefinition.constName) ?? [])
@@ -2520,7 +2520,7 @@ export async function createDataset(
     })),
     { path: toPosixRelativePath(entityNamesFilePath), role: 'entity names' },
     { path: toPosixRelativePath(categoryOrderFilePath), role: 'perk category order' },
-    { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favoured enemy metadata' },
+    { path: toPosixRelativePath(favouredEnemyConfigFilePath), role: 'favoured enemy metadata' },
     { path: toPosixRelativePath(perkGroupRulesFilePath), role: 'background fit rules' },
     ...(playerHookFileSource === null
       ? []
@@ -2580,10 +2580,80 @@ export async function createDataset(
   }
 }
 
-export async function writeDatasetFile(
-  dataset,
-  outputFilePath = path.join(projectRootDirectoryPath, 'src', 'data', 'legends-perks.json'),
-) {
+const defaultDatasetOutputFilePath = path.join(
+  projectRootDirectoryPath,
+  'src',
+  'data',
+  'legends-perks.json',
+)
+
+function createPerkCatalogDataset(dataset) {
+  return {
+    generatedAt: dataset.generatedAt,
+    perkCount: dataset.perkCount,
+    perks: dataset.perks,
+    referenceRoot: dataset.referenceRoot,
+    referenceVersion: dataset.referenceVersion,
+    sourceFiles: dataset.sourceFiles,
+    perkGroupCount: dataset.perkGroupCount,
+  }
+}
+
+function createBackgroundFitPerkRecord({ id, perkName, placements }) {
+  return {
+    id,
+    perkName,
+    placements,
+  }
+}
+
+function createBuildSharePreviewPerkRecord({ iconPath, id, perkName, placements }) {
+  return {
+    iconPath,
+    id,
+    perkName,
+    placements,
+  }
+}
+
+function createBackgroundFitDataset(dataset) {
+  return {
+    backgroundFitBackgrounds: dataset.backgroundFitBackgrounds,
+    backgroundFitRules: dataset.backgroundFitRules,
+    perks: dataset.perks.map(createBackgroundFitPerkRecord),
+  }
+}
+
+function createBuildSharePreviewDataset(dataset) {
+  return {
+    ...createBackgroundFitDataset(dataset),
+    perks: dataset.perks.map(createBuildSharePreviewPerkRecord),
+    referenceVersion: dataset.referenceVersion,
+  }
+}
+
+async function writeJsonFile(outputFilePath, value) {
   await mkdir(path.dirname(outputFilePath), { recursive: true })
-  await writeFile(outputFilePath, `${JSON.stringify(dataset, null, 2)}\n`, 'utf8')
+  await writeFile(outputFilePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
+}
+
+export async function writeDatasetFile(dataset, outputFilePath = defaultDatasetOutputFilePath) {
+  await writeJsonFile(outputFilePath, dataset)
+
+  const outputDirectoryPath = path.dirname(outputFilePath)
+
+  await Promise.all([
+    writeJsonFile(
+      path.join(outputDirectoryPath, 'legends-background-fit.json'),
+      createBackgroundFitDataset(dataset),
+    ),
+    writeJsonFile(
+      path.join(outputDirectoryPath, 'legends-build-share-preview.json'),
+      createBuildSharePreviewDataset(dataset),
+    ),
+    writeJsonFile(
+      path.join(outputDirectoryPath, 'legends-perk-catalog.json'),
+      createPerkCatalogDataset(dataset),
+    ),
+  ])
 }

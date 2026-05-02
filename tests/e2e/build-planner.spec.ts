@@ -10,7 +10,7 @@ import {
   getBuildPerksBar,
   getBuildSharedGroupsList,
   getParsedCssRgbColor,
-  getPerkDetailPanel,
+  getDetailPanel,
   getResolvedCssBackgroundColor,
   getResolvedCssBorderColor,
   getResultsList,
@@ -2607,7 +2607,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
 
   await expect(page.getByText('1 perk picked.')).toBeVisible()
   await expect(
-    getPerkDetailPanel(page).getByRole('heading', {
+    getDetailPanel(page).getByRole('heading', {
       level: 2,
       name: 'Select a perk or background',
     }),

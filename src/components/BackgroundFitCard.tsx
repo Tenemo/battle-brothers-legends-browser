@@ -235,7 +235,7 @@ function BackgroundFitMatchRow({
   )
 }
 
-export type BackgroundFitMetric = {
+type BackgroundFitMetric = {
   accessibleLabel: string
   icon: 'must-have' | null
   label: string

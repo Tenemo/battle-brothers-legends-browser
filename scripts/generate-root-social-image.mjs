@@ -13,6 +13,7 @@ import {
   socialImageHeight,
   socialImageWidth,
 } from '../src/lib/social-image-markup.ts'
+import { socialImageColors, socialImageFontFamilies } from '../src/lib/social-image-style.ts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -48,9 +49,9 @@ export async function createRootSocialImageSvg({
   )}">
   ${renderSocialImageDefinitions({ includePanelLight: true })}
   ${renderSocialImageBackground()}
-  <rect x="65" y="65" width="1070" height="502" fill="#16100d" stroke="#6f4f27" stroke-width="2" />
+  <rect x="65" y="65" width="1070" height="502" fill="${socialImageColors.panel}" stroke="${socialImageColors.panelStroke}" stroke-width="2" />
   <rect x="65" y="65" width="1070" height="502" fill="url(#panel-light)" />
-  <text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Build planner</text>
+  <text x="96" y="154" fill="${socialImageColors.title}" font-family="${socialImageFontFamilies.brand}" font-size="78" font-weight="700" letter-spacing="0.02em">Build planner</text>
   ${renderSocialImageBrand({
     fontSize: 26,
     x: 99,
@@ -66,7 +67,7 @@ export async function createRootSocialImageSvg({
         : ''
     }
   </g>
-  <text x="430" y="320" fill="#fffaf0" font-family="Cinzel, serif" font-size="41" font-weight="700" letter-spacing="0.02em">
+  <text x="430" y="320" fill="${socialImageColors.textPrimary}" font-family="${socialImageFontFamilies.brand}" font-size="41" font-weight="700" letter-spacing="0.02em">
     <tspan x="430" dy="0">Search perks, inspect perk groups</tspan>
     <tspan x="430" dy="48">placement, and plan builds</tspan>
     <tspan x="430" dy="48">with exact in-mod labels</tspan>

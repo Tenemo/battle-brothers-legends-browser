@@ -4,7 +4,7 @@ import {
   expectNoDocumentHorizontalOverflow,
   getBackgroundFitPanel,
   getBuildPerksBar,
-  getPerkDetailPanel,
+  getDetailPanel,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
   searchPerks,
@@ -22,7 +22,7 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
   await expect(page.getByText(/Build slot \d+|Not in build/)).toHaveCount(0)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const perkDetailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
 
   await expect
     .poll(async () =>
@@ -30,7 +30,7 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
         const backgroundFitPanelElement = document.querySelector(
           '[data-testid="background-fit-panel"]',
         )
-        const perkDetailPanelElement = document.querySelector('[data-testid="perk-detail-panel"]')
+        const detailPanelElement = document.querySelector('[data-testid="detail-panel"]')
 
         return {
           backgroundFitDirection:
@@ -38,8 +38,8 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
               ? window.getComputedStyle(backgroundFitPanelElement).flexDirection
               : null,
           perkDetailDirection:
-            perkDetailPanelElement instanceof HTMLElement
-              ? window.getComputedStyle(perkDetailPanelElement).flexDirection
+            detailPanelElement instanceof HTMLElement
+              ? window.getComputedStyle(detailPanelElement).flexDirection
               : null,
         }
       }),
@@ -49,13 +49,13 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
       perkDetailDirection: 'column',
     })
   await expect(backgroundFitPanel.getByLabel('Search backgrounds')).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Collapse perk details' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: 'Collapse detail panel' })).toHaveCount(0)
   await expect(page.getByRole('button', { name: 'Collapse category filters' })).toHaveAttribute(
     'aria-expanded',
     'true',
   )
   await backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }).click()
-  await perkDetailPanel.getByRole('button', { name: 'Select perk group Axe' }).click()
+  await detailPanel.getByRole('button', { name: 'Select perk group Axe' }).click()
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Weapon' })).toBeVisible()
@@ -72,6 +72,6 @@ test('keeps the main build and filtering flow usable on mobile', async ({ page }
     'false',
   )
   await expect(page.getByTestId('category-sidebar-body')).toBeHidden()
-  await expect(perkDetailPanel.getByTestId('perk-detail-panel-body')).toBeVisible()
+  await expect(detailPanel.getByTestId('detail-panel-body')).toBeVisible()
   await expectNoDocumentHorizontalOverflow(page)
 })

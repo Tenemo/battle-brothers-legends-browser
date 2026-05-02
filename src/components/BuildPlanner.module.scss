@@ -4,10 +4,10 @@
   .buildPlanner {
     --planner-base-perk-row-min-height: var(--primitive-length-3-45rem);
     --planner-requirement-legend-slot-scale: 0.7;
-    --planner-group-row-min-height: 4.7rem;
+    --planner-group-row-min-height: var(--planner-default-group-row-min-height);
     --planner-perk-row-min-height: var(--planner-base-perk-row-min-height);
-    --planner-picked-perk-slot-width: 8.04rem;
-    --planner-row-label-width: 10.4rem;
+    --planner-picked-perk-slot-width: var(--planner-default-picked-perk-slot-width);
+    --planner-row-label-width: var(--planner-default-row-label-width);
     --planner-slot-width: var(--primitive-length-14rem);
     --planner-track-gap: var(--space-md);
     --planner-tile-width: var(--primitive-length-14rem);
@@ -988,9 +988,9 @@
 
   @include compact-desktop {
     .buildPlanner {
-      --planner-group-row-min-height: var(--primitive-length-3-7rem);
+      --planner-group-row-min-height: var(--planner-compact-group-row-min-height);
       --planner-perk-row-min-height: var(--primitive-length-2-72rem);
-      --planner-row-label-width: 8.4rem;
+      --planner-row-label-width: var(--planner-compact-row-label-width);
       --planner-slot-width: var(--primitive-length-11-4rem);
       --planner-track-gap: var(--primitive-length-0-34rem);
       --planner-tile-width: var(--primitive-length-11-4rem);

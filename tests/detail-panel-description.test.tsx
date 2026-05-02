@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
-import { DetailsPanel } from '../src/components/PerkDetail'
+import { DetailPanel } from '../src/components/DetailPanel'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
 const devastatingStrikes = {
@@ -17,11 +17,11 @@ const devastatingStrikes = {
   searchText: 'Devastating Strikes Magic Passive: • All damage inflicted is increased by 10%.',
 } satisfies LegendsPerkRecord
 
-function renderPerkDetail(selectedPerk: LegendsPerkRecord) {
+function renderDetailPanel(selectedPerk: LegendsPerkRecord) {
   render(
-    <DetailsPanel
-      activeDetailType="perk"
-      backgroundFitDetail={null}
+    <DetailPanel
+      selectedDetailType="perk"
+      selectedBackgroundFitDetail={null}
       detailHistoryNavigationAvailability={{
         next: false,
         previous: false,
@@ -62,9 +62,9 @@ function renderPerkDetail(selectedPerk: LegendsPerkRecord) {
   )
 }
 
-describe('perk detail descriptions', () => {
+describe('detail panel descriptions', () => {
   test('renders effect headings on their own line before bullet text', () => {
-    renderPerkDetail(devastatingStrikes)
+    renderDetailPanel(devastatingStrikes)
 
     const descriptionParagraph = screen.getByTestId('perk-description-paragraph')
     const effectHeading = screen.getByTestId('perk-description-effect-heading')

@@ -1,9 +1,9 @@
 import type { StudyResourceRequirementProfile } from './background-study-reachability'
 import { ancientScrollIconPath } from './ancient-scroll-perk-group-display'
 
-export type BackgroundStudyResourceBadgeKind = 'book' | 'bright' | 'scroll'
+type BackgroundStudyResourceBadgeKind = 'book' | 'bright' | 'scroll'
 
-export type BackgroundStudyResourceBadge = {
+type BackgroundStudyResourceBadge = {
   iconPath: string
   isOptionalOnly: boolean
   kind: BackgroundStudyResourceBadgeKind
@@ -11,7 +11,7 @@ export type BackgroundStudyResourceBadge = {
   title: string
 }
 
-export type BackgroundStudyResourceBadgeDisplay = {
+type BackgroundStudyResourceBadgeDisplay = {
   accessibleLabel: string
   badges: BackgroundStudyResourceBadge[]
 }

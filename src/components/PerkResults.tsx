@@ -356,7 +356,7 @@ export function PerkResults({
                       onChange={(event) => onOriginPerkGroupsChange(event.target.checked)}
                       type="checkbox"
                     />
-                    <span>Origin perks</span>
+                    <span>Origin perk groups</span>
                   </label>
                   <label className={sharedStyles.filterOption}>
                     <input

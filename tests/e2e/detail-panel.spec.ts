@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 import {
-  getPerkDetailPanel,
+  getDetailPanel,
+  expectSearchParam,
   getSidebarPerkGroupButton,
   getResultsList,
   gotoBuildPlanner,
@@ -38,7 +39,7 @@ test('starts with an empty detail panel until a perk or background is selected',
   )
   await expect(page.getByTestId('perk-row').first()).toBeVisible()
   await expect(page.locator('[data-testid="perk-row"][data-selected="true"]')).toHaveCount(0)
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expectSearchParam(page, 'category', null)
 })
 
 test('deselects an inspected result perk when it is clicked again', async ({ page }) => {
@@ -47,14 +48,14 @@ test('deselects an inspected result perk when it is clicked again', async ({ pag
   await searchPerks(page, 'Berserk')
   await inspectPerkFromResults(page, 'Berserk')
 
-  const detailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
   const selectedResultRows = getResultsList(page).locator(
     '[data-testid="perk-row"][data-selected="true"]',
   )
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
   await expect(selectedResultRows).toHaveCount(1)
-  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBe('perk')
+  await expectSearchParam(page, 'detail', 'perk')
 
   await inspectPerkFromResults(page, 'Berserk')
 
@@ -62,7 +63,7 @@ test('deselects an inspected result perk when it is clicked again', async ({ pag
     detailPanel.getByRole('heading', { level: 2, name: 'Select a perk or background' }),
   ).toBeVisible()
   await expect(selectedResultRows).toHaveCount(0)
-  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBeNull()
+  await expectSearchParam(page, 'detail', null)
 })
 
 test('groups repeated background sources in the detail panel', async ({ page }) => {
@@ -100,7 +101,7 @@ test('detail history buttons stay inside page detail history', async ({ page }) 
   await searchPerks(page, 'Berserk')
   await inspectPerkFromResults(page, 'Berserk')
 
-  const detailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
   const previousDetailButton = detailPanel.getByRole('button', { name: 'Show previous detail' })
   const nextDetailButton = detailPanel.getByRole('button', { name: 'Show next detail' })
   const buildToggleButton = detailPanel.getByRole('button', { name: 'Add Berserk to build' })
@@ -277,7 +278,7 @@ test('sorts background sources from guaranteed to lowest chance', async ({ page 
   }
 })
 
-test('keeps raw perk group flavour strings out of perk details', async ({ page }) => {
+test('keeps raw perk group flavour strings out of perk detail content', async ({ page }) => {
   await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Favoured Enemy - Civilization')

@@ -38,11 +38,11 @@ import type { BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton, type BuildRequirement } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import catenaryChainIconPath from '../assets/catenary-chain.svg'
-import styles from './PerkDetail.module.scss'
+import styles from './DetailPanel.module.scss'
 
-type PerkDetailProps = {
-  activeDetailType: 'background' | 'perk'
-  backgroundFitDetail: { backgroundFit: RankedBackgroundFit; rank: number } | null
+type DetailPanelProps = {
+  selectedDetailType: 'background' | 'perk'
+  selectedBackgroundFitDetail: { backgroundFit: RankedBackgroundFit; rank: number } | null
   detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
@@ -144,9 +144,9 @@ function renderPerkDescriptionParagraph(paragraph: string): ReactNode {
   )
 }
 
-export function DetailsPanel({
-  activeDetailType,
-  backgroundFitDetail,
+export function DetailPanel({
+  selectedDetailType,
+  selectedBackgroundFitDetail,
   detailHistoryNavigationAvailability,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
@@ -176,20 +176,21 @@ export function DetailsPanel({
   selectedPerk,
   studyResourceFilter,
   supportedBuildTargetPerkGroups,
-}: PerkDetailProps) {
-  const selectedBackgroundFitDetail = activeDetailType === 'background' ? backgroundFitDetail : null
+}: DetailPanelProps) {
+  const displayedBackgroundFitDetail =
+    selectedDetailType === 'background' ? selectedBackgroundFitDetail : null
 
   return (
-    <aside aria-label="Details" className={styles.detailPanel} data-testid="perk-detail-panel">
+    <aside aria-label="Details" className={styles.detailPanel} data-testid="detail-panel">
       <div
         aria-live="polite"
         className={joinClassNames(styles.detailPanelBody, 'app-scrollbar')}
         data-scroll-container="true"
-        data-testid="perk-detail-panel-body"
+        data-testid="detail-panel-body"
       >
-        {selectedBackgroundFitDetail ? (
+        {displayedBackgroundFitDetail ? (
           <BackgroundDetail
-            backgroundFit={selectedBackgroundFitDetail.backgroundFit}
+            backgroundFit={displayedBackgroundFitDetail.backgroundFit}
             emphasizedCategoryNames={emphasizedCategoryNames}
             emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
             selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
@@ -212,7 +213,7 @@ export function DetailsPanel({
             optionalPickedPerkIds={optionalPickedPerkIds}
             optionalPickedPerkCount={optionalPickedPerkCount}
             pickedPerkCount={pickedPerkCount}
-            rank={selectedBackgroundFitDetail.rank}
+            rank={displayedBackgroundFitDetail.rank}
             studyResourceFilter={studyResourceFilter}
             supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
           />
@@ -370,8 +371,6 @@ export function DetailsPanel({
     </aside>
   )
 }
-
-export const PerkDetail = DetailsPanel
 
 function DetailHeader({
   actions,
@@ -618,7 +617,7 @@ function StudyResourceRequirementList({
 }) {
   return (
     <div className={styles.detailStudyResourceSection} data-testid="detail-study-resource-section">
-      <p className={styles.detailMatchSectionLabel}>Learn with book/scrolls</p>
+      <p className={styles.detailMatchSectionLabel}>Learn with skill books and ancient scrolls</p>
       {entries.length > 0 ? (
         <ul className={styles.detailStudyResourceList}>
           {entries.map((entry) => {

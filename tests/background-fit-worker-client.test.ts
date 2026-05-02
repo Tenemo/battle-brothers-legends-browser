@@ -178,6 +178,33 @@ describe('background fit worker client', () => {
     await expect(calculation.promise).rejects.toThrow('Could not rank backgrounds.')
   })
 
+  test('rejects superseded worker calculations so stale promises settle', async () => {
+    const worker = new MockWorker()
+    const client = createBackgroundFitWorkerClient({
+      createWorker: () => worker as unknown as Worker,
+    })
+    const firstCalculation = client.calculateBackgroundFitView(sampleWorkerInput)
+    const secondCalculation = client.calculateBackgroundFitView({
+      ...sampleWorkerInput,
+      pickedPerkIds: ['perk.required'],
+    })
+
+    worker.emitMessage({
+      requestId: firstCalculation.requestId,
+      type: 'background-fit-superseded',
+    })
+    worker.emitMessage({
+      requestId: secondCalculation.requestId,
+      type: 'background-fit-view',
+      view: emptyBackgroundFitView,
+    })
+
+    await expect(firstCalculation.promise).rejects.toThrow(
+      'Background fit request was superseded.',
+    )
+    await expect(secondCalculation.promise).resolves.toBe(emptyBackgroundFitView)
+  })
+
   test('rejects pending calculations when the worker errors', async () => {
     const worker = new MockWorker()
     const client = createBackgroundFitWorkerClient({

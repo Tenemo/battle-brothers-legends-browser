@@ -34,8 +34,12 @@ export type BackgroundFitWorkerResponse =
       requestId: number
       type: 'background-fit-error'
     }
+  | {
+      requestId: number
+      type: 'background-fit-superseded'
+    }
 
-export type BackgroundFitWorkerCalculation = {
+type BackgroundFitWorkerCalculation = {
   promise: Promise<BackgroundFitView>
   requestId: number
 }
@@ -64,7 +68,7 @@ type BackgroundFitWorkerClientOptions = {
   calculateOnMainThread?: (
     input: BackgroundFitWorkerInput,
     options?: BackgroundFitWorkerCalculationOptions,
-  ) => BackgroundFitView
+  ) => BackgroundFitView | Promise<BackgroundFitView>
   createWorker?: () => Worker | null
 }
 
@@ -110,6 +114,11 @@ export function createBackgroundFitWorkerClient({
 
       if (response.type === 'background-fit-error') {
         pendingCalculation.reject(new Error(response.message))
+        return
+      }
+
+      if (response.type === 'background-fit-superseded') {
+        pendingCalculation.reject(new Error('Background fit request was superseded.'))
         return
       }
 

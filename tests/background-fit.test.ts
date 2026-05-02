@@ -1571,7 +1571,6 @@ describe('background fit', () => {
     const engine = createBackgroundFitEngine({
       ...sampleDataset,
       backgroundFitBackgrounds: [worseTinyChanceBackground, betterTinyChanceBackground],
-      perkCount: 1,
       perks: [samplePerks[7]],
     })
     const backgroundFitView = engine.getBackgroundFitView([samplePerks[7]], noStudyResources)
@@ -1695,8 +1694,6 @@ describe('background fit', () => {
     const engine = createBackgroundFitEngine({
       ...sampleDataset,
       backgroundFitBackgrounds: [oneNativeTraitBackground, twoPossibleEnemyBackground],
-      perkCount: 4,
-      perkGroupCount: 4,
       perks: [firstEnemyPerk, secondEnemyPerk, samplePerks[5], samplePerks[6]],
     })
     const backgroundFitView = engine.getBackgroundFitView([

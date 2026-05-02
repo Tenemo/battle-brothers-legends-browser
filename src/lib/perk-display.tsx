@@ -291,7 +291,7 @@ export function getVisibleBackgroundPillLabel(backgroundFit: RankedBackgroundFit
   )
 }
 
-export type BackgroundFitKeyParts = {
+type BackgroundFitKeyParts = {
   backgroundId: string
   sourceFilePath: string
 }

@@ -1,10 +1,13 @@
-import legendsPerksDatasetJson from '../data/legends-perks.json'
+import legendsBuildSharePreviewDatasetJson from '../data/legends-build-share-preview.json'
 import type { RankedBackgroundFit } from './background-fit'
 import { createBackgroundFitEngine, getGuaranteedCoveredPickedPerkCount } from './background-fit'
 import { isOriginBackgroundFit } from './background-origin'
 import { createSharedBuildUrlSearch, readBuildPlannerUrlState } from './build-planner-url-state'
 import { defaultBackgroundStudyResourceFilter } from './background-study-reachability'
-import type { LegendsPerkRecord, LegendsPerksDataset } from '../types/legends-perks'
+import type {
+  LegendsBuildSharePreviewDataset,
+  LegendsBuildSharePreviewPerkRecord,
+} from '../types/legends-perks'
 
 export type BuildSharePreviewPerk = {
   iconPath: string | null
@@ -35,10 +38,11 @@ export type BuildSharePreviewOptions = {
   shouldIncludeTopBackgroundFits?: boolean
 }
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const allPerks = legendsPerksDataset.perks
+const legendsBuildSharePreviewDataset =
+  legendsBuildSharePreviewDatasetJson as LegendsBuildSharePreviewDataset
+const allPerks = legendsBuildSharePreviewDataset.perks
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
-const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
+const backgroundFitEngine = createBackgroundFitEngine(legendsBuildSharePreviewDataset)
 const emptyPerkGroupOptionsByGroup = new Map<string, []>()
 const buildSocialImagePathPrefix = '/social/builds'
 const maxDescriptionPerks = 4
@@ -52,7 +56,9 @@ type BuildSharePreviewBuildState = {
   pickedPerkIds: string[]
 }
 
-function getPerksFromPickedPerkIds(pickedPerkIds: string[]): LegendsPerkRecord[] {
+function getPerksFromPickedPerkIds(
+  pickedPerkIds: string[],
+): LegendsBuildSharePreviewPerkRecord[] {
   return pickedPerkIds.flatMap((pickedPerkId) => {
     const perk = allPerksById.get(pickedPerkId)
 
@@ -134,7 +140,7 @@ function getCachedTopBackgroundFits({
 }: {
   availableOptionalPerkIds: string[]
   canonicalSearch: string
-  pickedPerks: LegendsPerkRecord[]
+  pickedPerks: LegendsBuildSharePreviewPerkRecord[]
 }): BuildSharePreviewBackgroundFit[] {
   const cachedTopBackgroundFits = topBackgroundFitsByCanonicalSearch.get(canonicalSearch)
 
@@ -198,7 +204,7 @@ function createBuildImagePath(canonicalSearch: string): string {
   const searchParams = new URLSearchParams(canonicalSearch)
   const canonicalBuild = searchParams.get('build') ?? ''
   const canonicalOptionalPerks = searchParams.get('optional') ?? ''
-  const encodedReference = encodeURIComponent(legendsPerksDataset.referenceVersion)
+  const encodedReference = encodeURIComponent(legendsBuildSharePreviewDataset.referenceVersion)
   const encodedBuild = encodeURIComponent(canonicalBuild)
   const optionalPerksSearch = canonicalOptionalPerks
     ? `?optional=${encodeURIComponent(canonicalOptionalPerks)}`
@@ -230,7 +236,7 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
       imagePath: '/seo/og-image-v2.png',
       pickedPerkCount: 0,
       pickedPerks: [],
-      referenceVersion: legendsPerksDataset.referenceVersion,
+      referenceVersion: legendsBuildSharePreviewDataset.referenceVersion,
       status: 'empty',
       title: 'Battle Brothers Legends build planner',
       topBackgroundFits: [],
@@ -266,7 +272,7 @@ function createBuildSharePreviewPayloadFromPickedPerkIds(
     imagePath: createBuildImagePath(canonicalSearch),
     pickedPerkCount: pickedPerks.length,
     pickedPerks: previewPerks,
-    referenceVersion: legendsPerksDataset.referenceVersion,
+    referenceVersion: legendsBuildSharePreviewDataset.referenceVersion,
     status: 'found',
     title,
     topBackgroundFits,

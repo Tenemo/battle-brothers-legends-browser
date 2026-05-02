@@ -1,10 +1,10 @@
-import legendsPerksDatasetJson from '../data/legends-perks.json'
+import legendsBackgroundFitDatasetJson from '../data/legends-background-fit.json'
 import { createBackgroundFitEngine } from '../lib/background-fit'
 import type {
   BackgroundFitWorkerRequest,
   BackgroundFitWorkerResponse,
 } from '../lib/background-fit-worker-client'
-import type { LegendsPerksDataset } from '../types/legends-perks'
+import type { LegendsBackgroundFitDataset } from '../types/legends-perks'
 
 type BackgroundFitWorkerScope = {
   addEventListener: (
@@ -16,9 +16,9 @@ type BackgroundFitWorkerScope = {
 }
 
 const workerScope = self as unknown as BackgroundFitWorkerScope
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
-const perksById = new Map(legendsPerksDataset.perks.map((perk) => [perk.id, perk]))
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
+const backgroundFitEngine = createBackgroundFitEngine(legendsBackgroundFitDataset)
+const perksById = new Map(legendsBackgroundFitDataset.perks.map((perk) => [perk.id, perk]))
 
 let pendingRequest: BackgroundFitWorkerRequest | null = null
 let isProcessingPendingRequest = false
@@ -26,6 +26,13 @@ let latestRequestId = 0
 
 function postBackgroundFitResponse(response: BackgroundFitWorkerResponse): void {
   workerScope.postMessage(response)
+}
+
+function postSupersededBackgroundFitResponse(requestId: number): void {
+  postBackgroundFitResponse({
+    requestId,
+    type: 'background-fit-superseded',
+  })
 }
 
 function yieldToWorkerEventLoop(): Promise<void> {
@@ -93,6 +100,8 @@ async function processPendingRequests(): Promise<void> {
             type: 'background-fit-view',
             view,
           })
+        } else {
+          postSupersededBackgroundFitResponse(request.requestId)
         }
       } catch (error) {
         if (request.requestId === latestRequestId) {
@@ -101,6 +110,8 @@ async function processPendingRequests(): Promise<void> {
             requestId: request.requestId,
             type: 'background-fit-error',
           })
+        } else {
+          postSupersededBackgroundFitResponse(request.requestId)
         }
       }
 
@@ -123,6 +134,10 @@ workerScope.addEventListener('message', (event: MessageEvent<BackgroundFitWorker
   }
 
   latestRequestId = request.requestId
+  if (pendingRequest && pendingRequest.requestId !== request.requestId) {
+    postSupersededBackgroundFitResponse(pendingRequest.requestId)
+  }
+
   pendingRequest = request
   void processPendingRequests()
 })

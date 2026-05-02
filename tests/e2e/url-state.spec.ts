@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
+  expectSearchParam,
+  expectSearchParamValues,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
@@ -39,10 +41,10 @@ test('stores readable filters and build state in the url and restores them on a 
   expect(savedUrl).not.toContain('group-magic')
   expect(savedUrl).toContain('build=Perfect+Focus,Clarity')
   expect(savedUrl).not.toContain('origin-backgrounds')
-  expect(new URL(savedUrl).searchParams.getAll('category')).toEqual(['Magic'])
-  expect(new URL(savedUrl).searchParams.getAll('build')).toEqual(['Perfect Focus,Clarity'])
-  expect(new URL(savedUrl).searchParams.get('search')).toBeNull()
-  expect(new URL(savedUrl).searchParams.get('origin-backgrounds')).toBeNull()
+  await expectSearchParamValues(page, 'category', ['Magic'])
+  await expectSearchParamValues(page, 'build', ['Perfect Focus,Clarity'])
+  await expectSearchParam(page, 'search', null)
+  await expectSearchParam(page, 'origin-backgrounds', null)
 
   const sharedPage = await page.context().newPage()
 
@@ -94,8 +96,10 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
       name: 'View Chain Lightning from build planner',
     }),
   ).toHaveCount(2)
-  expect(new URL(page.url()).searchParams.get('build')).toBe(
+  await expectSearchParam(
+    page,
+    'build',
     'Chain Lightning--perk.legend_chain_lightning,Chain Lightning--perk.legend_magic_chain_lightning',
   )
-  expect(new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
+  await expectSearchParam(page, 'origin-backgrounds', null)
 })

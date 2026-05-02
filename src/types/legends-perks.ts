@@ -59,6 +59,16 @@ export type LegendsPerkRecord = {
   searchText: string
 }
 
+export type LegendsPerkUrlRecord = Pick<LegendsPerkRecord, 'id' | 'perkName'>
+
+export type LegendsBackgroundFitPerkRecord = Pick<
+  LegendsPerkRecord,
+  'id' | 'perkName' | 'placements'
+>
+
+export type LegendsBuildSharePreviewPerkRecord = LegendsBackgroundFitPerkRecord &
+  Pick<LegendsPerkRecord, 'iconPath'>
+
 export type LegendsBackgroundFitCategoryDefinition = {
   chance: number | null
   minimumPerkGroups: number | null
@@ -95,4 +105,23 @@ export type LegendsPerksDataset = {
   referenceVersion: string
   sourceFiles: LegendsSourceFile[]
   perkGroupCount: number
+}
+
+export type LegendsPerkCatalogDataset = Omit<
+  LegendsPerksDataset,
+  'backgroundFitBackgrounds' | 'backgroundFitRules'
+>
+
+export type LegendsBackgroundFitDataset = Pick<
+  LegendsPerksDataset,
+  'backgroundFitBackgrounds' | 'backgroundFitRules'
+> & {
+  perks: LegendsBackgroundFitPerkRecord[]
+}
+
+export type LegendsBuildSharePreviewDataset = Pick<
+  LegendsPerksDataset,
+  'backgroundFitBackgrounds' | 'backgroundFitRules' | 'referenceVersion'
+> & {
+  perks: LegendsBuildSharePreviewPerkRecord[]
 }

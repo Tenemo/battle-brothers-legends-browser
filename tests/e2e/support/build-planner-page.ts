@@ -108,12 +108,28 @@ export function getBackgroundFitPanel(page: Page): Locator {
   return page.getByTestId('background-fit-panel')
 }
 
-export function getPerkDetailPanel(page: Page): Locator {
-  return page.getByTestId('perk-detail-panel')
+export function getDetailPanel(page: Page): Locator {
+  return page.getByTestId('detail-panel')
 }
 
 export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
+}
+
+export async function expectSearchParam(
+  page: Page,
+  paramName: string,
+  expectedValue: string | null,
+): Promise<void> {
+  await expect.poll(() => new URL(page.url()).searchParams.get(paramName)).toBe(expectedValue)
+}
+
+export async function expectSearchParamValues(
+  page: Page,
+  paramName: string,
+  expectedValues: string[],
+): Promise<void> {
+  await expect.poll(() => new URL(page.url()).searchParams.getAll(paramName)).toEqual(expectedValues)
 }
 
 export async function expectRawAncientScrollMarker(marker: Locator): Promise<void> {
@@ -164,7 +180,7 @@ export async function expectViewportLocked(page: Page): Promise<void> {
     .poll(async () =>
       page.evaluate(() => {
         const detailPanelBody = document.querySelector(
-          '[data-testid="perk-detail-panel-body"]',
+          '[data-testid="detail-panel-body"]',
         ) as HTMLElement | null
         const resultsList = document.querySelector(
           '[data-testid="results-list"]',
@@ -221,7 +237,7 @@ export async function expectNoWorkspaceHorizontalClip(page: Page): Promise<void>
           '[data-testid="background-fit-panel"]',
           '[data-testid="category-sidebar"]',
           '[aria-label="Perk results"]',
-          '[data-testid="perk-detail-panel"]',
+          '[data-testid="detail-panel"]',
         ].flatMap((selector) => {
           const element = document.querySelector(selector)
 
@@ -260,10 +276,6 @@ export async function disableCategory(page: Page, categoryName: string): Promise
 
 export async function expandCategory(page: Page, categoryName: string): Promise<void> {
   await page.getByRole('button', { name: `Expand category ${categoryName}` }).click()
-}
-
-export async function collapseCategory(page: Page, categoryName: string): Promise<void> {
-  await page.getByRole('button', { name: `Collapse category ${categoryName}` }).click()
 }
 
 export async function selectPerkGroup(page: Page, perkGroupName: string): Promise<void> {

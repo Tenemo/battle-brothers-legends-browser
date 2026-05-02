@@ -219,7 +219,7 @@ describe('build planner url state', () => {
     })
   })
 
-  test('serializes and restores selected perk details', () => {
+  test('serializes and restores selected perk detail state', () => {
     const search = createBuildPlannerUrlSearch(
       {
         pickedPerkIds: [],
