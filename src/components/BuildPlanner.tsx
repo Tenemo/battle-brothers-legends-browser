@@ -27,7 +27,7 @@ export type {
 } from './build-planner-types'
 
 const buildPlannerGuidance =
-  'Use the star in the detail panel or search results to collect perk picks. Picked perks start as must-have and are marked with a chain; background fit uses them for the main build chance. Hover a picked perk and use the split-arrow action to mark it optional. Optional perks move to the end, stay visible for full-build coverage, and are scored separately from must-have perks.'
+  'Use the chain/split control in the detail panel or search results to collect perk picks. Chain adds must-have perks for the main build chance; split adds optional perks for full-build coverage. Optional perks move to the end, stay visible, and are scored separately from must-have perks.'
 
 function BuildPlannerInfoButton() {
   const tooltipId = useId()

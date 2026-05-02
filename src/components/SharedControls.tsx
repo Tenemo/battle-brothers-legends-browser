@@ -1,9 +1,11 @@
 import { type ReactNode, useRef } from 'react'
-import { ChevronRight, Funnel, Star, UserRound } from 'lucide-react'
+import { ChevronRight, Funnel, Link, Split, UserRound } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import styles from './SharedControls.module.scss'
 
 const railChevronStrokeWidth = 2.6
+
+export type BuildRequirement = 'must-have' | 'optional'
 
 export function ClearableSearchField({
   className = '',
@@ -172,24 +174,32 @@ export function FunnelIcon({
   )
 }
 
-export function BuildStar({
+export function BuildRequirementIcon({
   className,
-  isPicked,
+  requirement,
   testId,
 }: {
   className?: string
-  isPicked: boolean
+  requirement: BuildRequirement
   testId?: string
 }) {
-  return (
-    <Star
+  const iconClassName = joinClassNames(styles.buildRequirementIcon, className)
+
+  return requirement === 'must-have' ? (
+    <Link
       aria-hidden="true"
-      className={joinClassNames(styles.buildStar, className)}
-      data-picked={isPicked}
+      className={iconClassName}
+      data-requirement={requirement}
       data-testid={testId}
-      fill={isPicked ? 'currentColor' : 'none'}
-      stroke="currentColor"
-      strokeWidth={1.8}
+      strokeWidth={2}
+    />
+  ) : (
+    <Split
+      aria-hidden="true"
+      className={iconClassName}
+      data-requirement={requirement}
+      data-testid={testId}
+      strokeWidth={2.1}
     />
   )
 }
@@ -197,35 +207,69 @@ export function BuildStar({
 export function BuildToggleButton({
   className,
   isCompact = false,
-  isPicked,
-  onClick,
+  onAddMustHave,
+  onAddOptional,
+  onRemove,
+  pickedRequirement,
   perkName,
   source,
 }: {
   className?: string
   isCompact?: boolean
-  isPicked: boolean
-  onClick: () => void
+  onAddMustHave: () => void
+  onAddOptional: () => void
+  onRemove: () => void
+  pickedRequirement: BuildRequirement | null
   perkName: string
   source: 'detail' | 'results'
 }) {
   const locationSuffix = source === 'results' ? ' from results' : ''
-  const actionLabel = isPicked
-    ? `Remove ${perkName} from build${locationSuffix}`
-    : `Add ${perkName} to build${locationSuffix}`
-  const titleLabel = isPicked ? `Remove ${perkName} from build` : `Add ${perkName} to build`
+
+  if (pickedRequirement) {
+    const actionLabel = `Remove ${perkName} from build${locationSuffix}`
+
+    return (
+      <button
+        aria-label={actionLabel}
+        aria-pressed="true"
+        className={joinClassNames(styles.buildToggleButton, className)}
+        data-compact={isCompact}
+        data-requirement={pickedRequirement}
+        onClick={onRemove}
+        title={`Remove ${perkName} from build`}
+        type="button"
+      >
+        <BuildRequirementIcon requirement={pickedRequirement} />
+      </button>
+    )
+  }
 
   return (
-    <button
-      aria-label={actionLabel}
-      aria-pressed={isPicked}
-      className={joinClassNames(styles.buildToggleButton, className)}
+    <span
+      className={joinClassNames(styles.buildToggleButtonGroup, className)}
       data-compact={isCompact}
-      onClick={onClick}
-      title={titleLabel}
-      type="button"
+      data-testid="build-toggle-split-button"
     >
-      <BuildStar isPicked={isPicked} />
-    </button>
+      <button
+        aria-label={`Add ${perkName} to build${locationSuffix}`}
+        className={styles.buildToggleSegment}
+        data-requirement="must-have"
+        onClick={onAddMustHave}
+        title={`Add ${perkName} as must-have`}
+        type="button"
+      >
+        <BuildRequirementIcon requirement="must-have" />
+      </button>
+      <button
+        aria-label={`Add ${perkName} as optional${locationSuffix}`}
+        className={styles.buildToggleSegment}
+        data-requirement="optional"
+        onClick={onAddOptional}
+        title={`Add ${perkName} as optional`}
+        type="button"
+      >
+        <BuildRequirementIcon requirement="optional" />
+      </button>
+    </span>
   )
 }

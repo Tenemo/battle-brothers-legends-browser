@@ -263,12 +263,16 @@
   }
 
   .backgroundFitAccordionTrigger {
+    --background-fit-card-padding-block: var(--space-control-inline);
+    --background-fit-card-padding-inline: var(--space-control-inline);
+
+    position: relative;
     appearance: none;
     width: 100%;
     min-width: 0;
     border: 0;
     border-radius: inherit;
-    padding: var(--space-control-inline);
+    padding: var(--background-fit-card-padding-block) var(--background-fit-card-padding-inline);
     background: transparent;
     color: inherit;
     font: inherit;
@@ -369,6 +373,7 @@
     background: var(--border-subtle);
     font-size: var(--font-size-md);
     font-weight: 600;
+    cursor: help;
   }
 
   .backgroundFitIcon {
@@ -397,6 +402,10 @@
     --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-236-176-116);
 
     flex: 0 0 auto;
+    position: absolute;
+    right: var(--background-fit-card-padding-inline);
+    bottom: var(--background-fit-card-padding-block);
+    z-index: var(--z-index-indicator);
     max-width: 100%;
     min-height: var(--target-size-compact);
     border-color: var(--background-fit-veteran-perk-badge-border);
@@ -590,7 +599,8 @@
     }
 
     .backgroundFitAccordionTrigger {
-      padding: var(--space-xs) var(--space-sm);
+      --background-fit-card-padding-block: var(--space-xs);
+      --background-fit-card-padding-inline: var(--space-sm);
     }
 
     .backgroundFitCardHeader,

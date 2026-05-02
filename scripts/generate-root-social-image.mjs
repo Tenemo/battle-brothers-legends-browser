@@ -37,7 +37,7 @@ const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel-Bold.ttf')
 const sourceSansRegularFontPath = path.join(fontDirectoryPath, 'SourceSans3-Regular.ttf')
 const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Semibold.ttf')
 const sourceSansBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Bold.ttf')
-const fallbackLegendsReferenceVersion = '19.3.20'
+const fallbackLegendsReferenceVersion = '19.3.21'
 
 export async function createRootSocialImageSvg({
   bookIconDataUrl = '',

@@ -5,6 +5,7 @@ import {
   expectCssRgbColorsToMatch,
   getBackgroundFitPanel,
   expectNoDocumentHorizontalOverflow,
+  expectRawAncientScrollMarker,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
@@ -124,6 +125,50 @@ async function getPickedPerkNameLayoutMetrics(pickedPerkTile: Locator) {
       nameWhiteSpace: pickedPerkNameStyle.whiteSpace,
       nameWordBreak: pickedPerkNameStyle.wordBreak,
       textFragmentCount,
+    }
+  })
+}
+
+async function getRequirementChainScaleMetrics(
+  page: Page,
+  viewport: { height: number; width: number },
+) {
+  await gotoBuildPlanner(page, viewport)
+  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  return page.evaluate(() => {
+    function readRequirementChainMetrics(tileSelector: string) {
+      const tile = document.querySelector(tileSelector)
+      const chain = tile?.querySelector('[data-testid="planner-slot-requirement-chain"]')
+
+      if (!(tile instanceof HTMLElement) || !(chain instanceof HTMLElement)) {
+        throw new Error(`Unable to find requirement chain metrics for ${tileSelector}.`)
+      }
+
+      const tileRectangle = tile.getBoundingClientRect()
+      const chainRectangle = chain.getBoundingClientRect()
+
+      return {
+        chainHeight: chainRectangle.height,
+        chainHeightRatio: chainRectangle.height / tileRectangle.height,
+        chainLeftOffset: chainRectangle.left - tileRectangle.left,
+        chainLeftRatio: (chainRectangle.left - tileRectangle.left) / tileRectangle.height,
+        chainTopOffset: chainRectangle.top - tileRectangle.top,
+        chainTopRatio: (chainRectangle.top - tileRectangle.top) / tileRectangle.height,
+        chainWidth: chainRectangle.width,
+        chainWidthRatio: chainRectangle.width / tileRectangle.height,
+        tileHeight: tileRectangle.height,
+      }
+    }
+
+    return {
+      legend: readRequirementChainMetrics(
+        '[data-testid="planner-requirement-legend-tile"][data-requirement="must-have"]',
+      ),
+      picked: readRequirementChainMetrics(
+        '[data-planner-collection="picked-perks"] [data-testid="planner-slot-perk"][data-requirement="must-have"]',
+      ),
     }
   })
 }
@@ -373,9 +418,8 @@ test('build planner splits shared and individual perk groups without layout drif
   )
 
   expect(infoTooltipLeft).toBeGreaterThanOrEqual(0)
-  await expect(infoTooltip).toContainText(/picked perks start as must-have/i)
-  await expect(infoTooltip).toContainText(/marked with a chain/i)
-  await expect(infoTooltip).toContainText(/mark it optional/i)
+  await expect(infoTooltip).toContainText(/chain adds must-have perks/i)
+  await expect(infoTooltip).toContainText(/split adds optional perks/i)
   await expect(infoTooltip).toContainText(/scored separately from must-have perks/i)
   await page.mouse.move(1, 1)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
@@ -456,7 +500,7 @@ test('build planner splits shared and individual perk groups without layout drif
   })
 
   expect(tooltipTimerStyle).toEqual({
-    animationDuration: '1s',
+    animationDuration: '0.5s',
     height: '2px',
     opacity: '1',
   })
@@ -1234,7 +1278,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
   })
 
   expect(pillTooltipTimerStyle).toEqual({
-    animationDuration: '1s',
+    animationDuration: '0.5s',
     height: '2px',
     opacity: '1',
   })
@@ -1428,6 +1472,58 @@ test('keeps long planner group names compact without category text', async ({ pa
   expect(plannerGroupCardMetrics!.cardHeight).toBeLessThanOrEqual(
     plannerGroupCardMetrics!.cardMinimumHeight + 1,
   )
+})
+
+test('keeps ancient scroll group tile markers from reserving header space', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await searchPerks(page, 'Magic Missile Focus')
+  await addPerkToBuildFromResults(page, 'Magic Missile Focus')
+
+  const plannerGroupCard = getBuildIndividualGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Evocation' })
+  const ancientScrollMarker = plannerGroupCard.getByTestId('ancient-scroll-perk-group-marker')
+
+  await expect(plannerGroupCard).toBeVisible()
+  await expect(ancientScrollMarker).toBeVisible()
+  await expectRawAncientScrollMarker(ancientScrollMarker)
+
+  const plannerGroupCardMetrics = await plannerGroupCard.evaluate((card) => {
+    const groupCount = card.querySelector('[data-testid="planner-slot-group-count"]')
+    const marker = card.querySelector('[data-testid="ancient-scroll-perk-group-marker"]')
+
+    if (!(groupCount instanceof HTMLElement) || !(marker instanceof HTMLElement)) {
+      return null
+    }
+
+    const cardRectangle = card.getBoundingClientRect()
+    const groupCountRectangle = groupCount.getBoundingClientRect()
+    const markerRectangle = marker.getBoundingClientRect()
+    const rootFontSize = Number.parseFloat(
+      window.getComputedStyle(document.documentElement).fontSize,
+    )
+    const cardPaddingRight = Number.parseFloat(window.getComputedStyle(card).paddingRight)
+
+    return {
+      cardPaddingRight,
+      groupCountRightGap: cardRectangle.right - groupCountRectangle.right,
+      markerWidth: markerRectangle.width,
+      expectedMarkerWidth: rootFontSize * 1.4,
+      previousMarkerWidth: rootFontSize * 1.12,
+    }
+  })
+
+  expect(plannerGroupCardMetrics).not.toBeNull()
+  expect(plannerGroupCardMetrics!.groupCountRightGap).toBeLessThanOrEqual(
+    plannerGroupCardMetrics!.cardPaddingRight + 1,
+  )
+  expect(plannerGroupCardMetrics!.markerWidth).toBeGreaterThanOrEqual(
+    plannerGroupCardMetrics!.previousMarkerWidth * 1.24,
+  )
+  expect(
+    Math.abs(plannerGroupCardMetrics!.markerWidth - plannerGroupCardMetrics!.expectedMarkerWidth),
+  ).toBeLessThanOrEqual(1)
 })
 
 test('wraps picked perk names at spaces inside compact fixed tiles', async ({ page }) => {
@@ -1692,6 +1788,47 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   expect(plannerGroupCardMetrics!.groupNameHeight).toBeLessThanOrEqual(
     plannerGroupCardMetrics!.groupNameLineHeight + 1,
   )
+})
+
+test('keeps requirement chains scaled with picked perk tiles on compact desktop', async ({
+  page,
+}) => {
+  const largeDesktopMetrics = await getRequirementChainScaleMetrics(page, {
+    height: 1440,
+    width: 2560,
+  })
+  const compactDesktopMetrics = await getRequirementChainScaleMetrics(page, {
+    height: 768,
+    width: 1366,
+  })
+  const ratioKeys = [
+    'chainHeightRatio',
+    'chainLeftRatio',
+    'chainTopRatio',
+    'chainWidthRatio',
+  ] as const
+
+  expect(compactDesktopMetrics.picked.tileHeight).toBeLessThan(
+    largeDesktopMetrics.picked.tileHeight,
+  )
+  expect(compactDesktopMetrics.picked.chainWidth).toBeLessThan(
+    largeDesktopMetrics.picked.chainWidth,
+  )
+  expect(compactDesktopMetrics.legend.tileHeight).toBeLessThan(
+    largeDesktopMetrics.legend.tileHeight,
+  )
+  expect(compactDesktopMetrics.legend.chainWidth).toBeLessThan(
+    largeDesktopMetrics.legend.chainWidth,
+  )
+
+  for (const ratioKey of ratioKeys) {
+    expect(
+      Math.abs(compactDesktopMetrics.picked[ratioKey] - largeDesktopMetrics.picked[ratioKey]),
+    ).toBeLessThanOrEqual(0.02)
+    expect(
+      Math.abs(compactDesktopMetrics.legend[ratioKey] - largeDesktopMetrics.legend[ratioKey]),
+    ).toBeLessThanOrEqual(0.02)
+  }
 })
 
 test('marks picked perks as optional and separates them from must-have perks', async ({ page }) => {
@@ -1998,6 +2135,19 @@ test('marks picked perks as optional and separates them from must-have perks', a
       .getByTestId('background-fit-summary-label')
       .filter({ hasText: 'Best native roll covers total perks' }),
   ).toHaveCount(0)
+
+  await searchPerks(page, 'Berserk')
+  await inspectPerkFromResults(page, 'Berserk')
+  await addSelectedPerkToBuild(page, 'Berserk')
+  await expect(buildPerksBar.getByTestId('planner-picked-perk-name')).toHaveText([
+    'Perfect Focus',
+    'Student',
+    'Berserk',
+    'Clarity',
+  ])
+  await expect(
+    buildPerksBar.getByTestId('planner-slot-perk').filter({ hasText: 'Berserk' }),
+  ).toHaveAttribute('data-requirement', 'must-have')
 })
 
 test('cancels a picked perk tooltip timer before marking the perk optional', async ({ page }) => {
@@ -2397,7 +2547,7 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
   await expect(
     getBuildPerksBar(page).getByText(
-      'Use the star in the detail panel or the search results list.',
+      'Use the chain/split control in the detail panel or the search results list.',
     ),
   ).toBeVisible()
   const placeholderMetrics = await getBuildPerksBar(page).evaluate((buildPerksBar) => {

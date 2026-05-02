@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, Split } from 'lucide-react'
+import { formatDisplayBulletText } from '../lib/bullet-display'
 import {
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
@@ -34,7 +35,7 @@ import {
 } from './BackgroundFitCard'
 import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
-import { BuildToggleButton } from './SharedControls'
+import { BuildToggleButton, type BuildRequirement } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import catenaryChainIconPath from '../assets/catenary-chain.svg'
 import styles from './PerkDetail.module.scss'
@@ -42,6 +43,7 @@ import styles from './PerkDetail.module.scss'
 type PerkDetailProps = {
   activeDetailType: 'background' | 'perk'
   backgroundFitDetail: { backgroundFit: RankedBackgroundFit; rank: number } | null
+  detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   selectedEmphasisCategoryNames: ReadonlySet<string>
@@ -50,8 +52,8 @@ type PerkDetailProps = {
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
-  isSelectedPerkPicked: boolean
   mustHavePickedPerkIds: string[]
+  onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
@@ -65,14 +67,20 @@ type PerkDetailProps = {
     perkGroupSelection?: BuildPerkPillSelection,
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  onTogglePerkPicked: (perkId: string) => void
+  onRemovePerkFromBuild: (perkId: string) => void
   optionalPickedPerkIds: string[]
   mustHavePickedPerkCount: number
   optionalPickedPerkCount: number
   pickedPerkCount: number
+  selectedPerkRequirement: BuildRequirement | null
   selectedPerk: LegendsPerkRecord | null
   studyResourceFilter: BackgroundStudyResourceFilter
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+}
+
+type DetailHistoryNavigationAvailability = {
+  next: boolean
+  previous: boolean
 }
 
 type StudyResourceRequirementEntry = {
@@ -81,6 +89,7 @@ type StudyResourceRequirementEntry = {
   key: string
   label: string
   requirement: StudyReachabilityRequirement | null
+  resourceType: 'book' | 'bright' | 'scroll'
   support: string
 }
 
@@ -117,9 +126,28 @@ function renderFavouredEnemyTarget(favouredEnemyTarget: LegendsFavouredEnemyTarg
   )
 }
 
+function renderPerkDescriptionParagraph(paragraph: string): ReactNode {
+  const effectHeadingMatch = paragraph
+    .trim()
+    .match(/^(Passive|Active|Specialist Weapon Perk):\s+(.+)$/u)
+
+  if (!effectHeadingMatch) {
+    return formatDisplayBulletText(paragraph)
+  }
+
+  return (
+    <>
+      <span data-testid="perk-description-effect-heading">{effectHeadingMatch[1]}:</span>
+      <br />
+      {formatDisplayBulletText(effectHeadingMatch[2])}
+    </>
+  )
+}
+
 export function DetailsPanel({
   activeDetailType,
   backgroundFitDetail,
+  detailHistoryNavigationAvailability,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
   selectedEmphasisCategoryNames,
@@ -128,8 +156,8 @@ export function DetailsPanel({
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
-  isSelectedPerkPicked,
   mustHavePickedPerkIds,
+  onAddPerkToBuild,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onClosePerkGroupHover,
@@ -139,11 +167,12 @@ export function DetailsPanel({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
-  onTogglePerkPicked,
+  onRemovePerkFromBuild,
   optionalPickedPerkIds,
   mustHavePickedPerkCount,
   optionalPickedPerkCount,
   pickedPerkCount,
+  selectedPerkRequirement,
   selectedPerk,
   studyResourceFilter,
   supportedBuildTargetPerkGroups,
@@ -165,6 +194,7 @@ export function DetailsPanel({
             emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
             selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
             selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+            detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
             hoveredBuildPerkId={hoveredBuildPerkId}
             hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
             hoveredPerkId={hoveredPerkId}
@@ -196,8 +226,10 @@ export function DetailsPanel({
             <DetailHeader
               actions={
                 <BuildToggleButton
-                  isPicked={isSelectedPerkPicked}
-                  onClick={() => onTogglePerkPicked(selectedPerk.id)}
+                  onAddMustHave={() => onAddPerkToBuild(selectedPerk.id, 'must-have')}
+                  onAddOptional={() => onAddPerkToBuild(selectedPerk.id, 'optional')}
+                  onRemove={() => onRemovePerkFromBuild(selectedPerk.id)}
+                  pickedRequirement={selectedPerkRequirement}
                   perkName={selectedPerk.perkName}
                   source="detail"
                 />
@@ -206,6 +238,7 @@ export function DetailsPanel({
               iconLabel={`${selectedPerk.perkName} icon`}
               iconPath={getPerkDisplayIconPath(selectedPerk)}
               iconTestId="detail-perk-icon"
+              navigationAvailability={detailHistoryNavigationAvailability}
               onNavigateHistory={onNavigateDetailHistory}
               title={selectedPerk.perkName}
             />
@@ -213,8 +246,13 @@ export function DetailsPanel({
             <div className={styles.detailSection} data-testid="detail-section">
               <h3>Details</h3>
               {selectedPerk.descriptionParagraphs.length > 0 ? (
-                selectedPerk.descriptionParagraphs.map((paragraph) => (
-                  <p key={paragraph}>{paragraph}</p>
+                selectedPerk.descriptionParagraphs.map((paragraph, paragraphIndex) => (
+                  <p
+                    data-testid="perk-description-paragraph"
+                    key={`${paragraphIndex}-${paragraph}`}
+                  >
+                    {renderPerkDescriptionParagraph(paragraph)}
+                  </p>
                 ))
               ) : (
                 <p>No perk description is available in the local strings file.</p>
@@ -342,6 +380,7 @@ function DetailHeader({
   iconLabel,
   iconPath,
   iconTestId,
+  navigationAvailability,
   onNavigateHistory,
   title,
 }: {
@@ -351,6 +390,7 @@ function DetailHeader({
   iconLabel: string
   iconPath: string | null
   iconTestId: string
+  navigationAvailability: DetailHistoryNavigationAvailability
   onNavigateHistory: (direction: -1 | 1) => void
   title: string
 }) {
@@ -369,17 +409,27 @@ function DetailHeader({
           {badgeRow}
         </div>
       </div>
-      <div className={styles.detailHeaderActions}>
-        <DetailHistoryNavigation onNavigateHistory={onNavigateHistory} />
-        {actions}
+      <div className={styles.detailHeaderActions} data-testid="detail-header-actions">
+        <DetailHistoryNavigation
+          navigationAvailability={navigationAvailability}
+          onNavigateHistory={onNavigateHistory}
+        />
+        <div
+          className={styles.detailHeaderPrimaryAction}
+          data-testid="detail-header-primary-action"
+        >
+          {actions}
+        </div>
       </div>
     </div>
   )
 }
 
 function DetailHistoryNavigation({
+  navigationAvailability,
   onNavigateHistory,
 }: {
+  navigationAvailability: DetailHistoryNavigationAvailability
   onNavigateHistory: (direction: -1 | 1) => void
 }) {
   return (
@@ -387,6 +437,7 @@ function DetailHistoryNavigation({
       <button
         aria-label="Show previous detail"
         className={styles.detailHistoryButton}
+        disabled={!navigationAvailability.previous}
         onClick={() => onNavigateHistory(-1)}
         title="Show previous detail"
         type="button"
@@ -396,6 +447,7 @@ function DetailHistoryNavigation({
       <button
         aria-label="Show next detail"
         className={styles.detailHistoryButton}
+        disabled={!navigationAvailability.next}
         onClick={() => onNavigateHistory(1)}
         title="Show next detail"
         type="button"
@@ -468,6 +520,7 @@ function getStudyResourceRequirementEntries(
       key: `book-${getRequirementKey(studyResourceRequirementProfile.bookRequirement)}`,
       label: 'Skill book',
       requirement: studyResourceRequirementProfile.bookRequirement,
+      resourceType: 'book',
       support: 'Learn this perk group with a skill book.',
     })
   }
@@ -482,6 +535,7 @@ function getStudyResourceRequirementEntries(
       key: `scroll-${scrollIndex}-${getRequirementKey(scrollRequirement)}`,
       label: 'Ancient scroll',
       requirement: scrollRequirement,
+      resourceType: 'scroll',
       support: 'Learn this perk group with an ancient scroll.',
     })
   }
@@ -493,6 +547,7 @@ function getStudyResourceRequirementEntries(
       key: 'bright',
       label: 'Bright',
       requirement: null,
+      resourceType: 'bright',
       support: 'Needed to read a second ancient scroll.',
     })
   }
@@ -576,16 +631,20 @@ function StudyResourceRequirementList({
               <li key={entry.key}>
                 <div
                   className={styles.detailStudyResourceTileFrame}
+                  data-has-resource-icon={entry.resourceType !== 'scroll'}
+                  data-study-resource-type={entry.resourceType}
                   data-testid="detail-study-resource-tile-frame"
                 >
-                  <img
-                    alt={entry.iconAlt}
-                    className={styles.detailStudyResourceTileIcon}
-                    decoding="async"
-                    loading="lazy"
-                    src={`/game-icons/${entry.iconPath}`}
-                    title={entry.label}
-                  />
+                  {entry.resourceType === 'scroll' ? null : (
+                    <img
+                      alt={entry.iconAlt}
+                      className={styles.detailStudyResourceTileIcon}
+                      decoding="async"
+                      loading="lazy"
+                      src={`/game-icons/${entry.iconPath}`}
+                      title={entry.label}
+                    />
+                  )}
                   <BuildPerkGroupTile
                     arePerkGroupOptionsInteractive={buildTargetPerkGroup !== null}
                     className={styles.detailStudyResourceTile}
@@ -663,6 +722,7 @@ function getStudyResourceTilePerks(
 
 function BackgroundDetail({
   backgroundFit,
+  detailHistoryNavigationAvailability,
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
   selectedEmphasisCategoryNames,
@@ -689,6 +749,7 @@ function BackgroundDetail({
   supportedBuildTargetPerkGroups,
 }: {
   backgroundFit: RankedBackgroundFit
+  detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
   selectedEmphasisCategoryNames: ReadonlySet<string>
@@ -769,6 +830,7 @@ function BackgroundDetail({
         iconLabel={`${backgroundFit.backgroundName} background icon`}
         iconPath={backgroundFit.iconPath}
         iconTestId="detail-background-icon"
+        navigationAvailability={detailHistoryNavigationAvailability}
         onNavigateHistory={onNavigateDetailHistory}
         title={backgroundFit.backgroundName}
       />

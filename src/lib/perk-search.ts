@@ -3,6 +3,7 @@ import {
   getCategoryFilterModeFromSelection,
   type CategoryFilterMode,
 } from './category-filter-state'
+import { formatDisplayBulletText } from './bullet-display'
 
 type PerkSearchFilters = {
   categoryFilterMode?: CategoryFilterMode
@@ -85,7 +86,7 @@ function isEffectDescriptionParagraph(paragraph: string): boolean {
 }
 
 function formatPreviewParagraph(paragraph: string): string {
-  return paragraph.trim().replace(/^Passive:\s*/u, '')
+  return formatDisplayBulletText(paragraph.trim().replace(/^Passive:\s*/u, ''))
 }
 
 function getPreviewDescriptionParagraphs(descriptionParagraphs: string[]): string[] | null {

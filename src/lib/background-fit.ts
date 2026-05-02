@@ -190,6 +190,7 @@ type BackgroundFitEngine = {
 }
 
 const defaultBackgroundFitPartialViewChunkSize = 8
+const defaultBackgroundFitProgressChunkSize = 8
 
 function compareBuildTargetPerkGroups(
   leftPerkGroup: BuildTargetPerkGroup,
@@ -1752,7 +1753,7 @@ function getMaximumCategoryPerkGroupCount(
     )
   }
 
-  // In Legends 19.3.20, GetDynamicPerkTree's magic loop never appends random perk groups.
+  // GetDynamicPerkTree's magic loop never appends random perk groups.
   return explicitPerkGroupCount
 }
 
@@ -2042,6 +2043,37 @@ function compareRankedBackgroundFits(
     leftBackgroundFit.backgroundId.localeCompare(rightBackgroundFit.backgroundId) ||
     leftBackgroundFit.sourceFilePath.localeCompare(rightBackgroundFit.sourceFilePath)
   )
+}
+
+function mergeSortedRankedBackgroundFits(
+  leftRankedBackgroundFits: RankedBackgroundFit[],
+  rightRankedBackgroundFits: RankedBackgroundFit[],
+): RankedBackgroundFit[] {
+  const mergedRankedBackgroundFits: RankedBackgroundFit[] = []
+  let leftIndex = 0
+  let rightIndex = 0
+
+  while (
+    leftIndex < leftRankedBackgroundFits.length &&
+    rightIndex < rightRankedBackgroundFits.length
+  ) {
+    if (
+      compareRankedBackgroundFits(
+        leftRankedBackgroundFits[leftIndex],
+        rightRankedBackgroundFits[rightIndex],
+      ) <= 0
+    ) {
+      mergedRankedBackgroundFits.push(leftRankedBackgroundFits[leftIndex])
+      leftIndex += 1
+    } else {
+      mergedRankedBackgroundFits.push(rightRankedBackgroundFits[rightIndex])
+      rightIndex += 1
+    }
+  }
+
+  return mergedRankedBackgroundFits
+    .concat(leftRankedBackgroundFits.slice(leftIndex))
+    .concat(rightRankedBackgroundFits.slice(rightIndex))
 }
 
 function compareBackgroundFitSummaries(
@@ -2620,20 +2652,27 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
 
       const rankedBackgroundFits: RankedBackgroundFit[] = []
       let sortedRankedBackgroundFitsSnapshot: RankedBackgroundFit[] = []
-      let sortedSnapshotSourceLength = -1
+      let sortedSnapshotSourceLength = 0
       const totalBackgroundCount = backgroundFitBuildCache.cachedBackgroundFitRecords.length
       let checkedBackgroundCount = 0
       let lastPartialViewCheckedBackgroundCount = 0
       let lastPartialViewRankedBackgroundFitCount = 0
+      let lastReportedProgressCheckedBackgroundCount = -1
       const requestedPartialViewChunkSize =
         options.partialViewChunkSize ?? defaultBackgroundFitPartialViewChunkSize
       const partialViewChunkSize = Number.isFinite(requestedPartialViewChunkSize)
         ? Math.max(1, Math.floor(requestedPartialViewChunkSize))
         : defaultBackgroundFitPartialViewChunkSize
       const getSortedRankedBackgroundFits = (): RankedBackgroundFit[] => {
-        if (sortedSnapshotSourceLength !== rankedBackgroundFits.length) {
-          sortedRankedBackgroundFitsSnapshot =
-            rankedBackgroundFits.toSorted(compareRankedBackgroundFits)
+        if (sortedSnapshotSourceLength < rankedBackgroundFits.length) {
+          const sortedNewRankedBackgroundFits = rankedBackgroundFits
+            .slice(sortedSnapshotSourceLength)
+            .toSorted(compareRankedBackgroundFits)
+
+          sortedRankedBackgroundFitsSnapshot = mergeSortedRankedBackgroundFits(
+            sortedRankedBackgroundFitsSnapshot,
+            sortedNewRankedBackgroundFits,
+          )
           sortedSnapshotSourceLength = rankedBackgroundFits.length
         }
 
@@ -2644,7 +2683,21 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
         unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
       })
-      const reportProgress = () => {
+      const reportProgress = ({ shouldForce = false } = {}) => {
+        if (
+          !shouldForce &&
+          checkedBackgroundCount < totalBackgroundCount &&
+          checkedBackgroundCount - lastReportedProgressCheckedBackgroundCount <
+            defaultBackgroundFitProgressChunkSize
+        ) {
+          return
+        }
+
+        if (checkedBackgroundCount === lastReportedProgressCheckedBackgroundCount) {
+          return
+        }
+
+        lastReportedProgressCheckedBackgroundCount = checkedBackgroundCount
         options.onProgress?.({
           checkedBackgroundCount,
           totalBackgroundCount,
@@ -2681,7 +2734,7 @@ export function createBackgroundFitEngine(dataset: LegendsPerksDataset): Backgro
         reportPartialView()
       }
 
-      reportProgress()
+      reportProgress({ shouldForce: true })
 
       for (const cachedBackgroundFitRecord of backgroundFitBuildCache.cachedBackgroundFitRecords) {
         const mustHaveStudyResourceRequirement =

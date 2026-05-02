@@ -1,5 +1,4 @@
 import { useId, type RefObject } from 'react'
-import { Link, Split } from 'lucide-react'
 import catenaryChainUrl from '../assets/catenary-chain.svg'
 import { joinClassNames } from '../lib/class-names'
 import type {
@@ -14,7 +13,7 @@ import {
 } from '../lib/perk-display'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
-import { PlannerSectionChevron } from './SharedControls'
+import { BuildRequirementIcon, PlannerSectionChevron } from './SharedControls'
 import type { BuildPlannerPickedPerk, PlannerPerkGroupSelection } from './build-planner-types'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
@@ -546,11 +545,10 @@ export function BuildPlannerBoard({
                         }
                         type="button"
                       >
-                        {pickedPerk.isOptional ? (
-                          <Link aria-hidden="true" className={styles.plannerSlotActionIcon} />
-                        ) : (
-                          <Split aria-hidden="true" className={styles.plannerSlotActionIcon} />
-                        )}
+                        <BuildRequirementIcon
+                          className={styles.plannerSlotActionIcon}
+                          requirement={pickedPerk.isOptional ? 'must-have' : 'optional'}
+                        />
                       </button>
                       <button
                         aria-label={`Remove ${pickedPerk.perkName} from build`}
@@ -582,7 +580,7 @@ export function BuildPlannerBoard({
                 <div className={styles.plannerSlotCopy}>
                   <strong className={styles.plannerSlotName}>Pick a perk to start</strong>
                   <p className={styles.plannerSlotMeta} data-testid="planner-slot-meta">
-                    Use the star in the detail panel or the search results list.
+                    Use the chain/split control in the detail panel or the search results list.
                   </p>
                 </div>
               </div>

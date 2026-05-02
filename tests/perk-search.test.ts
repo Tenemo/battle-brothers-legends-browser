@@ -261,4 +261,22 @@ describe('perk search', () => {
       'Costs no AP.',
     ])
   })
+
+  test('formats perk preview bullet markers as en dashes', () => {
+    const previewParagraphs = getPerkPreviewParagraphs({
+      ...samplePerks[0],
+      descriptionParagraphs: [
+        'An ace up your sleeve.',
+        'Passive: • Currently equipped throwing items regain 1 ammo each turn.',
+        '•Costs no AP.',
+        'â€¢ Ignores mojibake bullet markers from source fixtures.',
+      ],
+    })
+
+    expect(previewParagraphs).toEqual([
+      '– Currently equipped throwing items regain 1 ammo each turn.',
+      '– Costs no AP.',
+      '– Ignores mojibake bullet markers from source fixtures.',
+    ])
+  })
 })

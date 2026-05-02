@@ -715,15 +715,6 @@ export function BackgroundFitCard({
                     })}
                   </span>
                 ) : null}
-                <span
-                  aria-label={`${veteranPerkLevelIntervalLabel} veteran perk interval`}
-                  className={styles.backgroundFitVeteranPerkBadge}
-                  data-testid="background-fit-veteran-perk-badge"
-                  data-veteran-perk-interval={backgroundFit.veteranPerkLevelInterval}
-                  title={veteranPerkLevelIntervalTitle}
-                >
-                  {veteranPerkLevelIntervalLabel}
-                </span>
               </div>
             </div>
 
@@ -739,6 +730,15 @@ export function BackgroundFitCard({
             </div>
           </div>
         </div>
+        <span
+          aria-label={`${veteranPerkLevelIntervalLabel} veteran perk interval`}
+          className={styles.backgroundFitVeteranPerkBadge}
+          data-testid="background-fit-veteran-perk-badge"
+          data-veteran-perk-interval={backgroundFit.veteranPerkLevelInterval}
+          title={veteranPerkLevelIntervalTitle}
+        >
+          {veteranPerkLevelIntervalLabel}
+        </span>
       </button>
     </article>
   )

@@ -4,6 +4,7 @@ import {
   disableCategory,
   enableCategory,
   expandCategory,
+  expectRawAncientScrollMarker,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -233,6 +234,9 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
   await expect(defaultMagicMissileFocusResultRow).toBeVisible()
   await expect(defaultMagicMissileFocusPlacementList).toContainText('Evocation')
   await expect(defaultMagicMissileFocusPlacementList).not.toContainText('Seer')
+  await expectRawAncientScrollMarker(
+    defaultMagicMissileFocusPlacementList.getByTestId('ancient-scroll-perk-group-marker'),
+  )
 
   await searchPerks(page, 'Berserk')
 
@@ -649,6 +653,10 @@ test('places ancient scroll markers next to sidebar perk group names', async ({ 
   expect(markerMetrics!.spaceBeforeCount).toBeGreaterThan(0)
   expect(markerMetrics!.markerRight).toBeLessThan(markerMetrics!.countLeft)
   expect(markerMetrics!.verticalCenterOffset).toBeLessThanOrEqual(2)
+
+  await expectRawAncientScrollMarker(
+    getSidebarPerkGroupButton(page, 'Evocation').getByTestId('ancient-scroll-perk-group-marker'),
+  )
 })
 
 test('keeps category rows compact with bordered separation in the sidebar', async ({ page }) => {
@@ -911,7 +919,7 @@ test('keeps middle-of-word search highlights from adding visual gaps', async ({ 
   })
 })
 
-test('shows picked categories and perk groups with stars and keeps picked result rows outlined while selection changes the background', async ({
+test('shows picked categories and perk groups with requirement icons and keeps picked result rows outlined while selection changes the background', async ({
   page,
 }) => {
   await gotoBuildPlanner(page)
@@ -923,7 +931,7 @@ test('shows picked categories and perk groups with stars and keeps picked result
 
   await searchPerks(page, 'Perfect Focus')
   await getResultsList(page)
-    .getByRole('button', { name: 'Add Perfect Focus to build from results' })
+    .getByRole('button', { name: 'Add Perfect Focus as optional from results' })
     .click()
   await inspectPerkFromResults(page, 'Perfect Focus')
 
@@ -932,24 +940,46 @@ test('shows picked categories and perk groups with stars and keeps picked result
   await expect(
     page
       .getByRole('button', { name: 'Enable category Traits' })
-      .getByTestId('category-picked-star'),
+      .getByTestId('category-picked-requirement-icon'),
   ).toHaveCount(2)
   await expect(
-    page.getByRole('button', { name: 'Enable category Magic' }).getByTestId('category-picked-star'),
+    page
+      .getByRole('button', { name: 'Enable category Traits' })
+      .getByTestId('category-picked-requirement-icon')
+      .nth(0),
+  ).toHaveAttribute('data-requirement', 'must-have')
+  await expect(
+    page
+      .getByRole('button', { name: 'Enable category Traits' })
+      .getByTestId('category-picked-requirement-icon')
+      .nth(1),
+  ).toHaveAttribute('data-requirement', 'optional')
+  await expect(
+    page
+      .getByRole('button', { name: 'Enable category Magic' })
+      .getByTestId('category-picked-requirement-icon'),
   ).toHaveCount(1)
+  await expect(
+    page
+      .getByRole('button', { name: 'Enable category Magic' })
+      .getByTestId('category-picked-requirement-icon'),
+  ).toHaveAttribute('data-requirement', 'optional')
 
   await enableCategory(page, 'Traits')
 
   await expect(
-    getSidebarPerkGroupButton(page, 'Calm').getByTestId('category-picked-star'),
+    getSidebarPerkGroupButton(page, 'Calm').getByTestId('category-picked-requirement-icon'),
   ).toHaveCount(2)
 
   await enableCategory(page, 'Magic')
 
   await expect(getSidebarPerkGroupButton(page, 'Calm')).toHaveCount(0)
   await expect(
-    getSidebarPerkGroupButton(page, 'Deadeye').getByTestId('category-picked-star'),
+    getSidebarPerkGroupButton(page, 'Deadeye').getByTestId('category-picked-requirement-icon'),
   ).toHaveCount(1)
+  await expect(
+    getSidebarPerkGroupButton(page, 'Deadeye').getByTestId('category-picked-requirement-icon'),
+  ).toHaveAttribute('data-requirement', 'optional')
 
   await disableCategory(page, 'Magic')
 

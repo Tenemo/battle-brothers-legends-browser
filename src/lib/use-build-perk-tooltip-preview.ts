@@ -2,8 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import type { BuildPerkHoverOptions, PerkGroupReference } from './use-perk-interaction-state'
 
 const buildPerkTooltipCloseGraceMs = 120
-const buildPerkTooltipOpenDelayMs = 1500
-const buildPerkTooltipTimerDelayMs = 500
+const buildPerkTooltipOpenDelayMs = 750
+const buildPerkTooltipTimerDelayMs = 250
 
 function isBuildPerkTooltipTarget(relatedTarget: EventTarget | null): boolean {
   const buildPerkTooltip = document.querySelector('[data-build-perk-tooltip="true"]')

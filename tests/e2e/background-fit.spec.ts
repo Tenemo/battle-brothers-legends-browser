@@ -405,6 +405,10 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
   await expect(detailPanel.getByText('Learn with book/scrolls')).toHaveCount(2)
   await expect(detailPanel.getByText('No optional perks in this build.')).toBeVisible()
+  await expect(detailPanel.getByTestId('detail-background-veteran-perk-badge')).toHaveCSS(
+    'cursor',
+    'help',
+  )
 
   const axeMatchButton = detailPanel.getByRole('button', { name: 'Select perk group Axe' })
   const axeMatchRow = axeMatchButton.locator(
@@ -736,6 +740,87 @@ test('filters the background fit list with the background search field', async (
   expect(
     Math.abs(backgroundSearchWidthWithoutScrollbar - backgroundSearchWidthWithScrollbar),
   ).toBeLessThanOrEqual(1)
+})
+
+test('positions veteran interval pills at the bottom right without reserving table space', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const oathtakerCard = backgroundFitPanel
+    .getByTestId('background-fit-card')
+    .filter({ hasText: 'Oathtaker' })
+    .first()
+
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel, {
+    shouldObserveProgress: true,
+  })
+  await expect(oathtakerCard).toBeVisible()
+
+  const veteranBadgeMetrics = await oathtakerCard.evaluate((card) => {
+    const trigger = card.querySelector('button')
+    const headerMain = card.querySelector('[class*="backgroundFitCardHeaderMain"]')
+    const metricTable = card.querySelector('[data-testid="background-fit-summary-table"]')
+    const metricValues = [
+      ...card.querySelectorAll('[data-testid="background-fit-summary-value"]'),
+    ]
+    const rankBadge = card.querySelector('[data-testid="background-fit-rank"]')
+    const veteranBadge = card.querySelector('[data-testid="background-fit-veteran-perk-badge"]')
+
+    if (
+      !(trigger instanceof HTMLElement) ||
+      !(headerMain instanceof HTMLElement) ||
+      !(metricTable instanceof HTMLElement) ||
+      !(rankBadge instanceof HTMLElement) ||
+      !(veteranBadge instanceof HTMLElement) ||
+      metricValues.some((metricValue) => !(metricValue instanceof HTMLElement))
+    ) {
+      return null
+    }
+
+    const triggerRectangle = trigger.getBoundingClientRect()
+    const triggerStyle = window.getComputedStyle(trigger)
+    const headerMainRectangle = headerMain.getBoundingClientRect()
+    const metricTableRectangle = metricTable.getBoundingClientRect()
+    const veteranBadgeRectangle = veteranBadge.getBoundingClientRect()
+    const metricValueRight = Math.max(
+      ...metricValues.map((metricValue) => metricValue.getBoundingClientRect().right),
+    )
+
+    return {
+      badgeBottomGap: triggerRectangle.bottom - veteranBadgeRectangle.bottom,
+      badgeLeft: veteranBadgeRectangle.left,
+      badgeRightGap: triggerRectangle.right - veteranBadgeRectangle.right,
+      badgeTop: veteranBadgeRectangle.top,
+      headerMainBottom: headerMainRectangle.bottom,
+      metricTableRightGap: triggerRectangle.right - metricTableRectangle.right,
+      metricValueRight,
+      paddingBottom: Number.parseFloat(triggerStyle.paddingBottom),
+      paddingRight: Number.parseFloat(triggerStyle.paddingRight),
+      rankCursor: window.getComputedStyle(rankBadge).cursor,
+      veteranCursor: window.getComputedStyle(veteranBadge).cursor,
+    }
+  })
+
+  expect(veteranBadgeMetrics).not.toBeNull()
+  expect(
+    Math.abs(veteranBadgeMetrics!.badgeRightGap - veteranBadgeMetrics!.paddingRight),
+  ).toBeLessThanOrEqual(1)
+  expect(
+    Math.abs(veteranBadgeMetrics!.badgeBottomGap - veteranBadgeMetrics!.paddingBottom),
+  ).toBeLessThanOrEqual(1)
+  expect(veteranBadgeMetrics!.metricTableRightGap).toBeLessThanOrEqual(
+    veteranBadgeMetrics!.paddingRight + 1,
+  )
+  expect(veteranBadgeMetrics!.badgeLeft).toBeGreaterThan(veteranBadgeMetrics!.metricValueRight + 4)
+  expect(veteranBadgeMetrics!.badgeTop).toBeGreaterThanOrEqual(
+    veteranBadgeMetrics!.headerMainBottom,
+  )
+  expect(veteranBadgeMetrics!.rankCursor).toBe('help')
+  expect(veteranBadgeMetrics!.veteranCursor).toBe('help')
 })
 
 test('filters origin backgrounds from the background search menu', async ({ page }) => {

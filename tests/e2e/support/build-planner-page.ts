@@ -116,6 +116,26 @@ export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
 }
 
+export async function expectRawAncientScrollMarker(marker: Locator): Promise<void> {
+  const markerPresentation = await marker.evaluate((element) => {
+    const style = window.getComputedStyle(element)
+
+    return {
+      backgroundColor: style.backgroundColor,
+      backgroundImage: style.backgroundImage,
+      borderRadius: style.borderRadius,
+      borderTopWidth: style.borderTopWidth,
+      cursor: style.cursor,
+    }
+  })
+
+  expect(markerPresentation.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+  expect(markerPresentation.backgroundImage).toBe('none')
+  expect(markerPresentation.borderRadius).toBe('0px')
+  expect(markerPresentation.borderTopWidth).toBe('0px')
+  expect(markerPresentation.cursor).toBe('help')
+}
+
 function getSidebar(page: Page): Locator {
   return page.getByTestId('category-sidebar')
 }

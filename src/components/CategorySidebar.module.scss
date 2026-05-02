@@ -220,7 +220,7 @@
 
   .categoryChipStart,
   .categoryChipEnd,
-  .categoryChipPickedStars,
+  .categoryChipPickedRequirementIcons,
   .perkGroupChipStart,
   .perkGroupChipEnd {
     display: inline-flex;
@@ -240,12 +240,12 @@
     flex-shrink: 0;
   }
 
-  .categoryChipPickedStars {
+  .categoryChipPickedRequirementIcons {
     gap: var(--space-3xs);
     color: var(--accent-soft);
   }
 
-  .categoryChipPickedStar {
+  .categoryChipPickedRequirementIcon {
     @include size(var(--primitive-length-0-66rem));
   }
 
