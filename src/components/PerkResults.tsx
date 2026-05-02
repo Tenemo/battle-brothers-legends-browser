@@ -11,7 +11,12 @@ import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
-import { BuildToggleButton, ClearableSearchField, FunnelIcon } from './SharedControls'
+import {
+  BuildToggleButton,
+  ClearableSearchField,
+  FunnelIcon,
+  type BuildRequirement,
+} from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
 
@@ -152,14 +157,15 @@ export function PerkResults({
   emphasizedPerkGroupKeys,
   onCloseResultsPerkHover,
   onClosePerkGroupHover,
+  onAddPerkToBuild,
   onAncientScrollPerkGroupsChange,
   onInspectPerkGroup,
   onOriginPerkGroupsChange,
   onOpenResultsPerkHover,
   onOpenPerkGroupHover,
+  onRemovePerkFromBuild,
   onSelectPerk,
-  onTogglePerkPicked,
-  pickedPerkOrderById,
+  pickedPerkRequirementById,
   perkResultListScrollResetKey,
   query,
   selectedPerk,
@@ -177,14 +183,15 @@ export function PerkResults({
   hoveredPerkId: string | null
   onClosePerkGroupHover: (perkGroupKey: string) => void
   onCloseResultsPerkHover: (perkId: string) => void
+  onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
   onAncientScrollPerkGroupsChange: (shouldIncludeAncientScrollPerkGroups: boolean) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOriginPerkGroupsChange: (shouldIncludeOriginPerkGroups: boolean) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOpenResultsPerkHover: (perkId: string) => void
+  onRemovePerkFromBuild: (perkId: string) => void
   onSelectPerk: (perkId: string) => void
-  onTogglePerkPicked: (perkId: string) => void
-  pickedPerkOrderById: Map<string, number>
+  pickedPerkRequirementById: ReadonlyMap<string, BuildRequirement>
   perkResultListScrollResetKey: number
   query: string
   selectedPerk: LegendsPerkRecord | null
@@ -383,7 +390,8 @@ export function PerkResults({
           <>
             {displayedPerks.map((perk) => {
               const isSelected = perk.id === selectedPerk?.id
-              const isPicked = pickedPerkOrderById.has(perk.id)
+              const pickedRequirement = pickedPerkRequirementById.get(perk.id) ?? null
+              const isPicked = pickedRequirement !== null
               const isHighlighted = hoveredPerkId === perk.id
               const previewParagraphs = getPerkPreviewParagraphs(perk)
 
@@ -472,8 +480,10 @@ export function PerkResults({
                   <BuildToggleButton
                     className={styles.buildToggleButtonInRow}
                     isCompact
-                    isPicked={isPicked}
-                    onClick={() => onTogglePerkPicked(perk.id)}
+                    onAddMustHave={() => onAddPerkToBuild(perk.id, 'must-have')}
+                    onAddOptional={() => onAddPerkToBuild(perk.id, 'optional')}
+                    onRemove={() => onRemovePerkFromBuild(perk.id)}
+                    pickedRequirement={pickedRequirement}
                     perkName={perk.perkName}
                     source="results"
                   />

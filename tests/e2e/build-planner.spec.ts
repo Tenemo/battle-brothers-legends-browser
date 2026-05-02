@@ -418,9 +418,8 @@ test('build planner splits shared and individual perk groups without layout drif
   )
 
   expect(infoTooltipLeft).toBeGreaterThanOrEqual(0)
-  await expect(infoTooltip).toContainText(/picked perks start as must-have/i)
-  await expect(infoTooltip).toContainText(/marked with a chain/i)
-  await expect(infoTooltip).toContainText(/mark it optional/i)
+  await expect(infoTooltip).toContainText(/chain adds must-have perks/i)
+  await expect(infoTooltip).toContainText(/split adds optional perks/i)
   await expect(infoTooltip).toContainText(/scored separately from must-have perks/i)
   await page.mouse.move(1, 1)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
@@ -1523,9 +1522,7 @@ test('keeps ancient scroll group tile markers from reserving header space', asyn
     plannerGroupCardMetrics!.previousMarkerWidth * 1.24,
   )
   expect(
-    Math.abs(
-      plannerGroupCardMetrics!.markerWidth - plannerGroupCardMetrics!.expectedMarkerWidth,
-    ),
+    Math.abs(plannerGroupCardMetrics!.markerWidth - plannerGroupCardMetrics!.expectedMarkerWidth),
   ).toBeLessThanOrEqual(1)
 })
 
@@ -1811,11 +1808,15 @@ test('keeps requirement chains scaled with picked perk tiles on compact desktop'
     'chainWidthRatio',
   ] as const
 
-  expect(compactDesktopMetrics.picked.tileHeight).toBeLessThan(largeDesktopMetrics.picked.tileHeight)
+  expect(compactDesktopMetrics.picked.tileHeight).toBeLessThan(
+    largeDesktopMetrics.picked.tileHeight,
+  )
   expect(compactDesktopMetrics.picked.chainWidth).toBeLessThan(
     largeDesktopMetrics.picked.chainWidth,
   )
-  expect(compactDesktopMetrics.legend.tileHeight).toBeLessThan(largeDesktopMetrics.legend.tileHeight)
+  expect(compactDesktopMetrics.legend.tileHeight).toBeLessThan(
+    largeDesktopMetrics.legend.tileHeight,
+  )
   expect(compactDesktopMetrics.legend.chainWidth).toBeLessThan(
     largeDesktopMetrics.legend.chainWidth,
   )
@@ -2134,6 +2135,19 @@ test('marks picked perks as optional and separates them from must-have perks', a
       .getByTestId('background-fit-summary-label')
       .filter({ hasText: 'Best native roll covers total perks' }),
   ).toHaveCount(0)
+
+  await searchPerks(page, 'Berserk')
+  await inspectPerkFromResults(page, 'Berserk')
+  await addSelectedPerkToBuild(page, 'Berserk')
+  await expect(buildPerksBar.getByTestId('planner-picked-perk-name')).toHaveText([
+    'Perfect Focus',
+    'Student',
+    'Berserk',
+    'Clarity',
+  ])
+  await expect(
+    buildPerksBar.getByTestId('planner-slot-perk').filter({ hasText: 'Berserk' }),
+  ).toHaveAttribute('data-requirement', 'must-have')
 })
 
 test('cancels a picked perk tooltip timer before marking the perk optional', async ({ page }) => {
@@ -2533,7 +2547,7 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
   await expect(
     getBuildPerksBar(page).getByText(
-      'Use the star in the detail panel or the search results list.',
+      'Use the chain/split control in the detail panel or the search results list.',
     ),
   ).toBeVisible()
   const placeholderMetrics = await getBuildPerksBar(page).evaluate((buildPerksBar) => {

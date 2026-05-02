@@ -34,9 +34,9 @@ function renderPerkDetail(selectedPerk: LegendsPerkRecord) {
       hoveredBuildPerkId={null}
       hoveredBuildPerkTooltipId={undefined}
       hoveredPerkId={null}
-      isSelectedPerkPicked={false}
       mustHavePickedPerkCount={0}
       mustHavePickedPerkIds={[]}
+      onAddPerkToBuild={vi.fn()}
       onCloseBuildPerkHover={vi.fn()}
       onCloseBuildPerkTooltip={vi.fn()}
       onClosePerkGroupHover={vi.fn()}
@@ -46,10 +46,11 @@ function renderPerkDetail(selectedPerk: LegendsPerkRecord) {
       onOpenBuildPerkHover={vi.fn()}
       onOpenBuildPerkTooltip={vi.fn()}
       onOpenPerkGroupHover={vi.fn()}
-      onTogglePerkPicked={vi.fn()}
+      onRemovePerkFromBuild={vi.fn()}
       optionalPickedPerkCount={0}
       optionalPickedPerkIds={[]}
       pickedPerkCount={0}
+      selectedPerkRequirement={null}
       selectedPerk={selectedPerk}
       studyResourceFilter={{
         shouldAllowBook: true,

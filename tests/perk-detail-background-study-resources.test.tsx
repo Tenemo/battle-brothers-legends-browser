@@ -87,9 +87,9 @@ function renderBackgroundFitDetail({
       hoveredBuildPerkId={null}
       hoveredBuildPerkTooltipId={undefined}
       hoveredPerkId={null}
-      isSelectedPerkPicked={false}
       mustHavePickedPerkCount={1}
       mustHavePickedPerkIds={['perk.legend_clarity']}
+      onAddPerkToBuild={vi.fn()}
       onCloseBuildPerkHover={vi.fn()}
       onCloseBuildPerkTooltip={vi.fn()}
       onClosePerkGroupHover={vi.fn()}
@@ -99,10 +99,11 @@ function renderBackgroundFitDetail({
       onOpenBuildPerkHover={vi.fn()}
       onOpenBuildPerkTooltip={vi.fn()}
       onOpenPerkGroupHover={vi.fn()}
-      onTogglePerkPicked={vi.fn()}
+      onRemovePerkFromBuild={vi.fn()}
       optionalPickedPerkCount={0}
       optionalPickedPerkIds={[]}
       pickedPerkCount={1}
+      selectedPerkRequirement={null}
       selectedPerk={null}
       studyResourceFilter={{
         shouldAllowBook: true,

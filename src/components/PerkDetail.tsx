@@ -35,7 +35,7 @@ import {
 } from './BackgroundFitCard'
 import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
-import { BuildToggleButton } from './SharedControls'
+import { BuildToggleButton, type BuildRequirement } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import catenaryChainIconPath from '../assets/catenary-chain.svg'
 import styles from './PerkDetail.module.scss'
@@ -52,8 +52,8 @@ type PerkDetailProps = {
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
-  isSelectedPerkPicked: boolean
   mustHavePickedPerkIds: string[]
+  onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
@@ -67,11 +67,12 @@ type PerkDetailProps = {
     perkGroupSelection?: BuildPerkPillSelection,
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  onTogglePerkPicked: (perkId: string) => void
+  onRemovePerkFromBuild: (perkId: string) => void
   optionalPickedPerkIds: string[]
   mustHavePickedPerkCount: number
   optionalPickedPerkCount: number
   pickedPerkCount: number
+  selectedPerkRequirement: BuildRequirement | null
   selectedPerk: LegendsPerkRecord | null
   studyResourceFilter: BackgroundStudyResourceFilter
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
@@ -155,8 +156,8 @@ export function DetailsPanel({
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
-  isSelectedPerkPicked,
   mustHavePickedPerkIds,
+  onAddPerkToBuild,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onClosePerkGroupHover,
@@ -166,11 +167,12 @@ export function DetailsPanel({
   onOpenBuildPerkHover,
   onOpenBuildPerkTooltip,
   onOpenPerkGroupHover,
-  onTogglePerkPicked,
+  onRemovePerkFromBuild,
   optionalPickedPerkIds,
   mustHavePickedPerkCount,
   optionalPickedPerkCount,
   pickedPerkCount,
+  selectedPerkRequirement,
   selectedPerk,
   studyResourceFilter,
   supportedBuildTargetPerkGroups,
@@ -224,8 +226,10 @@ export function DetailsPanel({
             <DetailHeader
               actions={
                 <BuildToggleButton
-                  isPicked={isSelectedPerkPicked}
-                  onClick={() => onTogglePerkPicked(selectedPerk.id)}
+                  onAddMustHave={() => onAddPerkToBuild(selectedPerk.id, 'must-have')}
+                  onAddOptional={() => onAddPerkToBuild(selectedPerk.id, 'optional')}
+                  onRemove={() => onRemovePerkFromBuild(selectedPerk.id)}
+                  pickedRequirement={selectedPerkRequirement}
                   perkName={selectedPerk.perkName}
                   source="detail"
                 />

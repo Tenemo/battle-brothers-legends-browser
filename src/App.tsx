@@ -14,7 +14,7 @@ import {
 import { CategorySidebar } from './components/CategorySidebar'
 import { DetailsPanel } from './components/PerkDetail'
 import { PerkResults } from './components/PerkResults'
-import { GitHubIcon, PersonIcon } from './components/SharedControls'
+import { GitHubIcon, PersonIcon, type BuildRequirement } from './components/SharedControls'
 import legendsPerksDatasetJson from './data/legends-perks.json'
 import {
   createBackgroundFitEngine,
@@ -104,6 +104,11 @@ const availableBackgroundVeteranPerkLevelIntervals =
 type PickedBuildPerkState = {
   isOptional: boolean
   perkId: string
+}
+
+type PickedPerkRequirementCounts = {
+  mustHave: number
+  optional: number
 }
 
 type BackgroundFitViewState = {
@@ -304,6 +309,59 @@ function getPickedBuildPerkIds(pickedBuildPerks: PickedBuildPerkState[]): string
 function getOptionalPickedBuildPerkIds(pickedBuildPerks: PickedBuildPerkState[]): string[] {
   return pickedBuildPerks.flatMap((pickedBuildPerk) =>
     pickedBuildPerk.isOptional ? [pickedBuildPerk.perkId] : [],
+  )
+}
+
+function addPickedBuildPerk(
+  pickedBuildPerks: PickedBuildPerkState[],
+  perkId: string,
+  requirement: BuildRequirement,
+): PickedBuildPerkState[] {
+  if (pickedBuildPerks.some((pickedBuildPerk) => pickedBuildPerk.perkId === perkId)) {
+    return pickedBuildPerks
+  }
+
+  const nextPickedBuildPerk = {
+    isOptional: requirement === 'optional',
+    perkId,
+  }
+
+  if (nextPickedBuildPerk.isOptional) {
+    return [...pickedBuildPerks, nextPickedBuildPerk]
+  }
+
+  const firstOptionalPerkIndex = pickedBuildPerks.findIndex(
+    (pickedBuildPerk) => pickedBuildPerk.isOptional,
+  )
+
+  if (firstOptionalPerkIndex === -1) {
+    return [...pickedBuildPerks, nextPickedBuildPerk]
+  }
+
+  return [
+    ...pickedBuildPerks.slice(0, firstOptionalPerkIndex),
+    nextPickedBuildPerk,
+    ...pickedBuildPerks.slice(firstOptionalPerkIndex),
+  ]
+}
+
+function getPickedPerkRequirementCounts(
+  mustHavePickedPerkCounts: ReadonlyMap<string, number>,
+  optionalPickedPerkCounts: ReadonlyMap<string, number>,
+): Map<string, PickedPerkRequirementCounts> {
+  const countKeys = new Set([
+    ...mustHavePickedPerkCounts.keys(),
+    ...optionalPickedPerkCounts.keys(),
+  ])
+
+  return new Map(
+    [...countKeys].map((countKey) => [
+      countKey,
+      {
+        mustHave: mustHavePickedPerkCounts.get(countKey) ?? 0,
+        optional: optionalPickedPerkCounts.get(countKey) ?? 0,
+      },
+    ]),
   )
 }
 
@@ -614,6 +672,10 @@ export default function App() {
   )
   const mustHavePickedPerks = useMemo(
     () => pickedPerks.filter((pickedPerk) => !pickedPerk.isOptional),
+    [pickedPerks],
+  )
+  const optionalPickedPerks = useMemo(
+    () => pickedPerks.filter((pickedPerk) => pickedPerk.isOptional),
     [pickedPerks],
   )
   const mustHavePickedPerkIds = useMemo(
@@ -1003,22 +1065,51 @@ export default function App() {
       visiblePerkCountsByCategoryPerkGroup,
     ],
   )
-  const pickedPerkCountsByCategory = useMemo(
-    () => getPickedPerkCountsByCategory(pickedPerks),
-    [pickedPerks],
-  )
-  const pickedPerkCountsByPerkGroup = useMemo(
-    () => getPickedPerkCountsByPerkGroup(pickedPerks),
-    [pickedPerks],
-  )
-  const pickedPerkOrderById = useMemo(
+  const pickedPerkRequirementById = useMemo<Map<string, BuildRequirement>>(
     () =>
       new Map(
-        pickedPerkIds.map((pickedPerkId, pickedPerkIndex) => [pickedPerkId, pickedPerkIndex + 1]),
+        pickedBuildPerks.map((pickedBuildPerk) => [
+          pickedBuildPerk.perkId,
+          pickedBuildPerk.isOptional ? 'optional' : 'must-have',
+        ]),
       ),
-    [pickedPerkIds],
+    [pickedBuildPerks],
   )
-  const isSelectedPerkPicked = selectedPerk ? pickedPerkOrderById.has(selectedPerk.id) : false
+  const selectedPerkRequirement = selectedPerk
+    ? (pickedPerkRequirementById.get(selectedPerk.id) ?? null)
+    : null
+  const mustHavePickedPerkCountsByCategory = useMemo(
+    () => getPickedPerkCountsByCategory(mustHavePickedPerks),
+    [mustHavePickedPerks],
+  )
+  const optionalPickedPerkCountsByCategory = useMemo(
+    () => getPickedPerkCountsByCategory(optionalPickedPerks),
+    [optionalPickedPerks],
+  )
+  const pickedPerkRequirementCountsByCategory = useMemo(
+    () =>
+      getPickedPerkRequirementCounts(
+        mustHavePickedPerkCountsByCategory,
+        optionalPickedPerkCountsByCategory,
+      ),
+    [mustHavePickedPerkCountsByCategory, optionalPickedPerkCountsByCategory],
+  )
+  const mustHavePickedPerkCountsByPerkGroup = useMemo(
+    () => getPickedPerkCountsByPerkGroup(mustHavePickedPerks),
+    [mustHavePickedPerks],
+  )
+  const optionalPickedPerkCountsByPerkGroup = useMemo(
+    () => getPickedPerkCountsByPerkGroup(optionalPickedPerks),
+    [optionalPickedPerks],
+  )
+  const pickedPerkRequirementCountsByPerkGroup = useMemo(
+    () =>
+      getPickedPerkRequirementCounts(
+        mustHavePickedPerkCountsByPerkGroup,
+        optionalPickedPerkCountsByPerkGroup,
+      ),
+    [mustHavePickedPerkCountsByPerkGroup, optionalPickedPerkCountsByPerkGroup],
+  )
   const groupedBackgroundSources = useMemo(
     () =>
       selectedPerk
@@ -1301,13 +1392,11 @@ export default function App() {
     })
   }
 
-  function handleTogglePerkPicked(perkId: string) {
+  function handleAddPickedPerk(perkId: string, requirement: BuildRequirement) {
     requestNextUrlHistoryEntry()
     startTransition(() => {
       setPickedBuildPerks((currentPickedBuildPerks) =>
-        currentPickedBuildPerks.some((pickedBuildPerk) => pickedBuildPerk.perkId === perkId)
-          ? currentPickedBuildPerks.filter((pickedBuildPerk) => pickedBuildPerk.perkId !== perkId)
-          : [...currentPickedBuildPerks, { isOptional: false, perkId }],
+        addPickedBuildPerk(currentPickedBuildPerks, perkId, requirement),
       )
       clearBuildPerkTooltip(perkId)
     })
@@ -1757,8 +1846,8 @@ export default function App() {
           hoveredPerkId={hoveredPerkId}
           selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
           selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-          isSelectedPerkPicked={isSelectedPerkPicked}
           mustHavePickedPerkIds={mustHavePickedPerkIds}
+          onAddPerkToBuild={handleAddPickedPerk}
           onCloseBuildPerkHover={closeBuildPerkHover}
           onCloseBuildPerkTooltip={closeBuildPerkTooltip}
           onClosePerkGroupHover={closePerkGroupHover}
@@ -1768,11 +1857,12 @@ export default function App() {
           onOpenBuildPerkHover={openBuildPerkHover}
           onOpenBuildPerkTooltip={openBuildPerkTooltip}
           onOpenPerkGroupHover={openPerkGroupHover}
-          onTogglePerkPicked={handleTogglePerkPicked}
+          onRemovePerkFromBuild={handleRemovePickedPerk}
           optionalPickedPerkIds={optionalPickedPerkIds}
           mustHavePickedPerkCount={mustHavePickedPerks.length}
           optionalPickedPerkCount={optionalPickedPerkIds.length}
           pickedPerkCount={pickedPerks.length}
+          selectedPerkRequirement={selectedPerkRequirement}
           selectedPerk={selectedPerk}
           studyResourceFilter={{
             shouldAllowBook: shouldAllowBackgroundStudyBook,
@@ -1793,9 +1883,10 @@ export default function App() {
           onOriginPerkGroupsChange={handleOriginPerkGroupsChange}
           onOpenPerkGroupHover={openPerkGroupHover}
           onOpenResultsPerkHover={openResultsPerkHover}
+          onAddPerkToBuild={handleAddPickedPerk}
+          onRemovePerkFromBuild={handleRemovePickedPerk}
           onSelectPerk={handleSelectPerk}
-          onTogglePerkPicked={handleTogglePerkPicked}
-          pickedPerkOrderById={pickedPerkOrderById}
+          pickedPerkRequirementById={pickedPerkRequirementById}
           query={query}
           selectedPerk={selectedPerk}
           selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
@@ -1830,8 +1921,8 @@ export default function App() {
           onPerkGroupSelect={handlePerkGroupSelect}
           onSelectAllCategories={handleSelectAllCategories}
           onToggleExpanded={() => setIsCategorySidebarExpanded((isExpanded) => !isExpanded)}
-          pickedPerkCountsByCategory={pickedPerkCountsByCategory}
-          pickedPerkCountsByPerkGroup={pickedPerkCountsByPerkGroup}
+          pickedPerkRequirementCountsByCategory={pickedPerkRequirementCountsByCategory}
+          pickedPerkRequirementCountsByPerkGroup={pickedPerkRequirementCountsByPerkGroup}
           query={query}
           selectedCategoryNames={selectedCategoryNames}
           selectedPerkGroupIdsByCategory={selectedPerkGroupIdsByCategory}

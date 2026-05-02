@@ -63,7 +63,8 @@
   }
 
   .searchClearButton,
-  .buildToggleButton {
+  .buildToggleButton,
+  .buildToggleSegment {
     appearance: none;
     display: inline-flex;
     align-items: center;
@@ -224,8 +225,7 @@
       margin: 0;
       padding: 0;
       background:
-        linear-gradient(180deg, var(--highlight-white-subtle), transparent),
-        rgb(18 15 13 / 0.92);
+        linear-gradient(180deg, var(--highlight-white-subtle), transparent), rgb(18 15 13 / 0.92);
       box-shadow: var(--shadow-checkbox);
       color: var(--accent-soft);
       cursor: pointer;
@@ -337,13 +337,68 @@
     &[data-compact='true'] {
       @include size(var(--control-height-sm));
 
-      .buildStar {
+      .buildRequirementIcon {
         @include size(0.95rem);
       }
     }
   }
 
-  .buildStar {
+  .buildToggleButtonGroup {
+    display: inline-grid;
+    grid-template-columns: 1fr 1fr;
+    width: calc(var(--target-size) * 1.68);
+    height: var(--target-size);
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-pill);
+    background: var(--surface-control);
+    color: var(--text-muted);
+    font: inherit;
+    overflow: hidden;
+
+    @include control-transition;
+
+    &:hover,
+    &:focus-within {
+      border-color: var(--border-strong);
+      background: var(--surface-result-active);
+      color: var(--accent-soft);
+    }
+
+    &[data-compact='true'] {
+      width: calc(var(--control-height-sm) * 1.72);
+      height: var(--control-height-sm);
+
+      .buildRequirementIcon {
+        @include size(0.95rem);
+      }
+    }
+  }
+
+  .buildToggleSegment {
+    min-width: 0;
+    border: 0;
+    border-radius: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+
+    & + & {
+      border-left: var(--primitive-length-1px) solid var(--border-muted);
+    }
+
+    &:hover,
+    &:focus-visible {
+      background: var(--border-overlay);
+      color: var(--text-primary);
+    }
+
+    &:focus-visible {
+      @include focus-ring(var(--primitive-length-negative-2px));
+    }
+  }
+
+  .buildRequirementIcon {
     @include size(var(--primitive-length-1-05rem));
   }
 
@@ -362,12 +417,22 @@
 
     .searchClearButton,
     .filterButton,
-    .buildToggleButton,
+    .buildToggleButton {
+      @include size(var(--primitive-length-2-72rem));
+    }
+
+    .buildToggleButtonGroup,
+    .buildToggleButtonGroup[data-compact='true'] {
+      width: calc(var(--primitive-length-2-72rem) * 2);
+      height: var(--primitive-length-2-72rem);
+    }
+
     .buildToggleButton[data-compact='true'] {
       @include size(var(--primitive-length-2-72rem));
     }
 
-    .buildToggleButton[data-compact='true'] .buildStar {
+    .buildToggleButton[data-compact='true'] .buildRequirementIcon,
+    .buildToggleButtonGroup[data-compact='true'] .buildRequirementIcon {
       @include size(var(--primitive-length-1-05rem));
     }
   }

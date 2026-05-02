@@ -80,6 +80,7 @@ test('detail history buttons stay inside page detail history', async ({ page }) 
   const previousDetailButton = detailPanel.getByRole('button', { name: 'Show previous detail' })
   const nextDetailButton = detailPanel.getByRole('button', { name: 'Show next detail' })
   const buildToggleButton = detailPanel.getByRole('button', { name: 'Add Berserk to build' })
+  const buildToggleControl = detailPanel.getByTestId('build-toggle-split-button')
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
   await expect(previousDetailButton).toBeVisible()
@@ -87,8 +88,9 @@ test('detail history buttons stay inside page detail history', async ({ page }) 
   await expect(previousDetailButton).toBeDisabled()
   await expect(nextDetailButton).toBeDisabled()
   await expect(buildToggleButton).toBeVisible()
+  await expect(detailPanel.getByRole('button', { name: 'Add Berserk as optional' })).toBeVisible()
   const detailActionButtonSizes = await Promise.all(
-    [previousDetailButton, nextDetailButton, buildToggleButton].map((button) =>
+    [previousDetailButton, nextDetailButton, buildToggleControl].map((button) =>
       button.evaluate((element) => {
         const rectangle = element.getBoundingClientRect()
 
@@ -100,10 +102,13 @@ test('detail history buttons stay inside page detail history', async ({ page }) 
     ),
   )
 
-  expect(detailActionButtonSizes[0]).toEqual(detailActionButtonSizes[2])
-  expect(detailActionButtonSizes[1]).toEqual(detailActionButtonSizes[2])
+  expect(detailActionButtonSizes[2].height).toEqual(detailActionButtonSizes[0].height)
+  expect(detailActionButtonSizes[2].width).toBeGreaterThan(detailActionButtonSizes[0].width)
+  expect(detailActionButtonSizes[2].width).toBeLessThan(
+    detailActionButtonSizes[0].width + detailActionButtonSizes[1].width,
+  )
   const detailActionButtonLayout = await Promise.all(
-    [previousDetailButton, nextDetailButton, buildToggleButton].map((button) =>
+    [previousDetailButton, nextDetailButton, buildToggleControl].map((button) =>
       button.evaluate((element) => {
         const rectangle = element.getBoundingClientRect()
 

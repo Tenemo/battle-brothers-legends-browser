@@ -4,9 +4,14 @@ import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display
 import { joinClassNames } from '../lib/class-names'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { AncientScrollPerkGroupMarker } from './PerkGroupIcon'
-import { BuildStar, CategoryChevron, CategorySidebarRailChevron } from './SharedControls'
+import { BuildRequirementIcon, CategoryChevron, CategorySidebarRailChevron } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './CategorySidebar.module.scss'
+
+type PickedPerkRequirementCounts = {
+  mustHave: number
+  optional: number
+}
 
 type CategorySidebarProps = {
   allPerkCount: number
@@ -30,26 +35,34 @@ type CategorySidebarProps = {
   onPerkGroupSelect: (categoryName: string, perkGroupId: string) => void
   onSelectAllCategories: () => void
   onToggleExpanded: () => void
-  pickedPerkCountsByCategory: Map<string, number>
-  pickedPerkCountsByPerkGroup: Map<string, number>
+  pickedPerkRequirementCountsByCategory: Map<string, PickedPerkRequirementCounts>
+  pickedPerkRequirementCountsByPerkGroup: Map<string, PickedPerkRequirementCounts>
   query: string
   selectedCategoryNames: string[]
   selectedPerkGroupIdsByCategory: Record<string, string[]>
 }
 
-function renderPickedStars(keyPrefix: string, count: number) {
-  if (count <= 0) {
+function renderPickedRequirementIcons(keyPrefix: string, counts: PickedPerkRequirementCounts) {
+  if (counts.mustHave <= 0 && counts.optional <= 0) {
     return null
   }
 
   return (
-    <span aria-hidden="true" className={styles.categoryChipPickedStars}>
-      {Array.from({ length: count }, (_unusedValue, pickedPerkIndex) => (
-        <BuildStar
-          className={styles.categoryChipPickedStar}
-          isPicked
-          key={`${keyPrefix}-picked-${pickedPerkIndex}`}
-          testId="category-picked-star"
+    <span aria-hidden="true" className={styles.categoryChipPickedRequirementIcons}>
+      {Array.from({ length: counts.mustHave }, (_unusedValue, pickedPerkIndex) => (
+        <BuildRequirementIcon
+          className={styles.categoryChipPickedRequirementIcon}
+          key={`${keyPrefix}-must-have-${pickedPerkIndex}`}
+          requirement="must-have"
+          testId="category-picked-requirement-icon"
+        />
+      ))}
+      {Array.from({ length: counts.optional }, (_unusedValue, pickedPerkIndex) => (
+        <BuildRequirementIcon
+          className={styles.categoryChipPickedRequirementIcon}
+          key={`${keyPrefix}-optional-${pickedPerkIndex}`}
+          requirement="optional"
+          testId="category-picked-requirement-icon"
         />
       ))}
     </span>
@@ -78,8 +91,8 @@ export function CategorySidebar({
   onPerkGroupSelect,
   onSelectAllCategories,
   onToggleExpanded,
-  pickedPerkCountsByCategory,
-  pickedPerkCountsByPerkGroup,
+  pickedPerkRequirementCountsByCategory,
+  pickedPerkRequirementCountsByPerkGroup,
   query,
   selectedCategoryNames,
   selectedPerkGroupIdsByCategory,
@@ -152,8 +165,9 @@ export function CategorySidebar({
             displayedPerkGroupOptionsByCategory.get(availableCategoryName) ?? []
           const isCategoryExpanded = expandedCategoryNames.includes(availableCategoryName)
           const isActive = selectedCategoryNames.includes(availableCategoryName)
-          const pickedPerkCountInCategory =
-            pickedPerkCountsByCategory.get(availableCategoryName) ?? 0
+          const pickedPerkRequirementCountInCategory = pickedPerkRequirementCountsByCategory.get(
+            availableCategoryName,
+          ) ?? { mustHave: 0, optional: 0 }
           const selectedPerkGroupIds = selectedPerkGroupIdsByCategory[availableCategoryName] ?? []
           const isAllPerkGroupsSelectionActive = isActive && selectedPerkGroupIds.length === 0
           const isHoveredCategory =
@@ -239,7 +253,10 @@ export function CategorySidebar({
                     </span>
                   </span>
                   <span className={styles.categoryChipEnd}>
-                    {renderPickedStars(availableCategoryName, pickedPerkCountInCategory)}
+                    {renderPickedRequirementIcons(
+                      availableCategoryName,
+                      pickedPerkRequirementCountInCategory,
+                    )}
                     <span>{categoryCounts.get(availableCategoryName)}</span>
                   </span>
                 </button>
@@ -263,8 +280,11 @@ export function CategorySidebar({
                     </span>
                   </button>
                   {activePerkGroupOptions.map((perkGroupOption) => {
-                    const pickedPerkCountInPerkGroup =
-                      pickedPerkCountsByPerkGroup.get(perkGroupOption.perkGroupId) ?? 0
+                    const pickedPerkRequirementCountInPerkGroup =
+                      pickedPerkRequirementCountsByPerkGroup.get(perkGroupOption.perkGroupId) ?? {
+                        mustHave: 0,
+                        optional: 0,
+                      }
                     const isSelectedPerkGroup = selectedPerkGroupIds.includes(
                       perkGroupOption.perkGroupId,
                     )
@@ -313,9 +333,9 @@ export function CategorySidebar({
                           ) : null}
                         </span>
                         <span className={styles.perkGroupChipEnd}>
-                          {renderPickedStars(
+                          {renderPickedRequirementIcons(
                             perkGroupOption.perkGroupId,
-                            pickedPerkCountInPerkGroup,
+                            pickedPerkRequirementCountInPerkGroup,
                           )}
                           <span data-testid="perk-group-count">{perkGroupOption.perkCount}</span>
                         </span>
