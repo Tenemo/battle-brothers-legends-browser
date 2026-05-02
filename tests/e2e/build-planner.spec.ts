@@ -996,6 +996,9 @@ test('selects build planner perk groups from their group tiles', async ({ page }
     'true',
   )
 
+  await searchPerks(page, 'temporary search')
+  await expect(page.getByRole('button', { name: 'Enable category Defense' })).toBeVisible()
+
   const emptyPillListPosition = await heavyArmorGroupCard.evaluate((card) => {
     const pillList = card.querySelector('[data-testid="planner-pill-list"]')
 
@@ -1027,9 +1030,15 @@ test('selects build planner perk groups from their group tiles', async ({ page }
             y >= pillRectangle.top &&
             y <= pillRectangle.bottom,
         )
+        const pointTarget = document.elementFromPoint(x, y)
+        const isInsidePillHitTarget =
+          pointTarget instanceof HTMLElement &&
+          pointTarget.closest('[data-testid="planner-pill"]') !== null
 
-        if (!isInsidePill) {
+        if (!isInsidePill && !isInsidePillHitTarget) {
           return {
+            absoluteX: x,
+            absoluteY: y,
             x: x - cardRectangle.left,
             y: y - cardRectangle.top,
           }
@@ -1041,13 +1050,10 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   })
 
   expect(emptyPillListPosition).not.toBeNull()
-  await searchPerks(page, 'temporary search')
-  await heavyArmorGroupCard.click({
-    position: emptyPillListPosition ?? {
-      x: 0,
-      y: 0,
-    },
-  })
+  await page.mouse.click(
+    emptyPillListPosition?.absoluteX ?? 0,
+    emptyPillListPosition?.absoluteY ?? 0,
+  )
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(getSidebarPerkGroupButton(page, 'Heavy Armor')).toHaveAttribute(
@@ -1861,6 +1867,8 @@ test('marks picked perks as optional and separates them from must-have perks', a
   )
   await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
   await expect(optionalLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(0)
+  await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(0)
+  await expect(optionalLegendTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(1)
   const requirementLegendPlacementMetrics = await page
     .getByTestId('build-planner-header')
     .evaluate((buildPlannerHeader) => {
@@ -2003,6 +2011,9 @@ test('marks picked perks as optional and separates them from must-have perks', a
   await expect(clarityPickedPerkTile).toHaveAttribute('data-requirement', 'must-have')
   await expect(perfectFocusPickedPerkTile).toHaveAttribute('data-requirement', 'must-have')
   await expect(clarityPickedPerkTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
+  await expect(clarityPickedPerkTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(
+    0,
+  )
   await expect(
     perfectFocusPickedPerkTile.getByTestId('planner-slot-requirement-chain'),
   ).toHaveCount(1)
@@ -2065,6 +2076,9 @@ test('marks picked perks as optional and separates them from must-have perks', a
     optionalClarityPickedPerkTile.getByTestId('planner-slot-requirement-chain'),
   ).toHaveCount(0)
   await expect(
+    optionalClarityPickedPerkTile.getByTestId('planner-slot-requirement-optional'),
+  ).toHaveCount(1)
+  await expect(
     optionalClarityPickedPerkTile.getByTestId('planner-slot-optional-button'),
   ).toHaveAttribute('title', 'Mark Clarity as must-have')
   await expect(page).toHaveURL(/optional=Clarity/u)
@@ -2081,6 +2095,40 @@ test('marks picked perks as optional and separates them from must-have perks', a
     (element) => window.getComputedStyle(element).backgroundColor,
   )
   expect(optionalLegendBackgroundColor).toBe(optionalBackgroundColor)
+  const optionalRequirementIconPlacement = await optionalClarityPickedPerkTile.evaluate(
+    (pickedPerkTile) => {
+      const optionalRequirementIcon = pickedPerkTile.querySelector(
+        '[data-testid="planner-slot-requirement-optional"]',
+      )
+
+      if (!(optionalRequirementIcon instanceof HTMLElement)) {
+        return null
+      }
+
+      const iconRectangle = optionalRequirementIcon.getBoundingClientRect()
+      const tileRectangle = pickedPerkTile.getBoundingClientRect()
+
+      return {
+        bottomOffset: tileRectangle.bottom - iconRectangle.bottom,
+        iconCenterX: iconRectangle.left + iconRectangle.width / 2,
+        iconCenterY: iconRectangle.top + iconRectangle.height / 2,
+        rightOffset: tileRectangle.right - iconRectangle.right,
+        tileCenterX: tileRectangle.left + tileRectangle.width / 2,
+        tileCenterY: tileRectangle.top + tileRectangle.height / 2,
+        tileHeight: tileRectangle.height,
+      }
+    },
+  )
+
+  expect(optionalRequirementIconPlacement).not.toBeNull()
+  expect(optionalRequirementIconPlacement!.iconCenterX).toBeGreaterThan(
+    optionalRequirementIconPlacement!.tileCenterX,
+  )
+  expect(optionalRequirementIconPlacement!.iconCenterY).toBeGreaterThan(
+    optionalRequirementIconPlacement!.tileCenterY,
+  )
+  expect(Math.abs(optionalRequirementIconPlacement!.rightOffset)).toBeLessThanOrEqual(8)
+  expect(Math.abs(optionalRequirementIconPlacement!.bottomOffset)).toBeLessThanOrEqual(8)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 

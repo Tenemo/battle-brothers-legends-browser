@@ -1,5 +1,10 @@
 import { describe, expect, test, vi } from 'vitest'
-import type { BackgroundFitSummary, BackgroundFitSummaryView } from '../src/lib/background-fit'
+import type {
+  BackgroundFitSummary,
+  BackgroundFitView,
+  RankedBackgroundFit,
+} from '../src/lib/background-fit'
+import { defaultBackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
 
 const {
   getBackgroundFitSummaryView,
@@ -65,36 +70,90 @@ function createSummary({
   }
 }
 
-describe('build share preview lightweight background fits', () => {
-  test('uses background fit summaries and filters origin backgrounds from social previews', () => {
-    const summaryView = {
-      rankedBackgroundFitSummaries: [
-        createSummary({
+function createRankedBackgroundFit({
+  backgroundId,
+  backgroundName,
+  buildReachabilityProbability = 1,
+  expectedCoveredMustHavePerkCount = 1,
+  expectedCoveredOptionalPerkCount = 0,
+  sourceFilePath,
+}: {
+  backgroundId: string
+  backgroundName: string
+  buildReachabilityProbability?: number
+  expectedCoveredMustHavePerkCount?: number
+  expectedCoveredOptionalPerkCount?: number
+  sourceFilePath: string
+}): RankedBackgroundFit {
+  return {
+    ...createSummary({
+      backgroundId,
+      backgroundName,
+      sourceFilePath,
+    }),
+    buildReachabilityProbability,
+    expectedCoveredMustHavePerkCount,
+    expectedCoveredOptionalPerkCount,
+    fullBuildReachabilityProbability: buildReachabilityProbability,
+    fullBuildStudyResourceRequirement: null,
+    guaranteedCoveredMustHavePerkCount: 1,
+    guaranteedCoveredOptionalPerkCount: 0,
+    maximumNativeCoveredPickedPerkCount: 1,
+    mustHaveBuildReachabilityProbability: buildReachabilityProbability,
+    mustHaveStudyResourceRequirement: null,
+  }
+}
+
+describe('build share preview background fits', () => {
+  test('uses full background fit ranking and filters origin backgrounds from social previews', () => {
+    const backgroundFitView = {
+      rankedBackgroundFits: [
+        createRankedBackgroundFit({
           backgroundId: 'background.legend_berserker',
           backgroundName: 'Berserker',
+          buildReachabilityProbability: 1,
           sourceFilePath: 'scripts/skills/backgrounds/legend_berserker_background.nut',
         }),
-        createSummary({
+        createRankedBackgroundFit({
           backgroundId: 'background.apprentice',
           backgroundName: 'Apprentice',
+          buildReachabilityProbability: 0.9,
+          expectedCoveredMustHavePerkCount: 2,
           sourceFilePath: 'scripts/skills/backgrounds/apprentice_background.nut',
+        }),
+        createRankedBackgroundFit({
+          backgroundId: 'background.daytaler',
+          backgroundName: 'Daytaler',
+          buildReachabilityProbability: 0.8,
+          sourceFilePath: 'scripts/skills/backgrounds/daytaler_background.nut',
         }),
       ],
       supportedBuildTargetPerkGroups: [],
       unsupportedBuildTargetPerkGroups: [],
-    } satisfies BackgroundFitSummaryView
+    } satisfies BackgroundFitView
 
-    getBackgroundFitSummaryView.mockReturnValue(summaryView)
-    getBackgroundFitView.mockImplementation(() => {
-      throw new Error('Social previews should not use the full background fit view.')
+    getBackgroundFitView.mockReturnValue(backgroundFitView)
+    getBackgroundFitSummaryView.mockImplementation(() => {
+      throw new Error('Social previews should use the same ranking view as the app.')
     })
 
-    const payload = createBuildSharePreviewPayloadFromSearch('?build=Clarity')
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      '?build=Clarity,Perfect+Focus&optional=Perfect+Focus',
+    )
 
-    expect(getBackgroundFitSummaryView).toHaveBeenCalledTimes(1)
-    expect(getBackgroundFitView).not.toHaveBeenCalled()
+    expect(getBackgroundFitSummaryView).not.toHaveBeenCalled()
+    expect(getBackgroundFitView).toHaveBeenCalledTimes(1)
+    const [pickedPerks, studyResourceFilter, options] = getBackgroundFitView.mock.calls[0]
+    const pickedPerkNames = (pickedPerks as Array<{ perkName: string }>).map(
+      (perk) => perk.perkName,
+    )
+
+    expect(pickedPerkNames).toEqual(['Clarity', 'Perfect Focus'])
+    expect(studyResourceFilter).toEqual(defaultBackgroundStudyResourceFilter)
+    expect([...(options?.optionalPickedPerkIds ?? [])]).toEqual(['perk.legend_perfect_focus'])
     expect(payload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName)).toEqual([
       'Apprentice',
+      'Daytaler',
     ])
   })
 })

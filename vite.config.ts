@@ -33,9 +33,6 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2500,
   },
-  define: {
-    __PLANNER_VERSION__: JSON.stringify(plannerVersion),
-  },
   plugins: [
     react(),
     {

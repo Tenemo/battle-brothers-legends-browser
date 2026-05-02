@@ -571,6 +571,30 @@
     user-select: none;
   }
 
+  .plannerSlotRequirementOptional {
+    --planner-slot-requirement-optional-scale: var(--planner-picked-perk-tile-scale);
+
+    position: absolute;
+    right: calc(var(--primitive-length-negative-0-15rem) * var(--planner-slot-requirement-optional-scale));
+    bottom: calc(var(--primitive-length-negative-0-05rem) * var(--planner-slot-requirement-optional-scale));
+    z-index: var(--z-index-raised);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    filter: drop-shadow(var(--shadow-chain-drop));
+    line-height: 0;
+    opacity: 0.82;
+    pointer-events: none;
+    transform: rotate(-8deg);
+
+    .plannerSlotRequirementOptionalIcon {
+      width: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
+      height: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
+      stroke-width: 2.2;
+    }
+  }
+
   .plannerSlotActionIcon {
     @include size(var(--icon-size-xs));
 

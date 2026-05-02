@@ -29,6 +29,22 @@ describe('build share preview', () => {
     expect(payload.description).toContain('Perfect Focus')
   })
 
+  test('keeps optional perks in shared build metadata and social image urls', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      '?search=clarity&build=Clarity,Perfect+Focus,Peaceable&optional=Perfect+Focus,Peaceable',
+    )
+
+    expect(payload.status).toBe('found')
+    expect(payload.canonicalSearch).toBe(
+      '?build=Clarity,Perfect+Focus,Peaceable&optional=Perfect+Focus,Peaceable',
+    )
+    expect(payload.imagePath).toBe(
+      `/social/builds/${encodeURIComponent(
+        payload.referenceVersion,
+      )}/Clarity%2CPerfect%20Focus%2CPeaceable.png?optional=Perfect%20Focus%2CPeaceable`,
+    )
+  })
+
   test('canonicalizes duplicate-name shared build urls without dropping either perk id', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
@@ -65,7 +81,7 @@ describe('build share preview', () => {
     expect(payload.imagePath).not.toContain('?')
   })
 
-  test('summarizes background fits for picked builds', () => {
+  test('summarizes background fits in visible background ranking order', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       '?build=Perfect+Focus,Peaceable,Clarity',
     )
@@ -75,24 +91,11 @@ describe('build share preview', () => {
     expect(payload.topBackgroundFits[0].backgroundName).toBeTruthy()
     expect(payload.topBackgroundFits[0].expectedCoveredPickedPerkCount).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].guaranteedCoveredPickedPerkCount).toBeGreaterThan(0)
-    expect(
-      payload.topBackgroundFits.every((backgroundFit, backgroundFitIndex, backgroundFits) => {
-        if (backgroundFitIndex === 0) {
-          return true
-        }
-
-        const previousBackgroundFit = backgroundFits[backgroundFitIndex - 1]
-
-        return (
-          backgroundFit.guaranteedCoveredPickedPerkCount <
-            previousBackgroundFit.guaranteedCoveredPickedPerkCount ||
-          (backgroundFit.guaranteedCoveredPickedPerkCount ===
-            previousBackgroundFit.guaranteedCoveredPickedPerkCount &&
-            backgroundFit.expectedCoveredPickedPerkCount <=
-              previousBackgroundFit.expectedCoveredPickedPerkCount)
-        )
-      }),
-    ).toBe(true)
+    expect(payload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName)).toEqual([
+      'Anatomist',
+      'Assassin',
+      'Beast Slayer',
+    ])
   })
 
   test('excludes origin-specific backgrounds from shared build social image previews', () => {

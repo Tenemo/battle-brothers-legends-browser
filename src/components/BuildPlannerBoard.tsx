@@ -134,6 +134,23 @@ function PlannerSlotRequirementChain() {
   )
 }
 
+function PlannerSlotRequirementOptional() {
+  return (
+    <span
+      aria-label="Optional perk"
+      className={styles.plannerSlotRequirementOptional}
+      data-testid="planner-slot-requirement-optional"
+      role="img"
+      title="Optional perk"
+    >
+      <BuildRequirementIcon
+        className={styles.plannerSlotRequirementOptionalIcon}
+        requirement="optional"
+      />
+    </span>
+  )
+}
+
 export function BuildPlannerRequirementLegend() {
   return (
     <div
@@ -160,6 +177,7 @@ export function BuildPlannerRequirementLegend() {
         data-testid="planner-requirement-legend-tile"
         title={optionalLegendTileTitle}
       >
+        <PlannerSlotRequirementOptional />
         <div className={styles.plannerSlotPerkInspect}>
           <span className={styles.plannerPickedPerkName} data-testid="planner-picked-perk-name">
             Optional
@@ -490,6 +508,7 @@ export function BuildPlannerBoard({
                     }}
                   >
                     {!pickedPerk.isOptional ? <PlannerSlotRequirementChain /> : null}
+                    {pickedPerk.isOptional ? <PlannerSlotRequirementOptional /> : null}
                     <button
                       aria-describedby={
                         hoveredBuildPerkId === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
