@@ -1,10 +1,20 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
-import legendsPerksDatasetJson from '../src/data/legends-perks.json'
-import type { LegendsPerkRecord, LegendsPerksDataset } from '../src/types/legends-perks'
+import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
+import legendsPerkCatalogDatasetJson from '../src/data/legends-perk-catalog.json'
+import { createBackgroundFitEngine } from '../src/lib/background-fit'
+import { getPerkGroupCount, hydrateCatalogPerks } from '../src/lib/legends-data'
+import { filterAndSortPerks } from '../src/lib/perk-search'
+import type {
+  LegendsBackgroundFitBackgroundDefinition,
+  LegendsBackgroundFitDataset,
+  LegendsPerkCatalogDataset,
+  LegendsPerkCatalogRecord,
+} from '../src/types/legends-perks'
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
+const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
 
 const expectedDuplicatePerkNamesByName = new Map<string, string[]>([
   ['Chain Lightning', ['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning']],
@@ -93,7 +103,9 @@ const expectedPerksWithoutPlacements = new Set([
   'perk.sundering_strikes',
 ])
 
-function getDuplicatePerkNames(perks: LegendsPerkRecord[]): Map<string, string[]> {
+function getDuplicatePerkNames(
+  perks: Array<Pick<LegendsPerkCatalogRecord, 'id' | 'perkName'>>,
+): Map<string, string[]> {
   const perkIdsByName = new Map<string, string[]>()
 
   for (const perk of perks) {
@@ -103,16 +115,31 @@ function getDuplicatePerkNames(perks: LegendsPerkRecord[]): Map<string, string[]
   return new Map([...perkIdsByName.entries()].filter(([, perkIds]) => perkIds.length > 1))
 }
 
-function getReferencedGameIconPaths(dataset: LegendsPerksDataset): string[] {
+function getReferencedGameIconPaths({
+  backgroundFitBackgrounds,
+  perks,
+}: {
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[]
+  perks: LegendsPerkCatalogRecord[]
+}): string[] {
   const iconPaths = new Set<string>()
 
-  for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
+  for (const backgroundFitBackground of backgroundFitBackgrounds) {
     if (backgroundFitBackground.iconPath) {
       iconPaths.add(backgroundFitBackground.iconPath)
     }
+
+    for (const trait of [
+      ...backgroundFitBackground.excludedTraits,
+      ...backgroundFitBackground.guaranteedTraits,
+    ]) {
+      if (trait.iconPath) {
+        iconPaths.add(trait.iconPath)
+      }
+    }
   }
 
-  for (const perk of dataset.perks) {
+  for (const perk of perks) {
     if (perk.iconPath) {
       iconPaths.add(perk.iconPath)
     }
@@ -129,10 +156,12 @@ function getReferencedGameIconPaths(dataset: LegendsPerksDataset): string[] {
   )
 }
 
-function getDuplicateBackgroundFitTreeEntries(dataset: LegendsPerksDataset): string[] {
+function getDuplicateBackgroundFitTreeEntries(
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[],
+): string[] {
   const duplicateEntries: string[] = []
 
-  for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
+  for (const backgroundFitBackground of backgroundFitBackgrounds) {
     for (const [categoryName, categoryDefinition] of Object.entries(
       backgroundFitBackground.categories,
     )) {
@@ -153,59 +182,179 @@ function getDuplicateBackgroundFitTreeEntries(dataset: LegendsPerksDataset): str
   return duplicateEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
 }
 
+function getUnstableBackgroundMetadataEntries(
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[],
+): string[] {
+  const unstableEntries: string[] = []
+
+  for (const backgroundFitBackground of backgroundFitBackgrounds) {
+    const nameLists = [
+      ['background type', backgroundFitBackground.backgroundTypeNames],
+      ['excluded trait', backgroundFitBackground.excludedTraitNames],
+      ['guaranteed trait', backgroundFitBackground.guaranteedTraitNames],
+      ['excluded talent attribute', backgroundFitBackground.excludedTalentAttributeNames],
+    ] as const
+
+    for (const [nameListLabel, names] of nameLists) {
+      const sortedUniqueNames = [...new Set(names)].toSorted((leftName, rightName) =>
+        leftName.localeCompare(rightName),
+      )
+
+      if (names.join('::') !== sortedUniqueNames.join('::')) {
+        unstableEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${nameListLabel}`,
+        )
+      }
+    }
+
+    const traitLists = [
+      [
+        'excluded trait records',
+        backgroundFitBackground.excludedTraits,
+        backgroundFitBackground.excludedTraitNames,
+      ],
+      [
+        'guaranteed trait records',
+        backgroundFitBackground.guaranteedTraits,
+        backgroundFitBackground.guaranteedTraitNames,
+      ],
+    ] as const
+
+    for (const [traitListLabel, traits, traitNames] of traitLists) {
+      const traitRecordNames = traits.map((trait) => trait.traitName)
+
+      if (traitRecordNames.join('::') !== traitNames.join('::')) {
+        unstableEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${traitListLabel}`,
+        )
+      }
+    }
+  }
+
+  return unstableEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
+}
+
+function getDuplicateCampResourceModifierEntries(
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[],
+): string[] {
+  const duplicateEntries: string[] = []
+
+  for (const backgroundFitBackground of backgroundFitBackgrounds) {
+    const seenModifierKeys = new Set<string>()
+
+    for (const modifier of backgroundFitBackground.campResourceModifiers) {
+      if (modifier.value === 0) {
+        duplicateEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${modifier.modifierKey}::zero`,
+        )
+      }
+
+      if (seenModifierKeys.has(modifier.modifierKey)) {
+        duplicateEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${modifier.modifierKey}`,
+        )
+      }
+
+      seenModifierKeys.add(modifier.modifierKey)
+    }
+  }
+
+  return duplicateEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
+}
+
 describe('generated dataset integrity', () => {
-  test('keeps top-level counts and source provenance internally consistent', () => {
-    const perkGroupIds = new Set(
-      legendsPerksDataset.perks.flatMap((perk) =>
-        perk.placements.map((placement) => placement.perkGroupId),
-      ),
+  test('keeps only the compact runtime data files in src/data', () => {
+    expect(readdirSync(path.join(process.cwd(), 'src', 'data')).toSorted()).toEqual([
+      'legends-background-fit.json',
+      'legends-perk-catalog.json',
+    ])
+    expect(Object.keys(legendsPerkCatalogDataset)).toEqual(['referenceVersion', 'perks'])
+    expect(Object.keys(legendsBackgroundFitDataset)).toEqual([
+      'backgroundFitBackgrounds',
+      'backgroundFitRules',
+      'referenceVersion',
+      'perks',
+    ])
+  })
+
+  test('keeps catalog and background fit projections aligned', () => {
+    const backgroundFitPerksById = new Map(
+      legendsBackgroundFitDataset.perks.map((perk) => [perk.id, perk]),
     )
 
-    expect(legendsPerksDataset.perks).toHaveLength(legendsPerksDataset.perkCount)
-    expect(perkGroupIds.size).toBe(legendsPerksDataset.perkGroupCount)
-    expect(new Set(legendsPerksDataset.perks.map((perk) => perk.id)).size).toBe(
-      legendsPerksDataset.perks.length,
+    expect(legendsPerkCatalogDataset.referenceVersion).toBe(
+      legendsBackgroundFitDataset.referenceVersion,
     )
-    expect(new Set(legendsPerksDataset.sourceFiles.map((sourceFile) => sourceFile.path)).size).toBe(
-      legendsPerksDataset.sourceFiles.length,
+    expect(backgroundFitPerksById.size).toBe(legendsPerkCatalogDataset.perks.length)
+    expect(getPerkGroupCount(legendsPerkCatalogDataset.perks)).toBeGreaterThan(0)
+
+    for (const catalogPerk of legendsPerkCatalogDataset.perks) {
+      expect(backgroundFitPerksById.get(catalogPerk.id)).toEqual({
+        iconPath: catalogPerk.iconPath,
+        id: catalogPerk.id,
+        perkName: catalogPerk.perkName,
+        placements: catalogPerk.placements,
+      })
+    }
+  })
+
+  test('keeps derived fields out of the catalog data file', () => {
+    const derivedFieldEntries = legendsPerkCatalogDataset.perks.flatMap((perk) =>
+      ['backgroundSources', 'perkConstName', 'searchText'].flatMap((fieldName) =>
+        Object.hasOwn(perk, fieldName) ? [`${perk.id}::${fieldName}`] : [],
+      ),
     )
-    expect(legendsPerksDataset.sourceFiles.length).toBeGreaterThan(0)
+    const placementsWithRawDescriptions = legendsPerkCatalogDataset.perks.flatMap((perk) =>
+      perk.placements.filter((placement) => Object.hasOwn(placement, 'perkGroupDescriptions')),
+    )
+
+    expect(derivedFieldEntries).toEqual([])
+    expect(placementsWithRawDescriptions).toEqual([])
+    expect(JSON.stringify(legendsPerkCatalogDataset)).not.toContain('law-abiding fools')
   })
 
   test('keeps duplicate names and missing generated data explicit', () => {
-    expect(getDuplicatePerkNames(legendsPerksDataset.perks)).toEqual(
+    expect(getDuplicatePerkNames(legendsPerkCatalogDataset.perks)).toEqual(
       expectedDuplicatePerkNamesByName,
     )
     expect(
       new Set(
-        legendsPerksDataset.perks
+        legendsPerkCatalogDataset.perks
           .filter((perk) => perk.descriptionParagraphs.length === 0)
           .map((perk) => perk.id),
       ),
     ).toEqual(expectedPerksWithoutDescriptions)
     expect(
       new Set(
-        legendsPerksDataset.perks
+        legendsPerkCatalogDataset.perks
           .filter((perk) => perk.placements.length === 0)
           .map((perk) => perk.id),
       ),
     ).toEqual(expectedPerksWithoutPlacements)
   })
 
-  test('keeps raw perk group descriptions out of generated app data', () => {
-    const placementsWithRawDescriptions = legendsPerksDataset.perks.flatMap((perk) =>
-      perk.placements.filter((placement) => Object.hasOwn(placement, 'perkGroupDescriptions')),
+  test('hydrates background source search text without storing it in the catalog', () => {
+    const runtimePerks = hydrateCatalogPerks(
+      legendsPerkCatalogDataset.perks,
+      createBackgroundFitEngine(legendsBackgroundFitDataset),
     )
-    const perksWithCivilizationFlavourText = legendsPerksDataset.perks.filter((perk) =>
-      perk.searchText.includes('law-abiding fools'),
-    )
+    const apprenticeSearchResults = filterAndSortPerks(runtimePerks, {
+      query: 'Apprentice',
+      selectedCategoryNames: [],
+      selectedPerkGroupIdsByCategory: {},
+    })
 
-    expect(placementsWithRawDescriptions).toEqual([])
-    expect(perksWithCivilizationFlavourText).toEqual([])
+    expect(apprenticeSearchResults.map((perk) => perk.perkName)).toContain('Adrenaline')
+    expect(
+      legendsPerkCatalogDataset.perks.some((perk) => Object.hasOwn(perk, 'backgroundSources')),
+    ).toBe(false)
   })
 
   test('only references game icons that exist in the served asset directory', () => {
-    const missingIconPaths = getReferencedGameIconPaths(legendsPerksDataset).filter(
+    const missingIconPaths = getReferencedGameIconPaths({
+      backgroundFitBackgrounds: legendsBackgroundFitDataset.backgroundFitBackgrounds,
+      perks: legendsPerkCatalogDataset.perks,
+    }).filter(
       (iconPath) => !existsSync(path.join(process.cwd(), 'public', 'game-icons', iconPath)),
     )
 
@@ -213,6 +362,17 @@ describe('generated dataset integrity', () => {
   })
 
   test('keeps background fit explicit perk group ids unique per background category', () => {
-    expect(getDuplicateBackgroundFitTreeEntries(legendsPerksDataset)).toEqual([])
+    expect(
+      getDuplicateBackgroundFitTreeEntries(legendsBackgroundFitDataset.backgroundFitBackgrounds),
+    ).toEqual([])
+  })
+
+  test('keeps background detail metadata stable and non-duplicated', () => {
+    expect(
+      getUnstableBackgroundMetadataEntries(legendsBackgroundFitDataset.backgroundFitBackgrounds),
+    ).toEqual([])
+    expect(
+      getDuplicateCampResourceModifierEntries(legendsBackgroundFitDataset.backgroundFitBackgrounds),
+    ).toEqual([])
   })
 })

@@ -13,10 +13,11 @@ import {
   type SavedBuildOperationStatus,
 } from './components/BuildPlanner'
 import { CategorySidebar } from './components/CategorySidebar'
-import { DetailsPanel } from './components/PerkDetail'
+import { DetailPanel } from './components/DetailPanel'
 import { PerkResults } from './components/PerkResults'
 import { GitHubIcon, PersonIcon, type BuildRequirement } from './components/SharedControls'
-import legendsPerksDatasetJson from './data/legends-perks.json'
+import legendsBackgroundFitDatasetJson from './data/legends-background-fit.json'
+import legendsPerkCatalogDatasetJson from './data/legends-perk-catalog.json'
 import {
   createBackgroundFitEngine,
   type BackgroundFitCalculationProgress,
@@ -52,6 +53,7 @@ import {
   parseBackgroundFitKey,
 } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
+import { getPerkGroupCount, hydrateCatalogPerks } from './lib/legends-data'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
   shouldKeepPerkGroupWithOriginAndAncientScrollFilters,
@@ -70,14 +72,12 @@ import {
 } from './lib/use-build-planner-url-sync'
 import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
-import type { LegendsPerksDataset } from './types/legends-perks'
+import type { LegendsBackgroundFitDataset, LegendsPerkCatalogDataset } from './types/legends-perks'
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
-const allPerks = legendsPerksDataset.perks.map((perk) => ({
-  ...perk,
-  backgroundSources: backgroundFitEngine.getPerkBackgroundSources(perk),
-}))
+const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
+const backgroundFitEngine = createBackgroundFitEngine(legendsBackgroundFitDataset)
+const allPerks = hydrateCatalogPerks(legendsPerkCatalogDataset.perks, backgroundFitEngine)
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
@@ -88,16 +88,19 @@ const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFitProgressCompletionPaddingMs = 550
 
 const allCategoryCounts = getCategoryCounts(allPerks)
+const allPerkGroupCount = getPerkGroupCount(legendsPerkCatalogDataset.perks)
 const allPerkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
 const allAvailableCategories = [...allCategoryCounts.keys()].toSorted(compareCategoryNames)
-const allBackgroundUrlOptions = legendsPerksDataset.backgroundFitBackgrounds.map(
+const allBackgroundUrlOptions = legendsBackgroundFitDataset.backgroundFitBackgrounds.map(
   ({ backgroundId, sourceFilePath }) => ({
     backgroundId,
     sourceFilePath,
   }),
 )
 const availableBackgroundVeteranPerkLevelIntervals =
-  getAvailableBackgroundVeteranPerkLevelIntervals(legendsPerksDataset.backgroundFitBackgrounds)
+  getAvailableBackgroundVeteranPerkLevelIntervals(
+    legendsBackgroundFitDataset.backgroundFitBackgrounds,
+  )
 
 type PickedBuildPerkState = {
   isOptional: boolean
@@ -706,7 +709,7 @@ export default function App() {
     savedBuilds,
     savedBuildsErrorMessage,
   } = useSavedBuilds({
-    referenceVersion: legendsPerksDataset.referenceVersion,
+    referenceVersion: legendsPerkCatalogDataset.referenceVersion,
   })
   const [savedBuildOperationStatus, setSavedBuildOperationStatus] =
     useState<SavedBuildOperationStatus>('idle')
@@ -781,7 +784,7 @@ export default function App() {
     shouldLoadBackgroundFitView &&
     completedBackgroundFitView === null &&
     backgroundFitErrorMessage === null
-  const backgroundFitDetail = useMemo<{
+  const selectedBackgroundFitDetail = useMemo<{
     backgroundFit: RankedBackgroundFit
     rank: number
   } | null>(() => {
@@ -803,10 +806,10 @@ export default function App() {
       rank: backgroundFitIndex,
     }
   }, [activeDetailSelection, backgroundFitView])
-  const activeDetailType: 'background' | 'perk' =
-    backgroundFitDetail === null ? 'perk' : 'background'
+  const selectedDetailType: 'background' | 'perk' =
+    selectedBackgroundFitDetail === null ? 'perk' : 'background'
   const selectedBackgroundFitKey =
-    backgroundFitDetail === null ? null : getBackgroundFitKey(backgroundFitDetail.backgroundFit)
+    selectedBackgroundFitDetail === null ? null : getBackgroundFitKey(selectedBackgroundFitDetail.backgroundFit)
   const detailSelection = useMemo(
     () =>
       createUrlDetailSelection({
@@ -1248,11 +1251,11 @@ export default function App() {
     )
   }
 
-  function isSelectedPerkDetail(perkId: string) {
+  function isPerkSelectedInDetailPanel(perkId: string) {
     return activeDetailSelection.type === 'perk' && selectedPerkId === perkId
   }
 
-  function clearSelectedPerkDetail() {
+  function clearSelectedPerkFromDetailPanel() {
     setSelectedPerkId(null)
     setActiveDetailSelection({ type: 'perk' })
   }
@@ -1304,8 +1307,8 @@ export default function App() {
   function handleSelectPerk(perkId: string) {
     requestNextUrlHistoryEntry()
 
-    if (isSelectedPerkDetail(perkId)) {
-      clearSelectedPerkDetail()
+    if (isPerkSelectedInDetailPanel(perkId)) {
+      clearSelectedPerkFromDetailPanel()
       return
     }
 
@@ -1572,7 +1575,7 @@ export default function App() {
     perkId: string,
     perkGroupSelection?: { categoryName: string; perkGroupId: string },
   ) {
-    const shouldDeselectPerk = isSelectedPerkDetail(perkId)
+    const shouldDeselectPerk = isPerkSelectedInDetailPanel(perkId)
     const inspectedPerk = allPerksById.get(perkId)
     const nextPerkGroupSelection = perkGroupSelection ?? inspectedPerk?.placements[0] ?? null
     const nextSelectedCategoryNames =
@@ -1588,7 +1591,7 @@ export default function App() {
 
     if (shouldDeselectPerk) {
       startTransition(() => {
-        clearSelectedPerkDetail()
+        clearSelectedPerkFromDetailPanel()
       })
       return
     }
@@ -1739,15 +1742,15 @@ export default function App() {
             <dl className={styles.heroMeta} aria-label="Perk catalog summary">
               <div>
                 <dt>Perks</dt>
-                <dd>{legendsPerksDataset.perkCount}</dd>
+                <dd>{legendsPerkCatalogDataset.perks.length}</dd>
               </div>
               <div>
                 <dt>Perk groups</dt>
-                <dd>{legendsPerksDataset.perkGroupCount}</dd>
+                <dd>{allPerkGroupCount}</dd>
               </div>
               <div>
                 <dt>Mod version</dt>
-                <dd>{legendsPerksDataset.referenceVersion.replace(/^reference-mod_/, '')}</dd>
+                <dd>{legendsPerkCatalogDataset.referenceVersion.replace(/^reference-mod_/, '')}</dd>
               </div>
               <div>
                 <dt>Planner version</dt>
@@ -1812,7 +1815,7 @@ export default function App() {
         selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
         selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
         selectedBuildPlannerPerkId={
-          activeDetailType === 'perk' && selectedPerk !== null ? selectedPerk.id : null
+          selectedDetailType === 'perk' && selectedPerk !== null ? selectedPerk.id : null
         }
         shareBuildStatus={shareBuildStatus}
         sharedPerkGroups={buildPlannerGroups.sharedPerkGroups}
@@ -1859,9 +1862,9 @@ export default function App() {
           shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 
-        <DetailsPanel
-          activeDetailType={activeDetailType}
-          backgroundFitDetail={backgroundFitDetail}
+        <DetailPanel
+          selectedDetailType={selectedDetailType}
+          selectedBackgroundFitDetail={selectedBackgroundFitDetail}
           detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
           emphasizedCategoryNames={emphasizedCategoryNames}
           emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}

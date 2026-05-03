@@ -10,10 +10,13 @@ import {
   skillBookIconPath,
 } from '../src/lib/background-study-resource-display'
 import { ancientScrollIconPath } from '../src/lib/ancient-scroll-perk-group-display'
-import type { RankedBackgroundFit } from '../src/lib/background-fit'
+import type {
+  BackgroundFitStudyResourceStrategy,
+  BackgroundFitStudyResourceStrategyTarget,
+  RankedBackgroundFit,
+} from '../src/lib/background-fit'
 import type {
   BackgroundStudyResourceFilter,
-  StudyReachabilityRequirement,
   StudyResourceRequirementProfile,
 } from '../src/lib/background-study-reachability'
 
@@ -25,27 +28,87 @@ const nativeStudyResourceRequirement = {
   scrollRequirements: [],
 } satisfies StudyResourceRequirementProfile
 
-const skillBookRequirement = {
+const calmStrategyTarget = {
   categoryName: 'Traits',
+  coveredPickedPerkIds: ['perk.legend_clarity'],
+  coveredPickedPerkNames: ['Clarity'],
+  fixedTargetProbability: 0.6,
+  marginalProbabilityGain: 0.5,
+  perkGroupIconPath: 'ui/perks/perk_01.png',
   perkGroupId: 'CalmTree',
-} satisfies StudyReachabilityRequirement
+  perkGroupName: 'Calm',
+} satisfies BackgroundFitStudyResourceStrategyTarget
 
-const firstScrollRequirement = {
+const mediumArmorStrategyTarget = {
+  categoryName: 'Defense',
+  coveredPickedPerkIds: ['perk.legend_perfect_fit', 'perk.legend_lithe'],
+  coveredPickedPerkNames: ['Perfect Fit', 'Lithe'],
+  fixedTargetProbability: 0.3,
+  marginalProbabilityGain: 0.2,
+  perkGroupIconPath: 'ui/perks/perk_22.png',
+  perkGroupId: 'MediumDefenseTree',
+  perkGroupName: 'Medium Armor',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+const fitStrategyTarget = {
+  categoryName: 'Traits',
+  coveredPickedPerkIds: ['perk.legend_athlete'],
+  coveredPickedPerkNames: ['Athlete'],
+  fixedTargetProbability: 1 / 3,
+  marginalProbabilityGain: 0.23,
+  perkGroupIconPath: 'ui/perks/perk_31.png',
+  perkGroupId: 'FitTree',
+  perkGroupName: 'Fit',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+const berserkerStrategyTarget = {
   categoryName: 'Magic',
+  coveredPickedPerkIds: ['perk.legend_muscularity', 'perk.legend_brawny'],
+  coveredPickedPerkNames: ['Muscularity', 'Brawny'],
+  fixedTargetProbability: 0.6,
+  marginalProbabilityGain: 0.5,
+  perkGroupIconPath: 'ui/perks/perk_37.png',
   perkGroupId: 'BerserkerMagicTree',
-} satisfies StudyReachabilityRequirement
+  perkGroupName: 'Berserker',
+} satisfies BackgroundFitStudyResourceStrategyTarget
 
-const secondScrollRequirement = {
+const evocationStrategyTarget = {
   categoryName: 'Magic',
+  coveredPickedPerkIds: ['perk.legend_chain_lightning'],
+  coveredPickedPerkNames: ['Chain Lightning'],
+  fixedTargetProbability: 0.6,
+  marginalProbabilityGain: 0.5,
+  perkGroupIconPath: 'ui/perks/perk_39.png',
   perkGroupId: 'EvocationMagicTree',
-} satisfies StudyReachabilityRequirement
+  perkGroupName: 'Evocation',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+function createStudyResourceStrategy(
+  overrides: Partial<BackgroundFitStudyResourceStrategy> = {},
+): BackgroundFitStudyResourceStrategy {
+  return {
+    bookTargets: [],
+    nativeProbability: 0,
+    probability: 0.6,
+    scrollTargets: [],
+    selectedCombinationKey: 'book-and-scroll',
+    shouldAllowSecondScroll: false,
+    ...overrides,
+  }
+}
 
 function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): RankedBackgroundFit {
   return {
     backgroundId: 'background.study_resource_badges',
     backgroundName: 'Study resource badges',
+    backgroundTypeNames: [],
     buildReachabilityProbability: 1,
+    campResourceModifiers: [],
+    dailyCost: null,
     disambiguator: null,
+    excludedTalentAttributeNames: [],
+    excludedTraits: [],
+    excludedTraitNames: [],
     expectedCoveredMustHavePerkCount: 1,
     expectedCoveredOptionalPerkCount: 1,
     expectedCoveredPickedPerkCount: 2,
@@ -55,12 +118,15 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
     guaranteedCoveredMustHavePerkCount: 1,
     guaranteedCoveredOptionalPerkCount: 0,
     guaranteedMatchedPerkGroupCount: 0,
+    guaranteedTraits: [],
+    guaranteedTraitNames: [],
     iconPath: null,
     matches: [],
     maximumNativeCoveredPickedPerkCount: 1,
     maximumTotalPerkGroupCount: 0,
     mustHaveBuildReachabilityProbability: 1,
     mustHaveStudyResourceRequirement: nativeStudyResourceRequirement,
+    otherPerkGroups: [],
     sourceFilePath: 'backgrounds/study_resource_badges_background.nut',
     veteranPerkLevelInterval: 4,
     ...overrides,
@@ -108,30 +174,64 @@ function renderBackgroundFitCardWithStudyResourceFilter(
 }
 
 describe('background fit card study resource badges', () => {
-  test('renders full-build resource icons with native titles and optional-only styling hooks', () => {
+  test('does not render imported detail-only metadata on the card', () => {
     renderBackgroundFitCard(
       createBackgroundFit({
-        fullBuildStudyResourceRequirement: {
-          bookRequirement: skillBookRequirement,
-          requiredScrollCount: 2,
-          requiresBook: true,
-          requiresBright: true,
-          scrollRequirements: [firstScrollRequirement, secondScrollRequirement],
-        },
-        mustHaveStudyResourceRequirement: {
-          bookRequirement: skillBookRequirement,
-          requiredScrollCount: 1,
-          requiresBook: true,
-          requiresBright: false,
-          scrollRequirements: [firstScrollRequirement],
-        },
+        backgroundTypeNames: ['Crusader'],
+        campResourceModifiers: [
+          {
+            group: 'skill',
+            label: 'Repairing',
+            modifierKey: 'Repair',
+            value: 0.3,
+            valueKind: 'percent',
+          },
+        ],
+        dailyCost: 6,
+        excludedTalentAttributeNames: ['Ranged skill'],
+        excludedTraits: [
+          {
+            description: 'Afraid of walking dead.',
+            iconPath: 'ui/traits/trait_icon_50.png',
+            traitName: 'Fear of Undead',
+          },
+        ],
+        excludedTraitNames: ['Fear of Undead'],
+        guaranteedTraits: [
+          {
+            description: 'Moves with unusual speed.',
+            iconPath: 'ui/traits/trait_icon_32.png',
+            traitName: 'Quick',
+          },
+        ],
+        guaranteedTraitNames: ['Quick'],
+      }),
+    )
+
+    expect(screen.queryByText('Daily cost')).not.toBeInTheDocument()
+    expect(screen.queryByText('Crusader')).not.toBeInTheDocument()
+    expect(screen.queryByText('Repairing')).not.toBeInTheDocument()
+    expect(screen.queryByText('Fear of Undead')).not.toBeInTheDocument()
+    expect(screen.queryByText('Quick')).not.toBeInTheDocument()
+    expect(screen.queryByText('Ranged skill')).not.toBeInTheDocument()
+  })
+
+  test('renders strategy resource icons with target-specific titles', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        fullBuildStudyResourceStrategy: createStudyResourceStrategy({
+          bookTargets: [calmStrategyTarget],
+          scrollTargets: [berserkerStrategyTarget, evocationStrategyTarget],
+          selectedCombinationKey: 'scroll',
+          shouldAllowSecondScroll: true,
+        }),
       }),
     )
 
     const badgeContainer = screen.getByTestId(backgroundStudyResourceBadgesTestId)
     const badges = screen.getAllByTestId(backgroundStudyResourceBadgeTestId)
 
-    expect(badgeContainer).toHaveAccessibleName('Full build study resource requirements')
+    expect(badgeContainer).toHaveAccessibleName('Study resources improve full-build chance')
     expect(badges).toHaveLength(4)
     expect(badges.map((badge) => badge.getAttribute('data-study-resource-kind'))).toEqual([
       'book',
@@ -140,23 +240,27 @@ describe('background fit card study resource badges', () => {
       'bright',
     ])
     expect(badges[0]).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
-    expect(badges[0]).toHaveAttribute('title', 'Full build requires a skill book')
+    expect(badges[0]).toHaveAttribute('title', 'Skill book improves full-build chance: Calm')
     expect(badges[0]).toHaveAttribute('data-optional-only', 'false')
     expect(badges[1]).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
-    expect(badges[1]).toHaveAttribute('title', 'Full build requires two ancient scrolls')
+    expect(badges[1]).toHaveAttribute(
+      'title',
+      'Ancient scroll improves full-build chance: Berserker or Evocation',
+    )
     expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
     expect(badges[2]).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
-    expect(badges[2]).toHaveAttribute('title', 'Optional perks can use a second ancient scroll')
-    expect(badges[2]).toHaveAttribute('data-optional-only', 'true')
-    expect(badges[2].className).toContain('backgroundFitStudyResourceBadgeOptionalOnly')
+    expect(badges[2]).toHaveAttribute(
+      'title',
+      'Ancient scroll improves full-build chance: Berserker or Evocation',
+    )
+    expect(badges[2]).toHaveAttribute('data-optional-only', 'false')
     expect(badges[3]).toHaveAttribute('src', `/game-icons/${brightTraitIconPath}`)
     expect(badges[3]).toHaveAttribute(
       'title',
-      'Optional perks can use a second ancient scroll if Bright is available',
+      'Bright enables the second ancient scroll for full-build chance: Berserker or Evocation',
     )
     expect(brightTraitIconPath).toBe('ui/traits/trait_icon_11.png')
-    expect(badges[3]).toHaveAttribute('data-optional-only', 'true')
-    expect(badges[3].className).toContain('backgroundFitStudyResourceBadgeOptionalOnly')
+    expect(badges[3]).toHaveAttribute('data-optional-only', 'false')
     expect(existsSync(path.join(process.cwd(), 'public', 'game-icons', skillBookIconPath))).toBe(
       true,
     )
@@ -168,39 +272,112 @@ describe('background fit card study resource badges', () => {
     )
   })
 
-  test('does not render badges when the full build is native-only', () => {
-    renderBackgroundFitCard(createBackgroundFit())
-
-    expect(screen.queryByTestId(backgroundStudyResourceBadgesTestId)).not.toBeInTheDocument()
-  })
-
-  test('falls back to must-have resource icons when the full build is unreachable', () => {
+  test('marks study resources as must-have chance improvements when breakdown data shows an impact', () => {
     renderBackgroundFitCard(
       createBackgroundFit({
-        fullBuildReachabilityProbability: 0,
-        fullBuildStudyResourceRequirement: null,
-        mustHaveStudyResourceRequirement: {
-          bookRequirement: skillBookRequirement,
-          requiredScrollCount: 1,
-          requiresBook: true,
-          requiresBright: false,
-          scrollRequirements: [firstScrollRequirement],
-        },
+        mustHaveBuildReachabilityProbability: 0.6,
+        mustHaveStudyResourceStrategy: createStudyResourceStrategy({
+          bookTargets: [mediumArmorStrategyTarget, fitStrategyTarget],
+          scrollTargets: [berserkerStrategyTarget],
+        }),
+        mustHaveStudyResourceChanceBreakdown: [
+          {
+            key: 'native',
+            probability: 0.1,
+            shouldAllowBook: false,
+            shouldAllowScroll: false,
+            shouldAllowSecondScroll: false,
+          },
+          {
+            key: 'book',
+            probability: 0.2,
+            shouldAllowBook: true,
+            shouldAllowScroll: false,
+            shouldAllowSecondScroll: false,
+          },
+          {
+            key: 'scroll',
+            probability: 0.4,
+            shouldAllowBook: false,
+            shouldAllowScroll: true,
+            shouldAllowSecondScroll: false,
+          },
+          {
+            key: 'book-and-scroll',
+            probability: 0.6,
+            shouldAllowBook: true,
+            shouldAllowScroll: true,
+            shouldAllowSecondScroll: false,
+          },
+        ],
       }),
     )
 
     const badgeContainer = screen.getByTestId(backgroundStudyResourceBadgesTestId)
     const badges = screen.getAllByTestId(backgroundStudyResourceBadgeTestId)
 
-    expect(badgeContainer).toHaveAccessibleName('Must-have build study resource requirements')
+    expect(badgeContainer).toHaveAccessibleName('Study resources improve must-have chance')
     expect(badges).toHaveLength(2)
     expect(badges.map((badge) => badge.getAttribute('data-study-resource-kind'))).toEqual([
       'book',
       'scroll',
     ])
-    expect(badges[0]).toHaveAttribute('title', 'Must-have build requires a skill book')
+    expect(badges[0]).toHaveAttribute(
+      'title',
+      'Skill book improves must-have chance: Medium Armor or Fit',
+    )
+    expect(badges[0]).toHaveAttribute(
+      'alt',
+      'Skill book improves must-have chance: Medium Armor or Fit',
+    )
     expect(badges[0]).toHaveAttribute('data-optional-only', 'false')
-    expect(badges[1]).toHaveAttribute('title', 'Must-have build requires an ancient scroll')
+    expect(badges[1]).toHaveAttribute(
+      'title',
+      'Ancient scroll improves must-have chance: Berserker',
+    )
+    expect(badges[1]).toHaveAttribute('alt', 'Ancient scroll improves must-have chance: Berserker')
+    expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
+    expect(screen.getByText('Must-have build chance').closest('[title]')).toHaveAttribute(
+      'title',
+      expect.stringContaining(
+        'Breakdown: native 10%, skill book 20%, ancient scroll 40%, skill book and ancient scroll 60%.',
+      ),
+    )
+  })
+
+  test('does not render badges when the full build is native-only', () => {
+    renderBackgroundFitCard(createBackgroundFit())
+
+    expect(screen.queryByTestId(backgroundStudyResourceBadgesTestId)).not.toBeInTheDocument()
+  })
+
+  test('renders must-have strategy icons when the full build is unreachable', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        fullBuildReachabilityProbability: 0,
+        fullBuildStudyResourceRequirement: null,
+        mustHaveStudyResourceStrategy: createStudyResourceStrategy({
+          bookTargets: [calmStrategyTarget],
+          scrollTargets: [berserkerStrategyTarget],
+        }),
+      }),
+    )
+
+    const badgeContainer = screen.getByTestId(backgroundStudyResourceBadgesTestId)
+    const badges = screen.getAllByTestId(backgroundStudyResourceBadgeTestId)
+
+    expect(badgeContainer).toHaveAccessibleName('Study resources improve must-have chance')
+    expect(badges).toHaveLength(2)
+    expect(badges.map((badge) => badge.getAttribute('data-study-resource-kind'))).toEqual([
+      'book',
+      'scroll',
+    ])
+    expect(badges[0]).toHaveAttribute('title', 'Skill book improves must-have chance: Calm')
+    expect(badges[0]).toHaveAttribute('data-optional-only', 'false')
+    expect(badges[1]).toHaveAttribute(
+      'title',
+      'Ancient scroll improves must-have chance: Berserker',
+    )
     expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
     expect(screen.getByText('Full build chance').closest('[title]')).toHaveAttribute(
       'title',

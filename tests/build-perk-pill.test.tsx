@@ -19,6 +19,7 @@ function renderBuildPerkPill(overrides: Partial<BuildPerkPillProps> = {}) {
     onInspectPerk: vi.fn(),
     onOpenHover: vi.fn(),
     onOpenTooltip: vi.fn(),
+    perkIconPath: 'ui/perks/battle_forged.png',
     perkId: 'perk.battle_forged',
     perkName: 'Battle Forged',
     ...overrides,
@@ -33,6 +34,17 @@ function renderBuildPerkPill(overrides: Partial<BuildPerkPillProps> = {}) {
 }
 
 describe('build perk pill', () => {
+  test('renders a decorative perk icon without changing the accessible name', () => {
+    const { button } = renderBuildPerkPill()
+
+    const icon = screen.getByTestId('planner-pill-icon')
+
+    expect(button).toHaveAccessibleName('Battle Forged')
+    expect(icon).toHaveAttribute('alt', '')
+    expect(icon).toHaveAttribute('aria-hidden', 'true')
+    expect(icon).toHaveAttribute('src', '/game-icons/ui/perks/battle_forged.png')
+  })
+
   test('passes the perk group selection through keyboard and pointer hover paths', () => {
     const perkGroupSelection = {
       categoryName: 'Defense',

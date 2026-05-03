@@ -22,6 +22,10 @@ import styles from './PerkResults.module.scss'
 
 const mobilePerkResultBatchSize = 12
 const mobilePerkResultMediaQuery = '(max-width: 760px)'
+const perkFilterTooltips = {
+  ancientScrollPerks: 'Shows perk groups that are only available through ancient scroll sources.',
+  originPerkGroups: 'Shows perk groups that come only from origins and are hidden by default.',
+} as const
 
 function getIsMobilePerkResultViewport() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -349,16 +353,22 @@ export function PerkResults({
                   id={perkFilterMenuId}
                   role="group"
                 >
-                  <label className={sharedStyles.filterOption}>
+                  <label
+                    className={sharedStyles.filterOption}
+                    title={perkFilterTooltips.originPerkGroups}
+                  >
                     <input
                       checked={shouldIncludeOriginPerkGroups}
                       data-testid="origin-perk-groups-checkbox"
                       onChange={(event) => onOriginPerkGroupsChange(event.target.checked)}
                       type="checkbox"
                     />
-                    <span>Origin perks</span>
+                    <span>Origin perk groups</span>
                   </label>
-                  <label className={sharedStyles.filterOption}>
+                  <label
+                    className={sharedStyles.filterOption}
+                    title={perkFilterTooltips.ancientScrollPerks}
+                  >
                     <input
                       checked={shouldIncludeAncientScrollPerkGroups}
                       data-testid="ancient-scroll-perk-groups-checkbox"

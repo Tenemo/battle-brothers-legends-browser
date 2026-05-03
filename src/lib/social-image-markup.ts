@@ -1,3 +1,5 @@
+import { socialImageColors, socialImageFontFamilies } from './social-image-style.ts'
+
 export const socialImageWidth = 1200
 export const socialImageHeight = 630
 
@@ -35,22 +37,22 @@ export function renderSocialImageDefinitions({
 }: SocialImageDefinitionsOptions = {}): string {
   return `<defs>
     <linearGradient id="background" x1="0%" x2="100%" y1="0%" y2="100%">
-      <stop offset="0%" stop-color="#0d0a08" />
-      <stop offset="58%" stop-color="#17110d" />
-      <stop offset="100%" stop-color="#21170f" />
+      <stop offset="0%" stop-color="${socialImageColors.backgroundStart}" />
+      <stop offset="58%" stop-color="${socialImageColors.backgroundMiddle}" />
+      <stop offset="100%" stop-color="${socialImageColors.backgroundEnd}" />
     </linearGradient>
     <radialGradient id="warm-accent" cx="84%" cy="16%" r="62%">
-      <stop offset="0%" stop-color="#7a4c28" stop-opacity="0.46" />
-      <stop offset="100%" stop-color="#7a4c28" stop-opacity="0" />
+      <stop offset="0%" stop-color="${socialImageColors.warmAccent}" stop-opacity="0.46" />
+      <stop offset="100%" stop-color="${socialImageColors.warmAccent}" stop-opacity="0" />
     </radialGradient>
     <pattern id="line-pattern" width="44" height="44" patternUnits="userSpaceOnUse" patternTransform="rotate(28)">
-      <path d="M0 0H44" stroke="#3d2a1c" stroke-opacity="0.36" stroke-width="1" />
+      <path d="M0 0H44" stroke="${socialImageColors.backgroundLine}" stroke-opacity="0.36" stroke-width="1" />
     </pattern>${
       includePanelLight
         ? `
     <radialGradient id="panel-light" cx="42%" cy="34%" r="70%">
-      <stop offset="0%" stop-color="#2b2018" stop-opacity="0.5" />
-      <stop offset="100%" stop-color="#100c0a" stop-opacity="0" />
+      <stop offset="0%" stop-color="${socialImageColors.panelLightStart}" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="${socialImageColors.panelLightEnd}" stop-opacity="0" />
     </radialGradient>`
         : ''
     }
@@ -68,7 +70,7 @@ export function renderSocialImageBrand({
   x = 80,
   y = 98,
 }: SocialImageBrandOptions = {}): string {
-  return `<text x="${x}" y="${y}" fill="#ddb07b" font-family="Source Sans 3, serif" font-size="${fontSize}" font-weight="400" letter-spacing="0.16em">
+  return `<text x="${x}" y="${y}" fill="${socialImageColors.brand}" font-family="${socialImageFontFamilies.bodySerif}" font-size="${fontSize}" font-weight="400" letter-spacing="0.16em">
     <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
   </text>`
 }
@@ -78,8 +80,8 @@ export function renderSocialImageFooter({
   siteUrlFontSize,
   siteUrlY,
 }: SocialImageFooterOptions): string {
-  return `<text x="12" y="${siteUrlY}" fill="#ded4c1" font-family="Source Sans 3, Arial, sans-serif" font-size="${siteUrlFontSize}" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
-  <text x="${socialImageWidth - 12}" y="${siteUrlY}" fill="#80644a" font-family="Source Sans 3, Arial, sans-serif" font-size="${siteUrlFontSize}" font-weight="600" text-anchor="end">Legends ${escapeXml(
+  return `<text x="12" y="${siteUrlY}" fill="${socialImageColors.footerText}" font-family="${socialImageFontFamilies.body}" font-size="${siteUrlFontSize}" font-weight="700" text-decoration="underline">battlebrothers.academy</text>
+  <text x="${socialImageWidth - 12}" y="${siteUrlY}" fill="${socialImageColors.footerMuted}" font-family="${socialImageFontFamilies.body}" font-size="${siteUrlFontSize}" font-weight="600" text-anchor="end">Legends ${escapeXml(
     formatSocialImageReferenceVersion(referenceVersion),
   )}</text>`
 }

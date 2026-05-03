@@ -1,6 +1,8 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator } from '@playwright/test'
 import {
-  getPerkDetailPanel,
+  getDetailPanel,
+  expectSearchParam,
+  getBackgroundFitPanel,
   getSidebarPerkGroupButton,
   getResultsList,
   gotoBuildPlanner,
@@ -24,6 +26,23 @@ function readBackgroundSourceProbabilityLabel(label: string): number {
   return Number(chanceMatch[1]) / 100
 }
 
+async function expectImageToLoad(imageLocator: Locator): Promise<void> {
+  await expect
+    .poll(() =>
+      imageLocator.evaluate(
+        (element) =>
+          element instanceof HTMLImageElement &&
+          element.complete &&
+          element.naturalWidth > 0 &&
+          element.naturalHeight > 0,
+      ),
+    )
+    .toBe(true)
+}
+
+const reportedPeddlerStudyResourceBuildUrl =
+  '/?build=Muscularity,Brawny,Perfect+Fit,Colossus,Perfect+Focus,Athlete,Clarity,Lithe,Polearm+Mastery,Heightened+Reflexes,Alert,Onslaught,Berserk,Killing+Frenzy,In+the+Zone,First+Blood,Double+Strike,Bloody+Harvest&optional=Berserk,Killing+Frenzy,In+the+Zone,First+Blood,Double+Strike,Bloody+Harvest'
+
 test('starts with an empty detail panel until a perk or background is selected', async ({
   page,
 }) => {
@@ -38,7 +57,7 @@ test('starts with an empty detail panel until a perk or background is selected',
   )
   await expect(page.getByTestId('perk-row').first()).toBeVisible()
   await expect(page.locator('[data-testid="perk-row"][data-selected="true"]')).toHaveCount(0)
-  await expect.poll(() => new URL(page.url()).searchParams.get('category')).toBeNull()
+  await expectSearchParam(page, 'category', null)
 })
 
 test('deselects an inspected result perk when it is clicked again', async ({ page }) => {
@@ -47,14 +66,14 @@ test('deselects an inspected result perk when it is clicked again', async ({ pag
   await searchPerks(page, 'Berserk')
   await inspectPerkFromResults(page, 'Berserk')
 
-  const detailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
   const selectedResultRows = getResultsList(page).locator(
     '[data-testid="perk-row"][data-selected="true"]',
   )
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
   await expect(selectedResultRows).toHaveCount(1)
-  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBe('perk')
+  await expectSearchParam(page, 'detail', 'perk')
 
   await inspectPerkFromResults(page, 'Berserk')
 
@@ -62,7 +81,7 @@ test('deselects an inspected result perk when it is clicked again', async ({ pag
     detailPanel.getByRole('heading', { level: 2, name: 'Select a perk or background' }),
   ).toBeVisible()
   await expect(selectedResultRows).toHaveCount(0)
-  await expect.poll(() => new URL(page.url()).searchParams.get('detail')).toBeNull()
+  await expectSearchParam(page, 'detail', null)
 })
 
 test('groups repeated background sources in the detail panel', async ({ page }) => {
@@ -93,6 +112,106 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
   await expect(groupedBackgroundSourceRow.getByText('Guaranteed')).toBeVisible()
 })
 
+test('shows imported background metadata only in the background detail panel', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+
+  if (await expandBackgroundFitButton.isVisible()) {
+    await expandBackgroundFitButton.click()
+  }
+
+  await backgroundFitPanel.getByLabel('Search backgrounds').fill('Peddler')
+  await backgroundFitPanel.getByRole('button', { name: 'Inspect background Peddler' }).click()
+
+  const detailPanel = getDetailPanel(page)
+  const metadataSection = detailPanel.getByTestId('detail-background-metadata-section')
+  const metadataToggle = metadataSection.getByRole('button', { name: 'Background details' })
+
+  await expect(metadataSection).toHaveJSProperty('tagName', 'SECTION')
+  await expect(metadataSection.getByRole('heading', { name: 'Background details' })).toBeVisible()
+  await expect(metadataToggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(metadataSection.getByText('Daily cost')).toHaveCount(0)
+
+  await metadataToggle.click()
+
+  await expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(metadataSection.getByText('Daily cost')).toBeVisible()
+  await expect(metadataSection.getByText('6')).toBeVisible()
+  await expect(metadataSection.getByText('Lowborn')).toBeVisible()
+  await expect(metadataSection.getByText('Bartering')).toBeVisible()
+  await expect(metadataSection.getByText('+13')).toHaveCount(2)
+  await expect(metadataSection.getByText('Excluded traits')).toBeVisible()
+  const fearUndeadTraitPill = metadataSection.getByRole('button', { name: 'Fear Undead' })
+  const aggressiveTraitPill = metadataSection.getByRole('button', { name: 'Aggressive' })
+  const martialTraitPill = metadataSection.getByRole('button', { name: 'Martial' })
+  const fearUndeadTraitIcon = fearUndeadTraitPill.getByTestId('detail-background-trait-icon')
+  const aggressiveTraitIcon = aggressiveTraitPill.getByTestId('detail-background-trait-icon')
+  const martialTraitIcon = martialTraitPill.getByTestId('detail-background-trait-icon')
+
+  await expect(fearUndeadTraitIcon).toHaveAttribute(
+    'src',
+    /\/game-icons\/ui\/traits\/trait_icon_47\.png$/u,
+  )
+  await expect(aggressiveTraitIcon).toHaveAttribute(
+    'src',
+    /\/game-icons\/ui\/traits\/aggressive_trait\.png$/u,
+  )
+  await expect(martialTraitIcon).toHaveAttribute(
+    'src',
+    /\/game-icons\/ui\/traits\/firm_trait\.png$/u,
+  )
+  await expectImageToLoad(fearUndeadTraitIcon)
+  await expectImageToLoad(aggressiveTraitIcon)
+  await expectImageToLoad(martialTraitIcon)
+  await aggressiveTraitPill.hover()
+  const traitTooltip = page.getByTestId('detail-background-trait-tooltip')
+
+  await expect(traitTooltip).toBeVisible()
+  await expect(traitTooltip).toContainText(
+    'This character is pretty aggressive, even to their own detriment.',
+  )
+  await expect(traitTooltip).toContainText('This background excludes this trait')
+  await expect(backgroundFitPanel.getByText('Daily cost')).toHaveCount(0)
+  await expect(backgroundFitPanel.getByText('Bartering')).toHaveCount(0)
+})
+
+test('shows the dominant study resource strategy for the reported Peddler build', async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 720, width: 900 })
+  await page.goto(reportedPeddlerStudyResourceBuildUrl)
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+
+  if (await expandBackgroundFitButton.isVisible()) {
+    await expandBackgroundFitButton.click()
+  }
+
+  await backgroundFitPanel.getByLabel('Search backgrounds').fill('Peddler')
+  await backgroundFitPanel.getByRole('button', { name: 'Inspect background Peddler' }).click()
+
+  const detailPanel = getDetailPanel(page)
+  const studyResourcePlan = detailPanel.getByTestId('detail-study-resource-plan')
+  const mustHaveStudyResourcePlan = studyResourcePlan
+    .getByTestId('detail-study-resource-plan-scope')
+    .filter({ hasText: 'Must-have impact' })
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Peddler' })).toBeVisible()
+  await expect(mustHaveStudyResourcePlan.getByText('Ancient scroll:')).toBeVisible()
+  await expect(mustHaveStudyResourcePlan.getByText('Berserker')).toBeVisible()
+  await expect(mustHaveStudyResourcePlan.getByText('Skill book:')).toBeVisible()
+  await expect(mustHaveStudyResourcePlan.getByText('Medium Armor or Fit')).toBeVisible()
+  await expect(studyResourcePlan.getByText('Heavy Armor')).toHaveCount(0)
+})
+
 test('detail history buttons stay inside page detail history', async ({ page }) => {
   await page.goto('about:blank')
   await gotoBuildPlanner(page)
@@ -100,7 +219,7 @@ test('detail history buttons stay inside page detail history', async ({ page }) 
   await searchPerks(page, 'Berserk')
   await inspectPerkFromResults(page, 'Berserk')
 
-  const detailPanel = getPerkDetailPanel(page)
+  const detailPanel = getDetailPanel(page)
   const previousDetailButton = detailPanel.getByRole('button', { name: 'Show previous detail' })
   const nextDetailButton = detailPanel.getByRole('button', { name: 'Show next detail' })
   const buildToggleButton = detailPanel.getByRole('button', { name: 'Add Berserk to build' })
@@ -277,7 +396,7 @@ test('sorts background sources from guaranteed to lowest chance', async ({ page 
   }
 })
 
-test('keeps raw perk group flavour strings out of perk details', async ({ page }) => {
+test('keeps raw perk group flavour strings out of perk detail content', async ({ page }) => {
   await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Favoured Enemy - Civilization')

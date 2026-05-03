@@ -4,15 +4,19 @@ import type { BuildPerkHoverOptions, PerkGroupReference } from './use-perk-inter
 const buildPerkTooltipCloseGraceMs = 120
 const buildPerkTooltipOpenDelayMs = 750
 const buildPerkTooltipTimerDelayMs = 250
+const defaultTooltipTargetSelector = '[data-build-perk-tooltip="true"]'
 
-function isBuildPerkTooltipTarget(relatedTarget: EventTarget | null): boolean {
-  const buildPerkTooltip = document.querySelector('[data-build-perk-tooltip="true"]')
+function isBuildPerkTooltipTarget(
+  relatedTarget: EventTarget | null,
+  tooltipTargetSelector: string,
+): boolean {
+  const buildPerkTooltip = document.querySelector(tooltipTargetSelector)
 
   return relatedTarget instanceof Node && buildPerkTooltip?.contains(relatedTarget) === true
 }
 
-function isBuildPerkTooltipHovered(): boolean {
-  return document.querySelector('[data-build-perk-tooltip="true"]:hover') !== null
+function isBuildPerkTooltipHovered(tooltipTargetSelector: string): boolean {
+  return document.querySelector(`${tooltipTargetSelector}:hover`) !== null
 }
 
 export function useBuildPerkTooltipPreview({
@@ -21,6 +25,7 @@ export function useBuildPerkTooltipPreview({
   onCloseTooltip,
   onOpenHover,
   onOpenTooltip,
+  tooltipTargetSelector = defaultTooltipTargetSelector,
 }: {
   hoveredBuildPerkId: string | null
   onCloseHover: (perkId: string) => void
@@ -36,6 +41,7 @@ export function useBuildPerkTooltipPreview({
     perkGroupReference?: PerkGroupReference,
     options?: BuildPerkHoverOptions,
   ) => void
+  tooltipTargetSelector?: string
 }) {
   const [activeTooltipIndicatorPerkId, setActiveTooltipIndicatorPerkId] = useState<string | null>(
     null,
@@ -85,7 +91,7 @@ export function useBuildPerkTooltipPreview({
         return
       }
 
-      if (isBuildPerkTooltipTarget(relatedTarget ?? null)) {
+      if (isBuildPerkTooltipTarget(relatedTarget ?? null, tooltipTargetSelector)) {
         return
       }
 
@@ -93,7 +99,7 @@ export function useBuildPerkTooltipPreview({
       tooltipCloseTimeoutRef.current = window.setTimeout(() => {
         tooltipCloseTimeoutRef.current = null
 
-        if (isBuildPerkTooltipHovered()) {
+        if (isBuildPerkTooltipHovered(tooltipTargetSelector)) {
           return
         }
 
@@ -108,6 +114,7 @@ export function useBuildPerkTooltipPreview({
       hoveredBuildPerkId,
       onCloseHover,
       onCloseTooltip,
+      tooltipTargetSelector,
     ],
   )
 

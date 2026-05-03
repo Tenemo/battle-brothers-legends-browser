@@ -233,7 +233,7 @@ describe('perk search', () => {
     expect(results.map((perk) => perk.perkName)).toEqual(['Favoured Enemy - Beasts', 'Clarity'])
   })
 
-  test('returns the full effect block after skipping a flavor quote in the perk preview', () => {
+  test('returns the full effect block after skipping a flavour quote in the perk preview', () => {
     const previewParagraphs = getPerkPreviewParagraphs({
       ...samplePerks[0],
       descriptionParagraphs: [
@@ -246,7 +246,7 @@ describe('perk search', () => {
     expect(previewParagraphs).toEqual(['Repairs armor after combat.', 'Costs no AP.'])
   })
 
-  test('returns the full effect block after skipping unquoted flavor text in the perk preview', () => {
+  test('returns the full effect block after skipping unquoted flavour text in the perk preview', () => {
     const previewParagraphs = getPerkPreviewParagraphs({
       ...samplePerks[0],
       descriptionParagraphs: [

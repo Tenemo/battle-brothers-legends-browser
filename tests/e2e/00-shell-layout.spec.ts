@@ -94,7 +94,7 @@ const desktopScrollbarTargets = [
   '[data-testid="background-fit-panel-body"]',
   '[data-testid="category-sidebar-body"]',
   '[data-testid="results-list"]',
-  '[data-testid="perk-detail-panel-body"]',
+  '[data-testid="detail-panel-body"]',
   '[data-testid="planner-board"]',
 ]
 
@@ -117,10 +117,10 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
       '[data-testid="category-sidebar"]',
     ) as HTMLElement | null
     const detailPanel = document.querySelector(
-      '[data-testid="perk-detail-panel"]',
+      '[data-testid="detail-panel"]',
     ) as HTMLElement | null
     const detailPanelBody = document.querySelector(
-      '[data-testid="perk-detail-panel-body"]',
+      '[data-testid="detail-panel-body"]',
     ) as HTMLElement | null
     const detailParagraph = document.querySelector(
       '[data-testid="detail-section"] p',
@@ -255,7 +255,7 @@ async function readBelowDesktopSectionTops(page: Page) {
       backgroundFit: getElementTop('[data-testid="background-fit-panel"]'),
       buildPlanner: getElementTop('[aria-label="Build planner"]'),
       filters: getElementTop('[data-testid="category-sidebar"]'),
-      perkDetails: getElementTop('[data-testid="perk-detail-panel"]'),
+      details: getElementTop('[data-testid="detail-panel"]'),
       results: getElementTop('[data-testid="results-panel"]'),
     }
   })
@@ -377,8 +377,8 @@ test('keeps the below-desktop section order consistent across the mobile boundar
     const sectionTops = await readBelowDesktopSectionTops(page)
 
     expect(sectionTops.buildPlanner).toBeLessThan(sectionTops.results)
-    expect(sectionTops.results).toBeLessThan(sectionTops.perkDetails)
-    expect(sectionTops.perkDetails).toBeLessThan(sectionTops.filters)
+    expect(sectionTops.results).toBeLessThan(sectionTops.details)
+    expect(sectionTops.details).toBeLessThan(sectionTops.filters)
     expect(sectionTops.filters).toBeLessThan(sectionTops.backgroundFit)
   }
 })
@@ -575,14 +575,14 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
       backgroundFit: getElementTop('[data-testid="background-fit-panel"]'),
       buildPlanner: getElementTop('[aria-label="Build planner"]'),
       filters: getElementTop('[data-testid="category-sidebar"]'),
-      perkDetails: getElementTop('[data-testid="perk-detail-panel"]'),
+      details: getElementTop('[data-testid="detail-panel"]'),
       results: getElementTop('[data-testid="results-panel"]'),
     }
   })
 
   expect(mobileSectionTops.buildPlanner).toBeLessThan(mobileSectionTops.results)
-  expect(mobileSectionTops.results).toBeLessThan(mobileSectionTops.perkDetails)
-  expect(mobileSectionTops.perkDetails).toBeLessThan(mobileSectionTops.filters)
+  expect(mobileSectionTops.results).toBeLessThan(mobileSectionTops.details)
+  expect(mobileSectionTops.details).toBeLessThan(mobileSectionTops.filters)
   expect(mobileSectionTops.filters).toBeLessThan(mobileSectionTops.backgroundFit)
   expect(mobileSectionTops.buildPlanner).toBeLessThan(300)
 

@@ -34,7 +34,7 @@ function getPrimitiveStyleSnapshot() {
     backgroundFitPanel: getElementStyle('[data-testid="background-fit-panel"]'),
     buildPlannerInfoButton: getElementStyle('[aria-label="Show build planner guidance"]'),
     categorySidebarRailChevron: getElementStyle('[aria-label="Collapse category filters"] svg'),
-    detailPanel: getElementStyle('[data-testid="perk-detail-panel"]'),
+    detailPanel: getElementStyle('[data-testid="detail-panel"]'),
     detailBadge: getElementStyle(
       '[data-testid="detail-badge"], [data-testid="detail-background-veteran-perk-badge"]',
     ),
@@ -125,5 +125,77 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
     borderColor: strongBorderColor,
     outlineStyle: 'solid',
     outlineWidth: '2px',
+  })
+})
+
+test('keeps compact desktop controls above the minimum target size', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 720, width: 1280 })
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+  await page.getByRole('button', { name: 'Expand background fit' }).click()
+  await expect(page.getByRole('button', { name: 'Inspect background Apprentice' })).toBeVisible()
+
+  const targetMetrics = await page.evaluate(() => {
+    const selectors = [
+      { name: 'search input', selector: '[aria-label="Search perks"]' },
+      { name: 'result build toggle', selector: '[aria-label="Remove Axe Mastery from build from results"]' },
+      { name: 'clear build', selector: '[data-testid="clear-build-button"]' },
+      {
+        minimumWidth: 16,
+        name: 'category rail',
+        selector: '[aria-label="Collapse category filters"]',
+      },
+      {
+        minimumWidth: 16,
+        name: 'background fit rail',
+        selector: '[aria-label="Collapse background fit"]',
+      },
+      { name: 'background inspect', selector: '[data-testid="background-fit-card"] button' },
+    ]
+
+    return selectors.map(({ minimumWidth = 24, name, selector }) => {
+      const element = document.querySelector(selector)
+
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing compact desktop target "${name}".`)
+      }
+
+      const rectangle = element.getBoundingClientRect()
+
+      return {
+        height: rectangle.height,
+        minimumWidth,
+        name,
+        width: rectangle.width,
+      }
+    })
+  })
+
+  for (const targetMetric of targetMetrics) {
+    expect(targetMetric.width, `${targetMetric.name} width`).toBeGreaterThanOrEqual(
+      targetMetric.minimumWidth,
+    )
+    expect(targetMetric.height, `${targetMetric.name} height`).toBeGreaterThanOrEqual(24)
+  }
+})
+
+test('honours reduced motion for global transitions and animations', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' })
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
+
+  const motionSnapshot = await page.getByTestId('results-panel').evaluate((element) => {
+    const style = window.getComputedStyle(element)
+
+    return {
+      animationDuration: style.animationDuration,
+      scrollBehavior: window.getComputedStyle(document.documentElement).scrollBehavior,
+      transitionDuration: style.transitionDuration,
+    }
+  })
+
+  expect(motionSnapshot).toEqual({
+    animationDuration: '0.001s',
+    scrollBehavior: 'auto',
+    transitionDuration: '0.001s',
   })
 })

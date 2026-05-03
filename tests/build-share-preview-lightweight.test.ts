@@ -5,8 +5,11 @@ import type {
   RankedBackgroundFit,
 } from '../src/lib/background-fit'
 import { defaultBackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
-import legendsPerksDatasetJson from '../src/data/legends-perks.json'
-import type { LegendsPerkRecord, LegendsPerksDataset } from '../src/types/legends-perks'
+import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
+import type {
+  LegendsBackgroundFitDataset,
+  LegendsBuildSharePreviewPerkRecord,
+} from '../src/types/legends-perks'
 
 const {
   getBackgroundFitSummaryView,
@@ -40,15 +43,15 @@ import {
   maxBuildSharePreviewTopBackgroundFitCacheEntries,
 } from '../src/lib/build-share-preview'
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const perkFixtures = legendsPerksDataset.perks
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
+const perkFixtures = legendsBackgroundFitDataset.perks
 
 beforeEach(() => {
   vi.clearAllMocks()
   clearBuildSharePreviewCache()
 })
 
-function getRequiredPerkFixture(index: number): LegendsPerkRecord {
+function getRequiredPerkFixture(index: number): LegendsBuildSharePreviewPerkRecord {
   const perk = perkFixtures[index]
 
   if (!perk) {
@@ -70,10 +73,18 @@ function createSummary({
   return {
     backgroundId,
     backgroundName,
+    backgroundTypeNames: [],
+    campResourceModifiers: [],
+    dailyCost: null,
     disambiguator: null,
+    excludedTalentAttributeNames: [],
+    excludedTraits: [],
+    excludedTraitNames: [],
     expectedCoveredPickedPerkCount: 1,
     expectedMatchedPerkGroupCount: 1,
     guaranteedMatchedPerkGroupCount: 1,
+    guaranteedTraits: [],
+    guaranteedTraitNames: [],
     iconPath: null,
     matches: [
       {
@@ -83,12 +94,14 @@ function createSummary({
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
         pickedPerkCount: 1,
+        pickedPerkIconPaths: [null],
         pickedPerkIds: ['perk.legend_clarity'],
         pickedPerkNames: ['Clarity'],
         probability: 1,
       },
     ],
     maximumTotalPerkGroupCount: 1,
+    otherPerkGroups: [],
     sourceFilePath,
     veteranPerkLevelInterval: 4,
   }
@@ -207,7 +220,7 @@ describe('build share preview background fits', () => {
       supportedBuildTargetPerkGroups: [],
       unsupportedBuildTargetPerkGroups: [],
     } satisfies BackgroundFitView
-    const searchForPerk = (perk: LegendsPerkRecord) =>
+    const searchForPerk = (perk: LegendsBuildSharePreviewPerkRecord) =>
       `?${new URLSearchParams({ build: perk.id }).toString()}`
     const cachedPerk = getRequiredPerkFixture(0)
     const evictedPerk = getRequiredPerkFixture(1)

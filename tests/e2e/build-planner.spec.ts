@@ -10,7 +10,7 @@ import {
   getBuildPerksBar,
   getBuildSharedGroupsList,
   getParsedCssRgbColor,
-  getPerkDetailPanel,
+  getDetailPanel,
   getResolvedCssBackgroundColor,
   getResolvedCssBorderColor,
   getResultsList,
@@ -481,14 +481,14 @@ test('build planner splits shared and individual perk groups without layout drif
 
   const pickedPerkRemoveControl = pickedPerkTile.getByTestId('planner-slot-remove-button')
   await expect(pickedPerkRemoveControl).toBeHidden()
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
 
   await pickedPerkTile.hover()
   const pickedPerkRemoveButton = pickedPerkTile.getByRole('button', {
     name: 'Remove Clarity from build',
   })
 
-  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
   const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
@@ -981,13 +981,17 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   const heavyArmorGroupCard = getBuildSharedGroupsList(page)
     .getByTestId('planner-group-card')
     .filter({ hasText: 'Heavy Armor' })
-
-  await heavyArmorGroupCard.click({
-    position: {
-      x: 96,
-      y: 38,
-    },
+  const heavyArmorGroupButton = heavyArmorGroupCard.getByRole('button', {
+    name: 'Select perk group Heavy Armor',
   })
+  const heavyArmorPillIcons = heavyArmorGroupCard.getByTestId('planner-pill-icon')
+
+  await expect(heavyArmorPillIcons).toHaveCount(3)
+  await expect(heavyArmorPillIcons.first()).toHaveAttribute(
+    'src',
+    '/game-icons/ui/perks/perk_03.png',
+  )
+  await heavyArmorGroupButton.click()
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Defense' })).toBeVisible()
@@ -1271,8 +1275,12 @@ test('separates planner group card hover from icon and perk pill hover states', 
     )
     .toBe(activePlannerSurfaceColor)
 
-  await battleForgedPill.hover()
+  await page.mouse.move(1, 1)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'false')
+  await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
+
+  await battleForgedPill.hover()
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
   const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
@@ -2138,12 +2146,10 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(optionalRequirementIconPlacement!.bottomOffset).toBeGreaterThanOrEqual(-8)
   expect(optionalRequirementIconPlacement!.iconSvgWidth).not.toBeNull()
   expect(
-    optionalRequirementIconPlacement!.iconSvgWidth! /
-      optionalRequirementIconPlacement!.tileHeight,
+    optionalRequirementIconPlacement!.iconSvgWidth! / optionalRequirementIconPlacement!.tileHeight,
   ).toBeGreaterThan(0.32)
   expect(
-    optionalRequirementIconPlacement!.iconSvgWidth! /
-      optionalRequirementIconPlacement!.tileHeight,
+    optionalRequirementIconPlacement!.iconSvgWidth! / optionalRequirementIconPlacement!.tileHeight,
   ).toBeLessThan(0.35)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
@@ -2605,7 +2611,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
 
   await expect(page.getByText('1 perk picked.')).toBeVisible()
   await expect(
-    getPerkDetailPanel(page).getByRole('heading', {
+    getDetailPanel(page).getByRole('heading', {
       level: 2,
       name: 'Select a perk or background',
     }),

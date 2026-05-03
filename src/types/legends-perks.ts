@@ -51,7 +51,7 @@ export type LegendsPerkRecord = {
   categoryNames: string[]
   iconPath: string | null
   id: string
-  perkConstName: string
+  perkConstName?: string
   perkName: string
   placements: LegendsPerkPlacement[]
   primaryCategoryName: string
@@ -59,18 +59,59 @@ export type LegendsPerkRecord = {
   searchText: string
 }
 
+export type LegendsPerkUrlRecord = Pick<LegendsPerkRecord, 'id' | 'perkName'>
+
+export type LegendsPerkCatalogRecord = Omit<
+  LegendsPerkRecord,
+  'backgroundSources' | 'perkConstName' | 'searchText'
+>
+
+export type LegendsBackgroundFitPerkRecord = Pick<
+  LegendsPerkRecord,
+  'id' | 'iconPath' | 'perkName' | 'placements'
+>
+
+export type LegendsBuildSharePreviewPerkRecord = LegendsBackgroundFitPerkRecord &
+  Pick<LegendsPerkRecord, 'iconPath'>
+
 export type LegendsBackgroundFitCategoryDefinition = {
   chance: number | null
   minimumPerkGroups: number | null
   perkGroupIds: string[]
 }
 
+export type LegendsBackgroundCampResourceModifierGroup = 'capacity' | 'skill' | 'terrain'
+
+export type LegendsBackgroundCampResourceModifierValueKind = 'flat' | 'percent'
+
+export type LegendsBackgroundCampResourceModifier = {
+  group: LegendsBackgroundCampResourceModifierGroup
+  label: string
+  modifierKey: string
+  value: number
+  valueKind: LegendsBackgroundCampResourceModifierValueKind
+}
+
+export type LegendsBackgroundTrait = {
+  description: string | null
+  iconPath: string | null
+  traitName: string
+}
+
 export type LegendsBackgroundFitBackgroundDefinition = {
   backgroundId: string
   backgroundName: string
+  backgroundTypeNames: string[]
   categories: Partial<
     Record<LegendsDynamicBackgroundCategoryName, LegendsBackgroundFitCategoryDefinition>
   >
+  campResourceModifiers: LegendsBackgroundCampResourceModifier[]
+  dailyCost: number | null
+  excludedTalentAttributeNames: string[]
+  excludedTraits: LegendsBackgroundTrait[]
+  excludedTraitNames: string[]
+  guaranteedTraits: LegendsBackgroundTrait[]
+  guaranteedTraitNames: string[]
   iconPath: string | null
   sourceFilePath: string
   veteranPerkLevelInterval: number
@@ -95,4 +136,16 @@ export type LegendsPerksDataset = {
   referenceVersion: string
   sourceFiles: LegendsSourceFile[]
   perkGroupCount: number
+}
+
+export type LegendsPerkCatalogDataset = {
+  perks: LegendsPerkCatalogRecord[]
+  referenceVersion: string
+}
+
+export type LegendsBackgroundFitDataset = Pick<
+  LegendsPerksDataset,
+  'backgroundFitBackgrounds' | 'backgroundFitRules' | 'referenceVersion'
+> & {
+  perks: LegendsBuildSharePreviewPerkRecord[]
 }

@@ -1,11 +1,11 @@
 import { describe, expect, test } from 'vitest'
-import legendsPerksDatasetJson from '../src/data/legends-perks.json'
+import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import { getOriginBackgroundPillLabel, isOriginBackgroundFit } from '../src/lib/background-origin'
 import type { RankedBackgroundFit } from '../src/lib/background-fit'
 import { getVisibleBackgroundPillLabel } from '../src/lib/perk-display'
-import type { LegendsPerksDataset } from '../src/types/legends-perks'
+import type { LegendsBackgroundFitDataset } from '../src/types/legends-perks'
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
 
 function createBackgroundFit({
   backgroundId,
@@ -21,8 +21,14 @@ function createBackgroundFit({
   return {
     backgroundId,
     backgroundName,
+    backgroundTypeNames: [],
     buildReachabilityProbability: null,
+    campResourceModifiers: [],
+    dailyCost: null,
     disambiguator,
+    excludedTalentAttributeNames: [],
+    excludedTraits: [],
+    excludedTraitNames: [],
     expectedCoveredMustHavePerkCount: 0,
     expectedCoveredOptionalPerkCount: 0,
     expectedCoveredPickedPerkCount: 0,
@@ -32,12 +38,15 @@ function createBackgroundFit({
     guaranteedCoveredMustHavePerkCount: 0,
     guaranteedCoveredOptionalPerkCount: 0,
     guaranteedMatchedPerkGroupCount: 0,
+    guaranteedTraits: [],
+    guaranteedTraitNames: [],
     iconPath: null,
     matches: [],
     maximumNativeCoveredPickedPerkCount: 0,
     maximumTotalPerkGroupCount: 0,
     mustHaveBuildReachabilityProbability: null,
     mustHaveStudyResourceRequirement: null,
+    otherPerkGroups: [],
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
     veteranPerkLevelInterval: 4,
   }
@@ -52,14 +61,14 @@ function getBackgroundSourceFileLabel(sourceFilePath: string): string {
 function getImportedBackgroundFits(): RankedBackgroundFit[] {
   const duplicateBackgroundNameCountByName = new Map<string, number>()
 
-  for (const backgroundDefinition of legendsPerksDataset.backgroundFitBackgrounds) {
+  for (const backgroundDefinition of legendsBackgroundFitDataset.backgroundFitBackgrounds) {
     duplicateBackgroundNameCountByName.set(
       backgroundDefinition.backgroundName,
       (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) + 1,
     )
   }
 
-  return legendsPerksDataset.backgroundFitBackgrounds.map(
+  return legendsBackgroundFitDataset.backgroundFitBackgrounds.map(
     (backgroundDefinition): RankedBackgroundFit => ({
       ...backgroundDefinition,
       buildReachabilityProbability: null,
@@ -81,6 +90,7 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
       maximumTotalPerkGroupCount: 0,
       mustHaveBuildReachabilityProbability: null,
       mustHaveStudyResourceRequirement: null,
+      otherPerkGroups: [],
     }),
   )
 }
@@ -452,7 +462,7 @@ describe('background origin detection', () => {
       'background.legend_warlock_summoner',
       'background.legend_youngblood',
     ])
-    const importedBackgroundFits = legendsPerksDataset.backgroundFitBackgrounds
+    const importedBackgroundFits = legendsBackgroundFitDataset.backgroundFitBackgrounds
       .filter((backgroundFit) => expectedOriginBackgroundIds.has(backgroundFit.backgroundId))
       .map(
         (backgroundFit): RankedBackgroundFit => ({
@@ -473,6 +483,7 @@ describe('background origin detection', () => {
           maximumTotalPerkGroupCount: 0,
           mustHaveBuildReachabilityProbability: null,
           mustHaveStudyResourceRequirement: null,
+          otherPerkGroups: [],
         }),
       )
 

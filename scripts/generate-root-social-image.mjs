@@ -13,6 +13,7 @@ import {
   socialImageHeight,
   socialImageWidth,
 } from '../src/lib/social-image-markup.ts'
+import { socialImageColors, socialImageFontFamilies } from '../src/lib/social-image-style.ts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -26,18 +27,18 @@ const bookIconPath = path.join(
   'perks',
   'perk_21.png',
 )
-const legendsPerksDataPath = path.join(
+const legendsPerkCatalogDataPath = path.join(
   projectRootDirectoryPath,
   'src',
   'data',
-  'legends-perks.json',
+  'legends-perk-catalog.json',
 )
 const fontDirectoryPath = path.join(projectRootDirectoryPath, 'scripts', 'assets', 'fonts')
 const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel-Bold.ttf')
 const sourceSansRegularFontPath = path.join(fontDirectoryPath, 'SourceSans3-Regular.ttf')
 const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Semibold.ttf')
 const sourceSansBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Bold.ttf')
-const fallbackLegendsReferenceVersion = '19.3.21'
+const fallbackLegendsReferenceVersion = '19.3.22'
 
 export async function createRootSocialImageSvg({
   bookIconDataUrl = '',
@@ -48,9 +49,9 @@ export async function createRootSocialImageSvg({
   )}">
   ${renderSocialImageDefinitions({ includePanelLight: true })}
   ${renderSocialImageBackground()}
-  <rect x="65" y="65" width="1070" height="502" fill="#16100d" stroke="#6f4f27" stroke-width="2" />
+  <rect x="65" y="65" width="1070" height="502" fill="${socialImageColors.panel}" stroke="${socialImageColors.panelStroke}" stroke-width="2" />
   <rect x="65" y="65" width="1070" height="502" fill="url(#panel-light)" />
-  <text x="96" y="154" fill="#f4eee6" font-family="Cinzel, serif" font-size="78" font-weight="700" letter-spacing="0.02em">Build planner</text>
+  <text x="96" y="154" fill="${socialImageColors.title}" font-family="${socialImageFontFamilies.brand}" font-size="78" font-weight="700" letter-spacing="0.02em">Build planner</text>
   ${renderSocialImageBrand({
     fontSize: 26,
     x: 99,
@@ -66,7 +67,7 @@ export async function createRootSocialImageSvg({
         : ''
     }
   </g>
-  <text x="430" y="320" fill="#fffaf0" font-family="Cinzel, serif" font-size="41" font-weight="700" letter-spacing="0.02em">
+  <text x="430" y="320" fill="${socialImageColors.textPrimary}" font-family="${socialImageFontFamilies.brand}" font-size="41" font-weight="700" letter-spacing="0.02em">
     <tspan x="430" dy="0">Search perks, inspect perk groups</tspan>
     <tspan x="430" dy="48">placement, and plan builds</tspan>
     <tspan x="430" dy="48">with exact in-mod labels</tspan>
@@ -87,10 +88,10 @@ async function createBookIconDataUrl() {
 
 async function readLegendsReferenceVersion() {
   try {
-    const legendsPerksData = JSON.parse(await readFile(legendsPerksDataPath, 'utf8'))
+    const legendsPerkCatalogData = JSON.parse(await readFile(legendsPerkCatalogDataPath, 'utf8'))
 
-    return typeof legendsPerksData.referenceVersion === 'string'
-      ? legendsPerksData.referenceVersion
+    return typeof legendsPerkCatalogData.referenceVersion === 'string'
+      ? legendsPerkCatalogData.referenceVersion
       : fallbackLegendsReferenceVersion
   } catch {
     return fallbackLegendsReferenceVersion

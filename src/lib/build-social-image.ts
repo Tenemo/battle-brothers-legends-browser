@@ -11,7 +11,8 @@ import {
   renderSocialImageFooter,
   socialImageHeight,
   socialImageWidth,
-} from './social-image-markup'
+} from './social-image-markup.ts'
+import { socialImageColors, socialImageFontFamilies } from './social-image-style.ts'
 
 export const buildSocialImageWidth = socialImageWidth
 export const buildSocialImageHeight = socialImageHeight
@@ -160,7 +161,7 @@ function renderTextLines({
       (line, lineIndex) =>
         `<text x="${x}" y="${
           y + lineIndex * lineStep
-        }" fill="${fill}" font-family="Source Sans 3, Arial, sans-serif" font-size="${fontSize}" font-weight="${fontWeight}">${escapeXml(
+        }" fill="${fill}" font-family="${socialImageFontFamilies.body}" font-size="${fontSize}" font-weight="${fontWeight}">${escapeXml(
           line,
         )}</text>`,
     )
@@ -173,8 +174,8 @@ function renderPerkNameRows(payload: BuildSharePreviewPayload, startY: number): 
     const name = truncateLineByVisualWidth(perk.perkName, 30)
 
     return `<g transform="translate(80 ${rowY})">
-      <circle cx="7" cy="7" r="4" fill="#c89d66" />
-      <text x="24" y="14" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="23" font-weight="600">${escapeXml(
+      <circle cx="7" cy="7" r="4" fill="${socialImageColors.accent}" />
+      <text x="24" y="14" fill="${socialImageColors.textPrimary}" font-family="${socialImageFontFamilies.body}" font-size="23" font-weight="600">${escapeXml(
         name,
       )}</text>
     </g>`
@@ -185,7 +186,7 @@ function renderPerkNameRows(payload: BuildSharePreviewPayload, startY: number): 
     perkRows.push(
       `<text x="80" y="${
         startY + maxVisiblePerkNames * 29 + 8
-      }" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="600">+${hiddenCount} more perks</text>`,
+      }" fill="${socialImageColors.textMuted}" font-family="${socialImageFontFamilies.body}" font-size="21" font-weight="600">+${hiddenCount} more perks</text>`,
     )
   }
 
@@ -211,18 +212,18 @@ function renderIconCell({
 
   if (hiddenCount !== undefined && hiddenCount > 0) {
     return `<g transform="translate(${x} ${y})">
-      <rect width="56" height="56" rx="13" fill="#211a15" stroke="#76563b" stroke-width="2" />
-      <text x="28" y="36" fill="#f2d6ad" font-family="Source Sans 3, Arial, sans-serif" font-size="22" font-weight="700" text-anchor="middle">+${hiddenCount}</text>
+      <rect width="56" height="56" rx="13" fill="${socialImageColors.iconCellMuted}" stroke="${socialImageColors.iconStroke}" stroke-width="2" />
+      <text x="28" y="36" fill="${socialImageColors.iconCellText}" font-family="${socialImageFontFamilies.body}" font-size="22" font-weight="700" text-anchor="middle">+${hiddenCount}</text>
     </g>`
   }
 
   const iconMarkup = iconDataUrl
     ? `<defs><clipPath id="${clipPathId}"><rect x="${x}" y="${y}" width="56" height="56" rx="13" /></clipPath></defs>
       <image href="${iconDataUrl}" x="${x}" y="${y}" width="56" height="56" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipPathId})" />`
-    : `<rect x="${x}" y="${y}" width="56" height="56" rx="13" fill="#221b16" />`
+    : `<rect x="${x}" y="${y}" width="56" height="56" rx="13" fill="${socialImageColors.iconCellEmpty}" />`
 
   return `<g>
-    <rect x="${x - 3}" y="${y - 3}" width="62" height="62" rx="15" fill="#18130f" stroke="#76563b" stroke-width="2" />
+    <rect x="${x - 3}" y="${y - 3}" width="62" height="62" rx="15" fill="${socialImageColors.iconCell}" stroke="${socialImageColors.iconStroke}" stroke-width="2" />
     ${iconMarkup}
     <title>${escapeXml(perkName)}</title>
   </g>`
@@ -273,10 +274,10 @@ function renderBackgroundIcon({
   const iconMarkup = iconDataUrl
     ? `<defs><clipPath id="${clipPathId}"><rect x="${x}" y="${y}" width="38" height="38" rx="8" /></clipPath></defs>
       <image href="${iconDataUrl}" x="${x}" y="${y}" width="38" height="38" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clipPathId})" />`
-    : `<rect x="${x}" y="${y}" width="38" height="38" rx="8" fill="#221b16" />`
+    : `<rect x="${x}" y="${y}" width="38" height="38" rx="8" fill="${socialImageColors.iconCellEmpty}" />`
 
   return `<g>
-    <rect x="${x - 2}" y="${y - 2}" width="42" height="42" rx="10" fill="#18130f" stroke="#76563b" stroke-width="1.5" />
+    <rect x="${x - 2}" y="${y - 2}" width="42" height="42" rx="10" fill="${socialImageColors.iconCell}" stroke="${socialImageColors.iconStroke}" stroke-width="1.5" />
     ${iconMarkup}
     <title>${escapeXml(backgroundFit.backgroundName)}</title>
   </g>`
@@ -287,8 +288,8 @@ function renderBackgroundFits(
   resolveBackgroundIconDataUrl: BuildSocialImageOptions['resolveBackgroundIconDataUrl'],
 ): string {
   if (payload.topBackgroundFits.length === 0) {
-    return `<text x="664" y="442" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="25" font-weight="700">Background fit</text>
-      <text x="664" y="480" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="21" font-weight="500">Pick perks to compare backgrounds.</text>`
+    return `<text x="664" y="442" fill="${socialImageColors.textPrimary}" font-family="${socialImageFontFamilies.body}" font-size="25" font-weight="700">Background fit</text>
+      <text x="664" y="480" fill="${socialImageColors.textMuted}" font-family="${socialImageFontFamilies.body}" font-size="21" font-weight="500">Pick perks to compare backgrounds.</text>`
   }
 
   return payload.topBackgroundFits
@@ -318,12 +319,12 @@ function renderBackgroundFits(
           x: 0,
           y: -28,
         })}
-        <text x="54" y="-8" fill="#f2e9df" font-family="Source Sans 3, Arial, sans-serif" font-size="22" font-weight="700">${escapeXml(
+        <text x="54" y="-8" fill="${socialImageColors.textPrimary}" font-family="${socialImageFontFamilies.body}" font-size="22" font-weight="700">${escapeXml(
           name,
         )}</text>
-        <rect x="270" y="-24" width="160" height="11" rx="5.5" fill="#2a211b" />
-        <rect x="270" y="-24" width="${scoreWidth.toFixed(1)}" height="11" rx="5.5" fill="#c89d66" />
-        <text x="270" y="9" fill="#d9c6aa" font-family="Source Sans 3, Arial, sans-serif" font-size="16" font-weight="600">${expectedBuildPerkCount}/${payload.pickedPerkCount} expected perks</text>
+        <rect x="270" y="-24" width="160" height="11" rx="5.5" fill="${socialImageColors.progressTrack}" />
+        <rect x="270" y="-24" width="${scoreWidth.toFixed(1)}" height="11" rx="5.5" fill="${socialImageColors.accent}" />
+        <text x="270" y="9" fill="${socialImageColors.progressText}" font-family="${socialImageFontFamilies.body}" font-size="16" font-weight="600">${expectedBuildPerkCount}/${payload.pickedPerkCount} expected perks</text>
       </g>`
     })
     .join('')
@@ -345,12 +346,12 @@ export function createBuildSocialImageSvg(
   )}">
     ${renderSocialImageDefinitions()}
     ${renderSocialImageBackground()}
-    <rect x="48" y="32" width="528" height="538" rx="24" fill="#130f0c" fill-opacity="0.9" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="32" width="528" height="326" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
-    <rect x="624" y="376" width="528" height="194" rx="24" fill="#130f0c" fill-opacity="0.88" stroke="#5d4129" stroke-width="2" />
+    <rect x="48" y="32" width="528" height="538" rx="24" fill="${socialImageColors.panel}" fill-opacity="0.9" stroke="${socialImageColors.panelStroke}" stroke-width="2" />
+    <rect x="624" y="32" width="528" height="326" rx="24" fill="${socialImageColors.panel}" fill-opacity="0.88" stroke="${socialImageColors.panelStroke}" stroke-width="2" />
+    <rect x="624" y="376" width="528" height="194" rx="24" fill="${socialImageColors.panel}" fill-opacity="0.88" stroke="${socialImageColors.panelStroke}" stroke-width="2" />
     ${renderSocialImageBrand()}
     ${renderTextLines({
-      fill: '#f6eee5',
+      fill: socialImageColors.title,
       fontSize: 56,
       fontWeight: 700,
       lineStep: 62,
@@ -360,15 +361,15 @@ export function createBuildSocialImageSvg(
     })}
     ${
       isEmpty
-        ? `<text x="80" y="${titleLines.length > 1 ? 240 : 206}" fill="#bda98f" font-family="Source Sans 3, Arial, sans-serif" font-size="24" font-weight="500">${escapeXml(
+        ? `<text x="80" y="${titleLines.length > 1 ? 240 : 206}" fill="${socialImageColors.textMuted}" font-family="${socialImageFontFamilies.body}" font-size="24" font-weight="500">${escapeXml(
             truncateLineByVisualWidth(emptySubtitle, 30),
           )}</text>`
         : ''
     }
     ${isEmpty ? '' : renderPerkNameRows(payload, perkListStartY)}
-    <text x="664" y="64" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Picked perks</text>
+    <text x="664" y="64" fill="${socialImageColors.accent}" font-family="${socialImageFontFamilies.body}" font-size="20" font-weight="700">Picked perks</text>
     ${renderIconGrid(payload, resolvePerkIconDataUrl)}
-    <text x="664" y="410" fill="#c89d66" font-family="Source Sans 3, Arial, sans-serif" font-size="20" font-weight="700">Best background fits</text>
+    <text x="664" y="410" fill="${socialImageColors.accent}" font-family="${socialImageFontFamilies.body}" font-size="20" font-weight="700">Best background fits</text>
     ${renderBackgroundFits(payload, resolveBackgroundIconDataUrl)}
     ${renderSocialImageFooter({
       referenceVersion: payload.referenceVersion,

@@ -132,7 +132,7 @@
     position: absolute;
     top: 50%;
     right: var(--primitive-length-0-36rem);
-    z-index: var(--z-index-raised);
+    z-index: var(--z-index-popover);
     display: inline-flex;
     transform: translateY(-50%);
   }
@@ -197,7 +197,7 @@
     color: var(--text-primary);
     font-size: var(--font-size-lg);
     line-height: 1;
-    cursor: pointer;
+    cursor: help;
 
     span {
       display: inline-flex;

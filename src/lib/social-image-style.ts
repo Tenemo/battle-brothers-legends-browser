@@ -1,0 +1,31 @@
+export const socialImageColors = {
+  accent: '#c89d66',
+  backgroundEnd: '#21170f',
+  backgroundLine: '#3d2a1c',
+  backgroundMiddle: '#17110d',
+  backgroundStart: '#0d0a08',
+  brand: '#ddb07b',
+  footerMuted: '#80644a',
+  footerText: '#ded4c1',
+  iconCell: '#18130f',
+  iconCellEmpty: '#221b16',
+  iconCellMuted: '#211a15',
+  iconCellText: '#f2d6ad',
+  iconStroke: '#76563b',
+  panel: '#130f0c',
+  panelLightEnd: '#100c0a',
+  panelLightStart: '#2b2018',
+  panelStroke: '#5d4129',
+  progressTrack: '#2a211b',
+  progressText: '#d9c6aa',
+  textMuted: '#bda98f',
+  textPrimary: '#f2e9df',
+  title: '#f6eee5',
+  warmAccent: '#7a4c28',
+} as const
+
+export const socialImageFontFamilies = {
+  brand: 'Cinzel, serif',
+  body: 'Source Sans 3, Arial, sans-serif',
+  bodySerif: 'Source Sans 3, serif',
+} as const

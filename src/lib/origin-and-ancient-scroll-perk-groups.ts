@@ -1,8 +1,8 @@
 import type {
-  LegendsPerkBackgroundSource,
   LegendsPerkPlacement,
   LegendsPerkRecord,
 } from '../types/legends-perks'
+import { createPerkSearchText } from './perk-search'
 
 const originPerkGroupIds = new Set([
   'ArcherCommandTree',
@@ -87,52 +87,6 @@ function getFilteredCategoryNames(placements: LegendsPerkPlacement[]): string[] 
   return categoryNames
 }
 
-function buildFilteredSearchText({
-  backgroundSources,
-  categoryNames,
-  perk,
-  placements,
-}: {
-  backgroundSources: LegendsPerkBackgroundSource[]
-  categoryNames: string[]
-  perk: LegendsPerkRecord
-  placements: LegendsPerkPlacement[]
-}): string {
-  return [
-    perk.perkName,
-    perk.perkConstName,
-    ...categoryNames,
-    ...placements.flatMap((placement) => [
-      placement.categoryName,
-      placement.perkGroupName,
-      placement.perkGroupId,
-      placement.tier === null ? '' : `Tier ${placement.tier}`,
-    ]),
-    ...perk.descriptionParagraphs,
-    ...(perk.favouredEnemyTargets ?? []).flatMap((favouredEnemyTarget) => [
-      favouredEnemyTarget.entityConstName,
-      favouredEnemyTarget.entityName,
-      favouredEnemyTarget.killsPerPercentBonus === null
-        ? ''
-        : String(favouredEnemyTarget.killsPerPercentBonus),
-    ]),
-    ...backgroundSources.flatMap((backgroundSource) => [
-      backgroundSource.backgroundName,
-      backgroundSource.categoryName,
-      backgroundSource.perkGroupName,
-    ]),
-    ...perk.scenarioSources.flatMap((scenarioSource) => [
-      scenarioSource.scenarioName,
-      scenarioSource.scenarioId,
-      scenarioSource.grantType,
-      scenarioSource.sourceMethodName,
-      ...scenarioSource.candidatePerkNames,
-    ]),
-  ]
-    .filter((value) => value.length > 0)
-    .join(' ')
-}
-
 export function getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
   perks: LegendsPerkRecord[],
   filters: OriginAndAncientScrollPerkGroupFilters = {
@@ -165,10 +119,10 @@ export function getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
         categoryNames,
         placements,
         primaryCategoryName: categoryNames[0] ?? perk.primaryCategoryName,
-        searchText: buildFilteredSearchText({
+        searchText: createPerkSearchText({
+          ...perk,
           backgroundSources,
           categoryNames,
-          perk,
           placements,
         }),
       },

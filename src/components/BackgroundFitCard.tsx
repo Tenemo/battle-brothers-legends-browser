@@ -1,5 +1,6 @@
 import { Link } from 'lucide-react'
 import type {
+  BackgroundFitStudyResourceChanceBreakdownEntry,
   BackgroundFitMatch,
   BuildTargetPerkGroup,
   RankedBackgroundFit,
@@ -55,16 +56,18 @@ function getBackgroundFitBuildReachabilitySummaryCopy(
   probability: number,
   buildScopeLabel: string,
   studyResourceFilter: BackgroundStudyResourceFilter,
+  chanceBreakdownEntries?: BackgroundFitStudyResourceChanceBreakdownEntry[],
 ): string {
   const studyResourceFilterPhrase = getBackgroundFitStudyResourceFilterPhrase(studyResourceFilter)
+  const chanceBreakdownPhrase = getBackgroundFitChanceBreakdownPhrase(chanceBreakdownEntries)
 
   if (probability <= 0) {
-    return `No legal native background roll ${studyResourceFilterPhrase} can cover every picked perk for ${buildScopeLabel}.`
+    return `No legal native background roll ${studyResourceFilterPhrase} can cover every picked perk for ${buildScopeLabel}.${chanceBreakdownPhrase}`
   }
 
   return `One legal native background roll ${studyResourceFilterPhrase} can cover every picked perk with a ${formatBackgroundFitProbabilityLabel(
     probability,
-  )} chance for ${buildScopeLabel}.`
+  )} chance for ${buildScopeLabel}.${chanceBreakdownPhrase}`
 }
 
 function getBackgroundFitRankTitle(backgroundFit: RankedBackgroundFit, rank: number): string {
@@ -99,6 +102,43 @@ function getBackgroundFitStudyResourceFilterPhrase(
   }
 
   return `plus ${enabledStudyResources.join(' and ')}`
+}
+
+function getBackgroundFitChanceBreakdownLabel(
+  entry: BackgroundFitStudyResourceChanceBreakdownEntry,
+): string {
+  if (entry.shouldAllowBook && entry.shouldAllowScroll) {
+    return entry.shouldAllowSecondScroll
+      ? 'skill book and ancient scrolls'
+      : 'skill book and ancient scroll'
+  }
+
+  if (entry.shouldAllowBook) {
+    return 'skill book'
+  }
+
+  if (entry.shouldAllowScroll) {
+    return entry.shouldAllowSecondScroll ? 'ancient scrolls' : 'ancient scroll'
+  }
+
+  return 'native'
+}
+
+function getBackgroundFitChanceBreakdownPhrase(
+  entries?: BackgroundFitStudyResourceChanceBreakdownEntry[],
+): string {
+  if (!entries || entries.length <= 1) {
+    return ''
+  }
+
+  return ` Breakdown: ${entries
+    .map(
+      (entry) =>
+        `${getBackgroundFitChanceBreakdownLabel(entry)} ${formatBackgroundFitProbabilityLabel(
+          entry.probability,
+        )}`,
+    )
+    .join(', ')}.`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -227,6 +267,7 @@ function BackgroundFitMatchRow({
         onOpenPerkGroupHover={onOpenPerkGroupHover}
         optionIconClassName={styles.backgroundFitPerkGroupIcon}
         perks={match.pickedPerkNames.map((perkName, perkIndex) => ({
+          iconPath: match.pickedPerkIconPaths[perkIndex] ?? null,
           perkId: match.pickedPerkIds[perkIndex] ?? null,
           perkName,
         }))}
@@ -235,7 +276,7 @@ function BackgroundFitMatchRow({
   )
 }
 
-export type BackgroundFitMetric = {
+type BackgroundFitMetric = {
   accessibleLabel: string
   icon: 'must-have' | null
   label: string
@@ -314,8 +355,8 @@ export function BackgroundFitStudyResourceBadges({
   backgroundFit: RankedBackgroundFit
 }) {
   const studyResourceBadgeDisplay = getBackgroundStudyResourceBadgeDisplay({
-    fullBuildStudyResourceRequirement: backgroundFit.fullBuildStudyResourceRequirement,
-    mustHaveStudyResourceRequirement: backgroundFit.mustHaveStudyResourceRequirement,
+    fullBuildStudyResourceStrategy: backgroundFit.fullBuildStudyResourceStrategy,
+    mustHaveStudyResourceStrategy: backgroundFit.mustHaveStudyResourceStrategy,
   })
 
   if (studyResourceBadgeDisplay === null) {
@@ -330,7 +371,7 @@ export function BackgroundFitStudyResourceBadges({
     >
       {studyResourceBadgeDisplay.badges.map((studyResourceBadge, studyResourceBadgeIndex) => (
         <img
-          alt={`${studyResourceBadge.label} requirement`}
+          alt={studyResourceBadge.title}
           className={joinClassNames(
             styles.backgroundFitStudyResourceBadge,
             studyResourceBadge.isOptionalOnly && styles.backgroundFitStudyResourceBadgeOptionalOnly,
@@ -392,6 +433,7 @@ function getBackgroundFitDetailsMetrics({
               backgroundFit.mustHaveBuildReachabilityProbability,
               'the must-have build',
               studyResourceFilter,
+              backgroundFit.mustHaveStudyResourceChanceBreakdown,
             ),
             value: formatBackgroundFitProbabilityLabel(
               backgroundFit.mustHaveBuildReachabilityProbability,
@@ -411,6 +453,7 @@ function getBackgroundFitDetailsMetrics({
               backgroundFit.fullBuildReachabilityProbability,
               'the full build, including optional perks',
               studyResourceFilter,
+              backgroundFit.fullBuildStudyResourceChanceBreakdown,
             ),
             value: formatBackgroundFitProbabilityLabel(
               backgroundFit.fullBuildReachabilityProbability,

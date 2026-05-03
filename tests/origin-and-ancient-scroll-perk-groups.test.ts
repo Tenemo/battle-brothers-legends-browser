@@ -1,5 +1,8 @@
 import { describe, expect, test } from 'vitest'
-import legendsPerksDatasetJson from '../src/data/legends-perks.json'
+import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
+import legendsPerkCatalogDatasetJson from '../src/data/legends-perk-catalog.json'
+import { createBackgroundFitEngine } from '../src/lib/background-fit'
+import { hydrateCatalogPerks } from '../src/lib/legends-data'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
   isAncientScrollLearnablePerkGroupId,
@@ -8,12 +11,15 @@ import {
   isOriginOrAncientScrollOnlyPerkGroupId,
 } from '../src/lib/origin-and-ancient-scroll-perk-groups'
 import { filterAndSortPerks } from '../src/lib/perk-search'
-import type { LegendsPerksDataset } from '../src/types/legends-perks'
+import type { LegendsBackgroundFitDataset, LegendsPerkCatalogDataset } from '../src/types/legends-perks'
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const filteredPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-  legendsPerksDataset.perks,
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
+const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
+const legendsPerks = hydrateCatalogPerks(
+  legendsPerkCatalogDataset.perks,
+  createBackgroundFitEngine(legendsBackgroundFitDataset),
 )
+const filteredPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(legendsPerks)
 const filteredPerksByName = new Map(filteredPerks.map((perk) => [perk.perkName, perk]))
 
 describe('origin and ancient scroll perk groups', () => {
@@ -37,7 +43,7 @@ describe('origin and ancient scroll perk groups', () => {
 
   test('can include origin perk groups without ancient scroll perk groups', () => {
     const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerksDataset.perks,
+      legendsPerks,
       {
         shouldIncludeAncientScrollPerkGroups: false,
         shouldIncludeOriginPerkGroups: true,
@@ -67,7 +73,7 @@ describe('origin and ancient scroll perk groups', () => {
 
   test('can include ancient scroll perk groups without origin perk groups', () => {
     const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerksDataset.perks,
+      legendsPerks,
       {
         shouldIncludeAncientScrollPerkGroups: true,
         shouldIncludeOriginPerkGroups: false,
@@ -100,14 +106,14 @@ describe('origin and ancient scroll perk groups', () => {
 
   test('keeps overlapping origin and ancient scroll perk groups when either source filter is enabled', () => {
     const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerksDataset.perks,
+      legendsPerks,
       {
         shouldIncludeAncientScrollPerkGroups: false,
         shouldIncludeOriginPerkGroups: true,
       },
     )
     const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerksDataset.perks,
+      legendsPerks,
       {
         shouldIncludeAncientScrollPerkGroups: true,
         shouldIncludeOriginPerkGroups: false,

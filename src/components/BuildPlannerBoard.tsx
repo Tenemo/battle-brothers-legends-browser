@@ -285,6 +285,7 @@ function renderPlannerGroupCard({
       onOpenBuildPerkTooltip={onOpenTooltip}
       onOpenPerkGroupHover={onOpenPerkGroupHover}
       perks={groupedPerkGroup.perkNames.map((perkName, perkIndex) => ({
+        iconPath: groupedPerkGroup.perkIconPaths[perkIndex] ?? null,
         perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
         perkName,
       }))}

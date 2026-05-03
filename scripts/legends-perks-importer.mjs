@@ -60,7 +60,7 @@ function addImporterParseWarning(diagnosticContext, parserContext, source, error
   })
 }
 
-const favoriteEnemyPerkConstByArrayName = {
+const favouredEnemyPerkConstByArrayName = {
   FavoriteBeast: 'LegendFavouredEnemyBeast',
   FavoriteCivilization: 'LegendFavouredEnemyCivilization',
   FavoriteGreenSkins: 'LegendFavouredEnemyGreenskin',
@@ -83,6 +83,86 @@ const fallbackPerkNamesByIdentifier = {
   'perk.mastery.spear': 'Spear Mastery',
   'perk.mastery.sword': 'Sword Mastery',
   'perk.mastery.throwing': 'Throwing Mastery',
+}
+
+const backgroundCampResourceModifierGroupsByKey = {
+  Ammo: 'capacity',
+  ArmorParts: 'capacity',
+  Meds: 'capacity',
+  Stash: 'capacity',
+  Terrain: 'terrain',
+}
+
+const backgroundCampResourceModifierLabelsByKey = {
+  Ammo: 'Ammo capacity',
+  ArmorParts: 'Tools and supplies capacity',
+  Meds: 'Medicine capacity',
+  Stash: 'Stash capacity',
+  Healing: 'Healing',
+  Injury: 'Injury recovery',
+  Repair: 'Repairing',
+  Salvage: 'Salvaging',
+  Crafting: 'Crafting',
+  Barter: 'Bartering',
+  ToolConsumption: 'Tool consumption',
+  MedConsumption: 'Medicine consumption',
+  Hunting: 'Hunting',
+  Fletching: 'Fletching',
+  Scout: 'Scouting',
+  Gathering: 'Gathering',
+  Training: 'Training',
+  Enchanting: 'Enchanting',
+}
+
+const backgroundCampResourceModifierOrder = [
+  'Ammo',
+  'ArmorParts',
+  'Meds',
+  'Stash',
+  'Healing',
+  'Injury',
+  'Repair',
+  'Salvage',
+  'Crafting',
+  'Barter',
+  'ToolConsumption',
+  'MedConsumption',
+  'Hunting',
+  'Fletching',
+  'Scout',
+  'Gathering',
+  'Training',
+  'Enchanting',
+  'Terrain',
+]
+
+const backgroundTerrainLabelsByIndex = {
+  2: 'Plains',
+  3: 'Swamps',
+  4: 'Hills',
+  5: 'Forests',
+  6: 'Snow forests',
+  7: 'Leaf forests',
+  8: 'Autumn forests',
+  9: 'Mountains',
+  11: 'Farmland',
+  12: 'Snow',
+  13: 'Badlands',
+  14: 'Highlands',
+  15: 'Steppes',
+  17: 'Deserts',
+  18: 'Oases',
+}
+
+const backgroundTalentAttributeLabelsByConstName = {
+  Bravery: 'Resolve',
+  Fatigue: 'Fatigue',
+  Hitpoints: 'Hitpoints',
+  Initiative: 'Initiative',
+  MeleeDefense: 'Melee defense',
+  MeleeSkill: 'Melee skill',
+  RangedDefense: 'Ranged defense',
+  RangedSkill: 'Ranged skill',
 }
 
 function normalizeWhitespace(value) {
@@ -377,6 +457,12 @@ function stringArrayValue(value, localValues = new Map()) {
     .filter((item) => item !== null)
 }
 
+function numberArrayValue(value, localValues = new Map()) {
+  return arrayValues(value, localValues)
+    .map((item) => numberValue(item, localValues))
+    .filter((item) => item !== null)
+}
+
 function referenceArrayValue(value, localValues = new Map()) {
   return arrayValues(value, localValues)
     .map((item) => referenceValue(item, localValues))
@@ -440,6 +526,822 @@ function extractNumericOperations(source, assignmentPrefix) {
   }
 
   return operations
+}
+
+function findTopLevelStatementEnd(source, startIndex) {
+  let braceDepth = 0
+  let bracketDepth = 0
+  let parenthesesDepth = 0
+  let index = startIndex
+
+  while (index < source.length) {
+    const twoCharacters = source.slice(index, index + 2)
+    const character = source[index]
+
+    if (twoCharacters === '@"') {
+      index += 2
+      const endIndex = source.indexOf('"', index)
+      index = endIndex === -1 ? source.length : endIndex + 1
+      continue
+    }
+
+    if (character === '"') {
+      index += 1
+
+      while (index < source.length) {
+        if (source[index] === '\\') {
+          index += 2
+          continue
+        }
+
+        if (source[index] === '"') {
+          index += 1
+          break
+        }
+
+        index += 1
+      }
+
+      continue
+    }
+
+    if (character === '{') {
+      braceDepth += 1
+      index += 1
+      continue
+    }
+
+    if (character === '}') {
+      if (braceDepth === 0 && bracketDepth === 0 && parenthesesDepth === 0) {
+        return index
+      }
+
+      braceDepth -= 1
+      index += 1
+      continue
+    }
+
+    if (character === '[') {
+      bracketDepth += 1
+      index += 1
+      continue
+    }
+
+    if (character === ']') {
+      bracketDepth -= 1
+      index += 1
+      continue
+    }
+
+    if (character === '(') {
+      parenthesesDepth += 1
+      index += 1
+      continue
+    }
+
+    if (character === ')') {
+      parenthesesDepth -= 1
+      index += 1
+      continue
+    }
+
+    if (character === ';' && braceDepth === 0 && bracketDepth === 0 && parenthesesDepth === 0) {
+      return index
+    }
+
+    index += 1
+  }
+
+  return source.length
+}
+
+function extractAssignmentExpressionSource(source, assignmentTarget) {
+  const pattern = new RegExp(`${escapeForRegularExpression(assignmentTarget)}\\s*(?:<-|=)\\s*`, 'g')
+  const match = pattern.exec(source)
+
+  if (!match) {
+    return null
+  }
+
+  const valueStartIndex = match.index + match[0].length
+  const valueEndIndex = findTopLevelStatementEnd(source, valueStartIndex)
+  return source.slice(valueStartIndex, valueEndIndex).trim()
+}
+
+function parseResourceModifierReference(reference) {
+  const normalizedReference = normalizeConstReference(reference)
+  const match = /^::Const\.LegendMod\.ResourceModifiers\.([A-Za-z0-9_]+)\[(\d+)\]$/u.exec(
+    normalizedReference,
+  )
+
+  if (!match) {
+    return null
+  }
+
+  return {
+    modifierKey: match[1],
+    valueIndex: Number(match[2]),
+  }
+}
+
+function resolveResourceModifierValue(value, resourceModifierValuesByKey) {
+  const directNumberValue = numberValue(value)
+
+  if (directNumberValue !== null) {
+    return directNumberValue
+  }
+
+  const reference = referenceValue(value)
+
+  if (reference === null) {
+    return null
+  }
+
+  const modifierReference = parseResourceModifierReference(reference)
+
+  if (modifierReference === null) {
+    return null
+  }
+
+  const modifierValues = resourceModifierValuesByKey.get(modifierReference.modifierKey) ?? []
+  return modifierValues[modifierReference.valueIndex] ?? null
+}
+
+function cloneBackgroundModifiers(modifiers) {
+  return Object.fromEntries(
+    Object.entries(modifiers).map(([modifierKey, modifierValue]) => [
+      modifierKey,
+      Array.isArray(modifierValue) ? [...modifierValue] : modifierValue,
+    ]),
+  )
+}
+
+function cloneBackgroundDefinitionMetadata(backgroundDefinition) {
+  return {
+    backgroundTypeNames: [...backgroundDefinition.backgroundTypeNames],
+    campResourceModifiers: backgroundDefinition.campResourceModifiers.map((modifier) => ({
+      ...modifier,
+    })),
+    dailyCost: backgroundDefinition.dailyCost,
+    excludedTalentAttributeNames: [...backgroundDefinition.excludedTalentAttributeNames],
+    excludedTraits: backgroundDefinition.excludedTraits.map((trait) => ({ ...trait })),
+    excludedTraitNames: [...backgroundDefinition.excludedTraitNames],
+    guaranteedTraits: backgroundDefinition.guaranteedTraits.map((trait) => ({ ...trait })),
+    guaranteedTraitNames: [...backgroundDefinition.guaranteedTraitNames],
+    modifiers: cloneBackgroundModifiers(backgroundDefinition.modifiers),
+  }
+}
+
+function getBackgroundCampResourceModifierGroup(modifierKey) {
+  return backgroundCampResourceModifierGroupsByKey[modifierKey] ?? 'skill'
+}
+
+function getBackgroundCampResourceModifierValueKind(modifierKey) {
+  return getBackgroundCampResourceModifierGroup(modifierKey) === 'capacity' ? 'flat' : 'percent'
+}
+
+function getBackgroundCampResourceModifierOrder(modifierKey) {
+  const baseKey = modifierKey.split('.')[0]
+  const order = backgroundCampResourceModifierOrder.indexOf(baseKey)
+  return order === -1 ? Number.POSITIVE_INFINITY : order
+}
+
+function getBackgroundCampResourceModifierDetailOrder(modifierKey) {
+  const [, detailKey] = modifierKey.split('.')
+  const detailOrder = detailKey === undefined ? 0 : Number(detailKey)
+  return Number.isFinite(detailOrder) ? detailOrder : Number.POSITIVE_INFINITY
+}
+
+function buildBackgroundCampResourceModifiers(modifiers) {
+  const resourceModifiers = []
+
+  for (const [modifierKey, modifierValue] of Object.entries(modifiers)) {
+    if (Array.isArray(modifierValue)) {
+      for (const [terrainIndex, terrainModifierValue] of modifierValue.entries()) {
+        if (terrainModifierValue === 0) {
+          continue
+        }
+
+        const terrainLabel =
+          backgroundTerrainLabelsByIndex[terrainIndex] ?? `Terrain ${terrainIndex}`
+
+        resourceModifiers.push({
+          group: 'terrain',
+          label: terrainLabel,
+          modifierKey: `${modifierKey}.${terrainIndex}`,
+          value: terrainModifierValue,
+          valueKind: 'percent',
+        })
+      }
+
+      continue
+    }
+
+    if (modifierValue === 0) {
+      continue
+    }
+
+    resourceModifiers.push({
+      group: getBackgroundCampResourceModifierGroup(modifierKey),
+      label:
+        backgroundCampResourceModifierLabelsByKey[modifierKey] ?? prettifyIdentifier(modifierKey),
+      modifierKey,
+      value: modifierValue,
+      valueKind: getBackgroundCampResourceModifierValueKind(modifierKey),
+    })
+  }
+
+  return resourceModifiers.toSorted(
+    (leftModifier, rightModifier) =>
+      getBackgroundCampResourceModifierOrder(leftModifier.modifierKey) -
+        getBackgroundCampResourceModifierOrder(rightModifier.modifierKey) ||
+      getBackgroundCampResourceModifierDetailOrder(leftModifier.modifierKey) -
+        getBackgroundCampResourceModifierDetailOrder(rightModifier.modifierKey) ||
+      leftModifier.modifierKey.localeCompare(rightModifier.modifierKey),
+  )
+}
+
+function parseResourceModifierValuesFile(fileSource) {
+  const resourceModifierValuesByKey = new Map()
+  const resourceModifierAssignment = collectTopLevelStatements(fileSource).find(
+    (statement) =>
+      statement.type === 'assignment' && statement.target === '::Const.LegendMod.ResourceModifiers',
+  )
+
+  if (!resourceModifierAssignment) {
+    return resourceModifierValuesByKey
+  }
+
+  for (const [modifierKey, modifierValue] of tableEntriesToMap(
+    resourceModifierAssignment.value,
+  ).entries()) {
+    resourceModifierValuesByKey.set(modifierKey, numberArrayValue(modifierValue))
+  }
+
+  return resourceModifierValuesByKey
+}
+
+function parseBackgroundTypeMetadataFile(fileSource) {
+  const backgroundTypeNamesByKey = new Map()
+  const backgroundTypeValuesByKey = new Map()
+
+  for (const statement of collectTopLevelStatements(fileSource)) {
+    if (statement.type !== 'assignment') {
+      continue
+    }
+
+    if (statement.target === '::Const.BackgroundTypeName') {
+      for (const [typeKey, typeNameValue] of tableEntriesToMap(statement.value).entries()) {
+        const typeName = stringValue(typeNameValue)
+
+        if (typeName !== null) {
+          backgroundTypeNamesByKey.set(typeKey, typeName)
+        }
+      }
+
+      continue
+    }
+
+    if (statement.target === '::Const.BackgroundType') {
+      for (const [typeKey, typeValue] of tableEntriesToMap(statement.value).entries()) {
+        const typeNumberValue = numberValue(typeValue)
+
+        if (typeNumberValue !== null) {
+          backgroundTypeValuesByKey.set(typeKey, typeNumberValue)
+        }
+      }
+    }
+  }
+
+  return {
+    backgroundTypeNamesByKey,
+    backgroundTypeValuesByKey,
+  }
+}
+
+function resolveBackgroundTypeConstKey(reference) {
+  const normalizedReference = normalizeConstReference(reference)
+  const match = /^::Const\.BackgroundType\.([A-Za-z0-9_]+)$/u.exec(normalizedReference)
+  return match?.[1] ?? null
+}
+
+function parseBackgroundTypeExpression(expressionSource) {
+  return expressionSource
+    .split('|')
+    .map((expressionPart) => resolveBackgroundTypeConstKey(expressionPart.trim()))
+    .filter((typeKey) => typeKey !== null)
+}
+
+function resolveBackgroundTypeNames(typeKeys, backgroundTypeMetadata) {
+  return sortUniqueStrings(
+    typeKeys.map(
+      (typeKey) =>
+        backgroundTypeMetadata.backgroundTypeNamesByKey.get(typeKey) ?? prettifyIdentifier(typeKey),
+    ),
+  )
+}
+
+function applyBackgroundTypeOperation(typeKeys, operationType, nextTypeKey) {
+  if (nextTypeKey === 'None') {
+    return operationType === 'set' ? ['None'] : typeKeys
+  }
+
+  const nextTypeKeys = typeKeys.filter((typeKey) => typeKey !== 'None')
+
+  if (operationType === 'remove') {
+    return nextTypeKeys.filter((typeKey) => typeKey !== nextTypeKey)
+  }
+
+  return nextTypeKeys.includes(nextTypeKey) ? nextTypeKeys : [...nextTypeKeys, nextTypeKey]
+}
+
+function applyCreateBodyBackgroundTypeOperations(typeKeys, createBody) {
+  let nextTypeKeys = [...typeKeys]
+  const operationPattern =
+    /\bthis\.(addBackgroundType|removeBackgroundType)\s*\(\s*((?:this|::)\.?(?:Const)\.BackgroundType\.[A-Za-z0-9_]+)\s*\)/gu
+
+  for (const match of createBody.matchAll(operationPattern)) {
+    const typeKey = resolveBackgroundTypeConstKey(match[2])
+
+    if (typeKey === null) {
+      continue
+    }
+
+    nextTypeKeys = applyBackgroundTypeOperation(
+      nextTypeKeys,
+      match[1] === 'removeBackgroundType' ? 'remove' : 'add',
+      typeKey,
+    )
+  }
+
+  return nextTypeKeys.length > 0 ? nextTypeKeys : ['None']
+}
+
+function parseBackgroundTypeNamesFromCreateBody({
+  baseBackgroundTypeNames,
+  backgroundTypeMetadata,
+  createBody,
+}) {
+  const assignedExpressionSource = extractAssignmentExpressionSource(
+    createBody,
+    'this.m.BackgroundType',
+  )
+  const assignedTypeKeys =
+    assignedExpressionSource === null
+      ? baseBackgroundTypeNames.flatMap((typeName) => {
+          for (const [
+            typeKey,
+            candidateTypeName,
+          ] of backgroundTypeMetadata.backgroundTypeNamesByKey) {
+            if (candidateTypeName === typeName) {
+              return [typeKey]
+            }
+          }
+
+          return typeName === 'None' ? ['None'] : []
+        })
+      : parseBackgroundTypeExpression(assignedExpressionSource)
+
+  const typeKeys = applyCreateBodyBackgroundTypeOperations(
+    assignedTypeKeys.length > 0 ? assignedTypeKeys : ['None'],
+    createBody,
+  )
+
+  return resolveBackgroundTypeNames(typeKeys, backgroundTypeMetadata)
+}
+
+function parseBaseBackgroundModifiers(fileSource, resourceModifierValuesByKey, diagnosticContext) {
+  const modifiersValue = extractAssignedValue(fileSource, 'o.m.Modifiers', diagnosticContext)
+  const modifiers = {}
+
+  for (const [modifierKey, modifierValue] of tableEntriesToMap(modifiersValue).entries()) {
+    const arrayValue = unwrapArray(modifierValue)
+
+    if (arrayValue !== null) {
+      modifiers[modifierKey] = arrayValue.values.map(
+        (item) => resolveResourceModifierValue(item, resourceModifierValuesByKey) ?? 0,
+      )
+      continue
+    }
+
+    modifiers[modifierKey] =
+      resolveResourceModifierValue(modifierValue, resourceModifierValuesByKey) ?? 0
+  }
+
+  return modifiers
+}
+
+function parseModifierAssignmentValue(valueSource, diagnosticContext) {
+  try {
+    return parseSquirrelValue(valueSource).value
+  } catch (error) {
+    addImporterParseWarning(diagnosticContext, 'background modifier assignment', valueSource, error)
+    return null
+  }
+}
+
+function applyCreateBodyModifierOperations({
+  createBody,
+  diagnostics,
+  modifiers,
+  resourceModifierValuesByKey,
+  sourceFilePath,
+}) {
+  const diagnosticContext = { diagnostics, sourceFilePath }
+  const operationPattern = /\bthis\.m\.Modifiers\.([A-Za-z0-9_]+)\s*(\+=|-=|=)\s*/gu
+  const nextModifiers = cloneBackgroundModifiers(modifiers)
+
+  for (const match of createBody.matchAll(operationPattern)) {
+    const modifierKey = match[1]
+    const operator = match[2]
+    const valueStartIndex = match.index + match[0].length
+    const valueEndIndex = findTopLevelStatementEnd(createBody, valueStartIndex)
+    const valueSource = createBody.slice(valueStartIndex, valueEndIndex).trim()
+    const parsedValue = parseModifierAssignmentValue(valueSource, diagnosticContext)
+
+    if (parsedValue === null) {
+      continue
+    }
+
+    const arrayValue = unwrapArray(parsedValue)
+
+    if (arrayValue !== null) {
+      if (operator !== '=') {
+        continue
+      }
+
+      nextModifiers[modifierKey] = arrayValue.values.map(
+        (item) => resolveResourceModifierValue(item, resourceModifierValuesByKey) ?? 0,
+      )
+      continue
+    }
+
+    const numericValue = resolveResourceModifierValue(parsedValue, resourceModifierValuesByKey)
+
+    if (numericValue === null) {
+      continue
+    }
+
+    if (operator === '=') {
+      nextModifiers[modifierKey] = numericValue
+      continue
+    }
+
+    const previousValue =
+      typeof nextModifiers[modifierKey] === 'number' ? nextModifiers[modifierKey] : 0
+    nextModifiers[modifierKey] =
+      operator === '+=' ? previousValue + numericValue : previousValue - numericValue
+  }
+
+  return nextModifiers
+}
+
+function resolveTraitConstNameFromValue(value) {
+  const reference = referenceValue(value)
+
+  if (reference !== null) {
+    const normalizedReference = normalizeConstReference(reference)
+    const traitReferenceMatch = /^::Legends\.Trait\.([A-Za-z0-9_]+)$/u.exec(normalizedReference)
+
+    return traitReferenceMatch?.[1] ?? null
+  }
+
+  const callValue = unwrapCall(value)
+
+  if (callValue === null || callValue.callee !== '::Legends.Traits.getID') {
+    return null
+  }
+
+  return resolveTraitConstNameFromValue(callValue.arguments[0])
+}
+
+// Legends hooks often reference vanilla traits without redefining the base icon assignment.
+// These paths are backed by the game assets extracted by syncLegendsIcons.
+const knownTraitIconPathsByLowercaseName = new Map(
+  Object.entries({
+    ailing: 'ui/traits/trait_icon_59.png',
+    asthmatic: 'ui/traits/trait_icon_22.png',
+    athletic: 'ui/traits/trait_icon_21.png',
+    bleeder: 'ui/traits/trait_icon_16.png',
+    bloodthirsty: 'ui/traits/trait_icon_42.png',
+    brave: 'ui/traits/trait_icon_37.png',
+    bright: 'ui/traits/trait_icon_11.png',
+    brute: 'ui/traits/trait_icon_01.png',
+    clubfooted: 'ui/traits/trait_icon_23.png',
+    clumsy: 'ui/traits/trait_icon_36.png',
+    cocky: 'ui/traits/trait_icon_24.png',
+    craven: 'ui/traits/trait_icon_40.png',
+    dastard: 'ui/traits/trait_icon_38.png',
+    deathwish: 'ui/traits/trait_icon_13.png',
+    determined: 'ui/traits/trait_icon_31.png',
+    dexterous: 'ui/traits/trait_icon_34.png',
+    disloyal: 'ui/traits/trait_icon_35.png',
+    drunkard: 'ui/traits/trait_icon_29.png',
+    dumb: 'ui/traits/trait_icon_17.png',
+    'eagle eyes': 'ui/traits/trait_icon_09.png',
+    fainthearted: 'ui/traits/trait_icon_41.png',
+    fat: 'ui/traits/trait_icon_10.png',
+    'fear beasts': 'ui/traits/trait_icon_48.png',
+    'fear greenskins': 'ui/traits/trait_icon_49.png',
+    'fear of undead': 'ui/traits/trait_icon_47.png',
+    'fear undead': 'ui/traits/trait_icon_47.png',
+    fearless: 'ui/traits/trait_icon_30.png',
+    fragile: 'ui/traits/trait_icon_04.png',
+    gluttonous: 'ui/traits/trait_icon_07.png',
+    greedy: 'ui/traits/trait_icon_06.png',
+    'hate beasts': 'ui/traits/trait_icon_51.png',
+    'hate for beasts': 'ui/traits/trait_icon_51.png',
+    'hate for greenskins': 'ui/traits/trait_icon_52.png',
+    'hate greenskins': 'ui/traits/trait_icon_52.png',
+    'hate for undead': 'ui/traits/trait_icon_50.png',
+    'hate undead': 'ui/traits/trait_icon_50.png',
+    hesitant: 'ui/traits/trait_icon_25.png',
+    hesistant: 'ui/traits/trait_icon_25.png',
+    huge: 'ui/traits/trait_icon_61.png',
+    impatient: 'ui/traits/trait_icon_46.png',
+    insecure: 'ui/traits/trait_icon_03.png',
+    'iron jaw': 'ui/traits/trait_icon_44.png',
+    'iron lungs': 'ui/traits/trait_icon_33.png',
+    irrational: 'ui/traits/trait_icon_28.png',
+    loyal: 'ui/traits/trait_icon_39.png',
+    mad: 'ui/traits/trait_icon_76.png',
+    'night blind': 'ui/traits/trait_icon_56.png',
+    'night owl': 'ui/traits/trait_icon_57.png',
+    old: 'skills/status_effect_60.png',
+    optimist: 'ui/traits/trait_icon_19.png',
+    paranoid: 'ui/traits/trait_icon_55.png',
+    pessimist: 'ui/traits/trait_icon_20.png',
+    quick: 'ui/traits/trait_icon_18.png',
+    'short sighted': 'ui/traits/trait_icon_27.png',
+    spartan: 'ui/traits/trait_icon_08.png',
+    strong: 'ui/traits/trait_icon_15.png',
+    superstitious: 'ui/traits/trait_icon_26.png',
+    'sure footing': 'ui/traits/trait_icon_05.png',
+    survivor: 'ui/traits/trait_icon_43.png',
+    swift: 'ui/traits/trait_icon_53.png',
+    teamplayer: 'ui/traits/trait_icon_58.png',
+    'team player': 'ui/traits/trait_icon_58.png',
+    tiny: 'ui/traits/trait_icon_02.png',
+    tough: 'ui/traits/trait_icon_14.png',
+    weasel: 'ui/traits/trait_icon_60.png',
+  }),
+)
+
+function getKnownTraitIconPath(traitName) {
+  return knownTraitIconPathsByLowercaseName.get(traitName.toLocaleLowerCase('en-US')) ?? null
+}
+
+function normalizeTraitMetadataRecord(traitRecord, fallbackTraitName = traitRecord.traitName) {
+  return {
+    description: traitRecord.description ?? null,
+    iconPath: traitRecord.iconPath ?? getKnownTraitIconPath(traitRecord.traitName),
+    traitName: traitRecord.hasExplicitName ? traitRecord.traitName : fallbackTraitName,
+  }
+}
+
+function mergeTraitMetadataRecord(leftRecord, rightRecord) {
+  if (!leftRecord) {
+    return { ...rightRecord }
+  }
+
+  const shouldUseRightName = rightRecord.hasExplicitName || !leftRecord.hasExplicitName
+
+  return {
+    description: leftRecord.description ?? rightRecord.description ?? null,
+    hasExplicitName: leftRecord.hasExplicitName || rightRecord.hasExplicitName,
+    iconPath: leftRecord.iconPath ?? rightRecord.iconPath ?? null,
+    traitName: shouldUseRightName ? rightRecord.traitName : leftRecord.traitName,
+  }
+}
+
+function setMergedTraitMetadataRecord(map, key, traitRecord) {
+  if (!key) {
+    return
+  }
+
+  map.set(key, mergeTraitMetadataRecord(map.get(key), traitRecord))
+}
+
+function getTraitRecordNameKey(traitName) {
+  return traitName.toLocaleLowerCase('en-US')
+}
+
+function getTraitScriptIdCandidates(traitReference) {
+  const normalizedReference = traitReference.replace(/_trait$/u, '')
+  const snakeReference = normalizedReference
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLocaleLowerCase('en-US')
+
+  return [`${snakeReference}_trait`, snakeReference]
+}
+
+function sortUniqueTraitRecords(traitRecords) {
+  const traitRecordsByName = new Map()
+
+  for (const traitRecord of traitRecords) {
+    const normalizedTraitRecord = normalizeTraitMetadataRecord(traitRecord)
+    const existingTraitRecord = traitRecordsByName.get(traitRecord.traitName)
+
+    traitRecordsByName.set(traitRecord.traitName, {
+      description: existingTraitRecord?.description ?? normalizedTraitRecord.description,
+      iconPath: existingTraitRecord?.iconPath ?? normalizedTraitRecord.iconPath,
+      traitName: normalizedTraitRecord.traitName,
+    })
+  }
+
+  return [...traitRecordsByName.values()].toSorted(
+    (leftTraitRecord, rightTraitRecord) =>
+      leftTraitRecord.traitName.localeCompare(rightTraitRecord.traitName) ||
+      (leftTraitRecord.iconPath ?? '').localeCompare(rightTraitRecord.iconPath ?? ''),
+  )
+}
+
+function resolveTraitRecord(traitReference, traitMetadata) {
+  if (traitReference === null) {
+    return null
+  }
+
+  const fallbackTraitName = prettifyIdentifier(traitReference.replace(/_trait$/u, ''))
+
+  if (traitMetadata.traitRecordsByConstName.has(traitReference)) {
+    return normalizeTraitMetadataRecord(
+      traitMetadata.traitRecordsByConstName.get(traitReference),
+      fallbackTraitName,
+    )
+  }
+
+  if (traitMetadata.traitRecordsByScriptId.has(traitReference)) {
+    return normalizeTraitMetadataRecord(
+      traitMetadata.traitRecordsByScriptId.get(traitReference),
+      fallbackTraitName,
+    )
+  }
+
+  for (const traitScriptIdCandidate of getTraitScriptIdCandidates(traitReference)) {
+    if (traitMetadata.traitRecordsByScriptId.has(traitScriptIdCandidate)) {
+      return normalizeTraitMetadataRecord(
+        traitMetadata.traitRecordsByScriptId.get(traitScriptIdCandidate),
+        fallbackTraitName,
+      )
+    }
+  }
+
+  const nameKey = getTraitRecordNameKey(fallbackTraitName)
+
+  if (traitMetadata.traitRecordsByName.has(nameKey)) {
+    return normalizeTraitMetadataRecord(traitMetadata.traitRecordsByName.get(nameKey))
+  }
+
+  return {
+    description: null,
+    iconPath: getKnownTraitIconPath(fallbackTraitName),
+    traitName: fallbackTraitName,
+  }
+}
+
+function parseTraitRecordsFromArrayValue(value, traitMetadata) {
+  return sortUniqueTraitRecords(
+    arrayValues(value)
+      .map((item) => {
+        const traitConstName = resolveTraitConstNameFromValue(item)
+
+        if (traitConstName !== null) {
+          return resolveTraitRecord(traitConstName, traitMetadata)
+        }
+
+        return resolveTraitRecord(stringValue(item), traitMetadata)
+      })
+      .filter((traitRecord) => traitRecord !== null),
+  )
+}
+
+function parseGuaranteedTraitRecordsFromSource(source, traitMetadata, diagnosticContext) {
+  const traitRecords = []
+
+  for (const argumentList of extractCallArgumentLists(source, '::Legends.Traits.grant')) {
+    const traitArgumentSource = argumentList[1]
+
+    if (!traitArgumentSource) {
+      continue
+    }
+
+    try {
+      const traitConstName = resolveTraitConstNameFromValue(
+        parseSquirrelValue(traitArgumentSource).value,
+      )
+      const traitRecord = resolveTraitRecord(traitConstName, traitMetadata)
+
+      if (traitRecord !== null) {
+        traitRecords.push(traitRecord)
+      }
+    } catch (error) {
+      addImporterParseWarning(
+        diagnosticContext,
+        'background guaranteed trait grant argument',
+        traitArgumentSource,
+        error,
+      )
+    }
+  }
+
+  return sortUniqueTraitRecords(traitRecords)
+}
+
+function parseExcludedTalentAttributeNames(value) {
+  return sortUniqueStrings(
+    referenceArrayValue(value)
+      .map((reference) => getLastPathSegment(normalizeConstReference(reference)))
+      .map(
+        (attributeConstName) =>
+          backgroundTalentAttributeLabelsByConstName[attributeConstName] ??
+          prettifyIdentifier(attributeConstName),
+      ),
+  )
+}
+
+function parseTraitMetadataFileEntries(traitFileEntries) {
+  const traitRecordsByConstName = new Map()
+  const traitRecordsByName = new Map()
+  const traitRecordsByScriptId = new Map()
+
+  for (const traitFileEntry of traitFileEntries) {
+    const uncommentedFileSource = stripSquirrelComments(traitFileEntry.fileSource)
+    const traitConstName = resolveTraitConstNameFromValue(
+      extractAssignedValue(uncommentedFileSource, 'this.m.ID'),
+    )
+    const explicitTraitName = stringValue(extractAssignedValue(uncommentedFileSource, 'this.m.Name'))
+    const iconPath = stringValue(extractAssignedValue(uncommentedFileSource, 'this.m.Icon'))
+    const description = stringValue(
+      extractAssignedValue(uncommentedFileSource, 'this.m.Description'),
+    )
+    const traitScriptId = path.posix.basename(
+      traitFileEntry.sourceFilePath,
+      path.posix.extname(traitFileEntry.sourceFilePath),
+    )
+    const traitName = explicitTraitName ?? prettifyIdentifier(traitScriptId.replace(/_trait$/u, ''))
+
+    if (explicitTraitName === null && iconPath === null && description === null) {
+      continue
+    }
+
+    const traitRecord = {
+      description: description === null ? null : cleanRichText(description),
+      hasExplicitName: explicitTraitName !== null,
+      iconPath,
+      traitName,
+    }
+
+    setMergedTraitMetadataRecord(traitRecordsByScriptId, traitScriptId, traitRecord)
+    setMergedTraitMetadataRecord(traitRecordsByName, getTraitRecordNameKey(traitName), traitRecord)
+
+    if (traitConstName !== null) {
+      setMergedTraitMetadataRecord(traitRecordsByConstName, traitConstName, traitRecord)
+    }
+  }
+
+  return {
+    traitRecordsByConstName,
+    traitRecordsByName,
+    traitRecordsByScriptId,
+  }
+}
+
+function createBackgroundMetadataDefaults({
+  backgroundTypeMetadata,
+  characterBackgroundFileSource,
+  diagnostics,
+  resourceModifierValuesByKey,
+  sourceFilePath,
+}) {
+  const diagnosticContext = { diagnostics, sourceFilePath }
+  const uncommentedFileSource = stripSquirrelComments(characterBackgroundFileSource)
+  const backgroundTypeExpressionSource = extractAssignmentExpressionSource(
+    uncommentedFileSource,
+    'o.m.BackgroundType',
+  )
+  const backgroundTypeNames = resolveBackgroundTypeNames(
+    backgroundTypeExpressionSource === null
+      ? ['None']
+      : parseBackgroundTypeExpression(backgroundTypeExpressionSource),
+    backgroundTypeMetadata,
+  )
+  const modifiers = parseBaseBackgroundModifiers(
+    uncommentedFileSource,
+    resourceModifierValuesByKey,
+    diagnosticContext,
+  )
+
+  return {
+    backgroundTypeNames,
+    campResourceModifiers: buildBackgroundCampResourceModifiers(modifiers),
+    dailyCost: null,
+    excludedTalentAttributeNames: [],
+    excludedTraits: [],
+    excludedTraitNames: [],
+    guaranteedTraits: [],
+    guaranteedTraitNames: [],
+    modifiers,
+  }
 }
 
 function normalizeVeteranPerkLevelInterval(value) {
@@ -540,11 +1442,7 @@ function resolveActorReceiverAlias(receiver, receiverAliases) {
   return resolvedReceiver
 }
 
-function extractReceiverMethodCallArgumentLists(
-  source,
-  methodName,
-  diagnosticContext = null,
-) {
+function extractReceiverMethodCallArgumentLists(source, methodName, diagnosticContext = null) {
   const calls = []
   const pattern = new RegExp(
     `((?:[A-Za-z_][A-Za-z0-9_]*)(?:\\s*\\[[^\\]]+\\])?)\\s*\\.\\s*${escapeForRegularExpression(
@@ -824,7 +1722,7 @@ function parseEntityNamesFile(fileSource) {
   return entityNamesByConstName
 }
 
-function parseFavoriteEnemyConfigFile(fileSource) {
+function parseFavouredEnemyConfigFile(fileSource) {
   const targetConstNamesByPerkConstName = new Map()
   const killsPerPercentBonusByEntityConstName = new Map()
 
@@ -834,7 +1732,7 @@ function parseFavoriteEnemyConfigFile(fileSource) {
       statement.target.startsWith('::Const.LegendMod.Favorite')
     ) {
       const arrayName = getLastPathSegment(statement.target)
-      const perkConstName = favoriteEnemyPerkConstByArrayName[arrayName]
+      const perkConstName = favouredEnemyPerkConstByArrayName[arrayName]
 
       if (!perkConstName) {
         continue
@@ -936,6 +1834,7 @@ function createDefaultBackgroundDefinition(
   backgroundScriptId,
   baseDynamicTreeValue,
   baseMinimums,
+  backgroundMetadataDefaults,
   defaultVeteranPerkLevelInterval,
   sourceFilePath,
 ) {
@@ -945,6 +1844,7 @@ function createDefaultBackgroundDefinition(
     backgroundScriptId,
     dynamicTreeValue: baseDynamicTreeValue,
     iconPath: null,
+    ...cloneBackgroundDefinitionMetadata(backgroundMetadataDefaults),
     minimums: cloneMinimums(baseMinimums),
     sourceFilePath,
     veteranPerkLevelInterval: defaultVeteranPerkLevelInterval,
@@ -952,15 +1852,20 @@ function createDefaultBackgroundDefinition(
 }
 
 function applyBackgroundCreateBody({
+  backgroundTypeMetadata,
   backgroundScriptId,
   baseBackgroundDefinition,
   createBody,
   diagnostics,
+  metadataSource,
   preferScriptIdWhenIdentifierIsInherited,
+  resourceModifierValuesByKey,
   sourceFilePath,
+  traitMetadata,
 }) {
   const diagnosticContext = { diagnostics, sourceFilePath }
   const uncommentedCreateBody = stripSquirrelComments(createBody)
+  const uncommentedMetadataSource = stripSquirrelComments(metadataSource ?? createBody)
   const explicitBackgroundIdentifier = stringValue(
     extractAssignedValue(uncommentedCreateBody, 'this.m.ID', diagnosticContext),
   )
@@ -973,6 +1878,61 @@ function applyBackgroundCreateBody({
   const dynamicTreeValue =
     extractAssignedValue(uncommentedCreateBody, 'this.m.PerkTreeDynamic', diagnosticContext) ??
     baseBackgroundDefinition.dynamicTreeValue
+  const dailyCost =
+    numberValue(
+      extractAssignedValue(uncommentedCreateBody, 'this.m.DailyCost', diagnosticContext),
+    ) ?? baseBackgroundDefinition.dailyCost
+  const backgroundTypeNames = parseBackgroundTypeNamesFromCreateBody({
+    backgroundTypeMetadata,
+    baseBackgroundTypeNames: baseBackgroundDefinition.backgroundTypeNames,
+    createBody: uncommentedCreateBody,
+  })
+  const modifiers = applyCreateBodyModifierOperations({
+    createBody: uncommentedCreateBody,
+    diagnostics,
+    modifiers: baseBackgroundDefinition.modifiers,
+    resourceModifierValuesByKey,
+    sourceFilePath,
+  })
+  const excludedTraitValue = extractAssignedValue(
+    uncommentedCreateBody,
+    'this.m.Excluded',
+    diagnosticContext,
+  )
+  const guaranteedTraitValue = extractAssignedValue(
+    uncommentedCreateBody,
+    'this.m.IsGuaranteed',
+    diagnosticContext,
+  )
+  const excludedTalentAttributeValue = extractAssignedValue(
+    uncommentedCreateBody,
+    'this.m.ExcludedTalents',
+    diagnosticContext,
+  )
+  const excludedTraits =
+    excludedTraitValue === null
+      ? baseBackgroundDefinition.excludedTraits
+      : parseTraitRecordsFromArrayValue(excludedTraitValue, traitMetadata)
+  const excludedTraitNames = excludedTraits.map((trait) => trait.traitName)
+  const explicitGuaranteedTraits =
+    guaranteedTraitValue === null
+      ? []
+      : parseTraitRecordsFromArrayValue(guaranteedTraitValue, traitMetadata)
+  const staticGuaranteedTraits = parseGuaranteedTraitRecordsFromSource(
+    uncommentedMetadataSource,
+    traitMetadata,
+    diagnosticContext,
+  )
+  const guaranteedTraits = sortUniqueTraitRecords([
+    ...baseBackgroundDefinition.guaranteedTraits,
+    ...explicitGuaranteedTraits,
+    ...staticGuaranteedTraits,
+  ])
+  const guaranteedTraitNames = guaranteedTraits.map((trait) => trait.traitName)
+  const excludedTalentAttributeNames =
+    excludedTalentAttributeValue === null
+      ? baseBackgroundDefinition.excludedTalentAttributeNames
+      : parseExcludedTalentAttributeNames(excludedTalentAttributeValue)
   const minimums = cloneMinimums(baseBackgroundDefinition.minimums)
 
   for (const operation of extractNumericOperations(
@@ -1006,9 +1966,18 @@ function applyBackgroundCreateBody({
         : (baseBackgroundDefinition.backgroundIdentifier ?? backgroundScriptId)),
     backgroundName,
     backgroundScriptId,
+    backgroundTypeNames,
+    campResourceModifiers: buildBackgroundCampResourceModifiers(modifiers),
+    dailyCost,
     dynamicTreeValue,
+    excludedTalentAttributeNames,
+    excludedTraits,
+    excludedTraitNames,
+    guaranteedTraits,
+    guaranteedTraitNames,
     iconPath,
     minimums,
+    modifiers,
     sourceFilePath,
     veteranPerkLevelInterval: baseBackgroundDefinition.veteranPerkLevelInterval,
   }
@@ -1019,8 +1988,12 @@ function parseBackgroundHookFile(
   sourceFilePath,
   baseDynamicTreeValue,
   baseMinimums,
+  backgroundMetadataDefaults,
+  backgroundTypeMetadata,
   defaultVeteranPerkLevelInterval,
   diagnostics,
+  resourceModifierValuesByKey,
+  traitMetadata,
 ) {
   const wrapperFunction = extractHookWrapperFunction(fileSource)
 
@@ -1036,18 +2009,23 @@ function parseBackgroundHookFile(
   }
 
   const backgroundDefinition = applyBackgroundCreateBody({
+    backgroundTypeMetadata,
     backgroundScriptId: getBackgroundScriptIdFromSourceFilePath(sourceFilePath),
     baseBackgroundDefinition: createDefaultBackgroundDefinition(
       getBackgroundScriptIdFromSourceFilePath(sourceFilePath),
       baseDynamicTreeValue,
       baseMinimums,
+      backgroundMetadataDefaults,
       defaultVeteranPerkLevelInterval,
       sourceFilePath,
     ),
     createBody: createFunctionLiteral.body,
     diagnostics,
+    metadataSource: wrapperFunction.body,
     preferScriptIdWhenIdentifierIsInherited: false,
+    resourceModifierValuesByKey,
     sourceFilePath,
+    traitMetadata,
   })
 
   if (
@@ -1105,6 +2083,7 @@ function parseBackgroundScriptFileDefinition(fileSource, sourceFilePath) {
   return {
     backgroundScriptId,
     createBody: createFunctionEntry.body,
+    metadataSource: fileSource,
     parentBackgroundScriptId: path.posix.basename(inheritedBackgroundScriptPath),
     sourceFilePath,
     veteranPerkLevelInterval: extractSetVeteranPerksInterval(stripSquirrelComments(fileSource)),
@@ -1115,8 +2094,12 @@ function resolveScriptBackgroundDefinitions(
   rawBackgroundDefinitionsByScriptId,
   baseDynamicTreeValue,
   baseMinimums,
+  backgroundMetadataDefaults,
+  backgroundTypeMetadata,
   defaultVeteranPerkLevelInterval,
   diagnostics,
+  resourceModifierValuesByKey,
+  traitMetadata,
 ) {
   const resolvedBackgroundDefinitionsByScriptId = new Map()
 
@@ -1143,6 +2126,7 @@ function resolveScriptBackgroundDefinitions(
       ? {
           ...parentBackgroundDefinition,
           backgroundScriptId,
+          ...cloneBackgroundDefinitionMetadata(parentBackgroundDefinition),
           minimums: cloneMinimums(parentBackgroundDefinition.minimums),
           sourceFilePath: rawBackgroundDefinition.sourceFilePath,
         }
@@ -1150,19 +2134,24 @@ function resolveScriptBackgroundDefinitions(
           backgroundScriptId,
           baseDynamicTreeValue,
           baseMinimums,
+          backgroundMetadataDefaults,
           defaultVeteranPerkLevelInterval,
           rawBackgroundDefinition.sourceFilePath,
         )
 
     const resolvedBackgroundDefinition = applyBackgroundCreateBody({
+      backgroundTypeMetadata,
       backgroundScriptId,
       baseBackgroundDefinition,
       createBody: rawBackgroundDefinition.createBody,
       diagnostics,
+      metadataSource: rawBackgroundDefinition.metadataSource,
       preferScriptIdWhenIdentifierIsInherited:
         parentBackgroundDefinition !== null &&
         rawBackgroundDefinition.parentBackgroundScriptId !== backgroundScriptId,
+      resourceModifierValuesByKey,
       sourceFilePath: rawBackgroundDefinition.sourceFilePath,
+      traitMetadata,
     })
 
     if (resolvedBackgroundDefinition.backgroundName === null) {
@@ -1270,6 +2259,7 @@ function buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions) {
       return {
         backgroundId: background.backgroundIdentifier,
         backgroundName: background.backgroundName,
+        backgroundTypeNames: background.backgroundTypeNames,
         categories: Object.fromEntries(
           dynamicBackgroundCategoryNames.map((categoryName) => {
             const perkGroupValue = dynamicTreeEntries.get(categoryName)
@@ -1293,6 +2283,13 @@ function buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions) {
             ]
           }),
         ),
+        campResourceModifiers: background.campResourceModifiers,
+        dailyCost: background.dailyCost,
+        excludedTalentAttributeNames: background.excludedTalentAttributeNames,
+        excludedTraits: background.excludedTraits,
+        excludedTraitNames: background.excludedTraitNames,
+        guaranteedTraits: background.guaranteedTraits,
+        guaranteedTraitNames: background.guaranteedTraitNames,
         iconPath: background.iconPath,
         sourceFilePath: background.sourceFilePath,
         veteranPerkLevelInterval: background.veteranPerkLevelInterval,
@@ -1842,7 +2839,7 @@ function parseScenarioHookFile(fileSource, sourceFilePath, diagnostics) {
   }
 }
 
-function buildFavoriteEnemyTargets(
+function buildFavouredEnemyTargets(
   perkConstName,
   targetConstNamesByPerkConstName,
   killsPerPercentBonusByEntityConstName,
@@ -1951,10 +2948,20 @@ export async function createDataset(
     'afterHooks',
     'perk_to_perk_groups_mapping.nut',
   )
-  const favoriteEnemyConfigFilePath = path.join(
+  const favouredEnemyConfigFilePath = path.join(
     referenceRootDirectoryPath,
     'config',
     'z_legends_fav_enemies.nut',
+  )
+  const backgroundTypeMetadataFilePath = path.join(
+    referenceRootDirectoryPath,
+    '!!config',
+    'character.nut',
+  )
+  const resourceModifierValuesFilePath = path.join(
+    referenceRootDirectoryPath,
+    '!config',
+    'mods_legend_resources.nut',
   )
   const perkGroupRulesFilePath = path.join(referenceRootDirectoryPath, 'config', 'perks_tree.nut')
   const playerHookFilePath = path.join(
@@ -1971,6 +2978,8 @@ export async function createDataset(
     'backgrounds',
   )
   const scriptBackgroundDirectoryPath = path.join(scriptsRootDirectoryPath, 'skills', 'backgrounds')
+  const hookTraitDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'skills', 'traits')
+  const scriptTraitDirectoryPath = path.join(scriptsRootDirectoryPath, 'skills', 'traits')
   const scenarioDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'scenarios', 'world')
   const scriptScenarioDirectoryPath = path.join(scriptsRootDirectoryPath, 'scenarios', 'world')
   const perkGroupDirectoryPath = path.join(referenceRootDirectoryPath, 'config')
@@ -1992,7 +3001,9 @@ export async function createDataset(
     perkDefinitionsFileSource,
     entityNamesFileSource,
     categoryOrderFileSource,
-    favoriteEnemyConfigFileSource,
+    favouredEnemyConfigFileSource,
+    backgroundTypeMetadataFileSource,
+    resourceModifierValuesFileSource,
     perkGroupRulesFileSource,
     characterBackgroundFileSource,
     playerHookFileSource,
@@ -2001,7 +3012,9 @@ export async function createDataset(
     readFile(perkDefinitionsFilePath, 'utf8'),
     readFile(entityNamesFilePath, 'utf8'),
     readFile(categoryOrderFilePath, 'utf8'),
-    readFile(favoriteEnemyConfigFilePath, 'utf8'),
+    readFile(favouredEnemyConfigFilePath, 'utf8'),
+    readFileIfExists(backgroundTypeMetadataFilePath),
+    readFileIfExists(resourceModifierValuesFilePath),
     readFile(perkGroupRulesFilePath, 'utf8'),
     readFile(characterBackgroundFilePath, 'utf8'),
     readFileIfExists(playerHookFilePath),
@@ -2064,6 +3077,23 @@ export async function createDataset(
     (backgroundFileEntry) =>
       !backgroundFileEntry.sourceFilePath.endsWith('/character_background.nut'),
   )
+  const traitFileEntries = (
+    await Promise.all(
+      [hookTraitDirectoryPath, scriptTraitDirectoryPath].map((directoryPath) =>
+        collectNutFileEntriesRecursively(directoryPath),
+      ),
+    )
+  )
+    .flat()
+    .filter(
+      (fileEntry, index, fileEntries) =>
+        fileEntries.findIndex(
+          (candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath,
+        ) === index,
+    )
+    .toSorted((leftEntry, rightEntry) =>
+      leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+    )
 
   const scenarioFileNames = (await readdir(scenarioDirectoryPath))
     .filter((fileName) => fileName.endsWith('.nut'))
@@ -2125,7 +3155,17 @@ export async function createDataset(
     toPosixRelativePath(perkDefinitionsFilePath),
   )
   const entityNamesByConstName = parseEntityNamesFile(entityNamesFileSource)
-  const favoriteEnemyConfig = parseFavoriteEnemyConfigFile(favoriteEnemyConfigFileSource)
+  const favouredEnemyConfig = parseFavouredEnemyConfigFile(favouredEnemyConfigFileSource)
+  const backgroundTypeMetadata = backgroundTypeMetadataFileSource
+    ? parseBackgroundTypeMetadataFile(backgroundTypeMetadataFileSource)
+    : {
+        backgroundTypeNamesByKey: new Map([['None', 'None']]),
+        backgroundTypeValuesByKey: new Map([['None', 0]]),
+      }
+  const resourceModifierValuesByKey = resourceModifierValuesFileSource
+    ? parseResourceModifierValuesFile(resourceModifierValuesFileSource)
+    : new Map()
+  const traitMetadata = parseTraitMetadataFileEntries(traitFileEntries)
 
   const perkGroupDefinitions = new Map()
   const perkGroupCategoryNames = new Map()
@@ -2204,6 +3244,13 @@ export async function createDataset(
   }
 
   const baseMinimums = buildMinimumsObject(baseMinimumsValue)
+  const backgroundMetadataDefaults = createBackgroundMetadataDefaults({
+    backgroundTypeMetadata,
+    characterBackgroundFileSource: characterBackgroundWrapperFunction.body,
+    diagnostics,
+    resourceModifierValuesByKey,
+    sourceFilePath: toPosixRelativePath(characterBackgroundFilePath),
+  })
   const defaultVeteranPerkLevelInterval =
     playerHookFileSource === null
       ? fallbackVeteranPerkLevelInterval
@@ -2218,8 +3265,12 @@ export async function createDataset(
         backgroundFileEntry.sourceFilePath,
         baseDynamicTreeValue,
         baseMinimums,
+        backgroundMetadataDefaults,
+        backgroundTypeMetadata,
         defaultVeteranPerkLevelInterval,
         diagnostics,
+        resourceModifierValuesByKey,
+        traitMetadata,
       ),
     )
     .filter((background) => background !== null)
@@ -2241,8 +3292,12 @@ export async function createDataset(
     rawScriptBackgroundDefinitionsByScriptId,
     baseDynamicTreeValue,
     baseMinimums,
+    backgroundMetadataDefaults,
+    backgroundTypeMetadata,
     defaultVeteranPerkLevelInterval,
     diagnostics,
+    resourceModifierValuesByKey,
+    traitMetadata,
   )
   const knownBackgroundScriptIds = new Set([
     ...hookBackgroundFileEntries.map((backgroundFileEntry) =>
@@ -2439,10 +3494,10 @@ export async function createDataset(
             getCategoryPriority(categoryOrder, rightCategoryName) ||
           leftCategoryName.localeCompare(rightCategoryName),
       )[0] ?? 'Other'
-    const favouredEnemyTargets = buildFavoriteEnemyTargets(
+    const favouredEnemyTargets = buildFavouredEnemyTargets(
       perkDefinition.constName,
-      favoriteEnemyConfig.targetConstNamesByPerkConstName,
-      favoriteEnemyConfig.killsPerPercentBonusByEntityConstName,
+      favouredEnemyConfig.targetConstNamesByPerkConstName,
+      favouredEnemyConfig.killsPerPercentBonusByEntityConstName,
       entityNamesByConstName,
     )
     const backgroundSources = (backgroundSourcesByPerkConstName.get(perkDefinition.constName) ?? [])
@@ -2520,7 +3575,23 @@ export async function createDataset(
     })),
     { path: toPosixRelativePath(entityNamesFilePath), role: 'entity names' },
     { path: toPosixRelativePath(categoryOrderFilePath), role: 'perk category order' },
-    { path: toPosixRelativePath(favoriteEnemyConfigFilePath), role: 'favoured enemy metadata' },
+    { path: toPosixRelativePath(favouredEnemyConfigFilePath), role: 'favoured enemy metadata' },
+    ...(backgroundTypeMetadataFileSource === null
+      ? []
+      : [
+          {
+            path: toPosixRelativePath(backgroundTypeMetadataFilePath),
+            role: 'background type metadata',
+          },
+        ]),
+    ...(resourceModifierValuesFileSource === null
+      ? []
+      : [
+          {
+            path: toPosixRelativePath(resourceModifierValuesFilePath),
+            role: 'camp resource modifier metadata',
+          },
+        ]),
     { path: toPosixRelativePath(perkGroupRulesFilePath), role: 'background fit rules' },
     ...(playerHookFileSource === null
       ? []
@@ -2549,6 +3620,10 @@ export async function createDataset(
         role: 'background dynamic pools',
       }),
     ),
+    ...traitFileEntries.map((traitFileEntry) => ({
+      path: traitFileEntry.sourceFilePath,
+      role: 'trait metadata',
+    })),
     ...scenarioVeteranPerkFileEntries.map((scenarioFileEntry) => ({
       path: scenarioFileEntry.sourceFilePath,
       role: 'scenario perk sources',
@@ -2580,10 +3655,74 @@ export async function createDataset(
   }
 }
 
+const defaultDatasetOutputDirectoryPath = path.join(projectRootDirectoryPath, 'src', 'data')
+
+function createPerkCatalogRecord({
+  categoryNames,
+  descriptionParagraphs,
+  favouredEnemyTargets,
+  iconPath,
+  id,
+  perkName,
+  placements,
+  primaryCategoryName,
+  scenarioSources,
+}) {
+  return {
+    categoryNames,
+    descriptionParagraphs,
+    ...(favouredEnemyTargets ? { favouredEnemyTargets } : {}),
+    iconPath,
+    id,
+    perkName,
+    placements,
+    primaryCategoryName,
+    scenarioSources,
+  }
+}
+
+function createPerkCatalogDataset(dataset) {
+  return {
+    referenceVersion: dataset.referenceVersion,
+    perks: dataset.perks.map(createPerkCatalogRecord),
+  }
+}
+
+function createBackgroundFitPerkRecord({ iconPath, id, perkName, placements }) {
+  return {
+    iconPath,
+    id,
+    perkName,
+    placements,
+  }
+}
+
+function createBackgroundFitDataset(dataset) {
+  return {
+    backgroundFitBackgrounds: dataset.backgroundFitBackgrounds,
+    backgroundFitRules: dataset.backgroundFitRules,
+    referenceVersion: dataset.referenceVersion,
+    perks: dataset.perks.map(createBackgroundFitPerkRecord),
+  }
+}
+
+async function writeJsonFile(outputFilePath, value) {
+  await mkdir(path.dirname(outputFilePath), { recursive: true })
+  await writeFile(outputFilePath, `${JSON.stringify(value)}\n`, 'utf8')
+}
+
 export async function writeDatasetFile(
   dataset,
-  outputFilePath = path.join(projectRootDirectoryPath, 'src', 'data', 'legends-perks.json'),
+  outputDirectoryPath = defaultDatasetOutputDirectoryPath,
 ) {
-  await mkdir(path.dirname(outputFilePath), { recursive: true })
-  await writeFile(outputFilePath, `${JSON.stringify(dataset, null, 2)}\n`, 'utf8')
+  await Promise.all([
+    writeJsonFile(
+      path.join(outputDirectoryPath, 'legends-background-fit.json'),
+      createBackgroundFitDataset(dataset),
+    ),
+    writeJsonFile(
+      path.join(outputDirectoryPath, 'legends-perk-catalog.json'),
+      createPerkCatalogDataset(dataset),
+    ),
+  ])
 }

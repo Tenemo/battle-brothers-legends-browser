@@ -11,7 +11,32 @@ const sampleDataset: LegendsPerksDataset = {
     {
       backgroundId: 'background.farmhand',
       backgroundName: 'Farmhand',
+      backgroundTypeNames: [],
       categories: {},
+      campResourceModifiers: [],
+      dailyCost: null,
+      excludedTalentAttributeNames: [],
+      excludedTraits: [
+        {
+          description: 'Moves with unusual speed.',
+          iconPath: 'ui/traits/trait_icon_32.png',
+          traitName: 'Quick',
+        },
+        {
+          description: 'Moves with unusual speed.',
+          iconPath: 'ui/traits/trait_icon_32.png',
+          traitName: 'Quick',
+        },
+      ],
+      excludedTraitNames: ['Quick'],
+      guaranteedTraits: [
+        {
+          description: 'Learns quickly.',
+          iconPath: 'ui/traits/trait_icon_11.png',
+          traitName: 'Bright',
+        },
+      ],
+      guaranteedTraitNames: ['Bright'],
       iconPath: 'ui/backgrounds/background_09.png',
       sourceFilePath: 'scripts/skills/backgrounds/farmhand_background.nut',
       veteranPerkLevelInterval: 4,
@@ -81,6 +106,7 @@ describe('legends icon sync', () => {
       'ui/items/trade/scroll.png',
       'ui/perks/clarity_circle.png',
       'ui/traits/trait_icon_11.png',
+      'ui/traits/trait_icon_32.png',
     ])
   })
 

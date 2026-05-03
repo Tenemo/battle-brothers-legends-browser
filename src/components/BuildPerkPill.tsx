@@ -21,6 +21,7 @@ export function BuildPerkPill({
   onOpenHover,
   onOpenTooltip,
   perkGroupSelection,
+  perkIconPath,
   perkId,
   perkName,
 }: {
@@ -42,6 +43,7 @@ export function BuildPerkPill({
     options?: BuildPerkHoverOptions,
   ) => void
   perkGroupSelection?: BuildPerkPillSelection
+  perkIconPath: string | null
   perkId: string
   perkName: string
 }) {
@@ -83,7 +85,18 @@ export function BuildPerkPill({
       onMouseLeave={(event) => closeTooltipPreview(perkId, event.relatedTarget)}
       type="button"
     >
-      {perkName}
+      {perkIconPath ? (
+        <img
+          alt=""
+          aria-hidden="true"
+          className={styles.plannerPillIcon}
+          data-testid="planner-pill-icon"
+          decoding="async"
+          loading="lazy"
+          src={`/game-icons/${perkIconPath}`}
+        />
+      ) : null}
+      <span className={styles.plannerPillLabel}>{perkName}</span>
     </button>
   )
 }
