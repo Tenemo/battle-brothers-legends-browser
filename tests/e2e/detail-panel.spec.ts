@@ -196,6 +196,61 @@ test('shows imported background metadata only in the background detail panel', a
   await expect(backgroundFitPanel.getByText('Bartering')).toHaveCount(0)
 })
 
+test('keeps camp skill metadata rows tucked under their heading', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+
+  if (await expandBackgroundFitButton.isVisible()) {
+    await expandBackgroundFitButton.click()
+  }
+
+  await backgroundFitPanel.getByLabel('Search backgrounds').fill('Vagabond')
+  await backgroundFitPanel.getByRole('button', { name: /Inspect background Vagabond/u }).click()
+
+  const detailPanel = getDetailPanel(page)
+  const metadataSection = detailPanel.getByTestId('detail-background-metadata-section')
+  const metadataToggle = metadataSection.getByRole('button', { name: 'Background details' })
+
+  await metadataToggle.click()
+  await expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(metadataSection.getByText('Camp skills')).toBeVisible()
+  await expect(metadataSection.getByText('Scouting', { exact: true })).toBeVisible()
+  await expect(metadataSection.getByText('Gathering', { exact: true })).toBeVisible()
+
+  const campSkillMetrics = await metadataSection.evaluate((section) => {
+    const headingElements = [...section.querySelectorAll('h4')]
+    const campSkillsHeading = headingElements.find(
+      (headingElement) => headingElement.textContent?.trim() === 'Camp skills',
+    )
+    const campSkillsSection = campSkillsHeading?.parentElement
+    const firstCampSkillRow = campSkillsSection?.querySelector('li')
+
+    if (
+      !(campSkillsHeading instanceof HTMLElement) ||
+      !(campSkillsSection instanceof HTMLElement) ||
+      !(firstCampSkillRow instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const headingRectangle = campSkillsHeading.getBoundingClientRect()
+    const firstRowRectangle = firstCampSkillRow.getBoundingClientRect()
+
+    return {
+      headingHeight: headingRectangle.height,
+      headingToFirstRowDistance: firstRowRectangle.top - headingRectangle.top,
+    }
+  })
+
+  expect(campSkillMetrics).not.toBeNull()
+  expect(campSkillMetrics!.headingHeight).toBeLessThan(24)
+  expect(campSkillMetrics!.headingToFirstRowDistance).toBeLessThanOrEqual(28)
+})
+
 test('shows the dominant study resource strategy for the reported Peddler build', async ({
   page,
 }) => {
