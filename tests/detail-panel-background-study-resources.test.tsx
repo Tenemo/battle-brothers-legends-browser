@@ -9,8 +9,12 @@ import type {
   BuildTargetPerkGroup,
   RankedBackgroundFit,
 } from '../src/lib/background-fit'
-import { backgroundStudyResourceBadgesTestId } from '../src/lib/background-study-resource-display'
+import {
+  backgroundStudyResourceBadgesTestId,
+  skillBookIconPath,
+} from '../src/lib/background-study-resource-display'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
+import { ancientScrollIconPath } from '../src/lib/ancient-scroll-perk-group-display'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
 const skillBookRequirementProfile = {
@@ -715,10 +719,29 @@ describe('background details study resources', () => {
     expect(
       within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Must-have impact' }),
     ).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Calm')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Covers')).toBeVisible()
-    const coveredClarityPill = within(studyResourcePlan).getByRole('button', { name: 'Clarity' })
+    expect(
+      within(studyResourcePlan).getByRole('heading', {
+        level: 6,
+        name: 'Skill book covers Calm',
+      }),
+    ).toBeVisible()
+    expect(within(studyResourcePlan).queryByText('Covers')).not.toBeInTheDocument()
+
+    const skillBookPerkGroupList = within(studyResourcePlan).getByRole('list', {
+      name: 'Skill book covered perk groups',
+    })
+    const calmStudyResourceTile = within(skillBookPerkGroupList).getByTestId('planner-group-card')
+    const calmStudyResourceTileIcons = within(calmStudyResourceTile).getAllByTestId(
+      'planner-group-option-icon',
+    )
+    const coveredClarityPill = within(calmStudyResourceTile).getByRole('button', {
+      name: 'Clarity',
+    })
+
+    expect(calmStudyResourceTile).toBeVisible()
+    expect(calmStudyResourceTileIcons).toHaveLength(2)
+    expect(calmStudyResourceTileIcons[0]).toHaveAttribute('src', '/game-icons/ui/perks/perk_01.png')
+    expect(calmStudyResourceTileIcons[1]).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
 
     expect(coveredClarityPill).toBeVisible()
     expect(within(coveredClarityPill).getByTestId('planner-pill-icon')).toHaveAttribute(
@@ -787,6 +810,36 @@ describe('background details study resources', () => {
     expect(within(chanceBreakdown).getByText('40%')).toBeVisible()
     expect(within(chanceBreakdown).getByText('Skill book and ancient scroll')).toBeVisible()
     expect(within(chanceBreakdown).getByText('60%')).toBeVisible()
+
+    const chanceBreakdownRows = within(chanceBreakdown).getAllByTestId(
+      'detail-chance-breakdown-row',
+    )
+
+    expect(
+      chanceBreakdownRows[0]!.querySelectorAll(
+        '[data-testid^="detail-chance-breakdown-resource-icon-"]',
+      ),
+    ).toHaveLength(0)
+    expect(
+      within(chanceBreakdownRows[1]!).getByTestId(
+        'detail-chance-breakdown-resource-icon-book-book',
+      ),
+    ).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
+    expect(
+      within(chanceBreakdownRows[2]!).getByTestId(
+        'detail-chance-breakdown-resource-icon-scroll-scroll-1',
+      ),
+    ).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(
+      within(chanceBreakdownRows[3]!).getByTestId(
+        'detail-chance-breakdown-resource-icon-book-and-scroll-book',
+      ),
+    ).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
+    expect(
+      within(chanceBreakdownRows[3]!).getByTestId(
+        'detail-chance-breakdown-resource-icon-book-and-scroll-scroll-1',
+      ),
+    ).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
   })
 
   test('labels a differing full-build strategy by impact instead of optional-only route', () => {
@@ -841,10 +894,18 @@ describe('background details study resources', () => {
     expect(
       within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Full-build impact' }),
     ).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Calm')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Ancient scroll:')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Assassin')).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', {
+        level: 6,
+        name: 'Skill book covers Calm',
+      }),
+    ).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', {
+        level: 6,
+        name: 'Ancient scroll covers Assassin',
+      }),
+    ).toBeVisible()
     expect(screen.queryByText('Additional optional-only study route')).not.toBeInTheDocument()
   })
 
@@ -936,22 +997,41 @@ describe('background details study resources', () => {
 
     const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
 
-    expect(within(studyResourcePlan).getByText('Ancient scroll:')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Berserker')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Medium Armor or Fit')).toBeVisible()
-    expect(within(studyResourcePlan).queryByText('Heavy Armor')).not.toBeInTheDocument()
-    const scrollCoveredPerks = within(studyResourcePlan).getByRole('list', {
-      name: 'Covered perks for ancient scroll',
-    })
-
-    expect(within(scrollCoveredPerks).getByRole('button', { name: 'Muscularity' })).toBeVisible()
-    expect(within(scrollCoveredPerks).getByRole('button', { name: 'Brawny' })).toBeVisible()
-    expect(within(scrollCoveredPerks).getByRole('button', { name: 'Colossus' })).toBeVisible()
     expect(
-      within(within(scrollCoveredPerks).getByRole('button', { name: 'Muscularity' })).getByTestId(
-        'planner-pill-icon',
-      ),
+      within(studyResourcePlan).getByRole('heading', {
+        level: 6,
+        name: 'Ancient scroll covers Berserker',
+      }),
+    ).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', {
+        level: 6,
+        name: 'Skill book covers Medium Armor or Fit, depending on native roll',
+      }),
+    ).toBeVisible()
+    expect(within(studyResourcePlan).queryByText('Heavy Armor')).not.toBeInTheDocument()
+    const scrollCoveredPerkGroups = within(studyResourcePlan).getByRole('list', {
+      name: 'Ancient scroll covered perk groups',
+    })
+    const berserkerStudyResourceTile = within(scrollCoveredPerkGroups)
+      .getAllByTestId('planner-group-card')
+      .find((groupCard) => groupCard.textContent?.includes('Berserker'))
+
+    expect(berserkerStudyResourceTile).toBeDefined()
+
+    expect(
+      within(berserkerStudyResourceTile!).getByRole('button', { name: 'Muscularity' }),
+    ).toBeVisible()
+    expect(
+      within(berserkerStudyResourceTile!).getByRole('button', { name: 'Brawny' }),
+    ).toBeVisible()
+    expect(
+      within(berserkerStudyResourceTile!).getByRole('button', { name: 'Colossus' }),
+    ).toBeVisible()
+    expect(
+      within(
+        within(berserkerStudyResourceTile!).getByRole('button', { name: 'Muscularity' }),
+      ).getByTestId('planner-pill-icon'),
     ).toHaveAttribute('src', '/game-icons/ui/perks/muscularity.png')
     expect(screen.getByRole('button', { name: 'Select perk group Heavy Armor' })).toBeVisible()
   })

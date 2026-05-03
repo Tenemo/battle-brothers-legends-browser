@@ -137,11 +137,13 @@
 
   .buildPlannerInfoGlyph {
     display: block;
-    font-family: var(--heading-font-family);
-    font-size: calc(var(--type-panel-title-size) * 1.25);
-    font-weight: 700;
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: calc(var(--type-panel-title-size) * 1.08);
+    font-style: italic;
+    font-weight: 600;
     line-height: 1;
-    transform: translate(-0.02rem, var(--primitive-length-negative-0-05rem));
+    text-transform: none;
+    transform: translate(-0.03rem, var(--primitive-length-negative-0-05rem));
   }
 
   .buildPlannerInfoTooltip,
@@ -326,9 +328,7 @@
     }
 
     .plannerSlotRequirementOptional {
-      --planner-slot-requirement-optional-base-scale: var(
-        --planner-requirement-legend-tile-scale
-      );
+      --planner-slot-requirement-optional-base-scale: var(--planner-requirement-legend-tile-scale);
     }
   }
 
@@ -609,7 +609,9 @@
 
     .plannerSlotRequirementOptionalIcon {
       width: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
-      height: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
+      height: calc(
+        var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale)
+      );
       stroke-width: 2.2;
     }
   }

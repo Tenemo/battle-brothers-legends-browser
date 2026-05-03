@@ -64,6 +64,7 @@ function BuildPlannerInfoButton() {
         onFocus={() => setIsOpen(true)}
         type="button"
       >
+        {/* This is intentionally a lowercase handwritten-style i, not a roman numeral I. */}
         <span
           aria-hidden="true"
           className={styles.buildPlannerInfoGlyph}

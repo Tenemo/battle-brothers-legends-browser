@@ -8,6 +8,7 @@ import styles from './BuildPlanner.module.scss'
 
 export type BuildPerkGroupTileOption = {
   categoryName: string
+  iconLabel?: string
   isSelectable?: boolean
   perkGroupIconPath: string | null
   perkGroupId: string
@@ -83,7 +84,7 @@ function renderPerkGroupOptionIcon({
         optionIconClassName,
       )}
       iconPath={perkGroupOption.perkGroupIconPath}
-      label={`${perkGroupOption.perkGroupLabel} perk group icon`}
+      label={perkGroupOption.iconLabel ?? `${perkGroupOption.perkGroupLabel} perk group icon`}
       testId="planner-group-option-icon"
     />
   )
@@ -320,10 +321,7 @@ export function BuildPerkGroupTile({
           </div>
         </div>
       </div>
-      <div
-        className={styles.plannerPillList}
-        data-testid="planner-pill-list"
-      >
+      <div className={styles.plannerPillList} data-testid="planner-pill-list">
         {perks.map((perk) =>
           perk.perkId ? (
             <BuildPerkPill

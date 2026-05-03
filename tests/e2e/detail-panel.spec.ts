@@ -391,26 +391,46 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   expect(studyResourceScopeSpacing).not.toBeNull()
   expect(studyResourceScopeSpacing!).toBeGreaterThanOrEqual(10)
   await expect(metricSummary).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Ancient scroll:')).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Berserker')).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Skill book:')).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Medium Armor or Fit')).toBeVisible()
+  await expect(
+    mustHaveStudyResourcePlan.getByRole('heading', {
+      level: 6,
+      name: 'Ancient scroll covers Berserker',
+    }),
+  ).toBeVisible()
+  await expect(
+    mustHaveStudyResourcePlan.getByRole('heading', {
+      level: 6,
+      name: 'Skill book covers Medium Armor or Fit, depending on native roll',
+    }),
+  ).toBeVisible()
   await expect(
     fullBuildStudyResourcePlan.getByRole('heading', {
       level: 5,
       name: 'Full-build impact',
     }),
   ).toBeVisible()
-  const ancientScrollCoveredPerks = mustHaveStudyResourcePlan.getByRole('list', {
-    name: 'Covered perks for ancient scroll',
+  const ancientScrollCoveredPerkGroups = mustHaveStudyResourcePlan.getByRole('list', {
+    name: 'Ancient scroll covered perk groups',
   })
-  const muscularityCoveredPerkPill = ancientScrollCoveredPerks.getByRole('button', {
+  const berserkerStudyResourceTile = ancientScrollCoveredPerkGroups
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Berserker' })
+  const berserkerStudyResourceTileIcons = berserkerStudyResourceTile.getByTestId(
+    'planner-group-option-icon',
+  )
+  const muscularityCoveredPerkPill = berserkerStudyResourceTile.getByRole('button', {
     name: 'Muscularity',
   })
   const muscularityCoveredPerkIcon = muscularityCoveredPerkPill.getByTestId('planner-pill-icon')
 
-  await expect(ancientScrollCoveredPerks.getByRole('button', { name: 'Brawny' })).toBeVisible()
-  await expect(ancientScrollCoveredPerks.getByRole('button', { name: 'Colossus' })).toBeVisible()
+  await expect(berserkerStudyResourceTile).toBeVisible()
+  await expect(berserkerStudyResourceTileIcons).toHaveCount(2)
+  await expect(berserkerStudyResourceTileIcons.nth(1)).toHaveAttribute(
+    'src',
+    /\/game-icons\/ui\/items\/trade\/scroll\.png$/,
+  )
+  await expect(berserkerStudyResourceTile.getByRole('button', { name: 'Brawny' })).toBeVisible()
+  await expect(berserkerStudyResourceTile.getByRole('button', { name: 'Colossus' })).toBeVisible()
   await expect(muscularityCoveredPerkPill).toBeVisible()
   await expect(muscularityCoveredPerkIcon).toBeVisible()
   await expectImageToLoad(muscularityCoveredPerkIcon)

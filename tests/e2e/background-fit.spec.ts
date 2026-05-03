@@ -1216,7 +1216,8 @@ test('shows probabilistic background fit matches with percentage badges', async 
     otherNativePerkGroupsSection.getByRole('button', { name: 'Select perk group Barter' }),
   ).toHaveCount(0)
 
-  const barterMatchButton = detailPanel.getByRole('button', {
+  const matchedPerkGroupsRegion = detailPanel.getByRole('region', { name: 'Matched perk groups' })
+  const barterMatchButton = matchedPerkGroupsRegion.getByRole('button', {
     name: 'Select perk group Barter',
   })
   const barterMatchRow = barterMatchButton.locator(

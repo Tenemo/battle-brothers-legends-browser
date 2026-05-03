@@ -387,20 +387,13 @@ test('build planner splits shared and individual perk groups without layout drif
   })
   const infoButtonGlyphStyle = await infoButtonGlyph.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
-    const rootStyle = window.getComputedStyle(document.documentElement)
     const fontSizeProbe = document.createElement('span')
-    fontSizeProbe.style.fontSize = 'calc(var(--type-panel-title-size) * 1.25)'
+    fontSizeProbe.style.fontSize = 'calc(var(--type-panel-title-size) * 1.08)'
     document.body.append(fontSizeProbe)
 
     const expectedFontSize = Number.parseFloat(window.getComputedStyle(fontSizeProbe).fontSize)
     fontSizeProbe.remove()
 
-    const expectedFontFamily = rootStyle
-      .getPropertyValue('--heading-font-family')
-      .split(',')[0]
-      .trim()
-      .replaceAll("'", '')
-      .toLowerCase()
     const fontFamily = computedStyle.fontFamily
       .split(',')[0]
       .trim()
@@ -409,11 +402,11 @@ test('build planner splits shared and individual perk groups without layout drif
       .toLowerCase()
 
     return {
-      expectedFontFamily,
       expectedFontSize,
       fontFamily,
       fontSize: Number.parseFloat(computedStyle.fontSize),
       fontStyle: computedStyle.fontStyle,
+      textTransform: computedStyle.textTransform,
       transform: computedStyle.transform,
     }
   })
@@ -423,11 +416,12 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(Math.abs(infoButtonStyle.height - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(Math.abs(infoButtonStyle.width - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(infoButtonStyle.textTransform).toBe('none')
-  expect(infoButtonGlyphStyle.fontFamily).toBe(infoButtonGlyphStyle.expectedFontFamily)
+  expect(infoButtonGlyphStyle.fontFamily).toBe('georgia')
   expect(
     Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize),
   ).toBeLessThan(0.5)
-  expect(infoButtonGlyphStyle.fontStyle).toBe('normal')
+  expect(infoButtonGlyphStyle.fontStyle).toBe('italic')
+  expect(infoButtonGlyphStyle.textTransform).toBe('none')
   expect(infoButtonGlyphStyle.transform).not.toBe('none')
 
   await infoButton.hover()

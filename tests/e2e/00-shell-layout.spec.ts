@@ -152,6 +152,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
         categorySidebar?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       categorySidebarWidth: categorySidebar?.getBoundingClientRect().width ?? 0,
       detailPanelLeft: detailPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
+      detailPanelWidth: detailPanel?.getBoundingClientRect().width ?? 0,
       detailPanelBodyGap:
         detailPanelBodyStyle === null
           ? Number.POSITIVE_INFINITY
@@ -177,6 +178,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
           : plannerBoard.scrollHeight - plannerBoard.clientHeight,
       plannerHeight: planner?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY,
       resultsPanelLeft: resultsPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
+      resultsPanelWidth: resultsPanel?.getBoundingClientRect().width ?? 0,
       resultsListHeight: resultsList?.clientHeight ?? 0,
       resultsListGap:
         resultsListStyle === null
@@ -409,6 +411,9 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     expect(desktopMetrics.backgroundFitPanelLeft).toBeLessThan(desktopMetrics.detailPanelLeft)
     expect(desktopMetrics.detailPanelLeft).toBeLessThan(desktopMetrics.resultsPanelLeft)
     expect(desktopMetrics.resultsPanelLeft).toBeLessThan(desktopMetrics.categorySidebarLeft)
+    expect(desktopMetrics.resultsPanelWidth).toBeLessThanOrEqual(
+      desktopMetrics.detailPanelWidth * 0.72,
+    )
     expect(desktopMetrics.backgroundFitPanelWidth).toBeLessThanOrEqual(
       expectation.maximumBackgroundFitPanelWidth,
     )
