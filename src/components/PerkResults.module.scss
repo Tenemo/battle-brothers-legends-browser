@@ -15,7 +15,8 @@
     h2 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--font-size-2xl);
+      font-size: var(--type-panel-title-size);
+      line-height: var(--type-heading-line-height);
     }
   }
 
@@ -123,14 +124,17 @@
   }
 
   .perkName {
-    font-size: var(--primitive-length-0-92rem);
+    font-size: var(--type-card-title-size);
     font-weight: 600;
+    line-height: var(--type-heading-line-height);
   }
 
   .perkContext,
   .perkPreview {
     margin: var(--space-sm) 0 0;
     color: var(--text-secondary);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
   }
 
   .perkPreview {
@@ -208,7 +212,8 @@
     align-items: baseline;
     min-width: 0;
     color: var(--text-muted);
-    font-size: var(--font-size-md);
+    font-size: var(--type-compact-size);
+    line-height: var(--type-compact-line-height);
     white-space: nowrap;
   }
 

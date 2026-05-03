@@ -7,7 +7,7 @@
     @include rail-panel-shell(
       '.sidebarBody',
       '.categorySidebarRailButtonLabel',
-      translateX(var(--font-size-xl)),
+      translateX(var(--type-panel-title-size)),
       translateY(var(--primitive-length-0-45rem))
     );
 
@@ -55,13 +55,15 @@
     h2 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--font-size-2xl);
+      font-size: var(--type-panel-title-size);
+      line-height: var(--type-heading-line-height);
     }
 
     p {
-      margin: var(--primitive-length-0-18rem) 0 0;
+      margin: var(--space-2xs) 0 0;
       color: var(--text-secondary);
-      font-size: var(--font-size-lg);
+      font-size: var(--type-support-size);
+      line-height: var(--type-support-line-height);
     }
   }
 
@@ -126,7 +128,8 @@
     border-radius: var(--radius-control);
     padding: var(--primitive-length-0-3rem) var(--primitive-length-0-46rem);
     background: var(--button-background);
-    font-size: var(--primitive-length-0-84rem);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
 
     .categoryCard > & {
       margin-bottom: 0;
@@ -142,7 +145,8 @@
     border-radius: var(--radius-control);
     background: var(--button-background);
     color: inherit;
-    font-size: var(--primitive-length-0-84rem);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
 
     @include control-transition;
 
@@ -297,10 +301,11 @@
   }
 
   .perkGroupHeading {
-    margin: 0 0 0.04rem;
+    margin: 0 0 var(--space-3xs);
     color: var(--text-muted);
-    font-size: var(--font-size-xs);
-    letter-spacing: var(--primitive-length-0-08em);
+    font-size: var(--type-meta-size);
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-meta-line-height);
     text-transform: uppercase;
   }
 
@@ -311,7 +316,8 @@
     padding: var(--space-xs) var(--primitive-length-0-4rem);
     background: rgb(21 17 14 / 0.9);
     color: var(--text-secondary);
-    font-size: var(--font-size-base);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
   }
 
   @keyframes fade-in {

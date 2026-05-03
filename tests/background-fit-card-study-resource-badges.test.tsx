@@ -272,6 +272,34 @@ describe('background fit card study resource badges', () => {
     )
   })
 
+  test('does not duplicate the scroll badge when only one scroll target improves the strategy', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        fullBuildStudyResourceStrategy: createStudyResourceStrategy({
+          bookTargets: [calmStrategyTarget],
+          scrollTargets: [berserkerStrategyTarget],
+          selectedCombinationKey: 'book-and-scroll',
+          shouldAllowSecondScroll: true,
+        }),
+      }),
+    )
+
+    const badges = screen.getAllByTestId(backgroundStudyResourceBadgeTestId)
+
+    expect(badges).toHaveLength(2)
+    expect(badges.map((badge) => badge.getAttribute('data-study-resource-kind'))).toEqual([
+      'book',
+      'scroll',
+    ])
+    expect(badges[1]).toHaveAttribute(
+      'title',
+      'Ancient scroll improves full-build chance: Berserker',
+    )
+    expect(
+      screen.queryByAltText(/Bright enables the second ancient scroll/),
+    ).not.toBeInTheDocument()
+  })
+
   test('marks study resources as must-have chance improvements when breakdown data shows an impact', () => {
     renderBackgroundFitCard(
       createBackgroundFit({

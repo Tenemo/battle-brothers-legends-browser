@@ -71,8 +71,7 @@ export type LegendsBackgroundFitPerkRecord = Pick<
   'id' | 'iconPath' | 'perkName' | 'placements'
 >
 
-export type LegendsBuildSharePreviewPerkRecord = LegendsBackgroundFitPerkRecord &
-  Pick<LegendsPerkRecord, 'iconPath'>
+export type LegendsBuildSharePreviewPerkRecord = LegendsBackgroundFitPerkRecord
 
 export type LegendsBackgroundFitCategoryDefinition = {
   chance: number | null

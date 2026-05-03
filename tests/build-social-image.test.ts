@@ -30,12 +30,14 @@ describe('build social image', () => {
   test('resolves bundled social image fonts', () => {
     const fontFiles = resolveBuildSocialImageFontFiles()
 
-    expect(fontFiles).toHaveLength(3)
+    expect(fontFiles).toHaveLength(5)
     expect(fontFiles).toEqual(
       expect.arrayContaining([
         expect.stringContaining('SourceSans3-Regular.ttf'),
         expect.stringContaining('SourceSans3-Semibold.ttf'),
         expect.stringContaining('SourceSans3-Bold.ttf'),
+        expect.stringContaining('Cinzel.ttf'),
+        expect.stringContaining('Cinzel-Bold.ttf'),
       ]),
     )
     expect(fontFiles.every((fontFile) => existsSync(fontFile))).toBe(true)

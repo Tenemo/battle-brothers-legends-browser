@@ -50,7 +50,7 @@ export function formatBackgroundVeteranPerkLevelIntervalBadge(interval: number):
 }
 
 export function formatBackgroundVeteranPerkLevelIntervalFilterLabel(interval: number): string {
-  return `Every ${interval} veteran levels`
+  return `Perk every ${interval} veteran levels`
 }
 
 export function formatBackgroundVeteranPerkLevelIntervalTitle(interval: number): string {

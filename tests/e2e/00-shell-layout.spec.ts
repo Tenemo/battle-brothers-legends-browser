@@ -17,7 +17,6 @@ const denseDesktopBuildUrl =
 
 type DenseDesktopViewportExpectation = {
   isBackgroundFitExpandedByDefault: boolean
-  maximumBackgroundFitPanelWidth: number
   maximumDetailPanelBodyGap: number
   maximumDetailPanelBodyPaddingTop: number
   maximumDetailParagraphMarginTop: number
@@ -26,12 +25,14 @@ type DenseDesktopViewportExpectation = {
   maximumPerkRowPaddingBlock: number
   maximumPlannerHeight: number
   maximumResultsListGap: number
-  minimumCategorySidebarWidth: number
   minimumPlannerBoardOverflow: number
   minimumResultsListHeight: number
   minimumWorkspaceHeight: number
   viewportSize: { height: number; width: number }
 }
+
+const maximumAlignedSidePanelWidthDifference = 2
+const maximumCollapsedBackgroundFitPanelWidth = 40
 
 const compactDesktopDensityExpectation = {
   maximumDetailPanelBodyGap: 8,
@@ -47,9 +48,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
   {
     ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: true,
-    maximumBackgroundFitPanelWidth: 430,
     maximumPlannerHeight: 280,
-    minimumCategorySidebarWidth: 340,
     minimumPlannerBoardOverflow: 0,
     minimumResultsListHeight: 600,
     minimumWorkspaceHeight: 720,
@@ -58,9 +57,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
   {
     ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: true,
-    maximumBackgroundFitPanelWidth: 430,
     maximumPlannerHeight: 300,
-    minimumCategorySidebarWidth: 250,
     minimumPlannerBoardOverflow: 40,
     minimumResultsListHeight: 380,
     minimumWorkspaceHeight: 520,
@@ -69,9 +66,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
   {
     ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: false,
-    maximumBackgroundFitPanelWidth: 40,
     maximumPlannerHeight: 250,
-    minimumCategorySidebarWidth: 230,
     minimumPlannerBoardOverflow: 80,
     minimumResultsListHeight: 320,
     minimumWorkspaceHeight: 430,
@@ -80,9 +75,7 @@ const denseDesktopViewportExpectations: DenseDesktopViewportExpectation[] = [
   {
     ...compactDesktopDensityExpectation,
     isBackgroundFitExpandedByDefault: false,
-    maximumBackgroundFitPanelWidth: 40,
     maximumPlannerHeight: 235,
-    minimumCategorySidebarWidth: 230,
     minimumPlannerBoardOverflow: 100,
     minimumResultsListHeight: 300,
     minimumWorkspaceHeight: 400,
@@ -116,9 +109,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     const categorySidebar = document.querySelector(
       '[data-testid="category-sidebar"]',
     ) as HTMLElement | null
-    const detailPanel = document.querySelector(
-      '[data-testid="detail-panel"]',
-    ) as HTMLElement | null
+    const detailPanel = document.querySelector('[data-testid="detail-panel"]') as HTMLElement | null
     const detailPanelBody = document.querySelector(
       '[data-testid="detail-panel-body"]',
     ) as HTMLElement | null
@@ -152,6 +143,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
         categorySidebar?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
       categorySidebarWidth: categorySidebar?.getBoundingClientRect().width ?? 0,
       detailPanelLeft: detailPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
+      detailPanelWidth: detailPanel?.getBoundingClientRect().width ?? 0,
       detailPanelBodyGap:
         detailPanelBodyStyle === null
           ? Number.POSITIVE_INFINITY
@@ -177,6 +169,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
           : plannerBoard.scrollHeight - plannerBoard.clientHeight,
       plannerHeight: planner?.getBoundingClientRect().height ?? Number.POSITIVE_INFINITY,
       resultsPanelLeft: resultsPanel?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY,
+      resultsPanelWidth: resultsPanel?.getBoundingClientRect().width ?? 0,
       resultsListHeight: resultsList?.clientHeight ?? 0,
       resultsListGap:
         resultsListStyle === null
@@ -409,11 +402,23 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     expect(desktopMetrics.backgroundFitPanelLeft).toBeLessThan(desktopMetrics.detailPanelLeft)
     expect(desktopMetrics.detailPanelLeft).toBeLessThan(desktopMetrics.resultsPanelLeft)
     expect(desktopMetrics.resultsPanelLeft).toBeLessThan(desktopMetrics.categorySidebarLeft)
-    expect(desktopMetrics.backgroundFitPanelWidth).toBeLessThanOrEqual(
-      expectation.maximumBackgroundFitPanelWidth,
+    expect(desktopMetrics.resultsPanelWidth).toBeLessThanOrEqual(
+      desktopMetrics.detailPanelWidth * 0.72,
     )
-    expect(desktopMetrics.categorySidebarWidth).toBeGreaterThanOrEqual(
-      expectation.minimumCategorySidebarWidth,
+    expect(
+      Math.abs(desktopMetrics.categorySidebarWidth - desktopMetrics.resultsPanelWidth),
+    ).toBeLessThanOrEqual(maximumAlignedSidePanelWidthDifference)
+    if (expectation.isBackgroundFitExpandedByDefault) {
+      expect(
+        Math.abs(desktopMetrics.backgroundFitPanelWidth - desktopMetrics.resultsPanelWidth),
+      ).toBeLessThanOrEqual(maximumAlignedSidePanelWidthDifference)
+    } else {
+      expect(desktopMetrics.backgroundFitPanelWidth).toBeLessThanOrEqual(
+        maximumCollapsedBackgroundFitPanelWidth,
+      )
+    }
+    expect(desktopMetrics.categorySidebarWidth).toBeLessThanOrEqual(
+      desktopMetrics.detailPanelWidth * 0.72,
     )
     expect(desktopMetrics.resultsListGap).toBeLessThanOrEqual(expectation.maximumResultsListGap)
     expect(desktopMetrics.perkRowPaddingBlock).toBeLessThanOrEqual(

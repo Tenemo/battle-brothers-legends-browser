@@ -13,6 +13,7 @@
     --planner-tile-width: var(--primitive-length-14rem);
     --planner-placeholder-width: var(--primitive-length-15rem);
     --planner-icon-frame-size: var(--primitive-length-1-72rem);
+    --planner-collapsed-section-toggle-max-width: 16rem;
     --planner-picked-perk-tile-scale: calc(
       var(--planner-perk-row-min-height) / var(--planner-base-perk-row-min-height)
     );
@@ -97,7 +98,8 @@
     min-height: var(--control-height-md);
     margin: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-lg);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
   }
 
   .buildPlannerInfo {
@@ -120,9 +122,9 @@
 
     border-radius: var(--radius-pill);
     color: var(--accent-soft);
-    font-size: var(--font-size-md);
+    font-size: var(--type-body-size);
     font-weight: 600;
-    line-height: 1;
+    line-height: var(--type-compact-line-height);
     text-transform: none;
     cursor: help;
 
@@ -136,11 +138,12 @@
   .buildPlannerInfoGlyph {
     display: block;
     font-family: Georgia, 'Times New Roman', serif;
-    font-size: calc(var(--font-size-xl) * 1.5);
+    font-size: calc(var(--type-panel-title-size) * 1.08);
     font-style: italic;
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1;
-    transform: translate(-0.02rem, var(--primitive-length-negative-0-05rem));
+    text-transform: none;
+    transform: translate(-0.03rem, var(--primitive-length-negative-0-05rem));
   }
 
   .buildPlannerInfoTooltip,
@@ -154,9 +157,9 @@
     left: 0;
     width: min(var(--primitive-length-24rem), calc(100vw - var(--control-height-md)));
     padding: var(--space-lg) var(--space-xl);
-    font-size: var(--font-size-md);
+    font-size: var(--type-body-size);
     font-weight: 400;
-    line-height: 1.32;
+    line-height: var(--type-body-line-height);
   }
 
   .plannerActionButton {
@@ -281,9 +284,10 @@
     min-height: 0;
     padding-top: var(--space-xs);
     color: var(--text-muted);
-    font-size: var(--font-size-sm);
+    font-size: var(--type-meta-size);
     font-weight: 600;
-    letter-spacing: 0;
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-meta-line-height);
     text-transform: uppercase;
   }
 
@@ -324,9 +328,7 @@
     }
 
     .plannerSlotRequirementOptional {
-      --planner-slot-requirement-optional-base-scale: var(
-        --planner-requirement-legend-tile-scale
-      );
+      --planner-slot-requirement-optional-base-scale: var(--planner-requirement-legend-tile-scale);
     }
   }
 
@@ -342,7 +344,8 @@
     background: transparent;
     color: var(--text-muted);
     font-family: inherit;
-    line-height: 1.12;
+    font-size: var(--type-control-size);
+    line-height: var(--type-compact-control-line-height);
     text-align: left;
     cursor: pointer;
 
@@ -360,7 +363,8 @@
     }
 
     &[data-collapsed-chip='true'] {
-      max-width: min(100%, var(--primitive-length-14rem));
+      width: min(100%, var(--planner-row-label-width));
+      max-width: min(100%, var(--planner-collapsed-section-toggle-max-width));
       border-color: var(--border-muted);
       padding: var(--space-3xs) var(--space-xs);
       background: var(--surface-control);
@@ -369,6 +373,9 @@
 
   .plannerSectionToggleLabel {
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .plannerSectionChevron {
@@ -602,7 +609,9 @@
 
     .plannerSlotRequirementOptionalIcon {
       width: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
-      height: calc(var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale));
+      height: calc(
+        var(--primitive-length-1-45rem) * var(--planner-slot-requirement-optional-scale)
+      );
       stroke-width: 2.2;
     }
   }
@@ -687,7 +696,8 @@
   .plannerSlotGroupCount {
     flex: 0 0 auto;
     color: var(--text-muted);
-    font-size: var(--font-size-xs);
+    font-size: var(--type-compact-size);
+    line-height: var(--type-compact-line-height);
   }
 
   .plannerSlotName {
@@ -697,15 +707,16 @@
     overflow: hidden;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
-    font-size: var(--font-size-lg);
-    line-height: 1.12;
+    font-size: var(--type-card-title-size);
+    line-height: var(--type-heading-line-height);
   }
 
   .plannerSlotMeta {
     width: 100%;
     margin: var(--space-2xs) 0 0;
     color: var(--text-muted);
-    font-size: var(--font-size-sm);
+    font-size: var(--type-support-size);
+    line-height: var(--type-support-line-height);
 
     @include truncate;
   }
@@ -754,13 +765,13 @@
     .plannerSlotName {
       flex: 1 1 auto;
       margin-top: 0;
-      font-size: var(--font-size-md);
+      font-size: var(--type-body-size);
       -webkit-line-clamp: 1;
     }
 
     .plannerSlotMeta {
       margin-top: var(--space-3xs);
-      font-size: var(--font-size-xs);
+      font-size: var(--type-compact-size);
     }
   }
 
@@ -898,8 +909,8 @@
     background: var(--surface-control);
     color: var(--text-secondary);
     font: inherit;
-    font-size: var(--font-size-xs);
-    line-height: 1;
+    font-size: var(--type-compact-size);
+    line-height: var(--type-chip-line-height);
     cursor: pointer;
     pointer-events: auto;
 
@@ -972,9 +983,9 @@
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
     text-overflow: ellipsis;
-    font-size: var(--font-size-md);
+    font-size: var(--type-body-size);
     font-weight: 600;
-    line-height: 1.05;
+    line-height: var(--type-compact-line-height);
   }
 
   .buildPerkTooltip {
@@ -990,8 +1001,8 @@
     p {
       margin: 0;
       color: var(--text-secondary);
-      font-size: var(--font-size-md);
-      line-height: 1.28;
+      font-size: var(--type-body-size);
+      line-height: var(--type-body-line-height);
     }
   }
 
@@ -1146,7 +1157,7 @@
 
       &[data-collapsed-chip='true'] {
         min-height: 0;
-        padding: var(--space-2xs) var(--space-xs);
+        padding: var(--space-3xs) var(--space-xs);
 
         &::before {
           content: '';

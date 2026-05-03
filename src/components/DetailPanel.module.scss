@@ -27,10 +27,10 @@
     h2 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: clamp(var(--primitive-length-1-35rem), 2.6vw, var(--control-height-md));
+      font-size: var(--type-detail-title-size);
       font-weight: 700;
-      line-height: 0.98;
-      letter-spacing: var(--primitive-length-0-02em);
+      line-height: var(--type-title-line-height);
+      letter-spacing: var(--type-heading-letter-spacing);
     }
   }
 
@@ -135,12 +135,15 @@
     h3 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--font-size-2xl);
+      font-size: var(--type-section-title-size);
+      line-height: var(--type-heading-line-height);
     }
 
     p {
       margin: var(--space-sm) 0 0;
       color: var(--text-secondary);
+      font-size: var(--type-body-size);
+      line-height: var(--type-body-line-height);
     }
   }
 
@@ -204,9 +207,9 @@
   .detailCollapsibleToggleHeading {
     min-width: 0;
     font-family: var(--heading-font-family);
-    font-size: var(--font-size-2xl);
+    font-size: var(--type-section-title-size);
     font-weight: 700;
-    line-height: 1.05;
+    line-height: var(--type-heading-line-height);
   }
 
   .detailCollapsibleToggleCount {
@@ -225,27 +228,55 @@
 
   .detailMetadataSections {
     display: grid;
-    gap: var(--space-md);
+    gap: var(--space-xl);
+  }
+
+  .detailMetadataFactList {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+    margin: 0;
+  }
+
+  .detailMetadataFact {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: baseline;
+    min-width: 0;
+    color: var(--text-secondary);
+
+    dt,
+    dd {
+      margin: 0;
+    }
+
+    dt {
+      color: var(--text-muted);
+      font-weight: 600;
+    }
   }
 
   .detailMetadataSection {
     display: grid;
+    align-content: start;
     gap: var(--space-xs);
     min-width: 0;
   }
 
   .detailMetadataHeading {
     margin: 0;
-    color: var(--text-primary);
+    color: var(--text-secondary);
     font-family: var(--heading-font-family);
-    font-size: var(--font-size-xl);
-    line-height: 1.1;
+    font-size: var(--type-card-title-size);
+    line-height: var(--type-heading-line-height);
   }
 
   .detailMetadataBody {
     min-width: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-base);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
   }
 
   .detailMetadataValueText {
@@ -256,9 +287,8 @@
     color: var(--text-muted);
   }
 
-  .detailTokenList {
-    display: flex;
-    flex-wrap: wrap;
+  .detailTalentAttributeList {
+    display: grid;
     gap: var(--space-xs);
     min-width: 0;
     margin: 0;
@@ -266,9 +296,30 @@
     list-style: none;
 
     li {
-      padding: var(--primitive-length-0-1rem) var(--space-sm);
+      display: grid;
+      grid-template-columns: var(--icon-size-xs) minmax(0, 1fr);
+      gap: var(--space-xs);
+      align-items: center;
+      min-width: 0;
+      color: var(--text-secondary);
+      font-size: var(--type-support-size);
+      line-height: var(--type-support-line-height);
+    }
+  }
 
-      @include badge-surface;
+  .detailTalentAttributeIcon {
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(var(--shadow-chain-drop));
+
+    @include size(var(--icon-size-xs));
+
+    &[data-placeholder='true'] {
+      border: var(--primitive-length-1px) solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      background:
+        linear-gradient(135deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.01)),
+        var(--surface-control);
     }
   }
 
@@ -303,29 +354,51 @@
     }
   }
 
+  .detailCampResourceModifierColumns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-md);
+    align-items: start;
+    min-width: 0;
+  }
+
   .detailCampResourceModifierList {
     display: grid;
-    gap: var(--space-xs);
+    gap: 0;
     min-width: 0;
     margin: 0;
     padding: 0;
     list-style: none;
 
     li {
-      display: flex;
-      justify-content: space-between;
-      gap: var(--space-md);
-      align-items: center;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) max-content;
+      gap: var(--space-sm);
+      align-items: baseline;
       min-width: 0;
-      border-top: var(--primitive-length-1px) solid var(--border-muted);
-      padding-top: var(--space-xs);
-      color: var(--text-secondary);
+      padding: var(--primitive-length-0-12rem) 0;
+      border-top: var(--primitive-length-1px) solid var(--border-subtle);
 
       &:first-child {
         border-top: 0;
-        padding-top: 0;
       }
     }
+  }
+
+  .detailCampResourceModifierLabel {
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: var(--type-support-size);
+    line-height: var(--type-support-line-height);
+  }
+
+  .detailCampResourceModifierValue {
+    color: var(--accent-soft);
+    font-size: var(--type-body-size);
+    font-weight: 400;
+    line-height: var(--type-compact-line-height);
+    text-align: right;
+    white-space: nowrap;
   }
 
   .detailList {
@@ -408,8 +481,8 @@
       align-items: center;
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--font-size-xl);
-      line-height: 1.05;
+      font-size: var(--type-card-title-size);
+      line-height: var(--type-heading-line-height);
     }
   }
 
@@ -457,13 +530,25 @@
   }
 
   .detailSubsectionHeading {
-    margin: 0;
-    color: var(--text-muted);
-    font-size: var(--font-size-xl);
+    margin: 0 0 var(--space-xs);
+    color: var(--accent-soft);
+    font-size: var(--type-subsection-title-size);
     font-weight: inherit;
-    letter-spacing: var(--primitive-length-0-12em);
-    line-height: 1.1;
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-meta-line-height);
     text-transform: uppercase;
+  }
+
+  .detailBackgroundFitTables {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+    align-items: start;
+    min-width: 0;
+
+    &[data-has-chance-breakdown='false'] {
+      grid-template-columns: minmax(0, 1fr);
+    }
   }
 
   .detailChanceBreakdown {
@@ -487,36 +572,60 @@
     min-width: 0;
     padding: var(--primitive-length-0-12rem) 0;
     border-top: var(--primitive-length-1px) solid var(--border-subtle);
+    cursor: help;
 
     &:first-child {
       border-top: 0;
     }
 
     dt {
+      display: flex;
+      gap: var(--space-xs);
+      align-items: center;
       min-width: 0;
       color: var(--text-secondary);
-      font-size: var(--font-size-sm);
-      line-height: 1.1;
+      font-size: var(--type-support-size);
+      line-height: var(--type-support-line-height);
     }
 
     dd {
       margin: 0;
       color: var(--accent-soft);
-      font-size: var(--font-size-base);
-      line-height: 1.05;
+      font-size: var(--type-body-size);
+      line-height: var(--type-compact-line-height);
       white-space: nowrap;
     }
   }
 
+  .detailChanceBreakdownLabelText {
+    min-width: 0;
+  }
+
+  .detailChanceBreakdownResourceIcons {
+    display: inline-flex;
+    flex: 0 0 auto;
+    gap: var(--space-2xs);
+    align-items: center;
+  }
+
+  .detailChanceBreakdownResourceIcon {
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(var(--shadow-chain-drop));
+
+    @include size(var(--icon-size-xs));
+  }
+
   .detailStudyResourcePlan {
     display: grid;
-    gap: var(--space-sm);
+    gap: var(--space-md);
     min-width: 0;
+    margin-top: var(--space-xl);
   }
 
   .detailStudyResourcePlanScopes {
     display: grid;
-    gap: var(--space-sm);
+    gap: var(--space-xl);
     min-width: 0;
   }
 
@@ -524,14 +633,25 @@
     display: grid;
     gap: var(--space-xs);
     min-width: 0;
+
+    + .detailStudyResourcePlanScope {
+      margin-top: var(--space-lg);
+    }
+
+    .detailSubsectionHeading {
+      margin-bottom: var(--space-2xs);
+    }
   }
 
-  .detailStudyResourcePlanScopeHeading {
+  .detailOtherPerkGroupRareHeading {
+    min-width: 0;
     margin: 0;
-    color: var(--text-secondary);
-    font-size: var(--font-size-lg);
-    font-weight: inherit;
-    line-height: 1.15;
+    color: var(--accent-soft);
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: 0;
+    line-height: var(--type-body-line-height);
+    text-transform: none;
   }
 
   .detailStudyResourcePlanRows {
@@ -542,9 +662,7 @@
 
   .detailStudyResourcePlanRow {
     display: grid;
-    grid-template-columns: var(--icon-size-sm) minmax(0, 1fr);
     gap: var(--space-sm);
-    align-items: start;
     min-width: 0;
     padding-top: var(--space-xs);
     border-top: var(--primitive-length-1px) solid var(--border-subtle);
@@ -555,35 +673,30 @@
     }
   }
 
-  .detailStudyResourcePlanIcon {
-    display: block;
-    object-fit: contain;
-    filter: drop-shadow(var(--shadow-chain-drop));
-
-    @include size(var(--icon-size-sm));
-  }
-
-  .detailStudyResourcePlanText {
-    min-width: 0;
-  }
-
   .detailStudyResourcePlanMain {
     margin: 0;
     color: var(--text-primary);
-    font-size: var(--font-size-base);
-    line-height: 1.25;
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--type-body-line-height);
+  }
 
-    strong {
-      color: var(--accent-soft);
-      font-weight: 600;
+  .detailStudyResourceTargetList {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, var(--primitive-length-12rem)), 1fr));
+    gap: var(--space-sm);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      min-width: 0;
     }
   }
 
-  .detailStudyResourcePlanSupport {
-    margin: var(--space-3xs) 0 0;
-    color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    line-height: 1.25;
+  .detailStudyResourceTargetTile {
+    height: 100%;
   }
 
   .detailOtherPerkGroupContent,
@@ -593,24 +706,47 @@
     min-width: 0;
   }
 
+  .detailOtherPerkGroupSection + .detailOtherPerkGroupSection {
+    margin-top: var(--space-xl);
+  }
+
   .detailOtherPerkGroupDescription {
     margin: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-base);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
+  }
+
+  .detailOtherPerkGroupHeader {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    min-width: 0;
+    margin: 0 0 var(--space-xs);
+
+    .detailSubsectionHeading {
+      margin: 0;
+    }
+  }
+
+  .detailOtherPerkGroupHeaderCount {
+    flex: 0 0 auto;
+    min-width: var(--target-size-compact);
+    padding: var(--space-2xs) var(--space-md);
+
+    @include badge-surface;
   }
 
   .detailOtherPerkGroupList {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--space-sm);
-    align-items: stretch;
     min-width: 0;
     margin: 0;
     padding: 0;
     list-style: none;
 
     li {
-      flex: 0 1 min(var(--primitive-length-11-4rem), 100%);
       min-width: 0;
     }
   }
@@ -621,25 +757,24 @@
 
   .detailOtherPerkGroupProbabilityBadge {
     color: var(--accent-soft);
-    font-size: var(--font-size-xs);
-    line-height: 1.1;
+    font-size: var(--type-compact-size);
+    line-height: var(--type-compact-line-height);
     text-align: right;
     white-space: normal;
   }
 
   .detailOtherPerkGroupRareToggle {
     appearance: none;
-    display: flex;
+    display: inline-flex;
     gap: var(--space-xs);
     align-items: center;
     justify-content: flex-start;
-    width: fit-content;
+    width: auto;
     max-width: 100%;
     min-width: 0;
-    border: var(--primitive-length-1px) solid var(--border-muted);
-    border-radius: var(--radius-sm);
-    padding: var(--space-3xs) var(--space-xs);
-    background: var(--surface-control);
+    border: 0;
+    padding: 0;
+    background: transparent;
     color: inherit;
     font: inherit;
     text-align: left;
@@ -666,13 +801,6 @@
     }
   }
 
-  .detailOtherPerkGroupRareCount {
-    flex: 0 0 auto;
-    padding: var(--primitive-length-0-1rem) var(--space-sm);
-
-    @include badge-surface;
-  }
-
   .detailPlacementTierBadge {
     color: var(--accent-soft);
   }
@@ -682,9 +810,10 @@
   }
 
   .detailSupport {
-    margin: var(--primitive-length-0-18rem) 0 0;
+    margin: var(--space-2xs) 0 0;
     color: var(--text-muted);
-    font-size: var(--font-size-base);
+    font-size: var(--type-support-size);
+    line-height: var(--type-support-line-height);
   }
 
   .detailBadge {
@@ -700,10 +829,11 @@
   }
 
   .eyebrow {
-    margin: 0 0 var(--primitive-length-0-2rem);
+    margin: 0 0 var(--space-2xs);
     color: var(--accent-soft);
-    font-size: var(--primitive-length-0-64rem);
-    letter-spacing: var(--primitive-length-0-16em);
+    font-size: var(--type-meta-size);
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-meta-line-height);
     text-transform: uppercase;
   }
 
@@ -736,7 +866,6 @@
     }
 
     .detailSection p,
-    .detailMetadataList,
     .detailList,
     .detailPlacementList {
       margin-top: var(--space-xs);
@@ -772,8 +901,8 @@
       padding: var(--space-sm);
     }
 
-    .detailMetadataContent {
-      gap: var(--space-md);
+    .detailMetadataSections {
+      gap: var(--space-xl);
     }
 
     .detailSupport {
@@ -802,18 +931,25 @@
     }
 
     .detailHeader,
-    .detailMetadataRow,
     .detailList li {
       flex-direction: column;
       align-items: flex-start;
     }
 
-    .detailMetadataRow {
+    .detailHeaderMain {
       grid-template-columns: 1fr;
-      gap: var(--space-2xs);
     }
 
-    .detailHeaderMain {
+    .detailCampResourceModifierColumns {
+      grid-template-columns: 1fr;
+    }
+
+    .detailBackgroundFitTables {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+
+    .detailOtherPerkGroupList {
       grid-template-columns: 1fr;
     }
 

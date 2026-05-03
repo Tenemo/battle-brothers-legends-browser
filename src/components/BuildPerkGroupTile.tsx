@@ -8,6 +8,7 @@ import styles from './BuildPlanner.module.scss'
 
 export type BuildPerkGroupTileOption = {
   categoryName: string
+  iconLabel?: string
   isSelectable?: boolean
   perkGroupIconPath: string | null
   perkGroupId: string
@@ -16,6 +17,7 @@ export type BuildPerkGroupTileOption = {
 
 type BuildPerkGroupTilePerk = {
   iconPath: string | null
+  perkGroupSelection?: BuildPerkPillSelection
   perkId: string | null
   perkName: string
 }
@@ -83,7 +85,7 @@ function renderPerkGroupOptionIcon({
         optionIconClassName,
       )}
       iconPath={perkGroupOption.perkGroupIconPath}
-      label={`${perkGroupOption.perkGroupLabel} perk group icon`}
+      label={perkGroupOption.iconLabel ?? `${perkGroupOption.perkGroupLabel} perk group icon`}
       testId="planner-group-option-icon"
     />
   )
@@ -320,10 +322,7 @@ export function BuildPerkGroupTile({
           </div>
         </div>
       </div>
-      <div
-        className={styles.plannerPillList}
-        data-testid="planner-pill-list"
-      >
+      <div className={styles.plannerPillList} data-testid="planner-pill-list">
         {perks.map((perk) =>
           perk.perkId ? (
             <BuildPerkPill
@@ -336,7 +335,7 @@ export function BuildPerkGroupTile({
               onInspectPerk={onInspectPerk}
               onOpenHover={onOpenBuildPerkHover}
               onOpenTooltip={onOpenBuildPerkTooltip}
-              perkGroupSelection={primaryPerkGroupSelection}
+              perkGroupSelection={perk.perkGroupSelection ?? primaryPerkGroupSelection}
               perkIconPath={perk.iconPath}
               perkId={perk.perkId}
               perkName={perk.perkName}

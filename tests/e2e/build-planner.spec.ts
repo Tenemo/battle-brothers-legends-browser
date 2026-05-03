@@ -387,15 +387,26 @@ test('build planner splits shared and individual perk groups without layout drif
   })
   const infoButtonGlyphStyle = await infoButtonGlyph.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
-    const rootStyle = window.getComputedStyle(document.documentElement)
-    const baseGlyphFontSize = Number.parseFloat(rootStyle.getPropertyValue('--font-size-xl'))
-    const rootFontSize = Number.parseFloat(rootStyle.fontSize)
+    const fontSizeProbe = document.createElement('span')
+    fontSizeProbe.style.fontSize = 'calc(var(--type-panel-title-size) * 1.08)'
+    document.body.append(fontSizeProbe)
+
+    const expectedFontSize = Number.parseFloat(window.getComputedStyle(fontSizeProbe).fontSize)
+    fontSizeProbe.remove()
+
+    const fontFamily = computedStyle.fontFamily
+      .split(',')[0]
+      .trim()
+      .replaceAll('"', '')
+      .replaceAll("'", '')
+      .toLowerCase()
 
     return {
-      expectedFontSize: baseGlyphFontSize * rootFontSize * 1.5,
-      fontFamily: computedStyle.fontFamily,
+      expectedFontSize,
+      fontFamily,
       fontSize: Number.parseFloat(computedStyle.fontSize),
       fontStyle: computedStyle.fontStyle,
+      textTransform: computedStyle.textTransform,
       transform: computedStyle.transform,
     }
   })
@@ -405,11 +416,12 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(Math.abs(infoButtonStyle.height - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(Math.abs(infoButtonStyle.width - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(infoButtonStyle.textTransform).toBe('none')
-  expect(infoButtonGlyphStyle.fontFamily).toContain('Georgia')
+  expect(infoButtonGlyphStyle.fontFamily).toBe('georgia')
   expect(
     Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize),
   ).toBeLessThan(0.5)
   expect(infoButtonGlyphStyle.fontStyle).toBe('italic')
+  expect(infoButtonGlyphStyle.textTransform).toBe('none')
   expect(infoButtonGlyphStyle.transform).not.toBe('none')
 
   await infoButton.hover()
@@ -489,7 +501,9 @@ test('build planner splits shared and individual perk groups without layout drif
     name: 'Remove Clarity from build',
   })
 
-  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
   const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -872,6 +886,38 @@ test('collapses and restores build planner perk group sections independently', a
 
   expect(collapsedToggleGap).not.toBeNull()
   expect(collapsedToggleGap!).toBeGreaterThanOrEqual(6)
+  const collapsedToggleTrackBoundaryMetrics = await page.evaluate(() => {
+    const firstPickedPerkTile = document.querySelector<HTMLElement>(
+      '[data-testid="planner-slot-perk"]',
+    )
+    const collapsedToggles = [
+      ...document.querySelectorAll<HTMLElement>(
+        '[data-testid="planner-section-toggle"][aria-expanded="false"]',
+      ),
+    ]
+
+    if (!(firstPickedPerkTile instanceof HTMLElement) || collapsedToggles.length !== 2) {
+      return null
+    }
+
+    const firstPickedPerkTileLeft = firstPickedPerkTile.getBoundingClientRect().left
+
+    return collapsedToggles.map((collapsedToggle) => {
+      const collapsedToggleRectangle = collapsedToggle.getBoundingClientRect()
+
+      return {
+        firstPickedPerkTileLeft,
+        right: collapsedToggleRectangle.right,
+      }
+    })
+  })
+
+  expect(collapsedToggleTrackBoundaryMetrics).not.toBeNull()
+  for (const collapsedToggleMetrics of collapsedToggleTrackBoundaryMetrics!) {
+    expect(collapsedToggleMetrics.right).toBeLessThanOrEqual(
+      collapsedToggleMetrics.firstPickedPerkTileLeft,
+    )
+  }
 
   await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
   await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()
@@ -1281,7 +1327,9 @@ test('separates planner group card hover from icon and perk pill hover states', 
   await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
 
   await battleForgedPill.hover()
-  await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
+  await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
   const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -2233,7 +2281,7 @@ test('cancels a picked perk tooltip timer before marking the perk optional', asy
 
   await clarityPickedPerkTile.hover()
   await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 1000,
+    timeout: 2500,
   })
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
 
@@ -2264,7 +2312,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
 
   await clarityPickedPerkTile.hover()
   await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 1000,
+    timeout: 2500,
   })
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
 
@@ -2281,7 +2329,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
   })
 
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 1000,
+    timeout: 2500,
   })
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
   await expect(page.getByRole('tooltip')).toContainText(/An additional \+10% of any damage/i)

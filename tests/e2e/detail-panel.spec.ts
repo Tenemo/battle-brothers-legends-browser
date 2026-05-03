@@ -10,6 +10,8 @@ import {
   searchPerks,
 } from './support/build-planner-page'
 
+const maximumTypographyFontSizeDifference = 0.1
+
 function readBackgroundSourceProbabilityLabel(label: string): number {
   const normalizedLabel = label.trim()
 
@@ -139,12 +141,29 @@ test('shows imported background metadata only in the background detail panel', a
   await metadataToggle.click()
 
   await expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
-  await expect(metadataSection.getByText('Daily cost')).toBeVisible()
+  await expect(metadataSection.getByText('Daily cost:')).toBeVisible()
   await expect(metadataSection.getByText('6')).toBeVisible()
+  await expect(metadataSection.getByText('Background type:')).toBeVisible()
   await expect(metadataSection.getByText('Lowborn')).toBeVisible()
   await expect(metadataSection.getByText('Bartering')).toBeVisible()
   await expect(metadataSection.getByText('+13')).toHaveCount(2)
-  await expect(metadataSection.getByText('Excluded traits')).toBeVisible()
+  const metadataParentHeading = metadataToggle
+    .locator('span')
+    .filter({ hasText: /^Background details$/u })
+    .first()
+  const excludedTraitsHeading = metadataSection.getByRole('heading', {
+    level: 4,
+    name: 'Excluded traits',
+  })
+  const metadataParentHeadingFontSize = await metadataParentHeading.evaluate((element) =>
+    Number.parseFloat(window.getComputedStyle(element).fontSize),
+  )
+  const excludedTraitsHeadingFontSize = await excludedTraitsHeading.evaluate((element) =>
+    Number.parseFloat(window.getComputedStyle(element).fontSize),
+  )
+
+  await expect(excludedTraitsHeading).toBeVisible()
+  expect(excludedTraitsHeadingFontSize).toBeLessThan(metadataParentHeadingFontSize)
   const fearUndeadTraitPill = metadataSection.getByRole('button', { name: 'Fear Undead' })
   const aggressiveTraitPill = metadataSection.getByRole('button', { name: 'Aggressive' })
   const martialTraitPill = metadataSection.getByRole('button', { name: 'Martial' })
@@ -174,9 +193,112 @@ test('shows imported background metadata only in the background detail panel', a
   await expect(traitTooltip).toContainText(
     'This character is pretty aggressive, even to their own detriment.',
   )
-  await expect(traitTooltip).toContainText('This background excludes this trait')
+  await expect(traitTooltip).not.toContainText('This background excludes this trait')
   await expect(backgroundFitPanel.getByText('Daily cost')).toHaveCount(0)
   await expect(backgroundFitPanel.getByText('Bartering')).toHaveCount(0)
+})
+
+test('keeps camp skill metadata rows tucked under their heading', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+
+  if (await expandBackgroundFitButton.isVisible()) {
+    await expandBackgroundFitButton.click()
+  }
+
+  await backgroundFitPanel.getByLabel('Search backgrounds').fill('Vagabond')
+  await backgroundFitPanel.getByRole('button', { name: /Inspect background Vagabond/u }).click()
+
+  const detailPanel = getDetailPanel(page)
+  const metadataSection = detailPanel.getByTestId('detail-background-metadata-section')
+  const metadataToggle = metadataSection.getByRole('button', { name: 'Background details' })
+
+  await metadataToggle.click()
+  await expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(metadataSection.getByText('Camp skills')).toBeVisible()
+  await expect(metadataSection.getByText('Scouting', { exact: true })).toBeVisible()
+  await expect(metadataSection.getByText('Gathering', { exact: true })).toBeVisible()
+  await expect(
+    metadataSection.getByTestId('detail-camp-resource-modifier-value').first(),
+  ).toHaveText(/^\+/u)
+
+  const campModifierTypography = await detailPanel.evaluate((panel) => {
+    function parsePixelValue(value: string) {
+      const parsedValue = Number.parseFloat(value)
+
+      return Number.isFinite(parsedValue) ? parsedValue : Number.POSITIVE_INFINITY
+    }
+
+    const campLabel = panel.querySelector('[data-testid="detail-camp-resource-modifier-label"]')
+    const campValue = panel.querySelector('[data-testid="detail-camp-resource-modifier-value"]')
+    const fitLabel = panel.querySelector('[data-testid="background-fit-summary-label"]')
+    const fitValue = panel.querySelector('[data-testid="background-fit-summary-value"]')
+
+    if (
+      !(campLabel instanceof HTMLElement) ||
+      !(campValue instanceof HTMLElement) ||
+      !(fitLabel instanceof HTMLElement) ||
+      !(fitValue instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const campLabelStyle = window.getComputedStyle(campLabel)
+    const campValueStyle = window.getComputedStyle(campValue)
+    const fitLabelStyle = window.getComputedStyle(fitLabel)
+    const fitValueStyle = window.getComputedStyle(fitValue)
+
+    return {
+      campLabelFontSize: parsePixelValue(campLabelStyle.fontSize),
+      campValueBackgroundImage: campValueStyle.backgroundImage,
+      campValueBorderRadius: campValueStyle.borderRadius,
+      campValueFontSize: parsePixelValue(campValueStyle.fontSize),
+      fitLabelFontSize: parsePixelValue(fitLabelStyle.fontSize),
+      fitValueFontSize: parsePixelValue(fitValueStyle.fontSize),
+    }
+  })
+
+  const campSkillMetrics = await metadataSection.evaluate((section) => {
+    const headingElements = [...section.querySelectorAll('h4')]
+    const campSkillsHeading = headingElements.find(
+      (headingElement) => headingElement.textContent?.trim() === 'Camp skills',
+    )
+    const campSkillsSection = campSkillsHeading?.parentElement
+    const firstCampSkillRow = campSkillsSection?.querySelector('li')
+
+    if (
+      !(campSkillsHeading instanceof HTMLElement) ||
+      !(campSkillsSection instanceof HTMLElement) ||
+      !(firstCampSkillRow instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const headingRectangle = campSkillsHeading.getBoundingClientRect()
+    const firstRowRectangle = firstCampSkillRow.getBoundingClientRect()
+
+    return {
+      headingHeight: headingRectangle.height,
+      headingToFirstRowDistance: firstRowRectangle.top - headingRectangle.top,
+    }
+  })
+
+  expect(campModifierTypography).not.toBeNull()
+  expect(
+    Math.abs(campModifierTypography!.campLabelFontSize - campModifierTypography!.fitLabelFontSize),
+  ).toBeLessThanOrEqual(maximumTypographyFontSizeDifference)
+  expect(
+    Math.abs(campModifierTypography!.campValueFontSize - campModifierTypography!.fitValueFontSize),
+  ).toBeLessThanOrEqual(maximumTypographyFontSizeDifference)
+  expect(campModifierTypography!.campValueBackgroundImage).toBe('none')
+  expect(campModifierTypography!.campValueBorderRadius).toBe('0px')
+  expect(campSkillMetrics).not.toBeNull()
+  expect(campSkillMetrics!.headingHeight).toBeLessThan(24)
+  expect(campSkillMetrics!.headingToFirstRowDistance).toBeLessThanOrEqual(28)
 })
 
 test('shows the dominant study resource strategy for the reported Peddler build', async ({
@@ -199,16 +321,144 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   await backgroundFitPanel.getByRole('button', { name: 'Inspect background Peddler' }).click()
 
   const detailPanel = getDetailPanel(page)
+  const backgroundFitTables = detailPanel.getByTestId('detail-background-fit-tables')
+  const metricSummary = backgroundFitTables.getByTestId('background-fit-summary-table')
+  const chanceBreakdown = backgroundFitTables.getByTestId('detail-chance-breakdown')
   const studyResourcePlan = detailPanel.getByTestId('detail-study-resource-plan')
   const mustHaveStudyResourcePlan = studyResourcePlan
     .getByTestId('detail-study-resource-plan-scope')
-    .filter({ hasText: 'Must-have impact' })
+    .filter({ hasText: 'Must-have book/scroll usage' })
+  const fullBuildStudyResourcePlan = studyResourcePlan
+    .getByTestId('detail-study-resource-plan-scope')
+    .filter({ hasText: 'Full-build book/scroll usage' })
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Peddler' })).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Ancient scroll:')).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Berserker')).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Skill book:')).toBeVisible()
-  await expect(mustHaveStudyResourcePlan.getByText('Medium Armor or Fit')).toBeVisible()
+  await expect(chanceBreakdown).toBeVisible()
+  const backgroundFitLayout = await backgroundFitTables.evaluate((tables) => {
+    const metricSummaryElement = tables.querySelector(
+      '[data-testid="background-fit-summary-table"]',
+    )
+    const chanceBreakdownElement = tables.querySelector('[data-testid="detail-chance-breakdown"]')
+
+    if (
+      !(metricSummaryElement instanceof HTMLElement) ||
+      !(chanceBreakdownElement instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const metricSummaryRectangle = metricSummaryElement.getBoundingClientRect()
+    const chanceBreakdownRectangle = chanceBreakdownElement.getBoundingClientRect()
+
+    return {
+      chanceBreakdownLeft: chanceBreakdownRectangle.left,
+      chanceBreakdownTop: chanceBreakdownRectangle.top,
+      metricSummaryRight: metricSummaryRectangle.right,
+      metricSummaryTop: metricSummaryRectangle.top,
+    }
+  })
+  const studyResourcePlanSpacing = await studyResourcePlan.evaluate((plan) => {
+    const previousElement = plan.previousElementSibling
+
+    if (!(previousElement instanceof HTMLElement)) {
+      return null
+    }
+
+    return plan.getBoundingClientRect().top - previousElement.getBoundingClientRect().bottom
+  })
+  const studyResourceScopeSpacing = await studyResourcePlan.evaluate((plan) => {
+    const scopeElements = [
+      ...plan.querySelectorAll('[data-testid="detail-study-resource-plan-scope"]'),
+    ]
+
+    if (scopeElements.length < 2) {
+      return null
+    }
+
+    const firstScopeElement = scopeElements[0]
+    const secondScopeElement = scopeElements[1]
+
+    if (
+      !(firstScopeElement instanceof HTMLElement) ||
+      !(secondScopeElement instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    return (
+      secondScopeElement.getBoundingClientRect().top -
+      firstScopeElement.getBoundingClientRect().bottom
+    )
+  })
+
+  expect(backgroundFitLayout).not.toBeNull()
+  expect(backgroundFitLayout!.chanceBreakdownLeft).toBeGreaterThan(
+    backgroundFitLayout!.metricSummaryRight,
+  )
+  expect(
+    Math.abs(backgroundFitLayout!.chanceBreakdownTop - backgroundFitLayout!.metricSummaryTop),
+  ).toBeLessThanOrEqual(4)
+  expect(studyResourcePlanSpacing).not.toBeNull()
+  expect(studyResourcePlanSpacing!).toBeGreaterThanOrEqual(16)
+  expect(studyResourceScopeSpacing).not.toBeNull()
+  expect(studyResourceScopeSpacing!).toBeGreaterThanOrEqual(18)
+  await expect(metricSummary).toBeVisible()
+  await expect(
+    mustHaveStudyResourcePlan.getByRole('heading', {
+      level: 5,
+      name: 'Ancient scroll covers:',
+    }),
+  ).toBeVisible()
+  await expect(
+    mustHaveStudyResourcePlan.getByRole('heading', {
+      level: 5,
+      name: 'Skill book covers:',
+    }),
+  ).toBeVisible()
+  await expect(
+    fullBuildStudyResourcePlan.getByRole('heading', {
+      level: 4,
+      name: 'Full-build book/scroll usage',
+    }),
+  ).toBeVisible()
+  const ancientScrollCoveredPerkGroups = mustHaveStudyResourcePlan.getByRole('list', {
+    name: 'Ancient scroll covered perk groups',
+  })
+  const mustHaveStudyResourceRowKinds = await mustHaveStudyResourcePlan
+    .getByTestId('detail-study-resource-plan-row')
+    .evaluateAll((rows) =>
+      rows.map((row) => row.getAttribute('data-resource-kind')).filter(Boolean),
+    )
+  const berserkerStudyResourceTile = ancientScrollCoveredPerkGroups
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Berserker' })
+  const berserkerStudyResourceTileIcons = berserkerStudyResourceTile.getByTestId(
+    'planner-group-option-icon',
+  )
+  const muscularityCoveredPerkPill = berserkerStudyResourceTile.getByRole('button', {
+    name: 'Muscularity',
+  })
+  const muscularityCoveredPerkIcon = muscularityCoveredPerkPill.getByTestId('planner-pill-icon')
+
+  expect(mustHaveStudyResourceRowKinds).toEqual(['book', 'scroll'])
+  await expect(berserkerStudyResourceTile).toBeVisible()
+  await expect(berserkerStudyResourceTileIcons).toHaveCount(2)
+  await expect(berserkerStudyResourceTileIcons.nth(1)).toHaveAttribute(
+    'src',
+    /\/game-icons\/ui\/items\/trade\/scroll\.png$/,
+  )
+  await expect(berserkerStudyResourceTile.getByRole('button', { name: 'Brawny' })).toBeVisible()
+  await expect(berserkerStudyResourceTile.getByRole('button', { name: 'Colossus' })).toBeVisible()
+  await expect(muscularityCoveredPerkPill).toBeVisible()
+  await expect(muscularityCoveredPerkIcon).toBeVisible()
+  await expectImageToLoad(muscularityCoveredPerkIcon)
+  await muscularityCoveredPerkPill.hover()
+  await expect(muscularityCoveredPerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
+  await page.mouse.move(1, 1)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(studyResourcePlan.getByText('Heavy Armor')).toHaveCount(0)
 })
 

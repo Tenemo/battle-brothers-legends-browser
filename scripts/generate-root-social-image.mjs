@@ -34,6 +34,7 @@ const legendsPerkCatalogDataPath = path.join(
   'legends-perk-catalog.json',
 )
 const fontDirectoryPath = path.join(projectRootDirectoryPath, 'scripts', 'assets', 'fonts')
+const cinzelRegularFontPath = path.join(fontDirectoryPath, 'Cinzel.ttf')
 const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel-Bold.ttf')
 const sourceSansRegularFontPath = path.join(fontDirectoryPath, 'SourceSans3-Regular.ttf')
 const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Semibold.ttf')
@@ -114,6 +115,7 @@ export async function renderRootSocialImagePng() {
         sourceSansRegularFontPath,
         sourceSansSemiBoldFontPath,
         sourceSansBoldFontPath,
+        cinzelRegularFontPath,
         cinzelBoldFontPath,
       ],
       loadSystemFonts: false,

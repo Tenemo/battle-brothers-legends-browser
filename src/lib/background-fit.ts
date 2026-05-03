@@ -87,6 +87,8 @@ export type BackgroundFitStudyResourceStrategy = {
 
 type StudyResourceChanceBreakdownProfile = {
   key: BackgroundFitStudyResourceChanceBreakdownEntry['key']
+  oneScrollEquivalentScopeCacheKey?: string
+  oneScrollEquivalentStudyResourceCoverageProfile?: StudyResourceMaskCoverageProfile
   scopeCacheKey: string
   shouldAllowBook: boolean
   shouldAllowScroll: boolean
@@ -2497,10 +2499,13 @@ function getStudyResourceChanceBreakdownFilters(
 function getStudyResourceBreakdownResourceCount(
   entry: Pick<
     BackgroundFitStudyResourceChanceBreakdownEntry,
-    'shouldAllowBook' | 'shouldAllowScroll'
+    'shouldAllowBook' | 'shouldAllowScroll' | 'shouldAllowSecondScroll'
   >,
 ): number {
-  return (entry.shouldAllowBook ? 1 : 0) + (entry.shouldAllowScroll ? 1 : 0)
+  return (
+    (entry.shouldAllowBook ? 1 : 0) +
+    (entry.shouldAllowScroll ? (entry.shouldAllowSecondScroll ? 2 : 1) : 0)
+  )
 }
 
 function compareStudyResourceBreakdownEntriesForStrategy(
@@ -2544,12 +2549,22 @@ function getStudyResourceBreakdownProbability(
   entries: BackgroundFitStudyResourceChanceBreakdownEntry[],
   filter: BackgroundStudyResourceFilter,
 ): number {
+  const exactEntry = entries.find(
+    (entry) =>
+      entry.shouldAllowBook === filter.shouldAllowBook &&
+      entry.shouldAllowScroll === filter.shouldAllowScroll &&
+      entry.shouldAllowSecondScroll === filter.shouldAllowSecondScroll,
+  )
+
+  if (exactEntry) {
+    return exactEntry.probability
+  }
+
   return (
     entries.find(
       (entry) =>
         entry.shouldAllowBook === filter.shouldAllowBook &&
-        entry.shouldAllowScroll === filter.shouldAllowScroll &&
-        entry.shouldAllowSecondScroll === filter.shouldAllowSecondScroll,
+        entry.shouldAllowScroll === filter.shouldAllowScroll,
     )?.probability ?? 0
   )
 }
@@ -3163,20 +3178,38 @@ export function createBackgroundFitEngine(
             shouldAllowScroll: breakdownFilter.shouldAllowScroll,
             shouldAllowSecondScroll: breakdownFilter.shouldAllowSecondScroll,
           } satisfies BackgroundStudyResourceFilter
+          const oneScrollEquivalentFilter = breakdownFilter.shouldAllowSecondScroll
+            ? ({
+                ...filter,
+                shouldAllowSecondScroll: false,
+              } satisfies BackgroundStudyResourceFilter)
+            : null
+          const createCoverageProfile = (profileFilter: BackgroundStudyResourceFilter) =>
+            createStudyResourceMaskCoverageProfile({
+              filter: profileFilter,
+              getRequirementCoverageMask,
+              pickedPerks,
+              targetMask,
+            })
 
           return {
             ...breakdownFilter,
+            oneScrollEquivalentScopeCacheKey: oneScrollEquivalentFilter
+              ? getBackgroundFitScopeCacheKey(
+                  scopePrefix,
+                  pickedPerks,
+                  getStudyResourceFilterCacheKey(oneScrollEquivalentFilter),
+                )
+              : undefined,
+            oneScrollEquivalentStudyResourceCoverageProfile: oneScrollEquivalentFilter
+              ? createCoverageProfile(oneScrollEquivalentFilter)
+              : undefined,
             scopeCacheKey: getBackgroundFitScopeCacheKey(
               scopePrefix,
               pickedPerks,
               getStudyResourceFilterCacheKey(filter),
             ),
-            studyResourceCoverageProfile: createStudyResourceMaskCoverageProfile({
-              filter,
-              getRequirementCoverageMask,
-              pickedPerks,
-              targetMask,
-            }),
+            studyResourceCoverageProfile: createCoverageProfile(filter),
           }
         })
       const mustHaveStudyResourceChanceBreakdownProfiles =
@@ -3284,18 +3317,40 @@ export function createBackgroundFitEngine(
         cachedBackgroundFitRecord: CachedBackgroundFitRecord,
         profiles: StudyResourceChanceBreakdownProfile[],
       ): BackgroundFitStudyResourceChanceBreakdownEntry[] =>
-        profiles.map((profile) => ({
-          key: profile.key,
-          probability: getCachedNativeOutcomeSummary({
+        profiles.map((profile) => {
+          const probability = getCachedNativeOutcomeSummary({
             backgroundFitBuildCache,
             cachedBackgroundFitRecord,
             studyResourceCoverageProfile: profile.studyResourceCoverageProfile,
             studyResourceFilterCacheKey: profile.scopeCacheKey,
-          }).buildReachabilityProbability,
-          shouldAllowBook: profile.shouldAllowBook,
-          shouldAllowScroll: profile.shouldAllowScroll,
-          shouldAllowSecondScroll: profile.shouldAllowSecondScroll,
-        }))
+          }).buildReachabilityProbability
+          const oneScrollEquivalentProbability =
+            profile.oneScrollEquivalentScopeCacheKey &&
+            profile.oneScrollEquivalentStudyResourceCoverageProfile
+              ? getCachedNativeOutcomeSummary({
+                  backgroundFitBuildCache,
+                  cachedBackgroundFitRecord,
+                  studyResourceCoverageProfile:
+                    profile.oneScrollEquivalentStudyResourceCoverageProfile,
+                  studyResourceFilterCacheKey: profile.oneScrollEquivalentScopeCacheKey,
+                }).buildReachabilityProbability
+              : null
+          const shouldAllowSecondScroll =
+            profile.shouldAllowSecondScroll &&
+            (oneScrollEquivalentProbability === null ||
+              probability - oneScrollEquivalentProbability >
+                studyResourceStrategyProbabilityEpsilon)
+
+          return {
+            key: profile.key,
+            probability: shouldAllowSecondScroll
+              ? probability
+              : (oneScrollEquivalentProbability ?? probability),
+            shouldAllowBook: profile.shouldAllowBook,
+            shouldAllowScroll: profile.shouldAllowScroll,
+            shouldAllowSecondScroll,
+          }
+        })
       const getStudyResourceStrategyTargets = ({
         baselineProbability,
         cachedBackgroundFitRecord,
