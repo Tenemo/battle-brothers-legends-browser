@@ -23,10 +23,7 @@ import type {
   BuildTargetPerkGroup,
   RankedBackgroundFit,
 } from '../lib/background-fit'
-import {
-  formatStudyResourceStrategyTargetNames,
-  skillBookIconPath,
-} from '../lib/background-study-resource-display'
+import { skillBookIconPath } from '../lib/background-study-resource-display'
 import { ancientScrollIconPath } from '../lib/ancient-scroll-perk-group-display'
 import type { BackgroundStudyResourceFilter } from '../lib/background-study-reachability'
 import {
@@ -662,6 +659,26 @@ function getChanceBreakdownLabel(entry: BackgroundFitStudyResourceChanceBreakdow
   return 'Native roll'
 }
 
+function getChanceBreakdownTooltip(entry: BackgroundFitStudyResourceChanceBreakdownEntry): string {
+  if (entry.shouldAllowBook && entry.shouldAllowScroll) {
+    return entry.shouldAllowSecondScroll
+      ? 'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book and up to two eligible missing magic perk groups can be filled by ancient scrolls if Bright is available.'
+      : 'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book and one eligible missing magic perk group can be filled by an ancient scroll.'
+  }
+
+  if (entry.shouldAllowBook) {
+    return 'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book. Ancient scrolls are not included.'
+  }
+
+  if (entry.shouldAllowScroll) {
+    return entry.shouldAllowSecondScroll
+      ? 'Chance the background covers every must-have perk when up to two eligible missing magic perk groups can be filled by ancient scrolls if Bright is available. Skill books are not included.'
+      : 'Chance the background covers every must-have perk when one eligible missing magic perk group can be filled by an ancient scroll. Skill books are not included.'
+  }
+
+  return 'Chance the background covers every must-have perk from native perk groups alone, without a skill book or ancient scroll.'
+}
+
 type ChanceBreakdownResourceIcon = {
   iconPath: string
   iconKey: string
@@ -711,18 +728,21 @@ function BackgroundFitChanceBreakdown({
       <h4 className={styles.detailSubsectionHeading}>Must-have chance breakdown</h4>
       <dl className={styles.detailChanceBreakdownList}>
         {entries.map((entry) => {
+          const label = getChanceBreakdownLabel(entry)
           const resourceIcons = getChanceBreakdownResourceIcons(entry)
+          const tooltip = getChanceBreakdownTooltip(entry)
+          const value = formatBackgroundFitProbabilityLabel(entry.probability)
 
           return (
             <div
+              aria-label={`${label} ${value}. ${tooltip}`}
               className={styles.detailChanceBreakdownRow}
               data-testid="detail-chance-breakdown-row"
               key={entry.key}
+              title={tooltip}
             >
               <dt>
-                <span className={styles.detailChanceBreakdownLabelText}>
-                  {getChanceBreakdownLabel(entry)}
-                </span>
+                <span className={styles.detailChanceBreakdownLabelText}>{label}</span>
                 {resourceIcons.length > 0 ? (
                   <span aria-hidden="true" className={styles.detailChanceBreakdownResourceIcons}>
                     {resourceIcons.map((resourceIcon) => (
@@ -739,7 +759,7 @@ function BackgroundFitChanceBreakdown({
                   </span>
                 ) : null}
               </dt>
-              <dd>{formatBackgroundFitProbabilityLabel(entry.probability)}</dd>
+              <dd>{value}</dd>
             </div>
           )
         })}
@@ -770,6 +790,40 @@ function getStudyResourceStrategyResourceLabel(
   resourceKind: StudyResourceStrategyResourceKind,
 ): string {
   return resourceKind === 'book' ? 'Skill book' : 'Ancient scroll'
+}
+
+function getStudyResourceStrategyUsageResourceLabel(
+  resourceKind: StudyResourceStrategyResourceKind,
+): string {
+  return resourceKind
+}
+
+function getStudyResourceStrategyUsageResourceKinds(
+  strategy: BackgroundFitStudyResourceStrategy,
+): StudyResourceStrategyResourceKind[] {
+  return (['book', 'scroll'] as const).filter(
+    (resourceKind) => getStudyResourceStrategyTargets({ resourceKind, strategy }).length > 0,
+  )
+}
+
+function formatStudyResourceStrategyUsageHeading({
+  scopeLabel,
+  strategy,
+}: {
+  scopeLabel: string
+  strategy: BackgroundFitStudyResourceStrategy
+}): string | null {
+  const resourceKinds = getStudyResourceStrategyUsageResourceKinds(strategy)
+
+  if (resourceKinds.length === 0) {
+    return null
+  }
+
+  const resourceUsageLabel = resourceKinds
+    .map((resourceKind) => getStudyResourceStrategyUsageResourceLabel(resourceKind))
+    .join('/')
+
+  return `${scopeLabel} ${resourceUsageLabel} usage`
 }
 
 type StudyResourceStrategyCoveredPerk = {
@@ -947,10 +1001,7 @@ function BackgroundFitStudyResourcePlanRow({
   }
 
   const resourceLabel = getStudyResourceStrategyResourceLabel(resourceKind)
-  const targetNames = formatStudyResourceStrategyTargetNames(targets)
-  const resourcePlanHeadingSuffix =
-    resourceKind === 'book' && targets.length > 1 ? ', depending on native roll' : ''
-  const resourcePlanHeading = `${resourceLabel} covers ${targetNames}${resourcePlanHeadingSuffix}`
+  const resourcePlanHeading = `${resourceLabel} covers:`
 
   return (
     <div
@@ -958,12 +1009,7 @@ function BackgroundFitStudyResourcePlanRow({
       data-resource-kind={resourceKind}
       data-testid="detail-study-resource-plan-row"
     >
-      <h6 aria-label={resourcePlanHeading} className={styles.detailStudyResourcePlanMain}>
-        <span>{resourceLabel} covers</span>
-        <span> </span>
-        <strong>{targetNames}</strong>
-        {resourcePlanHeadingSuffix ? <span>{resourcePlanHeadingSuffix}</span> : null}
-      </h6>
+      <h5 className={styles.detailStudyResourcePlanMain}>{resourcePlanHeading}</h5>
       <ul
         aria-label={`${resourceLabel} covered perk groups`}
         className={styles.detailStudyResourceTargetList}
@@ -1008,30 +1054,36 @@ function BackgroundFitStudyResourcePlanRow({
 }
 
 function BackgroundFitStudyResourcePlanScope({
-  label,
+  scopeLabel,
   strategy,
   ...interactionProps
 }: {
-  label: string
+  scopeLabel: string
   strategy: BackgroundFitStudyResourceStrategy
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 } & StudyResourcePlanPerkInteractionProps) {
+  const heading = formatStudyResourceStrategyUsageHeading({ scopeLabel, strategy })
+
+  if (heading === null) {
+    return null
+  }
+
   return (
     <section
-      aria-label={label}
+      aria-label={heading}
       className={styles.detailStudyResourcePlanScope}
       data-testid="detail-study-resource-plan-scope"
     >
-      <h5 className={styles.detailStudyResourcePlanScopeHeading}>{label}</h5>
+      <h4 className={styles.detailSubsectionHeading}>{heading}</h4>
       <div className={styles.detailStudyResourcePlanRows}>
         <BackgroundFitStudyResourcePlanRow
           {...interactionProps}
-          resourceKind="scroll"
+          resourceKind="book"
           strategy={strategy}
         />
         <BackgroundFitStudyResourcePlanRow
           {...interactionProps}
-          resourceKind="book"
+          resourceKind="scroll"
           strategy={strategy}
         />
       </div>
@@ -1062,12 +1114,11 @@ function BackgroundFitStudyResourcePlan({
 
   return (
     <div className={styles.detailStudyResourcePlan} data-testid="detail-study-resource-plan">
-      <h4 className={styles.detailSubsectionHeading}>Study resource plan</h4>
       <div className={styles.detailStudyResourcePlanScopes}>
         {mustHaveStrategy ? (
           <BackgroundFitStudyResourcePlanScope
             {...interactionProps}
-            label="Must-have impact"
+            scopeLabel="Must-have"
             strategy={mustHaveStrategy}
             supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
           />
@@ -1075,7 +1126,7 @@ function BackgroundFitStudyResourcePlan({
         {shouldShowFullBuildStrategy && fullBuildStrategy ? (
           <BackgroundFitStudyResourcePlanScope
             {...interactionProps}
-            label="Full-build impact"
+            scopeLabel="Full-build"
             strategy={fullBuildStrategy}
             supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
           />

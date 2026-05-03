@@ -754,16 +754,14 @@ describe('background details study resources', () => {
     expect(
       within(studyResourcePlan).getByRole('heading', {
         level: 4,
-        name: 'Study resource plan',
+        name: 'Must-have book usage',
       }),
     ).toBeVisible()
-    expect(
-      within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Must-have impact' }),
-    ).toBeVisible()
+    expect(within(studyResourcePlan).queryByText('Study resource plan')).not.toBeInTheDocument()
     expect(
       within(studyResourcePlan).getByRole('heading', {
-        level: 6,
-        name: 'Skill book covers Calm',
+        level: 5,
+        name: 'Skill book covers:',
       }),
     ).toBeVisible()
     expect(within(studyResourcePlan).queryByText('Covers')).not.toBeInTheDocument()
@@ -913,6 +911,25 @@ describe('background details study resources', () => {
         'detail-chance-breakdown-resource-icon-book-and-scroll-scroll-1',
       ),
     ).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(chanceBreakdownRows[0]).toHaveAttribute(
+      'title',
+      'Chance the background covers every must-have perk from native perk groups alone, without a skill book or ancient scroll.',
+    )
+    expect(chanceBreakdownRows[0]).toHaveAccessibleName(
+      'Native roll 10%. Chance the background covers every must-have perk from native perk groups alone, without a skill book or ancient scroll.',
+    )
+    expect(chanceBreakdownRows[1]).toHaveAttribute(
+      'title',
+      'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book. Ancient scrolls are not included.',
+    )
+    expect(chanceBreakdownRows[2]).toHaveAttribute(
+      'title',
+      'Chance the background covers every must-have perk when one eligible missing magic perk group can be filled by an ancient scroll. Skill books are not included.',
+    )
+    expect(chanceBreakdownRows[3]).toHaveAttribute(
+      'title',
+      'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book and one eligible missing magic perk group can be filled by an ancient scroll.',
+    )
   })
 
   test('labels a differing full-build strategy by impact instead of optional-only route', () => {
@@ -962,21 +979,21 @@ describe('background details study resources', () => {
     const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
 
     expect(
-      within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Must-have impact' }),
+      within(studyResourcePlan).getByRole('heading', { level: 4, name: 'Must-have book usage' }),
     ).toBeVisible()
     expect(
-      within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Full-build impact' }),
+      within(studyResourcePlan).getByRole('heading', { level: 4, name: 'Full-build scroll usage' }),
     ).toBeVisible()
     expect(
       within(studyResourcePlan).getByRole('heading', {
-        level: 6,
-        name: 'Skill book covers Calm',
+        level: 5,
+        name: 'Skill book covers:',
       }),
     ).toBeVisible()
     expect(
       within(studyResourcePlan).getByRole('heading', {
-        level: 6,
-        name: 'Ancient scroll covers Assassin',
+        level: 5,
+        name: 'Ancient scroll covers:',
       }),
     ).toBeVisible()
     expect(screen.queryByText('Additional optional-only study route')).not.toBeInTheDocument()
@@ -1072,16 +1089,27 @@ describe('background details study resources', () => {
 
     expect(
       within(studyResourcePlan).getByRole('heading', {
-        level: 6,
-        name: 'Ancient scroll covers Berserker',
+        level: 4,
+        name: 'Must-have book/scroll usage',
       }),
     ).toBeVisible()
     expect(
       within(studyResourcePlan).getByRole('heading', {
-        level: 6,
-        name: 'Skill book covers Medium Armor or Fit, depending on native roll',
+        level: 5,
+        name: 'Ancient scroll covers:',
       }),
     ).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', {
+        level: 5,
+        name: 'Skill book covers:',
+      }),
+    ).toBeVisible()
+    expect(
+      within(studyResourcePlan)
+        .getAllByTestId('detail-study-resource-plan-row')
+        .map((row) => row.getAttribute('data-resource-kind')),
+    ).toEqual(['book', 'scroll'])
     expect(within(studyResourcePlan).queryByText('Heavy Armor')).not.toBeInTheDocument()
     const scrollCoveredPerkGroups = within(studyResourcePlan).getByRole('list', {
       name: 'Ancient scroll covered perk groups',

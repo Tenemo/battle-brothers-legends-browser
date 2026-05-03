@@ -572,6 +572,7 @@
     min-width: 0;
     padding: var(--primitive-length-0-12rem) 0;
     border-top: var(--primitive-length-1px) solid var(--border-subtle);
+    cursor: help;
 
     &:first-child {
       border-top: 0;
@@ -632,14 +633,14 @@
     display: grid;
     gap: var(--space-xs);
     min-width: 0;
-  }
 
-  .detailStudyResourcePlanScopeHeading {
-    margin: 0 0 var(--space-2xs);
-    color: var(--text-secondary);
-    font-size: var(--type-card-title-size);
-    font-weight: inherit;
-    line-height: var(--type-heading-line-height);
+    + .detailStudyResourcePlanScope {
+      margin-top: var(--space-lg);
+    }
+
+    .detailSubsectionHeading {
+      margin-bottom: var(--space-2xs);
+    }
   }
 
   .detailOtherPerkGroupRareHeading {
@@ -678,11 +679,6 @@
     font-size: var(--type-body-size);
     font-weight: var(--font-weight-regular);
     line-height: var(--type-body-line-height);
-
-    strong {
-      color: var(--accent-soft);
-      font-weight: 600;
-    }
   }
 
   .detailStudyResourceTargetList {

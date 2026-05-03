@@ -97,6 +97,12 @@ function getDisplayedStudyResourceStrategy({
   return null
 }
 
+function getUniqueStudyResourceStrategyTargetCount(
+  targets: BackgroundFitStudyResourceStrategyTarget[],
+): number {
+  return new Set(targets.map((target) => `${target.categoryName}\u0000${target.perkGroupId}`)).size
+}
+
 export function getBackgroundStudyResourceBadgeDisplay({
   fullBuildStudyResourceStrategy,
   mustHaveStudyResourceStrategy,
@@ -136,7 +142,10 @@ export function getBackgroundStudyResourceBadgeDisplay({
       scope,
       strategy,
     })
-    const scrollBadgeCount = strategy.shouldAllowSecondScroll ? 2 : 1
+    const shouldShowSecondScroll =
+      strategy.shouldAllowSecondScroll &&
+      getUniqueStudyResourceStrategyTargetCount(strategy.scrollTargets) > 1
+    const scrollBadgeCount = shouldShowSecondScroll ? 2 : 1
 
     for (let scrollIndex = 0; scrollIndex < scrollBadgeCount; scrollIndex += 1) {
       badges.push({
@@ -148,7 +157,7 @@ export function getBackgroundStudyResourceBadgeDisplay({
       })
     }
 
-    if (strategy.shouldAllowSecondScroll) {
+    if (shouldShowSecondScroll) {
       badges.push({
         iconPath: brightTraitIconPath,
         isOptionalOnly: false,

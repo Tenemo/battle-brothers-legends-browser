@@ -366,6 +366,12 @@ const defaultStudyResources = {
   shouldAllowSecondScroll: false,
 } as const
 
+const twoScrollStudyResources = {
+  shouldAllowBook: true,
+  shouldAllowScroll: true,
+  shouldAllowSecondScroll: true,
+} as const
+
 describe('background fit', () => {
   test('formats expected picked perk coverage with one decimal when needed', () => {
     expect(formatBackgroundFitExpectedBuildPerksLabel(10 / 3, 4)).toBe(
@@ -1943,6 +1949,123 @@ describe('background fit', () => {
         (target) => target.perkGroupName,
       ),
     ).not.toContain('Heavy Armor')
+  })
+
+  test('does not report a second ancient scroll when it does not improve the reported Fisherman build', () => {
+    const reportedBuildPerkNames = [
+      'Muscularity',
+      'Brawny',
+      'Perfect Fit',
+      'Colossus',
+      'Perfect Focus',
+      'Athlete',
+      'Clarity',
+      'Lithe',
+      'Polearm Mastery',
+      'Heightened Reflexes',
+      'Alert',
+      'Berserk',
+      'Killing Frenzy',
+      'In the Zone',
+      'First Blood',
+      'Double Strike',
+      'Bloody Harvest',
+      'Onslaught',
+    ]
+    const reportedOptionalPerkNames = [
+      'Berserk',
+      'Killing Frenzy',
+      'In the Zone',
+      'First Blood',
+      'Double Strike',
+      'Bloody Harvest',
+      'Onslaught',
+    ]
+    const perksByName = new Map(
+      legendsBackgroundFitDataset.perks.map((perk) => [perk.perkName, perk]),
+    )
+    const reportedBuildPerks = reportedBuildPerkNames.map((perkName) => {
+      const perk = perksByName.get(perkName)
+
+      if (!perk) {
+        throw new Error(`Missing reported build perk fixture: ${perkName}`)
+      }
+
+      return perk
+    })
+    const optionalPickedPerkIds = new Set(
+      reportedOptionalPerkNames.map((perkName) => {
+        const perk = perksByName.get(perkName)
+
+        if (!perk) {
+          throw new Error(`Missing reported optional perk fixture: ${perkName}`)
+        }
+
+        return perk.id
+      }),
+    )
+    const engine = createBackgroundFitEngine(legendsBackgroundFitDataset)
+    const oneScrollBackgroundFit = engine
+      .getBackgroundFitView(reportedBuildPerks, defaultStudyResources, {
+        optionalPickedPerkIds,
+      })
+      .rankedBackgroundFits.find((backgroundFit) => backgroundFit.backgroundName === 'Fisherman')
+    const twoScrollBackgroundFit = engine
+      .getBackgroundFitView(reportedBuildPerks, twoScrollStudyResources, {
+        optionalPickedPerkIds,
+      })
+      .rankedBackgroundFits.find((backgroundFit) => backgroundFit.backgroundName === 'Fisherman')
+
+    if (!oneScrollBackgroundFit || !twoScrollBackgroundFit) {
+      throw new Error('Missing Fisherman background fit fixture')
+    }
+
+    expect(twoScrollBackgroundFit.mustHaveBuildReachabilityProbability).toBeCloseTo(
+      oneScrollBackgroundFit.mustHaveBuildReachabilityProbability ?? 0,
+      12,
+    )
+    expect(twoScrollBackgroundFit.fullBuildReachabilityProbability).toBeCloseTo(
+      oneScrollBackgroundFit.fullBuildReachabilityProbability ?? 0,
+      12,
+    )
+    expect(
+      twoScrollBackgroundFit.mustHaveStudyResourceChanceBreakdown
+        ?.filter((entry) => entry.shouldAllowScroll)
+        .map((entry) => ({
+          key: entry.key,
+          shouldAllowSecondScroll: entry.shouldAllowSecondScroll,
+        })),
+    ).toEqual([
+      { key: 'scroll', shouldAllowSecondScroll: false },
+      { key: 'book-and-scroll', shouldAllowSecondScroll: false },
+    ])
+    expect(
+      twoScrollBackgroundFit.fullBuildStudyResourceChanceBreakdown
+        ?.filter((entry) => entry.shouldAllowScroll)
+        .map((entry) => ({
+          key: entry.key,
+          shouldAllowSecondScroll: entry.shouldAllowSecondScroll,
+        })),
+    ).toEqual([
+      { key: 'scroll', shouldAllowSecondScroll: false },
+      { key: 'book-and-scroll', shouldAllowSecondScroll: false },
+    ])
+    expect(twoScrollBackgroundFit.mustHaveStudyResourceStrategy?.shouldAllowSecondScroll).toBe(
+      false,
+    )
+    expect(
+      twoScrollBackgroundFit.mustHaveStudyResourceStrategy?.scrollTargets.map(
+        (target) => target.perkGroupName,
+      ),
+    ).toEqual(['Berserker'])
+    expect(twoScrollBackgroundFit.fullBuildStudyResourceStrategy?.shouldAllowSecondScroll).toBe(
+      false,
+    )
+    expect(
+      twoScrollBackgroundFit.fullBuildStudyResourceStrategy?.scrollTargets.map(
+        (target) => target.perkGroupName,
+      ),
+    ).toEqual(['Berserker'])
   })
 
   test('keeps tiny must-have chances in raw probability order', () => {

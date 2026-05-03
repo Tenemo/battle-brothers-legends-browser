@@ -56,6 +56,8 @@ const socialImageFontFileNames = [
   'SourceSans3-Regular.ttf',
   'SourceSans3-Semibold.ttf',
   'SourceSans3-Bold.ttf',
+  'Cinzel.ttf',
+  'Cinzel-Bold.ttf',
 ]
 const successfulImageCachePolicy: BuildSocialImageCachePolicy = {
   browser: 'public, max-age=0, must-revalidate',

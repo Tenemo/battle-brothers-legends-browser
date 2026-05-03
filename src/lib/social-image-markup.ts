@@ -70,7 +70,7 @@ export function renderSocialImageBrand({
   x = 80,
   y = 98,
 }: SocialImageBrandOptions = {}): string {
-  return `<text x="${x}" y="${y}" fill="${socialImageColors.brand}" font-family="${socialImageFontFamilies.brand}" font-size="${fontSize}" font-weight="700" letter-spacing="0.1em">
+  return `<text x="${x}" y="${y}" fill="${socialImageColors.brand}" font-family="${socialImageFontFamilies.brand}" font-size="${fontSize}" font-weight="400" letter-spacing="0.1em">
     <tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>
   </text>`
 }

@@ -12,6 +12,7 @@ describe('root social image generation', () => {
 
     expect(svg).toContain('<tspan>BATTLE BROTHERS </tspan><tspan font-weight="700">LEGENDS</tspan>')
     expect(svg).toContain('letter-spacing="0.1em"')
+    expect(svg).toContain('font-weight="400" letter-spacing="0.1em"')
     expect(svg).toContain('font-family="Cinzel, serif"')
     expect(svg).toContain('letter-spacing="0.02em"')
     expect(svg).toContain('Build planner')

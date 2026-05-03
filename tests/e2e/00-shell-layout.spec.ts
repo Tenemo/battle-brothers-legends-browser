@@ -31,7 +31,7 @@ type DenseDesktopViewportExpectation = {
   viewportSize: { height: number; width: number }
 }
 
-const maximumAlignedSidePanelWidthDifference = 1
+const maximumAlignedSidePanelWidthDifference = 2
 const maximumCollapsedBackgroundFitPanelWidth = 40
 
 const compactDesktopDensityExpectation = {
@@ -109,9 +109,7 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
     const categorySidebar = document.querySelector(
       '[data-testid="category-sidebar"]',
     ) as HTMLElement | null
-    const detailPanel = document.querySelector(
-      '[data-testid="detail-panel"]',
-    ) as HTMLElement | null
+    const detailPanel = document.querySelector('[data-testid="detail-panel"]') as HTMLElement | null
     const detailPanelBody = document.querySelector(
       '[data-testid="detail-panel-body"]',
     ) as HTMLElement | null

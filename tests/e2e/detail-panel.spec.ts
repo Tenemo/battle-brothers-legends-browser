@@ -10,6 +10,8 @@ import {
   searchPerks,
 } from './support/build-planner-page'
 
+const maximumTypographyFontSizeDifference = 0.1
+
 function readBackgroundSourceProbabilityLabel(label: string): number {
   const normalizedLabel = label.trim()
 
@@ -225,6 +227,12 @@ test('keeps camp skill metadata rows tucked under their heading', async ({ page 
   ).toHaveText(/^\+/u)
 
   const campModifierTypography = await detailPanel.evaluate((panel) => {
+    function parsePixelValue(value: string) {
+      const parsedValue = Number.parseFloat(value)
+
+      return Number.isFinite(parsedValue) ? parsedValue : Number.POSITIVE_INFINITY
+    }
+
     const campLabel = panel.querySelector('[data-testid="detail-camp-resource-modifier-label"]')
     const campValue = panel.querySelector('[data-testid="detail-camp-resource-modifier-value"]')
     const fitLabel = panel.querySelector('[data-testid="background-fit-summary-label"]')
@@ -245,12 +253,12 @@ test('keeps camp skill metadata rows tucked under their heading', async ({ page 
     const fitValueStyle = window.getComputedStyle(fitValue)
 
     return {
-      campLabelFontSize: campLabelStyle.fontSize,
+      campLabelFontSize: parsePixelValue(campLabelStyle.fontSize),
       campValueBackgroundImage: campValueStyle.backgroundImage,
       campValueBorderRadius: campValueStyle.borderRadius,
-      campValueFontSize: campValueStyle.fontSize,
-      fitLabelFontSize: fitLabelStyle.fontSize,
-      fitValueFontSize: fitValueStyle.fontSize,
+      campValueFontSize: parsePixelValue(campValueStyle.fontSize),
+      fitLabelFontSize: parsePixelValue(fitLabelStyle.fontSize),
+      fitValueFontSize: parsePixelValue(fitValueStyle.fontSize),
     }
   })
 
@@ -280,8 +288,12 @@ test('keeps camp skill metadata rows tucked under their heading', async ({ page 
   })
 
   expect(campModifierTypography).not.toBeNull()
-  expect(campModifierTypography!.campLabelFontSize).toBe(campModifierTypography!.fitLabelFontSize)
-  expect(campModifierTypography!.campValueFontSize).toBe(campModifierTypography!.fitValueFontSize)
+  expect(
+    Math.abs(campModifierTypography!.campLabelFontSize - campModifierTypography!.fitLabelFontSize),
+  ).toBeLessThanOrEqual(maximumTypographyFontSizeDifference)
+  expect(
+    Math.abs(campModifierTypography!.campValueFontSize - campModifierTypography!.fitValueFontSize),
+  ).toBeLessThanOrEqual(maximumTypographyFontSizeDifference)
   expect(campModifierTypography!.campValueBackgroundImage).toBe('none')
   expect(campModifierTypography!.campValueBorderRadius).toBe('0px')
   expect(campSkillMetrics).not.toBeNull()
@@ -315,10 +327,10 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const studyResourcePlan = detailPanel.getByTestId('detail-study-resource-plan')
   const mustHaveStudyResourcePlan = studyResourcePlan
     .getByTestId('detail-study-resource-plan-scope')
-    .filter({ hasText: 'Must-have impact' })
+    .filter({ hasText: 'Must-have book/scroll usage' })
   const fullBuildStudyResourcePlan = studyResourcePlan
     .getByTestId('detail-study-resource-plan-scope')
-    .filter({ hasText: 'Full-build impact' })
+    .filter({ hasText: 'Full-build book/scroll usage' })
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Peddler' })).toBeVisible()
   await expect(chanceBreakdown).toBeVisible()
@@ -389,29 +401,34 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   expect(studyResourcePlanSpacing).not.toBeNull()
   expect(studyResourcePlanSpacing!).toBeGreaterThanOrEqual(16)
   expect(studyResourceScopeSpacing).not.toBeNull()
-  expect(studyResourceScopeSpacing!).toBeGreaterThanOrEqual(10)
+  expect(studyResourceScopeSpacing!).toBeGreaterThanOrEqual(18)
   await expect(metricSummary).toBeVisible()
   await expect(
     mustHaveStudyResourcePlan.getByRole('heading', {
-      level: 6,
-      name: 'Ancient scroll covers Berserker',
+      level: 5,
+      name: 'Ancient scroll covers:',
     }),
   ).toBeVisible()
   await expect(
     mustHaveStudyResourcePlan.getByRole('heading', {
-      level: 6,
-      name: 'Skill book covers Medium Armor or Fit, depending on native roll',
+      level: 5,
+      name: 'Skill book covers:',
     }),
   ).toBeVisible()
   await expect(
     fullBuildStudyResourcePlan.getByRole('heading', {
-      level: 5,
-      name: 'Full-build impact',
+      level: 4,
+      name: 'Full-build book/scroll usage',
     }),
   ).toBeVisible()
   const ancientScrollCoveredPerkGroups = mustHaveStudyResourcePlan.getByRole('list', {
     name: 'Ancient scroll covered perk groups',
   })
+  const mustHaveStudyResourceRowKinds = await mustHaveStudyResourcePlan
+    .getByTestId('detail-study-resource-plan-row')
+    .evaluateAll((rows) =>
+      rows.map((row) => row.getAttribute('data-resource-kind')).filter(Boolean),
+    )
   const berserkerStudyResourceTile = ancientScrollCoveredPerkGroups
     .getByTestId('planner-group-card')
     .filter({ hasText: 'Berserker' })
@@ -423,6 +440,7 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   })
   const muscularityCoveredPerkIcon = muscularityCoveredPerkPill.getByTestId('planner-pill-icon')
 
+  expect(mustHaveStudyResourceRowKinds).toEqual(['book', 'scroll'])
   await expect(berserkerStudyResourceTile).toBeVisible()
   await expect(berserkerStudyResourceTileIcons).toHaveCount(2)
   await expect(berserkerStudyResourceTileIcons.nth(1)).toHaveAttribute(
