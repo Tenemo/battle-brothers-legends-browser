@@ -7,10 +7,7 @@
 
   .savedBuildsDialog {
     width: min(var(--primitive-length-42rem), 100%);
-    max-height: min(
-      40rem,
-      calc(var(--primitive-length-100vh) - var(--control-height-md))
-    );
+    max-height: min(40rem, calc(var(--primitive-length-100vh) - var(--control-height-md)));
 
     @include dialog-surface;
 
@@ -127,8 +124,7 @@
     gap: var(--space-md);
     min-height: 0;
     padding-right: var(--space-xs);
-    overflow-x: hidden;
-    overflow-y: scroll;
+    overflow: hidden scroll;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
   }

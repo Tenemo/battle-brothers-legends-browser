@@ -232,6 +232,71 @@ async function readRailControlMetrics(page: Page) {
   })
 }
 
+async function readDesktopRailEdgeMetrics(page: Page) {
+  return page.evaluate(() => {
+    function getRequiredElement(selector: string) {
+      const element = document.querySelector(selector)
+
+      if (!(element instanceof HTMLElement)) {
+        throw new Error(`Missing desktop rail element for selector ${selector}.`)
+      }
+
+      return element
+    }
+
+    function getRequiredButton(selector: string) {
+      const element = document.querySelector(selector)
+
+      if (!(element instanceof HTMLButtonElement)) {
+        throw new Error(`Missing desktop rail button for selector ${selector}.`)
+      }
+
+      return element
+    }
+
+    function getTranslateX(element: HTMLElement) {
+      const transform = window.getComputedStyle(element).transform
+
+      if (transform === 'none') {
+        return 0
+      }
+
+      return new DOMMatrixReadOnly(transform).m41
+    }
+
+    const backgroundFitPanel = getRequiredElement('[data-testid="background-fit-panel"]')
+    const backgroundFitBody = getRequiredElement('[data-testid="background-fit-panel-content"]')
+    const backgroundFitButton = getRequiredButton('button[aria-label*="background fit"]')
+    const categorySidebar = getRequiredElement('[data-testid="category-sidebar"]')
+    const categorySidebarBody = getRequiredElement('[data-testid="category-sidebar-body"]')
+    const categorySidebarButton = getRequiredButton('button[aria-label*="category filters"]')
+
+    const backgroundFitPanelBounds = backgroundFitPanel.getBoundingClientRect()
+    const backgroundFitBodyBounds = backgroundFitBody.getBoundingClientRect()
+    const backgroundFitButtonBounds = backgroundFitButton.getBoundingClientRect()
+    const categorySidebarBounds = categorySidebar.getBoundingClientRect()
+    const categorySidebarBodyBounds = categorySidebarBody.getBoundingClientRect()
+    const categorySidebarButtonBounds = categorySidebarButton.getBoundingClientRect()
+
+    return {
+      backgroundFit: {
+        bodyRight: backgroundFitBodyBounds.right,
+        buttonLeft: backgroundFitButtonBounds.left,
+        buttonRight: backgroundFitButtonBounds.right,
+        panelRight: backgroundFitPanelBounds.right,
+        transformX: getTranslateX(backgroundFitBody),
+      },
+      categorySidebar: {
+        bodyLeft: categorySidebarBodyBounds.left,
+        buttonLeft: categorySidebarButtonBounds.left,
+        buttonRight: categorySidebarButtonBounds.right,
+        panelLeft: categorySidebarBounds.left,
+        transformX: getTranslateX(categorySidebarBody),
+      },
+    }
+  })
+}
+
 async function readBelowDesktopSectionTops(page: Page) {
   return page.evaluate(() => {
     function getElementTop(selector: string) {
@@ -479,6 +544,47 @@ test('keeps desktop side rails thin and mobile rails touchable', async ({ page }
   expect(mobileRailMetrics.categoryFilters.chevronWidth).toBeGreaterThanOrEqual(16)
   expect(mobileRailMetrics.backgroundFit.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
   expect(mobileRailMetrics.categoryFilters.chevronStrokeWidth).toBeGreaterThanOrEqual(2.5)
+})
+
+test('keeps desktop side rail buttons on the workspace-facing edges', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 900, width: 1440 })
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Collapse background fit' })).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Collapse category filters' })).toBeVisible()
+
+  const edgeTolerance = 1
+  const expandedMetrics = await readDesktopRailEdgeMetrics(page)
+
+  expect(
+    Math.abs(expandedMetrics.backgroundFit.buttonRight - expandedMetrics.backgroundFit.panelRight),
+  ).toBeLessThanOrEqual(edgeTolerance)
+  expect(expandedMetrics.backgroundFit.bodyRight).toBeLessThanOrEqual(
+    expandedMetrics.backgroundFit.buttonLeft + edgeTolerance,
+  )
+  expect(
+    Math.abs(
+      expandedMetrics.categorySidebar.buttonLeft - expandedMetrics.categorySidebar.panelLeft,
+    ),
+  ).toBeLessThanOrEqual(edgeTolerance)
+  expect(expandedMetrics.categorySidebar.buttonRight).toBeLessThanOrEqual(
+    expandedMetrics.categorySidebar.bodyLeft + edgeTolerance,
+  )
+
+  await page.getByRole('button', { name: 'Collapse background fit' }).click()
+  await page.getByRole('button', { name: 'Collapse category filters' }).click()
+  await expect(page.getByRole('button', { name: 'Expand background fit' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+  await expect(page.getByRole('button', { name: 'Expand category filters' })).toHaveAttribute(
+    'aria-expanded',
+    'false',
+  )
+
+  const collapsedMetrics = await readDesktopRailEdgeMetrics(page)
+
+  expect(collapsedMetrics.backgroundFit.transformX).toBeLessThan(0)
+  expect(collapsedMetrics.categorySidebar.transformX).toBeGreaterThan(0)
 })
 
 test('uses one app scrollbar style across desktop viewport sizes', async ({ page }) => {
@@ -890,7 +996,7 @@ test('keeps desktop rail bodies mounted and anchored for open and close animatio
         }
 
         return (
-          Math.abs(buttonBox.right - sidebarBox.right) <= 1 && bodyBox.right <= buttonBox.left + 1
+          Math.abs(buttonBox.left - sidebarBox.left) <= 1 && buttonBox.right <= bodyBox.left + 1
         )
       }),
     )

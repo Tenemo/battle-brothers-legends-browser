@@ -41,6 +41,7 @@ import {
 } from './lib/category-filter-state'
 import { compareCategoryNames } from './lib/dynamic-background-categories'
 import {
+  createBuildPlannerUrlSearch,
   createSharedBuildUrlSearch,
   type BuildPlannerDetailSelection,
   type BuildPlannerUrlState,
@@ -58,7 +59,10 @@ import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
   shouldKeepPerkGroupWithOriginAndAncientScrollFilters,
 } from './lib/origin-and-ancient-scroll-perk-groups'
-import { getAvailableBackgroundVeteranPerkLevelIntervals } from './lib/background-veteran-perks'
+import {
+  getAvailableBackgroundVeteranPerkLevelIntervals,
+  normalizeBackgroundVeteranPerkLevelIntervals,
+} from './lib/background-veteran-perks'
 import { copyBuildShareUrl, useBuildShareLink } from './lib/use-build-share-link'
 import { joinClassNames } from './lib/class-names'
 import {
@@ -72,6 +76,7 @@ import {
 } from './lib/use-build-planner-url-sync'
 import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
+import type { SavedBuildPlannerFilters } from './lib/saved-builds-storage'
 import type { LegendsBackgroundFitDataset, LegendsPerkCatalogDataset } from './types/legends-perks'
 
 const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
@@ -440,6 +445,43 @@ function hasActiveCategoryFilterSelection(
   )
 }
 
+function createSavedBuildPlannerFilters(
+  urlState: BuildPlannerUrlState,
+): SavedBuildPlannerFilters {
+  return {
+    categoryFilterMode:
+      urlState.categoryFilterMode ??
+      getCategoryFilterModeFromSelection({
+        selectedCategoryNames: urlState.selectedCategoryNames,
+        selectedPerkGroupIdsByCategory: urlState.selectedPerkGroupIdsByCategory,
+      }),
+    query: urlState.query,
+    selectedBackgroundVeteranPerkLevelIntervals:
+      urlState.selectedBackgroundVeteranPerkLevelIntervals,
+    selectedCategoryNames: urlState.selectedCategoryNames,
+    selectedPerkGroupIdsByCategory: urlState.selectedPerkGroupIdsByCategory,
+    shouldAllowBackgroundStudyBook: urlState.shouldAllowBackgroundStudyBook,
+    shouldAllowBackgroundStudyScroll: urlState.shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll: urlState.shouldAllowSecondBackgroundStudyScroll,
+    shouldIncludeAncientScrollPerkGroups: urlState.shouldIncludeAncientScrollPerkGroups,
+    shouldIncludeOriginBackgrounds: urlState.shouldIncludeOriginBackgrounds,
+    shouldIncludeOriginPerkGroups: urlState.shouldIncludeOriginPerkGroups,
+  }
+}
+
+function createSavedBuildUrlState(savedBuild: BuildPlannerSavedBuild): BuildPlannerUrlState | null {
+  if (!savedBuild.plannerFilters) {
+    return null
+  }
+
+  return {
+    ...savedBuild.plannerFilters,
+    detailSelection: { type: 'none' },
+    optionalPerkIds: savedBuild.optionalPerkIds,
+    pickedPerkIds: savedBuild.availablePerkIds,
+  }
+}
+
 export default function App() {
   const initialUrlState = useInitialBuildPlannerUrlState({
     availableCategoryNames: allAvailableCategories,
@@ -734,6 +776,7 @@ export default function App() {
           optionalPerkIds: availableOptionalPerkIds,
           perkNames: availablePerks.map((perk) => perk.perkName),
           pickedPerkCount: savedBuild.pickedPerkIds.length,
+          plannerFilters: savedBuild.plannerFilters,
           referenceVersion: savedBuild.referenceVersion,
           updatedAt: savedBuild.updatedAt,
         }
@@ -1251,6 +1294,41 @@ export default function App() {
     )
   }
 
+  function getRestoredBackgroundVeteranPerkLevelIntervals(
+    plannerFilters: SavedBuildPlannerFilters,
+  ) {
+    const normalizedIntervals = normalizeBackgroundVeteranPerkLevelIntervals(
+      plannerFilters.selectedBackgroundVeteranPerkLevelIntervals,
+      availableBackgroundVeteranPerkLevelIntervals,
+    )
+
+    return plannerFilters.selectedBackgroundVeteranPerkLevelIntervals.length > 0 &&
+      normalizedIntervals.length === 0
+      ? availableBackgroundVeteranPerkLevelIntervals
+      : normalizedIntervals
+  }
+
+  function applySavedBuildPlannerFilters(plannerFilters: SavedBuildPlannerFilters) {
+    requestPerkResultListScrollReset()
+    setQuery(plannerFilters.query)
+    setCategoryFilterMode(plannerFilters.categoryFilterMode)
+    setSelectedCategoryNames(plannerFilters.selectedCategoryNames)
+    setExpandedCategoryNames(plannerFilters.selectedCategoryNames)
+    setSelectedPerkGroupIdsByCategory(plannerFilters.selectedPerkGroupIdsByCategory)
+    setShouldAllowBackgroundStudyBook(plannerFilters.shouldAllowBackgroundStudyBook)
+    setShouldAllowBackgroundStudyScroll(plannerFilters.shouldAllowBackgroundStudyScroll)
+    setShouldAllowSecondBackgroundStudyScroll(
+      plannerFilters.shouldAllowBackgroundStudyScroll &&
+        plannerFilters.shouldAllowSecondBackgroundStudyScroll,
+    )
+    setShouldIncludeOriginPerkGroups(plannerFilters.shouldIncludeOriginPerkGroups)
+    setShouldIncludeAncientScrollPerkGroups(plannerFilters.shouldIncludeAncientScrollPerkGroups)
+    setShouldIncludeOriginBackgrounds(plannerFilters.shouldIncludeOriginBackgrounds)
+    setSelectedBackgroundVeteranPerkLevelIntervals(
+      getRestoredBackgroundVeteranPerkLevelIntervals(plannerFilters),
+    )
+  }
+
   function isPerkSelectedInDetailPanel(perkId: string) {
     return activeDetailSelection.type === 'perk' && selectedPerkId === perkId
   }
@@ -1489,6 +1567,7 @@ export default function App() {
       name,
       optionalPerkIds: optionalPickedPerkIds,
       pickedPerkIds,
+      plannerFilters: createSavedBuildPlannerFilters(currentUrlState),
     })
     setSavedBuildOperationStatus('saved')
   }
@@ -1497,6 +1576,7 @@ export default function App() {
     await overwriteSavedBuild(savedBuildId, {
       optionalPerkIds: optionalPickedPerkIds,
       pickedPerkIds,
+      plannerFilters: createSavedBuildPlannerFilters(currentUrlState),
     })
     setSavedBuildOperationStatus('saved')
   }
@@ -1515,6 +1595,9 @@ export default function App() {
       setPickedBuildPerks(
         createPickedBuildPerkState(savedBuild.availablePerkIds, savedBuild.optionalPerkIds),
       )
+      if (savedBuild.plannerFilters) {
+        applySavedBuildPlannerFilters(savedBuild.plannerFilters)
+      }
       setActiveDetailSelection({ type: 'perk' })
       clearAllHover()
       resetShareBuildStatus()
@@ -1537,12 +1620,22 @@ export default function App() {
     }
 
     try {
+      const savedBuildUrlState = createSavedBuildUrlState(savedBuild)
+
       await copyBuildShareUrl(
-        createSharedBuildUrlSearch(
-          savedBuild.availablePerkIds,
-          allPerksById,
-          savedBuild.optionalPerkIds,
-        ),
+        savedBuildUrlState
+          ? createBuildPlannerUrlSearch(savedBuildUrlState, {
+              availableCategoryNames: allAvailableCategories,
+              availableBackgroundVeteranPerkLevelIntervals,
+              backgrounds: allBackgroundUrlOptions,
+              perksById: allPerksById,
+              perkGroupOptionsByCategory: allPerkGroupOptionsByCategory,
+            })
+          : createSharedBuildUrlSearch(
+              savedBuild.availablePerkIds,
+              allPerksById,
+              savedBuild.optionalPerkIds,
+            ),
       )
       setSavedBuildOperationStatus('copied')
     } catch {

@@ -4,6 +4,16 @@ on:
   push:
     branches: [master, main]
   workflow_dispatch:
+    inputs:
+      base_url:
+        description: Deployed site URL to test
+        required: true
+        default: https://battlebrothers.academy
+      wait_for_current_commit:
+        description: Wait for the target URL to serve this branch commit before testing
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -13,34 +23,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  validate-manual-production-mode:
-    name: validate manual production mode
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+  production-e2e-target:
+    name: production e2e target
     runs-on: ubuntu-latest
+    outputs:
+      base-url: ${{ steps.target.outputs.base-url }}
+      should-wait-for-current-commit: ${{ steps.target.outputs.should-wait-for-current-commit }}
 
     steps:
-      - name: reject misleading non-production manual runs
+      - id: target
+        name: resolve production e2e target
         run: |
-          case "${{ github.ref_name }}" in
-            master|main)
-              echo "Manual production e2e is allowed for production branch '${{ github.ref_name }}'."
-              ;;
-            *)
-              echo "Manual production e2e always targets https://battlebrothers.academy."
-              echo "Branch '${{ github.ref_name }}' is not a production branch, so its tests can disagree with the live deployment."
-              echo "Run this workflow from master/main after the deploy you want to verify."
-              exit 1
-              ;;
-          esac
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            base_url="${{ inputs.base_url }}"
+            should_wait_for_current_commit="${{ inputs.wait_for_current_commit }}"
+          else
+            base_url="https://battlebrothers.academy"
+            should_wait_for_current_commit="true"
+          fi
+
+          echo "base-url=${base_url}" >> "$GITHUB_OUTPUT"
+          echo "should-wait-for-current-commit=${should_wait_for_current_commit}" >> "$GITHUB_OUTPUT"
+          echo "Production e2e target: ${base_url}"
+          echo "Wait for current commit: ${should_wait_for_current_commit}"
 
   wait-for-production-deploy:
     name: wait for production deploy
     if: >-
       ${{
-        github.event_name != 'workflow_dispatch' ||
-        github.ref_name == 'master' ||
-        github.ref_name == 'main'
+        needs.production-e2e-target.outputs.should-wait-for-current-commit == 'true'
       }}
+    needs: [production-e2e-target]
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -57,7 +70,7 @@ jobs:
         run: >-
           node scripts/wait-for-production-deploy.mjs
           --commit ${{ github.sha }}
-          --web https://battlebrothers.academy
+          --web "${{ needs.production-e2e-target.outputs.base-url }}"
           --timeout-ms 1800000
           --interval-ms 15000
           --request-timeout-ms 10000
@@ -65,20 +78,14 @@ jobs:
 
   production-e2e-browser:
     name: production e2e browser
-    needs: [validate-manual-production-mode, wait-for-production-deploy]
+    needs: [production-e2e-target, wait-for-production-deploy]
     if: >-
       ${{
         always() &&
+        needs.production-e2e-target.result == 'success' &&
         (
-          (
-            github.event_name != 'workflow_dispatch' &&
-            needs.wait-for-production-deploy.result == 'success'
-          ) ||
-          (
-            github.event_name == 'workflow_dispatch' &&
-            needs.validate-manual-production-mode.result == 'success' &&
-            needs.wait-for-production-deploy.result == 'success'
-          )
+          needs.wait-for-production-deploy.result == 'success' ||
+          needs.wait-for-production-deploy.result == 'skipped'
         )
       }}
     runs-on: ubuntu-latest
@@ -90,7 +97,7 @@ jobs:
     env:
       CI: true
       HOME: /root
-      PLAYWRIGHT_BASE_URL: https://battlebrothers.academy
+      PLAYWRIGHT_BASE_URL: ${{ needs.production-e2e-target.outputs.base-url }}
 
     steps:
       - uses: actions/checkout@v6
@@ -110,7 +117,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: run production browser e2e
-        run: pnpm test:e2e
+        run: pnpm run test:e2e:production
 
       - name: upload Playwright artifacts
         if: failure()
@@ -126,18 +133,18 @@ jobs:
   production-e2e:
     name: production e2e
     if: always()
-    needs: [validate-manual-production-mode, wait-for-production-deploy, production-e2e-browser]
+    needs: [production-e2e-target, wait-for-production-deploy, production-e2e-browser]
     runs-on: ubuntu-latest
 
     steps:
       - name: assert production e2e jobs passed
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ needs.validate-manual-production-mode.result }}" != "success" ]; then
-            echo "validate-manual-production-mode result: ${{ needs.validate-manual-production-mode.result }}"
+          if [ "${{ needs.production-e2e-target.result }}" != "success" ]; then
+            echo "production-e2e-target result: ${{ needs.production-e2e-target.result }}"
             exit 1
           fi
 
-          if [ "${{ needs.wait-for-production-deploy.result }}" != "success" ]; then
+          if [ "${{ needs.wait-for-production-deploy.result }}" != "success" ] && [ "${{ needs.wait-for-production-deploy.result }}" != "skipped" ]; then
             echo "wait-for-production-deploy result: ${{ needs.wait-for-production-deploy.result }}"
             exit 1
           fi
