@@ -456,11 +456,13 @@
     stroke-width: 2.2;
   }
 
-  .detailMatchSectionLabel {
+  .detailSubsectionHeading {
     margin: 0;
     color: var(--text-muted);
-    font-size: var(--primitive-length-0-66rem);
+    font-size: var(--font-size-xl);
+    font-weight: inherit;
     letter-spacing: var(--primitive-length-0-12em);
+    line-height: 1.1;
     text-transform: uppercase;
   }
 
@@ -524,10 +526,12 @@
     min-width: 0;
   }
 
-  .detailStudyResourcePlanScopeLabel {
+  .detailStudyResourcePlanScopeHeading {
     margin: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-lg);
+    font-weight: inherit;
+    line-height: 1.15;
   }
 
   .detailStudyResourcePlanRows {

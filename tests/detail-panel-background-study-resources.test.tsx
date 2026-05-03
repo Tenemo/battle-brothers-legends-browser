@@ -487,8 +487,8 @@ describe('background details study resources', () => {
         'Native perk groups this background can get outside the current build. Skill books and ancient scrolls are not included.',
       ),
     ).toBeVisible()
-    expect(within(section).getAllByText('Guaranteed')[0]).toBeVisible()
-    expect(within(section).getByText('Possible')).toBeVisible()
+    expect(within(section).getByRole('heading', { level: 4, name: 'Guaranteed' })).toBeVisible()
+    expect(within(section).getByRole('heading', { level: 4, name: 'Possible' })).toBeVisible()
     expect(within(section).getByText('Heavy armor stance')).toBeVisible()
     expect(within(section).getByText('Bold spirit')).toBeVisible()
     expect(within(section).queryByText('Defense')).not.toBeInTheDocument()
@@ -539,8 +539,15 @@ describe('background details study resources', () => {
 
     const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
 
-    expect(within(studyResourcePlan).getByText('Study resource plan')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Must-have impact')).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', {
+        level: 4,
+        name: 'Study resource plan',
+      }),
+    ).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Must-have impact' }),
+    ).toBeVisible()
     expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
     expect(within(studyResourcePlan).getByText('Calm')).toBeVisible()
     expect(within(studyResourcePlan).getByText('Covers Clarity')).toBeVisible()
@@ -588,7 +595,12 @@ describe('background details study resources', () => {
 
     const chanceBreakdown = screen.getByTestId('detail-chance-breakdown')
 
-    expect(within(chanceBreakdown).getByText('Must-have chance breakdown')).toBeVisible()
+    expect(
+      within(chanceBreakdown).getByRole('heading', {
+        level: 4,
+        name: 'Must-have chance breakdown',
+      }),
+    ).toBeVisible()
     expect(within(chanceBreakdown).getByText('Native roll')).toBeVisible()
     expect(within(chanceBreakdown).getByText('10%')).toBeVisible()
     expect(within(chanceBreakdown).getByText('Skill book')).toBeVisible()
@@ -645,8 +657,12 @@ describe('background details study resources', () => {
 
     const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
 
-    expect(within(studyResourcePlan).getByText('Must-have impact')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Full-build impact')).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Must-have impact' }),
+    ).toBeVisible()
+    expect(
+      within(studyResourcePlan).getByRole('heading', { level: 5, name: 'Full-build impact' }),
+    ).toBeVisible()
     expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
     expect(within(studyResourcePlan).getByText('Calm')).toBeVisible()
     expect(within(studyResourcePlan).getByText('Ancient scroll:')).toBeVisible()

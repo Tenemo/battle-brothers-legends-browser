@@ -633,7 +633,7 @@ function BackgroundFitChanceBreakdown({
       className={styles.detailChanceBreakdown}
       data-testid="detail-chance-breakdown"
     >
-      <p className={styles.detailMatchSectionLabel}>Must-have chance breakdown</p>
+      <h4 className={styles.detailSubsectionHeading}>Must-have chance breakdown</h4>
       <dl className={styles.detailChanceBreakdownList}>
         {entries.map((entry) => (
           <div className={styles.detailChanceBreakdownRow} key={entry.key}>
@@ -786,7 +786,7 @@ function BackgroundFitStudyResourcePlanScope({
       className={styles.detailStudyResourcePlanScope}
       data-testid="detail-study-resource-plan-scope"
     >
-      <p className={styles.detailStudyResourcePlanScopeLabel}>{label}</p>
+      <h5 className={styles.detailStudyResourcePlanScopeHeading}>{label}</h5>
       <div className={styles.detailStudyResourcePlanRows}>
         <BackgroundFitStudyResourcePlanRow resourceKind="scroll" strategy={strategy} />
         <BackgroundFitStudyResourcePlanRow resourceKind="book" strategy={strategy} />
@@ -815,7 +815,7 @@ function BackgroundFitStudyResourcePlan({
 
   return (
     <div className={styles.detailStudyResourcePlan} data-testid="detail-study-resource-plan">
-      <p className={styles.detailMatchSectionLabel}>Study resource plan</p>
+      <h4 className={styles.detailSubsectionHeading}>Study resource plan</h4>
       <div className={styles.detailStudyResourcePlanScopes}>
         {mustHaveStrategy ? (
           <BackgroundFitStudyResourcePlanScope
@@ -1297,7 +1297,7 @@ function BackgroundFitOtherPerkGroupList({
 
   return (
     <div className={styles.detailOtherPerkGroupSection}>
-      <p className={styles.detailMatchSectionLabel}>{label}</p>
+      <h4 className={styles.detailSubsectionHeading}>{label}</h4>
       <ul className={styles.detailOtherPerkGroupList}>
         {otherPerkGroups.map((otherPerkGroup) => (
           <li key={`${otherPerkGroup.categoryName}-${otherPerkGroup.perkGroupId}`}>
@@ -1347,7 +1347,7 @@ function BackgroundFitRareOtherPerkGroupList({
           className={styles.detailOtherPerkGroupRareChevron}
           isExpanded={isExpanded}
         />
-        <span className={styles.detailMatchSectionLabel}>Rare possible groups under 1%</span>
+        <span className={styles.detailSubsectionHeading}>Rare possible groups under 1%</span>
         <span
           aria-label={`${otherPerkGroups.length} rare native perk groups`}
           className={styles.detailOtherPerkGroupRareCount}

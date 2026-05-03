@@ -399,9 +399,13 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     detailPanel.getByRole('heading', { level: 3, name: 'Matched perk groups' }),
   ).toBeVisible()
-  await expect(detailPanel.getByRole('heading', { level: 4, name: 'Must-have' })).toBeVisible()
+  await expect(
+    detailPanel.getByRole('heading', { exact: true, level: 4, name: 'Must-have' }),
+  ).toBeVisible()
   await expect(detailPanel.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
-  await expect(detailPanel.getByRole('heading', { level: 4, name: 'Optional' })).toBeVisible()
+  await expect(
+    detailPanel.getByRole('heading', { exact: true, level: 4, name: 'Optional' }),
+  ).toBeVisible()
   await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
   await expect(detailPanel.getByText('Must-have study route')).toHaveCount(0)
   await expect(detailPanel.getByText('Additional optional-only study route')).toHaveCount(0)
