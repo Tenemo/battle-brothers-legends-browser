@@ -14,6 +14,10 @@
 
     @include dialog-surface;
 
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+
     h2 {
       margin: 0;
       font-family: var(--heading-font-family);
@@ -119,9 +123,14 @@
   }
 
   .savedBuildsList {
+    flex: 1 1 auto;
     gap: var(--space-md);
     min-height: 0;
-    overflow: auto;
+    padding-right: var(--space-xs);
+    overflow-x: hidden;
+    overflow-y: scroll;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .savedBuildsEmpty {
