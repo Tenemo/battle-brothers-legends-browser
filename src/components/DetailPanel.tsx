@@ -7,6 +7,7 @@ import {
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
   getAnchoredTooltipStyle,
+  getBackgroundFitKey,
   getVisibleBackgroundPillLabel,
   getPerkDisplayIconPath,
   renderGameIcon,
@@ -1052,15 +1053,25 @@ function getBackgroundTalentAttributeIconPath(attributeName: string): string | n
   return backgroundTalentAttributeIconPathsByName[attributeName] ?? null
 }
 
+function getBackgroundTalentAttributeIconTestId(attributeName: string): string {
+  return `detail-background-talent-attribute-icon-${attributeName
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')}`
+}
+
 function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
   if (attributeNames.length === 0) {
     return <span className={styles.detailMetadataNone}>None</span>
   }
 
   return (
-    <ul className={styles.detailTalentAttributeList}>
+    <ul
+      className={styles.detailTalentAttributeList}
+      data-testid="detail-background-talent-attribute-list"
+    >
       {attributeNames.map((attributeName) => {
         const iconPath = getBackgroundTalentAttributeIconPath(attributeName)
+        const iconTestId = getBackgroundTalentAttributeIconTestId(attributeName)
 
         return (
           <li key={attributeName}>
@@ -1069,7 +1080,7 @@ function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
                 alt=""
                 aria-hidden="true"
                 className={styles.detailTalentAttributeIcon}
-                data-testid="detail-background-talent-attribute-icon"
+                data-testid={iconTestId}
                 decoding="async"
                 loading="lazy"
                 src={`/game-icons/${iconPath}`}
@@ -1079,7 +1090,7 @@ function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
                 aria-hidden="true"
                 className={styles.detailTalentAttributeIcon}
                 data-placeholder="true"
-                data-testid="detail-background-talent-attribute-icon"
+                data-testid={iconTestId}
               />
             )}
             <span>{attributeName}</span>
@@ -1341,14 +1352,10 @@ function BackgroundMetadataCampResourceModifierSubsection({
   )
 }
 
-function BackgroundMetadataSection({
+function BackgroundMetadataSectionContent({
   backgroundFit,
-  isExpanded,
-  onExpandedChange,
 }: {
   backgroundFit: RankedBackgroundFit
-  isExpanded: boolean
-  onExpandedChange: (nextIsExpanded: boolean) => void
 }) {
   const backgroundTraitTooltipId = useId()
   const [hoveredTraitId, setHoveredTraitId] = useState<string | null>(null)
@@ -1385,25 +1392,8 @@ function BackgroundMetadataSection({
     })
   }
 
-  function updateExpandedState(nextIsExpanded: boolean) {
-    if (!nextIsExpanded) {
-      setHoveredTraitId(null)
-      setTraitTooltip(null)
-    }
-
-    onExpandedChange(nextIsExpanded)
-  }
-
   return (
-    <DetailCollapsibleSection
-      contentClassName={styles.detailMetadataSections}
-      contentTestId="detail-background-metadata-content"
-      isExpanded={isExpanded}
-      onExpandedChange={updateExpandedState}
-      sectionLabel="Background details"
-      sectionTestId="detail-background-metadata-section"
-      toggleTestId="detail-background-metadata-toggle"
-    >
+    <>
       <dl className={styles.detailMetadataFactList}>
         <BackgroundMetadataFact label="Daily cost">
           {renderBackgroundMetadataScalar(backgroundFit.dailyCost)}
@@ -1469,6 +1459,35 @@ function BackgroundMetadataSection({
           tooltipId={backgroundTraitTooltipId}
         />
       )}
+    </>
+  )
+}
+
+function BackgroundMetadataSection({
+  backgroundFit,
+  isExpanded,
+  onExpandedChange,
+}: {
+  backgroundFit: RankedBackgroundFit
+  isExpanded: boolean
+  onExpandedChange: (nextIsExpanded: boolean) => void
+}) {
+  const backgroundFitIdentityKey = getBackgroundFitKey(backgroundFit)
+
+  return (
+    <DetailCollapsibleSection
+      contentClassName={styles.detailMetadataSections}
+      contentTestId="detail-background-metadata-content"
+      isExpanded={isExpanded}
+      onExpandedChange={onExpandedChange}
+      sectionLabel="Background details"
+      sectionTestId="detail-background-metadata-section"
+      toggleTestId="detail-background-metadata-toggle"
+    >
+      <BackgroundMetadataSectionContent
+        backgroundFit={backgroundFit}
+        key={backgroundFitIdentityKey}
+      />
     </DetailCollapsibleSection>
   )
 }

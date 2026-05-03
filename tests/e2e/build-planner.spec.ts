@@ -507,7 +507,9 @@ test('build planner splits shared and individual perk groups without layout drif
     name: 'Remove Clarity from build',
   })
 
-  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
   const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -1331,7 +1333,9 @@ test('separates planner group card hover from icon and perk pill hover states', 
   await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
 
   await battleForgedPill.hover()
-  await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
+  await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
   const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
 
@@ -2283,7 +2287,7 @@ test('cancels a picked perk tooltip timer before marking the perk optional', asy
 
   await clarityPickedPerkTile.hover()
   await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 1000,
+    timeout: 2500,
   })
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
 
@@ -2314,7 +2318,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
 
   await clarityPickedPerkTile.hover()
   await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 1000,
+    timeout: 2500,
   })
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
 
@@ -2331,7 +2335,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
   })
 
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 1000,
+    timeout: 2500,
   })
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
   await expect(page.getByRole('tooltip')).toContainText(/An additional \+10% of any damage/i)

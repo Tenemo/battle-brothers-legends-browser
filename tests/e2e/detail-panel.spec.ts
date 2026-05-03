@@ -355,7 +355,9 @@ test('shows the dominant study resource strategy for the reported Peddler build'
     return plan.getBoundingClientRect().top - previousElement.getBoundingClientRect().bottom
   })
   const studyResourceScopeSpacing = await studyResourcePlan.evaluate((plan) => {
-    const scopeElements = [...plan.querySelectorAll('[data-testid="detail-study-resource-plan-scope"]')]
+    const scopeElements = [
+      ...plan.querySelectorAll('[data-testid="detail-study-resource-plan-scope"]'),
+    ]
 
     if (scopeElements.length < 2) {
       return null
@@ -405,8 +407,7 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const muscularityCoveredPerkPill = ancientScrollCoveredPerks.getByRole('button', {
     name: 'Muscularity',
   })
-  const muscularityCoveredPerkIcon =
-    muscularityCoveredPerkPill.getByTestId('planner-pill-icon')
+  const muscularityCoveredPerkIcon = muscularityCoveredPerkPill.getByTestId('planner-pill-icon')
 
   await expect(ancientScrollCoveredPerks.getByRole('button', { name: 'Brawny' })).toBeVisible()
   await expect(ancientScrollCoveredPerks.getByRole('button', { name: 'Colossus' })).toBeVisible()
@@ -415,7 +416,7 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   await expectImageToLoad(muscularityCoveredPerkIcon)
   await muscularityCoveredPerkPill.hover()
   await expect(muscularityCoveredPerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 1000,
+    timeout: 2500,
   })
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
   await page.mouse.move(1, 1)

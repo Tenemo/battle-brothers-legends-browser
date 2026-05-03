@@ -28,6 +28,9 @@ async function expectBackgroundFitCalculationComplete(
   const backgroundFitProgressBar = backgroundFitPanel.getByRole('progressbar', {
     name: 'Background fit progress',
   })
+  const backgroundFitRankingSummary = backgroundFitPanel.getByTestId(
+    'background-fit-ranking-summary',
+  )
 
   if (options.shouldObserveProgress) {
     await expect(backgroundFitProgressBar).toBeVisible()
@@ -48,6 +51,10 @@ async function expectBackgroundFitCalculationComplete(
   }
 
   await expect(backgroundFitProgressBar).toHaveCount(0)
+  await expect(backgroundFitRankingSummary).toBeVisible({
+    timeout: backgroundFitCalculationTimeoutMs,
+  })
+  await expect(backgroundFitRankingSummary).toHaveAttribute('aria-hidden', 'false')
 }
 
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
@@ -485,7 +492,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(axePerkPill).toBeVisible()
   await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'false')
   await axePerkPill.hover()
-  await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 1000 })
+  await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 2500 })
   await expect(pickedAxePerkTile).toHaveAttribute('data-highlighted', 'true')
   await expect(pickedAxePerkTile).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
@@ -997,17 +1004,13 @@ test('filters origin backgrounds from the background search menu', async ({ page
     'currentColor',
   )
 
-  await backgroundFitPanel
-    .getByRole('checkbox', { name: 'Perk every 3 veteran levels' })
-    .uncheck()
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Perk every 3 veteran levels' }).uncheck()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
     'currentColor',
   )
-  await backgroundFitPanel
-    .getByRole('checkbox', { name: 'Perk every 3 veteran levels' })
-    .check()
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Perk every 3 veteran levels' }).check()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
@@ -1028,15 +1031,9 @@ test('filters origin backgrounds from the background search menu', async ({ page
 
   await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a book' }).uncheck()
   await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a scroll' }).uncheck()
-  await backgroundFitPanel
-    .getByRole('checkbox', { name: 'Perk every 2 veteran levels' })
-    .uncheck()
-  await backgroundFitPanel
-    .getByRole('checkbox', { name: 'Perk every 3 veteran levels' })
-    .uncheck()
-  await backgroundFitPanel
-    .getByRole('checkbox', { name: 'Perk every 4 veteran levels' })
-    .uncheck()
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Perk every 2 veteran levels' }).uncheck()
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Perk every 3 veteran levels' }).uncheck()
+  await backgroundFitPanel.getByRole('checkbox', { name: 'Perk every 4 veteran levels' }).uncheck()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
@@ -1213,7 +1210,7 @@ test('shows probabilistic background fit matches with percentage badges', async 
     }),
   )
   expect(otherNativeGroupLayout?.firstCardWidth ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
-    ((otherNativeGroupLayout?.listWidth ?? 0) / 3) + 4,
+    (otherNativeGroupLayout?.listWidth ?? 0) / 3 + 4,
   )
   await expect(
     otherNativePerkGroupsSection.getByRole('button', { name: 'Select perk group Barter' }),

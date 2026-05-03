@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import type { ComponentProps } from 'react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
@@ -344,8 +344,14 @@ describe('background details study resources', () => {
       '/game-icons/ui/traits/trait_icon_32.png',
     )
     expect(within(metadataSection).getByText('Ranged skill')).toBeVisible()
+    const talentAttributeList = within(metadataSection).getByTestId(
+      'detail-background-talent-attribute-list',
+    )
+
     expect(
-      within(metadataSection).getByTestId('detail-background-talent-attribute-icon'),
+      within(talentAttributeList).getByTestId(
+        'detail-background-talent-attribute-icon-ranged-skill',
+      ),
     ).toHaveAttribute('src', '/game-icons/ui/icons/ranged_skill_va11.png')
     expect(within(metadataSection).getByText('Company capacity')).toBeVisible()
     expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
@@ -471,6 +477,57 @@ describe('background details study resources', () => {
     expect(traitTooltip).not.toHaveTextContent(
       'This background excludes this trait, so recruits with this background cannot roll it.',
     )
+  })
+
+  test('clears background trait tooltips while switching background details', async () => {
+    const user = userEvent.setup()
+    const alternateBackgroundFit = {
+      ...backgroundFit,
+      backgroundId: 'background.messenger',
+      backgroundName: 'Messenger',
+      excludedTraits: [],
+      excludedTraitNames: [],
+      guaranteedTraits: [],
+      guaranteedTraitNames: [],
+      sourceFilePath: 'scripts/skills/backgrounds/messenger_background.nut',
+    } satisfies RankedBackgroundFit
+    const { renderResult } = renderSelectedBackgroundFitDetail()
+
+    let metadataSection = screen.getByTestId('detail-background-metadata-section')
+    const metadataToggle = within(metadataSection).getByRole('button', {
+      name: 'Background details',
+    })
+
+    await user.click(metadataToggle)
+
+    const fearOfUndeadTraitPill = within(metadataSection).getByRole('button', {
+      name: 'Fear of Undead',
+    })
+
+    await user.click(fearOfUndeadTraitPill)
+
+    const traitTooltip = screen.getByRole('tooltip')
+
+    expect(fearOfUndeadTraitPill).toHaveAttribute('aria-describedby', traitTooltip.id)
+    expect(traitTooltip).toHaveTextContent('Afraid of walking dead.')
+
+    renderResult.rerender(
+      <DetailPanel
+        {...createDetailPanelProps({ selectedBackgroundFitDetail: alternateBackgroundFit })}
+      />,
+    )
+
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument())
+
+    metadataSection = screen.getByTestId('detail-background-metadata-section')
+
+    expect(
+      within(metadataSection).getByRole('button', { name: 'Background details' }),
+    ).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      within(metadataSection).queryByRole('button', { name: 'Fear of Undead' }),
+    ).not.toBeInTheDocument()
+    expect(within(metadataSection).getAllByText('None')).toHaveLength(2)
   })
 
   test('shows none for empty background trait and talent metadata', async () => {
