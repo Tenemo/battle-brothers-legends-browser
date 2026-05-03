@@ -1,4 +1,10 @@
-import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
+import type {
+  LegendsFavouredEnemyTarget,
+  LegendsPerkBackgroundSource,
+  LegendsPerkPlacement,
+  LegendsPerkRecord,
+  LegendsPerkScenarioSource,
+} from '../types/legends-perks'
 import {
   getCategoryFilterModeFromSelection,
   type CategoryFilterMode,
@@ -21,8 +27,59 @@ type NormalizedPerkSearchIndex = {
   perkGroupNames: string[]
 }
 
+type PerkSearchTextSource = {
+  backgroundSources: LegendsPerkBackgroundSource[]
+  categoryNames: string[]
+  descriptionParagraphs: string[]
+  favouredEnemyTargets?: LegendsFavouredEnemyTarget[]
+  perkName: string
+  placements: LegendsPerkPlacement[]
+  scenarioSources: LegendsPerkScenarioSource[]
+}
+
 function normalizeSearchValue(value: string): string {
   return value.trim().toLowerCase()
+}
+
+function normalizeSearchText(value: string): string {
+  return value.replace(/\s+/gu, ' ').trim()
+}
+
+export function createPerkSearchText(perk: PerkSearchTextSource): string {
+  return normalizeSearchText(
+    [
+      perk.perkName,
+      ...perk.categoryNames,
+      ...perk.descriptionParagraphs,
+      ...perk.placements.flatMap((placement) => [
+        placement.categoryName,
+        placement.perkGroupName,
+        placement.perkGroupId,
+        placement.tier === null ? '' : `Tier ${placement.tier}`,
+      ]),
+      ...(perk.favouredEnemyTargets ?? []).flatMap((favouredEnemyTarget) => [
+        favouredEnemyTarget.entityConstName,
+        favouredEnemyTarget.entityName,
+        favouredEnemyTarget.killsPerPercentBonus === null
+          ? ''
+          : String(favouredEnemyTarget.killsPerPercentBonus),
+      ]),
+      ...perk.backgroundSources.flatMap((backgroundSource) => [
+        backgroundSource.backgroundName,
+        backgroundSource.categoryName,
+        backgroundSource.perkGroupName,
+      ]),
+      ...perk.scenarioSources.flatMap((scenarioSource) => [
+        scenarioSource.scenarioName,
+        scenarioSource.scenarioId,
+        scenarioSource.grantType,
+        scenarioSource.sourceMethodName,
+        ...scenarioSource.candidatePerkNames,
+      ]),
+    ]
+      .filter((value) => value.length > 0)
+      .join(' '),
+  )
 }
 
 function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSearchIndex {
@@ -38,6 +95,8 @@ function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSe
       ].join(' '),
     )
     .join(' ')
+  const normalizedSearchText = perk.searchText.toLowerCase()
+  const normalizedBackgroundSourceSearchText = backgroundSourceSearchText.toLowerCase()
 
   const normalizedSearchIndex = {
     backgroundNames,
@@ -46,7 +105,11 @@ function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSe
     scenarioNames: perk.scenarioSources.map((scenarioSource) =>
       scenarioSource.scenarioName.toLowerCase(),
     ),
-    searchText: `${perk.searchText} ${backgroundSourceSearchText}`.toLowerCase(),
+    searchText:
+      normalizedBackgroundSourceSearchText.length > 0 &&
+      !normalizedSearchText.includes(normalizedBackgroundSourceSearchText)
+        ? `${normalizedSearchText} ${normalizedBackgroundSourceSearchText}`
+        : normalizedSearchText,
     perkGroupNames: perk.placements.map((placement) => placement.perkGroupName.toLowerCase()),
   }
 

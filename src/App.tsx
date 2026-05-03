@@ -53,6 +53,7 @@ import {
   parseBackgroundFitKey,
 } from './lib/perk-display'
 import { filterAndSortPerks } from './lib/perk-search'
+import { getPerkGroupCount, hydrateCatalogPerks } from './lib/legends-data'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
   shouldKeepPerkGroupWithOriginAndAncientScrollFilters,
@@ -76,10 +77,7 @@ import type { LegendsBackgroundFitDataset, LegendsPerkCatalogDataset } from './t
 const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
 const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
 const backgroundFitEngine = createBackgroundFitEngine(legendsBackgroundFitDataset)
-const allPerks = legendsPerkCatalogDataset.perks.map((perk) => ({
-  ...perk,
-  backgroundSources: backgroundFitEngine.getPerkBackgroundSources(perk),
-}))
+const allPerks = hydrateCatalogPerks(legendsPerkCatalogDataset.perks, backgroundFitEngine)
 const allPerksById = new Map(allPerks.map((perk) => [perk.id, perk]))
 const legendsModRepositoryUrl = 'https://github.com/Battle-Brothers-Legends/Legends-public'
 const repositoryUrl = 'https://github.com/Tenemo/battle-brothers-legends-browser'
@@ -90,6 +88,7 @@ const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFitProgressCompletionPaddingMs = 550
 
 const allCategoryCounts = getCategoryCounts(allPerks)
+const allPerkGroupCount = getPerkGroupCount(legendsPerkCatalogDataset.perks)
 const allPerkGroupOptionsByCategory = getCategoryPerkGroupOptions(allPerks)
 const allAvailableCategories = [...allCategoryCounts.keys()].toSorted(compareCategoryNames)
 const allBackgroundUrlOptions = legendsBackgroundFitDataset.backgroundFitBackgrounds.map(
@@ -1743,11 +1742,11 @@ export default function App() {
             <dl className={styles.heroMeta} aria-label="Perk catalog summary">
               <div>
                 <dt>Perks</dt>
-                <dd>{legendsPerkCatalogDataset.perkCount}</dd>
+                <dd>{legendsPerkCatalogDataset.perks.length}</dd>
               </div>
               <div>
                 <dt>Perk groups</dt>
-                <dd>{legendsPerkCatalogDataset.perkGroupCount}</dd>
+                <dd>{allPerkGroupCount}</dd>
               </div>
               <div>
                 <dt>Mod version</dt>

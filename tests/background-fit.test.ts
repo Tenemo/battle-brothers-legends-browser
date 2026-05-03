@@ -5,7 +5,7 @@ import {
   getBuildTargetPerkGroups,
   getCoveredPickedPerkCount,
 } from '../src/lib/background-fit'
-import legendsPerksDatasetJson from '../src/data/legends-perks.json'
+import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import {
   formatBackgroundFitBestNativeRollLabel,
   formatBackgroundFitBuildReachabilityLabel,
@@ -17,6 +17,7 @@ import {
 import type {
   LegendsBackgroundFitBackgroundDefinition,
   LegendsBackgroundFitCategoryDefinition,
+  LegendsBackgroundFitDataset,
   LegendsDynamicBackgroundCategoryName,
   LegendsPerkPlacement,
   LegendsPerkRecord,
@@ -347,7 +348,7 @@ const sampleDataset: LegendsPerksDataset = {
   perkGroupCount: 11,
 }
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
 
 const noStudyResources = {
   shouldAllowBook: false,
@@ -1535,7 +1536,9 @@ describe('background fit', () => {
       'Tactical Maneuvers',
       'Perfect Focus',
     ]
-    const perksByName = new Map(legendsPerksDataset.perks.map((perk) => [perk.perkName, perk]))
+    const perksByName = new Map(
+      legendsBackgroundFitDataset.perks.map((perk) => [perk.perkName, perk]),
+    )
     const denseBuildPerks = denseBuildPerkNames.map((perkName) => {
       const perk = perksByName.get(perkName)
 
@@ -1545,7 +1548,7 @@ describe('background fit', () => {
 
       return perk
     })
-    const engine = createBackgroundFitEngine(legendsPerksDataset)
+    const engine = createBackgroundFitEngine(legendsBackgroundFitDataset)
     const backgroundsByName = new Map(
       engine
         .getBackgroundFitView(denseBuildPerks, defaultStudyResources)

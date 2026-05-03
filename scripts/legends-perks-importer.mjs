@@ -3462,34 +3462,40 @@ export async function createDataset(
   }
 }
 
-const defaultDatasetOutputFilePath = path.join(
-  projectRootDirectoryPath,
-  'src',
-  'data',
-  'legends-perks.json',
-)
+const defaultDatasetOutputDirectoryPath = path.join(projectRootDirectoryPath, 'src', 'data')
 
-function createPerkCatalogDataset(dataset) {
+function createPerkCatalogRecord({
+  categoryNames,
+  descriptionParagraphs,
+  favouredEnemyTargets,
+  iconPath,
+  id,
+  perkName,
+  placements,
+  primaryCategoryName,
+  scenarioSources,
+}) {
   return {
-    generatedAt: dataset.generatedAt,
-    perkCount: dataset.perkCount,
-    perks: dataset.perks,
-    referenceRoot: dataset.referenceRoot,
-    referenceVersion: dataset.referenceVersion,
-    sourceFiles: dataset.sourceFiles,
-    perkGroupCount: dataset.perkGroupCount,
-  }
-}
-
-function createBackgroundFitPerkRecord({ id, perkName, placements }) {
-  return {
+    categoryNames,
+    descriptionParagraphs,
+    ...(favouredEnemyTargets ? { favouredEnemyTargets } : {}),
+    iconPath,
     id,
     perkName,
     placements,
+    primaryCategoryName,
+    scenarioSources,
   }
 }
 
-function createBuildSharePreviewPerkRecord({ iconPath, id, perkName, placements }) {
+function createPerkCatalogDataset(dataset) {
+  return {
+    referenceVersion: dataset.referenceVersion,
+    perks: dataset.perks.map(createPerkCatalogRecord),
+  }
+}
+
+function createBackgroundFitPerkRecord({ iconPath, id, perkName, placements }) {
   return {
     iconPath,
     id,
@@ -3502,36 +3508,24 @@ function createBackgroundFitDataset(dataset) {
   return {
     backgroundFitBackgrounds: dataset.backgroundFitBackgrounds,
     backgroundFitRules: dataset.backgroundFitRules,
-    perks: dataset.perks.map(createBackgroundFitPerkRecord),
-  }
-}
-
-function createBuildSharePreviewDataset(dataset) {
-  return {
-    ...createBackgroundFitDataset(dataset),
-    perks: dataset.perks.map(createBuildSharePreviewPerkRecord),
     referenceVersion: dataset.referenceVersion,
+    perks: dataset.perks.map(createBackgroundFitPerkRecord),
   }
 }
 
 async function writeJsonFile(outputFilePath, value) {
   await mkdir(path.dirname(outputFilePath), { recursive: true })
-  await writeFile(outputFilePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8')
+  await writeFile(outputFilePath, `${JSON.stringify(value)}\n`, 'utf8')
 }
 
-export async function writeDatasetFile(dataset, outputFilePath = defaultDatasetOutputFilePath) {
-  await writeJsonFile(outputFilePath, dataset)
-
-  const outputDirectoryPath = path.dirname(outputFilePath)
-
+export async function writeDatasetFile(
+  dataset,
+  outputDirectoryPath = defaultDatasetOutputDirectoryPath,
+) {
   await Promise.all([
     writeJsonFile(
       path.join(outputDirectoryPath, 'legends-background-fit.json'),
       createBackgroundFitDataset(dataset),
-    ),
-    writeJsonFile(
-      path.join(outputDirectoryPath, 'legends-build-share-preview.json'),
-      createBuildSharePreviewDataset(dataset),
     ),
     writeJsonFile(
       path.join(outputDirectoryPath, 'legends-perk-catalog.json'),

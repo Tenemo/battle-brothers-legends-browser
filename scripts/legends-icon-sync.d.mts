@@ -1,6 +1,15 @@
-import type { LegendsPerksDataset } from '../src/types/legends-perks'
+import type {
+  LegendsBackgroundFitBackgroundDefinition,
+  LegendsPerkCatalogRecord,
+  LegendsPerksDataset,
+} from '../src/types/legends-perks'
 
-export function collectRequiredGameIconPaths(dataset: LegendsPerksDataset): string[]
+type LegendsIconSourceDataset = {
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[]
+  perks: Pick<LegendsPerkCatalogRecord, 'iconPath' | 'placements'>[]
+}
+
+export function collectRequiredGameIconPaths(dataset: LegendsIconSourceDataset): string[]
 
 export function getArchiveEntryPathFromIconPath(iconPath: string): string
 
@@ -18,7 +27,8 @@ export function findBattleBrothersGameDirectoryPath(
 
 export function syncLegendsIcons(options?: {
   dataset?: LegendsPerksDataset | null
-  datasetFilePath?: string
+  backgroundFitDatasetFilePath?: string
+  catalogDatasetFilePath?: string
   gameDirectoryPath?: string | null
   outputDirectoryPath?: string
 }): Promise<{

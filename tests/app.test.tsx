@@ -5,7 +5,6 @@ import packageJson from '../package.json'
 import type {
   LegendsBackgroundFitDataset,
   LegendsPerkCatalogDataset,
-  LegendsPerksDataset,
 } from '../src/types/legends-perks'
 
 const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoisted(() => ({
@@ -23,53 +22,52 @@ const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoi
 }))
 
 async function loadFilteredAppTestDatasets() {
-  const actualDataset = (await vi.importActual(
-    '../src/data/legends-perks.json',
-  )) as LegendsPerksDataset
-  const perks = actualDataset.perks.filter((perk) => perkNamesForAppTests.has(perk.perkName))
-  const perkGroupCount = new Set(
-    perks.flatMap((perk) =>
-      perk.placements.map((placement) => `${placement.categoryName}::${placement.perkGroupId}`),
-    ),
-  ).size
-  const backgroundFitBackgrounds = actualDataset.backgroundFitBackgrounds.filter((backgroundFit) =>
-    backgroundFitSourceFileNamesForAppTests.has(
-      backgroundFit.sourceFilePath.split('/').at(-1) ?? '',
-    ),
+  const actualCatalogDataset = (await vi.importActual(
+    '../src/data/legends-perk-catalog.json',
+  )) as LegendsPerkCatalogDataset
+  const actualBackgroundFitDataset = (await vi.importActual(
+    '../src/data/legends-background-fit.json',
+  )) as LegendsBackgroundFitDataset
+  const perks = actualCatalogDataset.perks.filter((perk) =>
+    perkNamesForAppTests.has(perk.perkName),
+  )
+  const backgroundFitBackgrounds = actualBackgroundFitDataset.backgroundFitBackgrounds.filter(
+    (backgroundFit) =>
+      backgroundFitSourceFileNamesForAppTests.has(
+        backgroundFit.sourceFilePath.split('/').at(-1) ?? '',
+      ),
   )
 
   return {
-    actualDataset,
+    actualBackgroundFitDataset,
+    actualCatalogDataset,
     backgroundFitBackgrounds,
-    perkGroupCount,
     perks,
   }
 }
 
 vi.mock('../src/data/legends-perk-catalog.json', async () => {
-  const { actualDataset, perkGroupCount, perks } = await loadFilteredAppTestDatasets()
+  const { actualCatalogDataset, perks } = await loadFilteredAppTestDatasets()
 
   return {
     default: {
-      generatedAt: actualDataset.generatedAt,
-      perkCount: perks.length,
+      referenceVersion: actualCatalogDataset.referenceVersion,
       perks,
-      referenceRoot: actualDataset.referenceRoot,
-      referenceVersion: actualDataset.referenceVersion,
-      sourceFiles: actualDataset.sourceFiles,
-      perkGroupCount,
     } satisfies LegendsPerkCatalogDataset,
   }
 })
 
 vi.mock('../src/data/legends-background-fit.json', async () => {
-  const { actualDataset, backgroundFitBackgrounds, perks } = await loadFilteredAppTestDatasets()
+  const { actualBackgroundFitDataset, backgroundFitBackgrounds, perks } =
+    await loadFilteredAppTestDatasets()
 
   return {
     default: {
       backgroundFitBackgrounds,
-      backgroundFitRules: actualDataset.backgroundFitRules,
-      perks: perks.map(({ id, perkName, placements }) => ({
+      backgroundFitRules: actualBackgroundFitDataset.backgroundFitRules,
+      referenceVersion: actualBackgroundFitDataset.referenceVersion,
+      perks: perks.map(({ iconPath, id, perkName, placements }) => ({
+        iconPath,
         id,
         perkName,
         placements,

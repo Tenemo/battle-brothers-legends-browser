@@ -27,11 +27,11 @@ const bookIconPath = path.join(
   'perks',
   'perk_21.png',
 )
-const legendsPerksDataPath = path.join(
+const legendsPerkCatalogDataPath = path.join(
   projectRootDirectoryPath,
   'src',
   'data',
-  'legends-perks.json',
+  'legends-perk-catalog.json',
 )
 const fontDirectoryPath = path.join(projectRootDirectoryPath, 'scripts', 'assets', 'fonts')
 const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel-Bold.ttf')
@@ -88,10 +88,10 @@ async function createBookIconDataUrl() {
 
 async function readLegendsReferenceVersion() {
   try {
-    const legendsPerksData = JSON.parse(await readFile(legendsPerksDataPath, 'utf8'))
+    const legendsPerkCatalogData = JSON.parse(await readFile(legendsPerkCatalogDataPath, 'utf8'))
 
-    return typeof legendsPerksData.referenceVersion === 'string'
-      ? legendsPerksData.referenceVersion
+    return typeof legendsPerkCatalogData.referenceVersion === 'string'
+      ? legendsPerkCatalogData.referenceVersion
       : fallbackLegendsReferenceVersion
   } catch {
     return fallbackLegendsReferenceVersion

@@ -15,11 +15,17 @@ import { pathExists, runCommand, sortUniqueStrings } from './script-utils.mjs'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRootDirectoryPath = path.resolve(__dirname, '..')
-const defaultDatasetFilePath = path.join(
+const defaultCatalogDatasetFilePath = path.join(
   projectRootDirectoryPath,
   'src',
   'data',
-  'legends-perks.json',
+  'legends-perk-catalog.json',
+)
+const defaultBackgroundFitDatasetFilePath = path.join(
+  projectRootDirectoryPath,
+  'src',
+  'data',
+  'legends-background-fit.json',
 )
 const defaultIconOutputDirectoryPath = path.join(projectRootDirectoryPath, 'public', 'game-icons')
 const defaultStagingIconOutputDirectoryPath = path.join(
@@ -114,8 +120,19 @@ export function buildIconExtractionPlan(iconPaths, archiveEntriesByArchivePath) 
   }
 }
 
-async function readDatasetFile(datasetFilePath = defaultDatasetFilePath) {
-  return JSON.parse(await readFile(datasetFilePath, 'utf8'))
+async function readIconSourceDataset({
+  backgroundFitDatasetFilePath = defaultBackgroundFitDatasetFilePath,
+  catalogDatasetFilePath = defaultCatalogDatasetFilePath,
+} = {}) {
+  const [backgroundFitDataset, catalogDataset] = await Promise.all([
+    readFile(backgroundFitDatasetFilePath, 'utf8').then(JSON.parse),
+    readFile(catalogDatasetFilePath, 'utf8').then(JSON.parse),
+  ])
+
+  return {
+    backgroundFitBackgrounds: backgroundFitDataset.backgroundFitBackgrounds,
+    perks: catalogDataset.perks,
+  }
 }
 
 async function findSteamLibraryDirectoryPaths() {
@@ -245,12 +262,18 @@ async function copyExtractedIconsToOutputDirectory({
 }
 
 export async function syncLegendsIcons({
+  backgroundFitDatasetFilePath = defaultBackgroundFitDatasetFilePath,
+  catalogDatasetFilePath = defaultCatalogDatasetFilePath,
   dataset = null,
-  datasetFilePath = defaultDatasetFilePath,
   gameDirectoryPath = null,
   outputDirectoryPath = defaultIconOutputDirectoryPath,
 } = {}) {
-  const resolvedDataset = dataset ?? (await readDatasetFile(datasetFilePath))
+  const resolvedDataset =
+    dataset ??
+    (await readIconSourceDataset({
+      backgroundFitDatasetFilePath,
+      catalogDatasetFilePath,
+    }))
   const resolvedGameDirectoryPath = await findBattleBrothersGameDirectoryPath(gameDirectoryPath)
 
   if (!resolvedGameDirectoryPath) {

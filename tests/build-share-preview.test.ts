@@ -1,14 +1,16 @@
 import { describe, expect, test } from 'vitest'
-import legendsPerksDatasetJson from '../src/data/legends-perks.json'
+import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import { createBackgroundFitEngine } from '../src/lib/background-fit'
 import { isOriginBackgroundFit } from '../src/lib/background-origin'
 import { defaultBackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
 import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share-preview'
-import type { LegendsPerksDataset } from '../src/types/legends-perks'
+import type { LegendsBackgroundFitDataset } from '../src/types/legends-perks'
 
-const legendsPerksDataset = legendsPerksDatasetJson as LegendsPerksDataset
-const backgroundFitEngine = createBackgroundFitEngine(legendsPerksDataset)
-const allPerksByName = new Map(legendsPerksDataset.perks.map((perk) => [perk.perkName, perk]))
+const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
+const backgroundFitEngine = createBackgroundFitEngine(legendsBackgroundFitDataset)
+const allPerksByName = new Map(
+  legendsBackgroundFitDataset.perks.map((perk) => [perk.perkName, perk]),
+)
 
 describe('build share preview', () => {
   test('returns the empty preview for missing or invalid build params', () => {

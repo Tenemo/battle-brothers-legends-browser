@@ -24,5 +24,5 @@ export function createDataset(
 
 export function writeDatasetFile(
   dataset: LegendsPerksDataset,
-  outputFilePath?: string,
+  outputDirectoryPath?: string,
 ): Promise<void>

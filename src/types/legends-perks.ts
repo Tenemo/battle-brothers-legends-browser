@@ -51,7 +51,7 @@ export type LegendsPerkRecord = {
   categoryNames: string[]
   iconPath: string | null
   id: string
-  perkConstName: string
+  perkConstName?: string
   perkName: string
   placements: LegendsPerkPlacement[]
   primaryCategoryName: string
@@ -60,6 +60,11 @@ export type LegendsPerkRecord = {
 }
 
 export type LegendsPerkUrlRecord = Pick<LegendsPerkRecord, 'id' | 'perkName'>
+
+export type LegendsPerkCatalogRecord = Omit<
+  LegendsPerkRecord,
+  'backgroundSources' | 'perkConstName' | 'searchText'
+>
 
 export type LegendsBackgroundFitPerkRecord = Pick<
   LegendsPerkRecord,
@@ -125,19 +130,12 @@ export type LegendsPerksDataset = {
   perkGroupCount: number
 }
 
-export type LegendsPerkCatalogDataset = Omit<
-  LegendsPerksDataset,
-  'backgroundFitBackgrounds' | 'backgroundFitRules'
->
-
-export type LegendsBackgroundFitDataset = Pick<
-  LegendsPerksDataset,
-  'backgroundFitBackgrounds' | 'backgroundFitRules'
-> & {
-  perks: LegendsBackgroundFitPerkRecord[]
+export type LegendsPerkCatalogDataset = {
+  perks: LegendsPerkCatalogRecord[]
+  referenceVersion: string
 }
 
-export type LegendsBuildSharePreviewDataset = Pick<
+export type LegendsBackgroundFitDataset = Pick<
   LegendsPerksDataset,
   'backgroundFitBackgrounds' | 'backgroundFitRules' | 'referenceVersion'
 > & {
