@@ -211,10 +211,8 @@ export function DetailPanel({
 }: DetailPanelProps) {
   const displayedBackgroundFitDetail =
     selectedDetailType === 'background' ? selectedBackgroundFitDetail : null
-  const [
-    detailCollapsibleSectionExpandedStates,
-    setDetailCollapsibleSectionExpandedStates,
-  ] = useState<DetailCollapsibleSectionExpandedStates>({})
+  const [detailCollapsibleSectionExpandedStates, setDetailCollapsibleSectionExpandedStates] =
+    useState<DetailCollapsibleSectionExpandedStates>({})
 
   function updateDetailCollapsibleSectionExpandedState(
     sectionKey: DetailCollapsibleSectionKey,
@@ -259,9 +257,7 @@ export function DetailPanel({
             onClosePerkGroupHover={onClosePerkGroupHover}
             onInspectPerk={onInspectPerk}
             onInspectPerkGroup={onInspectPerkGroup}
-            onDetailCollapsibleSectionExpandedChange={
-              updateDetailCollapsibleSectionExpandedState
-            }
+            onDetailCollapsibleSectionExpandedChange={updateDetailCollapsibleSectionExpandedState}
             onNavigateDetailHistory={onNavigateDetailHistory}
             onOpenBuildPerkHover={onOpenBuildPerkHover}
             onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
@@ -898,16 +894,55 @@ function getGroupedCampResourceModifiers(
   })
 }
 
-function renderBackgroundMetadataValues(values: readonly string[]) {
-  if (values.length === 0) {
+const backgroundTalentAttributeIconPathsByName: Readonly<Partial<Record<string, string>>> = {
+  Fatigue: 'ui/icons/fatigue_va11.png',
+  Hitpoints: 'ui/icons/health_va11.png',
+  Initiative: 'ui/icons/initiative_va11.png',
+  'Melee defense': 'ui/icons/melee_defense_va11.png',
+  'Melee skill': 'ui/icons/melee_skill_va11.png',
+  'Ranged defense': 'ui/icons/ranged_defense_va11.png',
+  'Ranged skill': 'ui/icons/ranged_skill_va11.png',
+  Resolve: 'ui/icons/bravery_va11.png',
+}
+
+function getBackgroundTalentAttributeIconPath(attributeName: string): string | null {
+  return backgroundTalentAttributeIconPathsByName[attributeName] ?? null
+}
+
+function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
+  if (attributeNames.length === 0) {
     return <span className={styles.detailMetadataNone}>None</span>
   }
 
   return (
-    <ul className={styles.detailTokenList}>
-      {values.map((value) => (
-        <li key={value}>{value}</li>
-      ))}
+    <ul className={styles.detailTalentAttributeList}>
+      {attributeNames.map((attributeName) => {
+        const iconPath = getBackgroundTalentAttributeIconPath(attributeName)
+
+        return (
+          <li key={attributeName}>
+            {iconPath ? (
+              <img
+                alt=""
+                aria-hidden="true"
+                className={styles.detailTalentAttributeIcon}
+                data-testid="detail-background-talent-attribute-icon"
+                decoding="async"
+                loading="lazy"
+                src={`/game-icons/${iconPath}`}
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className={styles.detailTalentAttributeIcon}
+                data-placeholder="true"
+                data-testid="detail-background-talent-attribute-icon"
+              />
+            )}
+            <span>{attributeName}</span>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -1144,8 +1179,16 @@ function BackgroundMetadataCampResourceModifierSubsection({
       <ul className={styles.detailCampResourceModifierList}>
         {modifiers.map((modifier) => (
           <li key={modifier.modifierKey}>
-            <span>{modifier.label}</span>
-            <span className={styles.detailBadge}>
+            <span
+              className={styles.detailCampResourceModifierLabel}
+              data-testid="detail-camp-resource-modifier-label"
+            >
+              {modifier.label}
+            </span>
+            <span
+              className={styles.detailCampResourceModifierValue}
+              data-testid="detail-camp-resource-modifier-value"
+            >
               {formatBackgroundCampResourceModifierValue(modifier)}
             </span>
           </li>
@@ -1251,7 +1294,7 @@ function BackgroundMetadataSection({
         })}
       </BackgroundMetadataSubsection>
       <BackgroundMetadataSubsection title="Excluded talent attributes">
-        {renderBackgroundMetadataValues(backgroundFit.excludedTalentAttributeNames)}
+        {renderBackgroundTalentAttributes(backgroundFit.excludedTalentAttributeNames)}
       </BackgroundMetadataSubsection>
 
       {columnCampResourceModifierGroups.length > 0 ? (
@@ -1453,7 +1496,7 @@ function BackgroundFitRareOtherPerkGroupList({
             className={styles.detailOtherPerkGroupRareChevron}
             isExpanded={isExpanded}
           />
-          <span className={styles.detailSubsectionHeading}>Rare possible groups under 1%</span>
+          <span className={styles.detailOtherPerkGroupRareHeading}>Possible - under 1% chance</span>
           <span
             aria-label={`${otherPerkGroups.length} rare native perk groups`}
             className={styles.detailOtherPerkGroupHeaderCount}
@@ -1621,6 +1664,8 @@ function BackgroundDetail({
     ...backgroundFit,
     matches: getScopedBackgroundFitMatches(backgroundFit.matches, optionalPickedPerkIds),
   }
+  const hasMustHaveChanceBreakdown =
+    (backgroundFit.mustHaveStudyResourceChanceBreakdown?.length ?? 0) > 1
 
   return (
     <>
@@ -1673,16 +1718,22 @@ function BackgroundDetail({
         }
         sectionLabel="Background fit"
       >
-        <BackgroundFitMetricSummary
-          backgroundFit={backgroundFit}
-          mustHavePickedPerkCount={mustHavePickedPerkCount}
-          optionalPickedPerkCount={optionalPickedPerkCount}
-          pickedPerkCount={pickedPerkCount}
-          studyResourceFilter={studyResourceFilter}
-        />
-        <BackgroundFitChanceBreakdown
-          entries={backgroundFit.mustHaveStudyResourceChanceBreakdown}
-        />
+        <div
+          className={styles.detailBackgroundFitTables}
+          data-has-chance-breakdown={hasMustHaveChanceBreakdown}
+          data-testid="detail-background-fit-tables"
+        >
+          <BackgroundFitMetricSummary
+            backgroundFit={backgroundFit}
+            mustHavePickedPerkCount={mustHavePickedPerkCount}
+            optionalPickedPerkCount={optionalPickedPerkCount}
+            pickedPerkCount={pickedPerkCount}
+            studyResourceFilter={studyResourceFilter}
+          />
+          <BackgroundFitChanceBreakdown
+            entries={backgroundFit.mustHaveStudyResourceChanceBreakdown}
+          />
+        </div>
         <BackgroundFitStudyResourcePlan
           fullBuildStrategy={backgroundFit.fullBuildStudyResourceStrategy}
           mustHaveStrategy={backgroundFit.mustHaveStudyResourceStrategy}

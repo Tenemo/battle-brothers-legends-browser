@@ -220,6 +220,39 @@ test('keeps camp skill metadata rows tucked under their heading', async ({ page 
   await expect(metadataSection.getByText('Camp skills')).toBeVisible()
   await expect(metadataSection.getByText('Scouting', { exact: true })).toBeVisible()
   await expect(metadataSection.getByText('Gathering', { exact: true })).toBeVisible()
+  await expect(
+    metadataSection.getByTestId('detail-camp-resource-modifier-value').first(),
+  ).toHaveText(/^\+/u)
+
+  const campModifierTypography = await detailPanel.evaluate((panel) => {
+    const campLabel = panel.querySelector('[data-testid="detail-camp-resource-modifier-label"]')
+    const campValue = panel.querySelector('[data-testid="detail-camp-resource-modifier-value"]')
+    const fitLabel = panel.querySelector('[data-testid="background-fit-summary-label"]')
+    const fitValue = panel.querySelector('[data-testid="background-fit-summary-value"]')
+
+    if (
+      !(campLabel instanceof HTMLElement) ||
+      !(campValue instanceof HTMLElement) ||
+      !(fitLabel instanceof HTMLElement) ||
+      !(fitValue instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const campLabelStyle = window.getComputedStyle(campLabel)
+    const campValueStyle = window.getComputedStyle(campValue)
+    const fitLabelStyle = window.getComputedStyle(fitLabel)
+    const fitValueStyle = window.getComputedStyle(fitValue)
+
+    return {
+      campLabelFontSize: campLabelStyle.fontSize,
+      campValueBackgroundImage: campValueStyle.backgroundImage,
+      campValueBorderRadius: campValueStyle.borderRadius,
+      campValueFontSize: campValueStyle.fontSize,
+      fitLabelFontSize: fitLabelStyle.fontSize,
+      fitValueFontSize: fitValueStyle.fontSize,
+    }
+  })
 
   const campSkillMetrics = await metadataSection.evaluate((section) => {
     const headingElements = [...section.querySelectorAll('h4')]
@@ -246,6 +279,11 @@ test('keeps camp skill metadata rows tucked under their heading', async ({ page 
     }
   })
 
+  expect(campModifierTypography).not.toBeNull()
+  expect(campModifierTypography!.campLabelFontSize).toBe(campModifierTypography!.fitLabelFontSize)
+  expect(campModifierTypography!.campValueFontSize).toBe(campModifierTypography!.fitValueFontSize)
+  expect(campModifierTypography!.campValueBackgroundImage).toBe('none')
+  expect(campModifierTypography!.campValueBorderRadius).toBe('0px')
   expect(campSkillMetrics).not.toBeNull()
   expect(campSkillMetrics!.headingHeight).toBeLessThan(24)
   expect(campSkillMetrics!.headingToFirstRowDistance).toBeLessThanOrEqual(28)
@@ -271,12 +309,59 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   await backgroundFitPanel.getByRole('button', { name: 'Inspect background Peddler' }).click()
 
   const detailPanel = getDetailPanel(page)
+  const backgroundFitTables = detailPanel.getByTestId('detail-background-fit-tables')
+  const metricSummary = backgroundFitTables.getByTestId('background-fit-summary-table')
+  const chanceBreakdown = backgroundFitTables.getByTestId('detail-chance-breakdown')
   const studyResourcePlan = detailPanel.getByTestId('detail-study-resource-plan')
   const mustHaveStudyResourcePlan = studyResourcePlan
     .getByTestId('detail-study-resource-plan-scope')
     .filter({ hasText: 'Must-have impact' })
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Peddler' })).toBeVisible()
+  await expect(chanceBreakdown).toBeVisible()
+  const backgroundFitLayout = await backgroundFitTables.evaluate((tables) => {
+    const metricSummaryElement = tables.querySelector(
+      '[data-testid="background-fit-summary-table"]',
+    )
+    const chanceBreakdownElement = tables.querySelector('[data-testid="detail-chance-breakdown"]')
+
+    if (
+      !(metricSummaryElement instanceof HTMLElement) ||
+      !(chanceBreakdownElement instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    const metricSummaryRectangle = metricSummaryElement.getBoundingClientRect()
+    const chanceBreakdownRectangle = chanceBreakdownElement.getBoundingClientRect()
+
+    return {
+      chanceBreakdownLeft: chanceBreakdownRectangle.left,
+      chanceBreakdownTop: chanceBreakdownRectangle.top,
+      metricSummaryRight: metricSummaryRectangle.right,
+      metricSummaryTop: metricSummaryRectangle.top,
+    }
+  })
+  const studyResourcePlanSpacing = await studyResourcePlan.evaluate((plan) => {
+    const previousElement = plan.previousElementSibling
+
+    if (!(previousElement instanceof HTMLElement)) {
+      return null
+    }
+
+    return plan.getBoundingClientRect().top - previousElement.getBoundingClientRect().bottom
+  })
+
+  expect(backgroundFitLayout).not.toBeNull()
+  expect(backgroundFitLayout!.chanceBreakdownLeft).toBeGreaterThan(
+    backgroundFitLayout!.metricSummaryRight,
+  )
+  expect(
+    Math.abs(backgroundFitLayout!.chanceBreakdownTop - backgroundFitLayout!.metricSummaryTop),
+  ).toBeLessThanOrEqual(4)
+  expect(studyResourcePlanSpacing).not.toBeNull()
+  expect(studyResourcePlanSpacing!).toBeGreaterThanOrEqual(16)
+  await expect(metricSummary).toBeVisible()
   await expect(mustHaveStudyResourcePlan.getByText('Ancient scroll:')).toBeVisible()
   await expect(mustHaveStudyResourcePlan.getByText('Berserker')).toBeVisible()
   await expect(mustHaveStudyResourcePlan.getByText('Skill book:')).toBeVisible()

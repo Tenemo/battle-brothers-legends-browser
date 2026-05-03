@@ -36,6 +36,14 @@ const defaultStagingIconOutputDirectoryPath = path.join(
 const appRequiredGameIconPaths = [
   'ui/items/misc/inventory_ledger_item.png',
   'ui/items/trade/scroll.png',
+  'ui/icons/bravery_va11.png',
+  'ui/icons/fatigue_va11.png',
+  'ui/icons/health_va11.png',
+  'ui/icons/initiative_va11.png',
+  'ui/icons/melee_defense_va11.png',
+  'ui/icons/melee_skill_va11.png',
+  'ui/icons/ranged_defense_va11.png',
+  'ui/icons/ranged_skill_va11.png',
   'ui/traits/trait_icon_11.png',
 ]
 const defaultSteamRootDirectoryPaths = [

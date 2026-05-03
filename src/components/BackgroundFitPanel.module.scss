@@ -459,7 +459,11 @@
 
   .backgroundFitMetricTable {
     display: grid;
-    grid-template-columns: var(--icon-size-xs) minmax(0, 15.625rem) max-content minmax(0, 1fr);
+    grid-template-columns:
+      var(--icon-size-xs)
+      minmax(0, var(--background-fit-metric-label-column-size, 15.625rem))
+      max-content
+      minmax(0, 1fr);
     column-gap: var(--space-2xs);
     width: 100%;
     min-width: 0;

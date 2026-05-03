@@ -344,11 +344,23 @@ describe('background details study resources', () => {
       '/game-icons/ui/traits/trait_icon_32.png',
     )
     expect(within(metadataSection).getByText('Ranged skill')).toBeVisible()
+    expect(
+      within(metadataSection).getByTestId('detail-background-talent-attribute-icon'),
+    ).toHaveAttribute('src', '/game-icons/ui/icons/ranged_skill_va11.png')
     expect(within(metadataSection).getByText('Company capacity')).toBeVisible()
     expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
     expect(within(metadataSection).getByText('+13')).toBeVisible()
     expect(within(metadataSection).getByText('Camp skills')).toBeVisible()
     expect(screen.getByTestId('detail-camp-resource-modifier-columns')).toBeVisible()
+    expect(
+      within(metadataSection)
+        .getAllByTestId('detail-camp-resource-modifier-value')
+        .every((modifierValue) =>
+          [...modifierValue.classList].some((className) =>
+            className.includes('detailCampResourceModifierValue'),
+          ),
+        ),
+    ).toBe(true)
     expect(within(metadataSection).getByText('Repairing')).toBeVisible()
     expect(within(metadataSection).getByText('+30%')).toBeVisible()
     expect(within(metadataSection).getByText('Terrain movement')).toBeVisible()
@@ -587,6 +599,7 @@ describe('background details study resources', () => {
     expect(within(section).queryByText('Defense')).not.toBeInTheDocument()
     expect(within(section).queryByText('Traits')).not.toBeInTheDocument()
     expect(probabilityBadges).toEqual(['Guaranteed', '50%'])
+    expect(within(section).getByText('Possible - under 1% chance')).toBeVisible()
     expect(rareToggle).toHaveAttribute('aria-expanded', 'false')
     expect(screen.getByTestId('detail-rare-other-perk-groups-count')).toHaveTextContent('1')
     expect(screen.queryByTestId('detail-rare-other-perk-groups-list')).not.toBeInTheDocument()
@@ -687,7 +700,11 @@ describe('background details study resources', () => {
     })
 
     const chanceBreakdown = screen.getByTestId('detail-chance-breakdown')
+    const backgroundFitTables = screen.getByTestId('detail-background-fit-tables')
 
+    expect(backgroundFitTables).toHaveAttribute('data-has-chance-breakdown', 'true')
+    expect(backgroundFitTables).toContainElement(screen.getByTestId('background-fit-summary-table'))
+    expect(backgroundFitTables).toContainElement(chanceBreakdown)
     expect(
       within(chanceBreakdown).getByRole('heading', {
         level: 4,

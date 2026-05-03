@@ -287,9 +287,8 @@
     color: var(--text-muted);
   }
 
-  .detailTokenList {
-    display: flex;
-    flex-wrap: wrap;
+  .detailTalentAttributeList {
+    display: grid;
     gap: var(--space-xs);
     min-width: 0;
     margin: 0;
@@ -297,9 +296,30 @@
     list-style: none;
 
     li {
-      padding: var(--primitive-length-0-1rem) var(--space-sm);
+      display: grid;
+      grid-template-columns: var(--icon-size-xs) minmax(0, 1fr);
+      gap: var(--space-xs);
+      align-items: center;
+      min-width: 0;
+      color: var(--text-secondary);
+      font-size: var(--type-support-size);
+      line-height: var(--type-support-line-height);
+    }
+  }
 
-      @include badge-surface;
+  .detailTalentAttributeIcon {
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(var(--shadow-chain-drop));
+
+    @include size(var(--icon-size-xs));
+
+    &[data-placeholder='true'] {
+      border: var(--primitive-length-1px) solid var(--border-muted);
+      border-radius: var(--radius-sm);
+      background:
+        linear-gradient(135deg, rgb(255 255 255 / 0.06), rgb(255 255 255 / 0.01)),
+        var(--surface-control);
     }
   }
 
@@ -344,27 +364,41 @@
 
   .detailCampResourceModifierList {
     display: grid;
-    gap: var(--space-xs);
+    gap: 0;
     min-width: 0;
     margin: 0;
     padding: 0;
     list-style: none;
 
     li {
-      display: flex;
-      justify-content: space-between;
-      gap: var(--space-md);
-      align-items: center;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) max-content;
+      gap: var(--space-sm);
+      align-items: baseline;
       min-width: 0;
-      border-top: var(--primitive-length-1px) solid var(--border-muted);
-      padding-top: var(--space-xs);
-      color: var(--text-secondary);
+      padding: var(--primitive-length-0-12rem) 0;
+      border-top: var(--primitive-length-1px) solid var(--border-subtle);
 
       &:first-child {
         border-top: 0;
-        padding-top: 0;
       }
     }
+  }
+
+  .detailCampResourceModifierLabel {
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: var(--type-support-size);
+    line-height: var(--type-support-line-height);
+  }
+
+  .detailCampResourceModifierValue {
+    color: var(--accent-soft);
+    font-size: var(--type-body-size);
+    font-weight: 400;
+    line-height: var(--type-compact-line-height);
+    text-align: right;
+    white-space: nowrap;
   }
 
   .detailList {
@@ -505,6 +539,18 @@
     text-transform: uppercase;
   }
 
+  .detailBackgroundFitTables {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-lg);
+    align-items: start;
+    min-width: 0;
+
+    &[data-has-chance-breakdown='false'] {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
   .detailChanceBreakdown {
     display: grid;
     gap: var(--space-sm);
@@ -551,6 +597,7 @@
     display: grid;
     gap: var(--space-sm);
     min-width: 0;
+    margin-top: var(--space-xl);
   }
 
   .detailStudyResourcePlanScopes {
@@ -573,8 +620,15 @@
     line-height: var(--type-heading-line-height);
   }
 
-  .detailOtherPerkGroupRareToggle .detailSubsectionHeading {
+  .detailOtherPerkGroupRareHeading {
+    min-width: 0;
     margin: 0;
+    color: var(--accent-soft);
+    font-size: var(--type-body-size);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: 0;
+    line-height: var(--type-body-line-height);
+    text-transform: none;
   }
 
   .detailStudyResourcePlanRows {
@@ -637,7 +691,7 @@
   }
 
   .detailOtherPerkGroupSection + .detailOtherPerkGroupSection {
-    margin-top: var(--space-md);
+    margin-top: var(--space-xl);
   }
 
   .detailOtherPerkGroupDescription {
@@ -872,6 +926,11 @@
 
     .detailCampResourceModifierColumns {
       grid-template-columns: 1fr;
+    }
+
+    .detailBackgroundFitTables {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
     }
 
     .detailOtherPerkGroupList {
