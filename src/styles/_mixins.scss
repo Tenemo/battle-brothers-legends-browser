@@ -230,8 +230,8 @@
   border-radius: var(--radius-pill);
   background: rgb(20 17 14 / 0.8);
   color: var(--accent-soft);
-  font-size: var(--font-size-sm);
-  line-height: 1.2;
+  font-size: var(--type-chip-size);
+  line-height: var(--type-chip-line-height);
 }
 
 @mixin tooltip-surface {
@@ -377,9 +377,9 @@
 @mixin rail-label {
   color: var(--text-secondary);
   font-family: var(--heading-font-family);
-  font-size: var(--font-size-base);
-  letter-spacing: var(--primitive-length-0-08em);
-  line-height: 1;
+  font-size: var(--type-body-size);
+  letter-spacing: var(--type-meta-letter-spacing);
+  line-height: var(--type-meta-line-height);
   writing-mode: vertical-rl;
   transition:
     opacity var(--motion-fast-duration) ease,

@@ -195,14 +195,15 @@
     gap: var(--primitive-length-0-48rem);
     min-height: var(--control-height-sm);
     color: var(--text-primary);
-    font-size: var(--font-size-lg);
-    line-height: 1;
+    font-size: var(--type-control-size);
+    line-height: var(--type-control-line-height);
     cursor: help;
 
     span {
       display: inline-flex;
       align-items: center;
       min-height: var(--space-3xl);
+      line-height: var(--type-control-line-height);
     }
 
     input[type='checkbox'] {

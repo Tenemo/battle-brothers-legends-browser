@@ -388,11 +388,14 @@ test('build planner splits shared and individual perk groups without layout drif
   const infoButtonGlyphStyle = await infoButtonGlyph.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
     const rootStyle = window.getComputedStyle(document.documentElement)
-    const baseGlyphFontSize = Number.parseFloat(rootStyle.getPropertyValue('--font-size-xl'))
+    const baseGlyphFontSize = Number.parseFloat(
+      rootStyle.getPropertyValue('--type-panel-title-size'),
+    )
     const rootFontSize = Number.parseFloat(rootStyle.fontSize)
 
     return {
-      expectedFontSize: baseGlyphFontSize * rootFontSize * 1.5,
+      expectedFontSize: baseGlyphFontSize * rootFontSize * 1.25,
+      expectedFontFamily: rootStyle.getPropertyValue('--heading-font-family').trim().replaceAll("'", ''),
       fontFamily: computedStyle.fontFamily,
       fontSize: Number.parseFloat(computedStyle.fontSize),
       fontStyle: computedStyle.fontStyle,
@@ -405,11 +408,11 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(Math.abs(infoButtonStyle.height - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(Math.abs(infoButtonStyle.width - infoButtonStyle.expectedSize)).toBeLessThan(0.5)
   expect(infoButtonStyle.textTransform).toBe('none')
-  expect(infoButtonGlyphStyle.fontFamily).toContain('Georgia')
+  expect(infoButtonGlyphStyle.fontFamily).toBe(infoButtonGlyphStyle.expectedFontFamily)
   expect(
     Math.abs(infoButtonGlyphStyle.fontSize - infoButtonGlyphStyle.expectedFontSize),
   ).toBeLessThan(0.5)
-  expect(infoButtonGlyphStyle.fontStyle).toBe('italic')
+  expect(infoButtonGlyphStyle.fontStyle).toBe('normal')
   expect(infoButtonGlyphStyle.transform).not.toBe('none')
 
   await infoButton.hover()

@@ -27,10 +27,10 @@
     h2 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: clamp(var(--primitive-length-1-35rem), 2.6vw, var(--control-height-md));
+      font-size: var(--type-detail-title-size);
       font-weight: 700;
-      line-height: 0.98;
-      letter-spacing: var(--primitive-length-0-02em);
+      line-height: var(--type-title-line-height);
+      letter-spacing: var(--type-heading-letter-spacing);
     }
   }
 
@@ -135,12 +135,15 @@
     h3 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--font-size-2xl);
+      font-size: var(--type-section-title-size);
+      line-height: var(--type-heading-line-height);
     }
 
     p {
       margin: var(--space-sm) 0 0;
       color: var(--text-secondary);
+      font-size: var(--type-body-size);
+      line-height: var(--type-body-line-height);
     }
   }
 
@@ -204,9 +207,9 @@
   .detailCollapsibleToggleHeading {
     min-width: 0;
     font-family: var(--heading-font-family);
-    font-size: var(--font-size-2xl);
+    font-size: var(--type-section-title-size);
     font-weight: 700;
-    line-height: 1.05;
+    line-height: var(--type-heading-line-height);
   }
 
   .detailCollapsibleToggleCount {
@@ -264,14 +267,15 @@
     margin: 0;
     color: var(--text-secondary);
     font-family: var(--heading-font-family);
-    font-size: var(--font-size-lg);
-    line-height: 1.1;
+    font-size: var(--type-card-title-size);
+    line-height: var(--type-heading-line-height);
   }
 
   .detailMetadataBody {
     min-width: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-base);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
   }
 
   .detailMetadataValueText {
@@ -441,8 +445,8 @@
       align-items: center;
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: var(--font-size-xl);
-      line-height: 1.05;
+      font-size: var(--type-card-title-size);
+      line-height: var(--type-heading-line-height);
     }
   }
 
@@ -492,10 +496,10 @@
   .detailSubsectionHeading {
     margin: 0 0 var(--space-xs);
     color: var(--accent-soft);
-    font-size: var(--font-size-xl);
+    font-size: var(--type-subsection-title-size);
     font-weight: inherit;
-    letter-spacing: var(--primitive-length-0-16em);
-    line-height: 1.1;
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-meta-line-height);
     text-transform: uppercase;
   }
 
@@ -528,15 +532,15 @@
     dt {
       min-width: 0;
       color: var(--text-secondary);
-      font-size: var(--font-size-sm);
-      line-height: 1.1;
+      font-size: var(--type-support-size);
+      line-height: var(--type-support-line-height);
     }
 
     dd {
       margin: 0;
       color: var(--accent-soft);
-      font-size: var(--font-size-base);
-      line-height: 1.05;
+      font-size: var(--type-body-size);
+      line-height: var(--type-compact-line-height);
       white-space: nowrap;
     }
   }
@@ -562,9 +566,9 @@
   .detailStudyResourcePlanScopeHeading {
     margin: 0 0 var(--space-2xs);
     color: var(--text-secondary);
-    font-size: var(--font-size-lg);
+    font-size: var(--type-card-title-size);
     font-weight: inherit;
-    line-height: 1.15;
+    line-height: var(--type-heading-line-height);
   }
 
   .detailOtherPerkGroupRareToggle .detailSubsectionHeading {
@@ -607,8 +611,8 @@
   .detailStudyResourcePlanMain {
     margin: 0;
     color: var(--text-primary);
-    font-size: var(--font-size-base);
-    line-height: 1.25;
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
 
     strong {
       color: var(--accent-soft);
@@ -619,8 +623,8 @@
   .detailStudyResourcePlanSupport {
     margin: var(--space-3xs) 0 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-sm);
-    line-height: 1.25;
+    font-size: var(--type-support-size);
+    line-height: var(--type-support-line-height);
   }
 
   .detailOtherPerkGroupContent,
@@ -637,7 +641,8 @@
   .detailOtherPerkGroupDescription {
     margin: 0;
     color: var(--text-secondary);
-    font-size: var(--font-size-base);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
   }
 
   .detailOtherPerkGroupHeader {
@@ -680,8 +685,8 @@
 
   .detailOtherPerkGroupProbabilityBadge {
     color: var(--accent-soft);
-    font-size: var(--font-size-xs);
-    line-height: 1.1;
+    font-size: var(--type-compact-size);
+    line-height: var(--type-compact-line-height);
     text-align: right;
     white-space: normal;
   }
@@ -733,9 +738,10 @@
   }
 
   .detailSupport {
-    margin: var(--primitive-length-0-18rem) 0 0;
+    margin: var(--space-2xs) 0 0;
     color: var(--text-muted);
-    font-size: var(--font-size-base);
+    font-size: var(--type-support-size);
+    line-height: var(--type-support-line-height);
   }
 
   .detailBadge {
@@ -751,10 +757,11 @@
   }
 
   .eyebrow {
-    margin: 0 0 var(--primitive-length-0-2rem);
+    margin: 0 0 var(--space-2xs);
     color: var(--accent-soft);
-    font-size: var(--primitive-length-0-64rem);
-    letter-spacing: var(--primitive-length-0-16em);
+    font-size: var(--type-meta-size);
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-meta-line-height);
     text-transform: uppercase;
   }
 

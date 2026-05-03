@@ -27,5 +27,4 @@ export const socialImageColors = {
 export const socialImageFontFamilies = {
   brand: 'Cinzel, serif',
   body: 'Source Sans 3, Arial, sans-serif',
-  bodySerif: 'Source Sans 3, serif',
 } as const

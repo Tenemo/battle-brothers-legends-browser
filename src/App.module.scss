@@ -53,14 +53,10 @@
     h1 {
       margin: 0;
       font-family: var(--heading-font-family);
-      font-size: clamp(
-        1.26rem,
-        2.8vw,
-        2.17rem
-      );
+      font-size: var(--type-display-size);
       font-weight: 700;
-      line-height: 0.95;
-      letter-spacing: var(--primitive-length-0-02em);
+      line-height: var(--type-title-line-height);
+      letter-spacing: var(--type-heading-letter-spacing);
     }
   }
 
@@ -120,10 +116,11 @@
   }
 
   .eyebrow {
-    margin: 0 0 var(--primitive-length-0-2rem);
+    margin: 0 0 var(--space-2xs);
     color: var(--accent-soft);
-    font-size: var(--primitive-length-0-64rem);
-    letter-spacing: var(--primitive-length-0-16em);
+    font-size: var(--type-meta-size);
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-meta-line-height);
     text-transform: uppercase;
   }
 
@@ -180,14 +177,16 @@
 
     dt {
       color: var(--text-muted);
-      font-size: var(--font-size-2xs);
-      letter-spacing: var(--primitive-length-0-12em);
+      font-size: var(--type-meta-size);
+      letter-spacing: var(--type-meta-letter-spacing);
+      line-height: var(--type-meta-line-height);
       text-transform: uppercase;
     }
 
     dd {
       color: var(--text-primary);
-      font-size: var(--font-size-lg);
+      font-size: var(--type-body-size);
+      line-height: var(--type-body-line-height);
     }
   }
 
