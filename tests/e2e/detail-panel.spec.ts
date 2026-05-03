@@ -112,7 +112,7 @@ test('shows imported background metadata only in the background detail panel', a
   const detailPanel = getDetailPanel(page)
   const metadataSection = detailPanel.getByTestId('detail-background-metadata-section')
 
-  await expect(metadataSection).toHaveAttribute('open', '')
+  await expect(metadataSection).toHaveJSProperty('tagName', 'DIV')
   await expect(metadataSection.getByRole('heading', { name: 'Background details' })).toBeVisible()
   await expect(metadataSection.getByText('Daily cost')).toBeVisible()
   await expect(metadataSection.getByText('6')).toBeVisible()
@@ -124,11 +124,6 @@ test('shows imported background metadata only in the background detail panel', a
   await expect(metadataSection.getByText('Excluded traits')).toBeVisible()
   await expect(backgroundFitPanel.getByText('Daily cost')).toHaveCount(0)
   await expect(backgroundFitPanel.getByText('Repairing')).toHaveCount(0)
-
-  await metadataSection.getByText('Background details').click()
-
-  await expect(metadataSection).not.toHaveAttribute('open', '')
-  await expect(metadataSection.getByText('Background details')).toBeVisible()
 })
 
 test('detail history buttons stay inside page detail history', async ({ page }) => {

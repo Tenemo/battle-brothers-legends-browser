@@ -4,6 +4,7 @@ import {
   disableCategory,
   enableCategory,
   expandCategory,
+  getParsedCssRgbColor,
   expectRawAncientScrollMarker,
   expectSearchParam,
   getResultsList,
@@ -300,9 +301,9 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
 
   for (const { checkboxControl, label, labelRow, title } of filterOptions) {
     await expect(labelRow).toHaveAttribute('title', title)
-    await expect.poll(() => labelRow.evaluate((element) => getComputedStyle(element).cursor)).toBe(
-      'help',
-    )
+    await expect
+      .poll(() => labelRow.evaluate((element) => getComputedStyle(element).cursor))
+      .toBe('help')
     await expect
       .poll(async () => {
         const checkboxBox = await checkboxControl.boundingBox()
@@ -981,26 +982,16 @@ test('shows picked categories and perk groups with requirement icons and keeps p
       .getByTestId('category-picked-requirement-icon')
       .nth(1),
   ).toHaveAttribute('data-requirement', 'optional')
-  const traitsRequirementIconColors = await page
+  const traitsRequirementIconColorValues = await page
     .getByRole('button', { name: 'Enable category Traits' })
     .getByTestId('category-picked-requirement-icon')
     .evaluateAll((requirementIcons) =>
-      requirementIcons.map((requirementIcon) => {
-        const color = window.getComputedStyle(requirementIcon).color
-        const colorMatch = color.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(0|1|0?\.\d+))?\)$/u)
-
-        if (!colorMatch) {
-          return null
-        }
-
-        return {
-          blue: Number(colorMatch[3]),
-          color,
-          green: Number(colorMatch[2]),
-          red: Number(colorMatch[1]),
-        }
-      }),
+      requirementIcons.map((requirementIcon) => window.getComputedStyle(requirementIcon).color),
     )
+  const traitsRequirementIconColors = traitsRequirementIconColorValues.map((color) => ({
+    ...getParsedCssRgbColor(color),
+    color,
+  }))
 
   expect(traitsRequirementIconColors).toHaveLength(2)
   expect(traitsRequirementIconColors[0]?.color).not.toBe(traitsRequirementIconColors[1]?.color)

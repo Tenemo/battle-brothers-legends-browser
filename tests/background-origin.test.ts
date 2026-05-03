@@ -44,6 +44,7 @@ function createBackgroundFit({
     maximumTotalPerkGroupCount: 0,
     mustHaveBuildReachabilityProbability: null,
     mustHaveStudyResourceRequirement: null,
+    otherPerkGroups: [],
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
     veteranPerkLevelInterval: 4,
   }
@@ -87,6 +88,7 @@ function getImportedBackgroundFits(): RankedBackgroundFit[] {
       maximumTotalPerkGroupCount: 0,
       mustHaveBuildReachabilityProbability: null,
       mustHaveStudyResourceRequirement: null,
+      otherPerkGroups: [],
     }),
   )
 }
@@ -479,6 +481,7 @@ describe('background origin detection', () => {
           maximumTotalPerkGroupCount: 0,
           mustHaveBuildReachabilityProbability: null,
           mustHaveStudyResourceRequirement: null,
+          otherPerkGroups: [],
         }),
       )
 

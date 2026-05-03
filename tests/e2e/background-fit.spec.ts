@@ -403,7 +403,8 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(detailPanel.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
   await expect(detailPanel.getByRole('heading', { level: 4, name: 'Optional' })).toBeVisible()
   await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
-  await expect(detailPanel.getByText('Learn with skill books and ancient scrolls')).toHaveCount(2)
+  await expect(detailPanel.getByText('Must-have study route')).toBeVisible()
+  await expect(detailPanel.getByText('Additional optional-only study route')).toBeVisible()
   await expect(detailPanel.getByText('No optional perks in this build.')).toBeVisible()
   await expect(detailPanel.getByTestId('detail-background-veteran-perk-badge')).toHaveCSS(
     'cursor',
@@ -916,9 +917,9 @@ test('filters origin backgrounds from the background search menu', async ({ page
     const labelRow = backgroundFiltersGroup.locator('label').filter({ hasText: labelText })
 
     await expect(labelRow).toHaveAttribute('title', title)
-    await expect.poll(() => labelRow.evaluate((element) => getComputedStyle(element).cursor)).toBe(
-      'help',
-    )
+    await expect
+      .poll(() => labelRow.evaluate((element) => getComputedStyle(element).cursor))
+      .toBe('help')
   }
 
   await expect
@@ -1153,6 +1154,24 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
 
+  const otherNativePerkGroupsToggle = detailPanel.getByTestId('detail-other-perk-groups-toggle')
+
+  await expect(otherNativePerkGroupsToggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(detailPanel.getByTestId('detail-other-perk-groups-section')).toHaveCount(0)
+
+  await otherNativePerkGroupsToggle.click()
+
+  const otherNativePerkGroupsSection = detailPanel.getByTestId(
+    'detail-other-perk-groups-section',
+  )
+
+  await expect(otherNativePerkGroupsToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(otherNativePerkGroupsSection).toBeVisible()
+  await expect(otherNativePerkGroupsSection.getByTestId('planner-group-card').first()).toBeVisible()
+  await expect(
+    otherNativePerkGroupsSection.getByRole('button', { name: 'Select perk group Barter' }),
+  ).toHaveCount(0)
+
   const barterMatchButton = detailPanel.getByRole('button', {
     name: 'Select perk group Barter',
   })
@@ -1160,7 +1179,7 @@ test('shows probabilistic background fit matches with percentage badges', async 
     'xpath=ancestor::*[@data-testid="planner-group-card"][1]',
   )
 
-  await expect(detailPanel.getByText('Possible', { exact: true })).toBeVisible()
+  await expect(detailPanel.getByText('Possible', { exact: true }).first()).toBeVisible()
   await expect(barterMatchButton).toBeVisible()
   await expect(barterMatchRow).toHaveAttribute('data-testid', 'planner-group-card')
   await expect(barterMatchRow.getByTestId('background-fit-category-badge')).toHaveCount(0)

@@ -55,16 +55,35 @@ type NativeOutcomeSummary = {
   maximumNativeCoveredPickedPerkCount: number
 }
 
+export type BackgroundFitStudyResourceChanceBreakdownEntry = {
+  key: 'book' | 'book-and-scroll' | 'native' | 'scroll'
+  probability: number
+  shouldAllowBook: boolean
+  shouldAllowScroll: boolean
+  shouldAllowSecondScroll: boolean
+}
+
+type StudyResourceChanceBreakdownProfile = {
+  key: BackgroundFitStudyResourceChanceBreakdownEntry['key']
+  scopeCacheKey: string
+  shouldAllowBook: boolean
+  shouldAllowScroll: boolean
+  shouldAllowSecondScroll: boolean
+  studyResourceCoverageProfile: StudyResourceMaskCoverageProfile
+}
+
 export type BackgroundFitSummary = Omit<
   RankedBackgroundFit,
   | 'buildReachabilityProbability'
   | 'expectedCoveredMustHavePerkCount'
   | 'expectedCoveredOptionalPerkCount'
   | 'fullBuildReachabilityProbability'
+  | 'fullBuildStudyResourceChanceBreakdown'
   | 'guaranteedCoveredMustHavePerkCount'
   | 'guaranteedCoveredOptionalPerkCount'
   | 'maximumNativeCoveredPickedPerkCount'
   | 'mustHaveBuildReachabilityProbability'
+  | 'mustHaveStudyResourceChanceBreakdown'
   | 'fullBuildStudyResourceRequirement'
   | 'mustHaveStudyResourceRequirement'
 >
@@ -107,6 +126,13 @@ type DynamicPerkPlacement = LegendsPerkPlacement & {
   categoryName: LegendsDynamicBackgroundCategoryName
 }
 
+type BackgroundFitPerkGroupMetadata = {
+  categoryName: LegendsDynamicBackgroundCategoryName
+  perkGroupIconPath: string | null
+  perkGroupId: string
+  perkGroupName: string
+}
+
 export type BuildTargetPerkGroup = {
   categoryName: string
   pickedPerkCount: number
@@ -118,6 +144,11 @@ export type BuildTargetPerkGroup = {
 }
 
 export type BackgroundFitMatch = BuildTargetPerkGroup & {
+  isGuaranteed: boolean
+  probability: number
+}
+
+export type BackgroundFitOtherPerkGroup = BackgroundFitPerkGroupMetadata & {
   isGuaranteed: boolean
   probability: number
 }
@@ -136,6 +167,7 @@ export type RankedBackgroundFit = {
   expectedCoveredOptionalPerkCount: number
   expectedCoveredPickedPerkCount: number
   expectedMatchedPerkGroupCount: number
+  fullBuildStudyResourceChanceBreakdown?: BackgroundFitStudyResourceChanceBreakdownEntry[]
   fullBuildStudyResourceRequirement: StudyResourceRequirementProfile | null
   fullBuildReachabilityProbability: number | null
   guaranteedCoveredMustHavePerkCount: number
@@ -147,7 +179,9 @@ export type RankedBackgroundFit = {
   maximumTotalPerkGroupCount: number
   matches: BackgroundFitMatch[]
   mustHaveBuildReachabilityProbability: number | null
+  mustHaveStudyResourceChanceBreakdown?: BackgroundFitStudyResourceChanceBreakdownEntry[]
   mustHaveStudyResourceRequirement: StudyResourceRequirementProfile | null
+  otherPerkGroups: BackgroundFitOtherPerkGroup[]
   sourceFilePath: string
   veteranPerkLevelInterval: number
 }
@@ -340,8 +374,70 @@ function buildPerkGroupIdsByCategory(
   )
 }
 
+function buildPerkGroupMetadataByKey(
+  perks: LegendsBackgroundFitPerkRecord[],
+): Map<string, BackgroundFitPerkGroupMetadata> {
+  const perkGroupMetadataByKey = new Map<string, BackgroundFitPerkGroupMetadata>()
+
+  for (const perk of perks) {
+    for (const placement of perk.placements) {
+      if (!isDynamicBackgroundCategoryName(placement.categoryName)) {
+        continue
+      }
+
+      const perkGroupKey = getPerkGroupProbabilityKey(
+        placement.categoryName,
+        placement.perkGroupId,
+      )
+      const existingPerkGroupMetadata = perkGroupMetadataByKey.get(perkGroupKey)
+
+      if (!existingPerkGroupMetadata) {
+        perkGroupMetadataByKey.set(perkGroupKey, {
+          categoryName: placement.categoryName,
+          perkGroupIconPath: placement.perkGroupIconPath,
+          perkGroupId: placement.perkGroupId,
+          perkGroupName: placement.perkGroupName,
+        })
+        continue
+      }
+
+      if (
+        existingPerkGroupMetadata.perkGroupIconPath === null &&
+        placement.perkGroupIconPath !== null
+      ) {
+        perkGroupMetadataByKey.set(perkGroupKey, {
+          ...existingPerkGroupMetadata,
+          perkGroupIconPath: placement.perkGroupIconPath,
+        })
+      }
+    }
+  }
+
+  return perkGroupMetadataByKey
+}
+
 function getPerkGroupProbabilityKey(categoryName: string, perkGroupId: string): string {
   return `${categoryName}::${perkGroupId}`
+}
+
+function parsePerkGroupProbabilityKey(perkGroupKey: string): PerkGroupRequirement | null {
+  const separatorIndex = perkGroupKey.indexOf('::')
+
+  if (separatorIndex === -1) {
+    return null
+  }
+
+  const categoryName = perkGroupKey.slice(0, separatorIndex)
+  const perkGroupId = perkGroupKey.slice(separatorIndex + 2)
+
+  if (!isDynamicBackgroundCategoryName(categoryName) || perkGroupId.length === 0) {
+    return null
+  }
+
+  return {
+    categoryName,
+    perkGroupId,
+  }
 }
 
 function getPickedPerkMask(pickedPerkIndex: number): CoverageMask {
@@ -1947,6 +2043,72 @@ function compareBackgroundFitMatches(
   )
 }
 
+function compareBackgroundFitOtherPerkGroups(
+  leftPerkGroup: BackgroundFitOtherPerkGroup,
+  rightPerkGroup: BackgroundFitOtherPerkGroup,
+): number {
+  return (
+    Number(rightPerkGroup.isGuaranteed) - Number(leftPerkGroup.isGuaranteed) ||
+    rightPerkGroup.probability - leftPerkGroup.probability ||
+    getCategoryPriority(leftPerkGroup.categoryName) -
+      getCategoryPriority(rightPerkGroup.categoryName) ||
+    leftPerkGroup.perkGroupName.localeCompare(rightPerkGroup.perkGroupName) ||
+    leftPerkGroup.perkGroupId.localeCompare(rightPerkGroup.perkGroupId)
+  )
+}
+
+function getOtherBackgroundPerkGroups({
+  perkGroupMetadataByKey,
+  probabilitiesByPerkGroupKey,
+  supportedBuildTargetPerkGroups,
+}: {
+  perkGroupMetadataByKey: ReadonlyMap<string, BackgroundFitPerkGroupMetadata>
+  probabilitiesByPerkGroupKey: ReadonlyMap<string, number>
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+}): BackgroundFitOtherPerkGroup[] {
+  const buildPerkGroupKeys = new Set(
+    supportedBuildTargetPerkGroups.map((buildTargetPerkGroup) =>
+      getPerkGroupProbabilityKey(
+        buildTargetPerkGroup.categoryName,
+        buildTargetPerkGroup.perkGroupId,
+      ),
+    ),
+  )
+  const otherPerkGroups: BackgroundFitOtherPerkGroup[] = []
+
+  for (const [perkGroupKey, probability] of probabilitiesByPerkGroupKey) {
+    if (probability <= 0 || buildPerkGroupKeys.has(perkGroupKey)) {
+      continue
+    }
+
+    let perkGroupMetadata = perkGroupMetadataByKey.get(perkGroupKey)
+
+    if (!perkGroupMetadata) {
+      const fallbackRequirement = parsePerkGroupProbabilityKey(perkGroupKey)
+
+      if (fallbackRequirement === null) {
+        continue
+      }
+
+      perkGroupMetadata = {
+        categoryName: fallbackRequirement.categoryName,
+        perkGroupIconPath: null,
+        perkGroupId: fallbackRequirement.perkGroupId,
+        perkGroupName: fallbackRequirement.perkGroupId,
+      }
+    }
+    const displayProbability = Math.min(1, probability)
+
+    otherPerkGroups.push({
+      ...perkGroupMetadata,
+      isGuaranteed: displayProbability >= 1,
+      probability: displayProbability,
+    })
+  }
+
+  return otherPerkGroups.toSorted(compareBackgroundFitOtherPerkGroups)
+}
+
 function normalizeBackgroundFitMatches(matches: BackgroundFitMatch[]): BackgroundFitMatch[] {
   const guaranteedPickedPerkIdSet = new Set(
     matches.filter((match) => match.isGuaranteed).flatMap((match) => match.pickedPerkIds),
@@ -2152,6 +2314,62 @@ function getStudyResourceFilterCacheKey(
   ].join('|')
 }
 
+function getStudyResourceChanceBreakdownFilters(
+  studyResourceFilter: BackgroundStudyResourceFilter | undefined,
+): Array<
+  Pick<
+    BackgroundFitStudyResourceChanceBreakdownEntry,
+    'key' | 'shouldAllowBook' | 'shouldAllowScroll' | 'shouldAllowSecondScroll'
+  >
+> {
+  if (studyResourceFilter === undefined) {
+    return []
+  }
+
+  const breakdownFilters: Array<
+    Pick<
+      BackgroundFitStudyResourceChanceBreakdownEntry,
+      'key' | 'shouldAllowBook' | 'shouldAllowScroll' | 'shouldAllowSecondScroll'
+    >
+  > = [
+    {
+      key: 'native',
+      shouldAllowBook: false,
+      shouldAllowScroll: false,
+      shouldAllowSecondScroll: false,
+    },
+  ]
+
+  if (studyResourceFilter.shouldAllowBook) {
+    breakdownFilters.push({
+      key: 'book',
+      shouldAllowBook: true,
+      shouldAllowScroll: false,
+      shouldAllowSecondScroll: false,
+    })
+  }
+
+  if (studyResourceFilter.shouldAllowScroll) {
+    breakdownFilters.push({
+      key: 'scroll',
+      shouldAllowBook: false,
+      shouldAllowScroll: true,
+      shouldAllowSecondScroll: studyResourceFilter.shouldAllowSecondScroll,
+    })
+  }
+
+  if (studyResourceFilter.shouldAllowBook && studyResourceFilter.shouldAllowScroll) {
+    breakdownFilters.push({
+      key: 'book-and-scroll',
+      shouldAllowBook: true,
+      shouldAllowScroll: true,
+      shouldAllowSecondScroll: studyResourceFilter.shouldAllowSecondScroll,
+    })
+  }
+
+  return breakdownFilters
+}
+
 function getRequirementSubsetCacheKey(requirements: StudyReachabilityRequirement[]): string {
   return requirements
     .map((requirement) =>
@@ -2179,6 +2397,7 @@ export function createBackgroundFitEngine(
   dataset: LegendsBackgroundFitDataset,
 ): BackgroundFitEngine {
   const perkGroupIdsByCategory = buildPerkGroupIdsByCategory(dataset.perks)
+  const perkGroupMetadataByKey = buildPerkGroupMetadataByKey(dataset.perks)
   const classWeaponDependencyByClassPerkGroupId = buildClassWeaponDependencyByClassPerkGroupId(
     dataset.backgroundFitRules.classWeaponDependencies,
   )
@@ -2218,7 +2437,8 @@ export function createBackgroundFitEngine(
   function createEmptyBackgroundFitSummary(
     backgroundProbabilityRecord: BackgroundProbabilityRecord,
   ): BackgroundFitSummary {
-    const { backgroundDefinition, maximumTotalPerkGroupCount } = backgroundProbabilityRecord
+    const { backgroundDefinition, maximumTotalPerkGroupCount, probabilitiesByPerkGroupKey } =
+      backgroundProbabilityRecord
 
     return {
       backgroundId: backgroundDefinition.backgroundId,
@@ -2239,6 +2459,11 @@ export function createBackgroundFitEngine(
       iconPath: backgroundDefinition.iconPath ?? null,
       maximumTotalPerkGroupCount,
       matches: [],
+      otherPerkGroups: getOtherBackgroundPerkGroups({
+        perkGroupMetadataByKey,
+        probabilitiesByPerkGroupKey,
+        supportedBuildTargetPerkGroups: [],
+      }),
       sourceFilePath: backgroundDefinition.sourceFilePath,
       veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
     }
@@ -2481,6 +2706,11 @@ export function createBackgroundFitEngine(
       iconPath: backgroundDefinition.iconPath ?? null,
       maximumTotalPerkGroupCount,
       matches,
+      otherPerkGroups: getOtherBackgroundPerkGroups({
+        perkGroupMetadataByKey,
+        probabilitiesByPerkGroupKey,
+        supportedBuildTargetPerkGroups,
+      }),
       sourceFilePath: backgroundDefinition.sourceFilePath,
       veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
     }
@@ -2681,6 +2911,54 @@ export function createBackgroundFitEngine(
                 backgroundFitBuildCache.projection,
               ),
             })
+      const createStudyResourceChanceBreakdownProfiles = ({
+        pickedPerks,
+        scopePrefix,
+        targetMask,
+      }: {
+        pickedPerks: LegendsBackgroundFitPerkRecord[]
+        scopePrefix: string
+        targetMask: CoverageMask
+      }): StudyResourceChanceBreakdownProfile[] =>
+        getStudyResourceChanceBreakdownFilters(studyResourceFilter).map((breakdownFilter) => {
+          const filter = {
+            shouldAllowBook: breakdownFilter.shouldAllowBook,
+            shouldAllowScroll: breakdownFilter.shouldAllowScroll,
+            shouldAllowSecondScroll: breakdownFilter.shouldAllowSecondScroll,
+          } satisfies BackgroundStudyResourceFilter
+
+          return {
+            ...breakdownFilter,
+            scopeCacheKey: getBackgroundFitScopeCacheKey(
+              scopePrefix,
+              pickedPerks,
+              getStudyResourceFilterCacheKey(filter),
+            ),
+            studyResourceCoverageProfile: createStudyResourceMaskCoverageProfile({
+              filter,
+              getRequirementCoverageMask,
+              pickedPerks,
+              targetMask,
+            }),
+          }
+        })
+      const mustHaveStudyResourceChanceBreakdownProfiles =
+        createStudyResourceChanceBreakdownProfiles({
+          pickedPerks: mustHavePickedPerks,
+          scopePrefix: 'must-have',
+          targetMask: getPickedPerksCoverageMask(
+            mustHavePickedPerks,
+            backgroundFitBuildCache.projection,
+          ),
+        })
+      const totalStudyResourceChanceBreakdownProfiles =
+        optionalPickedPerks.length === 0
+          ? mustHaveStudyResourceChanceBreakdownProfiles
+          : createStudyResourceChanceBreakdownProfiles({
+              pickedPerks,
+              scopePrefix: 'total',
+              targetMask: backgroundFitBuildCache.projection.allPickedMask,
+            })
 
       const rankedBackgroundFits: RankedBackgroundFit[] = []
       let sortedRankedBackgroundFitsSnapshot: RankedBackgroundFit[] = []
@@ -2765,6 +3043,22 @@ export function createBackgroundFitEngine(
         reportProgress()
         reportPartialView()
       }
+      const getStudyResourceChanceBreakdown = (
+        cachedBackgroundFitRecord: CachedBackgroundFitRecord,
+        profiles: StudyResourceChanceBreakdownProfile[],
+      ): BackgroundFitStudyResourceChanceBreakdownEntry[] =>
+        profiles.map((profile) => ({
+          key: profile.key,
+          probability: getCachedNativeOutcomeSummary({
+            backgroundFitBuildCache,
+            cachedBackgroundFitRecord,
+            studyResourceCoverageProfile: profile.studyResourceCoverageProfile,
+            studyResourceFilterCacheKey: profile.scopeCacheKey,
+          }).buildReachabilityProbability,
+          shouldAllowBook: profile.shouldAllowBook,
+          shouldAllowScroll: profile.shouldAllowScroll,
+          shouldAllowSecondScroll: profile.shouldAllowSecondScroll,
+        }))
 
       reportProgress({ shouldForce: true })
 
@@ -2857,6 +3151,13 @@ export function createBackgroundFitEngine(
                   pickedPerks: optionalPickedPerks,
                   scopeCacheKey: optionalScopeCacheKey,
                 }),
+          fullBuildStudyResourceChanceBreakdown:
+            studyResourceFilter === undefined
+              ? undefined
+              : getStudyResourceChanceBreakdown(
+                  cachedBackgroundFitRecord,
+                  totalStudyResourceChanceBreakdownProfiles,
+                ),
           fullBuildStudyResourceRequirement,
           fullBuildReachabilityProbability:
             studyResourceFilter === undefined
@@ -2879,6 +3180,13 @@ export function createBackgroundFitEngine(
             studyResourceFilter === undefined
               ? null
               : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
+          mustHaveStudyResourceChanceBreakdown:
+            studyResourceFilter === undefined
+              ? undefined
+              : getStudyResourceChanceBreakdown(
+                  cachedBackgroundFitRecord,
+                  mustHaveStudyResourceChanceBreakdownProfiles,
+                ),
           mustHaveStudyResourceRequirement,
         }
 

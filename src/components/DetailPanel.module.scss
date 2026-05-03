@@ -151,31 +151,61 @@
     padding: var(--space-md);
     background: rgb(18 15 13 / 0.42);
 
-    &[open] .detailCollapsibleSummary {
+    &[data-expanded='true'] .detailCollapsibleToggle {
       margin-bottom: var(--space-md);
     }
   }
 
-  .detailCollapsibleSummary {
+  .detailCollapsibleToggle {
+    appearance: none;
     display: flex;
     gap: var(--space-sm);
     align-items: center;
-    cursor: pointer;
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    padding: 0;
+    background: transparent;
     color: var(--text-primary);
-
-    &::marker {
-      color: var(--accent-soft);
-    }
-
-    h3 {
-      margin: 0;
-      font-family: var(--heading-font-family);
-      font-size: var(--font-size-2xl);
-    }
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
 
     &:focus-visible {
       @include focus-ring;
     }
+  }
+
+  .detailCollapsibleChevron {
+    flex: 0 0 auto;
+
+    @include size(var(--icon-size-sm));
+
+    color: var(--text-muted);
+    transition:
+      color var(--motion-fast),
+      transform var(--motion-fast);
+
+    &[data-expanded='true'] {
+      color: var(--accent-soft);
+      transform: rotate(90deg);
+    }
+  }
+
+  .detailCollapsibleToggleHeading {
+    min-width: 0;
+    font-family: var(--heading-font-family);
+    font-size: var(--font-size-2xl);
+    font-weight: 700;
+    line-height: 1.05;
+  }
+
+  .detailCollapsibleToggleCount {
+    flex: 0 0 auto;
+    margin-left: auto;
+    padding: var(--primitive-length-0-12rem) var(--space-md);
+
+    @include badge-surface;
   }
 
   .detailMetadataContent {
@@ -407,10 +437,84 @@
     text-transform: uppercase;
   }
 
+  .detailChanceBreakdown {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  .detailChanceBreakdownList {
+    display: grid;
+    gap: 0;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .detailChanceBreakdownRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--space-sm);
+    align-items: baseline;
+    min-width: 0;
+    padding: var(--primitive-length-0-12rem) 0;
+    border-top: var(--primitive-length-1px) solid var(--border-subtle);
+
+    &:first-child {
+      border-top: 0;
+    }
+
+    dt {
+      min-width: 0;
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      line-height: 1.1;
+    }
+
+    dd {
+      margin: 0;
+      color: var(--accent-soft);
+      font-size: var(--font-size-base);
+      line-height: 1.05;
+      white-space: nowrap;
+    }
+  }
+
   .detailStudyResourceSection {
     display: grid;
     gap: var(--space-sm);
     min-width: 0;
+  }
+
+  .detailOtherPerkGroupContent,
+  .detailOtherPerkGroupSection {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  .detailOtherPerkGroupList {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      min-width: 0;
+    }
+  }
+
+  .detailOtherPerkGroupTile {
+    width: 100%;
+  }
+
+  .detailOtherPerkGroupProbabilityBadge {
+    color: var(--accent-soft);
+    font-size: var(--font-size-xs);
+    line-height: 1.1;
+    text-align: right;
+    white-space: normal;
   }
 
   .detailStudyResourceList {

@@ -26,17 +26,19 @@ import type {
 
 function createPlacement({
   categoryName,
+  perkGroupIconPath = null,
   perkGroupId,
   perkGroupName,
 }: {
   categoryName: string
+  perkGroupIconPath?: string | null
   perkGroupId: string
   perkGroupName: string
 }): LegendsPerkPlacement {
   return {
     categoryName,
     tier: 1,
-    perkGroupIconPath: null,
+    perkGroupIconPath,
     perkGroupId,
     perkGroupName,
   }
@@ -604,6 +606,61 @@ describe('background fit', () => {
         }),
       ]),
     )
+  })
+
+  test('reports native non-build perk groups with stable probability metadata', () => {
+    const duplicateLuckyPlacementPerk = createPerk({
+      id: 'perk.traits.lucky_icon_source',
+      perkConstName: 'LegendLuckyIconSource',
+      perkName: 'Lucky icon source',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupIconPath: 'ui/perks/lucky_icon.png',
+          perkGroupId: 'LuckyTree',
+          perkGroupName: 'Lucky duplicate label',
+        }),
+      ],
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      perks: [...samplePerks, duplicateLuckyPlacementPerk],
+    })
+    const backgroundFit = engine
+      .getBackgroundFitView([samplePerks[5]])
+      .rankedBackgroundFits.find(
+        (rankedBackgroundFit) => rankedBackgroundFit.backgroundId === 'background.traits_fill',
+      )
+
+    expect(backgroundFit?.matches).toEqual([
+      expect.objectContaining({
+        perkGroupId: 'BoldTree',
+        probability: 0.5,
+      }),
+    ])
+    expect(backgroundFit?.otherPerkGroups).toEqual([
+      {
+        categoryName: 'Traits',
+        isGuaranteed: true,
+        perkGroupIconPath: null,
+        perkGroupId: 'CalmTree',
+        perkGroupName: 'Calm',
+        probability: 1,
+      },
+      {
+        categoryName: 'Traits',
+        isGuaranteed: false,
+        perkGroupIconPath: 'ui/perks/lucky_icon.png',
+        perkGroupId: 'LuckyTree',
+        perkGroupName: 'Lucky',
+        probability: 0.5,
+      },
+    ])
+    expect(
+      backgroundFit?.otherPerkGroups.some(
+        (otherPerkGroup) => otherPerkGroup.perkGroupId === 'BoldTree',
+      ),
+    ).toBe(false)
   })
 
   test('projects deterministic fills onto only relevant picked groups', () => {
@@ -1336,6 +1393,70 @@ describe('background fit', () => {
           requiresBright: false,
           scrollRequirements: [],
         },
+      }),
+    )
+  })
+
+  test('reports must-have chance breakdown across study resource combinations', () => {
+    const berserkerPerk = createPerk({
+      id: 'perk.magic.actual_berserker',
+      perkConstName: 'LegendActualBerserker',
+      perkName: 'Actual berserker',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+          perkGroupName: 'Berserker',
+        }),
+      ],
+    })
+    const oneRandomTraitBackground = createBackgroundDefinition({
+      backgroundId: 'background.one_random_trait',
+      backgroundName: 'One random trait',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [oneRandomTraitBackground],
+      perks: [...samplePerks, berserkerPerk],
+    })
+    const [backgroundFit] = engine.getBackgroundFitView(
+      [samplePerks[4], berserkerPerk],
+      defaultStudyResources,
+    ).rankedBackgroundFits
+
+    expect(backgroundFit).toEqual(
+      expect.objectContaining({
+        buildReachabilityProbability: 1,
+        mustHaveBuildReachabilityProbability: 1,
+        mustHaveStudyResourceChanceBreakdown: [
+          expect.objectContaining({
+            key: 'native',
+            probability: 0,
+            shouldAllowBook: false,
+            shouldAllowScroll: false,
+          }),
+          expect.objectContaining({
+            key: 'book',
+            probability: 0,
+            shouldAllowBook: true,
+            shouldAllowScroll: false,
+          }),
+          expect.objectContaining({
+            key: 'scroll',
+            probability: 1 / 3,
+            shouldAllowBook: false,
+            shouldAllowScroll: true,
+          }),
+          expect.objectContaining({
+            key: 'book-and-scroll',
+            probability: 1,
+            shouldAllowBook: true,
+            shouldAllowScroll: true,
+          }),
+        ],
       }),
     )
   })

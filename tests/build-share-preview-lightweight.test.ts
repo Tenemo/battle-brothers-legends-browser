@@ -98,6 +98,7 @@ function createSummary({
       },
     ],
     maximumTotalPerkGroupCount: 1,
+    otherPerkGroups: [],
     sourceFilePath,
     veteranPerkLevelInterval: 4,
   }

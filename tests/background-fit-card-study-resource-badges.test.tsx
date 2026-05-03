@@ -67,6 +67,7 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
     maximumTotalPerkGroupCount: 0,
     mustHaveBuildReachabilityProbability: 1,
     mustHaveStudyResourceRequirement: nativeStudyResourceRequirement,
+    otherPerkGroups: [],
     sourceFilePath: 'backgrounds/study_resource_badges_background.nut',
     veteranPerkLevelInterval: 4,
     ...overrides,
@@ -199,6 +200,68 @@ describe('background fit card study resource badges', () => {
     ).toBe(true)
     expect(existsSync(path.join(process.cwd(), 'public', 'game-icons', brightTraitIconPath))).toBe(
       true,
+    )
+  })
+
+  test('marks study resources as must-have chance improvements when breakdown data shows an impact', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        mustHaveBuildReachabilityProbability: 0.6,
+        mustHaveStudyResourceChanceBreakdown: [
+          {
+            key: 'native',
+            probability: 0.1,
+            shouldAllowBook: false,
+            shouldAllowScroll: false,
+            shouldAllowSecondScroll: false,
+          },
+          {
+            key: 'book',
+            probability: 0.2,
+            shouldAllowBook: true,
+            shouldAllowScroll: false,
+            shouldAllowSecondScroll: false,
+          },
+          {
+            key: 'scroll',
+            probability: 0.4,
+            shouldAllowBook: false,
+            shouldAllowScroll: true,
+            shouldAllowSecondScroll: false,
+          },
+          {
+            key: 'book-and-scroll',
+            probability: 0.6,
+            shouldAllowBook: true,
+            shouldAllowScroll: true,
+            shouldAllowSecondScroll: false,
+          },
+        ],
+      }),
+    )
+
+    const badgeContainer = screen.getByTestId(backgroundStudyResourceBadgesTestId)
+    const badges = screen.getAllByTestId(backgroundStudyResourceBadgeTestId)
+
+    expect(badgeContainer).toHaveAccessibleName(
+      'Study resources can improve must-have build chance',
+    )
+    expect(badges).toHaveLength(2)
+    expect(badges.map((badge) => badge.getAttribute('data-study-resource-kind'))).toEqual([
+      'book',
+      'scroll',
+    ])
+    expect(badges[0]).toHaveAttribute('title', 'Skill book can improve must-have build chance')
+    expect(badges[0]).toHaveAttribute('alt', 'Skill book can improve must-have build chance')
+    expect(badges[0]).toHaveAttribute('data-optional-only', 'false')
+    expect(badges[1]).toHaveAttribute('title', 'Ancient scroll can improve must-have build chance')
+    expect(badges[1]).toHaveAttribute('alt', 'Ancient scroll can improve must-have build chance')
+    expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
+    expect(screen.getByText('Must-have build chance').closest('[title]')).toHaveAttribute(
+      'title',
+      expect.stringContaining(
+        'Breakdown: native 10%, skill book 20%, ancient scroll 40%, skill book and ancient scroll 60%.',
+      ),
     )
   })
 
