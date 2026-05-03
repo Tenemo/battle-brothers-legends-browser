@@ -581,9 +581,9 @@ describe('background details study resources', () => {
     const rareToggle = within(section).getByRole('button', {
       name: 'Expand rare native perk groups',
     })
-    const sectionCountBadges = within(section)
-      .getAllByTestId('detail-other-perk-group-section-count')
-      .map((countBadge) => countBadge.textContent)
+    const sectionCountBadges = within(section).getAllByTestId(
+      'detail-other-perk-group-section-count',
+    )
 
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(
@@ -593,7 +593,11 @@ describe('background details study resources', () => {
     ).toBeVisible()
     expect(within(section).getByRole('heading', { level: 4, name: 'Guaranteed' })).toBeVisible()
     expect(within(section).getByRole('heading', { level: 4, name: 'Possible' })).toBeVisible()
-    expect(sectionCountBadges).toEqual(['1', '1'])
+    expect(sectionCountBadges.map((countBadge) => countBadge.textContent)).toEqual(['1', '1'])
+    expect(sectionCountBadges.map((countBadge) => countBadge.getAttribute('aria-label'))).toEqual([
+      '1 guaranteed native perk group',
+      '1 possible native perk group',
+    ])
     expect(within(section).getByText('Heavy armor stance')).toBeVisible()
     expect(within(section).getByText('Bold spirit')).toBeVisible()
     expect(within(section).queryByText('Defense')).not.toBeInTheDocument()

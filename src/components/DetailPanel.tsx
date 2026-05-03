@@ -1422,6 +1422,12 @@ function BackgroundFitOtherPerkGroupTile({
   )
 }
 
+function formatNativePerkGroupCount(count: number, labelPrefix: string) {
+  const groupLabel = count === 1 ? 'group' : 'groups'
+
+  return `${count} ${labelPrefix} native perk ${groupLabel}`
+}
+
 function BackgroundFitOtherPerkGroupList({
   label,
   otherPerkGroups,
@@ -1439,7 +1445,7 @@ function BackgroundFitOtherPerkGroupList({
       <div className={styles.detailOtherPerkGroupHeader}>
         <h4 className={styles.detailSubsectionHeading}>{label}</h4>
         <span
-          aria-label={`${otherPerkGroups.length} ${label.toLowerCase()} native perk groups`}
+          aria-label={formatNativePerkGroupCount(otherPerkGroups.length, label.toLowerCase())}
           className={styles.detailOtherPerkGroupHeaderCount}
           data-testid="detail-other-perk-group-section-count"
         >
@@ -1498,7 +1504,7 @@ function BackgroundFitRareOtherPerkGroupList({
           />
           <span className={styles.detailOtherPerkGroupRareHeading}>Possible - under 1% chance</span>
           <span
-            aria-label={`${otherPerkGroups.length} rare native perk groups`}
+            aria-label={formatNativePerkGroupCount(otherPerkGroups.length, 'rare')}
             className={styles.detailOtherPerkGroupHeaderCount}
             data-testid="detail-rare-other-perk-groups-count"
           >
@@ -1556,7 +1562,7 @@ function BackgroundFitOtherPerkGroupsSection({
       contentClassName={styles.detailOtherPerkGroupContent}
       contentTestId="detail-other-perk-groups-section"
       count={backgroundFit.otherPerkGroups.length}
-      countLabel={`${backgroundFit.otherPerkGroups.length} other native perk groups`}
+      countLabel={formatNativePerkGroupCount(backgroundFit.otherPerkGroups.length, 'other')}
       isExpanded={isExpanded}
       onExpandedChange={onExpandedChange}
       sectionLabel="Other native perk groups"

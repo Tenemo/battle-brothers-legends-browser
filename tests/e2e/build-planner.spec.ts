@@ -388,15 +388,30 @@ test('build planner splits shared and individual perk groups without layout drif
   const infoButtonGlyphStyle = await infoButtonGlyph.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element)
     const rootStyle = window.getComputedStyle(document.documentElement)
-    const baseGlyphFontSize = Number.parseFloat(
-      rootStyle.getPropertyValue('--type-panel-title-size'),
-    )
-    const rootFontSize = Number.parseFloat(rootStyle.fontSize)
+    const fontSizeProbe = document.createElement('span')
+    fontSizeProbe.style.fontSize = 'calc(var(--type-panel-title-size) * 1.25)'
+    document.body.append(fontSizeProbe)
+
+    const expectedFontSize = Number.parseFloat(window.getComputedStyle(fontSizeProbe).fontSize)
+    fontSizeProbe.remove()
+
+    const expectedFontFamily = rootStyle
+      .getPropertyValue('--heading-font-family')
+      .split(',')[0]
+      .trim()
+      .replaceAll("'", '')
+      .toLowerCase()
+    const fontFamily = computedStyle.fontFamily
+      .split(',')[0]
+      .trim()
+      .replaceAll('"', '')
+      .replaceAll("'", '')
+      .toLowerCase()
 
     return {
-      expectedFontSize: baseGlyphFontSize * rootFontSize * 1.25,
-      expectedFontFamily: rootStyle.getPropertyValue('--heading-font-family').trim().replaceAll("'", ''),
-      fontFamily: computedStyle.fontFamily,
+      expectedFontFamily,
+      expectedFontSize,
+      fontFamily,
       fontSize: Number.parseFloat(computedStyle.fontSize),
       fontStyle: computedStyle.fontStyle,
       transform: computedStyle.transform,
