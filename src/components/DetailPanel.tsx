@@ -22,12 +22,20 @@ import type {
   StudyResourceRequirementProfile,
 } from '../lib/background-study-reachability'
 import {
+  backgroundCampResourceModifierGroupLabels,
+  formatBackgroundCampResourceModifierValue,
+} from '../lib/background-camp-resource-display'
+import {
   formatBackgroundVeteranPerkLevelIntervalBadge,
   formatBackgroundVeteranPerkLevelIntervalTitle,
 } from '../lib/background-veteran-perks'
 import { joinClassNames } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
 import type { LegendsFavouredEnemyTarget, LegendsPerkRecord } from '../types/legends-perks'
+import type {
+  LegendsBackgroundCampResourceModifier,
+  LegendsBackgroundCampResourceModifierGroup,
+} from '../types/legends-perks'
 import {
   BackgroundFitMatchSections,
   BackgroundFitMetricSummary,
@@ -719,6 +727,110 @@ function getStudyResourceTilePerks(
   }))
 }
 
+const backgroundCampResourceModifierGroupOrder: LegendsBackgroundCampResourceModifierGroup[] = [
+  'capacity',
+  'skill',
+  'terrain',
+]
+
+function getGroupedCampResourceModifiers(
+  campResourceModifiers: LegendsBackgroundCampResourceModifier[],
+): {
+  group: LegendsBackgroundCampResourceModifierGroup
+  modifiers: LegendsBackgroundCampResourceModifier[]
+}[] {
+  return backgroundCampResourceModifierGroupOrder.flatMap((group) => {
+    const modifiers = campResourceModifiers.filter((modifier) => modifier.group === group)
+
+    return modifiers.length > 0 ? [{ group, modifiers }] : []
+  })
+}
+
+function renderBackgroundMetadataValues(values: readonly string[]) {
+  if (values.length === 0) {
+    return <span className={styles.detailMetadataNone}>None</span>
+  }
+
+  return (
+    <ul className={styles.detailTokenList}>
+      {values.map((value) => (
+        <li key={value}>{value}</li>
+      ))}
+    </ul>
+  )
+}
+
+function BackgroundMetadataSection({ backgroundFit }: { backgroundFit: RankedBackgroundFit }) {
+  const groupedCampResourceModifiers = getGroupedCampResourceModifiers(
+    backgroundFit.campResourceModifiers,
+  )
+
+  return (
+    <details
+      className={styles.detailCollapsibleSection}
+      data-testid="detail-background-metadata-section"
+      open
+    >
+      <summary className={styles.detailCollapsibleSummary}>
+        <h3>Background details</h3>
+      </summary>
+      <div className={styles.detailMetadataContent}>
+        <dl className={styles.detailMetadataList}>
+          <div className={styles.detailMetadataRow}>
+            <dt>Daily cost</dt>
+            <dd>
+              {backgroundFit.dailyCost === null ? (
+                <span className={styles.detailMetadataNone}>None</span>
+              ) : (
+                backgroundFit.dailyCost
+              )}
+            </dd>
+          </div>
+          <div className={styles.detailMetadataRow}>
+            <dt>Background type</dt>
+            <dd>{renderBackgroundMetadataValues(backgroundFit.backgroundTypeNames)}</dd>
+          </div>
+          <div className={styles.detailMetadataRow}>
+            <dt>Excluded traits</dt>
+            <dd>{renderBackgroundMetadataValues(backgroundFit.excludedTraitNames)}</dd>
+          </div>
+          <div className={styles.detailMetadataRow}>
+            <dt>Guaranteed traits</dt>
+            <dd>{renderBackgroundMetadataValues(backgroundFit.guaranteedTraitNames)}</dd>
+          </div>
+          <div className={styles.detailMetadataRow}>
+            <dt>Excluded talent attributes</dt>
+            <dd>{renderBackgroundMetadataValues(backgroundFit.excludedTalentAttributeNames)}</dd>
+          </div>
+        </dl>
+
+        {groupedCampResourceModifiers.length > 0 ? (
+          <div
+            className={styles.detailCampResourceModifierGroups}
+            data-testid="detail-camp-resource-modifier-groups"
+          >
+            {groupedCampResourceModifiers.map(({ group, modifiers }) => (
+              <div className={styles.detailCampResourceModifierGroup} key={group}>
+                <h4>{backgroundCampResourceModifierGroupLabels[group]}</h4>
+                <ul className={styles.detailCampResourceModifierList}>
+                  {modifiers.map((modifier) => (
+                    <li key={modifier.modifierKey}>
+                      <span>{modifier.label}</span>
+                      <span className={styles.detailBadge}>
+                        {formatBackgroundCampResourceModifierValue(modifier)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    </details>
+  )
+}
+
 function BackgroundDetail({
   backgroundFit,
   detailHistoryNavigationAvailability,
@@ -833,6 +945,8 @@ function BackgroundDetail({
         onNavigateHistory={onNavigateDetailHistory}
         title={backgroundFit.backgroundName}
       />
+
+      <BackgroundMetadataSection backgroundFit={backgroundFit} />
 
       <div className={styles.detailSection} data-testid="detail-section">
         <h3>Background fit</h3>

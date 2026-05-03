@@ -144,6 +144,133 @@
     }
   }
 
+  .detailCollapsibleSection {
+    animation: fade-in var(--motion-slow-duration) ease-out;
+    border: var(--primitive-length-1px) solid var(--border-muted);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    background: rgb(18 15 13 / 0.42);
+
+    &[open] .detailCollapsibleSummary {
+      margin-bottom: var(--space-md);
+    }
+  }
+
+  .detailCollapsibleSummary {
+    display: flex;
+    gap: var(--space-sm);
+    align-items: center;
+    cursor: pointer;
+    color: var(--text-primary);
+
+    &::marker {
+      color: var(--accent-soft);
+    }
+
+    h3 {
+      margin: 0;
+      font-family: var(--heading-font-family);
+      font-size: var(--font-size-2xl);
+    }
+
+    &:focus-visible {
+      @include focus-ring;
+    }
+  }
+
+  .detailMetadataContent {
+    display: grid;
+    gap: var(--space-lg);
+  }
+
+  .detailMetadataList {
+    display: grid;
+    gap: var(--space-sm);
+    margin: 0;
+  }
+
+  .detailMetadataRow {
+    display: grid;
+    grid-template-columns: minmax(var(--primitive-length-7rem), 0.42fr) minmax(0, 1fr);
+    gap: var(--space-lg);
+    align-items: start;
+    min-width: 0;
+
+    dt {
+      color: var(--text-muted);
+      font-size: var(--font-size-base);
+    }
+
+    dd {
+      min-width: 0;
+      margin: 0;
+      color: var(--text-secondary);
+    }
+  }
+
+  .detailMetadataNone {
+    color: var(--text-muted);
+  }
+
+  .detailTokenList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      padding: var(--primitive-length-0-1rem) var(--space-sm);
+
+      @include badge-surface;
+    }
+  }
+
+  .detailCampResourceModifierGroups {
+    display: grid;
+    gap: var(--space-md);
+  }
+
+  .detailCampResourceModifierGroup {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+
+    h4 {
+      margin: 0;
+      color: var(--accent-soft);
+      font-family: var(--heading-font-family);
+      font-size: var(--font-size-xl);
+    }
+  }
+
+  .detailCampResourceModifierList {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      gap: var(--space-md);
+      align-items: center;
+      min-width: 0;
+      border-top: var(--primitive-length-1px) solid var(--border-muted);
+      padding-top: var(--space-xs);
+      color: var(--text-secondary);
+
+      &:first-child {
+        border-top: 0;
+        padding-top: 0;
+      }
+    }
+  }
+
   .detailList {
     margin: var(--space-sm) 0 0;
     padding-left: var(--space-3xl);
@@ -394,6 +521,7 @@
     }
 
     .detailSection p,
+    .detailMetadataList,
     .detailList,
     .detailPlacementList {
       margin-top: var(--space-xs);
@@ -425,6 +553,14 @@
       padding: var(--space-sm);
     }
 
+    .detailCollapsibleSection {
+      padding: var(--space-sm);
+    }
+
+    .detailMetadataContent {
+      gap: var(--space-md);
+    }
+
     .detailSupport {
       margin-top: var(--space-2xs);
     }
@@ -451,9 +587,15 @@
     }
 
     .detailHeader,
+    .detailMetadataRow,
     .detailList li {
       flex-direction: column;
       align-items: flex-start;
+    }
+
+    .detailMetadataRow {
+      grid-template-columns: 1fr;
+      gap: var(--space-2xs);
     }
 
     .detailHeaderMain {

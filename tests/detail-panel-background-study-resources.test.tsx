@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { DetailPanel } from '../src/components/DetailPanel'
 import { ancientScrollPerkGroupMarkerTestId } from '../src/lib/ancient-scroll-perk-group-display'
@@ -33,8 +34,35 @@ const ancientScrollRequirementProfile = {
 const backgroundFit = {
   backgroundId: 'background.apprentice',
   backgroundName: 'Apprentice',
+  backgroundTypeNames: ['Crusader', 'Educated'],
   buildReachabilityProbability: 1,
+  campResourceModifiers: [
+    {
+      group: 'capacity',
+      label: 'Tools and supplies capacity',
+      modifierKey: 'ArmorParts',
+      value: 13,
+      valueKind: 'flat',
+    },
+    {
+      group: 'skill',
+      label: 'Repairing',
+      modifierKey: 'Repair',
+      value: 0.3,
+      valueKind: 'percent',
+    },
+    {
+      group: 'terrain',
+      label: 'Plains',
+      modifierKey: 'Terrain.2',
+      value: 0.15,
+      valueKind: 'percent',
+    },
+  ],
+  dailyCost: 6,
   disambiguator: null,
+  excludedTalentAttributeNames: ['Ranged skill'],
+  excludedTraitNames: ['Fear of Undead'],
   expectedCoveredMustHavePerkCount: 1,
   expectedCoveredOptionalPerkCount: 0,
   expectedCoveredPickedPerkCount: 1,
@@ -44,6 +72,7 @@ const backgroundFit = {
   guaranteedCoveredMustHavePerkCount: 0,
   guaranteedCoveredOptionalPerkCount: 0,
   guaranteedMatchedPerkGroupCount: 0,
+  guaranteedTraitNames: ['Quick'],
   iconPath: null,
   matches: [],
   maximumNativeCoveredPickedPerkCount: 0,
@@ -116,6 +145,63 @@ function renderSelectedBackgroundFitDetail({
 }
 
 describe('background details study resources', () => {
+  test('renders imported background metadata in a default-open collapsible section', async () => {
+    const user = userEvent.setup()
+
+    renderSelectedBackgroundFitDetail()
+
+    const metadataSection = screen.getByTestId('detail-background-metadata-section')
+    const backgroundFitHeading = screen.getByRole('heading', { name: 'Background fit' })
+
+    expect(metadataSection).toHaveAttribute('open')
+    expect(
+      metadataSection.compareDocumentPosition(backgroundFitHeading) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).not.toBe(0)
+    expect(within(metadataSection).getByText('Daily cost')).toBeVisible()
+    expect(within(metadataSection).getByText('6')).toBeVisible()
+    expect(within(metadataSection).getByText('Crusader')).toBeVisible()
+    expect(within(metadataSection).getByText('Educated')).toBeVisible()
+    expect(within(metadataSection).getByText('Fear of Undead')).toBeVisible()
+    expect(within(metadataSection).getByText('Quick')).toBeVisible()
+    expect(within(metadataSection).getByText('Ranged skill')).toBeVisible()
+    expect(within(metadataSection).getByText('Company capacity')).toBeVisible()
+    expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
+    expect(within(metadataSection).getByText('+13')).toBeVisible()
+    expect(within(metadataSection).getByText('Camp skills')).toBeVisible()
+    expect(within(metadataSection).getByText('Repairing')).toBeVisible()
+    expect(within(metadataSection).getByText('+30%')).toBeVisible()
+    expect(within(metadataSection).getByText('Terrain movement')).toBeVisible()
+    expect(within(metadataSection).getByText('Plains')).toBeVisible()
+    expect(within(metadataSection).getByText('+15%')).toBeVisible()
+
+    await user.click(within(metadataSection).getByText('Background details'))
+
+    expect(metadataSection).not.toHaveAttribute('open')
+    expect(within(metadataSection).getByText('Background details')).toBeVisible()
+  })
+
+  test('shows none for empty background trait and talent metadata', () => {
+    renderSelectedBackgroundFitDetail({
+      selectedBackgroundFitDetail: {
+        ...backgroundFit,
+        backgroundTypeNames: [],
+        campResourceModifiers: [],
+        dailyCost: null,
+        excludedTalentAttributeNames: [],
+        excludedTraitNames: [],
+        guaranteedTraitNames: [],
+      },
+    })
+
+    const metadataSection = screen.getByTestId('detail-background-metadata-section')
+
+    expect(within(metadataSection).getAllByText('None')).toHaveLength(5)
+    expect(
+      within(metadataSection).queryByTestId('detail-camp-resource-modifier-groups'),
+    ).not.toBeInTheDocument()
+  })
+
   test('uses planner perk group tiles for book and scroll learning requirements', () => {
     renderSelectedBackgroundFitDetail()
 

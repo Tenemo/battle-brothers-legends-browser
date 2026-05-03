@@ -105,7 +105,13 @@ function createBackgroundDefinition({
   return {
     backgroundId,
     backgroundName,
+    backgroundTypeNames: [],
     categories,
+    campResourceModifiers: [],
+    dailyCost: null,
+    excludedTalentAttributeNames: [],
+    excludedTraitNames: [],
+    guaranteedTraitNames: [],
     iconPath: null,
     sourceFilePath: `backgrounds/${backgroundId}.nut`,
     veteranPerkLevelInterval: 4,
@@ -612,8 +618,10 @@ describe('background fit', () => {
         }),
       ],
     })
-    const [backgroundFit] = engine.getBackgroundFitView([samplePerks[4]], noStudyResources)
-      .rankedBackgroundFits
+    const [backgroundFit] = engine.getBackgroundFitView(
+      [samplePerks[4]],
+      noStudyResources,
+    ).rankedBackgroundFits
 
     expect(backgroundFit).toEqual(
       expect.objectContaining({
@@ -653,8 +661,10 @@ describe('background fit', () => {
       ],
       perks: [...samplePerks, flexibleTraitPerk],
     })
-    const [backgroundFit] = engine.getBackgroundFitView([flexibleTraitPerk], noStudyResources)
-      .rankedBackgroundFits
+    const [backgroundFit] = engine.getBackgroundFitView(
+      [flexibleTraitPerk],
+      noStudyResources,
+    ).rankedBackgroundFits
 
     expect(backgroundFit).toEqual(
       expect.objectContaining({
@@ -1479,9 +1489,7 @@ describe('background fit', () => {
         )
       },
       onProgress(progress) {
-        progressLabels.push(
-          `${progress.checkedBackgroundCount}/${progress.totalBackgroundCount}`,
-        )
+        progressLabels.push(`${progress.checkedBackgroundCount}/${progress.totalBackgroundCount}`)
       },
       partialViewChunkSize: 1,
     })
@@ -1492,8 +1500,9 @@ describe('background fit', () => {
       ['background.calm_alpha', 'background.calm_zulu'],
       ['background.calm_alpha', 'background.calm_beta', 'background.calm_zulu'],
     ])
-    expect(backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId))
-      .toEqual(['background.calm_alpha', 'background.calm_beta', 'background.calm_zulu'])
+    expect(
+      backgroundFitView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId),
+    ).toEqual(['background.calm_alpha', 'background.calm_beta', 'background.calm_zulu'])
   })
 
   test('calculates small non-zero full build chances for dense real background fits', () => {

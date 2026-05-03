@@ -284,17 +284,25 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
     {
       checkboxControl: originPerkGroupsCheckboxControl,
       label: perkFiltersGroup.getByText('Origin perk groups', { exact: true }),
+      labelRow: perkFiltersGroup.locator('label').filter({ hasText: 'Origin perk groups' }),
+      title: 'Shows perk groups that come only from origins and are hidden by default.',
     },
     {
       checkboxControl: ancientScrollPerkGroupsCheckboxControl,
       label: perkFiltersGroup.getByText('Ancient scroll perks', { exact: true }),
+      labelRow: perkFiltersGroup.locator('label').filter({ hasText: 'Ancient scroll perks' }),
+      title: 'Shows perk groups that are only available through ancient scroll sources.',
     },
   ] as const
 
   await expect(originPerkGroupsCheckbox).not.toBeChecked()
   await expect(ancientScrollPerkGroupsCheckbox).toBeChecked()
 
-  for (const { checkboxControl, label } of filterOptions) {
+  for (const { checkboxControl, label, labelRow, title } of filterOptions) {
+    await expect(labelRow).toHaveAttribute('title', title)
+    await expect.poll(() => labelRow.evaluate((element) => getComputedStyle(element).cursor)).toBe(
+      'help',
+    )
     await expect
       .poll(async () => {
         const checkboxBox = await checkboxControl.boundingBox()

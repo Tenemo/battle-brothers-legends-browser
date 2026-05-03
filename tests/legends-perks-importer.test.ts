@@ -89,6 +89,90 @@ describe('legends perks importer', () => {
     )
   })
 
+  test('imports background detail metadata from create bodies and static trait grants', () => {
+    const beastSlayerBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.beast_slayer',
+    )
+    const prizefighterBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'legend_gladiator_prizefighter_background',
+    )
+
+    expect(beastSlayerBackground).toEqual(
+      expect.objectContaining({
+        backgroundTypeNames: ['Crusader', 'Educated', 'Ranger'],
+        dailyCost: 6,
+        excludedTalentAttributeNames: ['Ranged skill'],
+        excludedTraitNames: ['Fear of Undead'],
+        guaranteedTraitNames: ['Disloyal', 'Quick'],
+      }),
+    )
+    expect(beastSlayerBackground?.campResourceModifiers).toEqual(
+      expect.arrayContaining([
+        {
+          group: 'capacity',
+          label: 'Tools and supplies capacity',
+          modifierKey: 'ArmorParts',
+          value: 13,
+          valueKind: 'flat',
+        },
+        {
+          group: 'skill',
+          label: 'Repairing',
+          modifierKey: 'Repair',
+          value: 0.3,
+          valueKind: 'percent',
+        },
+        {
+          group: 'terrain',
+          label: 'Plains',
+          modifierKey: 'Terrain.2',
+          value: 0.15,
+          valueKind: 'percent',
+        },
+        {
+          group: 'terrain',
+          label: 'Hills',
+          modifierKey: 'Terrain.4',
+          value: -0.05,
+          valueKind: 'percent',
+        },
+      ]),
+    )
+    expect(
+      beastSlayerBackground?.campResourceModifiers.some(
+        (modifier) => modifier.modifierKey === 'Barter',
+      ),
+    ).toBe(false)
+
+    expect(prizefighterBackground).toEqual(
+      expect.objectContaining({
+        backgroundTypeNames: ['Combat', 'Lowborn'],
+        dailyCost: 12,
+        excludedTalentAttributeNames: ['Fatigue', 'Hitpoints'],
+        excludedTraitNames: [],
+        guaranteedTraitNames: ['Bright'],
+      }),
+    )
+    expect(prizefighterBackground?.campResourceModifiers).toEqual(
+      expect.arrayContaining([
+        {
+          group: 'capacity',
+          label: 'Ammo capacity',
+          modifierKey: 'Ammo',
+          value: 21,
+          valueKind: 'flat',
+        },
+        {
+          group: 'skill',
+          label: 'Training',
+          modifierKey: 'Training',
+          value: 0.1,
+          valueKind: 'percent',
+        },
+      ]),
+    )
+  })
+
   test('merges perk string overrides from hooks after the base perk strings file', () => {
     const clarity = dataset.perks.find((perk) => perk.perkConstName === 'LegendClarity')
 

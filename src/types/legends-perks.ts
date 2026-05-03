@@ -75,12 +75,30 @@ export type LegendsBackgroundFitCategoryDefinition = {
   perkGroupIds: string[]
 }
 
+export type LegendsBackgroundCampResourceModifierGroup = 'capacity' | 'skill' | 'terrain'
+
+export type LegendsBackgroundCampResourceModifierValueKind = 'flat' | 'percent'
+
+export type LegendsBackgroundCampResourceModifier = {
+  group: LegendsBackgroundCampResourceModifierGroup
+  label: string
+  modifierKey: string
+  value: number
+  valueKind: LegendsBackgroundCampResourceModifierValueKind
+}
+
 export type LegendsBackgroundFitBackgroundDefinition = {
   backgroundId: string
   backgroundName: string
+  backgroundTypeNames: string[]
   categories: Partial<
     Record<LegendsDynamicBackgroundCategoryName, LegendsBackgroundFitCategoryDefinition>
   >
+  campResourceModifiers: LegendsBackgroundCampResourceModifier[]
+  dailyCost: number | null
+  excludedTalentAttributeNames: string[]
+  excludedTraitNames: string[]
+  guaranteedTraitNames: string[]
   iconPath: string | null
   sourceFilePath: string
   veteranPerkLevelInterval: number

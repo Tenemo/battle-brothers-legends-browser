@@ -70,10 +70,16 @@ function createSummary({
   return {
     backgroundId,
     backgroundName,
+    backgroundTypeNames: [],
+    campResourceModifiers: [],
+    dailyCost: null,
     disambiguator: null,
+    excludedTalentAttributeNames: [],
+    excludedTraitNames: [],
     expectedCoveredPickedPerkCount: 1,
     expectedMatchedPerkGroupCount: 1,
     guaranteedMatchedPerkGroupCount: 1,
+    guaranteedTraitNames: [],
     iconPath: null,
     matches: [
       {

@@ -23,6 +23,18 @@ const emptyBackgroundFitView: BackgroundFitView = {
   unsupportedBuildTargetPerkGroups: [],
 }
 const backgroundFitProgressCountMinimumStepDurationMs = 10
+const backgroundFilterTooltips = {
+  originBackgrounds: 'Shows origin-only backgrounds hidden from the default results.',
+  studyBook: 'Counts one eligible skill book when checking whether a background can reach the picked build.',
+  studyScroll:
+    'Counts one eligible ancient scroll when checking whether a background can reach the picked build.',
+  secondStudyScroll:
+    'Counts a second ancient scroll when Bright is available and the first scroll is allowed.',
+} as const
+
+function formatBackgroundVeteranPerkLevelIntervalFilterTitle(interval: number): string {
+  return `Shows backgrounds that gain 1 perk point every ${interval} veteran levels after level 12.`
+}
 
 function getClampedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
   return Math.min(
@@ -409,7 +421,10 @@ export function BackgroundFitPanel({
                     id={backgroundFitFilterMenuId}
                     role="group"
                   >
-                    <label className={sharedStyles.filterOption}>
+                    <label
+                      className={sharedStyles.filterOption}
+                      title={backgroundFilterTooltips.originBackgrounds}
+                    >
                       <input
                         checked={shouldIncludeOriginBackgrounds}
                         data-testid="origin-backgrounds-checkbox"
@@ -421,7 +436,10 @@ export function BackgroundFitPanel({
                       />
                       <span>Origin backgrounds</span>
                     </label>
-                    <label className={sharedStyles.filterOption}>
+                    <label
+                      className={sharedStyles.filterOption}
+                      title={backgroundFilterTooltips.studyBook}
+                    >
                       <input
                         checked={shouldAllowBackgroundStudyBook}
                         data-testid="background-study-book-checkbox"
@@ -433,7 +451,10 @@ export function BackgroundFitPanel({
                       />
                       <span>Allow a book</span>
                     </label>
-                    <label className={sharedStyles.filterOption}>
+                    <label
+                      className={sharedStyles.filterOption}
+                      title={backgroundFilterTooltips.studyScroll}
+                    >
                       <input
                         checked={shouldAllowBackgroundStudyScroll}
                         data-testid="background-study-scroll-checkbox"
@@ -445,7 +466,10 @@ export function BackgroundFitPanel({
                       />
                       <span>Allow a scroll</span>
                     </label>
-                    <label className={sharedStyles.filterOption}>
+                    <label
+                      className={sharedStyles.filterOption}
+                      title={backgroundFilterTooltips.secondStudyScroll}
+                    >
                       <input
                         checked={
                           shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll
@@ -461,7 +485,11 @@ export function BackgroundFitPanel({
                       <span>Allow two scrolls</span>
                     </label>
                     {availableBackgroundVeteranPerkLevelIntervals.map((interval) => (
-                      <label className={sharedStyles.filterOption} key={interval}>
+                      <label
+                        className={sharedStyles.filterOption}
+                        key={interval}
+                        title={formatBackgroundVeteranPerkLevelIntervalFilterTitle(interval)}
+                      >
                         <input
                           checked={selectedBackgroundVeteranPerkLevelIntervalSet.has(interval)}
                           data-testid={`background-veteran-perk-${interval}-checkbox`}

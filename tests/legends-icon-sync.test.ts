@@ -11,7 +11,13 @@ const sampleDataset: LegendsPerksDataset = {
     {
       backgroundId: 'background.farmhand',
       backgroundName: 'Farmhand',
+      backgroundTypeNames: [],
       categories: {},
+      campResourceModifiers: [],
+      dailyCost: null,
+      excludedTalentAttributeNames: [],
+      excludedTraitNames: [],
+      guaranteedTraitNames: [],
       iconPath: 'ui/backgrounds/background_09.png',
       sourceFilePath: 'scripts/skills/backgrounds/farmhand_background.nut',
       veteranPerkLevelInterval: 4,

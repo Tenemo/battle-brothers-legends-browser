@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 import {
   getDetailPanel,
   expectSearchParam,
+  getBackgroundFitPanel,
   getSidebarPerkGroupButton,
   getResultsList,
   gotoBuildPlanner,
@@ -92,6 +93,42 @@ test('groups repeated background sources in the detail panel', async ({ page }) 
 
   expect(Number(backgroundSourceNamesFontWeight)).toBeLessThan(600)
   await expect(groupedBackgroundSourceRow.getByText('Guaranteed')).toBeVisible()
+})
+
+test('shows imported background metadata only in the background detail panel', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+
+  if (await expandBackgroundFitButton.isVisible()) {
+    await expandBackgroundFitButton.click()
+  }
+
+  await backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }).click()
+
+  const detailPanel = getDetailPanel(page)
+  const metadataSection = detailPanel.getByTestId('detail-background-metadata-section')
+
+  await expect(metadataSection).toHaveAttribute('open', '')
+  await expect(metadataSection.getByRole('heading', { name: 'Background details' })).toBeVisible()
+  await expect(metadataSection.getByText('Daily cost')).toBeVisible()
+  await expect(metadataSection.getByText('6')).toBeVisible()
+  await expect(metadataSection.getByText('Crusader')).toBeVisible()
+  await expect(metadataSection.getByText('Educated')).toBeVisible()
+  await expect(metadataSection.getByText('Ranger')).toBeVisible()
+  await expect(metadataSection.getByText('Repairing')).toBeVisible()
+  await expect(metadataSection.getByText('+30%')).toBeVisible()
+  await expect(metadataSection.getByText('Excluded traits')).toBeVisible()
+  await expect(backgroundFitPanel.getByText('Daily cost')).toHaveCount(0)
+  await expect(backgroundFitPanel.getByText('Repairing')).toHaveCount(0)
+
+  await metadataSection.getByText('Background details').click()
+
+  await expect(metadataSection).not.toHaveAttribute('open', '')
+  await expect(metadataSection.getByText('Background details')).toBeVisible()
 })
 
 test('detail history buttons stay inside page detail history', async ({ page }) => {

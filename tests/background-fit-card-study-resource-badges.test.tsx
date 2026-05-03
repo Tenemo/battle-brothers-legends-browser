@@ -44,8 +44,13 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
   return {
     backgroundId: 'background.study_resource_badges',
     backgroundName: 'Study resource badges',
+    backgroundTypeNames: [],
     buildReachabilityProbability: 1,
+    campResourceModifiers: [],
+    dailyCost: null,
     disambiguator: null,
+    excludedTalentAttributeNames: [],
+    excludedTraitNames: [],
     expectedCoveredMustHavePerkCount: 1,
     expectedCoveredOptionalPerkCount: 1,
     expectedCoveredPickedPerkCount: 2,
@@ -55,6 +60,7 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
     guaranteedCoveredMustHavePerkCount: 1,
     guaranteedCoveredOptionalPerkCount: 0,
     guaranteedMatchedPerkGroupCount: 0,
+    guaranteedTraitNames: [],
     iconPath: null,
     matches: [],
     maximumNativeCoveredPickedPerkCount: 1,
@@ -108,6 +114,34 @@ function renderBackgroundFitCardWithStudyResourceFilter(
 }
 
 describe('background fit card study resource badges', () => {
+  test('does not render imported detail-only metadata on the card', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        backgroundTypeNames: ['Crusader'],
+        campResourceModifiers: [
+          {
+            group: 'skill',
+            label: 'Repairing',
+            modifierKey: 'Repair',
+            value: 0.3,
+            valueKind: 'percent',
+          },
+        ],
+        dailyCost: 6,
+        excludedTalentAttributeNames: ['Ranged skill'],
+        excludedTraitNames: ['Fear of Undead'],
+        guaranteedTraitNames: ['Quick'],
+      }),
+    )
+
+    expect(screen.queryByText('Daily cost')).not.toBeInTheDocument()
+    expect(screen.queryByText('Crusader')).not.toBeInTheDocument()
+    expect(screen.queryByText('Repairing')).not.toBeInTheDocument()
+    expect(screen.queryByText('Fear of Undead')).not.toBeInTheDocument()
+    expect(screen.queryByText('Quick')).not.toBeInTheDocument()
+    expect(screen.queryByText('Ranged skill')).not.toBeInTheDocument()
+  })
+
   test('renders full-build resource icons with native titles and optional-only styling hooks', () => {
     renderBackgroundFitCard(
       createBackgroundFit({

@@ -153,6 +153,59 @@ function getDuplicateBackgroundFitTreeEntries(dataset: LegendsPerksDataset): str
   return duplicateEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
 }
 
+function getUnstableBackgroundMetadataEntries(dataset: LegendsPerksDataset): string[] {
+  const unstableEntries: string[] = []
+
+  for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
+    const nameLists = [
+      ['background type', backgroundFitBackground.backgroundTypeNames],
+      ['excluded trait', backgroundFitBackground.excludedTraitNames],
+      ['guaranteed trait', backgroundFitBackground.guaranteedTraitNames],
+      ['excluded talent attribute', backgroundFitBackground.excludedTalentAttributeNames],
+    ] as const
+
+    for (const [nameListLabel, names] of nameLists) {
+      const sortedUniqueNames = [...new Set(names)].toSorted((leftName, rightName) =>
+        leftName.localeCompare(rightName),
+      )
+
+      if (names.join('::') !== sortedUniqueNames.join('::')) {
+        unstableEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${nameListLabel}`,
+        )
+      }
+    }
+  }
+
+  return unstableEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
+}
+
+function getDuplicateCampResourceModifierEntries(dataset: LegendsPerksDataset): string[] {
+  const duplicateEntries: string[] = []
+
+  for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
+    const seenModifierKeys = new Set<string>()
+
+    for (const modifier of backgroundFitBackground.campResourceModifiers) {
+      if (modifier.value === 0) {
+        duplicateEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${modifier.modifierKey}::zero`,
+        )
+      }
+
+      if (seenModifierKeys.has(modifier.modifierKey)) {
+        duplicateEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${modifier.modifierKey}`,
+        )
+      }
+
+      seenModifierKeys.add(modifier.modifierKey)
+    }
+  }
+
+  return duplicateEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
+}
+
 describe('generated dataset integrity', () => {
   test('keeps top-level counts and source provenance internally consistent', () => {
     const perkGroupIds = new Set(
@@ -214,5 +267,10 @@ describe('generated dataset integrity', () => {
 
   test('keeps background fit explicit perk group ids unique per background category', () => {
     expect(getDuplicateBackgroundFitTreeEntries(legendsPerksDataset)).toEqual([])
+  })
+
+  test('keeps background detail metadata stable and non-duplicated', () => {
+    expect(getUnstableBackgroundMetadataEntries(legendsPerksDataset)).toEqual([])
+    expect(getDuplicateCampResourceModifierEntries(legendsPerksDataset)).toEqual([])
   })
 })

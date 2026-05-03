@@ -125,8 +125,13 @@ export type BackgroundFitMatch = BuildTargetPerkGroup & {
 export type RankedBackgroundFit = {
   backgroundId: string
   backgroundName: string
+  backgroundTypeNames: string[]
   buildReachabilityProbability: number | null
+  campResourceModifiers: LegendsBackgroundFitBackgroundDefinition['campResourceModifiers']
+  dailyCost: number | null
   disambiguator: string | null
+  excludedTalentAttributeNames: string[]
+  excludedTraitNames: string[]
   expectedCoveredMustHavePerkCount: number
   expectedCoveredOptionalPerkCount: number
   expectedCoveredPickedPerkCount: number
@@ -136,6 +141,7 @@ export type RankedBackgroundFit = {
   guaranteedCoveredMustHavePerkCount: number
   guaranteedCoveredOptionalPerkCount: number
   guaranteedMatchedPerkGroupCount: number
+  guaranteedTraitNames: string[]
   iconPath: string | null
   maximumNativeCoveredPickedPerkCount: number
   maximumTotalPerkGroupCount: number
@@ -185,7 +191,9 @@ type BackgroundFitEngine = {
     studyResourceFilter?: BackgroundStudyResourceFilter,
     options?: BackgroundFitViewOptions,
   ) => BackgroundFitView
-  getBackgroundFitSummaryView: (pickedPerks: LegendsBackgroundFitPerkRecord[]) => BackgroundFitSummaryView
+  getBackgroundFitSummaryView: (
+    pickedPerks: LegendsBackgroundFitPerkRecord[],
+  ) => BackgroundFitSummaryView
   getPerkBackgroundSources: (perk: LegendsBackgroundFitPerkRecord) => LegendsPerkBackgroundSource[]
 }
 
@@ -349,10 +357,7 @@ function addOutcomeProbability(
     return
   }
 
-  outcomeDistribution.set(
-    coverageMask,
-    (outcomeDistribution.get(coverageMask) ?? 0) + probability,
-  )
+  outcomeDistribution.set(coverageMask, (outcomeDistribution.get(coverageMask) ?? 0) + probability)
 }
 
 function combineOutcomeDistributions(
@@ -379,9 +384,11 @@ function getRequirementCoverageMask(
   categoryName: LegendsDynamicBackgroundCategoryName,
   perkGroupId: string,
 ): CoverageMask {
-  return projection.groupCoverageMaskByRequirementKey.get(
-    getPerkGroupProbabilityKey(categoryName, perkGroupId),
-  ) ?? 0n
+  return (
+    projection.groupCoverageMaskByRequirementKey.get(
+      getPerkGroupProbabilityKey(categoryName, perkGroupId),
+    ) ?? 0n
+  )
 }
 
 function getPerkGroupIdsCoverageMask({
@@ -600,7 +607,9 @@ function getCategoryDefinition(
   )
 }
 
-function createBackgroundFitProjection(pickedPerks: LegendsBackgroundFitPerkRecord[]): BackgroundFitProjection {
+function createBackgroundFitProjection(
+  pickedPerks: LegendsBackgroundFitPerkRecord[],
+): BackgroundFitProjection {
   const groupCoverageMaskByRequirementKey = new Map<string, CoverageMask>()
   const pickedPerkMaskById = new Map<string, CoverageMask>()
   let pickedPerkIndex = 0
@@ -1898,7 +1907,9 @@ export function getBuildTargetPerkGroups(pickedPerks: LegendsBackgroundFitPerkRe
   }
 }
 
-function getUniqueDynamicPerkPlacements(perk: LegendsBackgroundFitPerkRecord): DynamicPerkPlacement[] {
+function getUniqueDynamicPerkPlacements(
+  perk: LegendsBackgroundFitPerkRecord,
+): DynamicPerkPlacement[] {
   const seenPlacementKeys = new Set<string>()
   const dynamicPlacements: DynamicPerkPlacement[] = []
 
@@ -2164,7 +2175,9 @@ function trimBackgroundFitBuildCache(
   }
 }
 
-export function createBackgroundFitEngine(dataset: LegendsBackgroundFitDataset): BackgroundFitEngine {
+export function createBackgroundFitEngine(
+  dataset: LegendsBackgroundFitDataset,
+): BackgroundFitEngine {
   const perkGroupIdsByCategory = buildPerkGroupIdsByCategory(dataset.perks)
   const classWeaponDependencyByClassPerkGroupId = buildClassWeaponDependencyByClassPerkGroupId(
     dataset.backgroundFitRules.classWeaponDependencies,
@@ -2210,13 +2223,19 @@ export function createBackgroundFitEngine(dataset: LegendsBackgroundFitDataset):
     return {
       backgroundId: backgroundDefinition.backgroundId,
       backgroundName: backgroundDefinition.backgroundName,
+      backgroundTypeNames: backgroundDefinition.backgroundTypeNames,
+      campResourceModifiers: backgroundDefinition.campResourceModifiers,
+      dailyCost: backgroundDefinition.dailyCost,
       disambiguator:
         (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
           ? getBackgroundDisambiguator(backgroundDefinition)
           : null,
+      excludedTalentAttributeNames: backgroundDefinition.excludedTalentAttributeNames,
+      excludedTraitNames: backgroundDefinition.excludedTraitNames,
       expectedCoveredPickedPerkCount: 0,
       expectedMatchedPerkGroupCount: 0,
       guaranteedMatchedPerkGroupCount: 0,
+      guaranteedTraitNames: backgroundDefinition.guaranteedTraitNames,
       iconPath: backgroundDefinition.iconPath ?? null,
       maximumTotalPerkGroupCount,
       matches: [],
@@ -2231,7 +2250,9 @@ export function createBackgroundFitEngine(dataset: LegendsBackgroundFitDataset):
       .toSorted(compareBackgroundFitSummaries)
   }
 
-  function getBackgroundFitBuildCache(pickedPerks: LegendsBackgroundFitPerkRecord[]): BackgroundFitBuildCache {
+  function getBackgroundFitBuildCache(
+    pickedPerks: LegendsBackgroundFitPerkRecord[],
+  ): BackgroundFitBuildCache {
     const pickedPerksCacheKey = getPickedPerksCacheKey(pickedPerks)
     const cachedBackgroundFitBuildCache =
       backgroundFitBuildCacheByPickedPerksKey.get(pickedPerksCacheKey)
@@ -2432,22 +2453,31 @@ export function createBackgroundFitEngine(dataset: LegendsBackgroundFitDataset):
     cachedBackgroundFitRecord.baseBackgroundFit = {
       backgroundId: backgroundDefinition.backgroundId,
       backgroundName: backgroundDefinition.backgroundName,
+      backgroundTypeNames: backgroundDefinition.backgroundTypeNames,
+      campResourceModifiers: backgroundDefinition.campResourceModifiers,
+      dailyCost: backgroundDefinition.dailyCost,
       disambiguator:
         (duplicateBackgroundNameCountByName.get(backgroundDefinition.backgroundName) ?? 0) > 1
           ? getBackgroundDisambiguator(backgroundDefinition)
           : null,
+      excludedTalentAttributeNames: backgroundDefinition.excludedTalentAttributeNames,
+      excludedTraitNames: backgroundDefinition.excludedTraitNames,
       expectedCoveredPickedPerkCount: calculateExpectedCoveredPickedPerkCountFromDistribution({
         nativeOutcomeDistribution: getCachedNativeOutcomeDistribution(
           backgroundFitBuildCache,
           cachedBackgroundFitRecord,
         ),
-        pickedPerksMask: getPickedPerksCoverageMask(pickedPerks, backgroundFitBuildCache.projection),
+        pickedPerksMask: getPickedPerksCoverageMask(
+          pickedPerks,
+          backgroundFitBuildCache.projection,
+        ),
       }),
       expectedMatchedPerkGroupCount: matches.reduce(
         (expectedPerkGroupCount, match) => expectedPerkGroupCount + match.probability,
         0,
       ),
       guaranteedMatchedPerkGroupCount: matches.filter((match) => match.isGuaranteed).length,
+      guaranteedTraitNames: backgroundDefinition.guaranteedTraitNames,
       iconPath: backgroundDefinition.iconPath ?? null,
       maximumTotalPerkGroupCount,
       matches,
@@ -2572,19 +2602,21 @@ export function createBackgroundFitEngine(dataset: LegendsBackgroundFitDataset):
 
         return {
           rankedBackgroundFits: getEmptyBackgroundFitSummaries()
-            .map((backgroundFitSummary): RankedBackgroundFit => ({
-              ...backgroundFitSummary,
-              buildReachabilityProbability,
-              expectedCoveredMustHavePerkCount: 0,
-              expectedCoveredOptionalPerkCount: 0,
-              fullBuildStudyResourceRequirement: null,
-              fullBuildReachabilityProbability: buildReachabilityProbability,
-              guaranteedCoveredMustHavePerkCount: 0,
-              guaranteedCoveredOptionalPerkCount: 0,
-              maximumNativeCoveredPickedPerkCount: 0,
-              mustHaveBuildReachabilityProbability: buildReachabilityProbability,
-              mustHaveStudyResourceRequirement: null,
-            }))
+            .map(
+              (backgroundFitSummary): RankedBackgroundFit => ({
+                ...backgroundFitSummary,
+                buildReachabilityProbability,
+                expectedCoveredMustHavePerkCount: 0,
+                expectedCoveredOptionalPerkCount: 0,
+                fullBuildStudyResourceRequirement: null,
+                fullBuildReachabilityProbability: buildReachabilityProbability,
+                guaranteedCoveredMustHavePerkCount: 0,
+                guaranteedCoveredOptionalPerkCount: 0,
+                maximumNativeCoveredPickedPerkCount: 0,
+                mustHaveBuildReachabilityProbability: buildReachabilityProbability,
+                mustHaveStudyResourceRequirement: null,
+              }),
+            )
             .toSorted(compareRankedBackgroundFits),
           supportedBuildTargetPerkGroups: [],
           unsupportedBuildTargetPerkGroups: [],

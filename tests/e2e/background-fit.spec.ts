@@ -866,6 +866,39 @@ test('filters origin backgrounds from the background search menu', async ({ page
     'input[data-testid="origin-backgrounds-checkbox"]',
   )
   const originBackgroundsLabel = backgroundFiltersGroup.getByText('Origin backgrounds')
+  const backgroundFilterOptions = [
+    {
+      labelText: 'Origin backgrounds',
+      title: 'Shows origin-only backgrounds hidden from the default results.',
+    },
+    {
+      labelText: 'Allow a book',
+      title:
+        'Counts one eligible skill book when checking whether a background can reach the picked build.',
+    },
+    {
+      labelText: 'Allow a scroll',
+      title:
+        'Counts one eligible ancient scroll when checking whether a background can reach the picked build.',
+    },
+    {
+      labelText: 'Allow two scrolls',
+      title:
+        'Counts a second ancient scroll when Bright is available and the first scroll is allowed.',
+    },
+    {
+      labelText: 'Every 2 veteran levels',
+      title: 'Shows backgrounds that gain 1 perk point every 2 veteran levels after level 12.',
+    },
+    {
+      labelText: 'Every 3 veteran levels',
+      title: 'Shows backgrounds that gain 1 perk point every 3 veteran levels after level 12.',
+    },
+    {
+      labelText: 'Every 4 veteran levels',
+      title: 'Shows backgrounds that gain 1 perk point every 4 veteran levels after level 12.',
+    },
+  ] as const
 
   await expect(originBackgroundsCheckbox).not.toBeChecked()
   await expect(
@@ -878,6 +911,16 @@ test('filters origin backgrounds from the background search menu', async ({ page
       name: 'Allow a scroll',
     }),
   ).toBeChecked()
+
+  for (const { labelText, title } of backgroundFilterOptions) {
+    const labelRow = backgroundFiltersGroup.locator('label').filter({ hasText: labelText })
+
+    await expect(labelRow).toHaveAttribute('title', title)
+    await expect.poll(() => labelRow.evaluate((element) => getComputedStyle(element).cursor)).toBe(
+      'help',
+    )
+  }
+
   await expect
     .poll(async () => {
       const checkboxBox = await originBackgroundsCheckboxControl.boundingBox()

@@ -1,5 +1,6 @@
 import type { ComponentProps } from 'react'
 import { render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { BackgroundFitPanel } from '../src/components/BackgroundFitPanel'
 
@@ -56,6 +57,14 @@ function getFilterBackgroundsButton() {
   return screen.getByRole('button', { name: 'Filter backgrounds' })
 }
 
+function getFilterOptionLabel(labelText: string): HTMLLabelElement {
+  const label = screen.getByText(labelText).closest('label')
+
+  expect(label).not.toBeNull()
+
+  return label as HTMLLabelElement
+}
+
 describe('background fit panel filters', () => {
   test('marks any selected background filter as active', () => {
     const { rerender } = render(createBackgroundFitPanel())
@@ -97,5 +106,42 @@ describe('background fit panel filters', () => {
     )
 
     expect(getFilterBackgroundsButton()).toHaveAttribute('data-active-filter', 'false')
+  })
+
+  test('describes every background filter option with a native tooltip', async () => {
+    const user = userEvent.setup()
+
+    render(createBackgroundFitPanel())
+
+    await user.click(getFilterBackgroundsButton())
+
+    expect(getFilterOptionLabel('Origin backgrounds')).toHaveAttribute(
+      'title',
+      'Shows origin-only backgrounds hidden from the default results.',
+    )
+    expect(getFilterOptionLabel('Allow a book')).toHaveAttribute(
+      'title',
+      'Counts one eligible skill book when checking whether a background can reach the picked build.',
+    )
+    expect(getFilterOptionLabel('Allow a scroll')).toHaveAttribute(
+      'title',
+      'Counts one eligible ancient scroll when checking whether a background can reach the picked build.',
+    )
+    expect(getFilterOptionLabel('Allow two scrolls')).toHaveAttribute(
+      'title',
+      'Counts a second ancient scroll when Bright is available and the first scroll is allowed.',
+    )
+    expect(getFilterOptionLabel('Every 2 veteran levels')).toHaveAttribute(
+      'title',
+      'Shows backgrounds that gain 1 perk point every 2 veteran levels after level 12.',
+    )
+    expect(getFilterOptionLabel('Every 3 veteran levels')).toHaveAttribute(
+      'title',
+      'Shows backgrounds that gain 1 perk point every 3 veteran levels after level 12.',
+    )
+    expect(getFilterOptionLabel('Every 4 veteran levels')).toHaveAttribute(
+      'title',
+      'Shows backgrounds that gain 1 perk point every 4 veteran levels after level 12.',
+    )
   })
 })

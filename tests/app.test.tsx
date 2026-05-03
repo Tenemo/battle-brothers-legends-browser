@@ -102,7 +102,7 @@ describe('app', () => {
     expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
     expect(within(hero).getByText('Mod version')).toBeInTheDocument()
-    expect(within(hero).getByText('19.3.21')).toBeInTheDocument()
+    expect(within(hero).getByText('19.3.22')).toBeInTheDocument()
     expect(within(hero).getByText('Planner version')).toBeInTheDocument()
     expect(within(hero).getByText(packageJson.version)).toBeInTheDocument()
     expect(

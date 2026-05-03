@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-05-01T23:36:13.002Z",
+  "generatedAt": "2026-05-03T00:13:44.887Z",
   "perkCount": 367,
   "perks": [
     {
@@ -32212,7 +32212,7 @@
       ],
       "descriptionParagraphs": [
         "Knowledge of an animal's physiology allows for better diet, exercise and care.",
-        "Passive: • Increases Hitpoints by 25% donkeys in the company and their carrying capacity by +12.",
+        "Passive: • Increases Hitpoints by 25% for donkeys in the company and their carrying capacity by +12.",
         "• Does not stack with the same perk on multiple mercenaries."
       ],
       "categoryNames": [
@@ -32240,7 +32240,7 @@
       ],
       "primaryCategoryName": "Profession",
       "scenarioSources": [],
-      "searchText": "Hippology Profession Profession Knowledge of an animal's physiology allows for better diet, exercise and care. Passive: • Increases Hitpoints by 25% donkeys in the company and their carrying capacity by +12. • Does not stack with the same perk on multiple mercenaries. Profession Caravaneering Profession Dog Breeder Caravan Hand Profession Caravaneering Houndmaster Profession Dog Breeder Inventor Profession Caravaneering Merchant Profession Caravaneering"
+      "searchText": "Hippology Profession Profession Knowledge of an animal's physiology allows for better diet, exercise and care. Passive: • Increases Hitpoints by 25% for donkeys in the company and their carrying capacity by +12. • Does not stack with the same perk on multiple mercenaries. Profession Caravaneering Profession Dog Breeder Caravan Hand Profession Caravaneering Houndmaster Profession Dog Breeder Inventor Profession Caravaneering Merchant Profession Caravaneering"
     },
     {
       "backgroundSources": [
@@ -71119,7 +71119,9 @@
       ],
       "descriptionParagraphs": [
         "Make use of your acrobatic skill to dodge attacks and move out of trouble.",
-        "Passive: • As long as there's a free tile adjacent any attack against you has a chance to be rerolled. If the attack is ranged you will use your Melee Defense and if the attack is Melee you will use your Ranged Defense for the reroll."
+        "Passive: • As long as there's a free tile adjacent to you grant a chance to have any attacker require two successful attack rolls in order to hit. If the attack is ranged you will use your Melee Defense and if the attack is melee you will use your Ranged Defense for the reroll. On a succesful reroll you will be moved to a random tile.",
+        "• Disabled if you are rooted or stunned.",
+        "• Stacks with 'Lucky' or Premonition with the chance of either being added to the chance to reroll."
       ],
       "categoryNames": [
         "Class"
@@ -71139,7 +71141,7 @@
       ],
       "primaryCategoryName": "Class",
       "scenarioSources": [],
-      "searchText": "Tumble Class Class Make use of your acrobatic skill to dodge attacks and move out of trouble. Passive: • As long as there's a free tile adjacent any attack against you has a chance to be rerolled. If the attack is ranged you will use your Melee Defense and if the attack is Melee you will use your Ranged Defense for the reroll. Class Juggler Assassin Class Juggler Belly Dancer Class Juggler Gladiator Class Juggler Juggler Class Juggler Minstrel Class Juggler"
+      "searchText": "Tumble Class Class Make use of your acrobatic skill to dodge attacks and move out of trouble. Passive: • As long as there's a free tile adjacent to you grant a chance to have any attacker require two successful attack rolls in order to hit. If the attack is ranged you will use your Melee Defense and if the attack is melee you will use your Ranged Defense for the reroll. On a succesful reroll you will be moved to a random tile. • Disabled if you are rooted or stunned. • Stacks with 'Lucky' or Premonition with the chance of either being added to the chance to reroll. Class Juggler Assassin Class Juggler Belly Dancer Class Juggler Gladiator Class Juggler Juggler Class Juggler Minstrel Class Juggler"
     },
     {
       "backgroundSources": [
@@ -73627,7 +73629,7 @@
     }
   ],
   "referenceRoot": ".cache/legends-public/current/mod_legends",
-  "referenceVersion": "19.3.21",
+  "referenceVersion": "19.3.22",
   "sourceFiles": [
     {
       "path": ".cache/legends-public/current/mod_legends/!!config/_global.nut",
@@ -73638,12 +73640,20 @@
       "role": "playable background references"
     },
     {
+      "path": ".cache/legends-public/current/mod_legends/!!config/character.nut",
+      "role": "background type metadata"
+    },
+    {
       "path": ".cache/legends-public/current/mod_legends/!!config/perk_strings.nut",
       "role": "perk strings"
     },
     {
       "path": ".cache/legends-public/current/mod_legends/!!config/perks_defs.nut",
       "role": "perk definitions"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/!config/mods_legend_resources.nut",
+      "role": "camp resource modifier metadata"
     },
     {
       "path": ".cache/legends-public/current/mod_legends/afterHooks/perk_to_perk_groups_mapping.nut",
@@ -74170,6 +74180,266 @@
       "role": "background dynamic pools"
     },
     {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/addict_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/ailing_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/arena_fighter_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/arena_pit_fighter_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/athletic_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/bleeder_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/bloodthirsty_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/brave_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/bright_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/brute_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/clumsy_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/cocky_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/craven_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/cultist_acolyte_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/cultist_chosen_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/cultist_disciple_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/cultist_fanatic_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/cultist_prophet_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/cultist_zealot_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/dastard_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/deathwish_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/determined_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/dexterous_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/disloyal_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/drunkard_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/dumb_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/eagle_eyes_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/fainthearted_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/fat_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/fear_beasts_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/fear_greenskins_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/fear_undead_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/fearless_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/fragile_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/glorious_endurance_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/glorious_quickness_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/glorious_resolve_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/gluttonous_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/greedy_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/hate_beasts_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/hate_greenskins_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/hate_undead_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/hesitant_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/huge_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/impatient_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/insecure_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/iron_jaw_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/loyal_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/mad_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/night_blind_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/night_owl_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/oath_of_distinction_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/optimist_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/paranoid_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/pessimist_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/player_character_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/quick_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/strong_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/superstitious_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/survivor_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/swift_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/teamplayer_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/tiny_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/tough_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/mod_legends/hooks/skills/traits/weasel_trait.nut",
+      "role": "trait metadata"
+    },
+    {
       "path": ".cache/legends-public/current/scripts/scenarios/world/legend_random_3_scenario.nut",
       "role": "scenario perk sources"
     },
@@ -74636,6 +74906,186 @@
     {
       "path": ".cache/legends-public/current/scripts/skills/backgrounds/mage_legend_mage_commander_background.nut",
       "role": "background dynamic pools"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_aggressive_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_ambitious_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_appetite_donkey.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_arena_champion_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_arena_invictus_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_beastslayers_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_brothers_in_chains_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_cannibalistic.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_deathly_spectre_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_double_tongued_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_fear_dark_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_fear_nobles_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_fleshless_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_gift_of_people_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_hate_nobles_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_heavy_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_horse_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_inquisition_disciple_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_intensive_training_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_light_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_lw_relationship_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_martial_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_necromancer_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_noble_killer_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_nomad_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_peasant_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_pragmatic_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_predictable_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_ear.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_eye.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_finger.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_foot.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_forearm.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_hand.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_leg.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_prosthetic_nose.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_rotten_flesh_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_seductive_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_slack_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_steady_hands_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_sureshot_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_talented_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_undead_killer_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_unpredictable_trait.nut",
+      "role": "trait metadata"
+    },
+    {
+      "path": ".cache/legends-public/current/scripts/skills/traits/legend_withering_aura_trait.nut",
+      "role": "trait metadata"
     }
   ],
   "perkGroupCount": 116
