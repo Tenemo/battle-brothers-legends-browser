@@ -1,7 +1,6 @@
 import type {
   LegendsBackgroundFitBackgroundDefinition,
   LegendsPerkCatalogRecord,
-  LegendsPerksDataset,
 } from '../src/types/legends-perks'
 
 type LegendsIconSourceDataset = {
@@ -26,7 +25,7 @@ export function findBattleBrothersGameDirectoryPath(
 ): Promise<string | null>
 
 export function syncLegendsIcons(options?: {
-  dataset?: LegendsPerksDataset | null
+  dataset?: LegendsIconSourceDataset | null
   backgroundFitDatasetFilePath?: string
   catalogDatasetFilePath?: string
   gameDirectoryPath?: string | null

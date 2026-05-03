@@ -144,12 +144,35 @@ describe('build planner', () => {
               perkGroupName: 'Tenacious',
             },
           ],
+          perkIconPaths: ['ui/perks/sample_perk.png'],
           perkIds: ['perk.legend_sample'],
           perkNames: ['Sample perk'],
         },
       ],
       sharedPerkGroups: [],
     })
+  })
+
+  test('uses catalog perk icons and falls back to placement icons for grouped pills', () => {
+    const noCatalogIconPerk: LegendsPerkRecord = {
+      ...samplePerk,
+      iconPath: null,
+      id: 'perk.legend_no_catalog_icon',
+      perkConstName: 'LegendNoCatalogIcon',
+      perkName: 'No catalog icon perk',
+      searchText: 'No catalog icon perk cloth armor tenacious',
+    }
+
+    const buildPlannerGroups = getBuildPlannerGroups([samplePerk, noCatalogIconPerk])
+
+    expect(buildPlannerGroups.sharedPerkGroups).toHaveLength(1)
+    expect(buildPlannerGroups.sharedPerkGroups[0]).toEqual(
+      expect.objectContaining({
+        perkIconPaths: ['ui/perks/sample_perk.png', 'ui/perks/cloth_armor_tree.png'],
+        perkIds: ['perk.legend_sample', 'perk.legend_no_catalog_icon'],
+        perkNames: ['Sample perk', 'No catalog icon perk'],
+      }),
+    )
   })
 
   test('splits shared and individual perk groups by how many picked perks they cover', () => {
@@ -167,6 +190,7 @@ describe('build planner', () => {
               perkGroupName: 'Faith',
             },
           ],
+          perkIconPaths: ['ui/perks/sample_perk.png'],
           perkIds: ['perk.legend_overlapping'],
           perkNames: ['Overlapping perk'],
         },
@@ -181,6 +205,11 @@ describe('build planner', () => {
               perkGroupLabel: 'Cloth Armor',
               perkGroupName: 'Cloth Armor',
             },
+          ],
+          perkIconPaths: [
+            'ui/perks/sample_perk.png',
+            'ui/perks/sample_perk.png',
+            'ui/perks/sample_perk.png',
           ],
           perkIds: [
             'perk.legend_sample',
@@ -199,6 +228,7 @@ describe('build planner', () => {
               perkGroupName: 'Tenacious',
             },
           ],
+          perkIconPaths: ['ui/perks/sample_perk.png', 'ui/perks/sample_perk.png'],
           perkIds: ['perk.legend_sample', 'perk.legend_matching_shared_coverage'],
           perkNames: ['Sample perk', 'Matching shared coverage perk'],
         },
@@ -233,6 +263,7 @@ describe('build planner', () => {
               perkGroupName: 'Faith',
             },
           ],
+          perkIconPaths: ['ui/perks/sample_perk.png'],
           perkIds: ['perk.legend_multi_option'],
           perkNames: ['Multi option perk'],
         },
@@ -261,6 +292,7 @@ describe('build planner', () => {
               perkGroupName: 'Blacksmith',
             },
           ],
+          perkIconPaths: ['ui/perks/sample_perk.png'],
           perkIds: ['perk.legend_repeated_tree_name'],
           perkNames: ['Repeated perk group name perk'],
         },
@@ -292,6 +324,7 @@ describe('build planner', () => {
               perkGroupName: 'No perk group placement',
             },
           ],
+          perkIconPaths: ['ui/perks/sample_perk.png'],
           perkIds: ['perk.legend_direct'],
           perkNames: ['Direct perk'],
         },

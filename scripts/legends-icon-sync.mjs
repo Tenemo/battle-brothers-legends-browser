@@ -65,6 +65,15 @@ export function collectRequiredGameIconPaths(dataset) {
     if (backgroundFitBackground.iconPath) {
       iconPaths.add(normalizeRelativeIconPath(backgroundFitBackground.iconPath))
     }
+
+    for (const trait of [
+      ...(backgroundFitBackground.excludedTraits ?? []),
+      ...(backgroundFitBackground.guaranteedTraits ?? []),
+    ]) {
+      if (trait.iconPath) {
+        iconPaths.add(normalizeRelativeIconPath(trait.iconPath))
+      }
+    }
   }
 
   for (const perk of dataset.perks) {

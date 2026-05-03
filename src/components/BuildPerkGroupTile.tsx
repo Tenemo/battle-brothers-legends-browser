@@ -15,6 +15,7 @@ export type BuildPerkGroupTileOption = {
 }
 
 type BuildPerkGroupTilePerk = {
+  iconPath: string | null
   perkId: string | null
   perkName: string
 }
@@ -336,6 +337,7 @@ export function BuildPerkGroupTile({
               onOpenHover={onOpenBuildPerkHover}
               onOpenTooltip={onOpenBuildPerkTooltip}
               perkGroupSelection={primaryPerkGroupSelection}
+              perkIconPath={perk.iconPath}
               perkId={perk.perkId}
               perkName={perk.perkName}
             />
@@ -344,7 +346,18 @@ export function BuildPerkGroupTile({
               className={joinClassNames(styles.plannerPill, styles.plannerStaticPill)}
               key={`${groupLabel}-${perk.perkName}`}
             >
-              {perk.perkName}
+              {perk.iconPath ? (
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  className={styles.plannerPillIcon}
+                  data-testid="planner-pill-icon"
+                  decoding="async"
+                  loading="lazy"
+                  src={`/game-icons/${perk.iconPath}`}
+                />
+              ) : null}
+              <span className={styles.plannerPillLabel}>{perk.perkName}</span>
             </span>
           ),
         )}

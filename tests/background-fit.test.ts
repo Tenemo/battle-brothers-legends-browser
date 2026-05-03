@@ -113,7 +113,9 @@ function createBackgroundDefinition({
     campResourceModifiers: [],
     dailyCost: null,
     excludedTalentAttributeNames: [],
+    excludedTraits: [],
     excludedTraitNames: [],
+    guaranteedTraits: [],
     guaranteedTraitNames: [],
     iconPath: null,
     sourceFilePath: `backgrounds/${backgroundId}.nut`,
@@ -414,6 +416,7 @@ describe('background fit', () => {
         {
           categoryName: 'Weapon',
           pickedPerkCount: 2,
+          pickedPerkIconPaths: [null, null],
           pickedPerkIds: ['perk.weapon.axe_one', 'perk.weapon.axe_two'],
           pickedPerkNames: ['Axe drill', 'Axe finish'],
           perkGroupIconPath: null,
@@ -425,6 +428,7 @@ describe('background fit', () => {
         {
           categoryName: 'Other',
           pickedPerkCount: 1,
+          pickedPerkIconPaths: [null],
           pickedPerkIds: ['perk.other.forceful'],
           pickedPerkNames: ['Forceful stance'],
           perkGroupIconPath: null,
@@ -645,6 +649,13 @@ describe('background fit', () => {
         perkGroupIconPath: null,
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
+        perks: [
+          {
+            iconPath: null,
+            perkId: 'perk.traits.calm',
+            perkName: 'Calm focus',
+          },
+        ],
         probability: 1,
       },
       {
@@ -653,6 +664,18 @@ describe('background fit', () => {
         perkGroupIconPath: 'ui/perks/lucky_icon.png',
         perkGroupId: 'LuckyTree',
         perkGroupName: 'Lucky',
+        perks: [
+          {
+            iconPath: null,
+            perkId: 'perk.traits.lucky',
+            perkName: 'Lucky break',
+          },
+          {
+            iconPath: null,
+            perkId: 'perk.traits.lucky_icon_source',
+            perkName: 'Lucky icon source',
+          },
+        ],
         probability: 0.5,
       },
     ])
@@ -1395,6 +1418,20 @@ describe('background fit', () => {
         },
       }),
     )
+    expect(backgroundFit.mustHaveStudyResourceStrategy).toBeUndefined()
+    expect(backgroundFit.fullBuildStudyResourceStrategy).toEqual(
+      expect.objectContaining({
+        nativeProbability: 0,
+        probability: 1,
+        scrollTargets: [
+          expect.objectContaining({
+            coveredPickedPerkNames: ['Actual berserker'],
+            perkGroupName: 'Berserker',
+          }),
+        ],
+        selectedCombinationKey: 'scroll',
+      }),
+    )
   })
 
   test('reports must-have chance breakdown across study resource combinations', () => {
@@ -1459,6 +1496,127 @@ describe('background fit', () => {
         ],
       }),
     )
+  })
+
+  test('reports adaptive study resource targets while excluding redundant book targets', () => {
+    const brawnyOrBerserkerPerk = createPerk({
+      id: 'perk.synthetic.brawny_or_berserker',
+      perkConstName: 'SyntheticBrawnyOrBerserker',
+      perkName: 'Brawny',
+      placements: [
+        createPlacement({
+          categoryName: 'Defense',
+          perkGroupId: 'HeavyArmorTree',
+          perkGroupName: 'Heavy Armor',
+        }),
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+          perkGroupName: 'Berserker',
+        }),
+      ],
+    })
+    const mediumArmorPerk = createPerk({
+      id: 'perk.synthetic.medium_armor',
+      perkConstName: 'SyntheticMediumArmor',
+      perkName: 'Medium stance',
+      placements: [
+        createPlacement({
+          categoryName: 'Defense',
+          perkGroupId: 'MediumArmorTree',
+          perkGroupName: 'Medium Armor',
+        }),
+      ],
+    })
+    const fitPerk = createPerk({
+      id: 'perk.synthetic.fit',
+      perkConstName: 'SyntheticFit',
+      perkName: 'Fit',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'FitTree',
+          perkGroupName: 'Fit',
+        }),
+      ],
+    })
+    const spareTraitPerk = createPerk({
+      id: 'perk.synthetic.spare_trait',
+      perkConstName: 'SyntheticSpareTrait',
+      perkName: 'Spare trait',
+      placements: [
+        createPlacement({
+          categoryName: 'Traits',
+          perkGroupId: 'SpareTraitTree',
+          perkGroupName: 'Spare trait',
+        }),
+      ],
+    })
+    const adaptiveBackground = createBackgroundDefinition({
+      backgroundId: 'background.adaptive_study_resources',
+      backgroundName: 'Adaptive study resources',
+      overrides: {
+        Defense: { minimumPerkGroups: 1, perkGroupIds: [] },
+        Traits: { minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [adaptiveBackground],
+      perks: [brawnyOrBerserkerPerk, mediumArmorPerk, fitPerk, spareTraitPerk],
+    })
+    const [backgroundFit] = engine.getBackgroundFitView(
+      [brawnyOrBerserkerPerk, mediumArmorPerk, fitPerk],
+      defaultStudyResources,
+    ).rankedBackgroundFits
+    const strategy = backgroundFit.mustHaveStudyResourceStrategy
+
+    expect(backgroundFit.mustHaveStudyResourceChanceBreakdown).toEqual([
+      expect.objectContaining({ key: 'native', probability: 0 }),
+      expect.objectContaining({ key: 'book', probability: 0.5 }),
+      expect.objectContaining({ key: 'scroll', probability: 0.25 }),
+      expect.objectContaining({ key: 'book-and-scroll', probability: 0.75 }),
+    ])
+    expect(strategy).toEqual(
+      expect.objectContaining({
+        nativeProbability: 0,
+        probability: 0.75,
+        selectedCombinationKey: 'book-and-scroll',
+      }),
+    )
+    expect(strategy?.scrollTargets).toEqual([
+      expect.objectContaining({
+        coveredPickedPerkNames: ['Brawny'],
+        perkGroupName: 'Berserker',
+      }),
+    ])
+    expect(strategy?.bookTargets.map((target) => target.perkGroupName).toSorted()).toEqual([
+      'Fit',
+      'Medium Armor',
+    ])
+    expect(strategy?.bookTargets.map((target) => target.perkGroupName)).not.toContain('Heavy Armor')
+  })
+
+  test('omits study resource strategies when native rolls already cover the build', () => {
+    const calmOnlyBackground = createBackgroundDefinition({
+      backgroundId: 'background.native_calm_only',
+      backgroundName: 'Native calm only',
+      overrides: {
+        Traits: { minimumPerkGroups: 1, perkGroupIds: ['CalmTree'] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [calmOnlyBackground],
+    })
+    const [backgroundFit] = engine.getBackgroundFitView(
+      [samplePerks[4]],
+      defaultStudyResources,
+    ).rankedBackgroundFits
+
+    expect(backgroundFit.mustHaveBuildReachabilityProbability).toBe(1)
+    expect(backgroundFit.mustHaveStudyResourceStrategy).toBeUndefined()
+    expect(backgroundFit.fullBuildStudyResourceStrategy).toBeUndefined()
   })
 
   test('filters backgrounds by must-have perks while scoring optional perks separately', () => {
@@ -1684,6 +1842,107 @@ describe('background fit', () => {
     expect(bastardBuildChance).toBeGreaterThan(footSoldierBuildChance)
     expect(bastardBuildChance).toBeLessThan(0.01)
     expect(footSoldierBuildChance).toBeLessThan(0.01)
+  })
+
+  test('keeps the reported Peddler rank while explaining the dominant study resource strategy', () => {
+    const reportedBuildPerkNames = [
+      'Muscularity',
+      'Brawny',
+      'Perfect Fit',
+      'Colossus',
+      'Perfect Focus',
+      'Athlete',
+      'Clarity',
+      'Lithe',
+      'Polearm Mastery',
+      'Heightened Reflexes',
+      'Alert',
+      'Onslaught',
+      'Berserk',
+      'Killing Frenzy',
+      'In the Zone',
+      'First Blood',
+      'Double Strike',
+      'Bloody Harvest',
+    ]
+    const reportedOptionalPerkNames = [
+      'Berserk',
+      'Killing Frenzy',
+      'In the Zone',
+      'First Blood',
+      'Double Strike',
+      'Bloody Harvest',
+    ]
+    const perksByName = new Map(
+      legendsBackgroundFitDataset.perks.map((perk) => [perk.perkName, perk]),
+    )
+    const reportedBuildPerks = reportedBuildPerkNames.map((perkName) => {
+      const perk = perksByName.get(perkName)
+
+      if (!perk) {
+        throw new Error(`Missing reported build perk fixture: ${perkName}`)
+      }
+
+      return perk
+    })
+    const optionalPickedPerkIds = new Set(
+      reportedOptionalPerkNames.map((perkName) => {
+        const perk = perksByName.get(perkName)
+
+        if (!perk) {
+          throw new Error(`Missing reported optional perk fixture: ${perkName}`)
+        }
+
+        return perk.id
+      }),
+    )
+    const backgroundFitView = createBackgroundFitEngine(
+      legendsBackgroundFitDataset,
+    ).getBackgroundFitView(reportedBuildPerks, defaultStudyResources, {
+      optionalPickedPerkIds,
+    })
+    const peddlerRankIndex = backgroundFitView.rankedBackgroundFits.findIndex(
+      (backgroundFit) => backgroundFit.backgroundName === 'Peddler',
+    )
+    const peddlerBackgroundFit = backgroundFitView.rankedBackgroundFits[peddlerRankIndex]
+
+    expect(peddlerRankIndex + 1).toBe(12)
+    expect(peddlerBackgroundFit.mustHaveBuildReachabilityProbability).toBeCloseTo(
+      0.5333333333333337,
+      12,
+    )
+    expect(peddlerBackgroundFit.fullBuildReachabilityProbability).toBeCloseTo(
+      0.03555555555555556,
+      12,
+    )
+    expect(peddlerBackgroundFit.mustHaveStudyResourceChanceBreakdown).toEqual([
+      expect.objectContaining({ key: 'native', probability: 0 }),
+      expect.objectContaining({ key: 'book', probability: 0.044444444444444446 }),
+      expect.objectContaining({ key: 'scroll', probability: 0.10000000000000006 }),
+      expect.objectContaining({ key: 'book-and-scroll', probability: 0.5333333333333337 }),
+    ])
+    expect(peddlerBackgroundFit.mustHaveStudyResourceStrategy).toEqual(
+      expect.objectContaining({
+        nativeProbability: 0,
+        probability: 0.5333333333333337,
+        selectedCombinationKey: 'book-and-scroll',
+      }),
+    )
+    expect(
+      peddlerBackgroundFit.mustHaveStudyResourceStrategy?.scrollTargets.map(
+        (target) => target.perkGroupName,
+      ),
+    ).toEqual(['Berserker'])
+    expect(
+      peddlerBackgroundFit.mustHaveStudyResourceStrategy?.bookTargets
+        .map((target) => target.perkGroupName)
+        .toSorted(),
+    ).toEqual(['Fit', 'Medium Armor'])
+    expect(
+      peddlerBackgroundFit.mustHaveStudyResourceStrategy?.bookTargets.map(
+        (target) => target.perkGroupName,
+      ),
+    ).not.toContain('Heavy Armor')
   })
 
   test('keeps tiny must-have chances in raw probability order', () => {

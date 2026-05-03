@@ -128,6 +128,15 @@ function getReferencedGameIconPaths({
     if (backgroundFitBackground.iconPath) {
       iconPaths.add(backgroundFitBackground.iconPath)
     }
+
+    for (const trait of [
+      ...backgroundFitBackground.excludedTraits,
+      ...backgroundFitBackground.guaranteedTraits,
+    ]) {
+      if (trait.iconPath) {
+        iconPaths.add(trait.iconPath)
+      }
+    }
   }
 
   for (const perk of perks) {
@@ -194,6 +203,29 @@ function getUnstableBackgroundMetadataEntries(
       if (names.join('::') !== sortedUniqueNames.join('::')) {
         unstableEntries.push(
           `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${nameListLabel}`,
+        )
+      }
+    }
+
+    const traitLists = [
+      [
+        'excluded trait records',
+        backgroundFitBackground.excludedTraits,
+        backgroundFitBackground.excludedTraitNames,
+      ],
+      [
+        'guaranteed trait records',
+        backgroundFitBackground.guaranteedTraits,
+        backgroundFitBackground.guaranteedTraitNames,
+      ],
+    ] as const
+
+    for (const [traitListLabel, traits, traitNames] of traitLists) {
+      const traitRecordNames = traits.map((trait) => trait.traitName)
+
+      if (traitRecordNames.join('::') !== traitNames.join('::')) {
+        unstableEntries.push(
+          `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${traitListLabel}`,
         )
       }
     }

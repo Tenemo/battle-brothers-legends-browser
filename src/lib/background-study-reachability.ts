@@ -23,6 +23,8 @@ export type StudyResourceRequirementProfile = {
   scrollRequirements: StudyReachabilityRequirement[]
 }
 
+export type StudyResourceKind = 'book' | 'scroll'
+
 type StudyResourceAssignmentCandidate = {
   assignedBookRequirementKey: string | null
   assignedScrollRequirementKeys: string[]
@@ -271,6 +273,23 @@ function getUniqueReachableRequirementKeys({
   return [...reachableRequirementKeys].toSorted()
 }
 
+export function getReachableStudyResourceRequirements({
+  pickedPerks,
+  resourceKind,
+}: {
+  pickedPerks: LegendsBackgroundFitPerkRecord[]
+  resourceKind: StudyResourceKind
+}): StudyReachabilityRequirement[] {
+  const pickedPerkRequirementOptions = getPickedPerkRequirementOptions(pickedPerks)
+  const isReachableRequirement =
+    resourceKind === 'book' ? isSkillBookReachableRequirement : isAncientScrollReachableRequirement
+
+  return getUniqueReachableRequirementKeys({
+    isReachableRequirement,
+    pickedPerkRequirementOptions,
+  }).map(getStudyReachabilityRequirementFromKey)
+}
+
 function getScrollRequirementKeySets(
   scrollRequirementKeys: string[],
   scrollSlotCount: number,
@@ -440,37 +459,67 @@ function getRequirementKeysCoverageMask({
 }
 
 export function createStudyResourceMaskCoverageProfile({
+  fixedBookRequirement,
+  fixedScrollRequirements = [],
   filter,
   getRequirementCoverageMask,
   pickedPerks,
   targetMask,
 }: {
+  fixedBookRequirement?: StudyReachabilityRequirement
+  fixedScrollRequirements?: StudyReachabilityRequirement[]
   filter: BackgroundStudyResourceFilter | null
   getRequirementCoverageMask: (requirementKey: string) => bigint
   pickedPerks: LegendsBackgroundFitPerkRecord[]
   targetMask: bigint
 }): StudyResourceMaskCoverageProfile {
   const pickedPerkRequirementOptions = getPickedPerkRequirementOptions(pickedPerks)
-  const bookRequirementKeys = filter?.shouldAllowBook
-    ? [
-        null,
-        ...getUniqueReachableRequirementKeys({
-          isReachableRequirement: isSkillBookReachableRequirement,
-          pickedPerkRequirementOptions,
-        }),
-      ]
-    : [null]
+  const fixedBookRequirementKey =
+    fixedBookRequirement === undefined
+      ? null
+      : createPerkGroupKey(fixedBookRequirement.categoryName, fixedBookRequirement.perkGroupId)
+  const reachableBookRequirementKeys = getUniqueReachableRequirementKeys({
+    isReachableRequirement: isSkillBookReachableRequirement,
+    pickedPerkRequirementOptions,
+  })
+  const bookRequirementKeys =
+    fixedBookRequirementKey === null
+      ? filter?.shouldAllowBook
+        ? [null, ...reachableBookRequirementKeys]
+        : [null]
+      : filter?.shouldAllowBook && reachableBookRequirementKeys.includes(fixedBookRequirementKey)
+        ? [fixedBookRequirementKey]
+        : []
   const scrollSlotCount = filter === null ? 0 : getScrollSlotCount(filter)
+  const reachableScrollRequirementKeys = getUniqueReachableRequirementKeys({
+    isReachableRequirement: isAncientScrollReachableRequirement,
+    pickedPerkRequirementOptions,
+  })
+  const fixedScrollRequirementKeys = [
+    ...new Set(
+      fixedScrollRequirements.map((requirement) =>
+        createPerkGroupKey(requirement.categoryName, requirement.perkGroupId),
+      ),
+    ),
+  ].toSorted()
+  const canUseFixedScrollRequirements =
+    fixedScrollRequirementKeys.length <= scrollSlotCount &&
+    fixedScrollRequirementKeys.every((requirementKey) =>
+      reachableScrollRequirementKeys.includes(requirementKey),
+    )
   const scrollRequirementKeySets =
-    scrollSlotCount > 0
-      ? getScrollRequirementKeySets(
-          getUniqueReachableRequirementKeys({
-            isReachableRequirement: isAncientScrollReachableRequirement,
-            pickedPerkRequirementOptions,
-          }),
-          scrollSlotCount,
-        )
-      : [[]]
+    fixedScrollRequirementKeys.length > 0
+      ? canUseFixedScrollRequirements
+        ? getScrollRequirementKeySets(
+            reachableScrollRequirementKeys.filter(
+              (requirementKey) => !fixedScrollRequirementKeys.includes(requirementKey),
+            ),
+            scrollSlotCount - fixedScrollRequirementKeys.length,
+          ).map((requirementKeys) => [...fixedScrollRequirementKeys, ...requirementKeys].toSorted())
+        : []
+      : scrollSlotCount > 0
+        ? getScrollRequirementKeySets(reachableScrollRequirementKeys, scrollSlotCount)
+        : [[]]
   const studyCoveredPickedPerkMasks: bigint[] = []
 
   for (const assignedBookRequirementKey of bookRequirementKeys) {

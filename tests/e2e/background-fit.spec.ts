@@ -403,9 +403,8 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(detailPanel.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
   await expect(detailPanel.getByRole('heading', { level: 4, name: 'Optional' })).toBeVisible()
   await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
-  await expect(detailPanel.getByText('Must-have study route')).toBeVisible()
-  await expect(detailPanel.getByText('Additional optional-only study route')).toBeVisible()
-  await expect(detailPanel.getByText('No optional perks in this build.')).toBeVisible()
+  await expect(detailPanel.getByText('Must-have study route')).toHaveCount(0)
+  await expect(detailPanel.getByText('Additional optional-only study route')).toHaveCount(0)
   await expect(detailPanel.getByTestId('detail-background-veteran-perk-badge')).toHaveCSS(
     'cursor',
     'help',
@@ -1161,13 +1160,47 @@ test('shows probabilistic background fit matches with percentage badges', async 
 
   await otherNativePerkGroupsToggle.click()
 
-  const otherNativePerkGroupsSection = detailPanel.getByTestId(
-    'detail-other-perk-groups-section',
-  )
+  const otherNativePerkGroupsSection = detailPanel.getByTestId('detail-other-perk-groups-section')
 
   await expect(otherNativePerkGroupsToggle).toHaveAttribute('aria-expanded', 'true')
   await expect(otherNativePerkGroupsSection).toBeVisible()
   await expect(otherNativePerkGroupsSection.getByTestId('planner-group-card').first()).toBeVisible()
+  await expect(
+    otherNativePerkGroupsSection
+      .getByTestId('planner-group-card')
+      .first()
+      .getByTestId('planner-pill')
+      .first(),
+  ).toBeVisible()
+  const otherNativeGroupLayout = await otherNativePerkGroupsSection.evaluate((section) => {
+    const list = section.querySelector('ul')
+    const firstCard = section.querySelector('[data-testid="planner-group-card"]')
+
+    if (!(list instanceof HTMLElement) || !(firstCard instanceof HTMLElement)) {
+      return null
+    }
+
+    const listStyle = window.getComputedStyle(list)
+    const listRect = list.getBoundingClientRect()
+    const firstCardRect = firstCard.getBoundingClientRect()
+
+    return {
+      firstCardWidth: firstCardRect.width,
+      listDisplay: listStyle.display,
+      listFlexWrap: listStyle.flexWrap,
+      listWidth: listRect.width,
+    }
+  })
+
+  expect(otherNativeGroupLayout).toEqual(
+    expect.objectContaining({
+      listDisplay: 'flex',
+      listFlexWrap: 'wrap',
+    }),
+  )
+  expect(otherNativeGroupLayout?.firstCardWidth ?? Number.POSITIVE_INFINITY).toBeLessThan(
+    (otherNativeGroupLayout?.listWidth ?? 0) - 4,
+  )
   await expect(
     otherNativePerkGroupsSection.getByRole('button', { name: 'Select perk group Barter' }),
   ).toHaveCount(0)

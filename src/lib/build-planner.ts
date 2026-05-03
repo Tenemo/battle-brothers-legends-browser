@@ -13,6 +13,7 @@ export type BuildPlannerPerkGroupRequirementOption = BuildPlannerPerkGroupRequir
 
 export type BuildPlannerGroupedPerkGroup = {
   perkGroupOptions: BuildPlannerPerkGroupRequirementOption[]
+  perkIconPaths: Array<string | null>
   perkIds: string[]
   perkNames: string[]
 }
@@ -81,6 +82,10 @@ function getPerkGroupRequirementOptions(
   return getRequirementOptionsWithLabels(getPerkGroupRequirements(perk))
 }
 
+function getBuildPlannerPerkIconPath(perk: LegendsPerkRecord): string | null {
+  return perk.iconPath ?? perk.placements[0]?.perkGroupIconPath ?? null
+}
+
 function getNoPerkGroupPlacementOption(perkId: string): BuildPlannerPerkGroupRequirementOption {
   return {
     categoryName: 'No perk group',
@@ -116,6 +121,7 @@ function getGroupedPerkGroups(
     if (!groupedPerkGroupsByMatchKey.has(matchKey)) {
       groupedPerkGroupsByMatchKey.set(matchKey, {
         perkGroupOptions: [],
+        perkIconPaths: matchedPerks.map((matchedPerk) => getBuildPlannerPerkIconPath(matchedPerk)),
         perkIds: matchedPerks.map((matchedPerk) => matchedPerk.id),
         perkNames: matchedPerks.map((matchedPerk) => matchedPerk.perkName),
       })

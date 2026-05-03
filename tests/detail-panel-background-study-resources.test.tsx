@@ -2,8 +2,12 @@ import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { DetailPanel } from '../src/components/DetailPanel'
-import { ancientScrollPerkGroupMarkerTestId } from '../src/lib/ancient-scroll-perk-group-display'
-import type { BuildTargetPerkGroup, RankedBackgroundFit } from '../src/lib/background-fit'
+import type {
+  BackgroundFitStudyResourceStrategy,
+  BackgroundFitStudyResourceStrategyTarget,
+  BuildTargetPerkGroup,
+  RankedBackgroundFit,
+} from '../src/lib/background-fit'
 import { backgroundStudyResourceBadgesTestId } from '../src/lib/background-study-resource-display'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
 
@@ -30,6 +34,75 @@ const ancientScrollRequirementProfile = {
     },
   ],
 } satisfies StudyResourceRequirementProfile
+
+const calmStrategyTarget = {
+  categoryName: 'Traits',
+  coveredPickedPerkIds: ['perk.legend_clarity'],
+  coveredPickedPerkNames: ['Clarity'],
+  fixedTargetProbability: 1,
+  marginalProbabilityGain: 1,
+  perkGroupIconPath: 'ui/perks/perk_01.png',
+  perkGroupId: 'CalmTree',
+  perkGroupName: 'Calm',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+const assassinStrategyTarget = {
+  categoryName: 'Magic',
+  coveredPickedPerkIds: ['perk.legend_assassinate'],
+  coveredPickedPerkNames: ['Assassinate'],
+  fixedTargetProbability: 1,
+  marginalProbabilityGain: 1,
+  perkGroupIconPath: 'ui/perks/perk_37.png',
+  perkGroupId: 'AssassinMagicTree',
+  perkGroupName: 'Assassin',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+const mediumArmorStrategyTarget = {
+  categoryName: 'Defense',
+  coveredPickedPerkIds: ['perk.legend_perfect_fit', 'perk.legend_lithe'],
+  coveredPickedPerkNames: ['Perfect Fit', 'Lithe'],
+  fixedTargetProbability: 0.3,
+  marginalProbabilityGain: 0.2,
+  perkGroupIconPath: 'ui/perks/perk_22.png',
+  perkGroupId: 'MediumDefenseTree',
+  perkGroupName: 'Medium Armor',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+const fitStrategyTarget = {
+  categoryName: 'Traits',
+  coveredPickedPerkIds: ['perk.legend_athlete'],
+  coveredPickedPerkNames: ['Athlete'],
+  fixedTargetProbability: 1 / 3,
+  marginalProbabilityGain: 0.23,
+  perkGroupIconPath: 'ui/perks/perk_31.png',
+  perkGroupId: 'FitTree',
+  perkGroupName: 'Fit',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+const berserkerStrategyTarget = {
+  categoryName: 'Magic',
+  coveredPickedPerkIds: ['perk.legend_muscularity', 'perk.legend_brawny', 'perk.legend_colossus'],
+  coveredPickedPerkNames: ['Muscularity', 'Brawny', 'Colossus'],
+  fixedTargetProbability: 0.53,
+  marginalProbabilityGain: 0.49,
+  perkGroupIconPath: 'ui/perks/perk_37.png',
+  perkGroupId: 'BerserkerMagicTree',
+  perkGroupName: 'Berserker',
+} satisfies BackgroundFitStudyResourceStrategyTarget
+
+function createStudyResourceStrategy(
+  overrides: Partial<BackgroundFitStudyResourceStrategy> = {},
+): BackgroundFitStudyResourceStrategy {
+  return {
+    bookTargets: [],
+    nativeProbability: 0,
+    probability: 1,
+    scrollTargets: [],
+    selectedCombinationKey: 'book',
+    shouldAllowSecondScroll: false,
+    ...overrides,
+  }
+}
 
 const backgroundFit = {
   backgroundId: 'background.apprentice',
@@ -62,6 +135,13 @@ const backgroundFit = {
   dailyCost: 6,
   disambiguator: null,
   excludedTalentAttributeNames: ['Ranged skill'],
+  excludedTraits: [
+    {
+      description: 'Afraid of walking dead.',
+      iconPath: 'ui/traits/trait_icon_50.png',
+      traitName: 'Fear of Undead',
+    },
+  ],
   excludedTraitNames: ['Fear of Undead'],
   expectedCoveredMustHavePerkCount: 1,
   expectedCoveredOptionalPerkCount: 0,
@@ -69,9 +149,19 @@ const backgroundFit = {
   expectedMatchedPerkGroupCount: 0,
   fullBuildReachabilityProbability: 1,
   fullBuildStudyResourceRequirement: skillBookRequirementProfile,
+  fullBuildStudyResourceStrategy: createStudyResourceStrategy({
+    bookTargets: [calmStrategyTarget],
+  }),
   guaranteedCoveredMustHavePerkCount: 0,
   guaranteedCoveredOptionalPerkCount: 0,
   guaranteedMatchedPerkGroupCount: 0,
+  guaranteedTraits: [
+    {
+      description: 'Moves with unusual speed.',
+      iconPath: 'ui/traits/trait_icon_32.png',
+      traitName: 'Quick',
+    },
+  ],
   guaranteedTraitNames: ['Quick'],
   iconPath: null,
   matches: [],
@@ -79,6 +169,9 @@ const backgroundFit = {
   maximumTotalPerkGroupCount: 1,
   mustHaveBuildReachabilityProbability: 1,
   mustHaveStudyResourceRequirement: skillBookRequirementProfile,
+  mustHaveStudyResourceStrategy: createStudyResourceStrategy({
+    bookTargets: [calmStrategyTarget],
+  }),
   otherPerkGroups: [],
   sourceFilePath: 'scripts/skills/backgrounds/apprentice_background.nut',
   veteranPerkLevelInterval: 4,
@@ -96,6 +189,7 @@ function renderSelectedBackgroundFitDetail({
     {
       categoryName: 'Traits',
       pickedPerkCount: 1,
+      pickedPerkIconPaths: ['ui/perks/clarity.png'],
       pickedPerkIds: ['perk.legend_clarity'],
       pickedPerkNames: ['Clarity'],
       perkGroupIconPath: 'ui/perks/perk_01.png',
@@ -163,24 +257,56 @@ function renderSelectedBackgroundFitDetail({
 }
 
 describe('background details study resources', () => {
-  test('renders imported background metadata as a regular detail section', () => {
+  test('keeps imported background metadata collapsed until expanded', async () => {
+    const user = userEvent.setup()
+
     renderSelectedBackgroundFitDetail()
 
     const metadataSection = screen.getByTestId('detail-background-metadata-section')
+    const metadataToggle = within(metadataSection).getByRole('button', {
+      name: 'Background details',
+    })
     const backgroundFitHeading = screen.getByRole('heading', { name: 'Background fit' })
 
-    expect(metadataSection.tagName).toBe('DIV')
-    expect(within(metadataSection).getByRole('heading', { name: 'Background details' })).toBeVisible()
+    expect(metadataSection.tagName).toBe('SECTION')
+    expect(
+      within(metadataSection).getByRole('heading', { name: 'Background details' }),
+    ).toBeVisible()
+    expect(metadataToggle).toHaveAttribute('aria-expanded', 'false')
     expect(
       metadataSection.compareDocumentPosition(backgroundFitHeading) &
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).not.toBe(0)
-    expect(within(metadataSection).getByText('Daily cost')).toBeVisible()
+    expect(within(metadataSection).queryByText('Daily cost')).not.toBeInTheDocument()
+    expect(within(metadataSection).queryByText('Fear of Undead')).not.toBeInTheDocument()
+    expect(
+      within(metadataSection).queryByTestId('detail-background-metadata-content'),
+    ).not.toBeInTheDocument()
+
+    await user.click(metadataToggle)
+
+    expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      within(metadataSection).getByRole('region', { name: 'Background details' }),
+    ).toBeVisible()
+    expect(within(metadataSection).getByRole('heading', { name: 'Daily cost' })).toBeVisible()
     expect(within(metadataSection).getByText('6')).toBeVisible()
     expect(within(metadataSection).getByText('Crusader')).toBeVisible()
     expect(within(metadataSection).getByText('Educated')).toBeVisible()
-    expect(within(metadataSection).getByText('Fear of Undead')).toBeVisible()
-    expect(within(metadataSection).getByText('Quick')).toBeVisible()
+    const fearOfUndeadTraitPill = within(metadataSection).getByRole('button', {
+      name: 'Fear of Undead',
+    })
+    const quickTraitPill = within(metadataSection).getByRole('button', { name: 'Quick' })
+
+    expect(fearOfUndeadTraitPill).toBeVisible()
+    expect(quickTraitPill).toBeVisible()
+    expect(
+      within(fearOfUndeadTraitPill).getByTestId('detail-background-trait-icon'),
+    ).toHaveAttribute('src', '/game-icons/ui/traits/trait_icon_50.png')
+    expect(within(quickTraitPill).getByTestId('detail-background-trait-icon')).toHaveAttribute(
+      'src',
+      '/game-icons/ui/traits/trait_icon_32.png',
+    )
     expect(within(metadataSection).getByText('Ranged skill')).toBeVisible()
     expect(within(metadataSection).getByText('Company capacity')).toBeVisible()
     expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
@@ -193,7 +319,60 @@ describe('background details study resources', () => {
     expect(within(metadataSection).getByText('+15%')).toBeVisible()
   })
 
-  test('shows none for empty background trait and talent metadata', () => {
+  test('collapses top-level background sections without hiding their headings', async () => {
+    const user = userEvent.setup()
+
+    renderSelectedBackgroundFitDetail()
+
+    const backgroundFitToggle = screen.getByRole('button', { name: 'Background fit' })
+    const matchedGroupsToggle = screen.getByRole('button', { name: 'Matched perk groups' })
+
+    expect(screen.getByRole('heading', { name: 'Background fit' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Matched perk groups' })).toBeVisible()
+    expect(backgroundFitToggle).toHaveAttribute('aria-expanded', 'true')
+    expect(matchedGroupsToggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Must-have build chance')).toBeVisible()
+    expect(screen.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
+
+    await user.click(backgroundFitToggle)
+    await user.click(matchedGroupsToggle)
+
+    expect(backgroundFitToggle).toHaveAttribute('aria-expanded', 'false')
+    expect(matchedGroupsToggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByRole('heading', { name: 'Background fit' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Matched perk groups' })).toBeVisible()
+    expect(screen.queryByText('Must-have build chance')).not.toBeInTheDocument()
+    expect(screen.queryByRole('img', { name: 'Must-have perk groups' })).not.toBeInTheDocument()
+  })
+
+  test('opens background trait tooltips from trait pills', async () => {
+    const user = userEvent.setup()
+
+    renderSelectedBackgroundFitDetail()
+
+    const metadataSection = screen.getByTestId('detail-background-metadata-section')
+    const metadataToggle = within(metadataSection).getByRole('button', {
+      name: 'Background details',
+    })
+
+    await user.click(metadataToggle)
+
+    const fearOfUndeadTraitPill = within(metadataSection).getByRole('button', {
+      name: 'Fear of Undead',
+    })
+
+    await user.click(fearOfUndeadTraitPill)
+
+    const traitTooltip = screen.getByRole('tooltip')
+
+    expect(fearOfUndeadTraitPill).toHaveAttribute('aria-describedby', traitTooltip.id)
+    expect(traitTooltip).toHaveTextContent('Afraid of walking dead.')
+    expect(traitTooltip).toHaveTextContent(
+      'This background excludes this trait, so recruits with this background cannot roll it.',
+    )
+  })
+
+  test('shows none for empty background trait and talent metadata', async () => {
     renderSelectedBackgroundFitDetail({
       selectedBackgroundFitDetail: {
         ...backgroundFit,
@@ -201,17 +380,22 @@ describe('background details study resources', () => {
         campResourceModifiers: [],
         dailyCost: null,
         excludedTalentAttributeNames: [],
+        excludedTraits: [],
         excludedTraitNames: [],
+        guaranteedTraits: [],
         guaranteedTraitNames: [],
       },
     })
 
     const metadataSection = screen.getByTestId('detail-background-metadata-section')
+    const metadataToggle = within(metadataSection).getByRole('button', {
+      name: 'Background details',
+    })
+
+    await userEvent.click(metadataToggle)
 
     expect(within(metadataSection).getAllByText('None')).toHaveLength(5)
-    expect(
-      within(metadataSection).queryByTestId('detail-camp-resource-modifier-groups'),
-    ).not.toBeInTheDocument()
+    expect(within(metadataSection).queryByText('Company capacity')).not.toBeInTheDocument()
   })
 
   test('keeps native non-build perk groups collapsed until expanded', async () => {
@@ -229,6 +413,13 @@ describe('background details study resources', () => {
             perkGroupIconPath: 'ui/perks/heavy_defense.png',
             perkGroupId: 'HeavyDefenseTree',
             perkGroupName: 'Heavy armor',
+            perks: [
+              {
+                iconPath: 'ui/perks/heavy_armor.png',
+                perkId: 'perk.legend_heavy_armor',
+                perkName: 'Heavy armor stance',
+              },
+            ],
             probability: 1,
           },
           {
@@ -237,19 +428,44 @@ describe('background details study resources', () => {
             perkGroupIconPath: 'ui/perks/bold.png',
             perkGroupId: 'BoldTree',
             perkGroupName: 'Bold',
+            perks: [
+              {
+                iconPath: 'ui/perks/bold.png',
+                perkId: 'perk.legend_bold',
+                perkName: 'Bold spirit',
+              },
+            ],
             probability: 0.5,
+          },
+          {
+            categoryName: 'Enemy',
+            isGuaranteed: false,
+            perkGroupIconPath: 'ui/perks/beasts.png',
+            perkGroupId: 'BeastTree',
+            perkGroupName: 'Beasts',
+            perks: [
+              {
+                iconPath: 'ui/perks/beasts.png',
+                perkId: 'perk.legend_favoured_enemy_beasts',
+                perkName: 'Favoured Enemy - Beasts',
+              },
+            ],
+            probability: 0.005,
           },
         ],
       },
     })
 
-    const toggle = screen.getByRole('button', { name: 'Expand other native perk groups' })
+    const toggle = screen.getByTestId('detail-other-perk-groups-toggle')
 
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(screen.getByTestId('detail-other-perk-groups-count')).toHaveTextContent('2')
+    expect(screen.getByTestId('detail-other-perk-groups-count')).toHaveTextContent('3')
     expect(screen.queryByTestId('detail-other-perk-groups-section')).not.toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: 'Select perk group Heavy armor' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Select perk group Beasts' }),
     ).not.toBeInTheDocument()
 
     await user.click(toggle)
@@ -261,13 +477,29 @@ describe('background details study resources', () => {
     const probabilityBadges = within(section)
       .getAllByTestId('detail-other-perk-group-probability')
       .map((probabilityBadge) => probabilityBadge.textContent)
+    const rareToggle = within(section).getByRole('button', {
+      name: 'Expand rare native perk groups',
+    })
 
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      within(section).getByText(
+        'Native perk groups this background can get outside the current build. Skill books and ancient scrolls are not included.',
+      ),
+    ).toBeVisible()
     expect(within(section).getAllByText('Guaranteed')[0]).toBeVisible()
     expect(within(section).getByText('Possible')).toBeVisible()
-    expect(within(section).getByText('Defense')).toBeVisible()
-    expect(within(section).getByText('Traits')).toBeVisible()
+    expect(within(section).getByText('Heavy armor stance')).toBeVisible()
+    expect(within(section).getByText('Bold spirit')).toBeVisible()
+    expect(within(section).queryByText('Defense')).not.toBeInTheDocument()
+    expect(within(section).queryByText('Traits')).not.toBeInTheDocument()
     expect(probabilityBadges).toEqual(['Guaranteed', '50%'])
+    expect(rareToggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.getByTestId('detail-rare-other-perk-groups-count')).toHaveTextContent('1')
+    expect(screen.queryByTestId('detail-rare-other-perk-groups-list')).not.toBeInTheDocument()
+    expect(
+      within(section).queryByRole('button', { name: 'Select perk group Beasts' }),
+    ).not.toBeInTheDocument()
     expect(
       within(section).queryByRole('button', { name: 'Select perk group Calm' }),
     ).not.toBeInTheDocument()
@@ -275,9 +507,19 @@ describe('background details study resources', () => {
     await user.click(heavyArmorButton)
 
     expect(onInspectPerkGroup).toHaveBeenCalledWith('Defense', 'HeavyDefenseTree')
+
+    await user.click(rareToggle)
+
+    const rareGroupList = screen.getByTestId('detail-rare-other-perk-groups-list')
+
+    expect(rareToggle).toHaveAttribute('aria-expanded', 'true')
+    expect(
+      within(rareGroupList).getByRole('button', { name: 'Select perk group Beasts' }),
+    ).toBeVisible()
+    expect(within(rareGroupList).getByText('0.50%')).toBeVisible()
   })
 
-  test('uses planner perk group tiles for book and scroll learning requirements', () => {
+  test('renders the strategy study resource plan near fit metrics', () => {
     renderSelectedBackgroundFitDetail()
 
     expect(screen.getByRole('img', { name: 'Must-have perk groups' })).toBeVisible()
@@ -295,17 +537,15 @@ describe('background details study resources', () => {
         Node.DOCUMENT_POSITION_FOLLOWING,
     ).not.toBe(0)
 
-    const [mustHaveStudyResourceSection] = screen.getAllByTestId('detail-study-resource-section')
-    const studyResourceTile = within(mustHaveStudyResourceSection).getByTestId('planner-group-card')
+    const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
 
-    expect(
-      within(mustHaveStudyResourceSection).getByRole('img', { name: 'Skill book' }),
-    ).toBeVisible()
-    expect(
-      within(studyResourceTile).getByRole('button', { name: 'Select perk group Calm' }),
-    ).toBeVisible()
-    expect(within(studyResourceTile).getByRole('button', { name: 'Clarity' })).toBeVisible()
-    expect(screen.queryByText('Skill book: Calm')).not.toBeInTheDocument()
+    expect(within(studyResourcePlan).getByText('Study resource plan')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Must-have impact')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Calm')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Covers Clarity')).toBeVisible()
+    expect(screen.queryByText('Must-have study route')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('detail-study-resource-tile-frame')).not.toBeInTheDocument()
   })
 
   test('shows a must-have chance breakdown for study resources', () => {
@@ -359,11 +599,19 @@ describe('background details study resources', () => {
     expect(within(chanceBreakdown).getByText('60%')).toBeVisible()
   })
 
-  test('does not present alternate full-build study resources as optional-only routes', () => {
+  test('labels a differing full-build strategy by impact instead of optional-only route', () => {
     const alternateFullBuildResourceBackgroundFit = {
       ...backgroundFit,
       fullBuildStudyResourceRequirement: ancientScrollRequirementProfile,
+      fullBuildStudyResourceStrategy: createStudyResourceStrategy({
+        bookTargets: [],
+        scrollTargets: [assassinStrategyTarget],
+        selectedCombinationKey: 'scroll',
+      }),
       mustHaveStudyResourceRequirement: skillBookRequirementProfile,
+      mustHaveStudyResourceStrategy: createStudyResourceStrategy({
+        bookTargets: [calmStrategyTarget],
+      }),
     } satisfies RankedBackgroundFit
 
     renderSelectedBackgroundFitDetail({
@@ -375,6 +623,7 @@ describe('background details study resources', () => {
         {
           categoryName: 'Traits',
           pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/clarity.png'],
           pickedPerkIds: ['perk.legend_clarity'],
           pickedPerkNames: ['Clarity'],
           perkGroupIconPath: 'ui/perks/perk_01.png',
@@ -384,6 +633,7 @@ describe('background details study resources', () => {
         {
           categoryName: 'Magic',
           pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/assassinate.png'],
           pickedPerkIds: ['perk.legend_assassinate'],
           pickedPerkNames: ['Assassinate'],
           perkGroupIconPath: 'ui/perks/perk_37.png',
@@ -393,62 +643,76 @@ describe('background details study resources', () => {
       ],
     })
 
-    const [, optionalStudyResourceSection] = screen.getAllByTestId('detail-study-resource-section')
+    const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
 
-    expect(
-      within(optionalStudyResourceSection).getByText('Additional optional-only study route'),
-    ).toBeVisible()
-    expect(
-      within(optionalStudyResourceSection).getByText(
-        'No separate optional-only book or scroll route.',
-      ),
-    ).toBeVisible()
-    expect(
-      within(optionalStudyResourceSection).queryByText('Ancient scroll'),
-    ).not.toBeInTheDocument()
-    expect(
-      within(optionalStudyResourceSection).queryByTestId('detail-study-resource-tile-frame'),
-    ).not.toBeInTheDocument()
+    expect(within(studyResourcePlan).getByText('Must-have impact')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Full-build impact')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Calm')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Ancient scroll:')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Assassin')).toBeVisible()
+    expect(screen.queryByText('Additional optional-only study route')).not.toBeInTheDocument()
   })
 
-  test('uses only the built-in perk group tile marker for scroll learning requirements', () => {
-    const scrollBackgroundFit = {
+  test('keeps matched groups visible while excluding redundant groups from the study plan', () => {
+    const peddlerLikeBackgroundFit = {
       ...backgroundFit,
-      fullBuildStudyResourceRequirement: ancientScrollRequirementProfile,
-      mustHaveStudyResourceRequirement: ancientScrollRequirementProfile,
+      expectedCoveredMustHavePerkCount: 7.9,
+      fullBuildStudyResourceRequirement: skillBookRequirementProfile,
+      fullBuildStudyResourceStrategy: createStudyResourceStrategy({
+        bookTargets: [mediumArmorStrategyTarget, fitStrategyTarget],
+        probability: 0.53,
+        scrollTargets: [berserkerStrategyTarget],
+        selectedCombinationKey: 'book-and-scroll',
+      }),
+      matches: [
+        {
+          categoryName: 'Defense',
+          isGuaranteed: false,
+          pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/brawny.png'],
+          pickedPerkIds: ['perk.legend_brawny'],
+          pickedPerkNames: ['Brawny'],
+          perkGroupIconPath: 'ui/perks/perk_22.png',
+          perkGroupId: 'HeavyDefenseTree',
+          perkGroupName: 'Heavy Armor',
+          probability: 1 / 3,
+        },
+      ],
+      mustHaveStudyResourceRequirement: skillBookRequirementProfile,
+      mustHaveStudyResourceStrategy: createStudyResourceStrategy({
+        bookTargets: [mediumArmorStrategyTarget, fitStrategyTarget],
+        probability: 0.53,
+        scrollTargets: [berserkerStrategyTarget],
+        selectedCombinationKey: 'book-and-scroll',
+      }),
     } satisfies RankedBackgroundFit
 
     renderSelectedBackgroundFitDetail({
-      selectedBackgroundFitDetail: scrollBackgroundFit,
+      mustHavePickedPerkCount: 1,
+      mustHavePickedPerkIds: ['perk.legend_brawny'],
+      selectedBackgroundFitDetail: peddlerLikeBackgroundFit,
       supportedBuildTargetPerkGroups: [
         {
-          categoryName: 'Magic',
+          categoryName: 'Defense',
           pickedPerkCount: 1,
-          pickedPerkIds: ['perk.legend_assassinate'],
-          pickedPerkNames: ['Assassinate'],
-          perkGroupIconPath: 'ui/perks/perk_37.png',
-          perkGroupId: 'AssassinMagicTree',
-          perkGroupName: 'Assassin',
+          pickedPerkIconPaths: ['ui/perks/brawny.png'],
+          pickedPerkIds: ['perk.legend_brawny'],
+          pickedPerkNames: ['Brawny'],
+          perkGroupIconPath: 'ui/perks/perk_22.png',
+          perkGroupId: 'HeavyDefenseTree',
+          perkGroupName: 'Heavy Armor',
         },
       ],
     })
 
-    const [mustHaveStudyResourceSection] = screen.getAllByTestId('detail-study-resource-section')
-    const studyResourceTileFrame = within(mustHaveStudyResourceSection).getByTestId(
-      'detail-study-resource-tile-frame',
-    )
-    const studyResourceTile = within(studyResourceTileFrame).getByTestId('planner-group-card')
+    const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
 
-    expect(studyResourceTileFrame).toHaveAttribute('data-study-resource-type', 'scroll')
-    expect(studyResourceTileFrame).toHaveAttribute('data-has-resource-icon', 'false')
-    expect(
-      within(mustHaveStudyResourceSection).queryByRole('img', { name: 'Ancient scroll' }),
-    ).not.toBeInTheDocument()
-    expect(within(studyResourceTile).getByTestId(ancientScrollPerkGroupMarkerTestId)).toBeVisible()
-    expect(
-      within(studyResourceTile).getByRole('button', {
-        name: 'Learnable using an ancient scroll',
-      }),
-    ).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Ancient scroll:')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Berserker')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Medium Armor or Fit')).toBeVisible()
+    expect(within(studyResourcePlan).queryByText('Heavy Armor')).not.toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Select perk group Heavy Armor' })).toBeVisible()
   })
 })

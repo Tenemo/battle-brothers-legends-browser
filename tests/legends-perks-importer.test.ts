@@ -102,7 +102,26 @@ describe('legends perks importer', () => {
         backgroundTypeNames: ['Crusader', 'Educated', 'Ranger'],
         dailyCost: 6,
         excludedTalentAttributeNames: ['Ranged skill'],
+        excludedTraits: [
+          {
+            description: 'Afraid of walking dead.',
+            iconPath: 'ui/traits/trait_icon_50.png',
+            traitName: 'Fear of Undead',
+          },
+        ],
         excludedTraitNames: ['Fear of Undead'],
+        guaranteedTraits: [
+          {
+            description: 'Has no firm loyalty.',
+            iconPath: 'ui/traits/disloyal_trait.png',
+            traitName: 'Disloyal',
+          },
+          {
+            description: 'Moves with unusual speed.',
+            iconPath: 'ui/traits/trait_icon_32.png',
+            traitName: 'Quick',
+          },
+        ],
         guaranteedTraitNames: ['Disloyal', 'Quick'],
       }),
     )
@@ -149,7 +168,15 @@ describe('legends perks importer', () => {
         backgroundTypeNames: ['Combat', 'Lowborn'],
         dailyCost: 12,
         excludedTalentAttributeNames: ['Fatigue', 'Hitpoints'],
+        excludedTraits: [],
         excludedTraitNames: [],
+        guaranteedTraits: [
+          {
+            description: 'Learns quickly.',
+            iconPath: 'ui/traits/trait_icon_11.png',
+            traitName: 'Bright',
+          },
+        ],
         guaranteedTraitNames: ['Bright'],
       }),
     )

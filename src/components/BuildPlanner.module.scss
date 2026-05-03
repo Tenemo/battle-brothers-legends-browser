@@ -887,10 +887,14 @@
 
   .plannerPill {
     position: relative;
+    display: inline-flex;
+    gap: var(--space-xs);
+    align-items: center;
+    overflow: hidden;
     min-height: var(--target-size-compact);
     border: var(--primitive-length-1px) solid var(--border-subtle);
     border-radius: var(--radius-pill);
-    padding: var(--space-3xs) var(--space-sm);
+    padding: var(--space-3xs) var(--space-sm) var(--space-3xs) var(--space-xs);
     background: var(--surface-control);
     color: var(--text-secondary);
     font: inherit;
@@ -939,6 +943,21 @@
       animation: build-perk-tooltip-timer var(--motion-entry-duration) linear forwards;
       opacity: 1;
     }
+  }
+
+  .plannerPillIcon {
+    flex: 0 0 auto;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+
+    @include size(var(--primitive-length-1-2rem));
+  }
+
+  .plannerPillLabel {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .plannerStaticPill {

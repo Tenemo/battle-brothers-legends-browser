@@ -11,8 +11,8 @@ import {
   renderSocialImageFooter,
   socialImageHeight,
   socialImageWidth,
-} from './social-image-markup'
-import { socialImageColors, socialImageFontFamilies } from './social-image-style'
+} from './social-image-markup.ts'
+import { socialImageColors, socialImageFontFamilies } from './social-image-style.ts'
 
 export const buildSocialImageWidth = socialImageWidth
 export const buildSocialImageHeight = socialImageHeight

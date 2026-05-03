@@ -68,7 +68,7 @@ export type LegendsPerkCatalogRecord = Omit<
 
 export type LegendsBackgroundFitPerkRecord = Pick<
   LegendsPerkRecord,
-  'id' | 'perkName' | 'placements'
+  'id' | 'iconPath' | 'perkName' | 'placements'
 >
 
 export type LegendsBuildSharePreviewPerkRecord = LegendsBackgroundFitPerkRecord &
@@ -92,6 +92,12 @@ export type LegendsBackgroundCampResourceModifier = {
   valueKind: LegendsBackgroundCampResourceModifierValueKind
 }
 
+export type LegendsBackgroundTrait = {
+  description: string | null
+  iconPath: string | null
+  traitName: string
+}
+
 export type LegendsBackgroundFitBackgroundDefinition = {
   backgroundId: string
   backgroundName: string
@@ -102,7 +108,9 @@ export type LegendsBackgroundFitBackgroundDefinition = {
   campResourceModifiers: LegendsBackgroundCampResourceModifier[]
   dailyCost: number | null
   excludedTalentAttributeNames: string[]
+  excludedTraits: LegendsBackgroundTrait[]
   excludedTraitNames: string[]
+  guaranteedTraits: LegendsBackgroundTrait[]
   guaranteedTraitNames: string[]
   iconPath: string | null
   sourceFilePath: string

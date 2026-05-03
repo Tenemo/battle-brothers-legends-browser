@@ -684,7 +684,9 @@ function cloneBackgroundDefinitionMetadata(backgroundDefinition) {
     })),
     dailyCost: backgroundDefinition.dailyCost,
     excludedTalentAttributeNames: [...backgroundDefinition.excludedTalentAttributeNames],
+    excludedTraits: backgroundDefinition.excludedTraits.map((trait) => ({ ...trait })),
     excludedTraitNames: [...backgroundDefinition.excludedTraitNames],
+    guaranteedTraits: backgroundDefinition.guaranteedTraits.map((trait) => ({ ...trait })),
     guaranteedTraitNames: [...backgroundDefinition.guaranteedTraitNames],
     modifiers: cloneBackgroundModifiers(backgroundDefinition.modifiers),
   }
@@ -1013,40 +1015,208 @@ function resolveTraitConstNameFromValue(value) {
   return resolveTraitConstNameFromValue(callValue.arguments[0])
 }
 
-function resolveTraitName(traitReference, traitMetadata) {
+// Legends hooks often reference vanilla traits without redefining the base icon assignment.
+// These paths are backed by the game assets extracted by syncLegendsIcons.
+const knownTraitIconPathsByLowercaseName = new Map(
+  Object.entries({
+    ailing: 'ui/traits/trait_icon_59.png',
+    asthmatic: 'ui/traits/trait_icon_22.png',
+    athletic: 'ui/traits/trait_icon_21.png',
+    bleeder: 'ui/traits/trait_icon_16.png',
+    bloodthirsty: 'ui/traits/trait_icon_42.png',
+    brave: 'ui/traits/trait_icon_37.png',
+    bright: 'ui/traits/trait_icon_11.png',
+    brute: 'ui/traits/trait_icon_01.png',
+    clubfooted: 'ui/traits/trait_icon_23.png',
+    clumsy: 'ui/traits/trait_icon_36.png',
+    cocky: 'ui/traits/trait_icon_24.png',
+    craven: 'ui/traits/trait_icon_40.png',
+    dastard: 'ui/traits/trait_icon_38.png',
+    deathwish: 'ui/traits/trait_icon_13.png',
+    determined: 'ui/traits/trait_icon_31.png',
+    dexterous: 'ui/traits/trait_icon_34.png',
+    disloyal: 'ui/traits/trait_icon_35.png',
+    drunkard: 'ui/traits/trait_icon_29.png',
+    dumb: 'ui/traits/trait_icon_17.png',
+    'eagle eyes': 'ui/traits/trait_icon_09.png',
+    fainthearted: 'ui/traits/trait_icon_41.png',
+    fat: 'ui/traits/trait_icon_10.png',
+    'fear beasts': 'ui/traits/trait_icon_48.png',
+    'fear greenskins': 'ui/traits/trait_icon_49.png',
+    'fear of undead': 'ui/traits/trait_icon_47.png',
+    'fear undead': 'ui/traits/trait_icon_47.png',
+    fearless: 'ui/traits/trait_icon_30.png',
+    fragile: 'ui/traits/trait_icon_04.png',
+    gluttonous: 'ui/traits/trait_icon_07.png',
+    greedy: 'ui/traits/trait_icon_06.png',
+    'hate beasts': 'ui/traits/trait_icon_51.png',
+    'hate for beasts': 'ui/traits/trait_icon_51.png',
+    'hate for greenskins': 'ui/traits/trait_icon_52.png',
+    'hate greenskins': 'ui/traits/trait_icon_52.png',
+    'hate for undead': 'ui/traits/trait_icon_50.png',
+    'hate undead': 'ui/traits/trait_icon_50.png',
+    hesitant: 'ui/traits/trait_icon_25.png',
+    hesistant: 'ui/traits/trait_icon_25.png',
+    huge: 'ui/traits/trait_icon_61.png',
+    impatient: 'ui/traits/trait_icon_46.png',
+    insecure: 'ui/traits/trait_icon_03.png',
+    'iron jaw': 'ui/traits/trait_icon_44.png',
+    'iron lungs': 'ui/traits/trait_icon_33.png',
+    irrational: 'ui/traits/trait_icon_28.png',
+    loyal: 'ui/traits/trait_icon_39.png',
+    mad: 'ui/traits/trait_icon_76.png',
+    'night blind': 'ui/traits/trait_icon_56.png',
+    'night owl': 'ui/traits/trait_icon_57.png',
+    old: 'skills/status_effect_60.png',
+    optimist: 'ui/traits/trait_icon_19.png',
+    paranoid: 'ui/traits/trait_icon_55.png',
+    pessimist: 'ui/traits/trait_icon_20.png',
+    quick: 'ui/traits/trait_icon_18.png',
+    'short sighted': 'ui/traits/trait_icon_27.png',
+    spartan: 'ui/traits/trait_icon_08.png',
+    strong: 'ui/traits/trait_icon_15.png',
+    superstitious: 'ui/traits/trait_icon_26.png',
+    'sure footing': 'ui/traits/trait_icon_05.png',
+    survivor: 'ui/traits/trait_icon_43.png',
+    swift: 'ui/traits/trait_icon_53.png',
+    teamplayer: 'ui/traits/trait_icon_58.png',
+    'team player': 'ui/traits/trait_icon_58.png',
+    tiny: 'ui/traits/trait_icon_02.png',
+    tough: 'ui/traits/trait_icon_14.png',
+    weasel: 'ui/traits/trait_icon_60.png',
+  }),
+)
+
+function getKnownTraitIconPath(traitName) {
+  return knownTraitIconPathsByLowercaseName.get(traitName.toLocaleLowerCase('en-US')) ?? null
+}
+
+function normalizeTraitMetadataRecord(traitRecord, fallbackTraitName = traitRecord.traitName) {
+  return {
+    description: traitRecord.description ?? null,
+    iconPath: traitRecord.iconPath ?? getKnownTraitIconPath(traitRecord.traitName),
+    traitName: traitRecord.hasExplicitName ? traitRecord.traitName : fallbackTraitName,
+  }
+}
+
+function mergeTraitMetadataRecord(leftRecord, rightRecord) {
+  if (!leftRecord) {
+    return { ...rightRecord }
+  }
+
+  const shouldUseRightName = rightRecord.hasExplicitName || !leftRecord.hasExplicitName
+
+  return {
+    description: leftRecord.description ?? rightRecord.description ?? null,
+    hasExplicitName: leftRecord.hasExplicitName || rightRecord.hasExplicitName,
+    iconPath: leftRecord.iconPath ?? rightRecord.iconPath ?? null,
+    traitName: shouldUseRightName ? rightRecord.traitName : leftRecord.traitName,
+  }
+}
+
+function setMergedTraitMetadataRecord(map, key, traitRecord) {
+  if (!key) {
+    return
+  }
+
+  map.set(key, mergeTraitMetadataRecord(map.get(key), traitRecord))
+}
+
+function getTraitRecordNameKey(traitName) {
+  return traitName.toLocaleLowerCase('en-US')
+}
+
+function getTraitScriptIdCandidates(traitReference) {
+  const normalizedReference = traitReference.replace(/_trait$/u, '')
+  const snakeReference = normalizedReference
+    .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .toLocaleLowerCase('en-US')
+
+  return [`${snakeReference}_trait`, snakeReference]
+}
+
+function sortUniqueTraitRecords(traitRecords) {
+  const traitRecordsByName = new Map()
+
+  for (const traitRecord of traitRecords) {
+    const normalizedTraitRecord = normalizeTraitMetadataRecord(traitRecord)
+    const existingTraitRecord = traitRecordsByName.get(traitRecord.traitName)
+
+    traitRecordsByName.set(traitRecord.traitName, {
+      description: existingTraitRecord?.description ?? normalizedTraitRecord.description,
+      iconPath: existingTraitRecord?.iconPath ?? normalizedTraitRecord.iconPath,
+      traitName: normalizedTraitRecord.traitName,
+    })
+  }
+
+  return [...traitRecordsByName.values()].toSorted(
+    (leftTraitRecord, rightTraitRecord) =>
+      leftTraitRecord.traitName.localeCompare(rightTraitRecord.traitName) ||
+      (leftTraitRecord.iconPath ?? '').localeCompare(rightTraitRecord.iconPath ?? ''),
+  )
+}
+
+function resolveTraitRecord(traitReference, traitMetadata) {
   if (traitReference === null) {
     return null
   }
 
-  if (traitMetadata.traitNamesByConstName.has(traitReference)) {
-    return traitMetadata.traitNamesByConstName.get(traitReference)
+  const fallbackTraitName = prettifyIdentifier(traitReference.replace(/_trait$/u, ''))
+
+  if (traitMetadata.traitRecordsByConstName.has(traitReference)) {
+    return normalizeTraitMetadataRecord(
+      traitMetadata.traitRecordsByConstName.get(traitReference),
+      fallbackTraitName,
+    )
   }
 
-  if (traitMetadata.traitNamesByScriptId.has(traitReference)) {
-    return traitMetadata.traitNamesByScriptId.get(traitReference)
+  if (traitMetadata.traitRecordsByScriptId.has(traitReference)) {
+    return normalizeTraitMetadataRecord(
+      traitMetadata.traitRecordsByScriptId.get(traitReference),
+      fallbackTraitName,
+    )
   }
 
-  return prettifyIdentifier(traitReference.replace(/_trait$/u, ''))
+  for (const traitScriptIdCandidate of getTraitScriptIdCandidates(traitReference)) {
+    if (traitMetadata.traitRecordsByScriptId.has(traitScriptIdCandidate)) {
+      return normalizeTraitMetadataRecord(
+        traitMetadata.traitRecordsByScriptId.get(traitScriptIdCandidate),
+        fallbackTraitName,
+      )
+    }
+  }
+
+  const nameKey = getTraitRecordNameKey(fallbackTraitName)
+
+  if (traitMetadata.traitRecordsByName.has(nameKey)) {
+    return normalizeTraitMetadataRecord(traitMetadata.traitRecordsByName.get(nameKey))
+  }
+
+  return {
+    description: null,
+    iconPath: getKnownTraitIconPath(fallbackTraitName),
+    traitName: fallbackTraitName,
+  }
 }
 
-function parseTraitNamesFromArrayValue(value, traitMetadata) {
-  return sortUniqueStrings(
+function parseTraitRecordsFromArrayValue(value, traitMetadata) {
+  return sortUniqueTraitRecords(
     arrayValues(value)
       .map((item) => {
         const traitConstName = resolveTraitConstNameFromValue(item)
 
         if (traitConstName !== null) {
-          return resolveTraitName(traitConstName, traitMetadata)
+          return resolveTraitRecord(traitConstName, traitMetadata)
         }
 
-        return resolveTraitName(stringValue(item), traitMetadata)
+        return resolveTraitRecord(stringValue(item), traitMetadata)
       })
-      .filter((traitName) => traitName !== null),
+      .filter((traitRecord) => traitRecord !== null),
   )
 }
 
-function parseGuaranteedTraitNamesFromSource(source, traitMetadata, diagnosticContext) {
-  const traitNames = []
+function parseGuaranteedTraitRecordsFromSource(source, traitMetadata, diagnosticContext) {
+  const traitRecords = []
 
   for (const argumentList of extractCallArgumentLists(source, '::Legends.Traits.grant')) {
     const traitArgumentSource = argumentList[1]
@@ -1059,10 +1229,10 @@ function parseGuaranteedTraitNamesFromSource(source, traitMetadata, diagnosticCo
       const traitConstName = resolveTraitConstNameFromValue(
         parseSquirrelValue(traitArgumentSource).value,
       )
-      const traitName = resolveTraitName(traitConstName, traitMetadata)
+      const traitRecord = resolveTraitRecord(traitConstName, traitMetadata)
 
-      if (traitName !== null) {
-        traitNames.push(traitName)
+      if (traitRecord !== null) {
+        traitRecords.push(traitRecord)
       }
     } catch (error) {
       addImporterParseWarning(
@@ -1074,7 +1244,7 @@ function parseGuaranteedTraitNamesFromSource(source, traitMetadata, diagnosticCo
     }
   }
 
-  return traitNames
+  return sortUniqueTraitRecords(traitRecords)
 }
 
 function parseExcludedTalentAttributeNames(value) {
@@ -1090,34 +1260,49 @@ function parseExcludedTalentAttributeNames(value) {
 }
 
 function parseTraitMetadataFileEntries(traitFileEntries) {
-  const traitNamesByConstName = new Map()
-  const traitNamesByScriptId = new Map()
+  const traitRecordsByConstName = new Map()
+  const traitRecordsByName = new Map()
+  const traitRecordsByScriptId = new Map()
 
   for (const traitFileEntry of traitFileEntries) {
     const uncommentedFileSource = stripSquirrelComments(traitFileEntry.fileSource)
     const traitConstName = resolveTraitConstNameFromValue(
       extractAssignedValue(uncommentedFileSource, 'this.m.ID'),
     )
-    const traitName = stringValue(extractAssignedValue(uncommentedFileSource, 'this.m.Name'))
+    const explicitTraitName = stringValue(extractAssignedValue(uncommentedFileSource, 'this.m.Name'))
+    const iconPath = stringValue(extractAssignedValue(uncommentedFileSource, 'this.m.Icon'))
+    const description = stringValue(
+      extractAssignedValue(uncommentedFileSource, 'this.m.Description'),
+    )
     const traitScriptId = path.posix.basename(
       traitFileEntry.sourceFilePath,
       path.posix.extname(traitFileEntry.sourceFilePath),
     )
+    const traitName = explicitTraitName ?? prettifyIdentifier(traitScriptId.replace(/_trait$/u, ''))
 
-    if (traitName === null) {
+    if (explicitTraitName === null && iconPath === null && description === null) {
       continue
     }
 
-    traitNamesByScriptId.set(traitScriptId, traitName)
+    const traitRecord = {
+      description: description === null ? null : cleanRichText(description),
+      hasExplicitName: explicitTraitName !== null,
+      iconPath,
+      traitName,
+    }
+
+    setMergedTraitMetadataRecord(traitRecordsByScriptId, traitScriptId, traitRecord)
+    setMergedTraitMetadataRecord(traitRecordsByName, getTraitRecordNameKey(traitName), traitRecord)
 
     if (traitConstName !== null) {
-      traitNamesByConstName.set(traitConstName, traitName)
+      setMergedTraitMetadataRecord(traitRecordsByConstName, traitConstName, traitRecord)
     }
   }
 
   return {
-    traitNamesByConstName,
-    traitNamesByScriptId,
+    traitRecordsByConstName,
+    traitRecordsByName,
+    traitRecordsByScriptId,
   }
 }
 
@@ -1151,7 +1336,9 @@ function createBackgroundMetadataDefaults({
     campResourceModifiers: buildBackgroundCampResourceModifiers(modifiers),
     dailyCost: null,
     excludedTalentAttributeNames: [],
+    excludedTraits: [],
     excludedTraitNames: [],
+    guaranteedTraits: [],
     guaranteedTraitNames: [],
     modifiers,
   }
@@ -1722,24 +1909,26 @@ function applyBackgroundCreateBody({
     'this.m.ExcludedTalents',
     diagnosticContext,
   )
-  const excludedTraitNames =
+  const excludedTraits =
     excludedTraitValue === null
-      ? baseBackgroundDefinition.excludedTraitNames
-      : parseTraitNamesFromArrayValue(excludedTraitValue, traitMetadata)
-  const explicitGuaranteedTraitNames =
+      ? baseBackgroundDefinition.excludedTraits
+      : parseTraitRecordsFromArrayValue(excludedTraitValue, traitMetadata)
+  const excludedTraitNames = excludedTraits.map((trait) => trait.traitName)
+  const explicitGuaranteedTraits =
     guaranteedTraitValue === null
       ? []
-      : parseTraitNamesFromArrayValue(guaranteedTraitValue, traitMetadata)
-  const staticGuaranteedTraitNames = parseGuaranteedTraitNamesFromSource(
+      : parseTraitRecordsFromArrayValue(guaranteedTraitValue, traitMetadata)
+  const staticGuaranteedTraits = parseGuaranteedTraitRecordsFromSource(
     uncommentedMetadataSource,
     traitMetadata,
     diagnosticContext,
   )
-  const guaranteedTraitNames = sortUniqueStrings([
-    ...baseBackgroundDefinition.guaranteedTraitNames,
-    ...explicitGuaranteedTraitNames,
-    ...staticGuaranteedTraitNames,
+  const guaranteedTraits = sortUniqueTraitRecords([
+    ...baseBackgroundDefinition.guaranteedTraits,
+    ...explicitGuaranteedTraits,
+    ...staticGuaranteedTraits,
   ])
+  const guaranteedTraitNames = guaranteedTraits.map((trait) => trait.traitName)
   const excludedTalentAttributeNames =
     excludedTalentAttributeValue === null
       ? baseBackgroundDefinition.excludedTalentAttributeNames
@@ -1782,7 +1971,9 @@ function applyBackgroundCreateBody({
     dailyCost,
     dynamicTreeValue,
     excludedTalentAttributeNames,
+    excludedTraits,
     excludedTraitNames,
+    guaranteedTraits,
     guaranteedTraitNames,
     iconPath,
     minimums,
@@ -2095,7 +2286,9 @@ function buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions) {
         campResourceModifiers: background.campResourceModifiers,
         dailyCost: background.dailyCost,
         excludedTalentAttributeNames: background.excludedTalentAttributeNames,
+        excludedTraits: background.excludedTraits,
         excludedTraitNames: background.excludedTraitNames,
+        guaranteedTraits: background.guaranteedTraits,
         guaranteedTraitNames: background.guaranteedTraitNames,
         iconPath: background.iconPath,
         sourceFilePath: background.sourceFilePath,

@@ -981,13 +981,17 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   const heavyArmorGroupCard = getBuildSharedGroupsList(page)
     .getByTestId('planner-group-card')
     .filter({ hasText: 'Heavy Armor' })
-
-  await heavyArmorGroupCard.click({
-    position: {
-      x: 96,
-      y: 38,
-    },
+  const heavyArmorGroupButton = heavyArmorGroupCard.getByRole('button', {
+    name: 'Select perk group Heavy Armor',
   })
+  const heavyArmorPillIcons = heavyArmorGroupCard.getByTestId('planner-pill-icon')
+
+  await expect(heavyArmorPillIcons).toHaveCount(3)
+  await expect(heavyArmorPillIcons.first()).toHaveAttribute(
+    'src',
+    '/game-icons/ui/perks/perk_03.png',
+  )
+  await heavyArmorGroupButton.click()
 
   await expect(page.getByLabel('Search perks')).toHaveValue('')
   await expect(page.getByRole('button', { name: 'Disable category Defense' })).toBeVisible()

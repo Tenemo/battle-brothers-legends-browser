@@ -267,6 +267,7 @@ function BackgroundFitMatchRow({
         onOpenPerkGroupHover={onOpenPerkGroupHover}
         optionIconClassName={styles.backgroundFitPerkGroupIcon}
         perks={match.pickedPerkNames.map((perkName, perkIndex) => ({
+          iconPath: match.pickedPerkIconPaths[perkIndex] ?? null,
           perkId: match.pickedPerkIds[perkIndex] ?? null,
           perkName,
         }))}
@@ -354,9 +355,8 @@ export function BackgroundFitStudyResourceBadges({
   backgroundFit: RankedBackgroundFit
 }) {
   const studyResourceBadgeDisplay = getBackgroundStudyResourceBadgeDisplay({
-    fullBuildStudyResourceRequirement: backgroundFit.fullBuildStudyResourceRequirement,
-    mustHaveStudyResourceChanceBreakdown: backgroundFit.mustHaveStudyResourceChanceBreakdown,
-    mustHaveStudyResourceRequirement: backgroundFit.mustHaveStudyResourceRequirement,
+    fullBuildStudyResourceStrategy: backgroundFit.fullBuildStudyResourceStrategy,
+    mustHaveStudyResourceStrategy: backgroundFit.mustHaveStudyResourceStrategy,
   })
 
   if (studyResourceBadgeDisplay === null) {

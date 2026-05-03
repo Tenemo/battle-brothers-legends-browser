@@ -49,6 +49,7 @@ function renderBuildPerkGroupTile(
       onOpenPerkGroupHover={onOpenPerkGroupHover}
       perks={[
         {
+          iconPath: 'ui/perks/sample_perk.png',
           perkId: 'perk.legend_sample',
           perkName: 'Sample perk',
         },
@@ -79,6 +80,10 @@ describe('perk group icon', () => {
     expect(groupCard).toContainElement(marker)
     expect(iconStackItem).not.toContainElement(marker)
     expect(groupIcon).toHaveAttribute('src', '/game-icons/ui/perks/fire_circle.png')
+    expect(screen.getByTestId('planner-pill-icon')).toHaveAttribute(
+      'src',
+      '/game-icons/ui/perks/sample_perk.png',
+    )
     expect(marker).toHaveAccessibleName('Learnable using an ancient scroll')
     expect(marker).toHaveAttribute('title', 'Learnable using an ancient scroll')
     expect(markerIcon).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)

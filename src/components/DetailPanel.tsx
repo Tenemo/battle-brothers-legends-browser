@@ -1,4 +1,5 @@
 import { useId, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { ArrowLeft, ArrowRight, Split } from 'lucide-react'
 import { formatDisplayBulletText } from '../lib/bullet-display'
 import {
@@ -6,25 +7,28 @@ import {
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
   getBackgroundFitKey,
+  getAnchoredTooltipStyle,
   getVisibleBackgroundPillLabel,
   getPerkDisplayIconPath,
   renderGameIcon,
   type GroupedBackgroundSource,
+  type TooltipAnchorRectangle,
 } from '../lib/perk-display'
 import type {
   BackgroundFitOtherPerkGroup,
   BackgroundFitStudyResourceChanceBreakdownEntry,
+  BackgroundFitStudyResourceStrategy,
+  BackgroundFitStudyResourceStrategyTarget,
   BackgroundFitMatch,
   BuildTargetPerkGroup,
   RankedBackgroundFit,
 } from '../lib/background-fit'
-import { brightTraitIconPath, skillBookIconPath } from '../lib/background-study-resource-display'
+import {
+  formatStudyResourceStrategyTargetNames,
+  skillBookIconPath,
+} from '../lib/background-study-resource-display'
 import { ancientScrollIconPath } from '../lib/ancient-scroll-perk-group-display'
-import type {
-  BackgroundStudyResourceFilter,
-  StudyReachabilityRequirement,
-  StudyResourceRequirementProfile,
-} from '../lib/background-study-reachability'
+import type { BackgroundStudyResourceFilter } from '../lib/background-study-reachability'
 import {
   backgroundCampResourceModifierGroupLabels,
   formatBackgroundCampResourceModifierValue,
@@ -35,7 +39,12 @@ import {
 } from '../lib/background-veteran-perks'
 import { joinClassNames } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
-import type { LegendsFavouredEnemyTarget, LegendsPerkRecord } from '../types/legends-perks'
+import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
+import type {
+  LegendsBackgroundTrait,
+  LegendsFavouredEnemyTarget,
+  LegendsPerkRecord,
+} from '../types/legends-perks'
 import type {
   LegendsBackgroundCampResourceModifier,
   LegendsBackgroundCampResourceModifierGroup,
@@ -45,10 +54,11 @@ import {
   BackgroundFitMetricSummary,
   BackgroundFitStudyResourceBadges,
 } from './BackgroundFitCard'
-import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
+import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton, PlannerSectionChevron, type BuildRequirement } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
+import buildPlannerStyles from './BuildPlanner.module.scss'
 import catenaryChainIconPath from '../assets/catenary-chain.svg'
 import styles from './DetailPanel.module.scss'
 
@@ -93,16 +103,6 @@ type DetailPanelProps = {
 type DetailHistoryNavigationAvailability = {
   next: boolean
   previous: boolean
-}
-
-type StudyResourceRequirementEntry = {
-  iconAlt: string
-  iconPath: string
-  key: string
-  label: string
-  requirement: StudyReachabilityRequirement | null
-  resourceType: 'book' | 'bright' | 'scroll'
-  support: string
 }
 
 function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
@@ -187,7 +187,6 @@ export function DetailPanel({
   selectedPerkRequirement,
   selectedPerk,
   studyResourceFilter,
-  supportedBuildTargetPerkGroups,
 }: DetailPanelProps) {
   const displayedBackgroundFitDetail =
     selectedDetailType === 'background' ? selectedBackgroundFitDetail : null
@@ -227,7 +226,6 @@ export function DetailPanel({
             pickedPerkCount={pickedPerkCount}
             rank={displayedBackgroundFitDetail.rank}
             studyResourceFilter={studyResourceFilter}
-            supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
           />
         ) : selectedPerk === null ? (
           <div className={sharedStyles.emptyState} data-testid="empty-state">
@@ -313,6 +311,7 @@ export function DetailPanel({
                         onOpenPerkGroupHover={onOpenPerkGroupHover}
                         perks={[
                           {
+                            iconPath: getPerkDisplayIconPath(selectedPerk),
                             perkId: selectedPerk.id,
                             perkName: selectedPerk.perkName,
                           },
@@ -469,12 +468,95 @@ function DetailHistoryNavigation({
   )
 }
 
-function getRequirementKey(requirement: StudyReachabilityRequirement): string {
-  return `${requirement.categoryName}::${requirement.perkGroupId}`
-}
+function DetailCollapsibleSection({
+  children,
+  contentClassName,
+  contentTestId,
+  count,
+  countLabel,
+  defaultExpanded = true,
+  isExpanded,
+  onExpandedChange,
+  sectionLabel,
+  sectionTestId = 'detail-section',
+  toggleTestId,
+}: {
+  children: ReactNode
+  contentClassName?: string
+  contentTestId?: string
+  count?: number
+  countLabel?: string
+  defaultExpanded?: boolean
+  isExpanded?: boolean
+  onExpandedChange?: (nextIsExpanded: boolean) => void
+  sectionLabel: string
+  sectionTestId?: string
+  toggleTestId?: string
+}) {
+  const sectionContentId = useId()
+  const [uncontrolledIsExpanded, setUncontrolledIsExpanded] = useState(defaultExpanded)
+  const resolvedIsExpanded = isExpanded ?? uncontrolledIsExpanded
 
-function getBuildTargetPerkGroupKey(buildTargetPerkGroup: BuildTargetPerkGroup): string {
-  return `${buildTargetPerkGroup.categoryName}::${buildTargetPerkGroup.perkGroupId}`
+  function toggleExpanded() {
+    const nextIsExpanded = !resolvedIsExpanded
+
+    if (isExpanded === undefined) {
+      setUncontrolledIsExpanded(nextIsExpanded)
+    }
+
+    onExpandedChange?.(nextIsExpanded)
+  }
+
+  return (
+    <section
+      className={styles.detailCollapsibleSection}
+      data-expanded={resolvedIsExpanded}
+      data-testid={sectionTestId}
+    >
+      <h3 className={styles.detailCollapsibleHeading}>
+        <button
+          aria-controls={sectionContentId}
+          aria-expanded={resolvedIsExpanded}
+          className={styles.detailCollapsibleToggle}
+          data-testid={toggleTestId}
+          onClick={toggleExpanded}
+          title={`${resolvedIsExpanded ? 'Collapse' : 'Expand'} ${sectionLabel.toLowerCase()}`}
+          type="button"
+        >
+          <PlannerSectionChevron
+            className={styles.detailCollapsibleChevron}
+            isExpanded={resolvedIsExpanded}
+          />
+          <span className={styles.detailCollapsibleToggleHeading}>{sectionLabel}</span>
+          {count === undefined ? null : (
+            <span
+              aria-label={countLabel ?? `${count} ${sectionLabel.toLowerCase()}`}
+              className={styles.detailCollapsibleToggleCount}
+              data-testid={
+                toggleTestId === undefined
+                  ? undefined
+                  : `${toggleTestId.replace(/-toggle$/u, '')}-count`
+              }
+            >
+              {count}
+            </span>
+          )}
+        </button>
+      </h3>
+
+      {resolvedIsExpanded ? (
+        <div
+          aria-label={sectionLabel}
+          className={joinClassNames(styles.detailCollapsibleContent, contentClassName)}
+          data-testid={contentTestId}
+          id={sectionContentId}
+          role="region"
+        >
+          {children}
+        </div>
+      ) : null}
+    </section>
+  )
 }
 
 function getScopedBackgroundFitMatches(
@@ -488,6 +570,7 @@ function getScopedBackgroundFitMatches(
   const pickedPerkIdSet = new Set(pickedPerkIds)
 
   return matches.flatMap((match) => {
+    const scopedPickedPerkIconPaths: Array<string | null> = []
     const scopedPickedPerkIds: string[] = []
     const scopedPickedPerkNames: string[] = []
 
@@ -496,6 +579,7 @@ function getScopedBackgroundFitMatches(
         continue
       }
 
+      scopedPickedPerkIconPaths.push(match.pickedPerkIconPaths[pickedPerkIndex] ?? null)
       scopedPickedPerkIds.push(pickedPerkId)
       scopedPickedPerkNames.push(match.pickedPerkNames[pickedPerkIndex] ?? pickedPerkId)
     }
@@ -508,92 +592,12 @@ function getScopedBackgroundFitMatches(
       {
         ...match,
         pickedPerkCount: scopedPickedPerkIds.length,
+        pickedPerkIconPaths: scopedPickedPerkIconPaths,
         pickedPerkIds: scopedPickedPerkIds,
         pickedPerkNames: scopedPickedPerkNames,
       },
     ]
   })
-}
-
-function getStudyResourceRequirementEntries(
-  studyResourceRequirementProfile: StudyResourceRequirementProfile | null,
-): StudyResourceRequirementEntry[] {
-  if (studyResourceRequirementProfile === null) {
-    return []
-  }
-
-  const entries: StudyResourceRequirementEntry[] = []
-
-  if (studyResourceRequirementProfile.bookRequirement) {
-    entries.push({
-      iconAlt: 'Skill book',
-      iconPath: skillBookIconPath,
-      key: `book-${getRequirementKey(studyResourceRequirementProfile.bookRequirement)}`,
-      label: 'Skill book',
-      requirement: studyResourceRequirementProfile.bookRequirement,
-      resourceType: 'book',
-      support: 'Learn this perk group with a skill book.',
-    })
-  }
-
-  for (const [
-    scrollIndex,
-    scrollRequirement,
-  ] of studyResourceRequirementProfile.scrollRequirements.entries()) {
-    entries.push({
-      iconAlt: 'Ancient scroll',
-      iconPath: ancientScrollIconPath,
-      key: `scroll-${scrollIndex}-${getRequirementKey(scrollRequirement)}`,
-      label: 'Ancient scroll',
-      requirement: scrollRequirement,
-      resourceType: 'scroll',
-      support: 'Learn this perk group with an ancient scroll.',
-    })
-  }
-
-  if (studyResourceRequirementProfile.requiresBright) {
-    entries.push({
-      iconAlt: 'Bright trait',
-      iconPath: brightTraitIconPath,
-      key: 'bright',
-      label: 'Bright',
-      requirement: null,
-      resourceType: 'bright',
-      support: 'Needed to read a second ancient scroll.',
-    })
-  }
-
-  return entries
-}
-
-function getAdditionalStudyResourceRequirementEntries({
-  baseStudyResourceRequirementProfile,
-  fullStudyResourceRequirementProfile,
-}: {
-  baseStudyResourceRequirementProfile: StudyResourceRequirementProfile | null
-  fullStudyResourceRequirementProfile: StudyResourceRequirementProfile | null
-}): StudyResourceRequirementEntry[] {
-  const baseRequirementEntries = getStudyResourceRequirementEntries(
-    baseStudyResourceRequirementProfile,
-  )
-  const fullRequirementEntries = getStudyResourceRequirementEntries(
-    fullStudyResourceRequirementProfile,
-  )
-
-  if (baseRequirementEntries.length > 0) {
-    const fullRequirementKeys = new Set(fullRequirementEntries.map((entry) => entry.key))
-    const doesFullRouteExtendBaseRoute = baseRequirementEntries.every((entry) =>
-      fullRequirementKeys.has(entry.key),
-    )
-
-    if (!doesFullRouteExtendBaseRoute) {
-      return []
-    }
-  }
-
-  const baseRequirementKeys = new Set(baseRequirementEntries.map((entry) => entry.key))
-
-  return fullRequirementEntries.filter((entry) => !baseRequirementKeys.has(entry.key))
 }
 
 function getChanceBreakdownLabel(entry: BackgroundFitStudyResourceChanceBreakdownEntry): string {
@@ -642,153 +646,192 @@ function BackgroundFitChanceBreakdown({
   )
 }
 
-function StudyResourceRequirementList({
-  buildTargetPerkGroupByKey,
-  emptyMessage,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
-  entries,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
-  onInspectPerk,
-  onInspectPerkGroup,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
-  sectionLabel,
-}: {
-  buildTargetPerkGroupByKey: ReadonlyMap<string, BuildTargetPerkGroup>
-  emptyMessage: string
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
-  entries: StudyResourceRequirementEntry[]
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
-  onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  sectionLabel: string
-}) {
-  return (
-    <div className={styles.detailStudyResourceSection} data-testid="detail-study-resource-section">
-      <p className={styles.detailMatchSectionLabel}>{sectionLabel}</p>
-      {entries.length > 0 ? (
-        <ul className={styles.detailStudyResourceList}>
-          {entries.map((entry) => {
-            const buildTargetPerkGroup =
-              entry.requirement === null
-                ? null
-                : (buildTargetPerkGroupByKey.get(getRequirementKey(entry.requirement)) ?? null)
+type StudyResourceStrategyResourceKind = 'book' | 'scroll'
 
-            return (
-              <li key={entry.key}>
-                <div
-                  className={styles.detailStudyResourceTileFrame}
-                  data-has-resource-icon={entry.resourceType !== 'scroll'}
-                  data-study-resource-type={entry.resourceType}
-                  data-testid="detail-study-resource-tile-frame"
-                >
-                  {entry.resourceType === 'scroll' ? null : (
-                    <img
-                      alt={entry.iconAlt}
-                      className={styles.detailStudyResourceTileIcon}
-                      decoding="async"
-                      loading="lazy"
-                      src={`/game-icons/${entry.iconPath}`}
-                      title={entry.label}
-                    />
-                  )}
-                  <BuildPerkGroupTile
-                    arePerkGroupOptionsInteractive={buildTargetPerkGroup !== null}
-                    className={styles.detailStudyResourceTile}
-                    emphasizedCategoryNames={emphasizedCategoryNames}
-                    emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-                    selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-                    selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-                    groupLabel={buildTargetPerkGroup?.perkGroupName ?? entry.label}
-                    groupOptions={getStudyResourceTileOptions(entry, buildTargetPerkGroup)}
-                    hoveredBuildPerkId={hoveredBuildPerkId}
-                    hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                    hoveredPerkId={hoveredPerkId}
-                    isWide
-                    onCloseBuildPerkHover={onCloseBuildPerkHover}
-                    onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-                    onClosePerkGroupHover={onClosePerkGroupHover}
-                    onInspectPerk={onInspectPerk}
-                    onInspectPerkGroup={onInspectPerkGroup}
-                    onOpenBuildPerkHover={onOpenBuildPerkHover}
-                    onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-                    onOpenPerkGroupHover={onOpenPerkGroupHover}
-                    perks={getStudyResourceTilePerks(entry, buildTargetPerkGroup)}
-                  />
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      ) : (
-        <p className={styles.detailBackgroundFitEmptyMessage}>{emptyMessage}</p>
-      )}
+function getStudyResourceStrategyTargets({
+  resourceKind,
+  strategy,
+}: {
+  resourceKind: StudyResourceStrategyResourceKind
+  strategy: BackgroundFitStudyResourceStrategy
+}): BackgroundFitStudyResourceStrategyTarget[] {
+  return resourceKind === 'book' ? strategy.bookTargets : strategy.scrollTargets
+}
+
+function getStudyResourceStrategyResourceIconPath(
+  resourceKind: StudyResourceStrategyResourceKind,
+): string {
+  return resourceKind === 'book' ? skillBookIconPath : ancientScrollIconPath
+}
+
+function getStudyResourceStrategyResourceLabel(
+  resourceKind: StudyResourceStrategyResourceKind,
+): string {
+  return resourceKind === 'book' ? 'Skill book' : 'Ancient scroll'
+}
+
+function getUniqueStudyResourceStrategyCoveredPerkNames(
+  targets: BackgroundFitStudyResourceStrategyTarget[],
+): string[] {
+  const coveredPerkNames: string[] = []
+  const coveredPerkNameSet = new Set<string>()
+
+  for (const target of targets) {
+    for (const coveredPickedPerkName of target.coveredPickedPerkNames) {
+      if (coveredPerkNameSet.has(coveredPickedPerkName)) {
+        continue
+      }
+
+      coveredPerkNameSet.add(coveredPickedPerkName)
+      coveredPerkNames.push(coveredPickedPerkName)
+    }
+  }
+
+  return coveredPerkNames
+}
+
+function areStudyResourceStrategyTargetSetsEqual(
+  leftTargets: BackgroundFitStudyResourceStrategyTarget[],
+  rightTargets: BackgroundFitStudyResourceStrategyTarget[],
+): boolean {
+  if (leftTargets.length !== rightTargets.length) {
+    return false
+  }
+
+  const leftKeys = leftTargets
+    .map((target) => `${target.categoryName}::${target.perkGroupId}`)
+    .toSorted()
+  const rightKeys = rightTargets
+    .map((target) => `${target.categoryName}::${target.perkGroupId}`)
+    .toSorted()
+
+  return leftKeys.every((leftKey, targetIndex) => leftKey === rightKeys[targetIndex])
+}
+
+function areStudyResourceStrategiesEquivalent(
+  leftStrategy: BackgroundFitStudyResourceStrategy | undefined,
+  rightStrategy: BackgroundFitStudyResourceStrategy | undefined,
+): boolean {
+  if (!leftStrategy || !rightStrategy) {
+    return leftStrategy === rightStrategy
+  }
+
+  return (
+    leftStrategy.selectedCombinationKey === rightStrategy.selectedCombinationKey &&
+    leftStrategy.shouldAllowSecondScroll === rightStrategy.shouldAllowSecondScroll &&
+    areStudyResourceStrategyTargetSetsEqual(leftStrategy.bookTargets, rightStrategy.bookTargets) &&
+    areStudyResourceStrategyTargetSetsEqual(leftStrategy.scrollTargets, rightStrategy.scrollTargets)
+  )
+}
+
+function BackgroundFitStudyResourcePlanRow({
+  resourceKind,
+  strategy,
+}: {
+  resourceKind: StudyResourceStrategyResourceKind
+  strategy: BackgroundFitStudyResourceStrategy
+}) {
+  const targets = getStudyResourceStrategyTargets({ resourceKind, strategy })
+
+  if (targets.length === 0) {
+    return null
+  }
+
+  const resourceLabel = getStudyResourceStrategyResourceLabel(resourceKind)
+  const targetNames = formatStudyResourceStrategyTargetNames(targets)
+  const coveredPerkNames = getUniqueStudyResourceStrategyCoveredPerkNames(targets)
+
+  return (
+    <div
+      className={styles.detailStudyResourcePlanRow}
+      data-resource-kind={resourceKind}
+      data-testid="detail-study-resource-plan-row"
+    >
+      <img
+        alt=""
+        aria-hidden="true"
+        className={styles.detailStudyResourcePlanIcon}
+        decoding="async"
+        loading="lazy"
+        src={`/game-icons/${getStudyResourceStrategyResourceIconPath(resourceKind)}`}
+      />
+      <div className={styles.detailStudyResourcePlanText}>
+        <p className={styles.detailStudyResourcePlanMain}>
+          <span>{resourceLabel}: </span>
+          <strong>{targetNames}</strong>
+          {resourceKind === 'book' && targets.length > 1 ? (
+            <span>, depending on native roll</span>
+          ) : null}
+        </p>
+        {coveredPerkNames.length > 0 ? (
+          <p className={styles.detailStudyResourcePlanSupport}>
+            Covers {coveredPerkNames.join(', ')}
+          </p>
+        ) : null}
+      </div>
     </div>
   )
 }
 
-function getStudyResourceTileOptions(
-  entry: StudyResourceRequirementEntry,
-  buildTargetPerkGroup: BuildTargetPerkGroup | null,
-): BuildPerkGroupTileOption[] {
-  if (buildTargetPerkGroup) {
-    return [
-      {
-        categoryName: buildTargetPerkGroup.categoryName,
-        perkGroupIconPath: buildTargetPerkGroup.perkGroupIconPath,
-        perkGroupId: buildTargetPerkGroup.perkGroupId,
-        perkGroupLabel: buildTargetPerkGroup.perkGroupName,
-      },
-    ]
-  }
-
-  return [
-    {
-      categoryName: 'Study resources',
-      isSelectable: false,
-      perkGroupIconPath: entry.iconPath,
-      perkGroupId: entry.key,
-      perkGroupLabel: entry.label,
-    },
-  ]
+function BackgroundFitStudyResourcePlanScope({
+  label,
+  strategy,
+}: {
+  label: string
+  strategy: BackgroundFitStudyResourceStrategy
+}) {
+  return (
+    <section
+      aria-label={label}
+      className={styles.detailStudyResourcePlanScope}
+      data-testid="detail-study-resource-plan-scope"
+    >
+      <p className={styles.detailStudyResourcePlanScopeLabel}>{label}</p>
+      <div className={styles.detailStudyResourcePlanRows}>
+        <BackgroundFitStudyResourcePlanRow resourceKind="scroll" strategy={strategy} />
+        <BackgroundFitStudyResourcePlanRow resourceKind="book" strategy={strategy} />
+      </div>
+    </section>
+  )
 }
 
-function getStudyResourceTilePerks(
-  entry: StudyResourceRequirementEntry,
-  buildTargetPerkGroup: BuildTargetPerkGroup | null,
-): { perkId: string | null; perkName: string }[] {
-  if (!buildTargetPerkGroup) {
-    return [{ perkId: null, perkName: entry.support }]
+function BackgroundFitStudyResourcePlan({
+  fullBuildStrategy,
+  mustHaveStrategy,
+  optionalPickedPerkCount,
+}: {
+  fullBuildStrategy?: BackgroundFitStudyResourceStrategy
+  mustHaveStrategy?: BackgroundFitStudyResourceStrategy
+  optionalPickedPerkCount: number
+}) {
+  const shouldShowFullBuildStrategy =
+    optionalPickedPerkCount > 0 &&
+    fullBuildStrategy !== undefined &&
+    !areStudyResourceStrategiesEquivalent(fullBuildStrategy, mustHaveStrategy)
+
+  if (!mustHaveStrategy && !shouldShowFullBuildStrategy) {
+    return null
   }
 
-  return buildTargetPerkGroup.pickedPerkNames.map((perkName, pickedPerkIndex) => ({
-    perkId: buildTargetPerkGroup.pickedPerkIds[pickedPerkIndex] ?? null,
-    perkName,
-  }))
+  return (
+    <div className={styles.detailStudyResourcePlan} data-testid="detail-study-resource-plan">
+      <p className={styles.detailMatchSectionLabel}>Study resource plan</p>
+      <div className={styles.detailStudyResourcePlanScopes}>
+        {mustHaveStrategy ? (
+          <BackgroundFitStudyResourcePlanScope
+            label="Must-have impact"
+            strategy={mustHaveStrategy}
+          />
+        ) : null}
+        {shouldShowFullBuildStrategy && fullBuildStrategy ? (
+          <BackgroundFitStudyResourcePlanScope
+            label="Full-build impact"
+            strategy={fullBuildStrategy}
+          />
+        ) : null}
+      </div>
+    </div>
+  )
 }
 
 const backgroundCampResourceModifierGroupOrder: LegendsBackgroundCampResourceModifierGroup[] = [
@@ -824,71 +867,327 @@ function renderBackgroundMetadataValues(values: readonly string[]) {
   )
 }
 
+type BackgroundTraitRelationship = 'excluded' | 'guaranteed'
+
+type BackgroundTraitTooltipState = {
+  anchorRectangle: TooltipAnchorRectangle
+  relationship: BackgroundTraitRelationship
+  trait: LegendsBackgroundTrait
+  traitId: string
+}
+
+const backgroundTraitTooltipSelector = '[data-background-trait-tooltip="true"]'
+
+function getBackgroundTraitId(
+  trait: LegendsBackgroundTrait,
+  relationship: BackgroundTraitRelationship,
+) {
+  return `${relationship}-${trait.traitName}-${trait.iconPath ?? 'no-icon'}`
+}
+
+function getBackgroundTraitRelationshipCopy(relationship: BackgroundTraitRelationship) {
+  return relationship === 'excluded'
+    ? 'This background excludes this trait, so recruits with this background cannot roll it.'
+    : 'This background grants this trait when the background is generated.'
+}
+
+function BackgroundTraitPill({
+  activeTraitTooltipId,
+  hoveredTraitId,
+  onCloseTraitHover,
+  onCloseTraitTooltip,
+  onOpenTraitHover,
+  onOpenTraitTooltip,
+  relationship,
+  trait,
+}: {
+  activeTraitTooltipId: string | undefined
+  hoveredTraitId: string | null
+  onCloseTraitHover: (traitId: string) => void
+  onCloseTraitTooltip: () => void
+  onOpenTraitHover: (traitId: string) => void
+  onOpenTraitTooltip: (
+    trait: LegendsBackgroundTrait,
+    relationship: BackgroundTraitRelationship,
+    traitId: string,
+    currentTarget: HTMLElement,
+  ) => void
+  relationship: BackgroundTraitRelationship
+  trait: LegendsBackgroundTrait
+}) {
+  const traitId = getBackgroundTraitId(trait, relationship)
+  const {
+    activeTooltipIndicatorPerkId,
+    clearPendingTooltip,
+    closeTooltipPreview,
+    openTooltipPreview,
+  } = useBuildPerkTooltipPreview({
+    hoveredBuildPerkId: hoveredTraitId,
+    onCloseHover: onCloseTraitHover,
+    onCloseTooltip: onCloseTraitTooltip,
+    onOpenHover: onOpenTraitHover,
+    onOpenTooltip: (openedTraitId, currentTarget) => {
+      onOpenTraitTooltip(trait, relationship, openedTraitId, currentTarget)
+    },
+    tooltipTargetSelector: backgroundTraitTooltipSelector,
+  })
+
+  return (
+    <button
+      aria-describedby={hoveredTraitId === traitId ? activeTraitTooltipId : undefined}
+      className={joinClassNames(buildPlannerStyles.plannerPill, styles.detailTraitPill)}
+      data-highlighted={hoveredTraitId === traitId}
+      data-testid="detail-background-trait-pill"
+      data-tooltip-pending={activeTooltipIndicatorPerkId === traitId}
+      onBlur={() => closeTooltipPreview(traitId)}
+      onClick={(event) => {
+        clearPendingTooltip()
+        onOpenTraitHover(traitId)
+        onOpenTraitTooltip(trait, relationship, traitId, event.currentTarget)
+      }}
+      onFocus={() => onOpenTraitHover(traitId)}
+      onKeyDown={(event) => {
+        if (event.key === 'Escape') {
+          closeTooltipPreview(traitId)
+        }
+      }}
+      onMouseEnter={(event) => openTooltipPreview(traitId, event.currentTarget)}
+      onMouseLeave={(event) => closeTooltipPreview(traitId, event.relatedTarget)}
+      type="button"
+    >
+      {trait.iconPath ? (
+        <img
+          alt=""
+          aria-hidden="true"
+          className={styles.detailTraitIcon}
+          data-testid="detail-background-trait-icon"
+          decoding="async"
+          loading="lazy"
+          src={`/game-icons/${trait.iconPath}`}
+        />
+      ) : (
+        <span
+          aria-hidden="true"
+          className={styles.detailTraitIcon}
+          data-placeholder="true"
+          data-testid="detail-background-trait-icon"
+        />
+      )}
+      <span>{trait.traitName}</span>
+    </button>
+  )
+}
+
+function BackgroundTraitTooltip({
+  onCloseTraitHover,
+  onCloseTraitTooltip,
+  tooltip,
+  tooltipId,
+}: {
+  onCloseTraitHover: (traitId: string) => void
+  onCloseTraitTooltip: () => void
+  tooltip: BackgroundTraitTooltipState
+  tooltipId: string
+}) {
+  const tooltipElement = (
+    <div
+      className={buildPlannerStyles.buildPerkTooltip}
+      data-background-trait-tooltip="true"
+      data-testid="detail-background-trait-tooltip"
+      id={tooltipId}
+      onMouseLeave={() => {
+        onCloseTraitTooltip()
+        onCloseTraitHover(tooltip.traitId)
+      }}
+      role="tooltip"
+      style={getAnchoredTooltipStyle(tooltip.anchorRectangle)}
+    >
+      <div className={buildPlannerStyles.buildPerkTooltipCopy}>
+        {tooltip.trait.description ? <p>{tooltip.trait.description}</p> : null}
+        <p>{getBackgroundTraitRelationshipCopy(tooltip.relationship)}</p>
+      </div>
+    </div>
+  )
+
+  return createPortal(tooltipElement, document.body)
+}
+
+function renderBackgroundMetadataTraits({
+  activeTraitTooltipId,
+  hoveredTraitId,
+  onCloseTraitHover,
+  onCloseTraitTooltip,
+  onOpenTraitHover,
+  onOpenTraitTooltip,
+  relationship,
+  traits,
+}: {
+  activeTraitTooltipId: string | undefined
+  hoveredTraitId: string | null
+  onCloseTraitHover: (traitId: string) => void
+  onCloseTraitTooltip: () => void
+  onOpenTraitHover: (traitId: string) => void
+  onOpenTraitTooltip: (
+    trait: LegendsBackgroundTrait,
+    relationship: BackgroundTraitRelationship,
+    traitId: string,
+    currentTarget: HTMLElement,
+  ) => void
+  relationship: BackgroundTraitRelationship
+  traits: readonly LegendsBackgroundTrait[]
+}) {
+  if (traits.length === 0) {
+    return <span className={styles.detailMetadataNone}>None</span>
+  }
+
+  return (
+    <ul className={styles.detailTraitPillList}>
+      {traits.map((trait) => (
+        <li key={`${relationship}-${trait.traitName}`}>
+          <BackgroundTraitPill
+            activeTraitTooltipId={activeTraitTooltipId}
+            hoveredTraitId={hoveredTraitId}
+            onCloseTraitHover={onCloseTraitHover}
+            onCloseTraitTooltip={onCloseTraitTooltip}
+            onOpenTraitHover={onOpenTraitHover}
+            onOpenTraitTooltip={onOpenTraitTooltip}
+            relationship={relationship}
+            trait={trait}
+          />
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function renderBackgroundMetadataScalar(value: number | null) {
+  if (value === null) {
+    return <span className={styles.detailMetadataNone}>None</span>
+  }
+
+  return <span className={styles.detailMetadataValueText}>{value}</span>
+}
+
+function BackgroundMetadataSubsection({ children, title }: { children: ReactNode; title: string }) {
+  return (
+    <section className={styles.detailMetadataSection}>
+      <h4 className={styles.detailMetadataHeading}>{title}</h4>
+      <div className={styles.detailMetadataBody}>{children}</div>
+    </section>
+  )
+}
+
 function BackgroundMetadataSection({ backgroundFit }: { backgroundFit: RankedBackgroundFit }) {
+  const backgroundTraitTooltipId = useId()
+  const [isExpanded, setIsExpanded] = useState(false)
+  const [hoveredTraitId, setHoveredTraitId] = useState<string | null>(null)
+  const [traitTooltip, setTraitTooltip] = useState<BackgroundTraitTooltipState | null>(null)
   const groupedCampResourceModifiers = getGroupedCampResourceModifiers(
     backgroundFit.campResourceModifiers,
   )
 
-  return (
-    <div
-      className={styles.detailSection}
-      data-testid="detail-background-metadata-section"
-    >
-      <h3>Background details</h3>
-      <div className={styles.detailMetadataContent}>
-        <dl className={styles.detailMetadataList}>
-          <div className={styles.detailMetadataRow}>
-            <dt>Daily cost</dt>
-            <dd>
-              {backgroundFit.dailyCost === null ? (
-                <span className={styles.detailMetadataNone}>None</span>
-              ) : (
-                backgroundFit.dailyCost
-              )}
-            </dd>
-          </div>
-          <div className={styles.detailMetadataRow}>
-            <dt>Background type</dt>
-            <dd>{renderBackgroundMetadataValues(backgroundFit.backgroundTypeNames)}</dd>
-          </div>
-          <div className={styles.detailMetadataRow}>
-            <dt>Excluded traits</dt>
-            <dd>{renderBackgroundMetadataValues(backgroundFit.excludedTraitNames)}</dd>
-          </div>
-          <div className={styles.detailMetadataRow}>
-            <dt>Guaranteed traits</dt>
-            <dd>{renderBackgroundMetadataValues(backgroundFit.guaranteedTraitNames)}</dd>
-          </div>
-          <div className={styles.detailMetadataRow}>
-            <dt>Excluded talent attributes</dt>
-            <dd>{renderBackgroundMetadataValues(backgroundFit.excludedTalentAttributeNames)}</dd>
-          </div>
-        </dl>
+  function closeTraitHover(traitId: string) {
+    setHoveredTraitId((currentTraitId) => (currentTraitId === traitId ? null : currentTraitId))
+  }
 
-        {groupedCampResourceModifiers.length > 0 ? (
-          <div
-            className={styles.detailCampResourceModifierGroups}
-            data-testid="detail-camp-resource-modifier-groups"
-          >
-            {groupedCampResourceModifiers.map(({ group, modifiers }) => (
-              <div className={styles.detailCampResourceModifierGroup} key={group}>
-                <h4>{backgroundCampResourceModifierGroupLabels[group]}</h4>
-                <ul className={styles.detailCampResourceModifierList}>
-                  {modifiers.map((modifier) => (
-                    <li key={modifier.modifierKey}>
-                      <span>{modifier.label}</span>
-                      <span className={styles.detailBadge}>
-                        {formatBackgroundCampResourceModifierValue(modifier)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+  function closeTraitTooltip() {
+    setTraitTooltip(null)
+  }
+
+  function openTraitTooltip(
+    trait: LegendsBackgroundTrait,
+    relationship: BackgroundTraitRelationship,
+    traitId: string,
+    currentTarget: HTMLElement,
+  ) {
+    setTraitTooltip({
+      anchorRectangle: currentTarget.getBoundingClientRect(),
+      relationship,
+      trait,
+      traitId,
+    })
+  }
+
+  function updateExpandedState(nextIsExpanded: boolean) {
+    if (!nextIsExpanded) {
+      setHoveredTraitId(null)
+      setTraitTooltip(null)
+    }
+
+    setIsExpanded(nextIsExpanded)
+  }
+
+  return (
+    <DetailCollapsibleSection
+      contentClassName={styles.detailMetadataSections}
+      contentTestId="detail-background-metadata-content"
+      defaultExpanded={false}
+      isExpanded={isExpanded}
+      onExpandedChange={updateExpandedState}
+      sectionLabel="Background details"
+      sectionTestId="detail-background-metadata-section"
+      toggleTestId="detail-background-metadata-toggle"
+    >
+      <BackgroundMetadataSubsection title="Daily cost">
+        {renderBackgroundMetadataScalar(backgroundFit.dailyCost)}
+      </BackgroundMetadataSubsection>
+      <BackgroundMetadataSubsection title="Background type">
+        {renderBackgroundMetadataValues(backgroundFit.backgroundTypeNames)}
+      </BackgroundMetadataSubsection>
+      <BackgroundMetadataSubsection title="Excluded traits">
+        {renderBackgroundMetadataTraits({
+          activeTraitTooltipId: traitTooltip === null ? undefined : backgroundTraitTooltipId,
+          hoveredTraitId,
+          onCloseTraitHover: closeTraitHover,
+          onCloseTraitTooltip: closeTraitTooltip,
+          onOpenTraitHover: setHoveredTraitId,
+          onOpenTraitTooltip: openTraitTooltip,
+          relationship: 'excluded',
+          traits: backgroundFit.excludedTraits,
+        })}
+      </BackgroundMetadataSubsection>
+      <BackgroundMetadataSubsection title="Guaranteed traits">
+        {renderBackgroundMetadataTraits({
+          activeTraitTooltipId: traitTooltip === null ? undefined : backgroundTraitTooltipId,
+          hoveredTraitId,
+          onCloseTraitHover: closeTraitHover,
+          onCloseTraitTooltip: closeTraitTooltip,
+          onOpenTraitHover: setHoveredTraitId,
+          onOpenTraitTooltip: openTraitTooltip,
+          relationship: 'guaranteed',
+          traits: backgroundFit.guaranteedTraits,
+        })}
+      </BackgroundMetadataSubsection>
+      <BackgroundMetadataSubsection title="Excluded talent attributes">
+        {renderBackgroundMetadataValues(backgroundFit.excludedTalentAttributeNames)}
+      </BackgroundMetadataSubsection>
+
+      {groupedCampResourceModifiers.map(({ group, modifiers }) => (
+        <BackgroundMetadataSubsection
+          key={group}
+          title={backgroundCampResourceModifierGroupLabels[group]}
+        >
+          <ul className={styles.detailCampResourceModifierList}>
+            {modifiers.map((modifier) => (
+              <li key={modifier.modifierKey}>
+                <span>{modifier.label}</span>
+                <span className={styles.detailBadge}>
+                  {formatBackgroundCampResourceModifierValue(modifier)}
+                </span>
+              </li>
             ))}
-          </div>
-        ) : null}
-      </div>
-    </div>
+          </ul>
+        </BackgroundMetadataSubsection>
+      ))}
+      {traitTooltip === null ? null : (
+        <BackgroundTraitTooltip
+          onCloseTraitHover={closeTraitHover}
+          onCloseTraitTooltip={closeTraitTooltip}
+          tooltip={traitTooltip}
+          tooltipId={backgroundTraitTooltipId}
+        />
+      )}
+    </DetailCollapsibleSection>
   )
 }
 
@@ -934,6 +1233,15 @@ function BackgroundFitOtherPerkGroupTile({
 }: BackgroundFitOtherPerkGroupInteractionProps & {
   otherPerkGroup: BackgroundFitOtherPerkGroup
 }) {
+  const otherPerkGroupPerks =
+    otherPerkGroup.perks.length === 0
+      ? [{ iconPath: null, perkId: null, perkName: 'No parsed perks' }]
+      : otherPerkGroup.perks.map((perk) => ({
+          iconPath: perk.iconPath,
+          perkId: perk.perkId,
+          perkName: perk.perkName,
+        }))
+
   return (
     <BuildPerkGroupTile
       arePerkGroupOptionsInteractive={false}
@@ -970,7 +1278,7 @@ function BackgroundFitOtherPerkGroupTile({
       onOpenBuildPerkHover={onOpenBuildPerkHover}
       onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
       onOpenPerkGroupHover={onOpenPerkGroupHover}
-      perks={[{ perkId: null, perkName: otherPerkGroup.categoryName }]}
+      perks={otherPerkGroupPerks}
     />
   )
 }
@@ -1004,19 +1312,85 @@ function BackgroundFitOtherPerkGroupList({
   )
 }
 
+function BackgroundFitRareOtherPerkGroupList({
+  otherPerkGroups,
+  ...interactionProps
+}: BackgroundFitOtherPerkGroupInteractionProps & {
+  otherPerkGroups: BackgroundFitOtherPerkGroup[]
+}) {
+  const rareOtherPerkGroupsSectionId = useId()
+  const [isExpanded, setIsExpanded] = useState(false)
+
+  if (otherPerkGroups.length === 0) {
+    return null
+  }
+
+  return (
+    <div
+      className={styles.detailOtherPerkGroupSection}
+      data-expanded={isExpanded}
+      data-testid="detail-rare-other-perk-groups"
+    >
+      <button
+        aria-controls={rareOtherPerkGroupsSectionId}
+        aria-expanded={isExpanded}
+        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} rare native perk groups`}
+        className={styles.detailOtherPerkGroupRareToggle}
+        data-testid="detail-rare-other-perk-groups-toggle"
+        onClick={() => {
+          setIsExpanded((wasExpanded) => !wasExpanded)
+        }}
+        title={`${isExpanded ? 'Collapse' : 'Expand'} rare native perk groups`}
+        type="button"
+      >
+        <PlannerSectionChevron
+          className={styles.detailOtherPerkGroupRareChevron}
+          isExpanded={isExpanded}
+        />
+        <span className={styles.detailMatchSectionLabel}>Rare possible groups under 1%</span>
+        <span
+          aria-label={`${otherPerkGroups.length} rare native perk groups`}
+          className={styles.detailOtherPerkGroupRareCount}
+          data-testid="detail-rare-other-perk-groups-count"
+        >
+          {otherPerkGroups.length}
+        </span>
+      </button>
+
+      {isExpanded ? (
+        <ul
+          className={styles.detailOtherPerkGroupList}
+          data-testid="detail-rare-other-perk-groups-list"
+          id={rareOtherPerkGroupsSectionId}
+        >
+          {otherPerkGroups.map((otherPerkGroup) => (
+            <li key={`${otherPerkGroup.categoryName}-${otherPerkGroup.perkGroupId}`}>
+              <BackgroundFitOtherPerkGroupTile
+                {...interactionProps}
+                otherPerkGroup={otherPerkGroup}
+              />
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
 function BackgroundFitOtherPerkGroupsSection({
   backgroundFit,
   ...interactionProps
 }: BackgroundFitOtherPerkGroupInteractionProps & {
   backgroundFit: RankedBackgroundFit
 }) {
-  const otherPerkGroupsSectionId = useId()
-  const [isExpanded, setIsExpanded] = useState(false)
   const guaranteedOtherPerkGroups = backgroundFit.otherPerkGroups.filter(
     (otherPerkGroup) => otherPerkGroup.isGuaranteed,
   )
   const possibleOtherPerkGroups = backgroundFit.otherPerkGroups.filter(
-    (otherPerkGroup) => !otherPerkGroup.isGuaranteed,
+    (otherPerkGroup) => !otherPerkGroup.isGuaranteed && otherPerkGroup.probability >= 0.01,
+  )
+  const rareOtherPerkGroups = backgroundFit.otherPerkGroups.filter(
+    (otherPerkGroup) => !otherPerkGroup.isGuaranteed && otherPerkGroup.probability < 0.01,
   )
 
   if (backgroundFit.otherPerkGroups.length === 0) {
@@ -1024,58 +1398,35 @@ function BackgroundFitOtherPerkGroupsSection({
   }
 
   return (
-    <div
-      className={styles.detailCollapsibleSection}
-      data-expanded={isExpanded}
-      data-testid="detail-other-perk-groups"
+    <DetailCollapsibleSection
+      contentClassName={styles.detailOtherPerkGroupContent}
+      contentTestId="detail-other-perk-groups-section"
+      count={backgroundFit.otherPerkGroups.length}
+      countLabel={`${backgroundFit.otherPerkGroups.length} other native perk groups`}
+      defaultExpanded={false}
+      sectionLabel="Other native perk groups"
+      sectionTestId="detail-other-perk-groups"
+      toggleTestId="detail-other-perk-groups-toggle"
     >
-      <button
-        aria-controls={otherPerkGroupsSectionId}
-        aria-expanded={isExpanded}
-        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} other native perk groups`}
-        className={styles.detailCollapsibleToggle}
-        data-testid="detail-other-perk-groups-toggle"
-        onClick={() => {
-          setIsExpanded((wasExpanded) => !wasExpanded)
-        }}
-        title={`${isExpanded ? 'Collapse' : 'Expand'} other native perk groups`}
-        type="button"
-      >
-        <PlannerSectionChevron
-          className={styles.detailCollapsibleChevron}
-          isExpanded={isExpanded}
-        />
-        <span className={styles.detailCollapsibleToggleHeading}>Other native perk groups</span>
-        <span
-          aria-label={`${backgroundFit.otherPerkGroups.length} other native perk groups`}
-          className={styles.detailCollapsibleToggleCount}
-          data-testid="detail-other-perk-groups-count"
-        >
-          {backgroundFit.otherPerkGroups.length}
-        </span>
-      </button>
-
-      {isExpanded ? (
-        <div
-          aria-label="Other native perk groups"
-          className={styles.detailOtherPerkGroupContent}
-          data-testid="detail-other-perk-groups-section"
-          id={otherPerkGroupsSectionId}
-          role="region"
-        >
-          <BackgroundFitOtherPerkGroupList
-            {...interactionProps}
-            label="Guaranteed"
-            otherPerkGroups={guaranteedOtherPerkGroups}
-          />
-          <BackgroundFitOtherPerkGroupList
-            {...interactionProps}
-            label="Possible"
-            otherPerkGroups={possibleOtherPerkGroups}
-          />
-        </div>
-      ) : null}
-    </div>
+      <p className={styles.detailOtherPerkGroupDescription}>
+        Native perk groups this background can get outside the current build. Skill books and
+        ancient scrolls are not included.
+      </p>
+      <BackgroundFitOtherPerkGroupList
+        {...interactionProps}
+        label="Guaranteed"
+        otherPerkGroups={guaranteedOtherPerkGroups}
+      />
+      <BackgroundFitOtherPerkGroupList
+        {...interactionProps}
+        label="Possible"
+        otherPerkGroups={possibleOtherPerkGroups}
+      />
+      <BackgroundFitRareOtherPerkGroupList
+        {...interactionProps}
+        otherPerkGroups={rareOtherPerkGroups}
+      />
+    </DetailCollapsibleSection>
   )
 }
 
@@ -1105,7 +1456,6 @@ function BackgroundDetail({
   pickedPerkCount,
   rank,
   studyResourceFilter,
-  supportedBuildTargetPerkGroups,
 }: {
   backgroundFit: RankedBackgroundFit
   detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
@@ -1136,7 +1486,6 @@ function BackgroundDetail({
   pickedPerkCount: number
   rank: number
   studyResourceFilter: BackgroundStudyResourceFilter
-  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }) {
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
@@ -1153,16 +1502,6 @@ function BackgroundDetail({
     ...backgroundFit,
     matches: getScopedBackgroundFitMatches(backgroundFit.matches, optionalPickedPerkIds),
   }
-  const buildTargetPerkGroupByKey = new Map(
-    supportedBuildTargetPerkGroups.map((buildTargetPerkGroup) => [
-      getBuildTargetPerkGroupKey(buildTargetPerkGroup),
-      buildTargetPerkGroup,
-    ]),
-  )
-  const optionalStudyResourceRequirementEntries = getAdditionalStudyResourceRequirementEntries({
-    baseStudyResourceRequirementProfile: backgroundFit.mustHaveStudyResourceRequirement,
-    fullStudyResourceRequirementProfile: backgroundFit.fullBuildStudyResourceRequirement,
-  })
 
   return (
     <>
@@ -1194,10 +1533,12 @@ function BackgroundDetail({
         title={backgroundFit.backgroundName}
       />
 
-      <BackgroundMetadataSection backgroundFit={backgroundFit} />
+      <BackgroundMetadataSection
+        key={`metadata-${getBackgroundFitKey(backgroundFit)}`}
+        backgroundFit={backgroundFit}
+      />
 
-      <div className={styles.detailSection} data-testid="detail-section">
-        <h3>Background fit</h3>
+      <DetailCollapsibleSection defaultExpanded sectionLabel="Background fit">
         <BackgroundFitMetricSummary
           backgroundFit={backgroundFit}
           mustHavePickedPerkCount={mustHavePickedPerkCount}
@@ -1208,135 +1549,93 @@ function BackgroundDetail({
         <BackgroundFitChanceBreakdown
           entries={backgroundFit.mustHaveStudyResourceChanceBreakdown}
         />
-      </div>
+        <BackgroundFitStudyResourcePlan
+          fullBuildStrategy={backgroundFit.fullBuildStudyResourceStrategy}
+          mustHaveStrategy={backgroundFit.mustHaveStudyResourceStrategy}
+          optionalPickedPerkCount={optionalPickedPerkCount}
+        />
+      </DetailCollapsibleSection>
 
-      <div className={styles.detailSection} data-testid="detail-section">
-        <h3>Matched perk groups</h3>
-        <div className={styles.detailBackgroundFitMatchColumns}>
-          <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="must-have">
-            <span
-              aria-label="Must-have perk groups"
-              className={styles.detailRequirementChainOverlay}
-              data-testid="detail-requirement-chain-overlay"
-              role="img"
-              title="Must-have perk groups"
-            >
-              <img
-                alt=""
-                aria-hidden="true"
-                className={styles.detailRequirementChainImage}
-                draggable={false}
-                src={catenaryChainIconPath}
-              />
-            </span>
-            <div className={styles.detailBackgroundFitMatchColumnHeader}>
-              <h4>Must-have</h4>
-            </div>
-            <BackgroundFitMatchSections
-              backgroundFit={mustHaveBackgroundFit}
-              emphasizedCategoryNames={emphasizedCategoryNames}
-              emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-              hoveredBuildPerkId={hoveredBuildPerkId}
-              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-              hoveredPerkId={hoveredPerkId}
-              onCloseBuildPerkHover={onCloseBuildPerkHover}
-              onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-              onClosePerkGroupHover={onClosePerkGroupHover}
-              onInspectPerkGroup={onInspectPerkGroup}
-              onInspectPlannerPerk={onInspectPerk}
-              onOpenBuildPerkHover={onOpenBuildPerkHover}
-              onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-              onOpenPerkGroupHover={onOpenPerkGroupHover}
+      <DetailCollapsibleSection
+        contentClassName={styles.detailBackgroundFitMatchColumns}
+        defaultExpanded
+        sectionLabel="Matched perk groups"
+      >
+        <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="must-have">
+          <span
+            aria-label="Must-have perk groups"
+            className={styles.detailRequirementChainOverlay}
+            data-testid="detail-requirement-chain-overlay"
+            role="img"
+            title="Must-have perk groups"
+          >
+            <img
+              alt=""
+              aria-hidden="true"
+              className={styles.detailRequirementChainImage}
+              draggable={false}
+              src={catenaryChainIconPath}
             />
-            <StudyResourceRequirementList
-              buildTargetPerkGroupByKey={buildTargetPerkGroupByKey}
-              emptyMessage="No book or scroll needed for must-have perks."
-              emphasizedCategoryNames={emphasizedCategoryNames}
-              emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-              entries={getStudyResourceRequirementEntries(
-                backgroundFit.mustHaveStudyResourceRequirement,
-              )}
-              hoveredBuildPerkId={hoveredBuildPerkId}
-              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-              hoveredPerkId={hoveredPerkId}
-              onCloseBuildPerkHover={onCloseBuildPerkHover}
-              onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-              onClosePerkGroupHover={onClosePerkGroupHover}
-              onInspectPerk={onInspectPerk}
-              onInspectPerkGroup={onInspectPerkGroup}
-              onOpenBuildPerkHover={onOpenBuildPerkHover}
-              onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-              onOpenPerkGroupHover={onOpenPerkGroupHover}
-              sectionLabel="Must-have study route"
-            />
+          </span>
+          <div className={styles.detailBackgroundFitMatchColumnHeader}>
+            <h4>Must-have</h4>
           </div>
-          <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="optional">
-            <span
-              aria-label="Optional perk groups"
-              className={styles.detailRequirementOptionalOverlay}
-              data-testid="detail-requirement-optional-overlay"
-              role="img"
-              title="Optional perk groups"
-            >
-              <Split aria-hidden="true" className={styles.detailRequirementOptionalIcon} />
-            </span>
-            <div className={styles.detailBackgroundFitMatchColumnHeader}>
-              <h4>Optional</h4>
-            </div>
-            <BackgroundFitMatchSections
-              backgroundFit={optionalBackgroundFit}
-              emphasizedCategoryNames={emphasizedCategoryNames}
-              emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-              hoveredBuildPerkId={hoveredBuildPerkId}
-              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-              hoveredPerkId={hoveredPerkId}
-              onCloseBuildPerkHover={onCloseBuildPerkHover}
-              onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-              onClosePerkGroupHover={onClosePerkGroupHover}
-              onInspectPerkGroup={onInspectPerkGroup}
-              onInspectPlannerPerk={onInspectPerk}
-              onOpenBuildPerkHover={onOpenBuildPerkHover}
-              onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-              onOpenPerkGroupHover={onOpenPerkGroupHover}
-            />
-            <StudyResourceRequirementList
-              buildTargetPerkGroupByKey={buildTargetPerkGroupByKey}
-              emptyMessage={
-                optionalPickedPerkIds.length === 0
-                  ? 'No optional perks in this build.'
-                  : 'No separate optional-only book or scroll route.'
-              }
-              emphasizedCategoryNames={emphasizedCategoryNames}
-              emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-              selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-              selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-              entries={optionalStudyResourceRequirementEntries}
-              hoveredBuildPerkId={hoveredBuildPerkId}
-              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-              hoveredPerkId={hoveredPerkId}
-              onCloseBuildPerkHover={onCloseBuildPerkHover}
-              onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-              onClosePerkGroupHover={onClosePerkGroupHover}
-              onInspectPerk={onInspectPerk}
-              onInspectPerkGroup={onInspectPerkGroup}
-              onOpenBuildPerkHover={onOpenBuildPerkHover}
-              onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-              onOpenPerkGroupHover={onOpenPerkGroupHover}
-              sectionLabel="Additional optional-only study route"
-            />
-          </div>
+          <BackgroundFitMatchSections
+            backgroundFit={mustHaveBackgroundFit}
+            emphasizedCategoryNames={emphasizedCategoryNames}
+            emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+            selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+            selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+            hoveredBuildPerkId={hoveredBuildPerkId}
+            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+            hoveredPerkId={hoveredPerkId}
+            onCloseBuildPerkHover={onCloseBuildPerkHover}
+            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+            onClosePerkGroupHover={onClosePerkGroupHover}
+            onInspectPerkGroup={onInspectPerkGroup}
+            onInspectPlannerPerk={onInspectPerk}
+            onOpenBuildPerkHover={onOpenBuildPerkHover}
+            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+            onOpenPerkGroupHover={onOpenPerkGroupHover}
+          />
         </div>
-      </div>
+        <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="optional">
+          <span
+            aria-label="Optional perk groups"
+            className={styles.detailRequirementOptionalOverlay}
+            data-testid="detail-requirement-optional-overlay"
+            role="img"
+            title="Optional perk groups"
+          >
+            <Split aria-hidden="true" className={styles.detailRequirementOptionalIcon} />
+          </span>
+          <div className={styles.detailBackgroundFitMatchColumnHeader}>
+            <h4>Optional</h4>
+          </div>
+          <BackgroundFitMatchSections
+            backgroundFit={optionalBackgroundFit}
+            emphasizedCategoryNames={emphasizedCategoryNames}
+            emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+            selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+            selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+            hoveredBuildPerkId={hoveredBuildPerkId}
+            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+            hoveredPerkId={hoveredPerkId}
+            onCloseBuildPerkHover={onCloseBuildPerkHover}
+            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+            onClosePerkGroupHover={onClosePerkGroupHover}
+            onInspectPerkGroup={onInspectPerkGroup}
+            onInspectPlannerPerk={onInspectPerk}
+            onOpenBuildPerkHover={onOpenBuildPerkHover}
+            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
+            onOpenPerkGroupHover={onOpenPerkGroupHover}
+          />
+        </div>
+      </DetailCollapsibleSection>
 
       <BackgroundFitOtherPerkGroupsSection
         backgroundFit={backgroundFit}
-        key={getBackgroundFitKey(backgroundFit)}
+        key={`other-perk-groups-${getBackgroundFitKey(backgroundFit)}`}
         emphasizedCategoryNames={emphasizedCategoryNames}
         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
         selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
