@@ -363,8 +363,8 @@
     }
 
     &[data-collapsed-chip='true'] {
-      width: max-content;
-      max-width: var(--planner-collapsed-section-toggle-max-width);
+      width: min(100%, var(--planner-row-label-width));
+      max-width: min(100%, var(--planner-collapsed-section-toggle-max-width));
       border-color: var(--border-muted);
       padding: var(--space-3xs) var(--space-xs);
       background: var(--surface-control);
@@ -373,6 +373,9 @@
 
   .plannerSectionToggleLabel {
     min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .plannerSectionChevron {

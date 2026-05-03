@@ -660,7 +660,14 @@ describe('background details study resources', () => {
     ).toBeVisible()
     expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
     expect(within(studyResourcePlan).getByText('Calm')).toBeVisible()
-    expect(within(studyResourcePlan).getByText('Covers Clarity')).toBeVisible()
+    expect(within(studyResourcePlan).getByText('Covers')).toBeVisible()
+    const coveredClarityPill = within(studyResourcePlan).getByRole('button', { name: 'Clarity' })
+
+    expect(coveredClarityPill).toBeVisible()
+    expect(within(coveredClarityPill).getByTestId('planner-pill-icon')).toHaveAttribute(
+      'src',
+      '/game-icons/ui/perks/clarity.png',
+    )
     expect(screen.queryByText('Must-have study route')).not.toBeInTheDocument()
     expect(screen.queryByTestId('detail-study-resource-tile-frame')).not.toBeInTheDocument()
   })
@@ -825,6 +832,40 @@ describe('background details study resources', () => {
       supportedBuildTargetPerkGroups: [
         {
           categoryName: 'Defense',
+          pickedPerkCount: 2,
+          pickedPerkIconPaths: ['ui/perks/perfect_fit.png', 'ui/perks/lithe.png'],
+          pickedPerkIds: ['perk.legend_perfect_fit', 'perk.legend_lithe'],
+          pickedPerkNames: ['Perfect Fit', 'Lithe'],
+          perkGroupIconPath: 'ui/perks/perk_22.png',
+          perkGroupId: 'MediumDefenseTree',
+          perkGroupName: 'Medium Armor',
+        },
+        {
+          categoryName: 'Traits',
+          pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/athlete.png'],
+          pickedPerkIds: ['perk.legend_athlete'],
+          pickedPerkNames: ['Athlete'],
+          perkGroupIconPath: 'ui/perks/perk_31.png',
+          perkGroupId: 'FitTree',
+          perkGroupName: 'Fit',
+        },
+        {
+          categoryName: 'Magic',
+          pickedPerkCount: 3,
+          pickedPerkIconPaths: [
+            'ui/perks/muscularity.png',
+            'ui/perks/brawny.png',
+            'ui/perks/colossus.png',
+          ],
+          pickedPerkIds: ['perk.legend_muscularity', 'perk.legend_brawny', 'perk.legend_colossus'],
+          pickedPerkNames: ['Muscularity', 'Brawny', 'Colossus'],
+          perkGroupIconPath: 'ui/perks/perk_37.png',
+          perkGroupId: 'BerserkerMagicTree',
+          perkGroupName: 'Berserker',
+        },
+        {
+          categoryName: 'Defense',
           pickedPerkCount: 1,
           pickedPerkIconPaths: ['ui/perks/brawny.png'],
           pickedPerkIds: ['perk.legend_brawny'],
@@ -843,6 +884,18 @@ describe('background details study resources', () => {
     expect(within(studyResourcePlan).getByText('Skill book:')).toBeVisible()
     expect(within(studyResourcePlan).getByText('Medium Armor or Fit')).toBeVisible()
     expect(within(studyResourcePlan).queryByText('Heavy Armor')).not.toBeInTheDocument()
+    const scrollCoveredPerks = within(studyResourcePlan).getByRole('list', {
+      name: 'Covered perks for ancient scroll',
+    })
+
+    expect(within(scrollCoveredPerks).getByRole('button', { name: 'Muscularity' })).toBeVisible()
+    expect(within(scrollCoveredPerks).getByRole('button', { name: 'Brawny' })).toBeVisible()
+    expect(within(scrollCoveredPerks).getByRole('button', { name: 'Colossus' })).toBeVisible()
+    expect(
+      within(within(scrollCoveredPerks).getByRole('button', { name: 'Muscularity' })).getByTestId(
+        'planner-pill-icon',
+      ),
+    ).toHaveAttribute('src', '/game-icons/ui/perks/muscularity.png')
     expect(screen.getByRole('button', { name: 'Select perk group Heavy Armor' })).toBeVisible()
   })
 })

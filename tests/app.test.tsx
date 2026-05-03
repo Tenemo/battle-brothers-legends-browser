@@ -328,13 +328,13 @@ describe('app', () => {
       name: 'Allow two scrolls',
     })
     const everyTwoVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
-      name: 'Every 2 veteran levels',
+      name: 'Perk every 2 veteran levels',
     })
     const everyThreeVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
-      name: 'Every 3 veteran levels',
+      name: 'Perk every 3 veteran levels',
     })
     const everyFourVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
-      name: 'Every 4 veteran levels',
+      name: 'Perk every 4 veteran levels',
     })
 
     expect(allowBookCheckbox).toBeChecked()

@@ -131,15 +131,15 @@ describe('background fit panel filters', () => {
       'title',
       'Counts a second ancient scroll when Bright is available and the first scroll is allowed.',
     )
-    expect(getFilterOptionLabel('Every 2 veteran levels')).toHaveAttribute(
+    expect(getFilterOptionLabel('Perk every 2 veteran levels')).toHaveAttribute(
       'title',
       'Shows backgrounds that gain 1 perk point every 2 veteran levels after level 12.',
     )
-    expect(getFilterOptionLabel('Every 3 veteran levels')).toHaveAttribute(
+    expect(getFilterOptionLabel('Perk every 3 veteran levels')).toHaveAttribute(
       'title',
       'Shows backgrounds that gain 1 perk point every 3 veteran levels after level 12.',
     )
-    expect(getFilterOptionLabel('Every 4 veteran levels')).toHaveAttribute(
+    expect(getFilterOptionLabel('Perk every 4 veteran levels')).toHaveAttribute(
       'title',
       'Shows backgrounds that gain 1 perk point every 4 veteran levels after level 12.',
     )

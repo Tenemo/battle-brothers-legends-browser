@@ -890,6 +890,38 @@ test('collapses and restores build planner perk group sections independently', a
 
   expect(collapsedToggleGap).not.toBeNull()
   expect(collapsedToggleGap!).toBeGreaterThanOrEqual(6)
+  const collapsedToggleTrackBoundaryMetrics = await page.evaluate(() => {
+    const firstPickedPerkTile = document.querySelector<HTMLElement>(
+      '[data-testid="planner-slot-perk"]',
+    )
+    const collapsedToggles = [
+      ...document.querySelectorAll<HTMLElement>(
+        '[data-testid="planner-section-toggle"][aria-expanded="false"]',
+      ),
+    ]
+
+    if (!(firstPickedPerkTile instanceof HTMLElement) || collapsedToggles.length !== 2) {
+      return null
+    }
+
+    const firstPickedPerkTileLeft = firstPickedPerkTile.getBoundingClientRect().left
+
+    return collapsedToggles.map((collapsedToggle) => {
+      const collapsedToggleRectangle = collapsedToggle.getBoundingClientRect()
+
+      return {
+        firstPickedPerkTileLeft,
+        right: collapsedToggleRectangle.right,
+      }
+    })
+  })
+
+  expect(collapsedToggleTrackBoundaryMetrics).not.toBeNull()
+  for (const collapsedToggleMetrics of collapsedToggleTrackBoundaryMetrics!) {
+    expect(collapsedToggleMetrics.right).toBeLessThanOrEqual(
+      collapsedToggleMetrics.firstPickedPerkTileLeft,
+    )
+  }
 
   await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
   await page.getByRole('button', { name: 'Expand perk groups for individual perks' }).click()

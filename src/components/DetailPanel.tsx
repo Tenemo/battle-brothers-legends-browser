@@ -54,7 +54,7 @@ import {
   BackgroundFitStudyResourceBadges,
 } from './BackgroundFitCard'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
-import type { BuildPerkPillSelection } from './BuildPerkPill'
+import { BuildPerkPill, type BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton, PlannerSectionChevron, type BuildRequirement } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import buildPlannerStyles from './BuildPlanner.module.scss'
@@ -208,6 +208,7 @@ export function DetailPanel({
   selectedPerkRequirement,
   selectedPerk,
   studyResourceFilter,
+  supportedBuildTargetPerkGroups,
 }: DetailPanelProps) {
   const displayedBackgroundFitDetail =
     selectedDetailType === 'background' ? selectedBackgroundFitDetail : null
@@ -267,6 +268,7 @@ export function DetailPanel({
             pickedPerkCount={pickedPerkCount}
             rank={displayedBackgroundFitDetail.rank}
             studyResourceFilter={studyResourceFilter}
+            supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
           />
         ) : selectedPerk === null ? (
           <div className={sharedStyles.emptyState} data-testid="empty-state">
@@ -711,24 +713,91 @@ function getStudyResourceStrategyResourceLabel(
   return resourceKind === 'book' ? 'Skill book' : 'Ancient scroll'
 }
 
-function getUniqueStudyResourceStrategyCoveredPerkNames(
-  targets: BackgroundFitStudyResourceStrategyTarget[],
-): string[] {
-  const coveredPerkNames: string[] = []
-  const coveredPerkNameSet = new Set<string>()
+type StudyResourceStrategyCoveredPerk = {
+  iconPath: string | null
+  perkGroupSelection: BuildPerkPillSelection
+  perkId: string
+  perkName: string
+}
+
+type StudyResourcePlanPerkInteractionProps = {
+  hoveredBuildPerkId: string | null
+  hoveredBuildPerkTooltipId: string | undefined
+  hoveredPerkId: string | null
+  onCloseBuildPerkHover: (perkId: string) => void
+  onCloseBuildPerkTooltip: () => void
+  onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
+  onOpenBuildPerkTooltip: (
+    perkId: string,
+    currentTarget: HTMLElement,
+    perkGroupSelection?: BuildPerkPillSelection,
+  ) => void
+}
+
+function findBuildTargetPerkGroupForCoveredPerk({
+  perkId,
+  supportedBuildTargetPerkGroups,
+  target,
+}: {
+  perkId: string
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+  target: BackgroundFitStudyResourceStrategyTarget
+}): BuildTargetPerkGroup | undefined {
+  return (
+    supportedBuildTargetPerkGroups.find(
+      (buildTargetPerkGroup) =>
+        buildTargetPerkGroup.categoryName === target.categoryName &&
+        buildTargetPerkGroup.perkGroupId === target.perkGroupId &&
+        buildTargetPerkGroup.pickedPerkIds.includes(perkId),
+    ) ??
+    supportedBuildTargetPerkGroups.find((buildTargetPerkGroup) =>
+      buildTargetPerkGroup.pickedPerkIds.includes(perkId),
+    )
+  )
+}
+
+function getStudyResourceStrategyCoveredPerks({
+  supportedBuildTargetPerkGroups,
+  targets,
+}: {
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+  targets: BackgroundFitStudyResourceStrategyTarget[]
+}): StudyResourceStrategyCoveredPerk[] {
+  const coveredPerks: StudyResourceStrategyCoveredPerk[] = []
+  const coveredPerkIdSet = new Set<string>()
 
   for (const target of targets) {
-    for (const coveredPickedPerkName of target.coveredPickedPerkNames) {
-      if (coveredPerkNameSet.has(coveredPickedPerkName)) {
+    for (const [coveredPerkIndex, coveredPickedPerkId] of target.coveredPickedPerkIds.entries()) {
+      if (coveredPerkIdSet.has(coveredPickedPerkId)) {
         continue
       }
 
-      coveredPerkNameSet.add(coveredPickedPerkName)
-      coveredPerkNames.push(coveredPickedPerkName)
+      const buildTargetPerkGroup = findBuildTargetPerkGroupForCoveredPerk({
+        perkId: coveredPickedPerkId,
+        supportedBuildTargetPerkGroups,
+        target,
+      })
+      const buildTargetPerkIndex =
+        buildTargetPerkGroup?.pickedPerkIds.indexOf(coveredPickedPerkId) ?? -1
+
+      coveredPerkIdSet.add(coveredPickedPerkId)
+      coveredPerks.push({
+        iconPath:
+          buildTargetPerkIndex >= 0
+            ? (buildTargetPerkGroup?.pickedPerkIconPaths[buildTargetPerkIndex] ?? null)
+            : null,
+        perkGroupSelection: {
+          categoryName: target.categoryName,
+          perkGroupId: target.perkGroupId,
+        },
+        perkId: coveredPickedPerkId,
+        perkName: target.coveredPickedPerkNames[coveredPerkIndex] ?? coveredPickedPerkId,
+      })
     }
   }
 
-  return coveredPerkNames
+  return coveredPerks
 }
 
 function areStudyResourceStrategyTargetSetsEqual(
@@ -766,12 +835,22 @@ function areStudyResourceStrategiesEquivalent(
 }
 
 function BackgroundFitStudyResourcePlanRow({
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
+  hoveredPerkId,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
+  onInspectPerk,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
   resourceKind,
   strategy,
+  supportedBuildTargetPerkGroups,
 }: {
   resourceKind: StudyResourceStrategyResourceKind
   strategy: BackgroundFitStudyResourceStrategy
-}) {
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+} & StudyResourcePlanPerkInteractionProps) {
   const targets = getStudyResourceStrategyTargets({ resourceKind, strategy })
 
   if (targets.length === 0) {
@@ -780,7 +859,10 @@ function BackgroundFitStudyResourcePlanRow({
 
   const resourceLabel = getStudyResourceStrategyResourceLabel(resourceKind)
   const targetNames = formatStudyResourceStrategyTargetNames(targets)
-  const coveredPerkNames = getUniqueStudyResourceStrategyCoveredPerkNames(targets)
+  const coveredPerks = getStudyResourceStrategyCoveredPerks({
+    supportedBuildTargetPerkGroups,
+    targets,
+  })
 
   return (
     <div
@@ -804,10 +886,33 @@ function BackgroundFitStudyResourcePlanRow({
             <span>, depending on native roll</span>
           ) : null}
         </p>
-        {coveredPerkNames.length > 0 ? (
-          <p className={styles.detailStudyResourcePlanSupport}>
-            Covers {coveredPerkNames.join(', ')}
-          </p>
+        {coveredPerks.length > 0 ? (
+          <div className={styles.detailStudyResourcePlanSupport}>
+            <span className={styles.detailStudyResourcePlanSupportLabel}>Covers</span>
+            <ul
+              aria-label={`Covered perks for ${resourceLabel.toLowerCase()}`}
+              className={styles.detailStudyResourceCoveredPerkList}
+            >
+              {coveredPerks.map((coveredPerk) => (
+                <li key={`${resourceKind}-${coveredPerk.perkId}`}>
+                  <BuildPerkPill
+                    hoveredBuildPerkId={hoveredBuildPerkId}
+                    hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+                    hoveredPerkId={hoveredPerkId}
+                    onCloseHover={onCloseBuildPerkHover}
+                    onCloseTooltip={onCloseBuildPerkTooltip}
+                    onInspectPerk={onInspectPerk}
+                    onOpenHover={onOpenBuildPerkHover}
+                    onOpenTooltip={onOpenBuildPerkTooltip}
+                    perkGroupSelection={coveredPerk.perkGroupSelection}
+                    perkIconPath={coveredPerk.iconPath}
+                    perkId={coveredPerk.perkId}
+                    perkName={coveredPerk.perkName}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
         ) : null}
       </div>
     </div>
@@ -817,10 +922,12 @@ function BackgroundFitStudyResourcePlanRow({
 function BackgroundFitStudyResourcePlanScope({
   label,
   strategy,
+  ...interactionProps
 }: {
   label: string
   strategy: BackgroundFitStudyResourceStrategy
-}) {
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+} & StudyResourcePlanPerkInteractionProps) {
   return (
     <section
       aria-label={label}
@@ -829,8 +936,16 @@ function BackgroundFitStudyResourcePlanScope({
     >
       <h5 className={styles.detailStudyResourcePlanScopeHeading}>{label}</h5>
       <div className={styles.detailStudyResourcePlanRows}>
-        <BackgroundFitStudyResourcePlanRow resourceKind="scroll" strategy={strategy} />
-        <BackgroundFitStudyResourcePlanRow resourceKind="book" strategy={strategy} />
+        <BackgroundFitStudyResourcePlanRow
+          {...interactionProps}
+          resourceKind="scroll"
+          strategy={strategy}
+        />
+        <BackgroundFitStudyResourcePlanRow
+          {...interactionProps}
+          resourceKind="book"
+          strategy={strategy}
+        />
       </div>
     </section>
   )
@@ -838,13 +953,23 @@ function BackgroundFitStudyResourcePlanScope({
 
 function BackgroundFitStudyResourcePlan({
   fullBuildStrategy,
+  hoveredBuildPerkId,
+  hoveredBuildPerkTooltipId,
+  hoveredPerkId,
   mustHaveStrategy,
+  onCloseBuildPerkHover,
+  onCloseBuildPerkTooltip,
+  onInspectPerk,
+  onOpenBuildPerkHover,
+  onOpenBuildPerkTooltip,
   optionalPickedPerkCount,
+  supportedBuildTargetPerkGroups,
 }: {
   fullBuildStrategy?: BackgroundFitStudyResourceStrategy
   mustHaveStrategy?: BackgroundFitStudyResourceStrategy
   optionalPickedPerkCount: number
-}) {
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+} & StudyResourcePlanPerkInteractionProps) {
   const shouldShowFullBuildStrategy =
     optionalPickedPerkCount > 0 &&
     fullBuildStrategy !== undefined &&
@@ -860,14 +985,32 @@ function BackgroundFitStudyResourcePlan({
       <div className={styles.detailStudyResourcePlanScopes}>
         {mustHaveStrategy ? (
           <BackgroundFitStudyResourcePlanScope
+            hoveredBuildPerkId={hoveredBuildPerkId}
+            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+            hoveredPerkId={hoveredPerkId}
             label="Must-have impact"
+            onCloseBuildPerkHover={onCloseBuildPerkHover}
+            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+            onInspectPerk={onInspectPerk}
+            onOpenBuildPerkHover={onOpenBuildPerkHover}
+            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
             strategy={mustHaveStrategy}
+            supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
           />
         ) : null}
         {shouldShowFullBuildStrategy && fullBuildStrategy ? (
           <BackgroundFitStudyResourcePlanScope
+            hoveredBuildPerkId={hoveredBuildPerkId}
+            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+            hoveredPerkId={hoveredPerkId}
             label="Full-build impact"
+            onCloseBuildPerkHover={onCloseBuildPerkHover}
+            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+            onInspectPerk={onInspectPerk}
+            onOpenBuildPerkHover={onOpenBuildPerkHover}
+            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
             strategy={fullBuildStrategy}
+            supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
           />
         ) : null}
       </div>
@@ -1619,6 +1762,7 @@ function BackgroundDetail({
   pickedPerkCount,
   rank,
   studyResourceFilter,
+  supportedBuildTargetPerkGroups,
 }: {
   backgroundFit: RankedBackgroundFit
   detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
@@ -1654,6 +1798,7 @@ function BackgroundDetail({
   pickedPerkCount: number
   rank: number
   studyResourceFilter: BackgroundStudyResourceFilter
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }) {
   const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
   const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
@@ -1742,8 +1887,17 @@ function BackgroundDetail({
         </div>
         <BackgroundFitStudyResourcePlan
           fullBuildStrategy={backgroundFit.fullBuildStudyResourceStrategy}
+          hoveredBuildPerkId={hoveredBuildPerkId}
+          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
+          hoveredPerkId={hoveredPerkId}
           mustHaveStrategy={backgroundFit.mustHaveStudyResourceStrategy}
+          onCloseBuildPerkHover={onCloseBuildPerkHover}
+          onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
+          onInspectPerk={onInspectPerk}
+          onOpenBuildPerkHover={onOpenBuildPerkHover}
+          onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
           optionalPickedPerkCount={optionalPickedPerkCount}
+          supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
         />
       </DetailCollapsibleSection>
 

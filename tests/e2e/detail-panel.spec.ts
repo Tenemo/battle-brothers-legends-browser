@@ -316,6 +316,9 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const mustHaveStudyResourcePlan = studyResourcePlan
     .getByTestId('detail-study-resource-plan-scope')
     .filter({ hasText: 'Must-have impact' })
+  const fullBuildStudyResourcePlan = studyResourcePlan
+    .getByTestId('detail-study-resource-plan-scope')
+    .filter({ hasText: 'Full-build impact' })
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Peddler' })).toBeVisible()
   await expect(chanceBreakdown).toBeVisible()
@@ -351,6 +354,28 @@ test('shows the dominant study resource strategy for the reported Peddler build'
 
     return plan.getBoundingClientRect().top - previousElement.getBoundingClientRect().bottom
   })
+  const studyResourceScopeSpacing = await studyResourcePlan.evaluate((plan) => {
+    const scopeElements = [...plan.querySelectorAll('[data-testid="detail-study-resource-plan-scope"]')]
+
+    if (scopeElements.length < 2) {
+      return null
+    }
+
+    const firstScopeElement = scopeElements[0]
+    const secondScopeElement = scopeElements[1]
+
+    if (
+      !(firstScopeElement instanceof HTMLElement) ||
+      !(secondScopeElement instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    return (
+      secondScopeElement.getBoundingClientRect().top -
+      firstScopeElement.getBoundingClientRect().bottom
+    )
+  })
 
   expect(backgroundFitLayout).not.toBeNull()
   expect(backgroundFitLayout!.chanceBreakdownLeft).toBeGreaterThan(
@@ -361,11 +386,40 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   ).toBeLessThanOrEqual(4)
   expect(studyResourcePlanSpacing).not.toBeNull()
   expect(studyResourcePlanSpacing!).toBeGreaterThanOrEqual(16)
+  expect(studyResourceScopeSpacing).not.toBeNull()
+  expect(studyResourceScopeSpacing!).toBeGreaterThanOrEqual(10)
   await expect(metricSummary).toBeVisible()
   await expect(mustHaveStudyResourcePlan.getByText('Ancient scroll:')).toBeVisible()
   await expect(mustHaveStudyResourcePlan.getByText('Berserker')).toBeVisible()
   await expect(mustHaveStudyResourcePlan.getByText('Skill book:')).toBeVisible()
   await expect(mustHaveStudyResourcePlan.getByText('Medium Armor or Fit')).toBeVisible()
+  await expect(
+    fullBuildStudyResourcePlan.getByRole('heading', {
+      level: 5,
+      name: 'Full-build impact',
+    }),
+  ).toBeVisible()
+  const ancientScrollCoveredPerks = mustHaveStudyResourcePlan.getByRole('list', {
+    name: 'Covered perks for ancient scroll',
+  })
+  const muscularityCoveredPerkPill = ancientScrollCoveredPerks.getByRole('button', {
+    name: 'Muscularity',
+  })
+  const muscularityCoveredPerkIcon =
+    muscularityCoveredPerkPill.getByTestId('planner-pill-icon')
+
+  await expect(ancientScrollCoveredPerks.getByRole('button', { name: 'Brawny' })).toBeVisible()
+  await expect(ancientScrollCoveredPerks.getByRole('button', { name: 'Colossus' })).toBeVisible()
+  await expect(muscularityCoveredPerkPill).toBeVisible()
+  await expect(muscularityCoveredPerkIcon).toBeVisible()
+  await expectImageToLoad(muscularityCoveredPerkIcon)
+  await muscularityCoveredPerkPill.hover()
+  await expect(muscularityCoveredPerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 1000,
+  })
+  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
+  await page.mouse.move(1, 1)
+  await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(studyResourcePlan.getByText('Heavy Armor')).toHaveCount(0)
 })
 

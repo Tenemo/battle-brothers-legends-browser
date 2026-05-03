@@ -891,15 +891,15 @@ test('filters origin backgrounds from the background search menu', async ({ page
         'Counts a second ancient scroll when Bright is available and the first scroll is allowed.',
     },
     {
-      labelText: 'Every 2 veteran levels',
+      labelText: 'Perk every 2 veteran levels',
       title: 'Shows backgrounds that gain 1 perk point every 2 veteran levels after level 12.',
     },
     {
-      labelText: 'Every 3 veteran levels',
+      labelText: 'Perk every 3 veteran levels',
       title: 'Shows backgrounds that gain 1 perk point every 3 veteran levels after level 12.',
     },
     {
-      labelText: 'Every 4 veteran levels',
+      labelText: 'Perk every 4 veteran levels',
       title: 'Shows backgrounds that gain 1 perk point every 4 veteran levels after level 12.',
     },
   ] as const
@@ -997,13 +997,17 @@ test('filters origin backgrounds from the background search menu', async ({ page
     'currentColor',
   )
 
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 3 veteran levels' }).uncheck()
+  await backgroundFitPanel
+    .getByRole('checkbox', { name: 'Perk every 3 veteran levels' })
+    .uncheck()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
     'currentColor',
   )
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 3 veteran levels' }).check()
+  await backgroundFitPanel
+    .getByRole('checkbox', { name: 'Perk every 3 veteran levels' })
+    .check()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
@@ -1024,9 +1028,15 @@ test('filters origin backgrounds from the background search menu', async ({ page
 
   await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a book' }).uncheck()
   await backgroundFitPanel.getByRole('checkbox', { name: 'Allow a scroll' }).uncheck()
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 2 veteran levels' }).uncheck()
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 3 veteran levels' }).uncheck()
-  await backgroundFitPanel.getByRole('checkbox', { name: 'Every 4 veteran levels' }).uncheck()
+  await backgroundFitPanel
+    .getByRole('checkbox', { name: 'Perk every 2 veteran levels' })
+    .uncheck()
+  await backgroundFitPanel
+    .getByRole('checkbox', { name: 'Perk every 3 veteran levels' })
+    .uncheck()
+  await backgroundFitPanel
+    .getByRole('checkbox', { name: 'Perk every 4 veteran levels' })
+    .uncheck()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'false')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
