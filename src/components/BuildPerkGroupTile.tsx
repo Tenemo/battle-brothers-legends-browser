@@ -17,6 +17,7 @@ export type BuildPerkGroupTileOption = {
 
 type BuildPerkGroupTilePerk = {
   iconPath: string | null
+  perkGroupSelection?: BuildPerkPillSelection
   perkId: string | null
   perkName: string
 }
@@ -334,7 +335,7 @@ export function BuildPerkGroupTile({
               onInspectPerk={onInspectPerk}
               onOpenHover={onOpenBuildPerkHover}
               onOpenTooltip={onOpenBuildPerkTooltip}
-              perkGroupSelection={primaryPerkGroupSelection}
+              perkGroupSelection={perk.perkGroupSelection ?? primaryPerkGroupSelection}
               perkIconPath={perk.iconPath}
               perkId={perk.perkId}
               perkName={perk.perkName}

@@ -838,16 +838,17 @@ function getStudyResourceStrategyTargetCoveredPerks({
     })
     const buildTargetPerkIndex =
       buildTargetPerkGroup?.pickedPerkIds.indexOf(coveredPickedPerkId) ?? -1
+    const perkGroupSelection = {
+      categoryName: buildTargetPerkGroup?.categoryName ?? target.categoryName,
+      perkGroupId: buildTargetPerkGroup?.perkGroupId ?? target.perkGroupId,
+    }
 
     return {
       iconPath:
         buildTargetPerkIndex >= 0
           ? (buildTargetPerkGroup?.pickedPerkIconPaths[buildTargetPerkIndex] ?? null)
           : null,
-      perkGroupSelection: {
-        categoryName: target.categoryName,
-        perkGroupId: target.perkGroupId,
-      },
+      perkGroupSelection,
       perkId: coveredPickedPerkId,
       perkName: target.coveredPickedPerkNames[coveredPerkIndex] ?? coveredPickedPerkId,
     }
@@ -1103,25 +1104,38 @@ function getGroupedCampResourceModifiers(
   })
 }
 
-const backgroundTalentAttributeIconPathsByName: Readonly<Partial<Record<string, string>>> = {
-  Fatigue: 'ui/icons/fatigue_va11.png',
-  Hitpoints: 'ui/icons/health_va11.png',
-  Initiative: 'ui/icons/initiative_va11.png',
-  'Melee defense': 'ui/icons/melee_defense_va11.png',
-  'Melee skill': 'ui/icons/melee_skill_va11.png',
-  'Ranged defense': 'ui/icons/ranged_defense_va11.png',
-  'Ranged skill': 'ui/icons/ranged_skill_va11.png',
-  Resolve: 'ui/icons/bravery_va11.png',
+const backgroundTalentAttributeIconPathsByNormalizedName: Readonly<Record<string, string>> = {
+  fatigue: 'ui/icons/fatigue_va11.png',
+  hitpoints: 'ui/icons/health_va11.png',
+  initiative: 'ui/icons/initiative_va11.png',
+  'melee defense': 'ui/icons/melee_defense_va11.png',
+  'melee skill': 'ui/icons/melee_skill_va11.png',
+  'ranged defense': 'ui/icons/ranged_defense_va11.png',
+  'ranged skill': 'ui/icons/ranged_skill_va11.png',
+  resolve: 'ui/icons/bravery_va11.png',
+}
+
+function normalizeBackgroundTalentAttributeName(attributeName: string): string {
+  return attributeName
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
 }
 
 function getBackgroundTalentAttributeIconPath(attributeName: string): string | null {
-  return backgroundTalentAttributeIconPathsByName[attributeName] ?? null
+  return (
+    backgroundTalentAttributeIconPathsByNormalizedName[
+      normalizeBackgroundTalentAttributeName(attributeName)
+    ] ?? null
+  )
 }
 
 function getBackgroundTalentAttributeIconTestId(attributeName: string): string {
-  return `detail-background-talent-attribute-icon-${attributeName
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')}`
+  return `detail-background-talent-attribute-icon-${normalizeBackgroundTalentAttributeName(
+    attributeName,
+  ).replaceAll(' ', '-')}`
 }
 
 function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
@@ -1699,6 +1713,7 @@ function BackgroundFitRareOtherPerkGroupList({
 }: BackgroundFitOtherPerkGroupInteractionProps & {
   otherPerkGroups: BackgroundFitOtherPerkGroup[]
 }) {
+  const rareOtherPerkGroupsHeading = 'Possible - under 1% chance'
   const rareOtherPerkGroupsSectionId = useId()
   const [isExpanded, setIsExpanded] = useState(false)
 
@@ -1716,7 +1731,7 @@ function BackgroundFitRareOtherPerkGroupList({
         <button
           aria-controls={rareOtherPerkGroupsSectionId}
           aria-expanded={isExpanded}
-          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} rare native perk groups`}
+          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${rareOtherPerkGroupsHeading}, ${formatNativePerkGroupCount(otherPerkGroups.length, 'rare')}`}
           className={styles.detailOtherPerkGroupRareToggle}
           data-testid="detail-rare-other-perk-groups-toggle"
           onClick={() => {
@@ -1729,7 +1744,9 @@ function BackgroundFitRareOtherPerkGroupList({
             className={styles.detailOtherPerkGroupRareChevron}
             isExpanded={isExpanded}
           />
-          <span className={styles.detailOtherPerkGroupRareHeading}>Possible - under 1% chance</span>
+          <span className={styles.detailOtherPerkGroupRareHeading}>
+            {rareOtherPerkGroupsHeading}
+          </span>
           <span
             aria-label={formatNativePerkGroupCount(otherPerkGroups.length, 'rare')}
             className={styles.detailOtherPerkGroupHeaderCount}

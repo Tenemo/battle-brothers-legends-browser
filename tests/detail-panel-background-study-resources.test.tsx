@@ -200,6 +200,7 @@ const selectedPerk = {
 function createDetailPanelProps({
   mustHavePickedPerkCount = 1,
   mustHavePickedPerkIds = ['perk.legend_clarity'],
+  onInspectPerk = vi.fn(),
   onInspectPerkGroup = vi.fn(),
   optionalPickedPerkCount = 0,
   optionalPickedPerkIds = [],
@@ -222,6 +223,7 @@ function createDetailPanelProps({
 }: {
   mustHavePickedPerkCount?: number
   mustHavePickedPerkIds?: string[]
+  onInspectPerk?: ComponentProps<typeof DetailPanel>['onInspectPerk']
   onInspectPerkGroup?: (categoryName: string, perkGroupId: string) => void
   optionalPickedPerkCount?: number
   optionalPickedPerkIds?: string[]
@@ -255,7 +257,7 @@ function createDetailPanelProps({
     onCloseBuildPerkHover: vi.fn(),
     onCloseBuildPerkTooltip: vi.fn(),
     onClosePerkGroupHover: vi.fn(),
-    onInspectPerk: vi.fn(),
+    onInspectPerk,
     onInspectPerkGroup,
     onNavigateDetailHistory: vi.fn(),
     onOpenBuildPerkHover: vi.fn(),
@@ -279,12 +281,14 @@ function createDetailPanelProps({
 function renderSelectedBackgroundFitDetail(
   options: Parameters<typeof createDetailPanelProps>[0] = {},
 ) {
+  const onInspectPerk = options.onInspectPerk ?? vi.fn()
   const onInspectPerkGroup = options.onInspectPerkGroup ?? vi.fn()
   const renderResult = render(
-    <DetailPanel {...createDetailPanelProps({ ...options, onInspectPerkGroup })} />,
+    <DetailPanel {...createDetailPanelProps({ ...options, onInspectPerk, onInspectPerkGroup })} />,
   )
 
   return {
+    onInspectPerk,
     onInspectPerkGroup,
     renderResult,
   }
@@ -376,6 +380,40 @@ describe('background details study resources', () => {
     expect(within(metadataSection).getByText('Terrain movement')).toBeVisible()
     expect(within(metadataSection).getByText('Plains')).toBeVisible()
     expect(within(metadataSection).getByText('+15%')).toBeVisible()
+  })
+
+  test('normalizes background talent attribute names before resolving icons', async () => {
+    const user = userEvent.setup()
+
+    renderSelectedBackgroundFitDetail({
+      selectedBackgroundFitDetail: {
+        ...backgroundFit,
+        excludedTalentAttributeNames: [' Ranged Skill ', 'melee DEFENSE'],
+      },
+    })
+
+    const metadataSection = screen.getByTestId('detail-background-metadata-section')
+    const metadataToggle = within(metadataSection).getByRole('button', {
+      name: 'Background details',
+    })
+
+    await user.click(metadataToggle)
+
+    const talentAttributeList = within(metadataSection).getByTestId(
+      'detail-background-talent-attribute-list',
+    )
+
+    expect(
+      within(talentAttributeList).getByTestId(
+        'detail-background-talent-attribute-icon-ranged-skill',
+      ),
+    ).toHaveAttribute('src', '/game-icons/ui/icons/ranged_skill_va11.png')
+    expect(
+      within(talentAttributeList).getByTestId(
+        'detail-background-talent-attribute-icon-melee-defense',
+      ),
+    ).toHaveAttribute('src', '/game-icons/ui/icons/melee_defense_va11.png')
+    expect(talentAttributeList.querySelector('[data-placeholder="true"]')).not.toBeInTheDocument()
   })
 
   test('collapses top-level background sections without hiding their headings', async () => {
@@ -640,7 +678,7 @@ describe('background details study resources', () => {
       .getAllByTestId('detail-other-perk-group-probability')
       .map((probabilityBadge) => probabilityBadge.textContent)
     const rareToggle = within(section).getByRole('button', {
-      name: 'Expand rare native perk groups',
+      name: 'Expand Possible - under 1% chance, 1 rare native perk group',
     })
     const sectionCountBadges = within(section).getAllByTestId(
       'detail-other-perk-group-section-count',
@@ -684,6 +722,9 @@ describe('background details study resources', () => {
     const rareGroupList = screen.getByTestId('detail-rare-other-perk-groups-list')
 
     expect(rareToggle).toHaveAttribute('aria-expanded', 'true')
+    expect(rareToggle).toHaveAccessibleName(
+      'Collapse Possible - under 1% chance, 1 rare native perk group',
+    )
     expect(
       within(rareGroupList).getByRole('button', { name: 'Select perk group Beasts' }),
     ).toBeVisible()
@@ -750,6 +791,38 @@ describe('background details study resources', () => {
     )
     expect(screen.queryByText('Must-have study route')).not.toBeInTheDocument()
     expect(screen.queryByTestId('detail-study-resource-tile-frame')).not.toBeInTheDocument()
+  })
+
+  test('uses the resolved build target group for study resource perk pill interactions', async () => {
+    const user = userEvent.setup()
+    const onInspectPerk = vi.fn()
+    const fallbackStrategyTarget = {
+      ...calmStrategyTarget,
+      perkGroupId: 'MissingTree',
+      perkGroupName: 'Missing target',
+    } satisfies BackgroundFitStudyResourceStrategyTarget
+
+    renderSelectedBackgroundFitDetail({
+      onInspectPerk,
+      selectedBackgroundFitDetail: {
+        ...backgroundFit,
+        mustHaveStudyResourceStrategy: createStudyResourceStrategy({
+          bookTargets: [fallbackStrategyTarget],
+        }),
+      },
+    })
+
+    const studyResourcePlan = screen.getByTestId('detail-study-resource-plan')
+    const coveredClarityPill = within(studyResourcePlan).getByRole('button', {
+      name: 'Clarity',
+    })
+
+    await user.click(coveredClarityPill)
+
+    expect(onInspectPerk).toHaveBeenCalledWith('perk.legend_clarity', {
+      categoryName: 'Traits',
+      perkGroupId: 'CalmTree',
+    })
   })
 
   test('shows a must-have chance breakdown for study resources', () => {

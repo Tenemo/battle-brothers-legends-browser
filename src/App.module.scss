@@ -303,8 +303,8 @@
     }
 
     .workspace {
-      --workspace-background-fit-column: var(--workspace-compact-background-fit-column);
-      --workspace-category-column: var(--workspace-compact-category-column);
+      --workspace-background-fit-column: var(--workspace-results-column);
+      --workspace-category-column: var(--workspace-results-column);
 
       gap: var(--space-md);
     }
