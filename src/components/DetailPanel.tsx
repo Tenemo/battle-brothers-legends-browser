@@ -6,7 +6,6 @@ import {
   formatBackgroundFitProbabilityLabel,
   formatBackgroundSourceProbabilityLabel,
   formatScenarioGrantLabel,
-  getBackgroundFitKey,
   getAnchoredTooltipStyle,
   getVisibleBackgroundPillLabel,
   getPerkDisplayIconPath,
@@ -105,6 +104,28 @@ type DetailHistoryNavigationAvailability = {
   previous: boolean
 }
 
+type DetailCollapsibleSectionKey =
+  | 'background-details'
+  | 'background-fit'
+  | 'matched-perk-groups'
+  | 'other-native-perk-groups'
+
+type DetailCollapsibleSectionExpandedStates = Partial<Record<DetailCollapsibleSectionKey, boolean>>
+
+const defaultDetailCollapsibleSectionExpandedStates = {
+  'background-details': false,
+  'background-fit': true,
+  'matched-perk-groups': true,
+  'other-native-perk-groups': false,
+} satisfies Record<DetailCollapsibleSectionKey, boolean>
+
+function getDetailCollapsibleSectionExpandedState(
+  expandedStates: DetailCollapsibleSectionExpandedStates,
+  sectionKey: DetailCollapsibleSectionKey,
+): boolean {
+  return expandedStates[sectionKey] ?? defaultDetailCollapsibleSectionExpandedStates[sectionKey]
+}
+
 function renderBackgroundSource(backgroundSource: GroupedBackgroundSource) {
   return (
     <>
@@ -190,6 +211,26 @@ export function DetailPanel({
 }: DetailPanelProps) {
   const displayedBackgroundFitDetail =
     selectedDetailType === 'background' ? selectedBackgroundFitDetail : null
+  const [
+    detailCollapsibleSectionExpandedStates,
+    setDetailCollapsibleSectionExpandedStates,
+  ] = useState<DetailCollapsibleSectionExpandedStates>({})
+
+  function updateDetailCollapsibleSectionExpandedState(
+    sectionKey: DetailCollapsibleSectionKey,
+    nextIsExpanded: boolean,
+  ) {
+    setDetailCollapsibleSectionExpandedStates((currentExpandedStates) => {
+      if (currentExpandedStates[sectionKey] === nextIsExpanded) {
+        return currentExpandedStates
+      }
+
+      return {
+        ...currentExpandedStates,
+        [sectionKey]: nextIsExpanded,
+      }
+    })
+  }
 
   return (
     <aside aria-label="Details" className={styles.detailPanel} data-testid="detail-panel">
@@ -206,6 +247,7 @@ export function DetailPanel({
             emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
             selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
             selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+            detailCollapsibleSectionExpandedStates={detailCollapsibleSectionExpandedStates}
             detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
             hoveredBuildPerkId={hoveredBuildPerkId}
             hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
@@ -217,6 +259,9 @@ export function DetailPanel({
             onClosePerkGroupHover={onClosePerkGroupHover}
             onInspectPerk={onInspectPerk}
             onInspectPerkGroup={onInspectPerkGroup}
+            onDetailCollapsibleSectionExpandedChange={
+              updateDetailCollapsibleSectionExpandedState
+            }
             onNavigateDetailHistory={onNavigateDetailHistory}
             onOpenBuildPerkHover={onOpenBuildPerkHover}
             onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
@@ -867,6 +912,14 @@ function renderBackgroundMetadataValues(values: readonly string[]) {
   )
 }
 
+function renderBackgroundMetadataPlainTextValues(values: readonly string[]) {
+  if (values.length === 0) {
+    return <span className={styles.detailMetadataNone}>None</span>
+  }
+
+  return <span className={styles.detailMetadataValueText}>{values.join(', ')}</span>
+}
+
 type BackgroundTraitRelationship = 'excluded' | 'guaranteed'
 
 type BackgroundTraitTooltipState = {
@@ -883,12 +936,6 @@ function getBackgroundTraitId(
   relationship: BackgroundTraitRelationship,
 ) {
   return `${relationship}-${trait.traitName}-${trait.iconPath ?? 'no-icon'}`
-}
-
-function getBackgroundTraitRelationshipCopy(relationship: BackgroundTraitRelationship) {
-  return relationship === 'excluded'
-    ? 'This background excludes this trait, so recruits with this background cannot roll it.'
-    : 'This background grants this trait when the background is generated.'
 }
 
 function BackgroundTraitPill({
@@ -1003,8 +1050,7 @@ function BackgroundTraitTooltip({
       style={getAnchoredTooltipStyle(tooltip.anchorRectangle)}
     >
       <div className={buildPlannerStyles.buildPerkTooltipCopy}>
-        {tooltip.trait.description ? <p>{tooltip.trait.description}</p> : null}
-        <p>{getBackgroundTraitRelationshipCopy(tooltip.relationship)}</p>
+        <p>{tooltip.trait.description || 'No trait description is available.'}</p>
       </div>
     </div>
   )
@@ -1077,13 +1123,58 @@ function BackgroundMetadataSubsection({ children, title }: { children: ReactNode
   )
 }
 
-function BackgroundMetadataSection({ backgroundFit }: { backgroundFit: RankedBackgroundFit }) {
+function BackgroundMetadataFact({ children, label }: { children: ReactNode; label: string }) {
+  return (
+    <div className={styles.detailMetadataFact}>
+      <dt>{label}:</dt>
+      <dd>{children}</dd>
+    </div>
+  )
+}
+
+function BackgroundMetadataCampResourceModifierSubsection({
+  group,
+  modifiers,
+}: {
+  group: LegendsBackgroundCampResourceModifierGroup
+  modifiers: LegendsBackgroundCampResourceModifier[]
+}) {
+  return (
+    <BackgroundMetadataSubsection title={backgroundCampResourceModifierGroupLabels[group]}>
+      <ul className={styles.detailCampResourceModifierList}>
+        {modifiers.map((modifier) => (
+          <li key={modifier.modifierKey}>
+            <span>{modifier.label}</span>
+            <span className={styles.detailBadge}>
+              {formatBackgroundCampResourceModifierValue(modifier)}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </BackgroundMetadataSubsection>
+  )
+}
+
+function BackgroundMetadataSection({
+  backgroundFit,
+  isExpanded,
+  onExpandedChange,
+}: {
+  backgroundFit: RankedBackgroundFit
+  isExpanded: boolean
+  onExpandedChange: (nextIsExpanded: boolean) => void
+}) {
   const backgroundTraitTooltipId = useId()
-  const [isExpanded, setIsExpanded] = useState(false)
   const [hoveredTraitId, setHoveredTraitId] = useState<string | null>(null)
   const [traitTooltip, setTraitTooltip] = useState<BackgroundTraitTooltipState | null>(null)
   const groupedCampResourceModifiers = getGroupedCampResourceModifiers(
     backgroundFit.campResourceModifiers,
+  )
+  const columnCampResourceModifierGroups = groupedCampResourceModifiers.filter(
+    ({ group }) => group === 'capacity' || group === 'skill',
+  )
+  const stackedCampResourceModifierGroups = groupedCampResourceModifiers.filter(
+    ({ group }) => group !== 'capacity' && group !== 'skill',
   )
 
   function closeTraitHover(traitId: string) {
@@ -1114,26 +1205,27 @@ function BackgroundMetadataSection({ backgroundFit }: { backgroundFit: RankedBac
       setTraitTooltip(null)
     }
 
-    setIsExpanded(nextIsExpanded)
+    onExpandedChange(nextIsExpanded)
   }
 
   return (
     <DetailCollapsibleSection
       contentClassName={styles.detailMetadataSections}
       contentTestId="detail-background-metadata-content"
-      defaultExpanded={false}
       isExpanded={isExpanded}
       onExpandedChange={updateExpandedState}
       sectionLabel="Background details"
       sectionTestId="detail-background-metadata-section"
       toggleTestId="detail-background-metadata-toggle"
     >
-      <BackgroundMetadataSubsection title="Daily cost">
-        {renderBackgroundMetadataScalar(backgroundFit.dailyCost)}
-      </BackgroundMetadataSubsection>
-      <BackgroundMetadataSubsection title="Background type">
-        {renderBackgroundMetadataValues(backgroundFit.backgroundTypeNames)}
-      </BackgroundMetadataSubsection>
+      <dl className={styles.detailMetadataFactList}>
+        <BackgroundMetadataFact label="Daily cost">
+          {renderBackgroundMetadataScalar(backgroundFit.dailyCost)}
+        </BackgroundMetadataFact>
+        <BackgroundMetadataFact label="Background type">
+          {renderBackgroundMetadataPlainTextValues(backgroundFit.backgroundTypeNames)}
+        </BackgroundMetadataFact>
+      </dl>
       <BackgroundMetadataSubsection title="Excluded traits">
         {renderBackgroundMetadataTraits({
           activeTraitTooltipId: traitTooltip === null ? undefined : backgroundTraitTooltipId,
@@ -1162,22 +1254,26 @@ function BackgroundMetadataSection({ backgroundFit }: { backgroundFit: RankedBac
         {renderBackgroundMetadataValues(backgroundFit.excludedTalentAttributeNames)}
       </BackgroundMetadataSubsection>
 
-      {groupedCampResourceModifiers.map(({ group, modifiers }) => (
-        <BackgroundMetadataSubsection
-          key={group}
-          title={backgroundCampResourceModifierGroupLabels[group]}
+      {columnCampResourceModifierGroups.length > 0 ? (
+        <div
+          className={styles.detailCampResourceModifierColumns}
+          data-testid="detail-camp-resource-modifier-columns"
         >
-          <ul className={styles.detailCampResourceModifierList}>
-            {modifiers.map((modifier) => (
-              <li key={modifier.modifierKey}>
-                <span>{modifier.label}</span>
-                <span className={styles.detailBadge}>
-                  {formatBackgroundCampResourceModifierValue(modifier)}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </BackgroundMetadataSubsection>
+          {columnCampResourceModifierGroups.map(({ group, modifiers }) => (
+            <BackgroundMetadataCampResourceModifierSubsection
+              group={group}
+              key={group}
+              modifiers={modifiers}
+            />
+          ))}
+        </div>
+      ) : null}
+      {stackedCampResourceModifierGroups.map(({ group, modifiers }) => (
+        <BackgroundMetadataCampResourceModifierSubsection
+          group={group}
+          key={group}
+          modifiers={modifiers}
+        />
       ))}
       {traitTooltip === null ? null : (
         <BackgroundTraitTooltip
@@ -1297,7 +1393,16 @@ function BackgroundFitOtherPerkGroupList({
 
   return (
     <div className={styles.detailOtherPerkGroupSection}>
-      <h4 className={styles.detailSubsectionHeading}>{label}</h4>
+      <div className={styles.detailOtherPerkGroupHeader}>
+        <h4 className={styles.detailSubsectionHeading}>{label}</h4>
+        <span
+          aria-label={`${otherPerkGroups.length} ${label.toLowerCase()} native perk groups`}
+          className={styles.detailOtherPerkGroupHeaderCount}
+          data-testid="detail-other-perk-group-section-count"
+        >
+          {otherPerkGroups.length}
+        </span>
+      </div>
       <ul className={styles.detailOtherPerkGroupList}>
         {otherPerkGroups.map((otherPerkGroup) => (
           <li key={`${otherPerkGroup.categoryName}-${otherPerkGroup.perkGroupId}`}>
@@ -1331,31 +1436,33 @@ function BackgroundFitRareOtherPerkGroupList({
       data-expanded={isExpanded}
       data-testid="detail-rare-other-perk-groups"
     >
-      <button
-        aria-controls={rareOtherPerkGroupsSectionId}
-        aria-expanded={isExpanded}
-        aria-label={`${isExpanded ? 'Collapse' : 'Expand'} rare native perk groups`}
-        className={styles.detailOtherPerkGroupRareToggle}
-        data-testid="detail-rare-other-perk-groups-toggle"
-        onClick={() => {
-          setIsExpanded((wasExpanded) => !wasExpanded)
-        }}
-        title={`${isExpanded ? 'Collapse' : 'Expand'} rare native perk groups`}
-        type="button"
-      >
-        <PlannerSectionChevron
-          className={styles.detailOtherPerkGroupRareChevron}
-          isExpanded={isExpanded}
-        />
-        <span className={styles.detailSubsectionHeading}>Rare possible groups under 1%</span>
-        <span
-          aria-label={`${otherPerkGroups.length} rare native perk groups`}
-          className={styles.detailOtherPerkGroupRareCount}
-          data-testid="detail-rare-other-perk-groups-count"
+      <h4 className={styles.detailOtherPerkGroupHeader}>
+        <button
+          aria-controls={rareOtherPerkGroupsSectionId}
+          aria-expanded={isExpanded}
+          aria-label={`${isExpanded ? 'Collapse' : 'Expand'} rare native perk groups`}
+          className={styles.detailOtherPerkGroupRareToggle}
+          data-testid="detail-rare-other-perk-groups-toggle"
+          onClick={() => {
+            setIsExpanded((wasExpanded) => !wasExpanded)
+          }}
+          title={`${isExpanded ? 'Collapse' : 'Expand'} rare native perk groups`}
+          type="button"
         >
-          {otherPerkGroups.length}
-        </span>
-      </button>
+          <PlannerSectionChevron
+            className={styles.detailOtherPerkGroupRareChevron}
+            isExpanded={isExpanded}
+          />
+          <span className={styles.detailSubsectionHeading}>Rare possible groups under 1%</span>
+          <span
+            aria-label={`${otherPerkGroups.length} rare native perk groups`}
+            className={styles.detailOtherPerkGroupHeaderCount}
+            data-testid="detail-rare-other-perk-groups-count"
+          >
+            {otherPerkGroups.length}
+          </span>
+        </button>
+      </h4>
 
       {isExpanded ? (
         <ul
@@ -1379,9 +1486,13 @@ function BackgroundFitRareOtherPerkGroupList({
 
 function BackgroundFitOtherPerkGroupsSection({
   backgroundFit,
+  isExpanded,
+  onExpandedChange,
   ...interactionProps
 }: BackgroundFitOtherPerkGroupInteractionProps & {
   backgroundFit: RankedBackgroundFit
+  isExpanded: boolean
+  onExpandedChange: (nextIsExpanded: boolean) => void
 }) {
   const guaranteedOtherPerkGroups = backgroundFit.otherPerkGroups.filter(
     (otherPerkGroup) => otherPerkGroup.isGuaranteed,
@@ -1403,7 +1514,8 @@ function BackgroundFitOtherPerkGroupsSection({
       contentTestId="detail-other-perk-groups-section"
       count={backgroundFit.otherPerkGroups.length}
       countLabel={`${backgroundFit.otherPerkGroups.length} other native perk groups`}
-      defaultExpanded={false}
+      isExpanded={isExpanded}
+      onExpandedChange={onExpandedChange}
       sectionLabel="Other native perk groups"
       sectionTestId="detail-other-perk-groups"
       toggleTestId="detail-other-perk-groups-toggle"
@@ -1440,11 +1552,13 @@ function BackgroundDetail({
   hoveredBuildPerkId,
   hoveredBuildPerkTooltipId,
   hoveredPerkId,
+  detailCollapsibleSectionExpandedStates,
   mustHavePickedPerkIds,
   mustHavePickedPerkCount,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
   onClosePerkGroupHover,
+  onDetailCollapsibleSectionExpandedChange,
   onInspectPerk,
   onInspectPerkGroup,
   onNavigateDetailHistory,
@@ -1466,11 +1580,16 @@ function BackgroundDetail({
   hoveredBuildPerkId: string | null
   hoveredBuildPerkTooltipId: string | undefined
   hoveredPerkId: string | null
+  detailCollapsibleSectionExpandedStates: DetailCollapsibleSectionExpandedStates
   mustHavePickedPerkIds: string[]
   mustHavePickedPerkCount: number
   onCloseBuildPerkHover: (perkId: string) => void
   onCloseBuildPerkTooltip: () => void
   onClosePerkGroupHover: (perkGroupKey: string) => void
+  onDetailCollapsibleSectionExpandedChange: (
+    sectionKey: DetailCollapsibleSectionKey,
+    nextIsExpanded: boolean,
+  ) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onNavigateDetailHistory: (direction: -1 | 1) => void
@@ -1534,11 +1653,26 @@ function BackgroundDetail({
       />
 
       <BackgroundMetadataSection
-        key={`metadata-${getBackgroundFitKey(backgroundFit)}`}
         backgroundFit={backgroundFit}
+        isExpanded={getDetailCollapsibleSectionExpandedState(
+          detailCollapsibleSectionExpandedStates,
+          'background-details',
+        )}
+        onExpandedChange={(nextIsExpanded) =>
+          onDetailCollapsibleSectionExpandedChange('background-details', nextIsExpanded)
+        }
       />
 
-      <DetailCollapsibleSection defaultExpanded sectionLabel="Background fit">
+      <DetailCollapsibleSection
+        isExpanded={getDetailCollapsibleSectionExpandedState(
+          detailCollapsibleSectionExpandedStates,
+          'background-fit',
+        )}
+        onExpandedChange={(nextIsExpanded) =>
+          onDetailCollapsibleSectionExpandedChange('background-fit', nextIsExpanded)
+        }
+        sectionLabel="Background fit"
+      >
         <BackgroundFitMetricSummary
           backgroundFit={backgroundFit}
           mustHavePickedPerkCount={mustHavePickedPerkCount}
@@ -1558,7 +1692,13 @@ function BackgroundDetail({
 
       <DetailCollapsibleSection
         contentClassName={styles.detailBackgroundFitMatchColumns}
-        defaultExpanded
+        isExpanded={getDetailCollapsibleSectionExpandedState(
+          detailCollapsibleSectionExpandedStates,
+          'matched-perk-groups',
+        )}
+        onExpandedChange={(nextIsExpanded) =>
+          onDetailCollapsibleSectionExpandedChange('matched-perk-groups', nextIsExpanded)
+        }
         sectionLabel="Matched perk groups"
       >
         <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="must-have">
@@ -1635,7 +1775,13 @@ function BackgroundDetail({
 
       <BackgroundFitOtherPerkGroupsSection
         backgroundFit={backgroundFit}
-        key={`other-perk-groups-${getBackgroundFitKey(backgroundFit)}`}
+        isExpanded={getDetailCollapsibleSectionExpandedState(
+          detailCollapsibleSectionExpandedStates,
+          'other-native-perk-groups',
+        )}
+        onExpandedChange={(nextIsExpanded) =>
+          onDetailCollapsibleSectionExpandedChange('other-native-perk-groups', nextIsExpanded)
+        }
         emphasizedCategoryNames={emphasizedCategoryNames}
         emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
         selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}

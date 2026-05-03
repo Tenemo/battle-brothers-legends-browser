@@ -1190,20 +1190,20 @@ test('shows probabilistic background fit matches with percentage badges', async 
 
     return {
       firstCardWidth: firstCardRect.width,
+      gridColumnCount: listStyle.gridTemplateColumns.split(' ').filter(Boolean).length,
       listDisplay: listStyle.display,
-      listFlexWrap: listStyle.flexWrap,
       listWidth: listRect.width,
     }
   })
 
   expect(otherNativeGroupLayout).toEqual(
     expect.objectContaining({
-      listDisplay: 'flex',
-      listFlexWrap: 'wrap',
+      gridColumnCount: 3,
+      listDisplay: 'grid',
     }),
   )
-  expect(otherNativeGroupLayout?.firstCardWidth ?? Number.POSITIVE_INFINITY).toBeLessThan(
-    (otherNativeGroupLayout?.listWidth ?? 0) - 4,
+  expect(otherNativeGroupLayout?.firstCardWidth ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(
+    ((otherNativeGroupLayout?.listWidth ?? 0) / 3) + 4,
   )
   await expect(
     otherNativePerkGroupsSection.getByRole('button', { name: 'Select perk group Barter' }),

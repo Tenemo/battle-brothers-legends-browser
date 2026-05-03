@@ -139,12 +139,29 @@ test('shows imported background metadata only in the background detail panel', a
   await metadataToggle.click()
 
   await expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
-  await expect(metadataSection.getByText('Daily cost')).toBeVisible()
+  await expect(metadataSection.getByText('Daily cost:')).toBeVisible()
   await expect(metadataSection.getByText('6')).toBeVisible()
+  await expect(metadataSection.getByText('Background type:')).toBeVisible()
   await expect(metadataSection.getByText('Lowborn')).toBeVisible()
   await expect(metadataSection.getByText('Bartering')).toBeVisible()
   await expect(metadataSection.getByText('+13')).toHaveCount(2)
-  await expect(metadataSection.getByText('Excluded traits')).toBeVisible()
+  const metadataParentHeading = metadataToggle
+    .locator('span')
+    .filter({ hasText: /^Background details$/u })
+    .first()
+  const excludedTraitsHeading = metadataSection.getByRole('heading', {
+    level: 4,
+    name: 'Excluded traits',
+  })
+  const metadataParentHeadingFontSize = await metadataParentHeading.evaluate((element) =>
+    Number.parseFloat(window.getComputedStyle(element).fontSize),
+  )
+  const excludedTraitsHeadingFontSize = await excludedTraitsHeading.evaluate((element) =>
+    Number.parseFloat(window.getComputedStyle(element).fontSize),
+  )
+
+  await expect(excludedTraitsHeading).toBeVisible()
+  expect(excludedTraitsHeadingFontSize).toBeLessThan(metadataParentHeadingFontSize)
   const fearUndeadTraitPill = metadataSection.getByRole('button', { name: 'Fear Undead' })
   const aggressiveTraitPill = metadataSection.getByRole('button', { name: 'Aggressive' })
   const martialTraitPill = metadataSection.getByRole('button', { name: 'Martial' })
@@ -174,7 +191,7 @@ test('shows imported background metadata only in the background detail panel', a
   await expect(traitTooltip).toContainText(
     'This character is pretty aggressive, even to their own detriment.',
   )
-  await expect(traitTooltip).toContainText('This background excludes this trait')
+  await expect(traitTooltip).not.toContainText('This background excludes this trait')
   await expect(backgroundFitPanel.getByText('Daily cost')).toHaveCount(0)
   await expect(backgroundFitPanel.getByText('Bartering')).toHaveCount(0)
 })

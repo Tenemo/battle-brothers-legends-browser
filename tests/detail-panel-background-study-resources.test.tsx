@@ -1,4 +1,5 @@
 import { render, screen, within } from '@testing-library/react'
+import type { ComponentProps } from 'react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { DetailPanel } from '../src/components/DetailPanel'
@@ -10,6 +11,7 @@ import type {
 } from '../src/lib/background-fit'
 import { backgroundStudyResourceBadgesTestId } from '../src/lib/background-study-resource-display'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
+import type { LegendsPerkRecord } from '../src/types/legends-perks'
 
 const skillBookRequirementProfile = {
   bookRequirement: {
@@ -177,7 +179,21 @@ const backgroundFit = {
   veteranPerkLevelInterval: 4,
 } satisfies RankedBackgroundFit
 
-function renderSelectedBackgroundFitDetail({
+const selectedPerk = {
+  backgroundSources: [],
+  categoryNames: ['Traits'],
+  descriptionParagraphs: ['Keep a calm mind.'],
+  iconPath: null,
+  id: 'perk.legend_clarity',
+  perkConstName: 'LegendClarity',
+  perkName: 'Clarity',
+  placements: [],
+  primaryCategoryName: 'Traits',
+  scenarioSources: [],
+  searchText: 'Clarity Traits Keep a calm mind.',
+} satisfies LegendsPerkRecord
+
+function createDetailPanelProps({
   mustHavePickedPerkCount = 1,
   mustHavePickedPerkIds = ['perk.legend_clarity'],
   onInspectPerkGroup = vi.fn(),
@@ -185,6 +201,8 @@ function renderSelectedBackgroundFitDetail({
   optionalPickedPerkIds = [],
   pickedPerkCount = mustHavePickedPerkCount + optionalPickedPerkCount,
   selectedBackgroundFitDetail = backgroundFit,
+  selectedDetailType = 'background',
+  selectedPerkDetail = null,
   supportedBuildTargetPerkGroups = [
     {
       categoryName: 'Traits',
@@ -204,50 +222,62 @@ function renderSelectedBackgroundFitDetail({
   optionalPickedPerkCount?: number
   optionalPickedPerkIds?: string[]
   pickedPerkCount?: number
-  selectedBackgroundFitDetail?: RankedBackgroundFit
+  selectedBackgroundFitDetail?: RankedBackgroundFit | null
+  selectedDetailType?: 'background' | 'perk'
+  selectedPerkDetail?: LegendsPerkRecord | null
   supportedBuildTargetPerkGroups?: BuildTargetPerkGroup[]
-} = {}) {
+} = {}): ComponentProps<typeof DetailPanel> {
+  return {
+    selectedDetailType,
+    selectedBackgroundFitDetail:
+      selectedBackgroundFitDetail === null
+        ? null
+        : { backgroundFit: selectedBackgroundFitDetail, rank: 0 },
+    detailHistoryNavigationAvailability: {
+      next: false,
+      previous: false,
+    },
+    emphasizedCategoryNames: new Set(),
+    emphasizedPerkGroupKeys: new Set(),
+    selectedEmphasisCategoryNames: new Set(),
+    selectedEmphasisPerkGroupKeys: new Set(),
+    groupedBackgroundSources: [],
+    hoveredBuildPerkId: null,
+    hoveredBuildPerkTooltipId: undefined,
+    hoveredPerkId: null,
+    mustHavePickedPerkCount,
+    mustHavePickedPerkIds,
+    onAddPerkToBuild: vi.fn(),
+    onCloseBuildPerkHover: vi.fn(),
+    onCloseBuildPerkTooltip: vi.fn(),
+    onClosePerkGroupHover: vi.fn(),
+    onInspectPerk: vi.fn(),
+    onInspectPerkGroup,
+    onNavigateDetailHistory: vi.fn(),
+    onOpenBuildPerkHover: vi.fn(),
+    onOpenBuildPerkTooltip: vi.fn(),
+    onOpenPerkGroupHover: vi.fn(),
+    onRemovePerkFromBuild: vi.fn(),
+    optionalPickedPerkCount,
+    optionalPickedPerkIds,
+    pickedPerkCount,
+    selectedPerkRequirement: null,
+    selectedPerk: selectedPerkDetail,
+    studyResourceFilter: {
+      shouldAllowBook: true,
+      shouldAllowScroll: true,
+      shouldAllowSecondScroll: false,
+    },
+    supportedBuildTargetPerkGroups,
+  }
+}
+
+function renderSelectedBackgroundFitDetail(
+  options: Parameters<typeof createDetailPanelProps>[0] = {},
+) {
+  const onInspectPerkGroup = options.onInspectPerkGroup ?? vi.fn()
   const renderResult = render(
-    <DetailPanel
-      selectedDetailType="background"
-      selectedBackgroundFitDetail={{ backgroundFit: selectedBackgroundFitDetail, rank: 0 }}
-      detailHistoryNavigationAvailability={{
-        next: false,
-        previous: false,
-      }}
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
-      selectedEmphasisCategoryNames={new Set()}
-      selectedEmphasisPerkGroupKeys={new Set()}
-      groupedBackgroundSources={[]}
-      hoveredBuildPerkId={null}
-      hoveredBuildPerkTooltipId={undefined}
-      hoveredPerkId={null}
-      mustHavePickedPerkCount={mustHavePickedPerkCount}
-      mustHavePickedPerkIds={mustHavePickedPerkIds}
-      onAddPerkToBuild={vi.fn()}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onClosePerkGroupHover={vi.fn()}
-      onInspectPerk={vi.fn()}
-      onInspectPerkGroup={onInspectPerkGroup}
-      onNavigateDetailHistory={vi.fn()}
-      onOpenBuildPerkHover={vi.fn()}
-      onOpenBuildPerkTooltip={vi.fn()}
-      onOpenPerkGroupHover={vi.fn()}
-      onRemovePerkFromBuild={vi.fn()}
-      optionalPickedPerkCount={optionalPickedPerkCount}
-      optionalPickedPerkIds={optionalPickedPerkIds}
-      pickedPerkCount={pickedPerkCount}
-      selectedPerkRequirement={null}
-      selectedPerk={null}
-      studyResourceFilter={{
-        shouldAllowBook: true,
-        shouldAllowScroll: true,
-        shouldAllowSecondScroll: false,
-      }}
-      supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
-    />,
+    <DetailPanel {...createDetailPanelProps({ ...options, onInspectPerkGroup })} />,
   )
 
   return {
@@ -289,10 +319,16 @@ describe('background details study resources', () => {
     expect(
       within(metadataSection).getByRole('region', { name: 'Background details' }),
     ).toBeVisible()
-    expect(within(metadataSection).getByRole('heading', { name: 'Daily cost' })).toBeVisible()
+    expect(within(metadataSection).getByText('Daily cost:')).toBeVisible()
+    expect(
+      within(metadataSection).queryByRole('heading', { name: 'Daily cost' }),
+    ).not.toBeInTheDocument()
     expect(within(metadataSection).getByText('6')).toBeVisible()
-    expect(within(metadataSection).getByText('Crusader')).toBeVisible()
-    expect(within(metadataSection).getByText('Educated')).toBeVisible()
+    expect(within(metadataSection).getByText('Background type:')).toBeVisible()
+    expect(within(metadataSection).getByText('Crusader, Educated')).toBeVisible()
+    expect(
+      within(metadataSection).queryByRole('heading', { name: 'Background type' }),
+    ).not.toBeInTheDocument()
     const fearOfUndeadTraitPill = within(metadataSection).getByRole('button', {
       name: 'Fear of Undead',
     })
@@ -312,6 +348,7 @@ describe('background details study resources', () => {
     expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
     expect(within(metadataSection).getByText('+13')).toBeVisible()
     expect(within(metadataSection).getByText('Camp skills')).toBeVisible()
+    expect(screen.getByTestId('detail-camp-resource-modifier-columns')).toBeVisible()
     expect(within(metadataSection).getByText('Repairing')).toBeVisible()
     expect(within(metadataSection).getByText('+30%')).toBeVisible()
     expect(within(metadataSection).getByText('Terrain movement')).toBeVisible()
@@ -345,6 +382,58 @@ describe('background details study resources', () => {
     expect(screen.queryByRole('img', { name: 'Must-have perk groups' })).not.toBeInTheDocument()
   })
 
+  test('keeps background section expansion state while switching details', async () => {
+    const user = userEvent.setup()
+    const alternateBackgroundFit = {
+      ...backgroundFit,
+      backgroundId: 'background.messenger',
+      backgroundName: 'Messenger',
+      dailyCost: 8,
+    } satisfies RankedBackgroundFit
+    const { renderResult } = renderSelectedBackgroundFitDetail()
+
+    const metadataToggle = screen.getByRole('button', { name: 'Background details' })
+
+    await user.click(metadataToggle)
+
+    expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
+    expect(screen.getByText('Daily cost:')).toBeVisible()
+
+    renderResult.rerender(
+      <DetailPanel
+        {...createDetailPanelProps({ selectedBackgroundFitDetail: alternateBackgroundFit })}
+      />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Background details' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.getByText('8')).toBeVisible()
+
+    renderResult.rerender(
+      <DetailPanel
+        {...createDetailPanelProps({
+          selectedBackgroundFitDetail: null,
+          selectedDetailType: 'perk',
+          selectedPerkDetail: selectedPerk,
+        })}
+      />,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Clarity' })).toBeVisible()
+
+    renderResult.rerender(
+      <DetailPanel {...createDetailPanelProps({ selectedBackgroundFitDetail: backgroundFit })} />,
+    )
+
+    expect(screen.getByRole('button', { name: 'Background details' })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    )
+    expect(screen.getByText('Daily cost:')).toBeVisible()
+  })
+
   test('opens background trait tooltips from trait pills', async () => {
     const user = userEvent.setup()
 
@@ -367,7 +456,7 @@ describe('background details study resources', () => {
 
     expect(fearOfUndeadTraitPill).toHaveAttribute('aria-describedby', traitTooltip.id)
     expect(traitTooltip).toHaveTextContent('Afraid of walking dead.')
-    expect(traitTooltip).toHaveTextContent(
+    expect(traitTooltip).not.toHaveTextContent(
       'This background excludes this trait, so recruits with this background cannot roll it.',
     )
   })
@@ -480,6 +569,9 @@ describe('background details study resources', () => {
     const rareToggle = within(section).getByRole('button', {
       name: 'Expand rare native perk groups',
     })
+    const sectionCountBadges = within(section)
+      .getAllByTestId('detail-other-perk-group-section-count')
+      .map((countBadge) => countBadge.textContent)
 
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
     expect(
@@ -489,6 +581,7 @@ describe('background details study resources', () => {
     ).toBeVisible()
     expect(within(section).getByRole('heading', { level: 4, name: 'Guaranteed' })).toBeVisible()
     expect(within(section).getByRole('heading', { level: 4, name: 'Possible' })).toBeVisible()
+    expect(sectionCountBadges).toEqual(['1', '1'])
     expect(within(section).getByText('Heavy armor stance')).toBeVisible()
     expect(within(section).getByText('Bold spirit')).toBeVisible()
     expect(within(section).queryByText('Defense')).not.toBeInTheDocument()

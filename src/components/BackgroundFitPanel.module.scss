@@ -516,6 +516,10 @@
     gap: var(--space-sm);
   }
 
+  .backgroundFitMatchSection + .backgroundFitMatchSection {
+    margin-top: var(--space-md);
+  }
+
   .backgroundFitEmptyState {
     align-content: start;
     gap: var(--space-md);
