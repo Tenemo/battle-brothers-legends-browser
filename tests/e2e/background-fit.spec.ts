@@ -1144,7 +1144,7 @@ test('keeps the background filter dropdown above background fit cards', async ({
   )
 })
 
-test('shows probabilistic background fit matches with percentage badges', async ({ page }) => {
+test('shows probabilistic background fit matches with plain percentage text', async ({ page }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
   await searchPerks(page, 'Danger Pay')
   await addPerkToBuildFromResults(page, 'Danger Pay')
@@ -1232,6 +1232,23 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await expect(barterMatchRow.getByTestId('background-fit-match-probability-badge')).toHaveText(
     /\d+(\.\d)?%/,
   )
+  const barterMatchProbabilityStyle = await barterMatchRow
+    .getByTestId('background-fit-match-probability-badge')
+    .evaluate((element) => {
+      const computedStyle = window.getComputedStyle(element)
+
+      return {
+        backgroundImage: computedStyle.backgroundImage,
+        borderRadius: computedStyle.borderTopLeftRadius,
+        paddingLeft: computedStyle.paddingLeft,
+      }
+    })
+
+  expect(barterMatchProbabilityStyle).toEqual({
+    backgroundImage: 'none',
+    borderRadius: '0px',
+    paddingLeft: '0px',
+  })
   await expect(barterMatchRow).not.toContainText(/\/\s*\d+\s+perks?\s*\//)
   await barterMatchButton.click()
   await expect(page.getByLabel('Search perks')).toHaveValue('')

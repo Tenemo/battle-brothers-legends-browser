@@ -365,11 +365,9 @@ describe('background fit card study resource badges', () => {
     )
     expect(badges[1]).toHaveAttribute('alt', 'Ancient scroll improves must-have chance: Berserker')
     expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
-    expect(screen.getByText('Must-have build chance').closest('[title]')).toHaveAttribute(
+    expect(screen.getByText('Must-have build chance').closest('[title]')).not.toHaveAttribute(
       'title',
-      expect.stringContaining(
-        'Breakdown: native 10%, skill book 20%, ancient scroll 40%, skill book and ancient scroll 60%.',
-      ),
+      expect.stringContaining('Breakdown:'),
     )
   })
 

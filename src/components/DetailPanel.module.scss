@@ -371,10 +371,11 @@
     list-style: none;
 
     li {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) max-content;
+      display: flex;
+      flex-wrap: wrap;
       gap: var(--space-sm);
       align-items: baseline;
+      justify-content: flex-start;
       min-width: 0;
       padding: var(--primitive-length-0-12rem) 0;
       border-top: var(--primitive-length-1px) solid var(--border-subtle);
@@ -386,6 +387,7 @@
   }
 
   .detailCampResourceModifierLabel {
+    flex: 0 1 auto;
     min-width: 0;
     color: var(--text-secondary);
     font-size: var(--type-support-size);
@@ -393,11 +395,11 @@
   }
 
   .detailCampResourceModifierValue {
+    flex: 0 0 auto;
     color: var(--accent-soft);
     font-size: var(--type-body-size);
     font-weight: 400;
     line-height: var(--type-compact-line-height);
-    text-align: right;
     white-space: nowrap;
   }
 
@@ -541,79 +543,9 @@
 
   .detailBackgroundFitTables {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: var(--space-lg);
+    grid-template-columns: minmax(0, 1fr);
     align-items: start;
     min-width: 0;
-
-    &[data-has-chance-breakdown='false'] {
-      grid-template-columns: minmax(0, 1fr);
-    }
-  }
-
-  .detailChanceBreakdown {
-    display: grid;
-    gap: var(--space-sm);
-    min-width: 0;
-  }
-
-  .detailChanceBreakdownList {
-    display: grid;
-    gap: 0;
-    min-width: 0;
-    margin: 0;
-  }
-
-  .detailChanceBreakdownRow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) max-content;
-    gap: var(--space-sm);
-    align-items: baseline;
-    min-width: 0;
-    padding: var(--primitive-length-0-12rem) 0;
-    border-top: var(--primitive-length-1px) solid var(--border-subtle);
-    cursor: help;
-
-    &:first-child {
-      border-top: 0;
-    }
-
-    dt {
-      display: flex;
-      gap: var(--space-xs);
-      align-items: center;
-      min-width: 0;
-      color: var(--text-secondary);
-      font-size: var(--type-support-size);
-      line-height: var(--type-support-line-height);
-    }
-
-    dd {
-      margin: 0;
-      color: var(--accent-soft);
-      font-size: var(--type-body-size);
-      line-height: var(--type-compact-line-height);
-      white-space: nowrap;
-    }
-  }
-
-  .detailChanceBreakdownLabelText {
-    min-width: 0;
-  }
-
-  .detailChanceBreakdownResourceIcons {
-    display: inline-flex;
-    flex: 0 0 auto;
-    gap: var(--space-2xs);
-    align-items: center;
-  }
-
-  .detailChanceBreakdownResourceIcon {
-    display: block;
-    object-fit: contain;
-    filter: drop-shadow(var(--shadow-chain-drop));
-
-    @include size(var(--icon-size-xs));
   }
 
   .detailStudyResourcePlan {
@@ -697,6 +629,189 @@
 
   .detailStudyResourceTargetTile {
     height: 100%;
+  }
+
+  .detailChanceExplanationSection {
+    grid-column: 1 / -1;
+    border-width: var(--primitive-length-1px) 0 0;
+    border-radius: 0;
+    padding: var(--space-md) 0 0;
+    background: transparent;
+
+    &[data-expanded='true'] .detailCollapsibleToggle {
+      margin-bottom: var(--space-sm);
+    }
+
+    .detailCollapsibleToggleHeading {
+      font-size: var(--type-card-title-size);
+    }
+  }
+
+  .detailChanceExplanation {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+  }
+
+  .detailChanceExplanationCopy,
+  .detailChanceExplanationCalculation {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
+  }
+
+  .detailChanceExplanationCalculation {
+    display: grid;
+    gap: var(--space-2xs);
+    color: var(--text-primary);
+    overflow-wrap: anywhere;
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .detailChanceExplanationProbabilityTerm {
+    cursor: help;
+    text-decoration-line: underline;
+    text-decoration-style: dotted;
+    text-decoration-thickness: var(--primitive-length-1px);
+    text-underline-offset: 0.16em;
+  }
+
+  .detailChanceExplanationScopes {
+    display: grid;
+    gap: var(--space-md);
+    min-width: 0;
+  }
+
+  .detailChanceExplanationScope {
+    display: grid;
+    gap: var(--space-sm);
+    min-width: 0;
+    padding-top: var(--space-sm);
+    border-top: var(--primitive-length-1px) solid var(--border-subtle);
+  }
+
+  .detailChanceExplanationScopeHeading {
+    display: flex;
+    gap: var(--space-md);
+    align-items: baseline;
+    justify-content: space-between;
+    min-width: 0;
+    margin: 0;
+    color: var(--text-primary);
+    font-family: var(--heading-font-family);
+    font-size: var(--type-card-title-size);
+    font-weight: var(--font-weight-regular);
+    line-height: var(--type-heading-line-height);
+
+    span {
+      min-width: 0;
+    }
+
+    strong {
+      flex: 0 0 auto;
+      color: var(--accent-soft);
+      font-weight: var(--font-weight-regular);
+      white-space: nowrap;
+    }
+  }
+
+  .detailChanceExplanationResourceList {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .detailChanceExplanationResourceItem {
+    display: grid;
+    grid-template-columns: var(--icon-size-xs) minmax(0, 1fr);
+    gap: var(--space-xs);
+    align-items: center;
+    min-width: 0;
+    color: var(--text-primary);
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-line-height);
+  }
+
+  .detailChanceExplanationResourceIcon {
+    display: block;
+    object-fit: contain;
+    filter: drop-shadow(var(--shadow-chain-drop));
+
+    @include size(var(--icon-size-xs));
+  }
+
+  .detailChanceRouteComparison {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+  }
+
+  .detailChanceExplanationMiniHeading {
+    margin: 0;
+    color: var(--accent-soft);
+    font-size: var(--type-support-size);
+    font-weight: var(--font-weight-regular);
+    letter-spacing: var(--type-meta-letter-spacing);
+    line-height: var(--type-support-line-height);
+    text-transform: uppercase;
+  }
+
+  .detailChanceRouteComparisonList {
+    display: grid;
+    gap: 0;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .detailChanceRouteComparisonRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--space-sm);
+    align-items: baseline;
+    min-width: 0;
+    padding: var(--primitive-length-0-12rem) 0;
+    border-top: var(--primitive-length-1px) solid var(--border-subtle);
+
+    &:first-child {
+      border-top: 0;
+    }
+
+    dt {
+      min-width: 0;
+      color: var(--text-secondary);
+      font-size: var(--type-support-size);
+      line-height: var(--type-support-line-height);
+    }
+
+    dd {
+      margin: 0;
+      color: var(--accent-soft);
+      font-size: var(--type-body-size);
+      line-height: var(--type-compact-line-height);
+      white-space: nowrap;
+    }
+  }
+
+  .detailChanceExplanationAdvanced {
+    min-width: 0;
+    color: var(--text-secondary);
+    font-size: var(--type-support-size);
+    line-height: var(--type-support-line-height);
+
+    summary {
+      display: inline-flex;
+      align-items: center;
+      min-height: var(--target-size-compact);
+      color: var(--accent-soft);
+      cursor: pointer;
+    }
   }
 
   .detailOtherPerkGroupContent,

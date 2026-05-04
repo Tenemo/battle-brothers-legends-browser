@@ -319,6 +319,28 @@ async function readBelowDesktopSectionTops(page: Page) {
   })
 }
 
+async function readPlannerBoardVisualVerticalOverflow(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const plannerBoard = document.querySelector('[data-testid="planner-board"]')
+
+    if (!(plannerBoard instanceof HTMLElement)) {
+      return Number.POSITIVE_INFINITY
+    }
+
+    const plannerBoardRectangle = plannerBoard.getBoundingClientRect()
+    const childRectangles = [...plannerBoard.children].map((child) => child.getBoundingClientRect())
+
+    if (childRectangles.length === 0) {
+      return 0
+    }
+
+    return (
+      Math.max(...childRectangles.map((rectangle) => rectangle.bottom)) -
+      plannerBoardRectangle.bottom
+    )
+  })
+}
+
 async function readMobileTouchTargetMetrics(page: Page) {
   return page.evaluate(() => {
     const targetSelectors = [
@@ -381,19 +403,7 @@ test('keeps the shell pinned to the viewport with always-visible planner rows', 
   await expect(
     buildPlanner.getByText('Perk groups for individual perks', { exact: true }),
   ).toBeVisible()
-  await expect
-    .poll(async () =>
-      page.evaluate(() => {
-        const plannerBoard = document.querySelector(
-          '[data-testid="planner-board"]',
-        ) as HTMLElement | null
-
-        return plannerBoard === null
-          ? Number.POSITIVE_INFINITY
-          : plannerBoard.scrollHeight - plannerBoard.clientHeight
-      }),
-    )
-    .toBeLessThanOrEqual(1)
+  await expect.poll(async () => readPlannerBoardVisualVerticalOverflow(page)).toBeLessThanOrEqual(1)
 })
 
 test('uses normal page scrolling on tablet widths instead of cramped viewport rows', async ({

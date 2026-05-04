@@ -1,0 +1,604 @@
+[
+  {
+    "description": "This character has developed a substance addiction. If not provided with a regular supply, he may suffer symptoms of withdrawal.",
+    "iconPath": "ui/traits/trait_icon_62.png",
+    "scriptId": "addict_trait",
+    "traitId": "trait.addict",
+    "traitName": "Addict"
+  },
+  {
+    "description": "This character is always pale and sickly, which makes him particularly susceptible to poisons.",
+    "iconPath": "ui/traits/trait_icon_59.png",
+    "scriptId": "ailing_trait",
+    "traitId": "trait.ailing",
+    "traitName": "Ailing"
+  },
+  {
+    "description": "Hearing a crowd chant your name can be addicting. This character is starting to enjoy the deadly fights of the arena and dispatching his opponents in a way that entertains the crowds.",
+    "iconPath": "ui/traits/trait_icon_74.png",
+    "scriptId": "arena_fighter_trait",
+    "traitId": "trait.arena_fighter",
+    "traitName": "Arena Fighter"
+  },
+  {
+    "description": "This character has just dipped his toes into the brutal profession of arena fighting and did so without dying.",
+    "iconPath": "ui/traits/trait_icon_73.png",
+    "scriptId": "arena_pit_fighter_trait",
+    "traitId": "trait.pit_fighter",
+    "traitName": "Pit Fighter"
+  },
+  {
+    "description": "A veteran of the arena with many a scar, this character knows how to make the crowd cheer for a bloody spectacle. The worse the odds of winning, the better the entertainment!",
+    "iconPath": "ui/traits/trait_icon_75.png",
+    "scriptId": "arena_veteran_trait",
+    "traitId": "trait.arena_veteran",
+    "traitName": "Arena Veteran"
+  },
+  {
+    "description": "Being short of breath and prone to coughing, this character takes longer to recover from fatigue than others.",
+    "iconPath": "ui/traits/trait_icon_22.png",
+    "scriptId": "asthmatic_trait",
+    "traitId": "trait.asthmatic",
+    "traitName": "Asthmatic"
+  },
+  {
+    "description": "This character is physically fit.",
+    "iconPath": "ui/traits/trait_icon_21.png",
+    "scriptId": "athletic_trait",
+    "traitId": "trait.athletic",
+    "traitName": "Athletic"
+  },
+  {
+    "description": "This character is prone to bleeding and will do so longer than most others.",
+    "iconPath": "ui/traits/trait_icon_16.png",
+    "scriptId": "bleeder_trait",
+    "traitId": "trait.bleeder",
+    "traitName": "Bleeder"
+  },
+  {
+    "description": "This character is prone to excessive violence and cruelty towards his enemies. An opponent isn't good enough dead, his head needs to be on a spike!",
+    "iconPath": "ui/traits/trait_icon_42.png",
+    "scriptId": "bloodthirsty_trait",
+    "traitId": "trait.bloodthirsty",
+    "traitName": "Bloodthirsty"
+  },
+  {
+    "description": "Just keep on going. This character will bravely venture into the unknown.",
+    "iconPath": "ui/traits/trait_icon_37.png",
+    "scriptId": "brave_trait",
+    "traitId": "trait.brave",
+    "traitName": "Brave"
+  },
+  {
+    "description": "This character has an easier time than most with grasping new concepts and adapting to the situation.",
+    "iconPath": "ui/traits/trait_icon_11.png",
+    "scriptId": "bright_trait",
+    "traitId": "trait.bright",
+    "traitName": "Bright"
+  },
+  {
+    "description": "Not one for delicate attacks, this character will use full force for additional damage when striking an opponent's head in melee at the expense of some accuracy.",
+    "iconPath": "ui/traits/trait_icon_01.png",
+    "scriptId": "brute_trait",
+    "traitId": "trait.brute",
+    "traitName": "Brute"
+  },
+  {
+    "description": "Afflicted with clubfoot as a child, this character still has a harder time walking than most.",
+    "iconPath": "ui/traits/trait_icon_23.png",
+    "scriptId": "clubfooted_trait",
+    "traitId": "trait.clubfooted",
+    "traitName": "Clubfooted"
+  },
+  {
+    "description": "This character can be as dangerous for himself as to his opponent.",
+    "iconPath": "ui/traits/trait_icon_36.png",
+    "scriptId": "clumsy_trait",
+    "traitId": "trait.clumsy",
+    "traitName": "Clumsy"
+  },
+  {
+    "description": "All too easy! This character can be a bit too cocky for his own good. ",
+    "iconPath": "ui/traits/trait_icon_24.png",
+    "scriptId": "cocky_trait",
+    "traitId": "trait.cocky",
+    "traitName": "Cocky"
+  },
+  {
+    "description": "Run for your lives! This character is a craven and will run at the slightest sign of the odds turning against him.",
+    "iconPath": "ui/traits/trait_icon_40.png",
+    "scriptId": "craven_trait",
+    "traitId": "trait.craven",
+    "traitName": "Craven"
+  },
+  {
+    "description": "This character is an acolyte of Davkul, an individual with intimate knowledge of the teachings about the elder god. He embraces physical pain and peril as bringing him closer to salvation.",
+    "iconPath": "ui/traits/trait_icon_66.png",
+    "scriptId": "cultist_acolyte_trait",
+    "traitId": "trait.cultist_acolyte",
+    "traitName": "Acolyte of Davkul"
+  },
+  {
+    "description": "This character feels chosen by Davkul, something not many in this world can claim. He embraces physical pain and peril as bringing him closer to salvation, and he believes that his god will protect him so he can act on behest of his god.",
+    "iconPath": "ui/traits/trait_icon_68.png",
+    "scriptId": "cultist_chosen_trait",
+    "traitId": "trait.cultist_chosen",
+    "traitName": "Chosen of Davkul"
+  },
+  {
+    "description": "This character is a disciple of Davkul, an individual with unquestionable loyalty to the elder god. He embraces physical pain and peril as bringing him closer to salvation.",
+    "iconPath": "ui/traits/trait_icon_67.png",
+    "scriptId": "cultist_disciple_trait",
+    "traitId": "trait.cultist_disciple",
+    "traitName": "Disciple of Davkul"
+  },
+  {
+    "description": "This character is a fanatic follower of Davkul, believing that Davkul embraces man in death.",
+    "iconPath": "ui/traits/trait_icon_64.png",
+    "scriptId": "cultist_fanatic_trait",
+    "traitId": "trait.cultist_fanatic",
+    "traitName": "Fanatic of Davkul"
+  },
+  {
+    "description": "This character is a prophet of Davkul, the fleshen conduit of his will and the earthen voice speaking his truth. Other believers listen to his every word and feel compelled to go above and beyond their physical limits on his behest.",
+    "iconPath": "ui/traits/trait_icon_69.png",
+    "scriptId": "cultist_prophet_trait",
+    "traitId": "trait.cultist_prophet",
+    "traitName": "Prophet of Davkul"
+  },
+  {
+    "description": "This character is a zealous follower of Davkul, so much so that he has come to embrace physical pain as bringing him closer to salvation.",
+    "iconPath": "ui/traits/trait_icon_65.png",
+    "scriptId": "cultist_zealot_trait",
+    "traitId": "trait.cultist_zealot",
+    "traitName": "Zealot of Davkul"
+  },
+  {
+    "description": "This character will turn tail on the first possible occasion. Better have an eye on him!",
+    "iconPath": "ui/traits/trait_icon_38.png",
+    "scriptId": "dastard_trait",
+    "traitId": "trait.dastard",
+    "traitName": "Dastard"
+  },
+  {
+    "description": "I'm not dead yet! This character doesn't care about receiving injuries and will fight on regardless.",
+    "iconPath": "ui/traits/trait_icon_13.png",
+    "scriptId": "deathwish_trait",
+    "traitId": "trait.deathwish",
+    "traitName": "Deathwish"
+  },
+  {
+    "description": "Don't worry, I got this. This character shows a formidable amount of self-confidence.",
+    "iconPath": "ui/traits/trait_icon_31.png",
+    "scriptId": "determined_trait",
+    "traitId": "trait.determined",
+    "traitName": "Determined"
+  },
+  {
+    "description": "A dexterous character has an easier time hitting his opponent in melee.",
+    "iconPath": "ui/traits/trait_icon_34.png",
+    "scriptId": "dexterous_trait",
+    "traitId": "trait.dexterous",
+    "traitName": "Dexterous"
+  },
+  {
+    "description": "I have to put myself first! This character is rather disloyal and will be fast to leave should you ever run out of crowns or provisions.",
+    "iconPath": "ui/traits/trait_icon_35.png",
+    "scriptId": "disloyal_trait",
+    "traitId": "trait.disloyal",
+    "traitName": "Disloyal"
+  },
+  {
+    "description": "There's no question what this character spends his crowns on. Expect him to drink heavily before any battle, in secret if need be. ",
+    "iconPath": "ui/traits/trait_icon_29.png",
+    "scriptId": "drunkard_trait",
+    "traitId": "trait.drunkard",
+    "traitName": "Drunkard"
+  },
+  {
+    "description": "Umm, what? This character isn't the brightest, and new concepts take a while to really stick with him.",
+    "iconPath": "ui/traits/trait_icon_17.png",
+    "scriptId": "dumb_trait",
+    "traitId": "trait.dumb",
+    "traitName": "Dumb"
+  },
+  {
+    "description": "Blessed with the eyes of an eagle, this character can spot a fly from a hundred paces away.",
+    "iconPath": "ui/traits/trait_icon_09.png",
+    "scriptId": "eagle_eyes_trait",
+    "traitId": "trait.eagle_eyes",
+    "traitName": "Eagle Eyes"
+  },
+  {
+    "description": "This character needs some warm words and a pat on the back from time to time.",
+    "iconPath": "ui/traits/trait_icon_41.png",
+    "scriptId": "fainthearted_trait",
+    "traitId": "trait.fainthearted",
+    "traitName": "Fainthearted"
+  },
+  {
+    "description": "This character is more interested in pork chops than exercising, and will run out of breath more easily.",
+    "iconPath": "ui/traits/trait_icon_10.png",
+    "scriptId": "fat_trait",
+    "traitId": "trait.fat",
+    "traitName": "Fat"
+  },
+  {
+    "description": "Some past event or particularly convincing story in this character's life has left him scared of what the monstrous beasts of the wild are capable of, making him less reliable when facing them on the battlefield.",
+    "iconPath": "ui/traits/trait_icon_48.png",
+    "scriptId": "fear_beasts_trait",
+    "traitId": "trait.fear_beasts",
+    "traitName": "Fear of Beasts"
+  },
+  {
+    "description": "Some past event or particularly convincing story in this character's life has left him scared of what greenskins are capable of, making him less reliable when facing them on the battlefield.",
+    "iconPath": "ui/traits/trait_icon_49.png",
+    "scriptId": "fear_greenskins_trait",
+    "traitId": "trait.fear_greenskins",
+    "traitName": "Fear of Greenskins"
+  },
+  {
+    "description": "Some past event or particularly convincing story in this character's life has left him scared of what the walking dead are capable of, making him less reliable when facing them on the battlefield.",
+    "iconPath": "ui/traits/trait_icon_47.png",
+    "scriptId": "fear_undead_trait",
+    "traitId": "trait.fear_undead",
+    "traitName": "Fear of Undead"
+  },
+  {
+    "description": "There are a lot of old friends to meet in the afterlife. This character is not afraid of death.",
+    "iconPath": "ui/traits/trait_icon_30.png",
+    "scriptId": "fearless_trait",
+    "traitId": "trait.fearless",
+    "traitName": "Fearless"
+  },
+  {
+    "description": "With a physique like an eggshell, this guy is not the natural born brawler.",
+    "iconPath": "ui/traits/trait_icon_04.png",
+    "scriptId": "fragile_trait",
+    "traitId": "trait.fragile",
+    "traitName": "Fragile"
+  },
+  {
+    "description": "Forged in the arenas of the south, this character has fought many a battle, and every blow will only strengthen his indomitable will and endurance. His fabulous lifestyle demands high pay, but he'll never desert you and can't be dismissed. If all three original members should die, your campaign ends.",
+    "iconPath": "ui/traits/trait_icon_70.png",
+    "scriptId": "glorious_endurance_trait",
+    "traitId": "trait.glorious",
+    "traitName": "Glorious Endurance"
+  },
+  {
+    "description": "Forged in the arenas of the south, this character has fought many a battle, and is an expert in dispatching multiple opponents in a row. His fabulous lifestyle demands high pay, but he'll never desert you  and can't be dismissed. If all three original members should die, your campaign ends.",
+    "iconPath": "ui/traits/trait_icon_71.png",
+    "scriptId": "glorious_quickness_trait",
+    "traitId": "trait.glorious",
+    "traitName": "Glorious Quickness"
+  },
+  {
+    "description": "Forged in the arenas of the south, this character has fought man and beast alike, and it takes a lot to break his resolve. His fabulous lifestyle demands high pay, but he'll never desert you  and can't be dismissed. If all three original members should die, your campaign ends.",
+    "iconPath": "ui/traits/trait_icon_72.png",
+    "scriptId": "glorious_resolve_trait",
+    "traitId": "trait.glorious",
+    "traitName": "Glorious Resolve"
+  },
+  {
+    "description": "Tasty, let's have another one! Better bring extra provisions when traveling with this character and expect them to leave fast if you ever run out of provisions entirely.",
+    "iconPath": "ui/traits/trait_icon_07.png",
+    "scriptId": "gluttonous_trait",
+    "traitId": "trait.gluttonous",
+    "traitName": "Gluttonous"
+  },
+  {
+    "description": "I want more! This character is greedy and will demand a higher daily payment than others with a similar background, as well as being fast to leave you if you ever run out of crowns.",
+    "iconPath": "ui/traits/trait_icon_06.png",
+    "scriptId": "greedy_trait",
+    "traitId": "trait.greedy",
+    "traitName": "Greedy"
+  },
+  {
+    "description": "Some past event in this character's life has fueled a burning hatred for all things wild and monstrous.",
+    "iconPath": "ui/traits/trait_icon_51.png",
+    "scriptId": "hate_beasts_trait",
+    "traitId": "trait.hate_beasts",
+    "traitName": "Hate for Beasts"
+  },
+  {
+    "description": "Some past event in this character's life has fueled a burning hatred for all things green and mean.",
+    "iconPath": "ui/traits/trait_icon_52.png",
+    "scriptId": "hate_greenskins_trait",
+    "traitId": "trait.hate_greenskins",
+    "traitName": "Hate for Greenskins"
+  },
+  {
+    "description": "Some past event in this character's life has fueled a burning hatred for all things that refuse to stay six feet underground.",
+    "iconPath": "ui/traits/trait_icon_50.png",
+    "scriptId": "hate_undead_trait",
+    "traitId": "trait.hate_undead",
+    "traitName": "Hate for Undead"
+  },
+  {
+    "description": "Umm... well... maybe. This character is hesitant to act.",
+    "iconPath": "ui/traits/trait_icon_25.png",
+    "scriptId": "hesitant_trait",
+    "traitId": "trait.hesitant",
+    "traitName": "Hesitant"
+  },
+  {
+    "description": "Being particularly huge and burly, this character's strikes hurt plenty, but he's also a bigger target than most.",
+    "iconPath": "ui/traits/trait_icon_61.png",
+    "scriptId": "huge_trait",
+    "traitId": "trait.huge",
+    "traitName": "Huge"
+  },
+  {
+    "description": "Let's go already! What's taking so long? This character wants things to get started now.",
+    "iconPath": "ui/traits/trait_icon_46.png",
+    "scriptId": "impatient_trait",
+    "traitId": "trait.impatient",
+    "traitName": "Impatient"
+  },
+  {
+    "description": "I can't do it! This character could use a bit more self confidence.",
+    "iconPath": "ui/traits/trait_icon_03.png",
+    "scriptId": "insecure_trait",
+    "traitId": "trait.insecure",
+    "traitName": "Insecure"
+  },
+  {
+    "description": "This character shakes off hits that would cripple a lesser man.",
+    "iconPath": "ui/traits/trait_icon_44.png",
+    "scriptId": "iron_jaw_trait",
+    "traitId": "trait.iron_jaw",
+    "traitName": "Iron Jaw"
+  },
+  {
+    "description": "This character will rarely run out of breath, whether swinging a heavy weapon or running across all the battlefield.",
+    "iconPath": "ui/traits/trait_icon_33.png",
+    "scriptId": "iron_lungs_trait",
+    "traitId": "trait.iron_lungs",
+    "traitName": "Iron Lungs"
+  },
+  {
+    "description": "The glass is half empty now but was half full just a moment ago.",
+    "iconPath": "ui/traits/trait_icon_28.png",
+    "scriptId": "irrational_trait",
+    "traitId": "trait.irrational",
+    "traitName": "Irrational"
+  },
+  {
+    "description": "I'm with you! This character is loyal to the end and much less likely to leave you even if you run out of crowns and provisions.",
+    "iconPath": "ui/traits/trait_icon_39.png",
+    "scriptId": "loyal_trait",
+    "traitId": "trait.loyal",
+    "traitName": "Loyal"
+  },
+  {
+    "description": "This character has a natural talent for getting out of harm's way in the last second.",
+    "iconPath": "ui/traits/trait_icon_54.png",
+    "scriptId": "lucky_trait",
+    "traitId": "trait.lucky",
+    "traitName": "Lucky"
+  },
+  {
+    "description": "This character has gazed into the abyss, and the abyss has gazed right back at him, turning him quite mad. He often rambles unintelligibly, and his cryptic mind has become inaccessible both to his peers and to the enemy.",
+    "iconPath": "ui/traits/trait_icon_76.png",
+    "scriptId": "mad_trait",
+    "traitId": "trait.mad",
+    "traitName": "Mad"
+  },
+  {
+    "description": "During nighttime this character has to be tied to a flock, because he won't be able to see even his own nose.",
+    "iconPath": "ui/traits/trait_icon_56.png",
+    "scriptId": "night_blind_trait",
+    "traitId": "trait.night_blind",
+    "traitName": "Night Blind"
+  },
+  {
+    "description": "Some characters adapt to low light conditions better than others, and this individual is especially good at it.",
+    "iconPath": "ui/traits/trait_icon_57.png",
+    "scriptId": "night_owl_trait",
+    "traitId": "trait.night_owl",
+    "traitName": "Night Owl"
+  },
+  {
+    "description": "This character has taken an Oath of Camaraderie, and is sworn to stand and fall together with his allies. The general confusion of higher numbers on the battlefield, and the lack of focus on individual skill and personal glory has taken a toll on this character's resolve at the start of battle, however.",
+    "iconPath": "ui/traits/trait_icon_85.png",
+    "scriptId": "oath_of_camaraderie_trait",
+    "traitId": "trait.oath_of_camaraderie",
+    "traitName": "Oath of Camaderie"
+  },
+  {
+    "description": "This character has taken an Oath of Distinction, and is sworn to seek his own victories without the support of allies.",
+    "iconPath": "ui/traits/trait_icon_88.png",
+    "scriptId": "oath_of_distinction_trait",
+    "traitId": "trait.oath_of_distinction",
+    "traitName": "Oath of Distinction"
+  },
+  {
+    "description": "This character has taken an Oath of Dominion, and is sworn to protect mankind from the savagery of wild beasts.",
+    "iconPath": "ui/traits/trait_icon_79.png",
+    "scriptId": "oath_of_dominion_trait",
+    "traitId": "trait.oath_of_dominion",
+    "traitName": "Oath of Dominion"
+  },
+  {
+    "description": "This character has taken an Oath of Endurance, and is sworn to outlast any foe in battle.",
+    "iconPath": "ui/traits/trait_icon_84.png",
+    "scriptId": "oath_of_endurance_trait",
+    "traitId": "trait.oath_of_endurance",
+    "traitName": "Oath of Endurance"
+  },
+  {
+    "description": "This character has taken an Oath of Fortification, and is sworn to trust in his shield above all else.",
+    "iconPath": "ui/traits/trait_icon_86.png",
+    "scriptId": "oath_of_fortification_trait",
+    "traitId": "trait.oath_of_fortification",
+    "traitName": "Oath of Fortification"
+  },
+  {
+    "description": "This character has taken an Oath of Honor, and is sworn to seize victory up close.",
+    "iconPath": "ui/traits/trait_icon_82.png",
+    "scriptId": "oath_of_honor_trait",
+    "traitId": "trait.oath_of_honor",
+    "traitName": "Oath of Honor"
+  },
+  {
+    "description": "This character has taken an Oath of Humility, and is sworn to self-reflection and self-improvement.",
+    "iconPath": "ui/traits/trait_icon_81.png",
+    "scriptId": "oath_of_humility_trait",
+    "traitId": "trait.oath_of_humility",
+    "traitName": "Oath of Humility"
+  },
+  {
+    "description": "This character has taken an Oath of Righteousness, and is sworn to put the living dead to their final rest.",
+    "iconPath": "ui/traits/trait_icon_78.png",
+    "scriptId": "oath_of_righteousness_trait",
+    "traitId": "trait.oath_of_righteousness",
+    "traitName": "Oath of Righteousness"
+  },
+  {
+    "description": "This character has taken an Oath of Sacrifice, and is sworn to forgo self-care to see the company succeed. Such drive takes a toll on physical well-being, however.",
+    "iconPath": "ui/traits/trait_icon_87.png",
+    "scriptId": "oath_of_sacrifice_trait",
+    "traitId": "trait.oath_of_sacrifice",
+    "traitName": "Oath of Sacrifice"
+  },
+  {
+    "description": "This character has taken an Oath of Valor, and is sworn to hold fast in battle at any cost.",
+    "iconPath": "ui/traits/trait_icon_83.png",
+    "scriptId": "oath_of_valor_trait",
+    "traitId": "trait.oath_of_valor",
+    "traitName": "Oath of Valor"
+  },
+  {
+    "description": "This character has taken an Oath of Vengeance, and is sworn to battle the greenskin menace that plagues mankind.",
+    "iconPath": "ui/traits/trait_icon_77.png",
+    "scriptId": "oath_of_vengeance_trait",
+    "traitId": "trait.oath_of_vengeance",
+    "traitName": "Oath of Vengeance"
+  },
+  {
+    "description": "This character has taken an Oath of Wrath, and is sworn to smite even the greatest foe.",
+    "iconPath": "ui/traits/trait_icon_80.png",
+    "scriptId": "oath_of_wrath_trait",
+    "traitId": "trait.oath_of_wrath",
+    "traitName": "Oath of Wrath"
+  },
+  {
+    "description": "Old age has finally caught up with this character.",
+    "iconPath": "skills/status_effect_60.png",
+    "scriptId": "old_trait",
+    "traitId": "trait.old",
+    "traitName": "Old"
+  },
+  {
+    "description": "The glass is half full!",
+    "iconPath": "ui/traits/trait_icon_19.png",
+    "scriptId": "optimist_trait",
+    "traitId": "trait.optimist",
+    "traitName": "Optimist"
+  },
+  {
+    "description": "I swear that bush over there was moving! This character is extra cautious and reluctant to move ahead.",
+    "iconPath": "ui/traits/trait_icon_55.png",
+    "scriptId": "paranoid_trait",
+    "traitId": "trait.paranoid",
+    "traitName": "Paranoid"
+  },
+  {
+    "description": "The glass is definitely half empty.",
+    "iconPath": "ui/traits/trait_icon_20.png",
+    "scriptId": "pessimist_trait",
+    "traitId": "trait.pessimist",
+    "traitName": "Pessimist"
+  },
+  {
+    "description": "This is your player character, or in other words, yourself. If he dies, your campaign ends. You can't dismiss him, and he'll never desert you.",
+    "iconPath": "ui/traits/trait_icon_63.png",
+    "scriptId": "player_character_trait",
+    "traitId": "trait.player",
+    "traitName": "Player Character"
+  },
+  {
+    "description": "Already there! This character is quick to act, often before his opponents do.",
+    "iconPath": "ui/traits/trait_icon_18.png",
+    "scriptId": "quick_trait",
+    "traitId": "trait.quick",
+    "traitName": "Quick"
+  },
+  {
+    "description": "Is that a tree or an orc over there? This character is short sighted and can not see far.",
+    "iconPath": "ui/traits/trait_icon_27.png",
+    "scriptId": "short_sighted_trait",
+    "traitId": "trait.short_sighted",
+    "traitName": "Short Sighted"
+  },
+  {
+    "description": "Who needs more than oatmeal and water? This character finds no joy in eating and will use less provisions, as well as not leaving you as fast should you ever run out of provisions entirely.",
+    "iconPath": "ui/traits/trait_icon_08.png",
+    "scriptId": "spartan_trait",
+    "traitId": "trait.spartan",
+    "traitName": "Spartan"
+  },
+  {
+    "description": "Well fed and buffed to the max.",
+    "iconPath": "ui/traits/trait_icon_15.png",
+    "scriptId": "strong_trait",
+    "traitId": "trait.strong",
+    "traitName": "Strong"
+  },
+  {
+    "description": "It's cursed! This character is highly superstitious and therefore more vulnerable to skills that directly attack his Resolve.",
+    "iconPath": "ui/traits/trait_icon_26.png",
+    "scriptId": "superstitious_trait",
+    "traitId": "trait.superstitious",
+    "traitName": "Superstitious"
+  },
+  {
+    "description": "A sure footing makes it hard to catch this character off balance and land a hit.",
+    "iconPath": "ui/traits/trait_icon_05.png",
+    "scriptId": "sure_footing_trait",
+    "traitId": "trait.sure_footing",
+    "traitName": "Sure Footing"
+  },
+  {
+    "description": "Why won't you just stay dead? This character is a survivor and will outlive most of his peers.",
+    "iconPath": "ui/traits/trait_icon_43.png",
+    "scriptId": "survivor_trait",
+    "traitId": "trait.survivor",
+    "traitName": "Survivor"
+  },
+  {
+    "description": "This character is naturally swift and agile, and has an easier time dodging incoming projectiles.",
+    "iconPath": "ui/traits/trait_icon_53.png",
+    "scriptId": "swift_trait",
+    "traitId": "trait.swift",
+    "traitName": "Swift"
+  },
+  {
+    "description": "This character makes sure to always announce his intentions to his brothers-in-arms. In fact, he'll never shut the hell up. At least it reduces the chance of accidents happening.",
+    "iconPath": "ui/traits/trait_icon_58.png",
+    "scriptId": "teamplayer_trait",
+    "traitId": "trait.teamplayer",
+    "traitName": "Team Player"
+  },
+  {
+    "description": "Being very short of height, this character is used to slipping through.",
+    "iconPath": "ui/traits/trait_icon_02.png",
+    "scriptId": "tiny_trait",
+    "traitId": "trait.tiny",
+    "traitName": "Tiny"
+  },
+  {
+    "description": "This character is tough as nails, shrugging off hits and blows.",
+    "iconPath": "ui/traits/trait_icon_14.png",
+    "scriptId": "tough_trait",
+    "traitId": "trait.tough",
+    "traitName": "Tough"
+  },
+  {
+    "description": "This character is swift as a weasel. Unfortunately, he seems to only be able to call on this ability when running to save his hide.",
+    "iconPath": "ui/traits/trait_icon_60.png",
+    "scriptId": "weasel_trait",
+    "traitId": "trait.weasel",
+    "traitName": "Weasel"
+  }
+]

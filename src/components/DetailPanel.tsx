@@ -15,6 +15,8 @@ import {
   type TooltipAnchorRectangle,
 } from '../lib/perk-display'
 import type {
+  BackgroundFitChanceCalculation,
+  BackgroundFitChanceCalculationProbabilityTerm,
   BackgroundFitOtherPerkGroup,
   BackgroundFitStudyResourceChanceBreakdownEntry,
   BackgroundFitStudyResourceStrategy,
@@ -105,6 +107,7 @@ type DetailHistoryNavigationAvailability = {
 type DetailCollapsibleSectionKey =
   | 'background-details'
   | 'background-fit'
+  | 'chance-explanation'
   | 'matched-perk-groups'
   | 'other-native-perk-groups'
 
@@ -113,6 +116,7 @@ type DetailCollapsibleSectionExpandedStates = Partial<Record<DetailCollapsibleSe
 const defaultDetailCollapsibleSectionExpandedStates = {
   'background-details': false,
   'background-fit': true,
+  'chance-explanation': false,
   'matched-perk-groups': true,
   'other-native-perk-groups': false,
 } satisfies Record<DetailCollapsibleSectionKey, boolean>
@@ -511,6 +515,7 @@ function DetailHistoryNavigation({
 
 function DetailCollapsibleSection({
   children,
+  className,
   contentClassName,
   contentTestId,
   count,
@@ -523,6 +528,7 @@ function DetailCollapsibleSection({
   toggleTestId,
 }: {
   children: ReactNode
+  className?: string
   contentClassName?: string
   contentTestId?: string
   count?: number
@@ -550,7 +556,7 @@ function DetailCollapsibleSection({
 
   return (
     <section
-      className={styles.detailCollapsibleSection}
+      className={joinClassNames(styles.detailCollapsibleSection, className)}
       data-expanded={resolvedIsExpanded}
       data-testid={sectionTestId}
     >
@@ -641,130 +647,219 @@ function getScopedBackgroundFitMatches(
   })
 }
 
-function getChanceBreakdownLabel(entry: BackgroundFitStudyResourceChanceBreakdownEntry): string {
-  if (entry.shouldAllowBook && entry.shouldAllowScroll) {
-    return entry.shouldAllowSecondScroll
-      ? 'Skill book and ancient scrolls'
-      : 'Skill book and ancient scroll'
-  }
-
-  if (entry.shouldAllowBook) {
-    return 'Skill book'
-  }
-
-  if (entry.shouldAllowScroll) {
-    return entry.shouldAllowSecondScroll ? 'Ancient scrolls' : 'Ancient scroll'
-  }
-
-  return 'Native roll'
+function trimFixedDecimalLabel(value: string): string {
+  return value.replace(/\.?0+$/u, '')
 }
 
-function getChanceBreakdownTooltip(entry: BackgroundFitStudyResourceChanceBreakdownEntry): string {
-  if (entry.shouldAllowBook && entry.shouldAllowScroll) {
-    return entry.shouldAllowSecondScroll
-      ? 'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book and up to two eligible missing magic perk groups can be filled by ancient scrolls if Bright is available.'
-      : 'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book and one eligible missing magic perk group can be filled by an ancient scroll.'
+function formatChanceCalculationPercentageLabel(probability: number): string {
+  const percentage = Math.abs(probability * 100)
+  const signPrefix = probability < 0 ? '-' : ''
+
+  if (percentage < 1e-12) {
+    return '0%'
   }
 
-  if (entry.shouldAllowBook) {
-    return 'Chance the background covers every must-have perk when one eligible missing perk group can be filled by a skill book. Ancient scrolls are not included.'
-  }
+  const fractionDigitCount =
+    percentage >= 10
+      ? 1
+      : percentage >= 0.01
+        ? 2
+        : percentage >= 0.0001
+          ? 4
+          : percentage >= 0.000001
+            ? 8
+            : 10
 
-  if (entry.shouldAllowScroll) {
-    return entry.shouldAllowSecondScroll
-      ? 'Chance the background covers every must-have perk when up to two eligible missing magic perk groups can be filled by ancient scrolls if Bright is available. Skill books are not included.'
-      : 'Chance the background covers every must-have perk when one eligible missing magic perk group can be filled by an ancient scroll. Skill books are not included.'
-  }
-
-  return 'Chance the background covers every must-have perk from native perk groups alone, without a skill book or ancient scroll.'
+  return `${signPrefix}${trimFixedDecimalLabel(percentage.toFixed(fractionDigitCount))}%`
 }
 
-type ChanceBreakdownResourceIcon = {
-  iconPath: string
-  iconKey: string
-}
-
-function getChanceBreakdownResourceIcons(
-  entry: BackgroundFitStudyResourceChanceBreakdownEntry,
-): ChanceBreakdownResourceIcon[] {
-  const resourceIcons: ChanceBreakdownResourceIcon[] = []
-
-  if (entry.shouldAllowBook) {
-    resourceIcons.push({
-      iconKey: 'book',
-      iconPath: skillBookIconPath,
-    })
-  }
-
-  if (entry.shouldAllowScroll) {
-    const scrollIconCount = entry.shouldAllowSecondScroll ? 2 : 1
-
-    for (let scrollIconIndex = 0; scrollIconIndex < scrollIconCount; scrollIconIndex += 1) {
-      resourceIcons.push({
-        iconKey: `scroll-${scrollIconIndex + 1}`,
-        iconPath: ancientScrollIconPath,
-      })
-    }
-  }
-
-  return resourceIcons
-}
-
-function BackgroundFitChanceBreakdown({
-  entries,
+function formatChanceCalculationTermText({
+  outcomeCount,
+  probability,
 }: {
-  entries?: BackgroundFitStudyResourceChanceBreakdownEntry[]
-}) {
-  if (!entries || entries.length <= 1) {
-    return null
+  outcomeCount: number
+  probability: number
+}): string {
+  const probabilityLabel = formatChanceCalculationPercentageLabel(probability)
+
+  return outcomeCount === 1 ? probabilityLabel : `${outcomeCount} x ${probabilityLabel}`
+}
+
+function formatChanceCalculationTermExpression(
+  calculation: BackgroundFitChanceCalculation,
+): string {
+  if (calculation.successfulNativeOutcomeProbabilityTerms.length === 0) {
+    return '0'
   }
+
+  return calculation.successfulNativeOutcomeProbabilityTerms
+    .map(formatChanceCalculationTermText)
+    .join(' + ')
+}
+
+function formatChanceCalculationOutcomeSummary(
+  calculation: BackgroundFitChanceCalculation,
+): string {
+  const successfulOutcomeLabel =
+    calculation.successfulNativeOutcomeCount === 1 ? 'outcome' : 'outcomes'
+  const totalOutcomeLabel = calculation.totalNativeOutcomeCount === 1 ? 'outcome' : 'outcomes'
+
+  return `The engine summed ${calculation.successfulNativeOutcomeCount} successful grouped native ${successfulOutcomeLabel} out of ${calculation.totalNativeOutcomeCount} grouped native ${totalOutcomeLabel}.`
+}
+
+function getCoverageLabelsForPickedPerkIds({
+  nativeCoveredPickedPerkIds,
+  nativeMatches,
+}: {
+  nativeCoveredPickedPerkIds: string[]
+  nativeMatches: BackgroundFitMatch[]
+}): string[] {
+  const nativeCoveredPickedPerkIdSet = new Set(nativeCoveredPickedPerkIds)
+
+  return nativeMatches.flatMap((nativeMatch) => {
+    const coveredPickedPerkNames = nativeMatch.pickedPerkIds.flatMap(
+      (pickedPerkId, pickedPerkIndex) =>
+        nativeCoveredPickedPerkIdSet.has(pickedPerkId)
+          ? [nativeMatch.pickedPerkNames[pickedPerkIndex] ?? pickedPerkId]
+          : [],
+    )
+
+    if (coveredPickedPerkNames.length === 0) {
+      return []
+    }
+
+    return [`${nativeMatch.perkGroupName} covers ${formatInlineList(coveredPickedPerkNames)}`]
+  })
+}
+
+function getResourceCoverageLabels(
+  resourceLines: BackgroundFitChanceExplanationResourceLine[],
+): string[] {
+  return resourceLines.map(
+    (resourceLine) =>
+      `${resourceLine.resourceLabel} covers ${resourceLine.targetGroupName} for ${formatInlineList(
+        resourceLine.coveredPerkNames,
+      )}`,
+  )
+}
+
+function formatChanceCalculationCoverageSentence({
+  nativeCoverageLabels,
+  resourceCoverageLabels,
+}: {
+  nativeCoverageLabels: string[]
+  resourceCoverageLabels: string[]
+}): string {
+  const coverageLabels = [...nativeCoverageLabels, ...resourceCoverageLabels]
+
+  return coverageLabels.length > 0
+    ? `Coverage: ${coverageLabels.join('; ')}.`
+    : 'No additional perk group coverage is required.'
+}
+
+function getChanceCalculationTermTitle({
+  nativeMatches,
+  resourceLines,
+  scopeLabel,
+  term,
+}: {
+  nativeMatches: BackgroundFitMatch[]
+  resourceLines: BackgroundFitChanceExplanationResourceLine[]
+  scopeLabel: string
+  term: BackgroundFitChanceCalculationProbabilityTerm
+}): string {
+  const { nativeCoveredPickedPerkIdsByOutcome, outcomeCount, probability } = term
+  const probabilityLabel = formatChanceCalculationPercentageLabel(probability)
+  const resourceCoverageLabels = getResourceCoverageLabels(resourceLines)
+  const nativeCoverageLabelGroups = nativeCoveredPickedPerkIdsByOutcome.map(
+    (nativeCoveredPickedPerkIds) =>
+      getCoverageLabelsForPickedPerkIds({
+        nativeCoveredPickedPerkIds,
+        nativeMatches,
+      }),
+  )
+
+  if (outcomeCount === 1) {
+    return `${scopeLabel} term has ${probabilityLabel} probability. ${formatChanceCalculationCoverageSentence(
+      {
+        nativeCoverageLabels: nativeCoverageLabelGroups[0] ?? [],
+        resourceCoverageLabels,
+      },
+    )}`
+  }
+
+  const nativeOutcomeDescriptions = nativeCoverageLabelGroups.map((nativeCoverageLabels) =>
+    nativeCoverageLabels.length > 0 ? nativeCoverageLabels.join('; ') : 'no native perk group',
+  )
+
+  return `${outcomeCount} successful native outcomes each have ${probabilityLabel} probability, for ${formatChanceCalculationPercentageLabel(
+    outcomeCount * probability,
+  )} combined. Native coverage: ${nativeOutcomeDescriptions.join(' | ')}. ${
+    resourceCoverageLabels.length > 0
+      ? `Selected coverage: ${resourceCoverageLabels.join('; ')}.`
+      : 'No book or scroll coverage is used.'
+  }`
+}
+
+function BackgroundFitChanceCalculationExpression({
+  calculation,
+  nativeMatches,
+  resourceLines,
+  scopeLabel,
+}: {
+  calculation: BackgroundFitChanceCalculation
+  nativeMatches: BackgroundFitMatch[]
+  resourceLines: BackgroundFitChanceExplanationResourceLine[]
+  scopeLabel: string
+}) {
+  const resultLabel = formatBackgroundFitProbabilityLabel(calculation.probability)
+  const termExpression = formatChanceCalculationTermExpression(calculation)
+  const shouldShowSeparateResult = termExpression !== resultLabel
 
   return (
-    <div
-      aria-label="Must-have chance breakdown"
-      className={styles.detailChanceBreakdown}
-      data-testid="detail-chance-breakdown"
-    >
-      <h4 className={styles.detailSubsectionHeading}>Must-have chance breakdown</h4>
-      <dl className={styles.detailChanceBreakdownList}>
-        {entries.map((entry) => {
-          const label = getChanceBreakdownLabel(entry)
-          const resourceIcons = getChanceBreakdownResourceIcons(entry)
-          const tooltip = getChanceBreakdownTooltip(entry)
-          const value = formatBackgroundFitProbabilityLabel(entry.probability)
-
-          return (
-            <div
-              aria-label={`${label} ${value}. ${tooltip}`}
-              className={styles.detailChanceBreakdownRow}
-              data-testid="detail-chance-breakdown-row"
-              key={entry.key}
-              title={tooltip}
+    <p>
+      Actual engine expression: P ={' '}
+      {calculation.successfulNativeOutcomeProbabilityTerms.length === 0 ? (
+        <span
+          className={styles.detailChanceExplanationProbabilityTerm}
+          data-testid="detail-chance-explanation-probability-result"
+          title={`${scopeLabel} chance after summing successful grouped native outcomes: ${resultLabel}.`}
+        >
+          {resultLabel}
+        </span>
+      ) : (
+        calculation.successfulNativeOutcomeProbabilityTerms.map((term, termIndex) => (
+          <span key={`${term.outcomeCount}-${term.probability}-${termIndex}`}>
+            {termIndex > 0 ? ' + ' : null}
+            <span
+              className={styles.detailChanceExplanationProbabilityTerm}
+              data-testid="detail-chance-explanation-probability-term"
+              title={getChanceCalculationTermTitle({
+                nativeMatches,
+                resourceLines,
+                scopeLabel,
+                term,
+              })}
             >
-              <dt>
-                <span className={styles.detailChanceBreakdownLabelText}>{label}</span>
-                {resourceIcons.length > 0 ? (
-                  <span aria-hidden="true" className={styles.detailChanceBreakdownResourceIcons}>
-                    {resourceIcons.map((resourceIcon) => (
-                      <img
-                        alt=""
-                        className={styles.detailChanceBreakdownResourceIcon}
-                        data-testid={`detail-chance-breakdown-resource-icon-${entry.key}-${resourceIcon.iconKey}`}
-                        decoding="async"
-                        key={resourceIcon.iconKey}
-                        loading="lazy"
-                        src={`/game-icons/${resourceIcon.iconPath}`}
-                      />
-                    ))}
-                  </span>
-                ) : null}
-              </dt>
-              <dd>{value}</dd>
-            </div>
-          )
-        })}
-      </dl>
-    </div>
+              {formatChanceCalculationTermText(term)}
+            </span>
+          </span>
+        ))
+      )}
+      {shouldShowSeparateResult ? (
+        <>
+          {' = '}
+          <span
+            className={styles.detailChanceExplanationProbabilityTerm}
+            data-testid="detail-chance-explanation-probability-result"
+            title={`${scopeLabel} chance after summing all successful grouped native outcomes: ${resultLabel}.`}
+          >
+            {resultLabel}
+          </span>
+        </>
+      ) : null}
+      .
+    </p>
   )
 }
 
@@ -1136,6 +1231,857 @@ function BackgroundFitStudyResourcePlan({
   )
 }
 
+type BackgroundFitChanceExplanationResourceLine = {
+  coveredPerkNames: string[]
+  resourceIconPath: string
+  resourceKind: StudyResourceStrategyResourceKind
+  resourceLabel: string
+  targetGroupName: string
+}
+
+type BackgroundFitChanceExplanationScopeData = {
+  calculation?: BackgroundFitChanceCalculation
+  chanceBreakdownEntries?: BackgroundFitStudyResourceChanceBreakdownEntry[]
+  nativeMatches: BackgroundFitMatch[]
+  nativeProbability: number | null
+  probability: number
+  resourceLines: BackgroundFitChanceExplanationResourceLine[]
+  scopeKey: 'full-build' | 'must-have'
+  scopeLabel: string
+  strategy?: BackgroundFitStudyResourceStrategy
+}
+
+type BackgroundFitNativeSuccessCondition = {
+  matches: BackgroundFitMatch[]
+}
+
+type BackgroundFitChancePlanItem = {
+  iconPath: string
+  resourceKind: StudyResourceStrategyResourceKind
+  text: string
+}
+
+function formatInlineList(items: readonly string[]): string {
+  if (items.length === 0) {
+    return ''
+  }
+
+  if (items.length === 1) {
+    return items[0] ?? ''
+  }
+
+  if (items.length === 2) {
+    return `${items[0]} and ${items[1]}`
+  }
+
+  return `${items.slice(0, -1).join(', ')}, and ${items.at(-1)}`
+}
+
+function formatOrList(items: readonly string[]): string {
+  if (items.length === 0) {
+    return ''
+  }
+
+  if (items.length === 1) {
+    return items[0] ?? ''
+  }
+
+  if (items.length === 2) {
+    return `${items[0]} or ${items[1]}`
+  }
+
+  return `${items.slice(0, -1).join(', ')}, or ${items.at(-1)}`
+}
+
+function getUniquePickedPerkIds(pickedPerkIdGroups: readonly string[][]): string[] {
+  const uniquePickedPerkIds: string[] = []
+  const seenPickedPerkIds = new Set<string>()
+
+  for (const pickedPerkIds of pickedPerkIdGroups) {
+    for (const pickedPerkId of pickedPerkIds) {
+      if (seenPickedPerkIds.has(pickedPerkId)) {
+        continue
+      }
+
+      seenPickedPerkIds.add(pickedPerkId)
+      uniquePickedPerkIds.push(pickedPerkId)
+    }
+  }
+
+  return uniquePickedPerkIds
+}
+
+function getStrategyCoveredPickedPerkIds({
+  pickedPerkIdSet,
+  strategy,
+}: {
+  pickedPerkIdSet: ReadonlySet<string>
+  strategy?: BackgroundFitStudyResourceStrategy
+}): Set<string> {
+  const coveredPickedPerkIds = new Set<string>()
+
+  if (!strategy) {
+    return coveredPickedPerkIds
+  }
+
+  for (const resourceKind of ['book', 'scroll'] as const) {
+    const targets = getStudyResourceStrategyTargets({ resourceKind, strategy })
+    const resourceSlotCount = resourceKind === 'book' ? 1 : strategy.shouldAllowSecondScroll ? 2 : 1
+    const targetsThatCanAllFit = targets.length <= resourceSlotCount
+    const targetCoveredPickedPerkIdSets = targets.map(
+      (target) => new Set(target.coveredPickedPerkIds),
+    )
+
+    for (const target of targets) {
+      for (const coveredPickedPerkId of target.coveredPickedPerkIds) {
+        const isCoveredByEveryAlternativeTarget = targetCoveredPickedPerkIdSets.every(
+          (targetCoveredPickedPerkIdSet) => targetCoveredPickedPerkIdSet.has(coveredPickedPerkId),
+        )
+
+        if (
+          pickedPerkIdSet.has(coveredPickedPerkId) &&
+          (targetsThatCanAllFit || isCoveredByEveryAlternativeTarget)
+        ) {
+          coveredPickedPerkIds.add(coveredPickedPerkId)
+        }
+      }
+    }
+  }
+
+  return coveredPickedPerkIds
+}
+
+function getGuaranteedNativePickedPerkIds({
+  matches,
+  pickedPerkIdSet,
+}: {
+  matches: BackgroundFitMatch[]
+  pickedPerkIdSet: ReadonlySet<string>
+}): Set<string> {
+  const guaranteedPickedPerkIds = new Set<string>()
+
+  for (const match of matches) {
+    if (!match.isGuaranteed) {
+      continue
+    }
+
+    for (const pickedPerkId of match.pickedPerkIds) {
+      if (pickedPerkIdSet.has(pickedPerkId)) {
+        guaranteedPickedPerkIds.add(pickedPerkId)
+      }
+    }
+  }
+
+  return guaranteedPickedPerkIds
+}
+
+function getChanceExplanationResourceLines({
+  pickedPerkIdSet,
+  redundantPickedPerkIdSet,
+  strategy,
+}: {
+  pickedPerkIdSet: ReadonlySet<string>
+  redundantPickedPerkIdSet: ReadonlySet<string>
+  strategy?: BackgroundFitStudyResourceStrategy
+}): BackgroundFitChanceExplanationResourceLine[] {
+  if (!strategy) {
+    return []
+  }
+
+  return (['book', 'scroll'] as const).flatMap((resourceKind) =>
+    getStudyResourceStrategyTargets({ resourceKind, strategy }).flatMap((target) => {
+      let coveredPerkNames = target.coveredPickedPerkIds.flatMap(
+        (coveredPickedPerkId, coveredPickedPerkIndex) =>
+          pickedPerkIdSet.has(coveredPickedPerkId) &&
+          !redundantPickedPerkIdSet.has(coveredPickedPerkId)
+            ? [target.coveredPickedPerkNames[coveredPickedPerkIndex] ?? coveredPickedPerkId]
+            : [],
+      )
+
+      if (coveredPerkNames.length === 0) {
+        coveredPerkNames = target.coveredPickedPerkIds.flatMap(
+          (coveredPickedPerkId, coveredPickedPerkIndex) =>
+            pickedPerkIdSet.has(coveredPickedPerkId)
+              ? [target.coveredPickedPerkNames[coveredPickedPerkIndex] ?? coveredPickedPerkId]
+              : [],
+        )
+      }
+
+      if (coveredPerkNames.length === 0) {
+        return []
+      }
+
+      return [
+        {
+          coveredPerkNames,
+          resourceIconPath: getStudyResourceStrategyResourceIconPath(resourceKind),
+          resourceKind,
+          resourceLabel: getStudyResourceStrategyResourceLabel(resourceKind),
+          targetGroupName: target.perkGroupName,
+        },
+      ]
+    }),
+  )
+}
+
+function getNativeProbabilityFromChanceBreakdown({
+  chanceBreakdownEntries,
+  fallbackProbability,
+  strategy,
+}: {
+  chanceBreakdownEntries?: BackgroundFitStudyResourceChanceBreakdownEntry[]
+  fallbackProbability: number
+  strategy?: BackgroundFitStudyResourceStrategy
+}): number | null {
+  if (strategy) {
+    return strategy.nativeProbability
+  }
+
+  return (
+    chanceBreakdownEntries?.find((chanceBreakdownEntry) => chanceBreakdownEntry.key === 'native')
+      ?.probability ?? fallbackProbability
+  )
+}
+
+function areBackgroundFitProbabilitiesEqual(leftProbability: number, rightProbability: number) {
+  return Math.abs(leftProbability - rightProbability) <= 1e-9
+}
+
+function getChanceBreakdownEntryForStudyResourceFilter({
+  chanceBreakdownEntries,
+  studyResourceFilter,
+}: {
+  chanceBreakdownEntries?: BackgroundFitStudyResourceChanceBreakdownEntry[]
+  studyResourceFilter: BackgroundStudyResourceFilter
+}): BackgroundFitStudyResourceChanceBreakdownEntry | undefined {
+  const matchingResourceEntries = chanceBreakdownEntries?.filter(
+    (chanceBreakdownEntry) =>
+      chanceBreakdownEntry.shouldAllowBook === studyResourceFilter.shouldAllowBook &&
+      chanceBreakdownEntry.shouldAllowScroll === studyResourceFilter.shouldAllowScroll,
+  )
+
+  return (
+    matchingResourceEntries?.find(
+      (chanceBreakdownEntry) =>
+        chanceBreakdownEntry.shouldAllowSecondScroll ===
+        studyResourceFilter.shouldAllowSecondScroll,
+    ) ?? matchingResourceEntries?.[0]
+  )
+}
+
+function getChanceExplanationCalculation({
+  chanceBreakdownEntries,
+  fallbackProbability,
+  strategy,
+  studyResourceFilter,
+}: {
+  chanceBreakdownEntries?: BackgroundFitStudyResourceChanceBreakdownEntry[]
+  fallbackProbability: number
+  strategy?: BackgroundFitStudyResourceStrategy
+  studyResourceFilter: BackgroundStudyResourceFilter
+}): BackgroundFitChanceCalculation | undefined {
+  if (!chanceBreakdownEntries) {
+    return undefined
+  }
+
+  const strategyEntry = strategy
+    ? chanceBreakdownEntries.find(
+        (chanceBreakdownEntry) =>
+          chanceBreakdownEntry.key === strategy.selectedCombinationKey &&
+          chanceBreakdownEntry.shouldAllowSecondScroll === strategy.shouldAllowSecondScroll &&
+          areBackgroundFitProbabilitiesEqual(
+            chanceBreakdownEntry.probability,
+            strategy.probability,
+          ),
+      )
+    : undefined
+  const reportedFilterEntry = getChanceBreakdownEntryForStudyResourceFilter({
+    chanceBreakdownEntries,
+    studyResourceFilter,
+  })
+  const matchingProbabilityEntry = chanceBreakdownEntries.find((chanceBreakdownEntry) =>
+    areBackgroundFitProbabilitiesEqual(chanceBreakdownEntry.probability, fallbackProbability),
+  )
+
+  return (
+    strategyEntry?.calculation ??
+    reportedFilterEntry?.calculation ??
+    matchingProbabilityEntry?.calculation
+  )
+}
+
+function getChanceExplanationScopeData({
+  backgroundFit,
+  chanceBreakdownEntries,
+  pickedPerkIds,
+  probability,
+  scopeKey,
+  scopeLabel,
+  strategy,
+  studyResourceFilter,
+}: {
+  backgroundFit: RankedBackgroundFit
+  chanceBreakdownEntries?: BackgroundFitStudyResourceChanceBreakdownEntry[]
+  pickedPerkIds: string[]
+  probability: number | null
+  scopeKey: BackgroundFitChanceExplanationScopeData['scopeKey']
+  scopeLabel: string
+  strategy?: BackgroundFitStudyResourceStrategy
+  studyResourceFilter: BackgroundStudyResourceFilter
+}): BackgroundFitChanceExplanationScopeData | null {
+  if (pickedPerkIds.length === 0 || probability === null) {
+    return null
+  }
+
+  const pickedPerkIdSet = new Set(pickedPerkIds)
+  const resourceCoveredPickedPerkIds = getStrategyCoveredPickedPerkIds({
+    pickedPerkIdSet,
+    strategy,
+  })
+  const nativePickedPerkIds = pickedPerkIds.filter(
+    (pickedPerkId) => !resourceCoveredPickedPerkIds.has(pickedPerkId),
+  )
+  const guaranteedNativePickedPerkIds = getGuaranteedNativePickedPerkIds({
+    matches: backgroundFit.matches,
+    pickedPerkIdSet,
+  })
+
+  return {
+    calculation: getChanceExplanationCalculation({
+      chanceBreakdownEntries,
+      fallbackProbability: probability,
+      strategy,
+      studyResourceFilter,
+    }),
+    chanceBreakdownEntries,
+    nativeMatches: getScopedBackgroundFitMatches(backgroundFit.matches, nativePickedPerkIds),
+    nativeProbability: getNativeProbabilityFromChanceBreakdown({
+      chanceBreakdownEntries,
+      fallbackProbability: probability,
+      strategy,
+    }),
+    probability,
+    resourceLines: getChanceExplanationResourceLines({
+      pickedPerkIdSet,
+      redundantPickedPerkIdSet: guaranteedNativePickedPerkIds,
+      strategy,
+    }),
+    scopeKey,
+    scopeLabel,
+    strategy,
+  }
+}
+
+function getPossibleNativeMatches(
+  scopeData: BackgroundFitChanceExplanationScopeData,
+): BackgroundFitMatch[] {
+  return scopeData.nativeMatches.filter((nativeMatch) => !nativeMatch.isGuaranteed)
+}
+
+function getNativeMatchKey(nativeMatch: BackgroundFitMatch): string {
+  return `${nativeMatch.categoryName}::${nativeMatch.perkGroupId}`
+}
+
+function getNativeSuccessConditionKey(condition: BackgroundFitNativeSuccessCondition): string {
+  return condition.matches.map(getNativeMatchKey).toSorted().join('|')
+}
+
+function isNativeSuccessConditionSubset({
+  possibleSubsetCondition,
+  possibleSupersetCondition,
+}: {
+  possibleSubsetCondition: BackgroundFitNativeSuccessCondition
+  possibleSupersetCondition: BackgroundFitNativeSuccessCondition
+}): boolean {
+  if (possibleSubsetCondition.matches.length >= possibleSupersetCondition.matches.length) {
+    return false
+  }
+
+  const possibleSupersetMatchKeys = new Set(
+    possibleSupersetCondition.matches.map(getNativeMatchKey),
+  )
+
+  return possibleSubsetCondition.matches.every((nativeMatch) =>
+    possibleSupersetMatchKeys.has(getNativeMatchKey(nativeMatch)),
+  )
+}
+
+function getNativeSuccessConditions(
+  scopeData: BackgroundFitChanceExplanationScopeData,
+): BackgroundFitNativeSuccessCondition[] {
+  if (!scopeData.calculation || scopeData.calculation.probability <= 0) {
+    return []
+  }
+
+  const possibleNativeMatches = getPossibleNativeMatches(scopeData)
+  const successConditionsByKey = new Map<string, BackgroundFitNativeSuccessCondition>()
+
+  for (const term of scopeData.calculation.successfulNativeOutcomeProbabilityTerms) {
+    for (const nativeCoveredPickedPerkIds of term.nativeCoveredPickedPerkIdsByOutcome) {
+      const nativeCoveredPickedPerkIdSet = new Set(nativeCoveredPickedPerkIds)
+      const matches = possibleNativeMatches.filter((nativeMatch) =>
+        nativeMatch.pickedPerkIds.some((pickedPerkId) =>
+          nativeCoveredPickedPerkIdSet.has(pickedPerkId),
+        ),
+      )
+
+      if (matches.length === 0) {
+        continue
+      }
+
+      const condition = {
+        matches,
+      } satisfies BackgroundFitNativeSuccessCondition
+      const conditionKey = getNativeSuccessConditionKey(condition)
+
+      if (!successConditionsByKey.has(conditionKey)) {
+        successConditionsByKey.set(conditionKey, condition)
+      }
+    }
+  }
+
+  const successConditions = [...successConditionsByKey.values()]
+  const minimalSuccessConditions = successConditions.filter(
+    (successCondition) =>
+      !successConditions.some((otherSuccessCondition) =>
+        isNativeSuccessConditionSubset({
+          possibleSubsetCondition: otherSuccessCondition,
+          possibleSupersetCondition: successCondition,
+        }),
+      ),
+  )
+
+  return minimalSuccessConditions.toSorted(
+    (leftCondition, rightCondition) =>
+      leftCondition.matches.length - rightCondition.matches.length ||
+      formatNativeSuccessCondition(leftCondition).localeCompare(
+        formatNativeSuccessCondition(rightCondition),
+      ),
+  )
+}
+
+function formatNativeSuccessCondition(condition: BackgroundFitNativeSuccessCondition): string {
+  return formatInlineList(condition.matches.map((nativeMatch) => nativeMatch.perkGroupName))
+}
+
+function formatNativeSuccessConditionList(
+  conditions: BackgroundFitNativeSuccessCondition[],
+): string {
+  return formatOrList(conditions.map(formatNativeSuccessCondition))
+}
+
+function getNativeSuccessConditionSummary({
+  conditions,
+  scopeData,
+}: {
+  conditions: BackgroundFitNativeSuccessCondition[]
+  scopeData: BackgroundFitChanceExplanationScopeData
+}): string {
+  const hasResourceRoute = scopeData.resourceLines.length > 0
+
+  if (scopeData.probability <= 0) {
+    return hasResourceRoute
+      ? 'No legal native roll plus that route can cover every picked perk here.'
+      : 'No legal native roll can cover every picked perk here.'
+  }
+
+  if (conditions.length === 0) {
+    if (scopeData.calculation?.isNativeOutcomeIndependent) {
+      return hasResourceRoute
+        ? 'After that route, no random native group is still required.'
+        : 'Guaranteed native groups already cover every picked perk here.'
+    }
+
+    return 'No picked perk group still has to roll natively, but this route still depends on a native-roll gate such as Bright or a class/weapon requirement.'
+  }
+
+  const conditionListLabel = formatNativeSuccessConditionList(conditions)
+
+  return conditions.length === 1
+    ? `The remaining native roll needs ${conditionListLabel}.`
+    : `The remaining native roll needs ${conditionListLabel}.`
+}
+
+function getResourceLineTargetLabel(
+  resourceLine: BackgroundFitChanceExplanationResourceLine,
+): string {
+  return `${resourceLine.targetGroupName} for ${formatInlineList(resourceLine.coveredPerkNames)}`
+}
+
+function getStudyResourceSlotCount({
+  resourceKind,
+  strategy,
+}: {
+  resourceKind: StudyResourceStrategyResourceKind
+  strategy: BackgroundFitStudyResourceStrategy
+}): number {
+  return resourceKind === 'book' ? 1 : strategy.shouldAllowSecondScroll ? 2 : 1
+}
+
+function getStudyResourcePlanResourceLabel({
+  resourceKind,
+  slotCount,
+}: {
+  resourceKind: StudyResourceStrategyResourceKind
+  slotCount: number
+}): string {
+  if (resourceKind === 'book') {
+    return 'Skill book'
+  }
+
+  return slotCount > 1 ? 'Ancient scrolls' : 'Ancient scroll'
+}
+
+function getChancePlanItems(
+  scopeData: BackgroundFitChanceExplanationScopeData,
+): BackgroundFitChancePlanItem[] {
+  const strategy = scopeData.strategy
+
+  if (!strategy) {
+    return []
+  }
+
+  return (['book', 'scroll'] as const).flatMap((resourceKind) => {
+    const resourceLines = scopeData.resourceLines.filter(
+      (resourceLine) => resourceLine.resourceKind === resourceKind,
+    )
+
+    if (resourceLines.length === 0) {
+      return []
+    }
+
+    const slotCount = getStudyResourceSlotCount({ resourceKind, strategy })
+    const resourceLabel = getStudyResourcePlanResourceLabel({ resourceKind, slotCount })
+    const resourceVerb = slotCount > 1 ? 'cover' : 'covers'
+    const targetLabels = resourceLines.map(getResourceLineTargetLabel)
+    const text =
+      resourceLines.length <= slotCount
+        ? `${resourceLabel} ${resourceVerb} ${formatInlineList(targetLabels)}.`
+        : slotCount === 1
+          ? `${resourceLabel} covers one of ${formatOrList(targetLabels)}, depending on the native roll.`
+          : `${resourceLabel} cover up to ${slotCount} of ${formatOrList(
+              targetLabels,
+            )}, depending on the native roll.`
+
+    return [
+      {
+        iconPath: getStudyResourceStrategyResourceIconPath(resourceKind),
+        resourceKind,
+        text,
+      },
+    ]
+  })
+}
+
+function BackgroundFitChancePlanList({ items }: { items: BackgroundFitChancePlanItem[] }) {
+  if (items.length === 0) {
+    return null
+  }
+
+  return (
+    <ul aria-label="Selected route" className={styles.detailChanceExplanationResourceList}>
+      {items.map((item) => (
+        <li
+          className={styles.detailChanceExplanationResourceItem}
+          data-resource-kind={item.resourceKind}
+          data-testid="detail-chance-explanation-resource-line"
+          key={`${item.resourceKind}-${item.text}`}
+        >
+          <img
+            alt=""
+            aria-hidden="true"
+            className={styles.detailChanceExplanationResourceIcon}
+            decoding="async"
+            loading="lazy"
+            src={`/game-icons/${item.iconPath}`}
+          />
+          <span>{item.text}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function getChanceRouteLabel(entry: BackgroundFitStudyResourceChanceBreakdownEntry): string {
+  if (entry.shouldAllowBook && entry.shouldAllowScroll) {
+    return entry.shouldAllowSecondScroll
+      ? 'Skill book + ancient scrolls'
+      : 'Skill book + ancient scroll'
+  }
+
+  if (entry.shouldAllowBook) {
+    return 'Skill book'
+  }
+
+  if (entry.shouldAllowScroll) {
+    return entry.shouldAllowSecondScroll ? 'Ancient scrolls' : 'Ancient scroll'
+  }
+
+  return 'Native roll'
+}
+
+function BackgroundFitChanceRouteComparison({
+  entries,
+}: {
+  entries?: BackgroundFitStudyResourceChanceBreakdownEntry[]
+}) {
+  if (!entries || entries.length <= 1) {
+    return null
+  }
+
+  return (
+    <div
+      className={styles.detailChanceRouteComparison}
+      data-testid="detail-chance-route-comparison"
+    >
+      <h5 className={styles.detailChanceExplanationMiniHeading}>Route comparison</h5>
+      <dl className={styles.detailChanceRouteComparisonList}>
+        {entries.map((entry) => (
+          <div className={styles.detailChanceRouteComparisonRow} key={entry.key}>
+            <dt>{getChanceRouteLabel(entry)}</dt>
+            <dd>{formatBackgroundFitProbabilityLabel(entry.probability)}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  )
+}
+
+function getChanceMathSummary({
+  conditions,
+  scopeData,
+}: {
+  conditions: BackgroundFitNativeSuccessCondition[]
+  scopeData: BackgroundFitChanceExplanationScopeData
+}): string {
+  const chanceLabel = formatBackgroundFitProbabilityLabel(scopeData.probability)
+  const calculation = scopeData.calculation
+
+  if (scopeData.probability <= 0) {
+    return 'Chance math: no legal native roll satisfies the remaining condition.'
+  }
+
+  if (!calculation) {
+    return `Chance math: the selected route totals ${chanceLabel}.`
+  }
+
+  if (conditions.length === 0) {
+    return calculation.isNativeOutcomeIndependent
+      ? `Chance math: no random native group is required, so the chance is ${chanceLabel}.`
+      : `Chance math: ${calculation.successfulNativeOutcomeCount} legal native roll ${
+          calculation.successfulNativeOutcomeCount === 1 ? 'pattern' : 'patterns'
+        } satisfy the route, totaling ${chanceLabel}.`
+  }
+
+  const hasOnlySingleGroupConditions = conditions.every(
+    (condition) => condition.matches.length === 1,
+  )
+
+  if (conditions.length === 1 && hasOnlySingleGroupConditions) {
+    const nativeMatch = conditions[0]!.matches[0]!
+    const nativeMatchProbabilityLabel = formatBackgroundFitProbabilityLabel(nativeMatch.probability)
+
+    if (areBackgroundFitProbabilitiesEqual(nativeMatch.probability, scopeData.probability)) {
+      return `Chance math: ${nativeMatch.perkGroupName} appears in ${nativeMatchProbabilityLabel} of native rolls, so this route is ${chanceLabel}.`
+    }
+  }
+
+  if (conditions.length === 2 && hasOnlySingleGroupConditions) {
+    const [leftCondition, rightCondition] = conditions
+    const leftMatch = leftCondition!.matches[0]!
+    const rightMatch = rightCondition!.matches[0]!
+    const overlapProbability =
+      leftMatch.probability + rightMatch.probability - scopeData.probability
+    const isUsableOverlap =
+      overlapProbability >= -1e-9 &&
+      overlapProbability <= Math.min(leftMatch.probability, rightMatch.probability) + 1e-9
+
+    if (isUsableOverlap) {
+      return `Chance math: ${leftMatch.perkGroupName} ${formatBackgroundFitProbabilityLabel(
+        leftMatch.probability,
+      )} + ${rightMatch.perkGroupName} ${formatBackgroundFitProbabilityLabel(
+        rightMatch.probability,
+      )} - both ${formatBackgroundFitProbabilityLabel(Math.max(0, overlapProbability))} = ${chanceLabel}.`
+    }
+  }
+
+  return `Chance math: ${calculation.successfulNativeOutcomeCount} legal native roll ${
+    calculation.successfulNativeOutcomeCount === 1 ? 'pattern satisfies' : 'patterns satisfy'
+  } the remaining condition, totaling ${chanceLabel}.`
+}
+
+function BackgroundFitChanceExplanationAdvancedDetails({
+  scopeData,
+}: {
+  scopeData: BackgroundFitChanceExplanationScopeData
+}) {
+  if (!scopeData.calculation) {
+    return null
+  }
+
+  return (
+    <details
+      className={styles.detailChanceExplanationAdvanced}
+      data-testid="detail-chance-explanation-advanced"
+    >
+      <summary>Engine details</summary>
+      <div className={styles.detailChanceExplanationCalculation}>
+        <BackgroundFitChanceCalculationExpression
+          calculation={scopeData.calculation}
+          nativeMatches={scopeData.nativeMatches}
+          resourceLines={scopeData.resourceLines}
+          scopeLabel={scopeData.scopeLabel}
+        />
+        {scopeData.calculation.isNativeOutcomeIndependent ? null : (
+          <p>{formatChanceCalculationOutcomeSummary(scopeData.calculation)}</p>
+        )}
+      </div>
+    </details>
+  )
+}
+
+function BackgroundFitChanceExplanationScope({
+  scopeData,
+  studyResourceFilter,
+}: {
+  scopeData: BackgroundFitChanceExplanationScopeData
+  studyResourceFilter: BackgroundStudyResourceFilter
+}) {
+  const chanceLabel = formatBackgroundFitProbabilityLabel(scopeData.probability)
+  const nativeChanceLabel =
+    scopeData.nativeProbability === null
+      ? null
+      : formatBackgroundFitProbabilityLabel(scopeData.nativeProbability)
+  const hasResourceRoute = scopeData.resourceLines.length > 0
+  const hasEnabledStudyResources =
+    studyResourceFilter.shouldAllowBook || studyResourceFilter.shouldAllowScroll
+  const chancePlanItems = getChancePlanItems(scopeData)
+  const nativeSuccessConditions = getNativeSuccessConditions(scopeData)
+
+  return (
+    <section
+      aria-label={`${scopeData.scopeLabel} chance explanation`}
+      className={styles.detailChanceExplanationScope}
+      data-scope={scopeData.scopeKey}
+      data-testid="detail-chance-explanation-scope"
+    >
+      <h4 className={styles.detailChanceExplanationScopeHeading}>
+        <span>{scopeData.scopeLabel} chance</span>
+        <strong>{chanceLabel}</strong>
+      </h4>
+      {scopeData.strategy && hasResourceRoute ? (
+        <p className={styles.detailChanceExplanationCopy}>
+          Best route improves this from {nativeChanceLabel ?? 'native-only'} native-only to{' '}
+          {chanceLabel}.
+        </p>
+      ) : (
+        <p className={styles.detailChanceExplanationCopy}>
+          {hasEnabledStudyResources
+            ? 'No allowed book or scroll route improves this, so the chance is native-only.'
+            : 'Books and scrolls are disabled, so the chance is native-only.'}
+        </p>
+      )}
+      <BackgroundFitChancePlanList items={chancePlanItems} />
+      {scopeData.strategy?.shouldAllowSecondScroll ? (
+        <p className={styles.detailChanceExplanationCopy}>
+          A second ancient scroll only counts when Bright is available on that native roll.
+        </p>
+      ) : null}
+      <p className={styles.detailChanceExplanationCopy}>
+        {getNativeSuccessConditionSummary({
+          conditions: nativeSuccessConditions,
+          scopeData,
+        })}
+      </p>
+      <p
+        className={styles.detailChanceExplanationCalculation}
+        data-testid="detail-chance-explanation-native-calculation"
+      >
+        {getChanceMathSummary({
+          conditions: nativeSuccessConditions,
+          scopeData,
+        })}
+      </p>
+      <BackgroundFitChanceRouteComparison entries={scopeData.chanceBreakdownEntries} />
+      <BackgroundFitChanceExplanationAdvancedDetails scopeData={scopeData} />
+    </section>
+  )
+}
+
+function BackgroundFitChanceExplanation({
+  backgroundFit,
+  isExpanded,
+  mustHavePickedPerkIds,
+  onExpandedChange,
+  optionalPickedPerkCount,
+  optionalPickedPerkIds,
+  studyResourceFilter,
+}: {
+  backgroundFit: RankedBackgroundFit
+  isExpanded: boolean
+  mustHavePickedPerkIds: string[]
+  onExpandedChange: (nextIsExpanded: boolean) => void
+  optionalPickedPerkCount: number
+  optionalPickedPerkIds: string[]
+  studyResourceFilter: BackgroundStudyResourceFilter
+}) {
+  const fullBuildPickedPerkIds = getUniquePickedPerkIds([
+    mustHavePickedPerkIds,
+    optionalPickedPerkIds,
+  ])
+  const scopeDataList = [
+    getChanceExplanationScopeData({
+      backgroundFit,
+      chanceBreakdownEntries: backgroundFit.mustHaveStudyResourceChanceBreakdown,
+      pickedPerkIds: mustHavePickedPerkIds,
+      probability: backgroundFit.mustHaveBuildReachabilityProbability,
+      scopeKey: 'must-have',
+      scopeLabel: 'Must-have',
+      strategy: backgroundFit.mustHaveStudyResourceStrategy,
+      studyResourceFilter,
+    }),
+    optionalPickedPerkCount > 0
+      ? getChanceExplanationScopeData({
+          backgroundFit,
+          chanceBreakdownEntries: backgroundFit.fullBuildStudyResourceChanceBreakdown,
+          pickedPerkIds: fullBuildPickedPerkIds,
+          probability: backgroundFit.fullBuildReachabilityProbability,
+          scopeKey: 'full-build',
+          scopeLabel: 'Full build',
+          strategy: backgroundFit.fullBuildStudyResourceStrategy,
+          studyResourceFilter,
+        })
+      : null,
+  ].filter((scopeData): scopeData is BackgroundFitChanceExplanationScopeData => scopeData !== null)
+
+  if (scopeDataList.length === 0) {
+    return null
+  }
+
+  return (
+    <DetailCollapsibleSection
+      className={styles.detailChanceExplanationSection}
+      contentClassName={styles.detailChanceExplanation}
+      contentTestId="detail-chance-explanation-content"
+      isExpanded={isExpanded}
+      onExpandedChange={onExpandedChange}
+      sectionLabel="How chances combine"
+      sectionTestId="detail-chance-explanation"
+      toggleTestId="detail-chance-explanation-toggle"
+    >
+      <div className={styles.detailChanceExplanationScopes}>
+        {scopeDataList.map((scopeData) => (
+          <BackgroundFitChanceExplanationScope
+            key={scopeData.scopeKey}
+            scopeData={scopeData}
+            studyResourceFilter={studyResourceFilter}
+          />
+        ))}
+      </div>
+    </DetailCollapsibleSection>
+  )
+}
+
 const backgroundCampResourceModifierGroupOrder: LegendsBackgroundCampResourceModifierGroup[] = [
   'capacity',
   'skill',
@@ -1369,7 +2315,7 @@ function BackgroundTraitTooltip({
       style={getAnchoredTooltipStyle(tooltip.anchorRectangle)}
     >
       <div className={buildPlannerStyles.buildPerkTooltipCopy}>
-        <p>{tooltip.trait.description || 'No trait description is available.'}</p>
+        {tooltip.trait.description ? <p>{tooltip.trait.description}</p> : null}
       </div>
     </div>
   )
@@ -1967,8 +2913,6 @@ function BackgroundDetail({
     ...backgroundFit,
     matches: getScopedBackgroundFitMatches(backgroundFit.matches, optionalPickedPerkIds),
   }
-  const hasMustHaveChanceBreakdown =
-    (backgroundFit.mustHaveStudyResourceChanceBreakdown?.length ?? 0) > 1
 
   return (
     <>
@@ -2023,7 +2967,6 @@ function BackgroundDetail({
       >
         <div
           className={styles.detailBackgroundFitTables}
-          data-has-chance-breakdown={hasMustHaveChanceBreakdown}
           data-testid="detail-background-fit-tables"
         >
           <BackgroundFitMetricSummary
@@ -2032,9 +2975,6 @@ function BackgroundDetail({
             optionalPickedPerkCount={optionalPickedPerkCount}
             pickedPerkCount={pickedPerkCount}
             studyResourceFilter={studyResourceFilter}
-          />
-          <BackgroundFitChanceBreakdown
-            entries={backgroundFit.mustHaveStudyResourceChanceBreakdown}
           />
         </div>
         <BackgroundFitStudyResourcePlan
@@ -2141,6 +3081,20 @@ function BackgroundDetail({
             onOpenPerkGroupHover={onOpenPerkGroupHover}
           />
         </div>
+        <BackgroundFitChanceExplanation
+          backgroundFit={backgroundFit}
+          isExpanded={getDetailCollapsibleSectionExpandedState(
+            detailCollapsibleSectionExpandedStates,
+            'chance-explanation',
+          )}
+          mustHavePickedPerkIds={mustHavePickedPerkIds}
+          onExpandedChange={(nextIsExpanded) =>
+            onDetailCollapsibleSectionExpandedChange('chance-explanation', nextIsExpanded)
+          }
+          optionalPickedPerkCount={optionalPickedPerkCount}
+          optionalPickedPerkIds={optionalPickedPerkIds}
+          studyResourceFilter={studyResourceFilter}
+        />
       </DetailCollapsibleSection>
 
       <BackgroundFitOtherPerkGroupsSection

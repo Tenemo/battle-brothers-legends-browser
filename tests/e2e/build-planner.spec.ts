@@ -244,6 +244,28 @@ async function getPlannerWrapMetrics(page: Page) {
   })
 }
 
+async function getPlannerBoardVisualVerticalOverflow(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const plannerBoard = document.querySelector('[data-testid="planner-board"]')
+
+    if (!(plannerBoard instanceof HTMLElement)) {
+      return Number.POSITIVE_INFINITY
+    }
+
+    const plannerBoardRectangle = plannerBoard.getBoundingClientRect()
+    const childRectangles = [...plannerBoard.children].map((child) => child.getBoundingClientRect())
+
+    if (childRectangles.length === 0) {
+      return 0
+    }
+
+    return (
+      Math.max(...childRectangles.map((rectangle) => rectangle.bottom)) -
+      plannerBoardRectangle.bottom
+    )
+  })
+}
+
 test('build planner splits shared and individual perk groups without layout drift', async ({
   page,
 }) => {
@@ -293,13 +315,7 @@ test('build planner splits shared and individual perk groups without layout drif
         .evaluate((element) => element.getBoundingClientRect().height),
     )
     .toBeGreaterThanOrEqual(initialHeaderHeight - headerHeightSubpixelTolerance)
-  await expect
-    .poll(async () =>
-      page
-        .getByTestId('planner-board')
-        .evaluate((element) => element.scrollHeight - element.clientHeight),
-    )
-    .toBeLessThanOrEqual(1)
+  await expect.poll(async () => getPlannerBoardVisualVerticalOverflow(page)).toBeLessThanOrEqual(1)
   await expect
     .poll(async () =>
       page
@@ -336,36 +352,66 @@ test('build planner splits shared and individual perk groups without layout drif
   await expect(
     getBuildIndividualGroupsList(page).getByText('Clarity', { exact: true }),
   ).toBeVisible()
-  const plannerSectionToggleTypography = await page
-    .getByTestId('planner-section-toggle')
-    .evaluateAll((toggles) => {
-      const fontSizeProbe = document.createElement('span')
-      fontSizeProbe.style.fontSize = 'var(--font-size-sm)'
-      document.body.append(fontSizeProbe)
-      const bodyFontFamily = window.getComputedStyle(document.body).fontFamily
-      const expectedFontSize = window.getComputedStyle(fontSizeProbe).fontSize
-      fontSizeProbe.remove()
+  const plannerSectionLabelTypography = await page.evaluate(() => {
+    const previousFontSizeProbe = document.createElement('span')
+    previousFontSizeProbe.style.fontSize = 'var(--type-section-title-size)'
+    document.body.append(previousFontSizeProbe)
+    const previousSectionTitleFontSize = Number.parseFloat(
+      window.getComputedStyle(previousFontSizeProbe).fontSize,
+    )
+    previousFontSizeProbe.remove()
 
-      return toggles.map((toggle) => {
-        const computedStyle = window.getComputedStyle(toggle)
+    const fontFamilyProbe = document.createElement('span')
+    fontFamilyProbe.style.fontFamily = 'var(--heading-font-family)'
+    document.body.append(fontFamilyProbe)
+    const expectedFontFamily = window.getComputedStyle(fontFamilyProbe).fontFamily
+    fontFamilyProbe.remove()
 
-        return {
-          bodyFontFamily,
-          expectedFontSize,
-          fontFamily: computedStyle.fontFamily,
-          fontSize: computedStyle.fontSize,
-          fontWeight: computedStyle.fontWeight,
-          textTransform: computedStyle.textTransform,
-        }
-      })
+    const rowLabel = [
+      ...document.querySelectorAll<HTMLElement>('span[class*="plannerRowLabel"]'),
+    ].find((element) => element.textContent?.trim() === 'Perks')
+    const toggleLabels = [
+      ...document.querySelectorAll<HTMLElement>('[class*="plannerSectionToggleLabel"]'),
+    ]
+
+    if (!(rowLabel instanceof HTMLElement)) {
+      throw new Error('Missing planner row label.')
+    }
+
+    return [rowLabel, ...toggleLabels].map((label) => {
+      const computedStyle = window.getComputedStyle(label)
+
+      return {
+        expectedFontFamily,
+        fontFamily: computedStyle.fontFamily,
+        fontSize: Number.parseFloat(computedStyle.fontSize),
+        fontWeight: computedStyle.fontWeight,
+        previousSectionTitleFontSize,
+        text: label.textContent?.trim(),
+        textTransform: computedStyle.textTransform,
+      }
     })
+  })
 
-  expect(plannerSectionToggleTypography).toHaveLength(2)
-  for (const toggleTypography of plannerSectionToggleTypography) {
-    expect(toggleTypography.fontFamily).toBe(toggleTypography.bodyFontFamily)
-    expect(toggleTypography.fontSize).toBe(toggleTypography.expectedFontSize)
-    expect(Number(toggleTypography.fontWeight)).toBeGreaterThanOrEqual(600)
-    expect(toggleTypography.textTransform).toBe('uppercase')
+  expect(plannerSectionLabelTypography.map((typography) => typography.text)).toEqual([
+    'Perks',
+    'Perk groups for 2+ perks',
+    'Perk groups for individual perks',
+  ])
+  const firstPlannerSectionLabelTypography = plannerSectionLabelTypography[0]
+
+  expect(firstPlannerSectionLabelTypography).toBeDefined()
+  for (const labelTypography of plannerSectionLabelTypography) {
+    expect(labelTypography.fontFamily).toBe(labelTypography.expectedFontFamily)
+    expect(
+      Math.abs(labelTypography.fontSize - firstPlannerSectionLabelTypography!.fontSize),
+    ).toBeLessThanOrEqual(0.01)
+    expect(labelTypography.fontSize).toBeLessThan(labelTypography.previousSectionTitleFontSize)
+    expect(labelTypography.fontSize).toBeGreaterThan(
+      labelTypography.previousSectionTitleFontSize * 0.85,
+    )
+    expect(Number(labelTypography.fontWeight)).toBeGreaterThanOrEqual(700)
+    expect(labelTypography.textTransform).toBe('none')
   }
 
   const infoButton = page.getByRole('button', { name: 'Show build planner guidance' })
@@ -596,36 +642,14 @@ test('build planner splits shared and individual perk groups without layout drif
   expect(
     await getBuildSharedGroupsList(page).getByTestId('planner-group-card').count(),
   ).toBeGreaterThan(0)
-  expect(
-    await page.evaluate(() => {
-      const plannerBoard = document.querySelector(
-        '[data-testid="planner-board"]',
-      ) as HTMLElement | null
-
-      return plannerBoard === null
-        ? Number.NEGATIVE_INFINITY
-        : plannerBoard.scrollHeight - plannerBoard.clientHeight
-    }),
-  ).toBeLessThanOrEqual(1)
+  expect(await getPlannerBoardVisualVerticalOverflow(page)).toBeLessThanOrEqual(1)
 
   await page.setViewportSize({ height: 768, width: 1280 })
   await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute(
     'data-scroll-constrained',
     'false',
   )
-  await expect
-    .poll(async () =>
-      page.evaluate(() => {
-        const plannerBoard = document.querySelector(
-          '[data-testid="planner-board"]',
-        ) as HTMLElement | null
-
-        return plannerBoard === null
-          ? Number.NEGATIVE_INFINITY
-          : plannerBoard.scrollHeight - plannerBoard.clientHeight
-      }),
-    )
-    .toBeLessThanOrEqual(1)
+  await expect.poll(async () => getPlannerBoardVisualVerticalOverflow(page)).toBeLessThanOrEqual(1)
 
   const perksBarHorizontalOverflow = await page.evaluate(() => {
     const buildPerksBar = document.querySelector(
@@ -816,7 +840,6 @@ test('collapses and restores build planner perk group sections independently', a
   expect(
     Math.abs(sharedCollapsedToggleRowBottom - sharedCollapsedToggleMetrics.bottom),
   ).toBeLessThanOrEqual(1)
-  expect(sharedCollapsedToggleMetrics.height).toBeLessThan(36)
   expect(sharedCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
 
   await page.getByRole('button', { name: 'Expand perk groups for 2+ perks' }).click()
@@ -863,7 +886,6 @@ test('collapses and restores build planner perk group sections independently', a
   expect(
     Math.abs(individualCollapsedToggleRowBottom - individualCollapsedToggleMetrics.bottom),
   ).toBeLessThanOrEqual(1)
-  expect(individualCollapsedToggleMetrics.height).toBeLessThan(36)
   expect(individualCollapsedPlannerBoardHeight).toBeLessThan(expandedPlannerBoardHeight - 1)
 
   await sharedCollapseToggle.click()
@@ -886,6 +908,51 @@ test('collapses and restores build planner perk group sections independently', a
 
   expect(collapsedToggleGap).not.toBeNull()
   expect(collapsedToggleGap!).toBeGreaterThanOrEqual(6)
+  const collapsedToggleLabelMetrics = await page.evaluate(() =>
+    [
+      ...document.querySelectorAll<HTMLElement>(
+        '[data-testid="planner-section-toggle"][aria-expanded="false"]',
+      ),
+    ].map((toggle) => {
+      const label = toggle.querySelector<HTMLElement>('[class*="plannerSectionToggleLabel"]')
+
+      if (!(label instanceof HTMLElement)) {
+        throw new Error('Missing planner section toggle label.')
+      }
+
+      const labelStyle = window.getComputedStyle(label)
+      const toggleStyle = window.getComputedStyle(toggle)
+
+      return {
+        backgroundColor: toggleStyle.backgroundColor,
+        borderTopWidth: toggleStyle.borderTopWidth,
+        fontFamily: labelStyle.fontFamily,
+        fontWeight: labelStyle.fontWeight,
+        labelHeight: label.getBoundingClientRect().height,
+        labelClientWidth: label.clientWidth,
+        lineHeight: Number.parseFloat(labelStyle.lineHeight),
+        text: label.textContent,
+        textOverflow: labelStyle.textOverflow,
+        whiteSpace: labelStyle.whiteSpace,
+      }
+    }),
+  )
+
+  expect(collapsedToggleLabelMetrics.map((metric) => metric.text)).toEqual([
+    'Perk groups for 2+ perks',
+    'Perk groups for individual perks',
+  ])
+  for (const collapsedToggleLabelMetric of collapsedToggleLabelMetrics) {
+    expect(collapsedToggleLabelMetric.backgroundColor).toBe('rgba(0, 0, 0, 0)')
+    expect(collapsedToggleLabelMetric.borderTopWidth).toBe('0px')
+    expect(collapsedToggleLabelMetric.fontFamily.toLowerCase()).toContain('cinzel')
+    expect(collapsedToggleLabelMetric.fontWeight).toBe('700')
+    expect(collapsedToggleLabelMetric.labelHeight).toBeGreaterThan(
+      collapsedToggleLabelMetric.lineHeight * 1.5,
+    )
+    expect(collapsedToggleLabelMetric.textOverflow).not.toBe('ellipsis')
+    expect(collapsedToggleLabelMetric.whiteSpace).not.toBe('nowrap')
+  }
   const collapsedToggleTrackBoundaryMetrics = await page.evaluate(() => {
     const firstPickedPerkTile = document.querySelector<HTMLElement>(
       '[data-testid="planner-slot-perk"]',
@@ -925,7 +992,7 @@ test('collapses and restores build planner perk group sections independently', a
   await expect(buildIndividualGroupsList).toBeVisible()
 })
 
-test('keeps collapsible planner group labels compact on mobile', async ({ page }) => {
+test('wraps collapsible planner group labels on mobile without hiding text', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 844, width: 390 })
   await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
@@ -948,18 +1015,37 @@ test('keeps collapsible planner group labels compact on mobile', async ({ page }
   const toggleMetrics = await page.evaluate(() => {
     const toggles = [
       ...document.querySelectorAll<HTMLElement>('[data-testid="planner-section-toggle"]'),
-    ].map((toggle) => toggle.getBoundingClientRect())
+    ]
 
-    return toggles.map((toggleRectangle) => ({
-      height: toggleRectangle.height,
-      width: toggleRectangle.width,
-    }))
+    return toggles.map((toggle) => {
+      const toggleRectangle = toggle.getBoundingClientRect()
+      const label = toggle.querySelector<HTMLElement>('[class*="plannerSectionToggleLabel"]')
+
+      if (!(label instanceof HTMLElement)) {
+        throw new Error('Missing planner section toggle label.')
+      }
+
+      const labelStyle = window.getComputedStyle(label)
+
+      return {
+        height: toggleRectangle.height,
+        labelClientWidth: label.clientWidth,
+        labelHeight: label.getBoundingClientRect().height,
+        lineHeight: Number.parseFloat(labelStyle.lineHeight),
+        textOverflow: labelStyle.textOverflow,
+        whiteSpace: labelStyle.whiteSpace,
+        width: toggleRectangle.width,
+      }
+    })
   })
 
   expect(toggleMetrics).toHaveLength(2)
   for (const toggleMetric of toggleMetrics) {
-    expect(toggleMetric.height).toBeLessThanOrEqual(48)
+    expect(toggleMetric.height).toBeGreaterThan(toggleMetric.lineHeight * 1.5)
+    expect(toggleMetric.labelHeight).toBeGreaterThan(toggleMetric.lineHeight * 1.5)
     expect(toggleMetric.width).toBeLessThan(260)
+    expect(toggleMetric.textOverflow).not.toBe('ellipsis')
+    expect(toggleMetric.whiteSpace).not.toBe('nowrap')
   }
 
   await sharedCollapseToggle.click()
@@ -974,18 +1060,44 @@ test('keeps collapsible planner group labels compact on mobile', async ({ page }
       ...document.querySelectorAll<HTMLElement>('[data-testid="planner-section-toggle"]'),
     ]
       .filter((toggle) => toggle.getAttribute('aria-expanded') === 'false')
-      .map((toggle) => toggle.getBoundingClientRect())
+      .map((toggle) => {
+        const toggleRectangle = toggle.getBoundingClientRect()
+        const label = toggle.querySelector<HTMLElement>('[class*="plannerSectionToggleLabel"]')
 
-    return toggles.map((toggleRectangle) => ({
-      height: toggleRectangle.height,
-      width: toggleRectangle.width,
-    }))
+        if (!(label instanceof HTMLElement)) {
+          throw new Error('Missing planner section toggle label.')
+        }
+
+        const labelStyle = window.getComputedStyle(label)
+
+        return {
+          height: toggleRectangle.height,
+          labelClientWidth: label.clientWidth,
+          labelHeight: label.getBoundingClientRect().height,
+          lineHeight: Number.parseFloat(labelStyle.lineHeight),
+          text: label.textContent,
+          textOverflow: labelStyle.textOverflow,
+          whiteSpace: labelStyle.whiteSpace,
+          width: toggleRectangle.width,
+        }
+      })
+
+    return toggles
   })
 
   expect(collapsedToggleMetrics).toHaveLength(2)
+  expect(collapsedToggleMetrics.map((metric) => metric.text)).toEqual([
+    'Perk groups for 2+ perks',
+    'Perk groups for individual perks',
+  ])
   for (const collapsedToggleMetric of collapsedToggleMetrics) {
-    expect(collapsedToggleMetric.height).toBeLessThan(36)
+    expect(collapsedToggleMetric.height).toBeGreaterThan(collapsedToggleMetric.lineHeight * 1.5)
+    expect(collapsedToggleMetric.labelHeight).toBeGreaterThan(
+      collapsedToggleMetric.lineHeight * 1.5,
+    )
     expect(collapsedToggleMetric.width).toBeLessThan(260)
+    expect(collapsedToggleMetric.textOverflow).not.toBe('ellipsis')
+    expect(collapsedToggleMetric.whiteSpace).not.toBe('nowrap')
   }
 
   const firstCollapsedToggleHitZonePoint = await page.evaluate(() => {

@@ -4,6 +4,7 @@ import {
   createBackgroundFitEngine,
   getBuildTargetPerkGroups,
   getCoveredPickedPerkCount,
+  type BackgroundFitChanceCalculation,
 } from '../src/lib/background-fit'
 import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import {
@@ -371,6 +372,19 @@ const twoScrollStudyResources = {
   shouldAllowScroll: true,
   shouldAllowSecondScroll: true,
 } as const
+
+function getChanceCalculationProbabilitySum(
+  calculation: BackgroundFitChanceCalculation | undefined,
+): number {
+  if (!calculation) {
+    return Number.NaN
+  }
+
+  return calculation.successfulNativeOutcomeProbabilityTerms.reduce(
+    (sum, term) => sum + term.probability * term.outcomeCount,
+    0,
+  )
+}
 
 describe('background fit', () => {
   test('formats expected picked perk coverage with one decimal when needed', () => {
@@ -1174,6 +1188,50 @@ describe('background fit', () => {
     )
   })
 
+  test('collapses resource and guaranteed-native chance calculations instead of showing native complements', () => {
+    const traitsFillWithGuaranteedAxeBackground = createBackgroundDefinition({
+      backgroundId: 'background.guaranteed_axe_one_random_trait',
+      backgroundName: 'Guaranteed axe and one random trait',
+      overrides: {
+        Weapon: { minimumPerkGroups: 1, perkGroupIds: ['AxeTree'] },
+        Traits: { minimumPerkGroups: 1, perkGroupIds: [] },
+      },
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [traitsFillWithGuaranteedAxeBackground],
+    })
+    const [backgroundFit] = engine.getBackgroundFitView([samplePerks[0], samplePerks[4]], {
+      shouldAllowBook: true,
+      shouldAllowScroll: false,
+      shouldAllowSecondScroll: false,
+    }).rankedBackgroundFits
+    const nativeBreakdown = backgroundFit.mustHaveStudyResourceChanceBreakdown?.find(
+      (entry) => entry.key === 'native',
+    )
+    const bookBreakdown = backgroundFit.mustHaveStudyResourceChanceBreakdown?.find(
+      (entry) => entry.key === 'book',
+    )
+
+    expect(nativeBreakdown?.probability).toBeCloseTo(1 / 3, 12)
+    expect(bookBreakdown?.calculation).toEqual(
+      expect.objectContaining({
+        isNativeOutcomeIndependent: true,
+        probability: 1,
+        successfulNativeOutcomeCount: 1,
+        successfulNativeOutcomeProbabilityTerms: [
+          expect.objectContaining({
+            nativeCoveredPickedPerkIdsByOutcome: [['perk.weapon.axe_one']],
+            outcomeCount: 1,
+            probability: 1,
+          }),
+        ],
+        totalNativeOutcomeCount: 1,
+      }),
+    )
+    expect(getChanceCalculationProbabilitySum(bookBreakdown?.calculation)).toBe(1)
+  })
+
   test('calculates exact build chance for alternate placements without double-counting paths', () => {
     const flexibleWeaponPerk = createPerk({
       id: 'perk.weapon.flexible',
@@ -1262,6 +1320,21 @@ describe('background fit', () => {
         buildReachabilityProbability: 1 / 12,
       }),
     )
+
+    const nativeCalculation = backgroundFit.mustHaveStudyResourceChanceBreakdown?.[0]?.calculation
+
+    expect(nativeCalculation).toEqual(
+      expect.objectContaining({
+        probability: 1 / 12,
+        successfulNativeOutcomeCount: expect.any(Number),
+        totalNativeOutcomeCount: expect.any(Number),
+      }),
+    )
+    expect(nativeCalculation!.successfulNativeOutcomeCount).toBeGreaterThan(0)
+    expect(nativeCalculation!.totalNativeOutcomeCount).toBeGreaterThanOrEqual(
+      nativeCalculation!.successfulNativeOutcomeCount,
+    )
+    expect(getChanceCalculationProbabilitySum(nativeCalculation)).toBeCloseTo(1 / 12, 12)
   })
 
   test('calculates exact build chance through class and weapon dependencies', () => {
@@ -1502,6 +1575,18 @@ describe('background fit', () => {
         ],
       }),
     )
+    for (const chanceBreakdownEntry of backgroundFit.mustHaveStudyResourceChanceBreakdown ?? []) {
+      expect(chanceBreakdownEntry.calculation).toEqual(
+        expect.objectContaining({
+          probability: chanceBreakdownEntry.probability,
+          totalNativeOutcomeCount: expect.any(Number),
+        }),
+      )
+      expect(getChanceCalculationProbabilitySum(chanceBreakdownEntry.calculation)).toBeCloseTo(
+        chanceBreakdownEntry.probability,
+        12,
+      )
+    }
   })
 
   test('reports adaptive study resource targets while excluding redundant book targets', () => {
@@ -1583,6 +1668,21 @@ describe('background fit', () => {
       expect.objectContaining({ key: 'scroll', probability: 0.25 }),
       expect.objectContaining({ key: 'book-and-scroll', probability: 0.75 }),
     ])
+    const bookAndScrollCalculation = backgroundFit.mustHaveStudyResourceChanceBreakdown?.find(
+      (entry) => entry.key === 'book-and-scroll',
+    )?.calculation
+
+    expect(bookAndScrollCalculation).toEqual(
+      expect.objectContaining({
+        probability: 0.75,
+        successfulNativeOutcomeCount: 3,
+        successfulNativeOutcomeProbabilityTerms: [
+          expect.objectContaining({ outcomeCount: 3, probability: 0.25 }),
+        ],
+        totalNativeOutcomeCount: 4,
+      }),
+    )
+    expect(getChanceCalculationProbabilitySum(bookAndScrollCalculation)).toBeCloseTo(0.75, 12)
     expect(strategy).toEqual(
       expect.objectContaining({
         nativeProbability: 0,
@@ -1921,12 +2021,31 @@ describe('background fit', () => {
       0.03555555555555556,
       12,
     )
-    expect(peddlerBackgroundFit.mustHaveStudyResourceChanceBreakdown).toEqual([
-      expect.objectContaining({ key: 'native', probability: 0 }),
-      expect.objectContaining({ key: 'book', probability: 0.044444444444444446 }),
-      expect.objectContaining({ key: 'scroll', probability: 0.10000000000000006 }),
-      expect.objectContaining({ key: 'book-and-scroll', probability: 0.5333333333333337 }),
+    const peddlerMustHaveChanceBreakdown =
+      peddlerBackgroundFit.mustHaveStudyResourceChanceBreakdown ?? []
+    const peddlerMustHaveChanceBreakdownByKey = new Map(
+      peddlerMustHaveChanceBreakdown.map((entry) => [entry.key, entry]),
+    )
+
+    expect(peddlerMustHaveChanceBreakdown.map((entry) => entry.key)).toEqual([
+      'native',
+      'book',
+      'scroll',
+      'book-and-scroll',
     ])
+    expect(peddlerMustHaveChanceBreakdownByKey.get('native')?.probability).toBe(0)
+    expect(peddlerMustHaveChanceBreakdownByKey.get('book')?.probability).toBeCloseTo(
+      0.044444444444444446,
+      12,
+    )
+    expect(peddlerMustHaveChanceBreakdownByKey.get('scroll')?.probability).toBeCloseTo(
+      0.10000000000000006,
+      12,
+    )
+    expect(peddlerMustHaveChanceBreakdownByKey.get('book-and-scroll')?.probability).toBeCloseTo(
+      0.5333333333333337,
+      12,
+    )
     expect(peddlerBackgroundFit.mustHaveStudyResourceStrategy).toEqual(
       expect.objectContaining({
         nativeProbability: 0,
@@ -1949,6 +2068,91 @@ describe('background fit', () => {
         (target) => target.perkGroupName,
       ),
     ).not.toContain('Heavy Armor')
+  })
+
+  test('scopes must-have chance expression terms to must-have picked perks', () => {
+    const reportedBuildPerkNames = [
+      'Devastating Strikes',
+      'Pathfinder',
+      'Lookout',
+      'Bullseye',
+      'Keen Eyesight',
+      'Dodge',
+      'Relentless',
+      'Greed',
+      'Heightened Reflexes',
+      'Berserk',
+      'Poison Mastery',
+      'Nightvision',
+      'Ballistics',
+      'Anticipation',
+      'Perfect Fit',
+      'Alert',
+      'Brawny',
+      'Muscularity',
+    ]
+    const reportedOptionalPerkNames = [
+      'Poison Mastery',
+      'Nightvision',
+      'Ballistics',
+      'Anticipation',
+      'Perfect Fit',
+      'Alert',
+      'Brawny',
+      'Muscularity',
+    ]
+    const perksByName = new Map(
+      legendsBackgroundFitDataset.perks.map((perk) => [perk.perkName, perk]),
+    )
+    const reportedBuildPerks = reportedBuildPerkNames.map((perkName) => {
+      const perk = perksByName.get(perkName)
+
+      if (!perk) {
+        throw new Error(`Missing reported build perk fixture: ${perkName}`)
+      }
+
+      return perk
+    })
+    const optionalPickedPerkIds = new Set(
+      reportedOptionalPerkNames.map((perkName) => {
+        const perk = perksByName.get(perkName)
+
+        if (!perk) {
+          throw new Error(`Missing reported optional perk fixture: ${perkName}`)
+        }
+
+        return perk.id
+      }),
+    )
+    const hunterBackgroundFit = createBackgroundFitEngine(legendsBackgroundFitDataset)
+      .getBackgroundFitView(reportedBuildPerks, defaultStudyResources, {
+        optionalPickedPerkIds,
+      })
+      .rankedBackgroundFits.find((backgroundFit) => backgroundFit.backgroundId === 'background.hunter')
+    const bookAndScrollBreakdown =
+      hunterBackgroundFit?.mustHaveStudyResourceChanceBreakdown?.find(
+        (entry) => entry.key === 'book-and-scroll',
+      )
+
+    if (!hunterBackgroundFit || !bookAndScrollBreakdown?.calculation) {
+      throw new Error('Missing Hunter background fit fixture')
+    }
+
+    expect(hunterBackgroundFit.mustHaveBuildReachabilityProbability).toBeCloseTo(
+      0.3649090909090912,
+      12,
+    )
+    expect(bookAndScrollBreakdown.calculation.totalNativeOutcomeCount).toBe(4)
+    expect(bookAndScrollBreakdown.calculation.successfulNativeOutcomeCount).toBe(3)
+    expect(
+      bookAndScrollBreakdown.calculation.successfulNativeOutcomeProbabilityTerms.map(
+        (term) => term.outcomeCount,
+      ),
+    ).toEqual([1, 1, 1])
+    expect(getChanceCalculationProbabilitySum(bookAndScrollBreakdown.calculation)).toBeCloseTo(
+      hunterBackgroundFit.mustHaveBuildReachabilityProbability ?? 0,
+      12,
+    )
   })
 
   test('does not report a second ancient scroll when it does not improve the reported Fisherman build', () => {

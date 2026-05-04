@@ -200,6 +200,101 @@ describe('legends perks importer', () => {
     )
   })
 
+  test('fills hook-only background trait descriptions from vanilla trait metadata', async () => {
+    const temporaryRootDirectoryPath = path.join(
+      process.cwd(),
+      'node_modules',
+      '.tmp',
+      'legends-importer-vanilla-traits',
+    )
+
+    await mkdir(temporaryRootDirectoryPath, { recursive: true })
+
+    const temporaryFixtureDirectoryPath = await mkdtemp(
+      path.join(temporaryRootDirectoryPath, 'reference-'),
+    )
+
+    try {
+      const temporaryReferenceDirectoryPath = path.join(
+        temporaryFixtureDirectoryPath,
+        'legends-reference',
+      )
+
+      await copyDirectory(
+        path.dirname(fixtureReferenceRootDirectoryPath),
+        temporaryReferenceDirectoryPath,
+        {
+          recursive: true,
+        },
+      )
+
+      const beastHunterBackgroundFilePath = path.join(
+        temporaryReferenceDirectoryPath,
+        'mod_legends',
+        'hooks',
+        'skills',
+        'backgrounds',
+        'beast_hunter_background.nut',
+      )
+      const beastHunterBackgroundSource = await readFile(beastHunterBackgroundFilePath, 'utf8')
+
+      await writeFile(
+        beastHunterBackgroundFilePath,
+        beastHunterBackgroundSource.replace(
+          '      ::Legends.Traits.getID(::Legends.Trait.FearUndead)\n    ];',
+          [
+            '      ::Legends.Traits.getID(::Legends.Trait.FearUndead),',
+            '      ::Legends.Traits.getID(::Legends.Trait.Hesistant),',
+            '      "hate undead",',
+            '      "lucky_trait"',
+            '    ];',
+          ].join('\n'),
+        ),
+        'utf8',
+      )
+
+      const datasetWithVanillaTraits = await createDataset(
+        path.join(temporaryReferenceDirectoryPath, 'mod_legends'),
+      )
+      const beastSlayerBackground = datasetWithVanillaTraits.backgroundFitBackgrounds.find(
+        (background) => background.backgroundId === 'background.beast_slayer',
+      )
+
+      expect(beastSlayerBackground?.excludedTraits).toEqual([
+        {
+          description: 'Afraid of walking dead.',
+          iconPath: 'ui/traits/trait_icon_50.png',
+          traitName: 'Fear of Undead',
+        },
+        {
+          description:
+            "Some past event in this character's life has fueled a burning hatred for all things that refuse to stay six feet underground.",
+          iconPath: 'ui/traits/trait_icon_50.png',
+          traitName: 'Hate for Undead',
+        },
+        {
+          description: 'Umm... well... maybe. This character is hesitant to act.',
+          iconPath: 'ui/traits/trait_icon_25.png',
+          traitName: 'Hesitant',
+        },
+        {
+          description:
+            "This character has a natural talent for getting out of harm's way in the last second.",
+          iconPath: 'ui/traits/trait_icon_54.png',
+          traitName: 'Lucky',
+        },
+      ])
+      expect(beastSlayerBackground?.excludedTraitNames).toEqual([
+        'Fear of Undead',
+        'Hate for Undead',
+        'Hesitant',
+        'Lucky',
+      ])
+    } finally {
+      await removePath(temporaryFixtureDirectoryPath, { force: true, recursive: true })
+    }
+  })
+
   test('merges perk string overrides from hooks after the base perk strings file', () => {
     const clarity = dataset.perks.find((perk) => perk.perkConstName === 'LegendClarity')
 

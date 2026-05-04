@@ -24,6 +24,7 @@ import { sortUniqueStrings } from './script-utils.mjs'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRootDirectoryPath = path.resolve(__dirname, '..')
+const vanillaTraitMetadataFilePath = path.join(__dirname, 'vanilla-trait-metadata.json')
 
 export const defaultReferenceRootDirectoryPath = defaultLegendsReferenceDirectoryPath
 
@@ -1104,7 +1105,10 @@ function mergeTraitMetadataRecord(leftRecord, rightRecord) {
     return { ...rightRecord }
   }
 
-  const shouldUseRightName = rightRecord.hasExplicitName || !leftRecord.hasExplicitName
+  const shouldUseRightName =
+    rightRecord.shouldOverrideName === false
+      ? !leftRecord.hasExplicitName
+      : rightRecord.hasExplicitName || !leftRecord.hasExplicitName
 
   return {
     description: leftRecord.description ?? rightRecord.description ?? null,
@@ -1123,16 +1127,25 @@ function setMergedTraitMetadataRecord(map, key, traitRecord) {
 }
 
 function getTraitRecordNameKey(traitName) {
-  return traitName.toLocaleLowerCase('en-US')
+  return normalizeWhitespace(traitName).toLocaleLowerCase('en-US')
 }
+
+const traitScriptIdCandidateAliasesByReference = new Map([
+  ['hesistant', ['hesitant_trait', 'hesitant']],
+])
 
 function getTraitScriptIdCandidates(traitReference) {
   const normalizedReference = traitReference.replace(/_trait$/u, '')
   const snakeReference = normalizedReference
     .replace(/([a-z0-9])([A-Z])/g, '$1_$2')
+    .replace(/[\s-]+/g, '_')
     .toLocaleLowerCase('en-US')
 
-  return [`${snakeReference}_trait`, snakeReference]
+  return [
+    `${snakeReference}_trait`,
+    snakeReference,
+    ...(traitScriptIdCandidateAliasesByReference.get(snakeReference) ?? []),
+  ]
 }
 
 function sortUniqueTraitRecords(traitRecords) {
@@ -1140,9 +1153,10 @@ function sortUniqueTraitRecords(traitRecords) {
 
   for (const traitRecord of traitRecords) {
     const normalizedTraitRecord = normalizeTraitMetadataRecord(traitRecord)
-    const existingTraitRecord = traitRecordsByName.get(traitRecord.traitName)
+    const traitRecordNameKey = getTraitRecordNameKey(normalizedTraitRecord.traitName)
+    const existingTraitRecord = traitRecordsByName.get(traitRecordNameKey)
 
-    traitRecordsByName.set(traitRecord.traitName, {
+    traitRecordsByName.set(traitRecordNameKey, {
       description: existingTraitRecord?.description ?? normalizedTraitRecord.description,
       iconPath: existingTraitRecord?.iconPath ?? normalizedTraitRecord.iconPath,
       traitName: normalizedTraitRecord.traitName,
@@ -1259,17 +1273,54 @@ function parseExcludedTalentAttributeNames(value) {
   )
 }
 
-function parseTraitMetadataFileEntries(traitFileEntries) {
+function addTraitMetadataRecordToMaps(
+  { traitRecordsByConstName, traitRecordsByName, traitRecordsByScriptId },
+  { constName = null, scriptId = null, traitRecord },
+) {
+  setMergedTraitMetadataRecord(
+    traitRecordsByName,
+    getTraitRecordNameKey(traitRecord.traitName),
+    traitRecord,
+  )
+  setMergedTraitMetadataRecord(traitRecordsByScriptId, scriptId, traitRecord)
+
+  if (constName !== null) {
+    setMergedTraitMetadataRecord(traitRecordsByConstName, constName, traitRecord)
+  }
+}
+
+function normalizeFallbackTraitMetadataRecord(metadataRecord) {
+  const traitName =
+    metadataRecord.traitName ?? prettifyIdentifier(metadataRecord.scriptId.replace(/_trait$/u, ''))
+
+  return {
+    description:
+      metadataRecord.description === null ? null : cleanRichText(metadataRecord.description),
+    hasExplicitName: metadataRecord.traitName !== null,
+    iconPath: metadataRecord.iconPath ?? null,
+    shouldOverrideName: false,
+    traitName,
+  }
+}
+
+function parseTraitMetadataFileEntries(traitFileEntries, fallbackTraitMetadataRecords = []) {
   const traitRecordsByConstName = new Map()
   const traitRecordsByName = new Map()
   const traitRecordsByScriptId = new Map()
+  const traitMetadata = {
+    traitRecordsByConstName,
+    traitRecordsByName,
+    traitRecordsByScriptId,
+  }
 
   for (const traitFileEntry of traitFileEntries) {
     const uncommentedFileSource = stripSquirrelComments(traitFileEntry.fileSource)
     const traitConstName = resolveTraitConstNameFromValue(
       extractAssignedValue(uncommentedFileSource, 'this.m.ID'),
     )
-    const explicitTraitName = stringValue(extractAssignedValue(uncommentedFileSource, 'this.m.Name'))
+    const explicitTraitName = stringValue(
+      extractAssignedValue(uncommentedFileSource, 'this.m.Name'),
+    )
     const iconPath = stringValue(extractAssignedValue(uncommentedFileSource, 'this.m.Icon'))
     const description = stringValue(
       extractAssignedValue(uncommentedFileSource, 'this.m.Description'),
@@ -1291,19 +1342,21 @@ function parseTraitMetadataFileEntries(traitFileEntries) {
       traitName,
     }
 
-    setMergedTraitMetadataRecord(traitRecordsByScriptId, traitScriptId, traitRecord)
-    setMergedTraitMetadataRecord(traitRecordsByName, getTraitRecordNameKey(traitName), traitRecord)
-
-    if (traitConstName !== null) {
-      setMergedTraitMetadataRecord(traitRecordsByConstName, traitConstName, traitRecord)
-    }
+    addTraitMetadataRecordToMaps(traitMetadata, {
+      constName: traitConstName,
+      scriptId: traitScriptId,
+      traitRecord,
+    })
   }
 
-  return {
-    traitRecordsByConstName,
-    traitRecordsByName,
-    traitRecordsByScriptId,
+  for (const fallbackTraitMetadataRecord of fallbackTraitMetadataRecords) {
+    addTraitMetadataRecordToMaps(traitMetadata, {
+      scriptId: fallbackTraitMetadataRecord.scriptId,
+      traitRecord: normalizeFallbackTraitMetadataRecord(fallbackTraitMetadataRecord),
+    })
   }
+
+  return traitMetadata
 }
 
 function createBackgroundMetadataDefaults({
@@ -2963,6 +3016,8 @@ export async function createDataset(
     '!config',
     'mods_legend_resources.nut',
   )
+  const vanillaTraitMetadataFileSource = await readFile(vanillaTraitMetadataFilePath, 'utf8')
+  const vanillaTraitMetadataRecords = JSON.parse(vanillaTraitMetadataFileSource)
   const perkGroupRulesFilePath = path.join(referenceRootDirectoryPath, 'config', 'perks_tree.nut')
   const playerHookFilePath = path.join(
     referenceRootDirectoryPath,
@@ -3165,7 +3220,7 @@ export async function createDataset(
   const resourceModifierValuesByKey = resourceModifierValuesFileSource
     ? parseResourceModifierValuesFile(resourceModifierValuesFileSource)
     : new Map()
-  const traitMetadata = parseTraitMetadataFileEntries(traitFileEntries)
+  const traitMetadata = parseTraitMetadataFileEntries(traitFileEntries, vanillaTraitMetadataRecords)
 
   const perkGroupDefinitions = new Map()
   const perkGroupCategoryNames = new Map()
@@ -3624,6 +3679,10 @@ export async function createDataset(
       path: traitFileEntry.sourceFilePath,
       role: 'trait metadata',
     })),
+    {
+      path: toPosixRelativePath(vanillaTraitMetadataFilePath),
+      role: 'vanilla trait metadata',
+    },
     ...scenarioVeteranPerkFileEntries.map((scenarioFileEntry) => ({
       path: scenarioFileEntry.sourceFilePath,
       role: 'scenario perk sources',

@@ -45,6 +45,12 @@ async function expectImageToLoad(imageLocator: Locator): Promise<void> {
 const reportedPeddlerStudyResourceBuildUrl =
   '/?build=Muscularity,Brawny,Perfect+Fit,Colossus,Perfect+Focus,Athlete,Clarity,Lithe,Polearm+Mastery,Heightened+Reflexes,Alert,Onslaught,Berserk,Killing+Frenzy,In+the+Zone,First+Blood,Double+Strike,Bloody+Harvest&optional=Berserk,Killing+Frenzy,In+the+Zone,First+Blood,Double+Strike,Bloody+Harvest'
 
+const reportedRangerChanceExplanationBuildUrl =
+  '/?detail=background&background=background.legend_ranger&background-source=legend-ranger&build=Devastating+Strikes,Pathfinder,Lookout,Bullseye,Keen+Eyesight,Dodge,Relentless,Greed,Heightened+Reflexes,Berserk,Poison+Mastery,Nightvision,Ballistics,Anticipation,Perfect+Fit,Alert,Brawny,Muscularity&optional=Poison+Mastery,Nightvision,Ballistics,Anticipation,Perfect+Fit,Alert,Brawny,Muscularity'
+
+const reportedHunterChanceExplanationBuildUrl =
+  '/?detail=background&background=background.hunter&background-source=hunter&build=Devastating+Strikes,Pathfinder,Lookout,Bullseye,Keen+Eyesight,Dodge,Relentless,Greed,Heightened+Reflexes,Berserk,Poison+Mastery,Nightvision,Ballistics,Anticipation,Perfect+Fit,Alert,Brawny,Muscularity&optional=Poison+Mastery,Nightvision,Ballistics,Anticipation,Perfect+Fit,Alert,Brawny,Muscularity'
+
 test('starts with an empty detail panel until a perk or background is selected', async ({
   page,
 }) => {
@@ -164,7 +170,7 @@ test('shows imported background metadata only in the background detail panel', a
 
   await expect(excludedTraitsHeading).toBeVisible()
   expect(excludedTraitsHeadingFontSize).toBeLessThan(metadataParentHeadingFontSize)
-  const fearUndeadTraitPill = metadataSection.getByRole('button', { name: 'Fear Undead' })
+  const fearUndeadTraitPill = metadataSection.getByRole('button', { name: 'Fear of Undead' })
   const aggressiveTraitPill = metadataSection.getByRole('button', { name: 'Aggressive' })
   const martialTraitPill = metadataSection.getByRole('button', { name: 'Martial' })
   const fearUndeadTraitIcon = fearUndeadTraitPill.getByTestId('detail-background-trait-icon')
@@ -186,9 +192,15 @@ test('shows imported background metadata only in the background detail panel', a
   await expectImageToLoad(fearUndeadTraitIcon)
   await expectImageToLoad(aggressiveTraitIcon)
   await expectImageToLoad(martialTraitIcon)
-  await aggressiveTraitPill.hover()
   const traitTooltip = page.getByTestId('detail-background-trait-tooltip')
 
+  await fearUndeadTraitPill.hover()
+  await expect(traitTooltip).toBeVisible()
+  await expect(traitTooltip).toContainText(
+    'Some past event or particularly convincing story in this character',
+  )
+
+  await aggressiveTraitPill.hover()
   await expect(traitTooltip).toBeVisible()
   await expect(traitTooltip).toContainText(
     'This character is pretty aggressive, even to their own detriment.',
@@ -299,6 +311,39 @@ test('keeps camp skill metadata rows tucked under their heading', async ({ page 
   expect(campSkillMetrics).not.toBeNull()
   expect(campSkillMetrics!.headingHeight).toBeLessThan(24)
   expect(campSkillMetrics!.headingToFirstRowDistance).toBeLessThanOrEqual(28)
+
+  const campModifierValueSpacingMetrics = await metadataSection.evaluate((section) => {
+    return [...section.querySelectorAll('[data-testid="detail-camp-resource-modifier-columns"] li')]
+      .map((row) => {
+        const label = row.querySelector('[data-testid="detail-camp-resource-modifier-label"]')
+        const value = row.querySelector('[data-testid="detail-camp-resource-modifier-value"]')
+
+        if (
+          !(row instanceof HTMLElement) ||
+          !(label instanceof HTMLElement) ||
+          !(value instanceof HTMLElement)
+        ) {
+          return null
+        }
+
+        const labelRectangle = label.getBoundingClientRect()
+        const rowRectangle = row.getBoundingClientRect()
+        const valueRectangle = value.getBoundingClientRect()
+
+        return {
+          distanceFromLabel: valueRectangle.left - labelRectangle.right,
+          isValueBeforeRowMiddle: valueRectangle.left < rowRectangle.left + rowRectangle.width / 2,
+        }
+      })
+      .filter((metric) => metric !== null)
+  })
+
+  expect(campModifierValueSpacingMetrics.length).toBeGreaterThan(0)
+  expect(
+    campModifierValueSpacingMetrics.every(
+      (metric) => metric.distanceFromLabel <= 16 && metric.isValueBeforeRowMiddle,
+    ),
+  ).toBe(true)
 })
 
 test('shows the dominant study resource strategy for the reported Peddler build', async ({
@@ -323,7 +368,6 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const detailPanel = getDetailPanel(page)
   const backgroundFitTables = detailPanel.getByTestId('detail-background-fit-tables')
   const metricSummary = backgroundFitTables.getByTestId('background-fit-summary-table')
-  const chanceBreakdown = backgroundFitTables.getByTestId('detail-chance-breakdown')
   const studyResourcePlan = detailPanel.getByTestId('detail-study-resource-plan')
   const mustHaveStudyResourcePlan = studyResourcePlan
     .getByTestId('detail-study-resource-plan-scope')
@@ -333,30 +377,8 @@ test('shows the dominant study resource strategy for the reported Peddler build'
     .filter({ hasText: 'Full-build book/scroll usage' })
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Peddler' })).toBeVisible()
-  await expect(chanceBreakdown).toBeVisible()
-  const backgroundFitLayout = await backgroundFitTables.evaluate((tables) => {
-    const metricSummaryElement = tables.querySelector(
-      '[data-testid="background-fit-summary-table"]',
-    )
-    const chanceBreakdownElement = tables.querySelector('[data-testid="detail-chance-breakdown"]')
-
-    if (
-      !(metricSummaryElement instanceof HTMLElement) ||
-      !(chanceBreakdownElement instanceof HTMLElement)
-    ) {
-      return null
-    }
-
-    const metricSummaryRectangle = metricSummaryElement.getBoundingClientRect()
-    const chanceBreakdownRectangle = chanceBreakdownElement.getBoundingClientRect()
-
-    return {
-      chanceBreakdownLeft: chanceBreakdownRectangle.left,
-      chanceBreakdownTop: chanceBreakdownRectangle.top,
-      metricSummaryRight: metricSummaryRectangle.right,
-      metricSummaryTop: metricSummaryRectangle.top,
-    }
-  })
+  await expect(metricSummary).toBeVisible()
+  await expect(backgroundFitTables.getByTestId('detail-chance-breakdown')).toHaveCount(0)
   const studyResourcePlanSpacing = await studyResourcePlan.evaluate((plan) => {
     const previousElement = plan.previousElementSibling
 
@@ -391,18 +413,10 @@ test('shows the dominant study resource strategy for the reported Peddler build'
     )
   })
 
-  expect(backgroundFitLayout).not.toBeNull()
-  expect(backgroundFitLayout!.chanceBreakdownLeft).toBeGreaterThan(
-    backgroundFitLayout!.metricSummaryRight,
-  )
-  expect(
-    Math.abs(backgroundFitLayout!.chanceBreakdownTop - backgroundFitLayout!.metricSummaryTop),
-  ).toBeLessThanOrEqual(4)
   expect(studyResourcePlanSpacing).not.toBeNull()
   expect(studyResourcePlanSpacing!).toBeGreaterThanOrEqual(16)
   expect(studyResourceScopeSpacing).not.toBeNull()
   expect(studyResourceScopeSpacing!).toBeGreaterThanOrEqual(18)
-  await expect(metricSummary).toBeVisible()
   await expect(
     mustHaveStudyResourcePlan.getByRole('heading', {
       level: 5,
@@ -460,6 +474,125 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   await page.mouse.move(1, 1)
   await expect(page.getByRole('tooltip')).toHaveCount(0)
   await expect(studyResourcePlan.getByText('Heavy Armor')).toHaveCount(0)
+})
+
+test('explains the reported Ranger full-build chance from remaining native rows', async ({
+  page,
+}) => {
+  await page.setViewportSize({ height: 720, width: 900 })
+  await page.goto(reportedRangerChanceExplanationBuildUrl)
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const detailPanel = getDetailPanel(page)
+  const chanceExplanation = detailPanel.getByTestId('detail-chance-explanation')
+  const chanceExplanationToggle = chanceExplanation.getByRole('button', {
+    name: 'How chances combine',
+  })
+  const matchedPerkGroupsRegion = detailPanel.getByRole('region', { name: 'Matched perk groups' })
+  const mustHaveMatchColumn = matchedPerkGroupsRegion.locator(
+    '[data-requirement-scope="must-have"]',
+  )
+  const optionalMatchColumn = matchedPerkGroupsRegion.locator('[data-requirement-scope="optional"]')
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Ranger' })).toBeVisible()
+  await expect(chanceExplanation).toBeVisible()
+  await expect(chanceExplanationToggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(chanceExplanation.getByTestId('detail-chance-explanation-scope')).toHaveCount(0)
+
+  const layoutMetrics = await matchedPerkGroupsRegion.evaluate((region) => {
+    const explanation = region.querySelector('[data-testid="detail-chance-explanation"]')
+    const mustHaveColumn = region.querySelector('[data-requirement-scope="must-have"]')
+    const optionalColumn = region.querySelector('[data-requirement-scope="optional"]')
+
+    if (
+      !(explanation instanceof HTMLElement) ||
+      !(mustHaveColumn instanceof HTMLElement) ||
+      !(optionalColumn instanceof HTMLElement)
+    ) {
+      return null
+    }
+
+    return {
+      explanationTop: explanation.getBoundingClientRect().top,
+      mustHaveBottom: mustHaveColumn.getBoundingClientRect().bottom,
+      optionalBottom: optionalColumn.getBoundingClientRect().bottom,
+    }
+  })
+
+  expect(layoutMetrics).not.toBeNull()
+  expect(layoutMetrics!.explanationTop).toBeGreaterThanOrEqual(layoutMetrics!.mustHaveBottom - 1)
+  expect(layoutMetrics!.explanationTop).toBeGreaterThanOrEqual(layoutMetrics!.optionalBottom - 1)
+
+  await expect(mustHaveMatchColumn).toBeVisible()
+  await expect(optionalMatchColumn).toBeVisible()
+  await chanceExplanationToggle.click()
+  await expect(chanceExplanationToggle).toHaveAttribute('aria-expanded', 'true')
+
+  const fullBuildScope = chanceExplanation
+    .getByTestId('detail-chance-explanation-scope')
+    .filter({ hasText: 'Full build chance' })
+
+  await expect(fullBuildScope).toContainText('22.4%')
+  await expect(fullBuildScope).toContainText(
+    'Best route improves this from 0% native-only to 22.4%.',
+  )
+  await expect(fullBuildScope).toContainText(
+    'Skill book covers one of Barter for Greed or Calm for Alert, depending on the native roll.',
+  )
+  await expect(fullBuildScope).toContainText(
+    'Ancient scroll covers Berserker for Brawny and Muscularity.',
+  )
+  await expect(fullBuildScope).toContainText('The remaining native roll needs Barter or Calm.')
+  await expect(fullBuildScope).toContainText(
+    'Chance math: Barter 0.20% + Calm 22.2% - both 0.04% = 22.4%.',
+  )
+  await expect(fullBuildScope).toContainText('Actual engine expression:')
+  await expect(fullBuildScope).toContainText('successful grouped native outcome')
+  await expect(
+    fullBuildScope.getByTestId('detail-chance-explanation-probability-term').first(),
+  ).toHaveAttribute(
+    'title',
+    /Full build.*probability.*Skill book covers.*Ancient scroll covers Berserker/,
+  )
+
+  await expect(fullBuildScope.getByTestId('detail-chance-explanation-native-match')).toHaveCount(0)
+})
+
+test('keeps reported Hunter must-have expressions scoped to must-have rows', async ({ page }) => {
+  await page.setViewportSize({ height: 720, width: 900 })
+  await page.goto(reportedHunterChanceExplanationBuildUrl)
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const detailPanel = getDetailPanel(page)
+  const chanceExplanation = detailPanel.getByTestId('detail-chance-explanation')
+  const chanceExplanationToggle = chanceExplanation.getByRole('button', {
+    name: 'How chances combine',
+  })
+
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Hunter' })).toBeVisible()
+  await chanceExplanationToggle.click()
+
+  const mustHaveScope = chanceExplanation
+    .getByTestId('detail-chance-explanation-scope')
+    .filter({ hasText: 'Must-have chance' })
+
+  await expect(mustHaveScope).toContainText(
+    'Actual engine expression: P = 36.3% + 0.13% + 0.07% = 36.5%.',
+  )
+  await expect(mustHaveScope).toContainText(
+    'The engine summed 3 successful grouped native outcomes out of 4 grouped native outcomes.',
+  )
+  await expect(mustHaveScope).not.toContainText('72 successful grouped native outcomes')
+  await expect(mustHaveScope.getByTestId('detail-chance-explanation-probability-term')).toHaveCount(
+    3,
+  )
+  await expect(
+    mustHaveScope.getByTestId('detail-chance-explanation-probability-term').first(),
+  ).toHaveAttribute(
+    'title',
+    /Must-have term has 36\.3% probability\..*(Sling covers Lookout|Barter covers Greed|Skill book covers)/,
+  )
+  await expect(mustHaveScope.getByTestId('detail-chance-explanation-native-match')).toHaveCount(0)
 })
 
 test('detail history buttons stay inside page detail history', async ({ page }) => {
