@@ -50,8 +50,10 @@ export function AncientScrollPerkGroupMarker({
           aria-hidden="true"
           className={styles.ancientScrollMarkerIcon}
           decoding="async"
+          height="64"
           loading="lazy"
           src={`/game-icons/${ancientScrollIconPath}`}
+          width="64"
         />
       </button>
     )
@@ -63,9 +65,11 @@ export function AncientScrollPerkGroupMarker({
       className={joinClassNames(styles.ancientScrollMarker, className)}
       data-testid={ancientScrollPerkGroupMarkerTestId}
       decoding="async"
+      height="64"
       loading="lazy"
       src={`/game-icons/${ancientScrollIconPath}`}
       title="Learnable using an ancient scroll"
+      width="64"
     />
   )
 }

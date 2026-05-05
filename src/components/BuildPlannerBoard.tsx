@@ -132,7 +132,9 @@ function PlannerSlotRequirementChain() {
         className={styles.plannerSlotRequirementImage}
         data-testid="planner-slot-requirement-chain-image"
         draggable={false}
+        height="64"
         src={catenaryChainUrl}
+        width="64"
       />
     </span>
   )
@@ -207,17 +209,19 @@ function PlannerSectionToggle({
   label: string
   onToggle: () => void
 }) {
+  const toggleActionLabel = `${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`
+
   return (
     <button
       aria-controls={controlledSectionId}
       aria-expanded={isExpanded}
-      aria-label={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
+      aria-label={toggleActionLabel}
       className={joinClassNames(styles.plannerRowLabel, styles.plannerSectionToggle)}
       data-collapsed-chip={isCollapsedChip}
       data-testid="planner-section-toggle"
       id={buttonId}
       onClick={onToggle}
-      title={`${isExpanded ? 'Collapse' : 'Expand'} ${label.toLowerCase()}`}
+      title={toggleActionLabel}
       type="button"
     >
       <PlannerSectionChevron className={styles.plannerSectionChevron} isExpanded={isExpanded} />

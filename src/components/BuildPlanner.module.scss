@@ -1152,6 +1152,34 @@
       }
     }
 
+    .plannerSectionPlaceholder {
+      .plannerSlotName {
+        width: auto;
+        max-width: var(--primitive-length-12rem);
+        margin-top: 0;
+        -webkit-line-clamp: 1;
+        font-size: var(--font-size-3xs);
+        line-height: var(--type-meta-line-height);
+      }
+
+      .plannerSlotMeta {
+        display: none;
+      }
+    }
+
+    .plannerSlot[data-placeholder='true'] {
+      .plannerSlotName,
+      .plannerSlotMeta {
+        display: -webkit-box;
+        max-width: var(--primitive-length-12rem);
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+        font-size: var(--font-size-3xs);
+        line-height: var(--type-meta-line-height);
+      }
+    }
+
     .plannerSectionToggle {
       min-height: calc(var(--target-size-compact) + var(--space-3xl));
       padding: 0 0 0 calc(var(--icon-size-sm) + var(--space-md));

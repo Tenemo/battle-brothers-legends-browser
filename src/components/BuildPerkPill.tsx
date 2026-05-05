@@ -122,8 +122,10 @@ export function BuildPerkPill({
           className={styles.plannerPillIcon}
           data-testid="planner-pill-icon"
           decoding="async"
+          height="64"
           loading="lazy"
           src={`/game-icons/${perkIconPath}`}
+          width="64"
         />
       ) : null}
       <span className={styles.plannerPillLabel}>{perkName}</span>

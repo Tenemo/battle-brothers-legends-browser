@@ -33,14 +33,6 @@ const perkFilterTooltips = {
   originPerkGroups: 'Shows perk groups that come only from origins and are hidden by default.',
 } as const
 
-function getIsMobilePerkResultViewport() {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return false
-  }
-
-  return window.matchMedia(mobilePerkResultMediaQuery).matches
-}
-
 function renderPerkPlacementChip({
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
@@ -224,9 +216,7 @@ export function PerkResults({
     openResultsPerkHover: onOpenResultsPerkHover,
   } = usePlannerInteractionActions()
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
-  const [isMobilePerkResultViewport, setIsMobilePerkResultViewport] = useState(
-    getIsMobilePerkResultViewport,
-  )
+  const [shouldUseDesktopPerkResultWindow, setShouldUseDesktopPerkResultWindow] = useState(false)
   const [mobilePerkResultWindow, setMobilePerkResultWindow] = useState({
     resultSetKey: '',
     visiblePerkCount: mobilePerkResultBatchSize,
@@ -246,11 +236,11 @@ export function PerkResults({
     desktopPerkResultWindow.resultSetKey === visiblePerkResultSetKey
       ? desktopPerkResultWindow.visiblePerkCount
       : desktopInitialPerkResultBatchSize
-  const displayedPerkCount = isMobilePerkResultViewport
-    ? effectiveMobileVisiblePerkCount
-    : effectiveDesktopVisiblePerkCount
+  const displayedPerkCount = shouldUseDesktopPerkResultWindow
+    ? effectiveDesktopVisiblePerkCount
+    : effectiveMobileVisiblePerkCount
   const displayedPerks = visiblePerks.slice(0, displayedPerkCount)
-  const hiddenMobilePerkCount = isMobilePerkResultViewport
+  const hiddenMobilePerkCount = !shouldUseDesktopPerkResultWindow
     ? Math.max(visiblePerks.length - displayedPerks.length, 0)
     : 0
   const hasActivePerkSourceFilter =
@@ -268,7 +258,10 @@ export function PerkResults({
   }
 
   useEffect(() => {
-    if (isMobilePerkResultViewport || effectiveDesktopVisiblePerkCount >= visiblePerks.length) {
+    if (
+      !shouldUseDesktopPerkResultWindow ||
+      effectiveDesktopVisiblePerkCount >= visiblePerks.length
+    ) {
       return
     }
 
@@ -300,7 +293,7 @@ export function PerkResults({
     }
   }, [
     effectiveDesktopVisiblePerkCount,
-    isMobilePerkResultViewport,
+    shouldUseDesktopPerkResultWindow,
     visiblePerkResultSetKey,
     visiblePerks.length,
   ])
@@ -311,15 +304,18 @@ export function PerkResults({
     }
 
     const mobilePerkResultMediaQueryList = window.matchMedia(mobilePerkResultMediaQuery)
+    const initialMediaQueryTimeout = window.setTimeout(() => {
+      handleMobilePerkResultMediaChange(mobilePerkResultMediaQueryList)
+    }, 0)
 
     function handleMobilePerkResultMediaChange(event: { matches: boolean }) {
-      setIsMobilePerkResultViewport(event.matches)
+      setShouldUseDesktopPerkResultWindow(!event.matches)
     }
 
-    handleMobilePerkResultMediaChange(mobilePerkResultMediaQueryList)
     mobilePerkResultMediaQueryList.addEventListener('change', handleMobilePerkResultMediaChange)
 
     return () => {
+      window.clearTimeout(initialMediaQueryTimeout)
       mobilePerkResultMediaQueryList.removeEventListener(
         'change',
         handleMobilePerkResultMediaChange,
@@ -372,7 +368,7 @@ export function PerkResults({
           inputId="perk-results-search"
           label="Search perks"
           onValueChange={setQuery}
-          placeholder="Search perks, perk groups, backgrounds, scenarios, or enemy targets"
+          placeholder="Search perks"
           testId="perk-results-search-field"
           trailingControl={
             <div

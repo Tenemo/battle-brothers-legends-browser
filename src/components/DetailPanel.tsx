@@ -1748,8 +1748,10 @@ function BackgroundFitChancePlanList({ items }: { items: BackgroundFitChancePlan
             aria-hidden="true"
             className={styles.detailChanceExplanationResourceIcon}
             decoding="async"
+            height="64"
             loading="lazy"
             src={`/game-icons/${item.iconPath}`}
+            width="64"
           />
           <span>{item.text}</span>
         </li>
@@ -2134,8 +2136,10 @@ function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
                 className={styles.detailTalentAttributeIcon}
                 data-testid={iconTestId}
                 decoding="async"
+                height="64"
                 loading="lazy"
                 src={`/game-icons/${iconPath}`}
+                width="64"
               />
             ) : (
               <span
@@ -2250,8 +2254,10 @@ function BackgroundTraitPill({
           className={styles.detailTraitIcon}
           data-testid="detail-background-trait-icon"
           decoding="async"
+          height="64"
           loading="lazy"
           src={`/game-icons/${trait.iconPath}`}
+          width="64"
         />
       ) : (
         <span
@@ -2911,7 +2917,9 @@ function BackgroundDetail({
               aria-hidden="true"
               className={styles.detailRequirementChainImage}
               draggable={false}
+              height="64"
               src={catenaryChainIconPath}
+              width="64"
             />
           </span>
           <div className={styles.detailBackgroundFitMatchColumnHeader}>

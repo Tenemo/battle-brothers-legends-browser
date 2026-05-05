@@ -17,8 +17,8 @@
     "predev:test": "pnpm run generate:social-image",
     "dev:test": "vite --host 127.0.0.1 --port 4173 --strictPort",
     "prebuild": "pnpm run generate:social-image",
-    "build": "tsc -b && vite build",
-    "build:netlify": "pnpm run generate:social-image && tsc -b && vite build && node ./scripts/build-netlify-edge-functions.ts",
+    "build": "tsc -b && vite build && node ./scripts/prerender-root.ts",
+    "build:netlify": "pnpm run generate:social-image && tsc -b && vite build && node ./scripts/prerender-root.ts && node ./scripts/build-netlify-edge-functions.ts",
     "check:netlify-manifest": "node ./scripts/assert-netlify-edge-manifest.ts",
     "check:ci:non-e2e": "pnpm lint && pnpm format:check && pnpm stylelint && pnpm knip && pnpm knip:production && pnpm typecheck && pnpm test && pnpm netlify:build && pnpm check:netlify-manifest",
     "format": "prettier . --write --ignore-unknown",
@@ -43,7 +43,6 @@
     "sync:perks": "node ./scripts/sync-legends-perks.ts"
   },
   "dependencies": {
-    "@fontsource/cinzel": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",
     "@resvg/resvg-js": "^2.6.2",
     "lucide-react": "^1.11.0",

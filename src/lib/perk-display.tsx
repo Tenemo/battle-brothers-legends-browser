@@ -414,8 +414,10 @@ export function renderGameIcon({
       className={className}
       data-testid={testId}
       decoding="async"
+      height="64"
       loading="lazy"
       src={iconUrl}
+      width="64"
     />
   )
 }

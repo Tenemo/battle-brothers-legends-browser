@@ -328,8 +328,10 @@ export function BuildPerkGroupTile({
                   className={styles.plannerPillIcon}
                   data-testid="planner-pill-icon"
                   decoding="async"
+                  height="64"
                   loading="lazy"
                   src={`/game-icons/${perk.iconPath}`}
+                  width="64"
                 />
               ) : null}
               <span className={styles.plannerPillLabel}>{perk.perkName}</span>

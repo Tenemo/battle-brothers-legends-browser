@@ -1,14 +1,11 @@
-const productionOnlyIgnoredDependencies = [
-  '@fontsource/cinzel',
-  '@fontsource/source-sans-3',
-  'lucide-react',
-]
+const productionOnlyIgnoredDependencies = ['@fontsource/source-sans-3', 'lucide-react']
 
 const isProductionAnalysis = process.argv.includes('--production')
 
 export default {
   entry: [
     'netlify/edge-functions/build-seo.ts',
+    'src/entry-server.tsx',
     'src/types/virtual-modules.d.ts',
     'scripts/*.ts',
     'tests/**/*.test.ts',

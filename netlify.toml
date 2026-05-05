@@ -45,17 +45,25 @@ Referrer-Policy = "strict-origin-when-cross-origin"
 Cross-Origin-Opener-Policy = "same-origin"
 Strict-Transport-Security = "max-age=31536000; includeSubDomains; preload"
 Permissions-Policy = "accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()"
-Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; require-trusted-types-for 'script';"
+Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'; require-trusted-types-for 'script';"
 
 [[headers]]
 for = "/"
 [headers.values]
 Cache-Control = "public, max-age=0, must-revalidate"
+Netlify-CDN-Cache-Control = "public, max-age=300, stale-while-revalidate=3600"
 
 [[headers]]
 for = "/index.html"
 [headers.values]
 Cache-Control = "public, max-age=0, must-revalidate"
+Netlify-CDN-Cache-Control = "public, max-age=300, stale-while-revalidate=3600"
+
+[[headers]]
+for = "/hydrate-loader.js"
+[headers.values]
+Cache-Control = "public, max-age=0, must-revalidate"
+Netlify-CDN-Cache-Control = "public, max-age=300, stale-while-revalidate=3600"
 
 [[headers]]
 for = "/version.json"

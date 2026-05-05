@@ -295,10 +295,12 @@ export function BackgroundFitStudyResourceBadges({
           data-study-resource-kind={studyResourceBadge.kind}
           data-testid={backgroundStudyResourceBadgeTestId}
           decoding="async"
+          height="64"
           key={`${studyResourceBadge.kind}-${studyResourceBadgeIndex}`}
           loading="lazy"
           src={`/game-icons/${studyResourceBadge.iconPath}`}
           title={studyResourceBadge.title}
+          width="64"
         />
       ))}
     </span>

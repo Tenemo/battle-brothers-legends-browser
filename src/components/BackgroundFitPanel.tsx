@@ -245,6 +245,8 @@ export function BackgroundFitPanel({
     (shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll) ||
     selectedBackgroundVeteranPerkLevelIntervalSet.size > 0
   const hasActiveBackgroundFitSearch = backgroundFitInputValue.trim().length > 0
+  const shouldShowInitialBackgroundFitIdleState =
+    backgroundFitView === null && !hasPickedPerks && !hasActiveBackgroundFitSearch
   const shouldShowBackgroundFitRankingStatus =
     hasPickedPerks && (isLoadingBackgroundFitView || hasSupportedBackgroundFitTargets)
   const backgroundFitRankingSummaryText =
@@ -377,6 +379,7 @@ export function BackgroundFitPanel({
             onValueChange={(nextValue) => {
               clearBackgroundFitInteractiveHover()
               setBackgroundFitInputValue(nextValue)
+              onSearchActivityChange(nextValue.trim().length > 0)
             }}
             placeholder="Search backgrounds"
             testId="background-fit-search-field"
@@ -616,7 +619,7 @@ export function BackgroundFitPanel({
                       </li>
                     ))}
                   </ol>
-                ) : isLoadingBackgroundFitView ? null : (
+                ) : isLoadingBackgroundFitView || shouldShowInitialBackgroundFitIdleState ? null : (
                   <div className={styles.backgroundFitEmptyState}>
                     <p className={styles.backgroundFitSummaryCopy}>
                       No backgrounds match {backgroundFitEmptyResultTarget}.

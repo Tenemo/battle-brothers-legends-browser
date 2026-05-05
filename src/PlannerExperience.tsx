@@ -219,9 +219,10 @@ export function PlannerExperience() {
     [savedBuilds],
   )
   const shouldLoadBackgroundFitView =
-    isBackgroundFitPanelExpanded ||
     hasActiveBackgroundFitSearch ||
-    activeDetailSelection.type === 'background'
+    shouldIncludeOriginBackgrounds ||
+    activeDetailSelection.type === 'background' ||
+    (pickedPerks.length > 0 && isBackgroundFitPanelExpanded)
   const {
     backgroundFitErrorMessage,
     backgroundFitProgress,

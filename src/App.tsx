@@ -1,7 +1,4 @@
-import '@fontsource/cinzel/latin-700.css'
-import '@fontsource/source-sans-3/latin-400.css'
-import '@fontsource/source-sans-3/latin-600.css'
-import '@fontsource/source-sans-3/latin-700.css'
+import '@fontsource/source-sans-3/400.css'
 import styles from './App.module.scss'
 import { AppHero } from './components/AppHero'
 import { PlannerExperience } from './PlannerExperience'
