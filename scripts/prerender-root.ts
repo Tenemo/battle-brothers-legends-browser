@@ -12,10 +12,30 @@ const netlifyHeadersPath = path.join(distDirectory, '_headers')
 const hydrationLoaderPath = path.join(distDirectory, 'hydrate-loader.js')
 const sourceAssetUrlPattern = /\/src\/assets\/([^"')\s?#]+)/g
 const criticalFontUrlPattern =
-  /url\((\/assets\/(?:cinzel-latin-700|source-sans-3-latin-(?:400|600|700))-normal-[^)]+\.woff2)\)/g
+  /url\((\/assets\/(?:source-sans-3-latin-400|cinzel-latin-700|source-sans-3-latin-(?:600|700))-normal-[^)]+\.woff2)\)/g
+const criticalFontUrlPriorities = [
+  'source-sans-3-latin-400',
+  'cinzel-latin-700',
+  'source-sans-3-latin-600',
+  'source-sans-3-latin-700',
+]
+const prerenderedRootTemplateId = 'battle-brothers-prerendered-root'
+const prerenderedRootActivationScript = `(()=>{const root=document.getElementById("root");const template=document.getElementById("${prerenderedRootTemplateId}");if(!root||!(template instanceof HTMLTemplateElement))return;if(window.location.search!==""||window.location.hash!==""){document.documentElement.dataset.battleBrothersClientRender="true";return}root.append(template.content.cloneNode(true))})()`
 
 function escapeStyleText(styleText: string): string {
   return styleText.replaceAll('</style', '<\\/style')
+}
+
+function escapeScriptText(scriptText: string): string {
+  return scriptText.replaceAll('</script', '<\\/script')
+}
+
+function createPrerenderedRootMarkup(appHtml: string): string {
+  return [
+    '<div id="root"></div>',
+    `<template id="${prerenderedRootTemplateId}">${appHtml}</template>`,
+    `<script data-battle-brothers-prerendered-root="true">${escapeScriptText(prerenderedRootActivationScript)}</script>`,
+  ].join('')
 }
 
 function createCriticalFontPreloadTags(stylesheet: string): string {
@@ -24,6 +44,16 @@ function createCriticalFontPreloadTags(stylesheet: string): string {
   )
 
   return [...new Set(criticalFontUrls)]
+    .toSorted((leftCriticalFontUrl, rightCriticalFontUrl) => {
+      const leftPriority = criticalFontUrlPriorities.findIndex((criticalFontUrlPriority) =>
+        leftCriticalFontUrl.includes(criticalFontUrlPriority),
+      )
+      const rightPriority = criticalFontUrlPriorities.findIndex((criticalFontUrlPriority) =>
+        rightCriticalFontUrl.includes(criticalFontUrlPriority),
+      )
+
+      return leftPriority - rightPriority
+    })
     .map(
       (criticalFontUrl) =>
         `<link rel="preload" href="${criticalFontUrl}" as="font" type="font/woff2" crossorigin />`,
@@ -31,16 +61,33 @@ function createCriticalFontPreloadTags(stylesheet: string): string {
     .join('')
 }
 
-function createStyleHashSource(styleText: string): string {
-  const hash = createHash('sha256').update(styleText).digest('base64')
+function createHashSource(text: string): string {
+  const hash = createHash('sha256').update(text).digest('base64')
 
   return `'sha256-${hash}'`
 }
 
-function createContentSecurityPolicy(styleHashSource: string): string {
+function createInlineScriptHashSources(html: string): string[] {
+  const inlineScriptPattern = /<script\b(?![^>]*\bsrc=["'])[^>]*>([\s\S]*?)<\/script>/gi
+  const inlineScriptHashSources = [...html.matchAll(inlineScriptPattern)].map((inlineScriptMatch) =>
+    createHashSource(inlineScriptMatch[1]),
+  )
+
+  return [...new Set(inlineScriptHashSources)]
+}
+
+function createClientRenderBootScript(entryUrl: string): string {
+  return `const hydrationLoaderUrl="/hydrate-loader.js";if(window.location.search!==""||window.location.hash!==""){document.documentElement.dataset.battleBrothersClientRender="true";const state=window.__battleBrothersHydrationState??={hasStarted:false};if(!state.hasStarted){state.hasStarted=true;const link=document.createElement("link");link.rel="modulepreload";link.href=${JSON.stringify(entryUrl)};link.setAttribute("fetchpriority","high");document.head.append(link);import(${JSON.stringify(entryUrl)});window.setTimeout(()=>import(hydrationLoaderUrl),8000)}}else{import(hydrationLoaderUrl)}`
+}
+
+function createEntryModulePreloadTag(entryUrl: string): string {
+  return `<link rel="modulepreload" crossorigin href="${entryUrl}" fetchpriority="high">`
+}
+
+function createContentSecurityPolicy(styleHashSource: string, scriptHashSources: string[]): string {
   return [
     "default-src 'self'",
-    "script-src 'self'",
+    `script-src 'self' ${scriptHashSources.join(' ')}`,
     `style-src 'self' ${styleHashSource}`,
     "img-src 'self' data:",
     "font-src 'self'",
@@ -52,8 +99,8 @@ function createContentSecurityPolicy(styleHashSource: string): string {
   ].join('; ')
 }
 
-function createNetlifyHeadersFile(styleHashSource: string): string {
-  const contentSecurityPolicy = createContentSecurityPolicy(styleHashSource)
+function createNetlifyHeadersFile(styleHashSource: string, scriptHashSources: string[]): string {
+  const contentSecurityPolicy = createContentSecurityPolicy(styleHashSource, scriptHashSources)
 
   return [
     '/*',
@@ -85,7 +132,7 @@ function createNetlifyHeadersFile(styleHashSource: string): string {
     '  Cache-Control: public, max-age=31536000, immutable',
     '',
     '/game-icons/*',
-    '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
+    '  Cache-Control: public, max-age=31536000, immutable',
     '',
     '/favicon/*',
     '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
@@ -111,11 +158,12 @@ function getSingleMatch(html: string, pattern: RegExp, description: string): Reg
 
 function createHydrationLoader(entryUrl: string): string {
   return `const entryUrl=${JSON.stringify(entryUrl)};
-let hasStartedHydration=false;
 let idleHydrationHandle=0;
 let automaticHydrationTimeout=0;
 const automaticHydrationDelayMs=5000;
+const manifestLoadDelayMs=8000;
 const manifestUrl="/favicon/site.webmanifest";
+const hydrationState=window.__battleBrothersHydrationState??={hasStarted:false};
 const interactionEvents=["pointerdown","keydown","focusin"];
 const listenerOptions={capture:true,passive:true};
 const shouldClientRenderImmediately=window.location.search!==""||window.location.hash!=="";
@@ -126,6 +174,9 @@ function appendManifestLink(){
   manifestLink.href=manifestUrl;
   document.head.append(manifestLink);
 }
+function scheduleManifestLink(){
+  window.setTimeout(appendManifestLink,manifestLoadDelayMs);
+}
 function clearInteractionListeners(){
   for (const eventName of interactionEvents) {
     window.removeEventListener(eventName,startHydration,listenerOptions);
@@ -133,11 +184,12 @@ function clearInteractionListeners(){
 }
 function prepareClientRender(){
   if (!shouldClientRenderImmediately) return;
+  document.documentElement.dataset.battleBrothersClientRender="true";
   document.getElementById("root")?.replaceChildren();
 }
 function startHydration(){
-  if (hasStartedHydration) return;
-  hasStartedHydration=true;
+  if (hydrationState.hasStarted) return;
+  hydrationState.hasStarted=true;
   clearInteractionListeners();
   if (idleHydrationHandle && "cancelIdleCallback" in window) {
     window.cancelIdleCallback(idleHydrationHandle);
@@ -147,7 +199,7 @@ function startHydration(){
   }
   prepareClientRender();
   import(entryUrl);
-  appendManifestLink();
+  scheduleManifestLink();
 }
 function scheduleHydration(){
   automaticHydrationTimeout=window.setTimeout(() => {
@@ -155,16 +207,18 @@ function scheduleHydration(){
     if ("requestIdleCallback" in window) {
       idleHydrationHandle=window.requestIdleCallback(() => {
         startHydration();
-        appendManifestLink();
       },{timeout:2000});
       return;
     }
     startHydration();
-    appendManifestLink();
   },automaticHydrationDelayMs);
 }
 if (shouldClientRenderImmediately) {
-  startHydration();
+  if (!hydrationState.hasStarted) {
+    startHydration();
+  } else {
+    scheduleManifestLink();
+  }
 } else {
   for (const eventName of interactionEvents) {
     window.addEventListener(eventName,startHydration,listenerOptions);
@@ -197,7 +251,7 @@ async function readBuiltStylesheet(html: string): Promise<{
   }
 }
 
-function replaceEntryScriptWithHydrationLoader(html: string): {
+function replaceEntryScriptWithEntryModulePreload(html: string): {
   entryUrl: string
   html: string
 } {
@@ -207,11 +261,11 @@ function replaceEntryScriptWithHydrationLoader(html: string): {
     'module entry script',
   )
   const entryUrl = scriptMatch[1]
-  const hydrationLoaderTag = '<script type="module" src="/hydrate-loader.js"></script>'
+  const entryModulePreloadTag = createEntryModulePreloadTag(entryUrl)
 
   return {
     entryUrl,
-    html: html.replace(scriptMatch[0], hydrationLoaderTag),
+    html: html.replace(scriptMatch[0], entryModulePreloadTag),
   }
 }
 
@@ -255,28 +309,35 @@ async function prerenderRoot() {
     ])
     const appHtml = renderAppToHtml()
     const { stylesheet, stylesheetTag } = await readBuiltStylesheet(html)
-    const { entryUrl, html: htmlWithHydrationLoader } = replaceEntryScriptWithHydrationLoader(html)
-    const htmlWithPrerenderedRoot = htmlWithHydrationLoader.replace(
+    const { entryUrl, html: htmlWithEntryModulePreload } =
+      replaceEntryScriptWithEntryModulePreload(html)
+    const htmlWithPrerenderedRoot = htmlWithEntryModulePreload.replace(
       '<div id="root"></div>',
-      `<div id="root">${appHtml}</div>`,
+      createPrerenderedRootMarkup(appHtml),
     )
 
-    if (htmlWithPrerenderedRoot === htmlWithHydrationLoader) {
+    if (htmlWithPrerenderedRoot === htmlWithEntryModulePreload) {
       throw new Error('Could not find root placeholder in built index.html.')
     }
 
     const htmlWithBuiltAssetUrls = await replaceServerRenderedAssetUrls(htmlWithPrerenderedRoot)
     const criticalFontPreloadTags = createCriticalFontPreloadTags(stylesheet)
-    const styleHashSource = createStyleHashSource(stylesheet)
+    const clientRenderBootScript = createClientRenderBootScript(entryUrl)
+    const styleHashSource = createHashSource(stylesheet)
     const htmlWithInlineCss = htmlWithBuiltAssetUrls.replace(
       stylesheetTag,
-      `${criticalFontPreloadTags}<style data-battle-brothers-inline-css="true">${escapeStyleText(stylesheet)}</style>`,
+      `<script data-battle-brothers-client-render-boot="true">${escapeScriptText(clientRenderBootScript)}</script>${criticalFontPreloadTags}<style data-battle-brothers-inline-css="true">${escapeStyleText(stylesheet)}</style>`,
     )
+    const scriptHashSources = createInlineScriptHashSources(htmlWithInlineCss)
 
     await Promise.all([
       writeFile(distIndexPath, htmlWithInlineCss, 'utf8'),
       writeFile(hydrationLoaderPath, createHydrationLoader(entryUrl), 'utf8'),
-      writeFile(netlifyHeadersPath, createNetlifyHeadersFile(styleHashSource), 'utf8'),
+      writeFile(
+        netlifyHeadersPath,
+        createNetlifyHeadersFile(styleHashSource, scriptHashSources),
+        'utf8',
+      ),
     ])
   } finally {
     await viteServer.close()

@@ -304,10 +304,6 @@ export function BackgroundFitPanel({
   }
 
   useEffect(() => {
-    onSearchActivityChange(hasActiveBackgroundFitSearch)
-  }, [hasActiveBackgroundFitSearch, onSearchActivityChange])
-
-  useEffect(() => {
     if (!isExpanded) {
       return
     }

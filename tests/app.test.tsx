@@ -426,7 +426,7 @@ describe('app', () => {
     expect(screen.getByText('1 perk picked.')).toBeInTheDocument()
     expect(
       within(screen.getByTestId('build-perks-bar')).getByRole('button', {
-        name: 'View Berserk from build planner',
+        name: 'Berserk, view from build planner',
       }),
     ).toBeInTheDocument()
   })

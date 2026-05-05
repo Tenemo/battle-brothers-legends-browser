@@ -9,6 +9,7 @@ import {
   ancientScrollIconPath,
   ancientScrollPerkGroupMarkerTestId,
 } from '../src/lib/ancient-scroll-perk-group-display'
+import { gameIconImageWidths, getGameIconUrl } from '../src/lib/game-icon-url'
 import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 function renderBuildPerkGroupTile(
@@ -76,14 +77,20 @@ describe('perk group icon', () => {
     expect(groupCard).toHaveAttribute('data-ancient-scroll-perk-group', 'true')
     expect(groupCard).toContainElement(marker)
     expect(iconStackItem).not.toContainElement(marker)
-    expect(groupIcon).toHaveAttribute('src', '/game-icons/ui/perks/fire_circle.png')
+    expect(groupIcon).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/perks/fire_circle.png', gameIconImageWidths.compact),
+    )
     expect(screen.getByTestId('planner-pill-icon')).toHaveAttribute(
       'src',
-      '/game-icons/ui/perks/sample_perk.png',
+      getGameIconUrl('ui/perks/sample_perk.png', gameIconImageWidths.compact),
     )
     expect(marker).toHaveAccessibleName('Learnable using an ancient scroll')
     expect(marker).toHaveAttribute('title', 'Learnable using an ancient scroll')
-    expect(markerIcon).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(markerIcon).toHaveAttribute(
+      'src',
+      getGameIconUrl(ancientScrollIconPath, gameIconImageWidths.compact),
+    )
     expect(markerIcon).toHaveAttribute('aria-hidden', 'true')
     expect(
       existsSync(path.join(process.cwd(), 'public', 'game-icons', ancientScrollIconPath)),
@@ -120,7 +127,10 @@ describe('perk group icon', () => {
 
     expect(marker.tagName).toBe('IMG')
     expect(marker).toHaveAccessibleName('Learnable using an ancient scroll')
-    expect(marker).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(marker).toHaveAttribute(
+      'src',
+      getGameIconUrl(ancientScrollIconPath, gameIconImageWidths.compact),
+    )
     expect(marker).toHaveAttribute('title', 'Learnable using an ancient scroll')
   })
 
@@ -133,7 +143,7 @@ describe('perk group icon', () => {
     )
     expect(screen.getByTestId('planner-group-option-icon')).toHaveAttribute(
       'src',
-      '/game-icons/ui/perks/fire_circle.png',
+      getGameIconUrl('ui/perks/fire_circle.png', gameIconImageWidths.compact),
     )
     expect(screen.queryByTestId(ancientScrollPerkGroupMarkerTestId)).not.toBeInTheDocument()
   })

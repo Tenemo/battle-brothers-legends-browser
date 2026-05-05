@@ -4,6 +4,7 @@ import {
   expectSearchParam,
   expectBackgroundFitCalculationComplete,
   getBackgroundFitPanel,
+  getGameIconImageCdnSrcPattern,
   getSidebarPerkGroupButton,
   getResultsList,
   gotoBuildPlanner,
@@ -180,15 +181,15 @@ test('shows imported background metadata only in the background detail panel', a
 
   await expect(fearUndeadTraitIcon).toHaveAttribute(
     'src',
-    /\/game-icons\/ui\/traits\/trait_icon_47\.png$/u,
+    getGameIconImageCdnSrcPattern('ui/traits/trait_icon_47.png', 24),
   )
   await expect(aggressiveTraitIcon).toHaveAttribute(
     'src',
-    /\/game-icons\/ui\/traits\/aggressive_trait\.png$/u,
+    getGameIconImageCdnSrcPattern('ui/traits/aggressive_trait.png', 24),
   )
   await expect(martialTraitIcon).toHaveAttribute(
     'src',
-    /\/game-icons\/ui\/traits\/firm_trait\.png$/u,
+    getGameIconImageCdnSrcPattern('ui/traits/firm_trait.png', 24),
   )
   await expectImageToLoad(fearUndeadTraitIcon)
   await expectImageToLoad(aggressiveTraitIcon)
@@ -469,7 +470,7 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   await expect(berserkerStudyResourceTileIcons).toHaveCount(2)
   await expect(berserkerStudyResourceTileIcons.nth(1)).toHaveAttribute(
     'src',
-    /\/game-icons\/ui\/items\/trade\/scroll\.png$/,
+    getGameIconImageCdnSrcPattern('ui/items/trade/scroll.png', 24),
   )
   const studyResourceIconMetrics = await studyResourcePlan.evaluate((plan) =>
     [...plan.querySelectorAll('[data-testid="planner-group-option-icon"]')].map((element) => {

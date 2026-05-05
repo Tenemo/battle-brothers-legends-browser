@@ -31,6 +31,7 @@ import {
   backgroundCampResourceModifierGroupLabels,
   formatBackgroundCampResourceModifierValue,
 } from '../lib/background-camp-resource-display'
+import { gameIconImageWidths, getGameIconSrcSet, getGameIconUrl } from '../lib/game-icon-url'
 import {
   getBackgroundTalentAttributeIconPath,
   getBackgroundTalentAttributeIconTestId,
@@ -402,6 +403,7 @@ function DetailHeader({
       <div className={styles.detailHeaderMain}>
         {renderGameIcon({
           className: joinClassNames(sharedStyles.perkIcon, sharedStyles.perkIconLarge),
+          imageWidth: gameIconImageWidths.large,
           iconPath,
           label: iconLabel,
           testId: iconTestId,
@@ -1748,10 +1750,11 @@ function BackgroundFitChancePlanList({ items }: { items: BackgroundFitChancePlan
             aria-hidden="true"
             className={styles.detailChanceExplanationResourceIcon}
             decoding="async"
-            height="64"
+            height={gameIconImageWidths.compact}
             loading="lazy"
-            src={`/game-icons/${item.iconPath}`}
-            width="64"
+            src={getGameIconUrl(item.iconPath, gameIconImageWidths.compact) ?? ''}
+            srcSet={getGameIconSrcSet(item.iconPath, gameIconImageWidths.compact)}
+            width={gameIconImageWidths.compact}
           />
           <span>{item.text}</span>
         </li>
@@ -2136,10 +2139,11 @@ function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
                 className={styles.detailTalentAttributeIcon}
                 data-testid={iconTestId}
                 decoding="async"
-                height="64"
+                height={gameIconImageWidths.compact}
                 loading="lazy"
-                src={`/game-icons/${iconPath}`}
-                width="64"
+                src={getGameIconUrl(iconPath, gameIconImageWidths.compact) ?? ''}
+                srcSet={getGameIconSrcSet(iconPath, gameIconImageWidths.compact)}
+                width={gameIconImageWidths.compact}
               />
             ) : (
               <span
@@ -2254,10 +2258,11 @@ function BackgroundTraitPill({
           className={styles.detailTraitIcon}
           data-testid="detail-background-trait-icon"
           decoding="async"
-          height="64"
+          height={gameIconImageWidths.compact}
           loading="lazy"
-          src={`/game-icons/${trait.iconPath}`}
-          width="64"
+          src={getGameIconUrl(trait.iconPath, gameIconImageWidths.compact) ?? ''}
+          srcSet={getGameIconSrcSet(trait.iconPath, gameIconImageWidths.compact)}
+          width={gameIconImageWidths.compact}
         />
       ) : (
         <span

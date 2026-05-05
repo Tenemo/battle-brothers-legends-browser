@@ -17,6 +17,7 @@ import {
   renderHighlightedText,
 } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import { gameIconImageWidths, getGameIconSrcSet, getGameIconUrl } from '../lib/game-icon-url'
 import { usePlannerInteractionActions } from '../lib/planner-interaction-context-values'
 import {
   backgroundStudyResourceBadgesTestId,
@@ -295,12 +296,13 @@ export function BackgroundFitStudyResourceBadges({
           data-study-resource-kind={studyResourceBadge.kind}
           data-testid={backgroundStudyResourceBadgeTestId}
           decoding="async"
-          height="64"
+          height={gameIconImageWidths.compact}
           key={`${studyResourceBadge.kind}-${studyResourceBadgeIndex}`}
           loading="lazy"
-          src={`/game-icons/${studyResourceBadge.iconPath}`}
+          src={getGameIconUrl(studyResourceBadge.iconPath, gameIconImageWidths.compact) ?? ''}
+          srcSet={getGameIconSrcSet(studyResourceBadge.iconPath, gameIconImageWidths.compact)}
           title={studyResourceBadge.title}
-          width="64"
+          width={gameIconImageWidths.compact}
         />
       ))}
     </span>
@@ -587,6 +589,7 @@ export function BackgroundFitCard({
               </span>
               {renderGameIcon({
                 className: joinClassNames(sharedStyles.perkIcon, styles.backgroundFitIcon),
+                imageWidth: gameIconImageWidths.picked,
                 iconPath: backgroundFit.iconPath,
                 label: `${backgroundFit.backgroundName} background icon`,
                 testId: 'background-fit-icon',

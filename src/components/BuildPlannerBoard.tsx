@@ -9,6 +9,7 @@ import {
   usePlannerInteractionActions,
   usePlannerInteractionState,
 } from '../lib/planner-interaction-context-values'
+import { gameIconImageWidths } from '../lib/game-icon-url'
 import {
   formatPickedPerkCountLabel,
   getPerkDisplayIconPath,
@@ -458,7 +459,7 @@ export function BuildPlannerBoard({
                     {!pickedPerk.isOptional ? <PlannerSlotRequirementChain /> : null}
                     {pickedPerk.isOptional ? <PlannerSlotRequirementOptional /> : null}
                     <button
-                      aria-label={`View ${pickedPerk.perkName} from build planner`}
+                      aria-label={`${pickedPerk.perkName}, view from build planner`}
                       className={styles.plannerSlotPerkInspect}
                       onClick={() => {
                         clearPendingBuildPerkTooltip()
@@ -470,6 +471,7 @@ export function BuildPlannerBoard({
                     >
                       {renderGameIcon({
                         className: joinClassNames(sharedStyles.perkIcon, sharedStyles.perkIconTiny),
+                        imageWidth: gameIconImageWidths.picked,
                         iconPath: getPerkDisplayIconPath(pickedPerk),
                         label: `${pickedPerk.perkName} build icon`,
                         testId: 'planner-picked-perk-icon',

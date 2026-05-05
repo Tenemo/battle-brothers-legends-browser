@@ -14,6 +14,7 @@ import {
   backgroundStudyResourceBadgesTestId,
   skillBookIconPath,
 } from '../src/lib/background-study-resource-display'
+import { gameIconImageWidths, getGameIconUrl } from '../src/lib/game-icon-url'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
 import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
@@ -396,10 +397,13 @@ describe('background details study resources', () => {
     expect(quickTraitPill).toBeVisible()
     expect(
       within(fearOfUndeadTraitPill).getByTestId('detail-background-trait-icon'),
-    ).toHaveAttribute('src', '/game-icons/ui/traits/trait_icon_50.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/traits/trait_icon_50.png', gameIconImageWidths.compact),
+    )
     expect(within(quickTraitPill).getByTestId('detail-background-trait-icon')).toHaveAttribute(
       'src',
-      '/game-icons/ui/traits/trait_icon_32.png',
+      getGameIconUrl('ui/traits/trait_icon_32.png', gameIconImageWidths.compact),
     )
     expect(within(metadataSection).getByText('Ranged skill')).toBeVisible()
     const talentAttributeList = within(metadataSection).getByTestId(
@@ -410,7 +414,10 @@ describe('background details study resources', () => {
       within(talentAttributeList).getByTestId(
         'detail-background-talent-attribute-icon-ranged-skill',
       ),
-    ).toHaveAttribute('src', '/game-icons/ui/icons/ranged_skill_va11.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/icons/ranged_skill_va11.png', gameIconImageWidths.compact),
+    )
     expect(within(metadataSection).getByText('Company capacity')).toBeVisible()
     expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
     expect(within(metadataSection).getByText('+13')).toBeVisible()
@@ -457,12 +464,18 @@ describe('background details study resources', () => {
       within(talentAttributeList).getByTestId(
         'detail-background-talent-attribute-icon-ranged-skill',
       ),
-    ).toHaveAttribute('src', '/game-icons/ui/icons/ranged_skill_va11.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/icons/ranged_skill_va11.png', gameIconImageWidths.compact),
+    )
     expect(
       within(talentAttributeList).getByTestId(
         'detail-background-talent-attribute-icon-melee-defense',
       ),
-    ).toHaveAttribute('src', '/game-icons/ui/icons/melee_defense_va11.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/icons/melee_defense_va11.png', gameIconImageWidths.compact),
+    )
     expect(talentAttributeList.querySelector('[data-placeholder="true"]')).not.toBeInTheDocument()
   })
 
@@ -821,13 +834,19 @@ describe('background details study resources', () => {
 
     expect(calmStudyResourceTile).toBeVisible()
     expect(calmStudyResourceTileIcons).toHaveLength(2)
-    expect(calmStudyResourceTileIcons[0]).toHaveAttribute('src', '/game-icons/ui/perks/perk_01.png')
-    expect(calmStudyResourceTileIcons[1]).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
+    expect(calmStudyResourceTileIcons[0]).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/perks/perk_01.png', gameIconImageWidths.compact),
+    )
+    expect(calmStudyResourceTileIcons[1]).toHaveAttribute(
+      'src',
+      getGameIconUrl(skillBookIconPath, gameIconImageWidths.compact),
+    )
 
     expect(coveredClarityPill).toBeVisible()
     expect(within(coveredClarityPill).getByTestId('planner-pill-icon')).toHaveAttribute(
       'src',
-      '/game-icons/ui/perks/clarity.png',
+      getGameIconUrl('ui/perks/clarity.png', gameIconImageWidths.compact),
     )
     expect(screen.queryByText('Must-have study route')).not.toBeInTheDocument()
     expect(screen.queryByTestId('detail-study-resource-tile-frame')).not.toBeInTheDocument()
@@ -1147,7 +1166,10 @@ describe('background details study resources', () => {
       within(
         within(berserkerStudyResourceTile!).getByRole('button', { name: 'Muscularity' }),
       ).getByTestId('planner-pill-icon'),
-    ).toHaveAttribute('src', '/game-icons/ui/perks/muscularity.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/perks/muscularity.png', gameIconImageWidths.compact),
+    )
     expect(screen.getByRole('button', { name: 'Select perk group Heavy Armor' })).toBeVisible()
   })
 

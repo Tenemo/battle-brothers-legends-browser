@@ -92,6 +92,13 @@
     overflow: hidden;
   }
 
+  html[data-battle-brothers-client-render='true']:not(
+      [data-battle-brothers-client-render-ready='true']
+    )
+    #root {
+    display: none;
+  }
+
   @media (max-width: 1279px) {
     html {
       height: auto;

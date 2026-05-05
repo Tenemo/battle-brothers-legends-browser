@@ -9,6 +9,7 @@ import {
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
+  getGameIconImageCdnSrcPattern,
   getParsedCssRgbColor,
   getDetailPanel,
   getPlannerBoardVisualVerticalOverflow,
@@ -64,7 +65,9 @@ function createBuildUrl(perkNames: string[]): string {
 async function getPickedPerkNameLayoutMetrics(pickedPerkTile: Locator) {
   return pickedPerkTile.evaluate((tileElement) => {
     const pickedPerkName = tileElement.querySelector('[data-testid="planner-picked-perk-name"]')
-    const inspectButton = tileElement.querySelector('button[aria-label^="View "]')
+    const inspectButton = tileElement.querySelector(
+      'button[aria-label$=", view from build planner"]',
+    )
 
     if (!(pickedPerkName instanceof HTMLElement) || !(inspectButton instanceof HTMLElement)) {
       throw new Error('Unable to find picked perk name layout elements.')
@@ -1127,7 +1130,7 @@ test('selects build planner perk groups from their group tiles', async ({ page }
   await expect(heavyArmorPillIcons).toHaveCount(3)
   await expect(heavyArmorPillIcons.first()).toHaveAttribute(
     'src',
-    '/game-icons/ui/perks/perk_03.png',
+    getGameIconImageCdnSrcPattern('ui/perks/perk_03.png', 24),
   )
   await heavyArmorGroupButton.click()
 
@@ -1744,7 +1747,7 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
       '[data-testid="planner-slot-remove-button"]',
     )
     const pickedPerkInspectButton = pickedPerkTile.querySelector(
-      'button[aria-label="View Ammunition Bundles from build planner"]',
+      'button[aria-label="Ammunition Bundles, view from build planner"]',
     )
     const buildPlanner = pickedPerkTile.closest('[aria-label="Build planner"]')
 
@@ -2716,7 +2719,7 @@ test('links planner perk and category hover highlighting both ways', async ({ pa
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Clarity' })
   const clarityPickedPerkButton = getBuildPerksBar(page).getByRole('button', {
-    name: 'View Clarity from build planner',
+    name: 'Clarity, view from build planner',
   })
   const perfectFocusPickedPerkTile = getBuildPerksBar(page)
     .getByTestId('planner-slot-perk')
@@ -2798,7 +2801,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await getSidebarPerkGroupButton(page, 'Deadeye').click()
 
   await getBuildPerksBar(page)
-    .getByRole('button', { name: 'View Clarity from build planner' })
+    .getByRole('button', { name: 'Clarity, view from build planner' })
     .click()
 
   await expect(page.getByText('1 perk picked.')).toBeVisible()
@@ -2811,7 +2814,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
 
   await getBuildPerksBar(page)
-    .getByRole('button', { name: 'View Clarity from build planner' })
+    .getByRole('button', { name: 'Clarity, view from build planner' })
     .click()
 
   await expect(page.getByText('1 perk picked.')).toBeVisible()

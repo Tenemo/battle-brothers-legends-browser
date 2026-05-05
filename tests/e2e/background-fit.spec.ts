@@ -6,6 +6,7 @@ import {
   expectBackgroundFitCalculationComplete,
   expectViewportLocked,
   getBackgroundFitPanel,
+  getGameIconImageCdnSrcPattern,
   getBuildPerksBar,
   getBuildIndividualGroupsList,
   getDetailPanel,
@@ -313,7 +314,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(apprenticeBackgroundIcon).toBeVisible()
   await expect(apprenticeBackgroundIcon).toHaveAttribute(
     'src',
-    '/game-icons/ui/backgrounds/background_40.png',
+    getGameIconImageCdnSrcPattern('ui/backgrounds/background_40.png', 32),
   )
   await expect
     .poll(async () =>

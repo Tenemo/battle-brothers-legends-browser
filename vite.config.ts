@@ -1,4 +1,6 @@
-import { readFileSync } from 'node:fs'
+import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
+import type { IncomingMessage, ServerResponse } from 'node:http'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 import { normalizePath, type Plugin } from 'vite'
@@ -8,8 +10,19 @@ import { injectRootSeoIntoHtml } from './src/lib/seo-metadata'
 const commitShaPattern = /^[0-9a-f]{7,40}$/i
 const packageJsonUrl = new URL('./package.json', import.meta.url)
 const packageJsonPath = normalizePath(fileURLToPath(packageJsonUrl))
+const publicDirectoryPath = fileURLToPath(new URL('./public/', import.meta.url))
 const plannerVersionVirtualModuleId = 'virtual:planner-version'
 const resolvedPlannerVersionVirtualModuleId = `\0${plannerVersionVirtualModuleId}`
+const localImageContentTypes = new Map([
+  ['.gif', 'image/gif'],
+  ['.jpg', 'image/jpeg'],
+  ['.jpeg', 'image/jpeg'],
+  ['.png', 'image/png'],
+  ['.svg', 'image/svg+xml'],
+  ['.webp', 'image/webp'],
+])
+
+type MiddlewareNext = (error?: unknown) => void
 
 function readPlannerVersion(): string {
   const packageJson = JSON.parse(readFileSync(packageJsonUrl, 'utf8')) as { version?: unknown }
@@ -40,6 +53,89 @@ function getBuildCommitSha(): string | null {
 
 function shouldEmitBuildSourcemaps(): boolean {
   return process.env.BUILD_SOURCEMAPS === 'true'
+}
+
+function shouldUseNetlifyImageCdn(): boolean {
+  return process.env.NETLIFY === 'true' || process.env.USE_NETLIFY_IMAGE_CDN === 'true'
+}
+
+function createBuildChunkName(id: string): string | undefined {
+  if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/')) {
+    return 'react-vendor'
+  }
+
+  if (id.includes('/node_modules/scheduler/')) {
+    return 'react-vendor'
+  }
+
+  if (id.includes('/node_modules/lucide-react/')) {
+    return 'icon-vendor'
+  }
+
+  if (
+    id.endsWith('/src/data/legends-perk-catalog.json') ||
+    id.endsWith('/src/data/legends-planner-metadata.json')
+  ) {
+    return 'planner-data'
+  }
+
+  return undefined
+}
+
+function getLocalNetlifyImageFilePath(requestUrl: string | undefined): string | null {
+  if (!requestUrl) {
+    return null
+  }
+
+  const imageRequestUrl = new URL(requestUrl, 'http://localhost')
+  const sourceImageUrl = imageRequestUrl.searchParams.get('url')
+
+  if (!sourceImageUrl?.startsWith('/')) {
+    return null
+  }
+
+  const sourceImagePath = new URL(sourceImageUrl, 'http://localhost').pathname
+  const resolvedImagePath = path.resolve(publicDirectoryPath, sourceImagePath.replace(/^\/+/u, ''))
+  const normalizedPublicDirectoryPath = path.resolve(publicDirectoryPath)
+
+  if (
+    resolvedImagePath !== normalizedPublicDirectoryPath &&
+    !resolvedImagePath.startsWith(`${normalizedPublicDirectoryPath}${path.sep}`)
+  ) {
+    return null
+  }
+
+  return resolvedImagePath
+}
+
+function serveLocalNetlifyImage(
+  request: IncomingMessage,
+  response: ServerResponse,
+  next: MiddlewareNext,
+) {
+  const imageFilePath = getLocalNetlifyImageFilePath(request.url)
+
+  if (!imageFilePath || !existsSync(imageFilePath)) {
+    next()
+    return
+  }
+
+  const imageFileStat = statSync(imageFilePath)
+
+  if (!imageFileStat.isFile()) {
+    next()
+    return
+  }
+
+  response.statusCode = 200
+  response.setHeader(
+    'Content-Type',
+    localImageContentTypes.get(path.extname(imageFilePath).toLowerCase()) ??
+      'application/octet-stream',
+  )
+  response.setHeader('Content-Length', String(imageFileStat.size))
+  response.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
+  createReadStream(imageFilePath).pipe(response)
 }
 
 function createPlannerVersionPlugin(): Plugin {
@@ -81,14 +177,36 @@ function createPlannerVersionPlugin(): Plugin {
   }
 }
 
+function createLocalNetlifyImageCdnPlugin(): Plugin {
+  return {
+    name: 'battle-brothers-local-netlify-image-cdn',
+    configurePreviewServer(server) {
+      server.middlewares.use('/.netlify/images', serveLocalNetlifyImage)
+    },
+    configureServer(server) {
+      server.middlewares.use('/.netlify/images', serveLocalNetlifyImage)
+    },
+  }
+}
+
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2500,
+    rollupOptions: {
+      output: {
+        manualChunks: createBuildChunkName,
+      },
+    },
     sourcemap: shouldEmitBuildSourcemaps(),
+  },
+  define: {
+    'import.meta.env.VITE_PLANNER_VERSION': JSON.stringify(readPlannerVersion()),
+    'import.meta.env.VITE_USE_NETLIFY_IMAGE_CDN': JSON.stringify(shouldUseNetlifyImageCdn()),
   },
   plugins: [
     react(),
     createPlannerVersionPlugin(),
+    createLocalNetlifyImageCdnPlugin(),
     {
       name: 'battle-brothers-root-seo',
       transformIndexHtml(html) {

@@ -16,6 +16,21 @@ export const mediumBuildPlannerViewport = {
   width: 820,
 } as const
 
+function escapeRegularExpressionText(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+}
+
+export function getGameIconImageCdnSrcPattern(iconPath: string, width: number): RegExp {
+  const directSourcePath = `/game-icons/${iconPath}`
+  const encodedSourcePath = encodeURIComponent(`/game-icons/${iconPath}`)
+  const directSourcePattern = escapeRegularExpressionText(directSourcePath)
+  const imageCdnSourcePattern = `/\\.netlify/images\\?q=90&url=${escapeRegularExpressionText(
+    encodedSourcePath,
+  )}(?:%3Fv%3D[^&]+)?&w=${width}`
+
+  return new RegExp(`^(?:${directSourcePattern}|${imageCdnSourcePattern})$`, 'u')
+}
+
 type CssRgbColorParts = {
   alpha: number
   blue: number

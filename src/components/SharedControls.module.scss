@@ -373,7 +373,7 @@
     }
 
     &[data-compact='true'] {
-      width: calc(var(--control-height-sm) * 1.72);
+      width: calc(var(--control-height-sm) * 2);
       height: var(--control-height-sm);
 
       .buildRequirementIcon {

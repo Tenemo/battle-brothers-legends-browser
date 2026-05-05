@@ -7,6 +7,7 @@ import {
   renderHighlightedText,
 } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import { gameIconImageWidths } from '../lib/game-icon-url'
 import {
   usePlannerInteractionActions,
   usePlannerInteractionState,
@@ -25,13 +26,22 @@ import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
 
 const mobilePerkResultBatchSize = 12
-const desktopInitialPerkResultBatchSize = 48
+const desktopInitialPerkResultBatchSize = 24
 const desktopPerkResultBatchSize = 48
+const desktopPerkResultBatchDelayMs = 250
 const mobilePerkResultMediaQuery = '(max-width: 760px)'
 const perkFilterTooltips = {
   ancientScrollPerks: 'Shows perk groups that are only available through ancient scroll sources.',
   originPerkGroups: 'Shows perk groups that come only from origins and are hidden by default.',
 } as const
+
+function getInitialShouldUseDesktopPerkResultWindow(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false
+  }
+
+  return !window.matchMedia(mobilePerkResultMediaQuery).matches
+}
 
 function renderPerkPlacementChip({
   emphasizedCategoryNames,
@@ -216,7 +226,9 @@ export function PerkResults({
     openResultsPerkHover: onOpenResultsPerkHover,
   } = usePlannerInteractionActions()
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
-  const [shouldUseDesktopPerkResultWindow, setShouldUseDesktopPerkResultWindow] = useState(false)
+  const [shouldUseDesktopPerkResultWindow, setShouldUseDesktopPerkResultWindow] = useState(
+    getInitialShouldUseDesktopPerkResultWindow,
+  )
   const [mobilePerkResultWindow, setMobilePerkResultWindow] = useState({
     resultSetKey: '',
     visiblePerkCount: mobilePerkResultBatchSize,
@@ -286,7 +298,7 @@ export function PerkResults({
           }
         })
       })
-    }, 16)
+    }, desktopPerkResultBatchDelayMs)
 
     return () => {
       window.clearTimeout(desktopPerkResultBatchTimeout)
@@ -304,18 +316,14 @@ export function PerkResults({
     }
 
     const mobilePerkResultMediaQueryList = window.matchMedia(mobilePerkResultMediaQuery)
-    const initialMediaQueryTimeout = window.setTimeout(() => {
-      handleMobilePerkResultMediaChange(mobilePerkResultMediaQueryList)
-    }, 0)
-
     function handleMobilePerkResultMediaChange(event: { matches: boolean }) {
       setShouldUseDesktopPerkResultWindow(!event.matches)
     }
 
+    handleMobilePerkResultMediaChange(mobilePerkResultMediaQueryList)
     mobilePerkResultMediaQueryList.addEventListener('change', handleMobilePerkResultMediaChange)
 
     return () => {
-      window.clearTimeout(initialMediaQueryTimeout)
       mobilePerkResultMediaQueryList.removeEventListener(
         'change',
         handleMobilePerkResultMediaChange,
@@ -499,6 +507,7 @@ export function PerkResults({
                         sharedStyles.perkIconSmall,
                         styles.perkRowIcon,
                       ),
+                      imageWidth: gameIconImageWidths.row,
                       iconPath: getPerkDisplayIconPath(perk),
                       label: `${perk.perkName} icon`,
                       testId: 'perk-row-icon',

@@ -438,7 +438,7 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expect(page.getByLabel('Search perks')).toBeVisible()
     await getBuildPerksBar(page)
-      .getByRole('button', { name: 'View Axe Mastery from build planner' })
+      .getByRole('button', { name: 'Axe Mastery, view from build planner' })
       .click()
     await expect(page.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
     await expectViewportLocked(page)
@@ -694,7 +694,7 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
   await page.getByRole('button', { name: 'Add Student to build from results' }).click()
   await expect(
     getBuildPerksBar(page).getByRole('button', {
-      name: 'View Student from build planner',
+      name: 'Student, view from build planner',
     }),
   ).toBeVisible()
 })

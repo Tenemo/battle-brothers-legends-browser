@@ -1,6 +1,7 @@
 import { getPerkGroupHoverKey } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
 import { hasAncientScrollLearnablePerkGroup } from '../lib/ancient-scroll-perk-group-display'
+import { gameIconImageWidths, getGameIconSrcSet, getGameIconUrl } from '../lib/game-icon-url'
 import {
   usePlannerInteractionActions,
   usePlannerInteractionState,
@@ -328,10 +329,11 @@ export function BuildPerkGroupTile({
                   className={styles.plannerPillIcon}
                   data-testid="planner-pill-icon"
                   decoding="async"
-                  height="64"
+                  height={gameIconImageWidths.compact}
                   loading="lazy"
-                  src={`/game-icons/${perk.iconPath}`}
-                  width="64"
+                  src={getGameIconUrl(perk.iconPath, gameIconImageWidths.compact) ?? ''}
+                  srcSet={getGameIconSrcSet(perk.iconPath, gameIconImageWidths.compact)}
+                  width={gameIconImageWidths.compact}
                 />
               ) : null}
               <span className={styles.plannerPillLabel}>{perk.perkName}</span>

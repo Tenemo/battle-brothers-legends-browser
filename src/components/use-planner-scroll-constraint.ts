@@ -70,6 +70,29 @@ function hasPlannerContentPastCompactBudget(plannerContentRowCounts: number[]): 
   )
 }
 
+function isPlannerScrollConstraintViewport(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.innerWidth >= buildPlannerScrollConstraintMinimumWidth &&
+    window.innerWidth < buildPlannerScrollConstraintMaximumWidth
+  )
+}
+
+function shouldStartWithPlannerScrollConstraint({
+  individualPerkGroupCount,
+  pickedPerkCount,
+  sharedPerkGroupCount,
+}: {
+  individualPerkGroupCount: number
+  pickedPerkCount: number
+  sharedPerkGroupCount: number
+}): boolean {
+  return (
+    isPlannerScrollConstraintViewport() &&
+    (pickedPerkCount > 0 || sharedPerkGroupCount > 0 || individualPerkGroupCount > 0)
+  )
+}
+
 export function usePlannerScrollConstraint({
   individualPerkGroupCount,
   isIndividualPerkGroupsSectionExpanded,
@@ -84,15 +107,20 @@ export function usePlannerScrollConstraint({
   sharedPerkGroupCount: number
 }) {
   const plannerBoardRef = useRef<HTMLDivElement | null>(null)
-  const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(false)
+  const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(() =>
+    shouldStartWithPlannerScrollConstraint({
+      individualPerkGroupCount,
+      pickedPerkCount,
+      sharedPerkGroupCount,
+    }),
+  )
   const updatePlannerScrollConstraint = useCallback(() => {
     const plannerBoard = plannerBoardRef.current
     const plannerContentRowCounts =
       plannerBoard === null ? [] : getPlannerContentRowCounts(plannerBoard)
     const shouldConstrainPlanner =
       plannerBoard !== null &&
-      window.innerWidth >= buildPlannerScrollConstraintMinimumWidth &&
-      window.innerWidth < buildPlannerScrollConstraintMaximumWidth &&
+      isPlannerScrollConstraintViewport() &&
       (hasPlannerContentPastVisibleRows(plannerContentRowCounts) ||
         hasPlannerContentPastCompactBudget(plannerContentRowCounts))
 

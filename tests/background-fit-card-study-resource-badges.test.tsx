@@ -9,6 +9,7 @@ import {
   brightTraitIconPath,
   skillBookIconPath,
 } from '../src/lib/background-study-resource-display'
+import { gameIconImageWidths, getGameIconUrl } from '../src/lib/game-icon-url'
 import { ancientScrollIconPath } from '../src/lib/ancient-scroll-perk-group-display'
 import type {
   BackgroundFitStudyResourceStrategy,
@@ -242,22 +243,34 @@ describe('background fit card study resource badges', () => {
       'scroll',
       'bright',
     ])
-    expect(badges[0]).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
+    expect(badges[0]).toHaveAttribute(
+      'src',
+      getGameIconUrl(skillBookIconPath, gameIconImageWidths.compact),
+    )
     expect(badges[0]).toHaveAttribute('title', 'Skill book improves full build chance: Calm')
     expect(badges[0]).toHaveAttribute('data-optional-only', 'false')
-    expect(badges[1]).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(badges[1]).toHaveAttribute(
+      'src',
+      getGameIconUrl(ancientScrollIconPath, gameIconImageWidths.compact),
+    )
     expect(badges[1]).toHaveAttribute(
       'title',
       'Ancient scroll improves full build chance: Berserker or Evocation',
     )
     expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
-    expect(badges[2]).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(badges[2]).toHaveAttribute(
+      'src',
+      getGameIconUrl(ancientScrollIconPath, gameIconImageWidths.compact),
+    )
     expect(badges[2]).toHaveAttribute(
       'title',
       'Ancient scroll improves full build chance: Berserker or Evocation',
     )
     expect(badges[2]).toHaveAttribute('data-optional-only', 'false')
-    expect(badges[3]).toHaveAttribute('src', `/game-icons/${brightTraitIconPath}`)
+    expect(badges[3]).toHaveAttribute(
+      'src',
+      getGameIconUrl(brightTraitIconPath, gameIconImageWidths.compact),
+    )
     expect(badges[3]).toHaveAttribute(
       'title',
       'Bright enables the second ancient scroll for full build chance: Berserker or Evocation',

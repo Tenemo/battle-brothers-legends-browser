@@ -2,6 +2,7 @@ import { type ComponentProps } from 'react'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { BuildPerkPill } from '../src/components/BuildPerkPill'
+import { gameIconImageWidths, getGameIconUrl } from '../src/lib/game-icon-url'
 import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 type BuildPerkPillProps = ComponentProps<typeof BuildPerkPill>
@@ -47,7 +48,10 @@ describe('build perk pill', () => {
     expect(button).toHaveAccessibleName('Battle Forged')
     expect(icon).toHaveAttribute('alt', '')
     expect(icon).toHaveAttribute('aria-hidden', 'true')
-    expect(icon).toHaveAttribute('src', '/game-icons/ui/perks/battle_forged.png')
+    expect(icon).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/perks/battle_forged.png', gameIconImageWidths.compact),
+    )
   })
 
   test('passes the perk group selection through keyboard and pointer hover paths', () => {

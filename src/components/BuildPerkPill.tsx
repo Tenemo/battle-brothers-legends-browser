@@ -2,6 +2,7 @@ import {
   usePlannerInteractionActions,
   usePlannerInteractionState,
 } from '../lib/planner-interaction-context-values'
+import { gameIconImageWidths, getGameIconSrcSet, getGameIconUrl } from '../lib/game-icon-url'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
 import type { BuildPerkHoverOptions } from '../lib/use-perk-interaction-state'
 import styles from './BuildPlanner.module.scss'
@@ -122,10 +123,11 @@ export function BuildPerkPill({
           className={styles.plannerPillIcon}
           data-testid="planner-pill-icon"
           decoding="async"
-          height="64"
+          height={gameIconImageWidths.compact}
           loading="lazy"
-          src={`/game-icons/${perkIconPath}`}
-          width="64"
+          src={getGameIconUrl(perkIconPath, gameIconImageWidths.compact) ?? ''}
+          srcSet={getGameIconSrcSet(perkIconPath, gameIconImageWidths.compact)}
+          width={gameIconImageWidths.compact}
         />
       ) : null}
       <span className={styles.plannerPillLabel}>{perkName}</span>
