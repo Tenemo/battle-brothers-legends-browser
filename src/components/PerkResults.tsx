@@ -7,6 +7,10 @@ import {
   renderHighlightedText,
 } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
@@ -157,56 +161,51 @@ function renderPerkPlacements({
 }
 
 export function PerkResults({
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  onCloseResultsPerkHover,
-  onClosePerkGroupHover,
   onAddPerkToBuild,
   onAncientScrollPerkGroupsChange,
   onInspectPerkGroup,
   onOriginPerkGroupsChange,
-  onOpenResultsPerkHover,
-  onOpenPerkGroupHover,
   onRemovePerkFromBuild,
   onSelectPerk,
   pickedPerkRequirementById,
   perkResultListScrollResetKey,
   query,
   selectedPerk,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
   setQuery,
   shouldIncludeAncientScrollPerkGroups,
   shouldIncludeOriginPerkGroups,
   visiblePerkResultSetKey,
   visiblePerks,
-  hoveredPerkId,
 }: {
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  hoveredPerkId: string | null
-  onClosePerkGroupHover: (perkGroupKey: string) => void
-  onCloseResultsPerkHover: (perkId: string) => void
   onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
   onAncientScrollPerkGroupsChange: (shouldIncludeAncientScrollPerkGroups: boolean) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onOriginPerkGroupsChange: (shouldIncludeOriginPerkGroups: boolean) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  onOpenResultsPerkHover: (perkId: string) => void
   onRemovePerkFromBuild: (perkId: string) => void
   onSelectPerk: (perkId: string) => void
   pickedPerkRequirementById: ReadonlyMap<string, BuildRequirement>
   perkResultListScrollResetKey: number
   query: string
   selectedPerk: LegendsPerkRecord | null
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   setQuery: (query: string) => void
   shouldIncludeAncientScrollPerkGroups: boolean
   shouldIncludeOriginPerkGroups: boolean
   visiblePerkResultSetKey: string
   visiblePerks: LegendsPerkRecord[]
 }) {
+  const {
+    emphasizedCategoryNames,
+    emphasizedPerkGroupKeys,
+    hoveredPerkId,
+    selectedEmphasisCategoryNames,
+    selectedEmphasisPerkGroupKeys,
+  } = usePlannerInteractionState()
+  const {
+    closePerkGroupHover: onClosePerkGroupHover,
+    closeResultsPerkHover: onCloseResultsPerkHover,
+    openPerkGroupHover: onOpenPerkGroupHover,
+    openResultsPerkHover: onOpenResultsPerkHover,
+  } = usePlannerInteractionActions()
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
   const [isMobilePerkResultViewport, setIsMobilePerkResultViewport] = useState(
     getIsMobilePerkResultViewport,

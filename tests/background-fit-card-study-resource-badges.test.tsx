@@ -19,6 +19,7 @@ import type {
   BackgroundStudyResourceFilter,
   StudyResourceRequirementProfile,
 } from '../src/lib/background-study-reachability'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 const nativeStudyResourceRequirement = {
   bookRequirement: null,
@@ -135,22 +136,23 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
 
 function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit, rank = 0) {
   return render(
-    <BackgroundFitCard
-      backgroundFit={backgroundFit}
-      isSelected={false}
-      mustHavePickedPerkCount={1}
-      onClearPerkGroupHover={vi.fn()}
-      onSelect={vi.fn()}
-      optionalPickedPerkCount={1}
-      pickedPerkCount={2}
-      query=""
-      rank={rank}
-      studyResourceFilter={{
-        shouldAllowBook: true,
-        shouldAllowScroll: true,
-        shouldAllowSecondScroll: false,
-      }}
-    />,
+    <PlannerInteractionTestProvider>
+      <BackgroundFitCard
+        backgroundFit={backgroundFit}
+        isSelected={false}
+        mustHavePickedPerkCount={1}
+        onSelect={vi.fn()}
+        optionalPickedPerkCount={1}
+        pickedPerkCount={2}
+        query=""
+        rank={rank}
+        studyResourceFilter={{
+          shouldAllowBook: true,
+          shouldAllowScroll: true,
+          shouldAllowSecondScroll: false,
+        }}
+      />
+    </PlannerInteractionTestProvider>,
   )
 }
 
@@ -158,18 +160,19 @@ function renderBackgroundFitCardWithStudyResourceFilter(
   studyResourceFilter: BackgroundStudyResourceFilter,
 ) {
   return render(
-    <BackgroundFitCard
-      backgroundFit={createBackgroundFit()}
-      isSelected={false}
-      mustHavePickedPerkCount={1}
-      onClearPerkGroupHover={vi.fn()}
-      onSelect={vi.fn()}
-      optionalPickedPerkCount={0}
-      pickedPerkCount={1}
-      query=""
-      rank={0}
-      studyResourceFilter={studyResourceFilter}
-    />,
+    <PlannerInteractionTestProvider>
+      <BackgroundFitCard
+        backgroundFit={createBackgroundFit()}
+        isSelected={false}
+        mustHavePickedPerkCount={1}
+        onSelect={vi.fn()}
+        optionalPickedPerkCount={0}
+        pickedPerkCount={1}
+        query=""
+        rank={0}
+        studyResourceFilter={studyResourceFilter}
+      />
+    </PlannerInteractionTestProvider>,
   )
 }
 

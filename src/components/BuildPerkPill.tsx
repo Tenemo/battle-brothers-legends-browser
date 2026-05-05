@@ -1,3 +1,7 @@
+import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
 import type { BuildPerkHoverOptions } from '../lib/use-perk-interaction-state'
 import styles from './BuildPlanner.module.scss'
@@ -12,41 +16,26 @@ const pillHoverOptions = {
 } as const satisfies BuildPerkHoverOptions
 
 export function BuildPerkPill({
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
-  onCloseHover,
-  onCloseTooltip,
   onInspectPerk,
-  onOpenHover,
-  onOpenTooltip,
   perkGroupSelection,
   perkIconPath,
   perkId,
   perkName,
 }: {
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
-  onCloseHover: (perkId: string) => void
-  onCloseTooltip: () => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenHover: (
-    perkId: string,
-    perkGroupSelection?: BuildPerkPillSelection,
-    options?: BuildPerkHoverOptions,
-  ) => void
-  onOpenTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-    options?: BuildPerkHoverOptions,
-  ) => void
   perkGroupSelection?: BuildPerkPillSelection
   perkIconPath: string | null
   perkId: string
   perkName: string
 }) {
+  const { hoveredBuildPerk, hoveredPerkId } = usePlannerInteractionState()
+  const {
+    closeBuildPerkHover: onCloseHover,
+    closeBuildPerkTooltip: onCloseTooltip,
+    openBuildPerkHover: onOpenHover,
+    openBuildPerkTooltip: onOpenTooltip,
+  } = usePlannerInteractionActions()
+  const hoveredBuildPerkId = hoveredBuildPerk?.id ?? null
   const {
     activeTooltipIndicatorPerkId,
     clearPendingTooltip,
@@ -62,7 +51,6 @@ export function BuildPerkPill({
 
   return (
     <button
-      aria-describedby={hoveredBuildPerkId === perkId ? hoveredBuildPerkTooltipId : undefined}
       className={styles.plannerPill}
       data-highlighted={hoveredPerkId === perkId}
       data-testid="planner-pill"

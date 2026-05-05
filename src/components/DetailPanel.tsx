@@ -69,29 +69,12 @@ type DetailPanelProps = {
   selectedDetailType: 'background' | 'perk'
   selectedBackgroundFitDetail: { backgroundFit: RankedBackgroundFit; rank: number } | null
   detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   groupedBackgroundSources: GroupedBackgroundSource[]
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
   mustHavePickedPerkIds: string[]
   onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onNavigateDetailHistory: (direction: -1 | 1) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onRemovePerkFromBuild: (perkId: string) => void
   optionalPickedPerkIds: string[]
   mustHavePickedPerkCount: number
@@ -187,25 +170,12 @@ export function DetailPanel({
   selectedDetailType,
   selectedBackgroundFitDetail,
   detailHistoryNavigationAvailability,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
   groupedBackgroundSources,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
   mustHavePickedPerkIds,
   onAddPerkToBuild,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
   onInspectPerk,
   onInspectPerkGroup,
   onNavigateDetailHistory,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
   onRemovePerkFromBuild,
   optionalPickedPerkIds,
   mustHavePickedPerkCount,
@@ -248,27 +218,14 @@ export function DetailPanel({
         {displayedBackgroundFitDetail ? (
           <BackgroundDetail
             backgroundFit={displayedBackgroundFitDetail.backgroundFit}
-            emphasizedCategoryNames={emphasizedCategoryNames}
-            emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-            selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-            selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
             detailCollapsibleSectionExpandedStates={detailCollapsibleSectionExpandedStates}
             detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
-            hoveredBuildPerkId={hoveredBuildPerkId}
-            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-            hoveredPerkId={hoveredPerkId}
             mustHavePickedPerkIds={mustHavePickedPerkIds}
             mustHavePickedPerkCount={mustHavePickedPerkCount}
-            onCloseBuildPerkHover={onCloseBuildPerkHover}
-            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-            onClosePerkGroupHover={onClosePerkGroupHover}
             onInspectPerk={onInspectPerk}
             onInspectPerkGroup={onInspectPerkGroup}
             onDetailCollapsibleSectionExpandedChange={updateDetailCollapsibleSectionExpandedState}
             onNavigateDetailHistory={onNavigateDetailHistory}
-            onOpenBuildPerkHover={onOpenBuildPerkHover}
-            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-            onOpenPerkGroupHover={onOpenPerkGroupHover}
             optionalPickedPerkIds={optionalPickedPerkIds}
             optionalPickedPerkCount={optionalPickedPerkCount}
             pickedPerkCount={pickedPerkCount}
@@ -329,10 +286,6 @@ export function DetailPanel({
                     >
                       <BuildPerkGroupTile
                         className={styles.detailPlacementTile}
-                        emphasizedCategoryNames={emphasizedCategoryNames}
-                        emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-                        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-                        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
                         groupLabel={placement.perkGroupName}
                         groupOptions={[
                           {
@@ -343,21 +296,12 @@ export function DetailPanel({
                             perkGroupLabel: placement.perkGroupName,
                           },
                         ]}
-                        hoveredBuildPerkId={hoveredBuildPerkId}
-                        hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                        hoveredPerkId={hoveredPerkId}
                         isWide
                         metaClassName={styles.detailPlacementTierBadge}
                         metaLabel={getTierLabel(placement.tier)}
                         metaTestId="detail-placement-tier-badge"
-                        onCloseBuildPerkHover={onCloseBuildPerkHover}
-                        onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-                        onClosePerkGroupHover={onClosePerkGroupHover}
                         onInspectPerk={onInspectPerk}
                         onInspectPerkGroup={onInspectPerkGroup}
-                        onOpenBuildPerkHover={onOpenBuildPerkHover}
-                        onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-                        onOpenPerkGroupHover={onOpenPerkGroupHover}
                         perks={[
                           {
                             iconPath: getPerkDisplayIconPath(selectedPerk),
@@ -716,26 +660,9 @@ type StudyResourceStrategyCoveredPerk = {
   perkName: string
 }
 
-type StudyResourcePlanPerkInteractionProps = {
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
+type StudyResourcePlanInspectionProps = {
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
 }
 
 function findBuildTargetPerkGroupForCoveredPerk({
@@ -854,29 +781,16 @@ function getStudyResourceStrategyTargetGroupOptions({
 }
 
 function BackgroundFitStudyResourcePlanRow({
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
   onInspectPerk,
   onInspectPerkGroup,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
   resourceKind,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
   strategy,
   supportedBuildTargetPerkGroups,
 }: {
   resourceKind: StudyResourceStrategyResourceKind
   strategy: BackgroundFitStudyResourceStrategy
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
-} & StudyResourcePlanPerkInteractionProps) {
+} & StudyResourcePlanInspectionProps) {
   const targets = getStudyResourceStrategyTargets({ resourceKind, strategy })
 
   if (targets.length === 0) {
@@ -908,25 +822,12 @@ function BackgroundFitStudyResourcePlanRow({
               <BuildPerkGroupTile
                 arePerkGroupOptionsInteractive={false}
                 className={styles.detailStudyResourceTargetTile}
-                emphasizedCategoryNames={emphasizedCategoryNames}
-                emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
                 groupLabel={target.perkGroupName}
                 groupOptions={getStudyResourceStrategyTargetGroupOptions({ resourceKind, target })}
-                hoveredBuildPerkId={hoveredBuildPerkId}
-                hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-                hoveredPerkId={hoveredPerkId}
                 isWide
-                onCloseBuildPerkHover={onCloseBuildPerkHover}
-                onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-                onClosePerkGroupHover={onClosePerkGroupHover}
                 onInspectPerk={onInspectPerk}
                 onInspectPerkGroup={onInspectPerkGroup}
-                onOpenBuildPerkHover={onOpenBuildPerkHover}
-                onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-                onOpenPerkGroupHover={onOpenPerkGroupHover}
                 perks={coveredPerks}
-                selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-                selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
               />
             </li>
           )
@@ -939,12 +840,12 @@ function BackgroundFitStudyResourcePlanRow({
 function BackgroundFitStudyResourcePlanScope({
   scopeLabel,
   strategy,
-  ...interactionProps
+  ...inspectionProps
 }: {
   scopeLabel: string
   strategy: BackgroundFitStudyResourceStrategy
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
-} & StudyResourcePlanPerkInteractionProps) {
+} & StudyResourcePlanInspectionProps) {
   const heading = formatStudyResourceStrategyUsageHeading({ scopeLabel, strategy })
 
   if (heading === null) {
@@ -960,12 +861,12 @@ function BackgroundFitStudyResourcePlanScope({
       <h4 className={styles.detailSubsectionHeading}>{heading}</h4>
       <div className={styles.detailStudyResourcePlanRows}>
         <BackgroundFitStudyResourcePlanRow
-          {...interactionProps}
+          {...inspectionProps}
           resourceKind="book"
           strategy={strategy}
         />
         <BackgroundFitStudyResourcePlanRow
-          {...interactionProps}
+          {...inspectionProps}
           resourceKind="scroll"
           strategy={strategy}
         />
@@ -979,13 +880,13 @@ function BackgroundFitStudyResourcePlan({
   mustHaveStrategy,
   optionalPickedPerkCount,
   supportedBuildTargetPerkGroups,
-  ...interactionProps
+  ...inspectionProps
 }: {
   fullBuildStrategy?: BackgroundFitStudyResourceStrategy
   mustHaveStrategy?: BackgroundFitStudyResourceStrategy
   optionalPickedPerkCount: number
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
-} & StudyResourcePlanPerkInteractionProps) {
+} & StudyResourcePlanInspectionProps) {
   const shouldShowFullBuildStrategy =
     optionalPickedPerkCount > 0 &&
     fullBuildStrategy !== undefined &&
@@ -1000,7 +901,7 @@ function BackgroundFitStudyResourcePlan({
       <div className={styles.detailStudyResourcePlanScopes}>
         {mustHaveStrategy ? (
           <BackgroundFitStudyResourcePlanScope
-            {...interactionProps}
+            {...inspectionProps}
             scopeLabel="Must-have"
             strategy={mustHaveStrategy}
             supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
@@ -1008,7 +909,7 @@ function BackgroundFitStudyResourcePlan({
         ) : null}
         {shouldShowFullBuildStrategy && fullBuildStrategy ? (
           <BackgroundFitStudyResourcePlanScope
-            {...interactionProps}
+            {...inspectionProps}
             scopeLabel="Full-build"
             strategy={fullBuildStrategy}
             supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
@@ -2643,46 +2544,16 @@ function BackgroundMetadataSection({
   )
 }
 
-type BackgroundFitOtherPerkGroupInteractionProps = {
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
+type BackgroundFitOtherPerkGroupInspectionProps = {
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
 }
 
 function BackgroundFitOtherPerkGroupTile({
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
   onInspectPerk,
   onInspectPerkGroup,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
   otherPerkGroup,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
-}: BackgroundFitOtherPerkGroupInteractionProps & {
+}: BackgroundFitOtherPerkGroupInspectionProps & {
   otherPerkGroup: BackgroundFitOtherPerkGroup
 }) {
   const otherPerkGroupPerks =
@@ -2698,10 +2569,6 @@ function BackgroundFitOtherPerkGroupTile({
     <BuildPerkGroupTile
       arePerkGroupOptionsInteractive={false}
       className={styles.detailOtherPerkGroupTile}
-      emphasizedCategoryNames={emphasizedCategoryNames}
-      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-      selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-      selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
       groupLabel={otherPerkGroup.perkGroupName}
       groupOptions={[
         {
@@ -2711,9 +2578,6 @@ function BackgroundFitOtherPerkGroupTile({
           perkGroupLabel: otherPerkGroup.perkGroupName,
         },
       ]}
-      hoveredBuildPerkId={hoveredBuildPerkId}
-      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-      hoveredPerkId={hoveredPerkId}
       isWide
       metaClassName={styles.detailOtherPerkGroupProbabilityBadge}
       metaLabel={
@@ -2722,14 +2586,8 @@ function BackgroundFitOtherPerkGroupTile({
           : formatBackgroundFitProbabilityLabel(otherPerkGroup.probability)
       }
       metaTestId="detail-other-perk-group-probability"
-      onCloseBuildPerkHover={onCloseBuildPerkHover}
-      onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-      onClosePerkGroupHover={onClosePerkGroupHover}
       onInspectPerk={onInspectPerk}
       onInspectPerkGroup={onInspectPerkGroup}
-      onOpenBuildPerkHover={onOpenBuildPerkHover}
-      onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-      onOpenPerkGroupHover={onOpenPerkGroupHover}
       perks={otherPerkGroupPerks}
     />
   )
@@ -2744,8 +2602,8 @@ function formatNativePerkGroupCount(count: number, labelPrefix: string) {
 function BackgroundFitOtherPerkGroupList({
   label,
   otherPerkGroups,
-  ...interactionProps
-}: BackgroundFitOtherPerkGroupInteractionProps & {
+  ...inspectionProps
+}: BackgroundFitOtherPerkGroupInspectionProps & {
   label: string
   otherPerkGroups: BackgroundFitOtherPerkGroup[]
 }) {
@@ -2768,10 +2626,7 @@ function BackgroundFitOtherPerkGroupList({
       <ul className={styles.detailOtherPerkGroupList}>
         {otherPerkGroups.map((otherPerkGroup) => (
           <li key={`${otherPerkGroup.categoryName}-${otherPerkGroup.perkGroupId}`}>
-            <BackgroundFitOtherPerkGroupTile
-              {...interactionProps}
-              otherPerkGroup={otherPerkGroup}
-            />
+            <BackgroundFitOtherPerkGroupTile {...inspectionProps} otherPerkGroup={otherPerkGroup} />
           </li>
         ))}
       </ul>
@@ -2781,8 +2636,8 @@ function BackgroundFitOtherPerkGroupList({
 
 function BackgroundFitRareOtherPerkGroupList({
   otherPerkGroups,
-  ...interactionProps
-}: BackgroundFitOtherPerkGroupInteractionProps & {
+  ...inspectionProps
+}: BackgroundFitOtherPerkGroupInspectionProps & {
   otherPerkGroups: BackgroundFitOtherPerkGroup[]
 }) {
   const rareOtherPerkGroupsHeading = 'Possible - under 1% chance'
@@ -2838,7 +2693,7 @@ function BackgroundFitRareOtherPerkGroupList({
           {otherPerkGroups.map((otherPerkGroup) => (
             <li key={`${otherPerkGroup.categoryName}-${otherPerkGroup.perkGroupId}`}>
               <BackgroundFitOtherPerkGroupTile
-                {...interactionProps}
+                {...inspectionProps}
                 otherPerkGroup={otherPerkGroup}
               />
             </li>
@@ -2853,8 +2708,8 @@ function BackgroundFitOtherPerkGroupsSection({
   backgroundFit,
   isExpanded,
   onExpandedChange,
-  ...interactionProps
-}: BackgroundFitOtherPerkGroupInteractionProps & {
+  ...inspectionProps
+}: BackgroundFitOtherPerkGroupInspectionProps & {
   backgroundFit: RankedBackgroundFit
   isExpanded: boolean
   onExpandedChange: (nextIsExpanded: boolean) => void
@@ -2890,17 +2745,17 @@ function BackgroundFitOtherPerkGroupsSection({
         ancient scrolls are not included.
       </p>
       <BackgroundFitOtherPerkGroupList
-        {...interactionProps}
+        {...inspectionProps}
         label="Guaranteed"
         otherPerkGroups={guaranteedOtherPerkGroups}
       />
       <BackgroundFitOtherPerkGroupList
-        {...interactionProps}
+        {...inspectionProps}
         label="Possible"
         otherPerkGroups={possibleOtherPerkGroups}
       />
       <BackgroundFitRareOtherPerkGroupList
-        {...interactionProps}
+        {...inspectionProps}
         otherPerkGroups={rareOtherPerkGroups}
       />
     </DetailCollapsibleSection>
@@ -2910,26 +2765,13 @@ function BackgroundFitOtherPerkGroupsSection({
 function BackgroundDetail({
   backgroundFit,
   detailHistoryNavigationAvailability,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
   detailCollapsibleSectionExpandedStates,
   mustHavePickedPerkIds,
   mustHavePickedPerkCount,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
   onDetailCollapsibleSectionExpandedChange,
   onInspectPerk,
   onInspectPerkGroup,
   onNavigateDetailHistory,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
   optionalPickedPerkIds,
   optionalPickedPerkCount,
   pickedPerkCount,
@@ -2939,19 +2781,9 @@ function BackgroundDetail({
 }: {
   backgroundFit: RankedBackgroundFit
   detailHistoryNavigationAvailability: DetailHistoryNavigationAvailability
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
   detailCollapsibleSectionExpandedStates: DetailCollapsibleSectionExpandedStates
   mustHavePickedPerkIds: string[]
   mustHavePickedPerkCount: number
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
   onDetailCollapsibleSectionExpandedChange: (
     sectionKey: DetailCollapsibleSectionKey,
     nextIsExpanded: boolean,
@@ -2959,13 +2791,6 @@ function BackgroundDetail({
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onNavigateDetailHistory: (direction: -1 | 1) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   optionalPickedPerkIds: string[]
   optionalPickedPerkCount: number
   pickedPerkCount: number
@@ -3053,24 +2878,11 @@ function BackgroundDetail({
           />
         </div>
         <BackgroundFitStudyResourcePlan
-          emphasizedCategoryNames={emphasizedCategoryNames}
-          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           fullBuildStrategy={backgroundFit.fullBuildStudyResourceStrategy}
-          hoveredBuildPerkId={hoveredBuildPerkId}
-          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-          hoveredPerkId={hoveredPerkId}
           mustHaveStrategy={backgroundFit.mustHaveStudyResourceStrategy}
-          onCloseBuildPerkHover={onCloseBuildPerkHover}
-          onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-          onClosePerkGroupHover={onClosePerkGroupHover}
           onInspectPerk={onInspectPerk}
           onInspectPerkGroup={onInspectPerkGroup}
-          onOpenBuildPerkHover={onOpenBuildPerkHover}
-          onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-          onOpenPerkGroupHover={onOpenPerkGroupHover}
           optionalPickedPerkCount={optionalPickedPerkCount}
-          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           supportedBuildTargetPerkGroups={supportedBuildTargetPerkGroups}
         />
       </DetailCollapsibleSection>
@@ -3107,21 +2919,8 @@ function BackgroundDetail({
           </div>
           <BackgroundFitMatchSections
             backgroundFit={mustHaveBackgroundFit}
-            emphasizedCategoryNames={emphasizedCategoryNames}
-            emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-            selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-            selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-            hoveredBuildPerkId={hoveredBuildPerkId}
-            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-            hoveredPerkId={hoveredPerkId}
-            onCloseBuildPerkHover={onCloseBuildPerkHover}
-            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-            onClosePerkGroupHover={onClosePerkGroupHover}
             onInspectPerkGroup={onInspectPerkGroup}
             onInspectPlannerPerk={onInspectPerk}
-            onOpenBuildPerkHover={onOpenBuildPerkHover}
-            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-            onOpenPerkGroupHover={onOpenPerkGroupHover}
           />
         </div>
         <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="optional">
@@ -3139,21 +2938,8 @@ function BackgroundDetail({
           </div>
           <BackgroundFitMatchSections
             backgroundFit={optionalBackgroundFit}
-            emphasizedCategoryNames={emphasizedCategoryNames}
-            emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-            selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-            selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-            hoveredBuildPerkId={hoveredBuildPerkId}
-            hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-            hoveredPerkId={hoveredPerkId}
-            onCloseBuildPerkHover={onCloseBuildPerkHover}
-            onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-            onClosePerkGroupHover={onClosePerkGroupHover}
             onInspectPerkGroup={onInspectPerkGroup}
             onInspectPlannerPerk={onInspectPerk}
-            onOpenBuildPerkHover={onOpenBuildPerkHover}
-            onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-            onOpenPerkGroupHover={onOpenPerkGroupHover}
           />
         </div>
         <BackgroundFitChanceExplanation
@@ -3181,21 +2967,8 @@ function BackgroundDetail({
         onExpandedChange={(nextIsExpanded) =>
           onDetailCollapsibleSectionExpandedChange('other-native-perk-groups', nextIsExpanded)
         }
-        emphasizedCategoryNames={emphasizedCategoryNames}
-        emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
-        hoveredBuildPerkId={hoveredBuildPerkId}
-        hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-        hoveredPerkId={hoveredPerkId}
-        onCloseBuildPerkHover={onCloseBuildPerkHover}
-        onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-        onClosePerkGroupHover={onClosePerkGroupHover}
         onInspectPerk={onInspectPerk}
         onInspectPerkGroup={onInspectPerkGroup}
-        onOpenBuildPerkHover={onOpenBuildPerkHover}
-        onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-        onOpenPerkGroupHover={onOpenPerkGroupHover}
       />
     </>
   )

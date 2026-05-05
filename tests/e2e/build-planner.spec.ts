@@ -460,7 +460,7 @@ test('build planner splits shared and individual perk groups without layout drif
   await expect(infoTooltip).toContainText(/split adds optional perks/i)
   await expect(infoTooltip).toContainText(/scored separately from must-have perks/i)
   await page.mouse.move(1, 1)
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
 
   const resultsRowHeightAfterPicking = await page
     .getByTestId('results-list')
@@ -519,7 +519,7 @@ test('build planner splits shared and individual perk groups without layout drif
   const pickedPerkRemoveControl = pickedPerkTile.getByTestId('planner-slot-remove-button')
   await expect(pickedPerkRemoveControl).toBeHidden()
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
 
   await pickedPerkTile.hover()
   const pickedPerkRemoveButton = pickedPerkTile.getByRole('button', {
@@ -582,9 +582,10 @@ test('build planner splits shared and individual perk groups without layout drif
     Math.abs(hoverMetricsAfter.tileRectangle.right - hoverMetricsBefore.tileRectangle.right),
   ).toBeLessThanOrEqual(1)
 
-  const buildPerkTooltip = page.getByRole('tooltip')
+  const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
 
   await expect(buildPerkTooltip).toBeVisible({ timeout: 2500 })
+  await expect(buildPerkTooltip).toHaveAttribute('role', 'group')
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(buildPerkTooltip.getByTestId('build-perk-tooltip-title')).toHaveCount(0)
   await expect(buildPerkTooltip).not.toContainText('Clarity')
@@ -1413,7 +1414,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
     .toBe(activePlannerSurfaceColor)
 
   await page.mouse.move(1, 1)
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
 
@@ -1458,13 +1459,15 @@ test('separates planner group card hover from icon and perk pill hover states', 
   )
 
   expectCssRgbColorsToMatch(iconBorderAfterPerkHover, iconBorderBeforeCardHover)
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
+  const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
+
+  await expect(buildPerkTooltip).toBeVisible({ timeout: 2500 })
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(page.getByRole('tooltip')).not.toContainText('Battle Forged')
-  await expect(page.getByRole('tooltip')).toContainText(/Armor damage taken is reduced/i)
+  await expect(buildPerkTooltip).not.toContainText('Battle Forged')
+  await expect(buildPerkTooltip).toContainText(/Armor damage taken is reduced/i)
   await page.mouse.move(1, 1)
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
 })
 
 test('keeps picked perk hover from highlighting peer picked perks in the same group', async ({
@@ -2385,7 +2388,7 @@ test('cancels a picked perk tooltip timer before marking the perk optional', asy
 
   await page.waitForTimeout(1700)
 
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
 })
 
@@ -2422,8 +2425,10 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
     timeout: 2500,
   })
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
-  await expect(page.getByRole('tooltip')).toContainText(/An additional \+10% of any damage/i)
+  await expect(page.getByTestId('build-perk-tooltip')).toBeVisible({ timeout: 2500 })
+  await expect(page.getByTestId('build-perk-tooltip')).toContainText(
+    /An additional \+10% of any damage/i,
+  )
 })
 
 test('keeps picked perk word layout unchanged on hover', async ({ page }) => {
@@ -2742,7 +2747,7 @@ test('inspects picked perk tiles without removing them', async ({ page }) => {
   await expect(page.getByRole('button', { name: 'Inspect Clarity' })).toBeVisible()
   await expect(page.getByRole('heading', { level: 2, name: 'Clarity' })).toBeVisible()
   await expect(page.getByText(/Build slot \d+|Not in build/)).toHaveCount(0)
-  await expect(page.getByRole('tooltip')).toHaveCount(0)
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
 
   await getBuildPerksBar(page)
     .getByRole('button', { name: 'View Clarity from build planner' })

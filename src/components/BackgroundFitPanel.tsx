@@ -8,6 +8,10 @@ import {
   type CSSProperties,
 } from 'react'
 import { joinClassNames } from '../lib/class-names'
+import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
 import type { BackgroundFitCalculationProgress, BackgroundFitView } from '../lib/background-fit'
 import { isOriginBackgroundFit } from '../lib/background-origin'
 import { formatBackgroundVeteranPerkLevelIntervalFilterLabel } from '../lib/background-veteran-perks'
@@ -159,14 +163,10 @@ function BackgroundFitProgressIndicator({
 
 export function BackgroundFitPanel({
   backgroundFitView,
-  hoveredPerkId,
   backgroundFitErrorMessage,
   backgroundFitProgress,
   isExpanded,
   isLoadingBackgroundFitView,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClearPerkGroupHover,
   onSelectBackgroundFit,
   onBackgroundStudyBookChange,
   onBackgroundStudyScrollChange,
@@ -187,14 +187,10 @@ export function BackgroundFitPanel({
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView | null
-  hoveredPerkId: string | null
   backgroundFitErrorMessage: string | null
   backgroundFitProgress: BackgroundFitCalculationProgress | null
   isExpanded: boolean
   isLoadingBackgroundFitView: boolean
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClearPerkGroupHover: () => void
   onSelectBackgroundFit: (backgroundFitKey: string) => void
   onBackgroundStudyBookChange: (shouldAllowBackgroundStudyBook: boolean) => void
   onBackgroundStudyScrollChange: (shouldAllowBackgroundStudyScroll: boolean) => void
@@ -217,6 +213,12 @@ export function BackgroundFitPanel({
   selectedBackgroundFitKey: string | null
   shouldIncludeOriginBackgrounds: boolean
 }) {
+  const { hoveredPerkId } = usePlannerInteractionState()
+  const {
+    clearPerkGroupHover: onClearPerkGroupHover,
+    closeBuildPerkHover: onCloseBuildPerkHover,
+    closeBuildPerkTooltip: onCloseBuildPerkTooltip,
+  } = usePlannerInteractionActions()
   const effectiveBackgroundFitView = backgroundFitView ?? emptyBackgroundFitView
   const [backgroundFitInputValue, setBackgroundFitInputValue] = useState('')
   const [isBackgroundFilterMenuOpen, setIsBackgroundFilterMenuOpen] = useState(false)
@@ -589,7 +591,6 @@ export function BackgroundFitPanel({
                       <li key={`${backgroundFit.backgroundId}-${backgroundFit.sourceFilePath}`}>
                         <BackgroundFitCard
                           backgroundFit={backgroundFit}
-                          onClearPerkGroupHover={onClearPerkGroupHover}
                           onSelect={(backgroundFitKey: string) => {
                             clearBackgroundFitInteractiveHover()
                             onSelectBackgroundFit(backgroundFitKey)

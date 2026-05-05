@@ -22,6 +22,7 @@ const workerScope = self as unknown as BackgroundFitWorkerScope
 const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
 const backgroundFitEngine = createBackgroundFitEngine(legendsBackgroundFitDataset)
 const perksById = new Map(legendsBackgroundFitDataset.perks.map((perk) => [perk.id, perk]))
+const backgroundFitWorkerChunkSize = 32
 
 let pendingRequest: BackgroundFitWorkerRequest | null = null
 let isProcessingPendingRequest = false
@@ -82,7 +83,7 @@ async function calculateBackgroundFitView(request: BackgroundFitWorkerRequest) {
       })
     },
     optionalPickedPerkIds: new Set(request.optionalPickedPerkIds),
-    workChunkSize: 1,
+    workChunkSize: backgroundFitWorkerChunkSize,
     yieldControl: yieldToWorkerEventLoop,
   })
 }

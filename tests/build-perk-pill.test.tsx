@@ -2,6 +2,7 @@ import { type ComponentProps } from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { BuildPerkPill } from '../src/components/BuildPerkPill'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 type BuildPerkPillProps = ComponentProps<typeof BuildPerkPill>
 
@@ -10,25 +11,29 @@ const pillHoverOptions = {
 }
 
 function renderBuildPerkPill(overrides: Partial<BuildPerkPillProps> = {}) {
+  const interaction = {
+    closeBuildPerkHover: vi.fn(),
+    closeBuildPerkTooltip: vi.fn(),
+    openBuildPerkHover: vi.fn(),
+    openBuildPerkTooltip: vi.fn(),
+  }
   const props: BuildPerkPillProps = {
-    hoveredBuildPerkId: null,
-    hoveredBuildPerkTooltipId: undefined,
-    hoveredPerkId: null,
-    onCloseHover: vi.fn(),
-    onCloseTooltip: vi.fn(),
     onInspectPerk: vi.fn(),
-    onOpenHover: vi.fn(),
-    onOpenTooltip: vi.fn(),
     perkIconPath: 'ui/perks/battle_forged.png',
     perkId: 'perk.battle_forged',
     perkName: 'Battle Forged',
     ...overrides,
   }
 
-  render(<BuildPerkPill {...props} />)
+  render(
+    <PlannerInteractionTestProvider interactionOverrides={interaction}>
+      <BuildPerkPill {...props} />
+    </PlannerInteractionTestProvider>,
+  )
 
   return {
     button: screen.getByRole('button', { name: props.perkName }),
+    interaction,
     props,
   }
 }
@@ -50,13 +55,13 @@ describe('build perk pill', () => {
       categoryName: 'Defense',
       perkGroupId: 'HeavyArmorTree',
     }
-    const { button, props } = renderBuildPerkPill({
+    const { button, interaction, props } = renderBuildPerkPill({
       perkGroupSelection,
     })
 
     fireEvent.focus(button)
 
-    expect(props.onOpenHover).toHaveBeenLastCalledWith(
+    expect(interaction.openBuildPerkHover).toHaveBeenLastCalledWith(
       props.perkId,
       perkGroupSelection,
       pillHoverOptions,
@@ -64,7 +69,7 @@ describe('build perk pill', () => {
 
     fireEvent.mouseEnter(button)
 
-    expect(props.onOpenHover).toHaveBeenLastCalledWith(
+    expect(interaction.openBuildPerkHover).toHaveBeenLastCalledWith(
       props.perkId,
       perkGroupSelection,
       pillHoverOptions,
@@ -76,13 +81,13 @@ describe('build perk pill', () => {
       categoryName: 'Class',
       perkGroupId: 'HammerClassTree',
     }
-    const { button, props } = renderBuildPerkPill({
+    const { button, interaction, props } = renderBuildPerkPill({
       perkGroupSelection,
     })
 
     fireEvent.click(button)
 
-    expect(props.onCloseTooltip).toHaveBeenCalledTimes(1)
+    expect(interaction.closeBuildPerkTooltip).toHaveBeenCalledTimes(1)
     expect(props.onInspectPerk).toHaveBeenCalledWith(props.perkId, perkGroupSelection)
   })
 })

@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useReducer } from 'react'
+import { useCallback, useEffect, useMemo, useReducer } from 'react'
 import { getPerkGroupHoverKey, type TooltipAnchorRectangle } from './perk-display'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 
-export type HoveredBuildPerkTooltip = {
+type HoveredBuildPerkTooltip = {
   anchorRectangle: TooltipAnchorRectangle
   perkId: string
 }
@@ -334,27 +334,27 @@ export function usePerkInteractionState({
     ],
   )
 
-  function clearAllHover() {
+  const clearAllHover = useCallback(function clearAllHover() {
     dispatch({ type: 'clear-all-hover' })
-  }
+  }, [])
 
-  function clearPerkHover(perkId: string) {
+  const clearPerkHover = useCallback(function clearPerkHover(perkId: string) {
     dispatch({ perkId, type: 'clear-perk-hover' })
-  }
+  }, [])
 
-  function clearBuildPerkTooltip(perkId: string) {
+  const clearBuildPerkTooltip = useCallback(function clearBuildPerkTooltip(perkId: string) {
     dispatch({ perkId, type: 'clear-build-perk-tooltip' })
-  }
+  }, [])
 
-  function clearPerkGroupHover() {
+  const clearPerkGroupHover = useCallback(function clearPerkGroupHover() {
     dispatch({ type: 'clear-perk-group-hover' })
-  }
+  }, [])
 
-  function closeBuildPerkTooltip() {
+  const closeBuildPerkTooltip = useCallback(function closeBuildPerkTooltip() {
     dispatch({ type: 'close-build-perk-tooltip' })
-  }
+  }, [])
 
-  function openBuildPerkTooltip(
+  const openBuildPerkTooltip = useCallback(function openBuildPerkTooltip(
     perkId: string,
     currentTarget: HTMLElement,
     perkGroupReference?: PerkGroupReference,
@@ -375,9 +375,9 @@ export function usePerkInteractionState({
       shouldEmphasizePerkGroup: options.shouldEmphasizePerkGroup,
       type: 'open-build-perk-tooltip',
     })
-  }
+  }, [])
 
-  function openBuildPerkHover(
+  const openBuildPerkHover = useCallback(function openBuildPerkHover(
     perkId: string,
     perkGroupReference?: PerkGroupReference,
     options: BuildPerkHoverOptions = {},
@@ -388,30 +388,33 @@ export function usePerkInteractionState({
       shouldEmphasizePerkGroup: options.shouldEmphasizePerkGroup,
       type: 'open-build-perk-hover',
     })
-  }
+  }, [])
 
-  function openResultsPerkHover(perkId: string) {
+  const openResultsPerkHover = useCallback(function openResultsPerkHover(perkId: string) {
     dispatch({ perkId, type: 'open-results-perk-hover' })
-  }
+  }, [])
 
-  function openPerkGroupHover(categoryName: string, perkGroupId: string) {
+  const openPerkGroupHover = useCallback(function openPerkGroupHover(
+    categoryName: string,
+    perkGroupId: string,
+  ) {
     dispatch({
       perkGroupReference: { categoryName, perkGroupId },
       type: 'open-perk-group-hover',
     })
-  }
+  }, [])
 
-  function openCategoryHover(categoryName: string) {
+  const openCategoryHover = useCallback(function openCategoryHover(categoryName: string) {
     dispatch({ categoryName, type: 'open-category-hover' })
-  }
+  }, [])
 
-  function closeCategoryHover(categoryName: string) {
+  const closeCategoryHover = useCallback(function closeCategoryHover(categoryName: string) {
     dispatch({ categoryName, type: 'clear-category-hover' })
-  }
+  }, [])
 
-  function closePerkGroupHover(perkGroupKey: string) {
+  const closePerkGroupHover = useCallback(function closePerkGroupHover(perkGroupKey: string) {
     dispatch({ perkGroupKey, type: 'close-perk-group-hover' })
-  }
+  }, [])
 
   useEffect(() => {
     if (state.hoveredBuildPerkTooltip === null || typeof window === 'undefined') {

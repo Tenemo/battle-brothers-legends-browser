@@ -9,6 +9,7 @@ import {
   ancientScrollIconPath,
   ancientScrollPerkGroupMarkerTestId,
 } from '../src/lib/ancient-scroll-perk-group-display'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 function renderBuildPerkGroupTile(
   perkGroupId: string,
@@ -22,39 +23,35 @@ function renderBuildPerkGroupTile(
   const onOpenPerkGroupHover = vi.fn()
 
   render(
-    <BuildPerkGroupTile
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={options.emphasizedPerkGroupKeys ?? new Set()}
-      selectedEmphasisCategoryNames={new Set()}
-      selectedEmphasisPerkGroupKeys={options.selectedEmphasisPerkGroupKeys ?? new Set()}
-      groupLabel="Vala Chant"
-      groupOptions={[
-        {
-          categoryName: 'Magic',
-          perkGroupIconPath: 'ui/perks/fire_circle.png',
-          perkGroupId,
-          perkGroupLabel: 'Vala Chant',
-        },
-      ]}
-      hoveredBuildPerkId={null}
-      hoveredBuildPerkTooltipId={undefined}
-      hoveredPerkId={null}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onClosePerkGroupHover={onClosePerkGroupHover}
-      onInspectPerk={vi.fn()}
-      onInspectPerkGroup={onInspectPerkGroup}
-      onOpenBuildPerkHover={vi.fn()}
-      onOpenBuildPerkTooltip={vi.fn()}
-      onOpenPerkGroupHover={onOpenPerkGroupHover}
-      perks={[
-        {
-          iconPath: 'ui/perks/sample_perk.png',
-          perkId: 'perk.legend_sample',
-          perkName: 'Sample perk',
-        },
-      ]}
-    />,
+    <PlannerInteractionTestProvider
+      interactionOverrides={{
+        closePerkGroupHover: onClosePerkGroupHover,
+        emphasizedPerkGroupKeys: new Set(options.emphasizedPerkGroupKeys ?? []),
+        openPerkGroupHover: onOpenPerkGroupHover,
+        selectedEmphasisPerkGroupKeys: new Set(options.selectedEmphasisPerkGroupKeys ?? []),
+      }}
+    >
+      <BuildPerkGroupTile
+        groupLabel="Vala Chant"
+        groupOptions={[
+          {
+            categoryName: 'Magic',
+            perkGroupIconPath: 'ui/perks/fire_circle.png',
+            perkGroupId,
+            perkGroupLabel: 'Vala Chant',
+          },
+        ]}
+        onInspectPerk={vi.fn()}
+        onInspectPerkGroup={onInspectPerkGroup}
+        perks={[
+          {
+            iconPath: 'ui/perks/sample_perk.png',
+            perkId: 'perk.legend_sample',
+            perkName: 'Sample perk',
+          },
+        ]}
+      />
+    </PlannerInteractionTestProvider>,
   )
 
   return {

@@ -2,12 +2,14 @@ import { type MouseEvent, useId, useRef, useState } from 'react'
 import { Check, CircleAlert, Copy, FolderOpen, RotateCcw } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import type { BuildPlannerGroupedPerkGroup } from '../lib/build-planner'
+import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
 import { getAnchoredTooltipStyle } from '../lib/perk-display'
 import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
-import type { HoveredBuildPerkTooltip } from '../lib/use-perk-interaction-state'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
-import type { LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPlannerBoard, BuildPlannerRequirementLegend } from './BuildPlannerBoard'
 import { ClearBuildConfirmationDialog } from './ClearBuildConfirmationDialog'
 import { SavedBuildsDialog } from './SavedBuildsDialog'
@@ -85,29 +87,16 @@ function BuildPlannerInfoButton() {
 }
 
 export function BuildPlanner({
-  buildPerkHighlightPerkGroupKeys,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
   hasActiveBackgroundFitSearch,
-  hoveredBuildPerk,
-  hoveredBuildPerkTooltip,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
   individualPerkGroups,
   isSavedBuildsLoading,
   onAddPerkToBuild,
   onClearBuild,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
   onCopySavedBuildLink,
   onDeleteSavedBuild,
   onInspectPerkGroup,
   onInspectPlannerPerk,
   onLoadSavedBuild,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
   onOverwriteSavedBuild,
   onRemovePickedPerk,
   onTogglePickedPerkOptional,
@@ -119,37 +108,18 @@ export function BuildPlanner({
   savedBuilds,
   savedBuildsErrorMessage,
   selectedBuildPlannerPerkId,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
   shareBuildStatus,
   sharedPerkGroups,
 }: {
-  buildPerkHighlightPerkGroupKeys: ReadonlySet<string>
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
   hasActiveBackgroundFitSearch: boolean
-  hoveredBuildPerk: LegendsPerkRecord | null
-  hoveredBuildPerkTooltip: HoveredBuildPerkTooltip | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
   individualPerkGroups: BuildPlannerGroupedPerkGroup[]
   isSavedBuildsLoading: boolean
   onClearBuild: () => void
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
   onCopySavedBuildLink: (savedBuildId: string) => Promise<void>
   onDeleteSavedBuild: (savedBuildId: string) => Promise<void>
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPlannerPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
   onLoadSavedBuild: (savedBuildId: string) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: PlannerPerkGroupSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOverwriteSavedBuild: (savedBuildId: string) => Promise<void>
   onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
   onRemovePickedPerk: (perkId: string) => void
@@ -162,11 +132,17 @@ export function BuildPlanner({
   savedBuilds: BuildPlannerSavedBuild[]
   savedBuildsErrorMessage: string | null
   selectedBuildPlannerPerkId: string | null
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   shareBuildStatus: 'copied' | 'error' | 'idle'
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }) {
+  const { hoveredBuildPerk, hoveredBuildPerkTooltip, hoveredBuildPerkTooltipId } =
+    usePlannerInteractionState()
+  const {
+    closeBuildPerkHover: onCloseBuildPerkHover,
+    closeBuildPerkTooltip: onCloseBuildPerkTooltip,
+    openBuildPerkHover: onOpenBuildPerkHover,
+    openBuildPerkTooltip: onOpenBuildPerkTooltip,
+  } = usePlannerInteractionActions()
   const hasPickedPerks = pickedPerks.length > 0
   const clearBuildButtonRef = useRef<HTMLButtonElement | null>(null)
   const savedBuildsDialogReturnFocusElementRef = useRef<HTMLButtonElement | null>(null)
@@ -316,25 +292,13 @@ export function BuildPlanner({
 
         <BuildPlannerBoard
           activeBuildPerkTooltipIndicatorPerkId={activeTooltipIndicatorPerkId}
-          buildPerkHighlightPerkGroupKeys={buildPerkHighlightPerkGroupKeys}
           clearPendingBuildPerkTooltip={clearPendingTooltip}
           closeBuildPerkTooltipPreview={closeTooltipPreview}
-          emphasizedCategoryNames={emphasizedCategoryNames}
-          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
-          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-          hoveredPerkId={hoveredPerkId}
           individualPerkGroups={individualPerkGroups}
           isIndividualPerkGroupsSectionExpanded={isIndividualPerkGroupsSectionExpanded}
           isSharedPerkGroupsSectionExpanded={isSharedPerkGroupsSectionExpanded}
-          onCloseBuildPerkHover={onCloseBuildPerkHover}
-          onCloseBuildPerkTooltip={onCloseBuildPerkTooltip}
-          onClosePerkGroupHover={onClosePerkGroupHover}
           onInspectPerkGroup={onInspectPerkGroup}
           onInspectPlannerPerk={onInspectPlannerPerk}
-          onOpenBuildPerkHover={onOpenBuildPerkHover}
-          onOpenBuildPerkTooltip={onOpenBuildPerkTooltip}
-          onOpenPerkGroupHover={onOpenPerkGroupHover}
           onRemovePickedPerk={onRemovePickedPerk}
           onTogglePickedPerkOptional={onTogglePickedPerkOptional}
           onToggleIndividualPerkGroupsSection={handleToggleIndividualPerkGroupsSection}
@@ -344,8 +308,6 @@ export function BuildPlanner({
           pickedPerks={pickedPerks}
           plannerBoardRef={plannerBoardRef}
           selectedBuildPlannerPerkId={selectedBuildPlannerPerkId}
-          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           sharedPerkGroups={sharedPerkGroups}
           suppressBuildPerkTooltipPreviewUntilPointerMove={suppressTooltipPreviewUntilPointerMove}
         />
@@ -378,6 +340,7 @@ export function BuildPlanner({
 
       {hoveredBuildPerk !== null && hoveredBuildPerkTooltip !== null ? (
         <div
+          aria-label={`${hoveredBuildPerk.perkName} build preview and actions`}
           className={styles.buildPerkTooltip}
           data-build-perk-tooltip="true"
           data-testid="build-perk-tooltip"
@@ -388,7 +351,7 @@ export function BuildPlanner({
             onCloseBuildPerkTooltip()
             onCloseBuildPerkHover(hoveredBuildPerk.id)
           }}
-          role="tooltip"
+          role="group"
           style={getAnchoredTooltipStyle(hoveredBuildPerkTooltip.anchorRectangle)}
         >
           <div className={styles.buildPerkTooltipAction} data-testid="build-perk-tooltip-action">

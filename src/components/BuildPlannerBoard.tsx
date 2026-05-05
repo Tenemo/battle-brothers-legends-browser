@@ -6,6 +6,10 @@ import type {
   BuildPlannerPerkGroupRequirementOption,
 } from '../lib/build-planner'
 import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
+import {
   formatPickedPerkCountLabel,
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
@@ -223,100 +227,45 @@ function PlannerSectionToggle({
 }
 
 function renderPlannerGroupCard({
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
   groupedPerkGroup,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
   keyPrefix,
-  onCloseHover,
-  onClosePerkGroupHover,
-  onCloseTooltip,
   onInspectPerkGroup,
   onInspectPerk,
-  onOpenHover,
-  onOpenTooltip,
-  onOpenPerkGroupHover,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
 }: {
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
   groupedPerkGroup: BuildPlannerGroupedPerkGroup
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
   keyPrefix: string
-  onCloseHover: (perkId: string) => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
-  onCloseTooltip: () => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
-  onOpenHover: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
-  onOpenTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: PlannerPerkGroupSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
 
   return (
     <BuildPerkGroupTile
-      emphasizedCategoryNames={emphasizedCategoryNames}
-      emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
       groupLabel={plannerGroupLabel}
       groupOptions={getPlannerGroupTileOptions(groupedPerkGroup.perkGroupOptions)}
-      hoveredBuildPerkId={hoveredBuildPerkId}
-      hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-      hoveredPerkId={hoveredPerkId}
       key={`${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`}
       metaLabel={formatPickedPerkCountLabel(groupedPerkGroup.perkNames.length)}
-      onCloseBuildPerkHover={onCloseHover}
-      onCloseBuildPerkTooltip={onCloseTooltip}
-      onClosePerkGroupHover={onClosePerkGroupHover}
       onInspectPerk={onInspectPerk}
       onInspectPerkGroup={onInspectPerkGroup}
-      onOpenBuildPerkHover={onOpenHover}
-      onOpenBuildPerkTooltip={onOpenTooltip}
-      onOpenPerkGroupHover={onOpenPerkGroupHover}
       perks={groupedPerkGroup.perkNames.map((perkName, perkIndex) => ({
         iconPath: groupedPerkGroup.perkIconPaths[perkIndex] ?? null,
         perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
         perkName,
       }))}
-      selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-      selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
     />
   )
 }
 
 export function BuildPlannerBoard({
   activeBuildPerkTooltipIndicatorPerkId,
-  buildPerkHighlightPerkGroupKeys,
   clearBuildPerkTooltipPointerPreviewSuppression,
   clearPendingBuildPerkTooltip,
   closeBuildPerkTooltipPreview,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
   individualPerkGroups,
   isIndividualPerkGroupsSectionExpanded,
   isSharedPerkGroupsSectionExpanded,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
   onInspectPerkGroup,
   onInspectPlannerPerk,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
   onRemovePickedPerk,
   onTogglePickedPerkOptional,
   onToggleIndividualPerkGroupsSection,
@@ -325,36 +274,18 @@ export function BuildPlannerBoard({
   pickedPerks,
   plannerBoardRef,
   selectedBuildPlannerPerkId,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
   sharedPerkGroups,
   suppressBuildPerkTooltipPreviewUntilPointerMove,
 }: {
   activeBuildPerkTooltipIndicatorPerkId: string | null
-  buildPerkHighlightPerkGroupKeys: ReadonlySet<string>
   clearBuildPerkTooltipPointerPreviewSuppression: () => void
   clearPendingBuildPerkTooltip: () => void
   closeBuildPerkTooltipPreview: (perkId: string, relatedTarget?: EventTarget | null) => void
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
   individualPerkGroups: BuildPlannerGroupedPerkGroup[]
   isIndividualPerkGroupsSectionExpanded: boolean
   isSharedPerkGroupsSectionExpanded: boolean
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
   onInspectPlannerPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: PlannerPerkGroupSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onRemovePickedPerk: (perkId: string) => void
   onTogglePickedPerkOptional: (perkId: string) => void
   onToggleIndividualPerkGroupsSection: () => void
@@ -367,11 +298,23 @@ export function BuildPlannerBoard({
   pickedPerks: BuildPlannerPickedPerk[]
   plannerBoardRef: RefObject<HTMLDivElement | null>
   selectedBuildPlannerPerkId: string | null
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
   suppressBuildPerkTooltipPreviewUntilPointerMove: () => void
 }) {
+  const {
+    buildPerkHighlightPerkGroupKeys,
+    emphasizedCategoryNames,
+    hoveredBuildPerk,
+    hoveredPerkId,
+    selectedEmphasisCategoryNames,
+    selectedEmphasisPerkGroupKeys,
+  } = usePlannerInteractionState()
+  const {
+    closeBuildPerkHover: onCloseBuildPerkHover,
+    closeBuildPerkTooltip: onCloseBuildPerkTooltip,
+    openBuildPerkHover: onOpenBuildPerkHover,
+  } = usePlannerInteractionActions()
+  const hoveredBuildPerkId = hoveredBuildPerk?.id ?? null
   const sharedPerkGroupsToggleId = useId()
   const sharedPerkGroupsSectionId = useId()
   const individualPerkGroupsToggleId = useId()
@@ -511,9 +454,6 @@ export function BuildPlannerBoard({
                     {!pickedPerk.isOptional ? <PlannerSlotRequirementChain /> : null}
                     {pickedPerk.isOptional ? <PlannerSlotRequirementOptional /> : null}
                     <button
-                      aria-describedby={
-                        hoveredBuildPerkId === pickedPerk.id ? hoveredBuildPerkTooltipId : undefined
-                      }
                       aria-label={`View ${pickedPerk.perkName} from build planner`}
                       className={styles.plannerSlotPerkInspect}
                       onClick={() => {
@@ -644,23 +584,10 @@ export function BuildPlannerBoard({
               <div className={styles.plannerGroupList} data-planner-collection="shared-groups">
                 {sharedPerkGroups.map((sharedPerkGroup) =>
                   renderPlannerGroupCard({
-                    emphasizedCategoryNames,
-                    emphasizedPerkGroupKeys,
                     groupedPerkGroup: sharedPerkGroup,
-                    hoveredBuildPerkId,
-                    hoveredBuildPerkTooltipId,
-                    hoveredPerkId,
                     keyPrefix: 'shared',
-                    onCloseHover: onCloseBuildPerkHover,
-                    onClosePerkGroupHover,
-                    onCloseTooltip: onCloseBuildPerkTooltip,
                     onInspectPerkGroup,
                     onInspectPerk: onInspectPlannerPerk,
-                    onOpenHover: onOpenBuildPerkHover,
-                    onOpenTooltip: onOpenBuildPerkTooltip,
-                    onOpenPerkGroupHover,
-                    selectedEmphasisCategoryNames,
-                    selectedEmphasisPerkGroupKeys,
                   }),
                 )}
               </div>
@@ -712,23 +639,10 @@ export function BuildPlannerBoard({
                 >
                   {individualPerkGroups.map((individualPerkGroup) =>
                     renderPlannerGroupCard({
-                      emphasizedCategoryNames,
-                      emphasizedPerkGroupKeys,
                       groupedPerkGroup: individualPerkGroup,
-                      hoveredBuildPerkId,
-                      hoveredBuildPerkTooltipId,
-                      hoveredPerkId,
                       keyPrefix: 'individual',
-                      onCloseHover: onCloseBuildPerkHover,
-                      onClosePerkGroupHover,
-                      onCloseTooltip: onCloseBuildPerkTooltip,
                       onInspectPerkGroup,
                       onInspectPerk: onInspectPlannerPerk,
-                      onOpenHover: onOpenBuildPerkHover,
-                      onOpenTooltip: onOpenBuildPerkTooltip,
-                      onOpenPerkGroupHover,
-                      selectedEmphasisCategoryNames,
-                      selectedEmphasisPerkGroupKeys,
                     }),
                   )}
                 </div>

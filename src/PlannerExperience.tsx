@@ -38,6 +38,7 @@ import {
   useInitialBuildPlannerUrlState,
   type BuildPlannerUrlHistoryWriteMode,
 } from './lib/use-build-planner-url-sync'
+import { PlannerInteractionProvider } from './lib/planner-interaction-context'
 import { usePerkInteractionState } from './lib/use-perk-interaction-state'
 import { useSavedBuilds } from './lib/use-saved-builds'
 import {
@@ -132,36 +133,13 @@ export function PlannerExperience() {
   const [detailHistoryState, setDetailHistoryState] = useState(() =>
     createInitialDetailHistoryState(initialUrlState),
   )
-  const {
-    clearAllHover,
-    clearBuildPerkTooltip,
-    clearPerkGroupHover,
-    clearPerkHover,
-    buildPerkHighlightPerkGroupKeys,
-    closeCategoryHover,
-    closeBuildPerkHover,
-    closeBuildPerkTooltip,
-    closePerkGroupHover,
-    closeResultsPerkHover,
-    emphasizedCategoryNames,
-    emphasizedPerkGroupKeys,
-    hoveredBuildPerk,
-    hoveredBuildPerkTooltip,
-    hoveredBuildPerkTooltipId,
-    hoveredPerkGroupKey,
-    hoveredPerkId,
-    openCategoryHover,
-    openBuildPerkHover,
-    openBuildPerkTooltip,
-    openPerkGroupHover,
-    openResultsPerkHover,
-    selectedEmphasisCategoryNames,
-    selectedEmphasisPerkGroupKeys,
-  } = usePerkInteractionState({
+  const plannerInteraction = usePerkInteractionState({
     allPerksById,
     selectedCategoryNames,
     selectedPerkGroupIdsByCategory,
   })
+  const { clearAllHover, clearBuildPerkTooltip, clearPerkGroupHover, clearPerkHover } =
+    plannerInteraction
   const [selectedPerkId, setSelectedPerkId] = useState<string | null>(() =>
     getSelectedPerkIdFromUrl(initialUrlState.detailSelection),
   )
@@ -831,31 +809,18 @@ export function PlannerExperience() {
   }, [activeDetailSelection, completedBackgroundFitView])
 
   return (
-    <>
+    <PlannerInteractionProvider interaction={plannerInteraction}>
       <BuildPlanner
         hasActiveBackgroundFitSearch={hasActiveBackgroundFitSearch}
-        buildPerkHighlightPerkGroupKeys={buildPerkHighlightPerkGroupKeys}
-        emphasizedCategoryNames={emphasizedCategoryNames}
-        emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-        hoveredBuildPerk={hoveredBuildPerk}
-        hoveredBuildPerkTooltip={hoveredBuildPerkTooltip}
-        hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-        hoveredPerkId={hoveredPerkId}
         individualPerkGroups={buildPlannerGroups.individualPerkGroups}
         isSavedBuildsLoading={isSavedBuildsLoading}
         onAddPerkToBuild={handleAddPickedPerk}
         onClearBuild={handleClearBuild}
-        onCloseBuildPerkHover={closeBuildPerkHover}
-        onCloseBuildPerkTooltip={closeBuildPerkTooltip}
-        onClosePerkGroupHover={closePerkGroupHover}
         onCopySavedBuildLink={handleCopySavedBuildLink}
         onDeleteSavedBuild={handleDeleteSavedBuild}
         onInspectPerkGroup={handleSelectBuildPlannerPerkGroup}
         onInspectPlannerPerk={handleInspectPlannerPerk}
         onLoadSavedBuild={handleLoadSavedBuild}
-        onOpenBuildPerkHover={openBuildPerkHover}
-        onOpenBuildPerkTooltip={openBuildPerkTooltip}
-        onOpenPerkGroupHover={openPerkGroupHover}
         onOverwriteSavedBuild={handleOverwriteSavedBuild}
         onRemovePickedPerk={handleRemovePickedPerk}
         onTogglePickedPerkOptional={handleTogglePickedPerkOptional}
@@ -866,8 +831,6 @@ export function PlannerExperience() {
         savedBuildPersistenceState={savedBuildPersistenceState}
         savedBuilds={savedBuildViews}
         savedBuildsErrorMessage={savedBuildsErrorMessage}
-        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
         selectedBuildPlannerPerkId={
           selectedDetailType === 'perk' && selectedPerk !== null ? selectedPerk.id : null
         }
@@ -886,12 +849,8 @@ export function PlannerExperience() {
           backgroundFitView={backgroundFitView}
           backgroundFitErrorMessage={backgroundFitErrorMessage}
           backgroundFitProgress={backgroundFitProgress}
-          hoveredPerkId={hoveredPerkId}
           isExpanded={isBackgroundFitPanelExpanded}
           isLoadingBackgroundFitView={isBackgroundFitViewLoading || isBackgroundFitProgressVisible}
-          onCloseBuildPerkHover={closeBuildPerkHover}
-          onCloseBuildPerkTooltip={closeBuildPerkTooltip}
-          onClearPerkGroupHover={clearPerkGroupHover}
           onSelectBackgroundFit={handleSelectBackgroundFit}
           onBackgroundStudyBookChange={handleBackgroundStudyBookChange}
           onBackgroundStudyScrollChange={handleBackgroundStudyScrollChange}
@@ -920,25 +879,12 @@ export function PlannerExperience() {
           selectedDetailType={selectedDetailType}
           selectedBackgroundFitDetail={selectedBackgroundFitDetail}
           detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
-          emphasizedCategoryNames={emphasizedCategoryNames}
-          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
           groupedBackgroundSources={groupedBackgroundSources}
-          hoveredBuildPerkId={hoveredBuildPerk?.id ?? null}
-          hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-          hoveredPerkId={hoveredPerkId}
-          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           mustHavePickedPerkIds={mustHavePickedPerkIds}
           onAddPerkToBuild={handleAddPickedPerk}
-          onCloseBuildPerkHover={closeBuildPerkHover}
-          onCloseBuildPerkTooltip={closeBuildPerkTooltip}
-          onClosePerkGroupHover={closePerkGroupHover}
           onInspectPerk={handleInspectPlannerPerk}
           onInspectPerkGroup={handleInspectPerkGroup}
           onNavigateDetailHistory={handleNavigateDetailHistory}
-          onOpenBuildPerkHover={openBuildPerkHover}
-          onOpenBuildPerkTooltip={openBuildPerkTooltip}
-          onOpenPerkGroupHover={openPerkGroupHover}
           onRemovePerkFromBuild={handleRemovePickedPerk}
           optionalPickedPerkIds={optionalPickedPerkIds}
           mustHavePickedPerkCount={mustHavePickedPerks.length}
@@ -955,24 +901,15 @@ export function PlannerExperience() {
         />
 
         <PerkResults
-          emphasizedCategoryNames={emphasizedCategoryNames}
-          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-          hoveredPerkId={hoveredPerkId}
-          onClosePerkGroupHover={closePerkGroupHover}
-          onCloseResultsPerkHover={closeResultsPerkHover}
           onAncientScrollPerkGroupsChange={handleAncientScrollPerkGroupsChange}
           onInspectPerkGroup={handleInspectPerkGroup}
           onOriginPerkGroupsChange={handleOriginPerkGroupsChange}
-          onOpenPerkGroupHover={openPerkGroupHover}
-          onOpenResultsPerkHover={openResultsPerkHover}
           onAddPerkToBuild={handleAddPickedPerk}
           onRemovePerkFromBuild={handleRemovePickedPerk}
           onSelectPerk={handleSelectPerk}
           pickedPerkRequirementById={pickedPerkRequirementById}
           query={query}
           selectedPerk={selectedPerk}
-          selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
-          selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
           setQuery={handlePerkSearchChange}
           shouldIncludeAncientScrollPerkGroups={shouldIncludeAncientScrollPerkGroups}
           shouldIncludeOriginPerkGroups={shouldIncludeOriginPerkGroups}
@@ -988,17 +925,10 @@ export function PlannerExperience() {
           displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
           expandedCategoryNames={expandedCategoryNames}
           categoryCounts={categoryCounts}
-          emphasizedCategoryNames={emphasizedCategoryNames}
-          emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
-          hoveredPerkGroupKey={hoveredPerkGroupKey}
           isExpanded={isCategorySidebarExpanded}
           onCategoryExpandToggle={handleCategoryExpandToggle}
           onCategoryToggle={handleCategoryToggle}
           onClearCategorySelection={handleClearCategorySelection}
-          onCloseCategoryHover={closeCategoryHover}
-          onClosePerkGroupHover={closePerkGroupHover}
-          onOpenCategoryHover={openCategoryHover}
-          onOpenPerkGroupHover={openPerkGroupHover}
           onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
           onPerkGroupSelect={handlePerkGroupSelect}
           onSelectAllCategories={handleSelectAllCategories}
@@ -1010,6 +940,6 @@ export function PlannerExperience() {
           selectedPerkGroupIdsByCategory={selectedPerkGroupIdsByCategory}
         />
       </main>
-    </>
+    </PlannerInteractionProvider>
   )
 }

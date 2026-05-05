@@ -16,6 +16,7 @@ import {
 } from '../src/lib/background-study-resource-display'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 type TestChanceCalculationTerm = Omit<
   BackgroundFitChanceCalculation['successfulNativeOutcomeProbabilityTerms'][number],
@@ -301,26 +302,13 @@ function createDetailPanelProps({
       next: false,
       previous: false,
     },
-    emphasizedCategoryNames: new Set(),
-    emphasizedPerkGroupKeys: new Set(),
-    selectedEmphasisCategoryNames: new Set(),
-    selectedEmphasisPerkGroupKeys: new Set(),
     groupedBackgroundSources: [],
-    hoveredBuildPerkId: null,
-    hoveredBuildPerkTooltipId: undefined,
-    hoveredPerkId: null,
     mustHavePickedPerkCount,
     mustHavePickedPerkIds,
     onAddPerkToBuild: vi.fn(),
-    onCloseBuildPerkHover: vi.fn(),
-    onCloseBuildPerkTooltip: vi.fn(),
-    onClosePerkGroupHover: vi.fn(),
     onInspectPerk,
     onInspectPerkGroup,
     onNavigateDetailHistory: vi.fn(),
-    onOpenBuildPerkHover: vi.fn(),
-    onOpenBuildPerkTooltip: vi.fn(),
-    onOpenPerkGroupHover: vi.fn(),
     onRemovePerkFromBuild: vi.fn(),
     optionalPickedPerkCount,
     optionalPickedPerkIds,
@@ -332,13 +320,21 @@ function createDetailPanelProps({
   }
 }
 
+function createDetailPanelElement(options: Parameters<typeof createDetailPanelProps>[0] = {}) {
+  return (
+    <PlannerInteractionTestProvider>
+      <DetailPanel {...createDetailPanelProps(options)} />
+    </PlannerInteractionTestProvider>
+  )
+}
+
 function renderSelectedBackgroundFitDetail(
   options: Parameters<typeof createDetailPanelProps>[0] = {},
 ) {
   const onInspectPerk = options.onInspectPerk ?? vi.fn()
   const onInspectPerkGroup = options.onInspectPerkGroup ?? vi.fn()
   const renderResult = render(
-    <DetailPanel {...createDetailPanelProps({ ...options, onInspectPerk, onInspectPerkGroup })} />,
+    createDetailPanelElement({ ...options, onInspectPerk, onInspectPerkGroup }),
   )
 
   return {
@@ -514,9 +510,7 @@ describe('background details study resources', () => {
     expect(screen.getByText('Daily cost:')).toBeVisible()
 
     renderResult.rerender(
-      <DetailPanel
-        {...createDetailPanelProps({ selectedBackgroundFitDetail: alternateBackgroundFit })}
-      />,
+      createDetailPanelElement({ selectedBackgroundFitDetail: alternateBackgroundFit }),
     )
 
     expect(screen.getByRole('button', { name: 'Background details' })).toHaveAttribute(
@@ -526,20 +520,16 @@ describe('background details study resources', () => {
     expect(screen.getByText('8')).toBeVisible()
 
     renderResult.rerender(
-      <DetailPanel
-        {...createDetailPanelProps({
-          selectedBackgroundFitDetail: null,
-          selectedDetailType: 'perk',
-          selectedPerkDetail: selectedPerk,
-        })}
-      />,
+      createDetailPanelElement({
+        selectedBackgroundFitDetail: null,
+        selectedDetailType: 'perk',
+        selectedPerkDetail: selectedPerk,
+      }),
     )
 
     expect(screen.getByRole('heading', { name: 'Clarity' })).toBeVisible()
 
-    renderResult.rerender(
-      <DetailPanel {...createDetailPanelProps({ selectedBackgroundFitDetail: backgroundFit })} />,
-    )
+    renderResult.rerender(createDetailPanelElement({ selectedBackgroundFitDetail: backgroundFit }))
 
     expect(screen.getByRole('button', { name: 'Background details' })).toHaveAttribute(
       'aria-expanded',
@@ -608,9 +598,7 @@ describe('background details study resources', () => {
     expect(traitTooltip).toHaveTextContent('Afraid of walking dead.')
 
     renderResult.rerender(
-      <DetailPanel
-        {...createDetailPanelProps({ selectedBackgroundFitDetail: alternateBackgroundFit })}
-      />,
+      createDetailPanelElement({ selectedBackgroundFitDetail: alternateBackgroundFit }),
     )
 
     await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument())

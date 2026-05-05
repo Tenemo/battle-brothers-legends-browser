@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { DetailPanel } from '../src/components/DetailPanel'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 const devastatingStrikes = {
   backgroundSources: [],
@@ -19,46 +20,35 @@ const devastatingStrikes = {
 
 function renderDetailPanel(selectedPerk: LegendsPerkRecord) {
   render(
-    <DetailPanel
-      selectedDetailType="perk"
-      selectedBackgroundFitDetail={null}
-      detailHistoryNavigationAvailability={{
-        next: false,
-        previous: false,
-      }}
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
-      selectedEmphasisCategoryNames={new Set()}
-      selectedEmphasisPerkGroupKeys={new Set()}
-      groupedBackgroundSources={[]}
-      hoveredBuildPerkId={null}
-      hoveredBuildPerkTooltipId={undefined}
-      hoveredPerkId={null}
-      mustHavePickedPerkCount={0}
-      mustHavePickedPerkIds={[]}
-      onAddPerkToBuild={vi.fn()}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onClosePerkGroupHover={vi.fn()}
-      onInspectPerk={vi.fn()}
-      onInspectPerkGroup={vi.fn()}
-      onNavigateDetailHistory={vi.fn()}
-      onOpenBuildPerkHover={vi.fn()}
-      onOpenBuildPerkTooltip={vi.fn()}
-      onOpenPerkGroupHover={vi.fn()}
-      onRemovePerkFromBuild={vi.fn()}
-      optionalPickedPerkCount={0}
-      optionalPickedPerkIds={[]}
-      pickedPerkCount={0}
-      selectedPerkRequirement={null}
-      selectedPerk={selectedPerk}
-      studyResourceFilter={{
-        shouldAllowBook: true,
-        shouldAllowScroll: true,
-        shouldAllowSecondScroll: false,
-      }}
-      supportedBuildTargetPerkGroups={[]}
-    />,
+    <PlannerInteractionTestProvider>
+      <DetailPanel
+        selectedDetailType="perk"
+        selectedBackgroundFitDetail={null}
+        detailHistoryNavigationAvailability={{
+          next: false,
+          previous: false,
+        }}
+        groupedBackgroundSources={[]}
+        mustHavePickedPerkCount={0}
+        mustHavePickedPerkIds={[]}
+        onAddPerkToBuild={vi.fn()}
+        onInspectPerk={vi.fn()}
+        onInspectPerkGroup={vi.fn()}
+        onNavigateDetailHistory={vi.fn()}
+        onRemovePerkFromBuild={vi.fn()}
+        optionalPickedPerkCount={0}
+        optionalPickedPerkIds={[]}
+        pickedPerkCount={0}
+        selectedPerkRequirement={null}
+        selectedPerk={selectedPerk}
+        studyResourceFilter={{
+          shouldAllowBook: true,
+          shouldAllowScroll: true,
+          shouldAllowSecondScroll: false,
+        }}
+        supportedBuildTargetPerkGroups={[]}
+      />
+    </PlannerInteractionTestProvider>,
   )
 }
 
