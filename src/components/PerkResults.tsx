@@ -1,8 +1,8 @@
-import { startTransition, useEffect, useId, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import type { ComputeItemKey, VirtuosoHandle } from 'react-virtuoso'
 import {
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
-  formatMorePerkResultsLabel,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
@@ -22,25 +22,47 @@ import {
   FunnelIcon,
   type BuildRequirement,
 } from './SharedControls'
+import { VirtualizedList } from './VirtualizedList'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
 
-const mobilePerkResultBatchSize = 12
-const desktopInitialPerkResultBatchSize = 24
-const desktopPerkResultBatchSize = 48
-const desktopPerkResultBatchDelayMs = 250
 const mobilePerkResultMediaQuery = '(max-width: 760px)'
+const perkResultDefaultItemHeight = 244
+const perkResultInitialItemCount = 18
+const perkResultViewportIncrease = {
+  bottom: 1800,
+  top: 1200,
+} as const
+const perkResultMinimumOverscanItemCount = {
+  bottom: 8,
+  top: 5,
+} as const
+const perkResultOverscan = {
+  main: 720,
+  reverse: 420,
+} as const
 const perkFilterTooltips = {
   ancientScrollPerks: 'Shows perk groups that are only available through ancient scroll sources.',
   originPerkGroups: 'Shows perk groups that come only from origins and are hidden by default.',
 } as const
 
-function getInitialShouldUseDesktopPerkResultWindow(): boolean {
+const getPerkResultItemKey: ComputeItemKey<LegendsPerkRecord, unknown> = (_index, perk) => perk.id
+
+function getInitialShouldUseWindowPerkResultScroll(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return false
   }
 
-  return !window.matchMedia(mobilePerkResultMediaQuery).matches
+  return window.matchMedia(mobilePerkResultMediaQuery).matches
+}
+
+function getEstimatedPerkResultHeight(perk: LegendsPerkRecord): number {
+  const previewTextLength = getPerkPreviewParagraphs(perk).join(' ').length
+  const placementLineCount = Math.max(1, Math.ceil(perk.placements.length / 3))
+  const previewLineCount = Math.ceil(previewTextLength / 82)
+  const estimatedHeight = 116 + placementLineCount * 31 + previewLineCount * 22
+
+  return Math.min(460, Math.max(142, estimatedHeight))
 }
 
 function renderPerkPlacementChip({
@@ -177,6 +199,150 @@ function renderPerkPlacements({
   )
 }
 
+const PerkResultRow = memo(function PerkResultRow({
+  emphasizedCategoryNames,
+  emphasizedPerkGroupKeys,
+  hoveredPerkId,
+  hoveredPerkPlacementCategoryNames,
+  hoveredPerkPlacementPerkGroupKeys,
+  onAddPerkToBuild,
+  onClosePerkGroupHover,
+  onCloseResultsPerkHover,
+  onInspectPerkGroup,
+  onOpenPerkGroupHover,
+  onOpenResultsPerkHover,
+  onRemovePerkFromBuild,
+  onSelectPerk,
+  perk,
+  pickedRequirement,
+  query,
+  selectedEmphasisCategoryNames,
+  selectedEmphasisPerkGroupKeys,
+  selectedPerkId,
+}: {
+  emphasizedCategoryNames: ReadonlySet<string>
+  emphasizedPerkGroupKeys: ReadonlySet<string>
+  hoveredPerkId: string | null
+  hoveredPerkPlacementCategoryNames: ReadonlySet<string>
+  hoveredPerkPlacementPerkGroupKeys: ReadonlySet<string>
+  onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
+  onClosePerkGroupHover: (perkGroupKey: string) => void
+  onCloseResultsPerkHover: (perkId: string) => void
+  onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
+  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
+  onOpenResultsPerkHover: (perkId: string) => void
+  onRemovePerkFromBuild: (perkId: string) => void
+  onSelectPerk: (perkId: string) => void
+  perk: LegendsPerkRecord
+  pickedRequirement: BuildRequirement | null
+  query: string
+  selectedEmphasisCategoryNames: ReadonlySet<string>
+  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
+  selectedPerkId: string | null
+}) {
+  const isSelected = perk.id === selectedPerkId
+  const isPicked = pickedRequirement !== null
+  const isHighlighted = hoveredPerkId === perk.id
+  const previewParagraphs = getPerkPreviewParagraphs(perk)
+
+  return (
+    <div
+      className={styles.perkRow}
+      data-highlighted={isHighlighted}
+      data-picked={isPicked}
+      data-selected={isSelected}
+      data-testid="perk-row"
+      onBlurCapture={(event) => {
+        if (
+          event.relatedTarget instanceof Node &&
+          event.currentTarget.contains(event.relatedTarget)
+        ) {
+          return
+        }
+
+        onCloseResultsPerkHover(perk.id)
+      }}
+      onFocusCapture={() => onOpenResultsPerkHover(perk.id)}
+      onMouseEnter={() => onOpenResultsPerkHover(perk.id)}
+      onMouseLeave={() => onCloseResultsPerkHover(perk.id)}
+    >
+      <button
+        aria-label={`Inspect ${perk.perkName}`}
+        className={styles.perkRowSelect}
+        onClick={() => onSelectPerk(perk.id)}
+        type="button"
+      />
+      <div className={styles.perkRowLayout}>
+        {renderGameIcon({
+          className: joinClassNames(
+            sharedStyles.perkIcon,
+            sharedStyles.perkIconSmall,
+            styles.perkRowIcon,
+          ),
+          imageWidth: gameIconImageWidths.row,
+          iconPath: getPerkDisplayIconPath(perk),
+          label: `${perk.perkName} icon`,
+          testId: 'perk-row-icon',
+        })}
+        <div className={styles.perkRowCopy}>
+          <div className={styles.perkRowTopline}>
+            <span className={styles.perkName} data-testid="perk-name">
+              {renderHighlightedText({
+                highlightClassName: sharedStyles.searchHighlight,
+                keyPrefix: `${perk.id}-name`,
+                query,
+                text: perk.perkName,
+              })}
+            </span>
+          </div>
+        </div>
+        <div className={styles.perkRowContextSlot}>
+          <div
+            className={joinClassNames(styles.perkContext, styles.perkPlacementList)}
+            data-testid="perk-placement-list"
+          >
+            {renderPerkPlacements({
+              emphasizedCategoryNames,
+              emphasizedPerkGroupKeys,
+              hoveredPerkPlacementCategoryNames,
+              hoveredPerkPlacementPerkGroupKeys,
+              onClosePerkGroupHover,
+              onInspectPerkGroup,
+              onOpenPerkGroupHover,
+              perk,
+              query,
+              selectedEmphasisCategoryNames,
+              selectedEmphasisPerkGroupKeys,
+            })}
+          </div>
+          <div className={styles.perkPreview} data-testid="perk-preview">
+            {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
+              <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
+                {renderHighlightedText({
+                  highlightClassName: sharedStyles.searchHighlight,
+                  keyPrefix: `${perk.id}-preview-${previewParagraphIndex}`,
+                  query,
+                  text: previewParagraph,
+                })}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+      <BuildToggleButton
+        className={styles.buildToggleButtonInRow}
+        isCompact
+        onAddMustHave={() => onAddPerkToBuild(perk.id, 'must-have')}
+        onAddOptional={() => onAddPerkToBuild(perk.id, 'optional')}
+        onRemove={() => onRemovePerkFromBuild(perk.id)}
+        pickedRequirement={pickedRequirement}
+        perkName={perk.perkName}
+        source="results"
+      />
+    </div>
+  )
+})
+
 export function PerkResults({
   onAddPerkToBuild,
   onAncientScrollPerkGroupsChange,
@@ -226,89 +392,78 @@ export function PerkResults({
     openResultsPerkHover: onOpenResultsPerkHover,
   } = usePlannerInteractionActions()
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
-  const [shouldUseDesktopPerkResultWindow, setShouldUseDesktopPerkResultWindow] = useState(
-    getInitialShouldUseDesktopPerkResultWindow,
+  const [shouldUseWindowPerkResultScroll, setShouldUseWindowPerkResultScroll] = useState(
+    getInitialShouldUseWindowPerkResultScroll,
   )
-  const [mobilePerkResultWindow, setMobilePerkResultWindow] = useState({
-    resultSetKey: '',
-    visiblePerkCount: mobilePerkResultBatchSize,
-  })
-  const [desktopPerkResultWindow, setDesktopPerkResultWindow] = useState({
-    resultSetKey: '',
-    visiblePerkCount: desktopInitialPerkResultBatchSize,
-  })
   const perkFilterMenuId = useId()
   const perkFilterMenuRef = useRef<HTMLDivElement | null>(null)
-  const resultsListRef = useRef<HTMLUListElement | null>(null)
-  const effectiveMobileVisiblePerkCount =
-    mobilePerkResultWindow.resultSetKey === visiblePerkResultSetKey
-      ? mobilePerkResultWindow.visiblePerkCount
-      : mobilePerkResultBatchSize
-  const effectiveDesktopVisiblePerkCount =
-    desktopPerkResultWindow.resultSetKey === visiblePerkResultSetKey
-      ? desktopPerkResultWindow.visiblePerkCount
-      : desktopInitialPerkResultBatchSize
-  const displayedPerkCount = shouldUseDesktopPerkResultWindow
-    ? effectiveDesktopVisiblePerkCount
-    : effectiveMobileVisiblePerkCount
-  const displayedPerks = visiblePerks.slice(0, displayedPerkCount)
-  const hiddenMobilePerkCount = !shouldUseDesktopPerkResultWindow
-    ? Math.max(visiblePerks.length - displayedPerks.length, 0)
-    : 0
+  const resultsListRef = useRef<HTMLElement | null>(null)
+  const resultsListVirtuosoRef = useRef<VirtuosoHandle | null>(null)
+  const perkResultHeightEstimates = useMemo(
+    () => visiblePerks.map(getEstimatedPerkResultHeight),
+    [visiblePerks],
+  )
   const hasActivePerkSourceFilter =
     shouldIncludeOriginPerkGroups || shouldIncludeAncientScrollPerkGroups
-  const nextMobilePerkResultBatchSize = Math.min(mobilePerkResultBatchSize, hiddenMobilePerkCount)
+  const emptyPerkResults = useMemo(
+    () => (
+      <div className={sharedStyles.emptyState} data-testid="empty-state" role="listitem">
+        <h2>No perks found</h2>
+        <p>Try a broader search or switch the category filters.</p>
+      </div>
+    ),
+    [],
+  )
 
-  function handleShowMoreMobilePerkResults() {
-    setMobilePerkResultWindow({
-      resultSetKey: visiblePerkResultSetKey,
-      visiblePerkCount: Math.min(
-        effectiveMobileVisiblePerkCount + mobilePerkResultBatchSize,
-        visiblePerks.length,
-      ),
-    })
-  }
+  const setResultsListScrollerRef = useCallback((ref: HTMLElement | null | Window) => {
+    resultsListRef.current = ref instanceof HTMLElement ? ref : null
+  }, [])
 
-  useEffect(() => {
-    if (
-      !shouldUseDesktopPerkResultWindow ||
-      effectiveDesktopVisiblePerkCount >= visiblePerks.length
-    ) {
-      return
-    }
-
-    const desktopPerkResultBatchTimeout = window.setTimeout(() => {
-      startTransition(() => {
-        setDesktopPerkResultWindow((currentDesktopPerkResultWindow) => {
-          const currentDesktopVisiblePerkCount =
-            currentDesktopPerkResultWindow.resultSetKey === visiblePerkResultSetKey
-              ? currentDesktopPerkResultWindow.visiblePerkCount
-              : desktopInitialPerkResultBatchSize
-
-          if (currentDesktopVisiblePerkCount >= visiblePerks.length) {
-            return currentDesktopPerkResultWindow
-          }
-
-          return {
-            resultSetKey: visiblePerkResultSetKey,
-            visiblePerkCount: Math.min(
-              currentDesktopVisiblePerkCount + desktopPerkResultBatchSize,
-              visiblePerks.length,
-            ),
-          }
-        })
-      })
-    }, desktopPerkResultBatchDelayMs)
-
-    return () => {
-      window.clearTimeout(desktopPerkResultBatchTimeout)
-    }
-  }, [
-    effectiveDesktopVisiblePerkCount,
-    shouldUseDesktopPerkResultWindow,
-    visiblePerkResultSetKey,
-    visiblePerks.length,
-  ])
+  const renderPerkResult = useCallback(
+    (_index: number, perk: LegendsPerkRecord) => (
+      <PerkResultRow
+        emphasizedCategoryNames={emphasizedCategoryNames}
+        emphasizedPerkGroupKeys={emphasizedPerkGroupKeys}
+        hoveredPerkId={hoveredPerkId}
+        hoveredPerkPlacementCategoryNames={hoveredPerkPlacementCategoryNames}
+        hoveredPerkPlacementPerkGroupKeys={hoveredPerkPlacementPerkGroupKeys}
+        onAddPerkToBuild={onAddPerkToBuild}
+        onClosePerkGroupHover={onClosePerkGroupHover}
+        onCloseResultsPerkHover={onCloseResultsPerkHover}
+        onInspectPerkGroup={onInspectPerkGroup}
+        onOpenPerkGroupHover={onOpenPerkGroupHover}
+        onOpenResultsPerkHover={onOpenResultsPerkHover}
+        onRemovePerkFromBuild={onRemovePerkFromBuild}
+        onSelectPerk={onSelectPerk}
+        perk={perk}
+        pickedRequirement={pickedPerkRequirementById.get(perk.id) ?? null}
+        query={query}
+        selectedEmphasisCategoryNames={selectedEmphasisCategoryNames}
+        selectedEmphasisPerkGroupKeys={selectedEmphasisPerkGroupKeys}
+        selectedPerkId={selectedPerk?.id ?? null}
+      />
+    ),
+    [
+      emphasizedCategoryNames,
+      emphasizedPerkGroupKeys,
+      hoveredPerkId,
+      hoveredPerkPlacementCategoryNames,
+      hoveredPerkPlacementPerkGroupKeys,
+      onAddPerkToBuild,
+      onClosePerkGroupHover,
+      onCloseResultsPerkHover,
+      onInspectPerkGroup,
+      onOpenPerkGroupHover,
+      onOpenResultsPerkHover,
+      onRemovePerkFromBuild,
+      onSelectPerk,
+      pickedPerkRequirementById,
+      query,
+      selectedEmphasisCategoryNames,
+      selectedEmphasisPerkGroupKeys,
+      selectedPerk,
+    ],
+  )
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -317,7 +472,7 @@ export function PerkResults({
 
     const mobilePerkResultMediaQueryList = window.matchMedia(mobilePerkResultMediaQuery)
     function handleMobilePerkResultMediaChange(event: { matches: boolean }) {
-      setShouldUseDesktopPerkResultWindow(!event.matches)
+      setShouldUseWindowPerkResultScroll(event.matches)
     }
 
     handleMobilePerkResultMediaChange(mobilePerkResultMediaQueryList)
@@ -353,6 +508,10 @@ export function PerkResults({
 
   useEffect(() => {
     const resultsList = resultsListRef.current
+
+    resultsListVirtuosoRef.current?.scrollTo({
+      top: 0,
+    })
 
     if (resultsList === null) {
       return
@@ -452,139 +611,26 @@ export function PerkResults({
         />
       </div>
 
-      <ul
-        className={joinClassNames(styles.resultsList, 'app-scrollbar')}
-        data-scroll-container="true"
-        data-testid="results-list"
-        ref={resultsListRef}
-      >
-        {visiblePerks.length === 0 ? (
-          <li className={sharedStyles.emptyState} data-testid="empty-state">
-            <h2>No perks found</h2>
-            <p>Try a broader search or switch the category filters.</p>
-          </li>
-        ) : (
-          <>
-            {displayedPerks.map((perk) => {
-              const isSelected = perk.id === selectedPerk?.id
-              const pickedRequirement = pickedPerkRequirementById.get(perk.id) ?? null
-              const isPicked = pickedRequirement !== null
-              const isHighlighted = hoveredPerkId === perk.id
-              const previewParagraphs = getPerkPreviewParagraphs(perk)
-
-              return (
-                <li
-                  className={styles.perkRow}
-                  data-highlighted={isHighlighted}
-                  data-picked={isPicked}
-                  data-selected={isSelected}
-                  data-testid="perk-row"
-                  key={perk.id}
-                  onBlurCapture={(event) => {
-                    if (
-                      event.relatedTarget instanceof Node &&
-                      event.currentTarget.contains(event.relatedTarget)
-                    ) {
-                      return
-                    }
-
-                    onCloseResultsPerkHover(perk.id)
-                  }}
-                  onFocusCapture={() => onOpenResultsPerkHover(perk.id)}
-                  onMouseEnter={() => onOpenResultsPerkHover(perk.id)}
-                  onMouseLeave={() => onCloseResultsPerkHover(perk.id)}
-                >
-                  <button
-                    aria-label={`Inspect ${perk.perkName}`}
-                    className={styles.perkRowSelect}
-                    onClick={() => onSelectPerk(perk.id)}
-                    type="button"
-                  />
-                  <div className={styles.perkRowLayout}>
-                    {renderGameIcon({
-                      className: joinClassNames(
-                        sharedStyles.perkIcon,
-                        sharedStyles.perkIconSmall,
-                        styles.perkRowIcon,
-                      ),
-                      imageWidth: gameIconImageWidths.row,
-                      iconPath: getPerkDisplayIconPath(perk),
-                      label: `${perk.perkName} icon`,
-                      testId: 'perk-row-icon',
-                    })}
-                    <div className={styles.perkRowCopy}>
-                      <div className={styles.perkRowTopline}>
-                        <span className={styles.perkName} data-testid="perk-name">
-                          {renderHighlightedText({
-                            highlightClassName: sharedStyles.searchHighlight,
-                            keyPrefix: `${perk.id}-name`,
-                            query,
-                            text: perk.perkName,
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                    <div className={styles.perkRowContextSlot}>
-                      <div
-                        className={joinClassNames(styles.perkContext, styles.perkPlacementList)}
-                        data-testid="perk-placement-list"
-                      >
-                        {renderPerkPlacements({
-                          emphasizedCategoryNames,
-                          emphasizedPerkGroupKeys,
-                          hoveredPerkPlacementCategoryNames,
-                          hoveredPerkPlacementPerkGroupKeys,
-                          onClosePerkGroupHover,
-                          onInspectPerkGroup,
-                          onOpenPerkGroupHover,
-                          perk,
-                          query,
-                          selectedEmphasisCategoryNames,
-                          selectedEmphasisPerkGroupKeys,
-                        })}
-                      </div>
-                      <div className={styles.perkPreview} data-testid="perk-preview">
-                        {previewParagraphs.map((previewParagraph, previewParagraphIndex) => (
-                          <p key={`${perk.id}-preview-${previewParagraphIndex}`}>
-                            {renderHighlightedText({
-                              highlightClassName: sharedStyles.searchHighlight,
-                              keyPrefix: `${perk.id}-preview-${previewParagraphIndex}`,
-                              query,
-                              text: previewParagraph,
-                            })}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  <BuildToggleButton
-                    className={styles.buildToggleButtonInRow}
-                    isCompact
-                    onAddMustHave={() => onAddPerkToBuild(perk.id, 'must-have')}
-                    onAddOptional={() => onAddPerkToBuild(perk.id, 'optional')}
-                    onRemove={() => onRemovePerkFromBuild(perk.id)}
-                    pickedRequirement={pickedRequirement}
-                    perkName={perk.perkName}
-                    source="results"
-                  />
-                </li>
-              )
-            })}
-            {hiddenMobilePerkCount > 0 ? (
-              <li className={styles.showMoreResultsItem}>
-                <button
-                  className={styles.showMoreResultsButton}
-                  data-testid="show-more-results-button"
-                  onClick={handleShowMoreMobilePerkResults}
-                  type="button"
-                >
-                  {formatMorePerkResultsLabel(nextMobilePerkResultBatchSize)}
-                </button>
-              </li>
-            ) : null}
-          </>
-        )}
-      </ul>
+      <VirtualizedList
+        className={joinClassNames(styles.resultsListScroller, 'app-scrollbar')}
+        computeItemKey={getPerkResultItemKey}
+        data={visiblePerks}
+        defaultItemHeight={perkResultDefaultItemHeight}
+        emptyPlaceholder={emptyPerkResults}
+        heightEstimates={perkResultHeightEstimates}
+        increaseViewportBy={perkResultViewportIncrease}
+        initialItemCount={perkResultInitialItemCount}
+        itemClassName={styles.resultsListItem}
+        itemContent={renderPerkResult}
+        listClassName={styles.resultsList}
+        minOverscanItemCount={perkResultMinimumOverscanItemCount}
+        overscan={perkResultOverscan}
+        scrollerRef={setResultsListScrollerRef}
+        style={shouldUseWindowPerkResultScroll ? undefined : { height: '100%' }}
+        testId="results-list"
+        useWindowScroll={shouldUseWindowPerkResultScroll}
+        virtuosoRef={resultsListVirtuosoRef}
+      />
     </section>
   )
 }

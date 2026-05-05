@@ -2,8 +2,10 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   backgroundFitCalculationTimeoutMs,
+  collectVirtualizedTextContentInScrollContainer,
   enableCategory,
   expectBackgroundFitCalculationComplete,
+  expectLocatorVisibleInVirtualizedScrollContainer,
   expectViewportLocked,
   getBackgroundFitPanel,
   getGameIconImageCdnSrcPattern,
@@ -771,6 +773,12 @@ test('filters the background fit list with the background search field', async (
   await expectBackgroundFitCalculationComplete(backgroundFitPanel, {
     shouldObserveProgress: true,
   })
+  await expectLocatorVisibleInVirtualizedScrollContainer({
+    label: 'Oathtaker background fit card',
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    target: oathtakerCard,
+  })
   await expect(
     oathtakerCard.getByTestId('background-fit-summary-value').filter({ hasText: '0.3/1' }),
   ).toBeVisible()
@@ -883,10 +891,8 @@ test('filters the background fit list with the background search field', async (
     })
     .toBe(true)
   await expect
-    .poll(async () =>
-      backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
-    )
-    .toBeLessThanOrEqual(1)
+    .poll(async () => backgroundFitPanelBody.evaluate((element) => element.scrollHeight))
+    .toBeLessThanOrEqual(220)
   await expect(
     backgroundFitPanel.getByRole('button', {
       name: 'Inspect background Apprentice',
@@ -919,6 +925,7 @@ test('positions veteran interval pills at the bottom right without reserving tab
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const oathtakerCard = backgroundFitPanel
     .getByTestId('background-fit-card')
     .filter({ hasText: 'Oathtaker' })
@@ -927,7 +934,12 @@ test('positions veteran interval pills at the bottom right without reserving tab
   await expectBackgroundFitCalculationComplete(backgroundFitPanel, {
     shouldObserveProgress: true,
   })
-  await expect(oathtakerCard).toBeVisible()
+  await expectLocatorVisibleInVirtualizedScrollContainer({
+    label: 'Oathtaker background fit card',
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    target: oathtakerCard,
+  })
 
   const veteranBadgeMetrics = await oathtakerCard.evaluate((card) => {
     const trigger = card.querySelector('button')
@@ -1135,8 +1147,18 @@ test('filters origin backgrounds from the background search menu', async ({ page
     const sharedFilterBackgroundsButton = sharedBackgroundFitPanel.getByRole('button', {
       name: 'Filter backgrounds',
     })
+    const sharedBackgroundFitPanelBody = sharedBackgroundFitPanel.getByTestId(
+      'background-fit-panel-body',
+    )
 
-    await expect(sharedBackgroundFitPanel.getByText('Origin: Crusader').first()).toBeVisible()
+    await expect(sharedPage.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+    await expectLocatorVisibleInVirtualizedScrollContainer({
+      label: 'Crusader origin background text',
+      maximumScrollStepCount: 260,
+      page: sharedPage,
+      scrollContainer: sharedBackgroundFitPanelBody,
+      target: sharedBackgroundFitPanel.getByText('Origin: Crusader').first(),
+    })
     await sharedFilterBackgroundsButton.click()
     await expect(
       sharedBackgroundFitPanel.getByRole('checkbox', {
@@ -1233,69 +1255,78 @@ test('keeps the background filter dropdown above background fit cards', async ({
 
   const stackingProbe = await backgroundFiltersGroup.evaluate((filterPopover) => {
     const filterPopoverRectangle = filterPopover.getBoundingClientRect()
-    const overlappingVeteranPerkBadge = [
-      ...document.querySelectorAll<HTMLElement>(
-        '[data-testid="background-fit-veteran-perk-badge"]',
-      ),
-    ]
-      .map((veteranPerkBadge) => {
-        const veteranPerkBadgeRectangle = veteranPerkBadge.getBoundingClientRect()
+    const backgroundFitResultsScroll = document.querySelector(
+      '[data-testid="background-fit-panel-body"]',
+    )
 
-        return {
-          element: veteranPerkBadge,
-          x: veteranPerkBadgeRectangle.left + veteranPerkBadgeRectangle.width / 2,
-          y: veteranPerkBadgeRectangle.top + veteranPerkBadgeRectangle.height / 2,
-        }
-      })
-      .find(
-        ({ x, y }) =>
-          x >= filterPopoverRectangle.left &&
-          x <= filterPopoverRectangle.right &&
-          y >= filterPopoverRectangle.top &&
-          y <= filterPopoverRectangle.bottom,
-      )
-
-    if (!overlappingVeteranPerkBadge) {
+    if (!(backgroundFitResultsScroll instanceof HTMLElement)) {
       return {
+        backgroundFitCardStackIndex: -1,
         filterPopoverOwnsTopElement: false,
         filterPopoverStackIndex: -1,
-        overlappingVeteranPerkBadgeFound: false,
+        overlappingBackgroundFitCardFound: false,
         topElementTestId: null,
-        veteranPerkBadgeStackIndex: -1,
       }
     }
 
-    const elementsAtBadgeCenter = document.elementsFromPoint(
-      overlappingVeteranPerkBadge.x,
-      overlappingVeteranPerkBadge.y,
+    const backgroundFitResultsScrollRectangle = backgroundFitResultsScroll.getBoundingClientRect()
+    const overlapLeft = Math.max(
+      filterPopoverRectangle.left,
+      backgroundFitResultsScrollRectangle.left,
     )
-    const topElement = elementsAtBadgeCenter[0] ?? null
-    const filterPopoverStackIndex = elementsAtBadgeCenter.findIndex(
+    const overlapRight = Math.min(
+      filterPopoverRectangle.right,
+      backgroundFitResultsScrollRectangle.right,
+      window.innerWidth,
+    )
+    const overlapTop = Math.max(filterPopoverRectangle.top, backgroundFitResultsScrollRectangle.top)
+    const overlapBottom = Math.min(
+      filterPopoverRectangle.bottom,
+      backgroundFitResultsScrollRectangle.bottom,
+      window.innerHeight,
+    )
+
+    if (overlapLeft >= overlapRight || overlapTop >= overlapBottom) {
+      return {
+        backgroundFitCardStackIndex: -1,
+        filterPopoverOwnsTopElement: false,
+        filterPopoverStackIndex: -1,
+        overlappingBackgroundFitCardFound: false,
+        topElementTestId: null,
+      }
+    }
+
+    const elementsAtOverlap = document.elementsFromPoint(
+      (overlapLeft + overlapRight) / 2,
+      (overlapTop + overlapBottom) / 2,
+    )
+    const topElement = elementsAtOverlap[0] ?? null
+    const filterPopoverStackIndex = elementsAtOverlap.findIndex(
       (element) => element === filterPopover || filterPopover.contains(element),
     )
-    const veteranPerkBadgeStackIndex = elementsAtBadgeCenter.findIndex(
+    const backgroundFitCardStackIndex = elementsAtOverlap.findIndex(
       (element) =>
-        element === overlappingVeteranPerkBadge.element ||
-        overlappingVeteranPerkBadge.element.contains(element),
+        element instanceof HTMLElement &&
+        element.closest('[data-testid="background-fit-card"]') !== null,
     )
 
     return {
+      backgroundFitCardStackIndex,
       filterPopoverOwnsTopElement:
         topElement !== null && (topElement === filterPopover || filterPopover.contains(topElement)),
       filterPopoverStackIndex,
-      overlappingVeteranPerkBadgeFound: true,
+      overlappingBackgroundFitCardFound: backgroundFitCardStackIndex >= 0,
       topElementTestId:
         topElement instanceof HTMLElement ? (topElement.dataset.testid ?? null) : null,
-      veteranPerkBadgeStackIndex,
     }
   })
 
   expect(stackingProbe).toMatchObject({
     filterPopoverOwnsTopElement: true,
-    overlappingVeteranPerkBadgeFound: true,
+    overlappingBackgroundFitCardFound: true,
   })
   expect(stackingProbe.filterPopoverStackIndex).toBeGreaterThanOrEqual(0)
-  expect(stackingProbe.veteranPerkBadgeStackIndex).toBeGreaterThan(
+  expect(stackingProbe.backgroundFitCardStackIndex).toBeGreaterThan(
     stackingProbe.filterPopoverStackIndex,
   )
 })
@@ -1306,6 +1337,7 @@ test('shows probabilistic background fit matches with plain percentage text', as
   await addPerkToBuildFromResults(page, 'Danger Pay')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const detailPanel = getDetailPanel(page)
   const apprenticeCard = backgroundFitPanel
     .getByTestId('background-fit-card')
@@ -1315,7 +1347,13 @@ test('shows probabilistic background fit matches with plain percentage text', as
     name: 'Inspect background Apprentice',
   })
 
-  await apprenticeCard.scrollIntoViewIfNeeded()
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
+  await expectLocatorVisibleInVirtualizedScrollContainer({
+    label: 'Apprentice background fit card',
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    target: apprenticeCard,
+  })
   await apprenticeToggle.click()
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
@@ -1474,17 +1512,18 @@ test('keeps zero-match backgrounds after matching backgrounds in the full ranked
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
 
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }),
   ).toBeVisible()
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
 
-  const backgroundNameOrder = await page.evaluate(() =>
-    [...document.querySelectorAll('[data-testid="background-fit-card"] h3')].map((heading) =>
-      heading.textContent?.trim(),
-    ),
-  )
+  const backgroundNameOrder = await collectVirtualizedTextContentInScrollContainer({
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    selector: '[data-testid="background-fit-card"] h3',
+  })
 
   expect(backgroundNameOrder).toContain('Apprentice')
   expect(backgroundNameOrder).toContain('Oathtaker')

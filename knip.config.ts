@@ -2,6 +2,7 @@ const productionOnlyIgnoredDependencies = [
   '@fontsource/cinzel',
   '@fontsource/source-sans-3',
   'lucide-react',
+  'react-virtuoso',
 ]
 
 const isProductionAnalysis = process.argv.includes('--production')
