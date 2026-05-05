@@ -1470,6 +1470,37 @@ test('separates planner group card hover from icon and perk pill hover states', 
   await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
 })
 
+test('opens planner group pill tooltip actions from keyboard focus', async ({ page }) => {
+  await gotoBuildPlanner(page)
+
+  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const heavyArmorGroupCard = getBuildSharedGroupsList(page)
+    .getByTestId('planner-group-card')
+    .filter({ hasText: 'Heavy Armor' })
+  const battleForgedPill = heavyArmorGroupCard.getByRole('button', { name: 'Battle Forged' })
+
+  await battleForgedPill.focus()
+
+  const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
+
+  await expect(buildPerkTooltip).toBeVisible()
+  await expect(battleForgedPill).toHaveAttribute('aria-expanded', 'true')
+  await expect(battleForgedPill).toHaveAttribute('aria-controls', /build-perk-tooltip-/u)
+
+  await page.keyboard.press('ArrowDown')
+
+  const tooltipRemoveButton = buildPerkTooltip.getByRole('button', {
+    name: 'Remove Battle Forged from build from tooltip',
+  })
+
+  await expect(tooltipRemoveButton).toBeFocused()
+
+  await page.keyboard.press('Escape')
+  await expect(buildPerkTooltip).toHaveCount(0)
+})
+
 test('keeps picked perk hover from highlighting peer picked perks in the same group', async ({
   page,
 }) => {

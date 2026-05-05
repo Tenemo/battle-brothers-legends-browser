@@ -57,7 +57,7 @@ jobs:
 
       - name: wait for stable production readiness
         run: >-
-          node scripts/wait-for-production-deploy.mjs
+          node scripts/wait-for-production-deploy.ts
           --commit ${{ github.sha }}
           --web https://battlebrothers.academy
           --timeout-ms 1800000

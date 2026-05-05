@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process'
 import { access } from 'node:fs/promises'
 
-export async function pathExists(targetPath) {
+export async function pathExists(targetPath: string): Promise<boolean> {
   try {
     await access(targetPath)
     return true
@@ -10,7 +10,7 @@ export async function pathExists(targetPath) {
   }
 }
 
-export function runCommand(commandName, commandArguments) {
+export function runCommand(commandName: string, commandArguments: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
     const childProcess = spawn(commandName, commandArguments, {
       shell: false,
@@ -45,8 +45,10 @@ export function runCommand(commandName, commandArguments) {
   })
 }
 
-export function sortUniqueStrings(values) {
-  return [...new Set(values.filter(Boolean))].toSorted((leftValue, rightValue) =>
-    leftValue.localeCompare(rightValue),
-  )
+export function sortUniqueStrings(values: Array<string | null | undefined | false>): string[] {
+  return [
+    ...new Set(
+      values.filter((value): value is string => typeof value === 'string' && value !== ''),
+    ),
+  ].toSorted((leftValue, rightValue) => leftValue.localeCompare(rightValue))
 }

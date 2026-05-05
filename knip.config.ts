@@ -10,8 +10,7 @@ export default {
   entry: [
     'netlify/edge-functions/build-seo.ts',
     'src/types/virtual-modules.d.ts',
-    'scripts/*.mjs',
-    'scripts/*.d.mts',
+    'scripts/*.ts',
     'tests/**/*.test.ts',
     'tests/**/*.test.tsx',
     'tests/e2e/**/*.spec.ts',
@@ -21,11 +20,9 @@ export default {
     'src/**/*.ts',
     'src/**/*.tsx',
     'netlify/**/*.ts',
-    'scripts/**/*.mjs',
-    'scripts/**/*.mts',
+    'scripts/**/*.ts',
     'tests/**/*.ts',
     'tests/**/*.tsx',
     '*.config.ts',
-    '*.config.js',
   ],
 }

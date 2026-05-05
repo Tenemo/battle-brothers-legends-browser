@@ -1,5 +1,5 @@
 import { type ComponentProps } from 'react'
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { BuildPerkPill } from '../src/components/BuildPerkPill'
 import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
@@ -66,6 +66,12 @@ describe('build perk pill', () => {
       perkGroupSelection,
       pillHoverOptions,
     )
+    expect(interaction.openBuildPerkTooltip).toHaveBeenLastCalledWith(
+      props.perkId,
+      button,
+      perkGroupSelection,
+      pillHoverOptions,
+    )
 
     fireEvent.mouseEnter(button)
 
@@ -74,6 +80,48 @@ describe('build perk pill', () => {
       perkGroupSelection,
       pillHoverOptions,
     )
+  })
+
+  test('moves keyboard users from the focused pill into the tooltip action', async () => {
+    const perkGroupSelection = {
+      categoryName: 'Defense',
+      perkGroupId: 'HeavyArmorTree',
+    }
+    const { button, interaction, props } = renderBuildPerkPill({
+      perkGroupSelection,
+    })
+    const tooltipElement = document.createElement('div')
+    const tooltipAction = document.createElement('button')
+
+    tooltipElement.dataset.buildPerkTooltip = 'true'
+    tooltipElement.id = `build-perk-tooltip-${props.perkId}`
+    tooltipAction.textContent = 'Add Battle Forged as optional from tooltip'
+    tooltipElement.append(tooltipAction)
+    document.body.append(tooltipElement)
+
+    try {
+      fireEvent.keyDown(button, { key: 'ArrowDown' })
+
+      expect(interaction.openBuildPerkTooltip).toHaveBeenLastCalledWith(
+        props.perkId,
+        button,
+        perkGroupSelection,
+        pillHoverOptions,
+      )
+      await waitFor(() => expect(tooltipAction).toHaveFocus())
+    } finally {
+      tooltipElement.remove()
+    }
+  })
+
+  test('dismisses the keyboard-opened tooltip with Escape from the focused pill', () => {
+    const { button, interaction, props } = renderBuildPerkPill()
+
+    fireEvent.focus(button)
+    fireEvent.keyDown(button, { key: 'Escape' })
+
+    expect(interaction.closeBuildPerkTooltip).toHaveBeenCalledTimes(1)
+    expect(interaction.closeBuildPerkHover).toHaveBeenCalledWith(props.perkId)
   })
 
   test('keeps the same group selection when inspecting the pill', () => {

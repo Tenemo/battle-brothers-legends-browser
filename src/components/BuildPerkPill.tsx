@@ -28,7 +28,8 @@ export function BuildPerkPill({
   perkId: string
   perkName: string
 }) {
-  const { hoveredBuildPerk, hoveredPerkId } = usePlannerInteractionState()
+  const { hoveredBuildPerk, hoveredBuildPerkTooltipId, hoveredPerkId } =
+    usePlannerInteractionState()
   const {
     closeBuildPerkHover: onCloseHover,
     closeBuildPerkTooltip: onCloseTooltip,
@@ -40,6 +41,7 @@ export function BuildPerkPill({
     activeTooltipIndicatorPerkId,
     clearPendingTooltip,
     closeTooltipPreview,
+    openTooltipPreviewImmediately,
     openTooltipPreview,
   } = useBuildPerkTooltipPreview({
     hoveredBuildPerkId,
@@ -48,23 +50,63 @@ export function BuildPerkPill({
     onOpenHover,
     onOpenTooltip,
   })
+  const isTooltipOpenForPerk = hoveredBuildPerkId === perkId
+  const controlledTooltipId =
+    isTooltipOpenForPerk && hoveredBuildPerkTooltipId
+      ? hoveredBuildPerkTooltipId
+      : `build-perk-tooltip-${perkId}`
+
+  function focusFirstTooltipAction() {
+    window.setTimeout(() => {
+      const tooltipElement = document.getElementById(controlledTooltipId)
+      const firstTooltipAction =
+        tooltipElement?.querySelector<HTMLButtonElement>('button:not([disabled])')
+
+      firstTooltipAction?.focus()
+    }, 0)
+  }
 
   return (
     <button
+      aria-controls={isTooltipOpenForPerk ? controlledTooltipId : undefined}
+      aria-describedby={isTooltipOpenForPerk ? controlledTooltipId : undefined}
+      aria-expanded={isTooltipOpenForPerk}
+      aria-keyshortcuts="ArrowDown"
       className={styles.plannerPill}
       data-highlighted={hoveredPerkId === perkId}
       data-testid="planner-pill"
       data-tooltip-pending={activeTooltipIndicatorPerkId === perkId}
-      onBlur={() => closeTooltipPreview(perkId)}
+      onBlur={(event) => closeTooltipPreview(perkId, event.relatedTarget)}
       onClick={() => {
         clearPendingTooltip()
         onCloseTooltip()
         onInspectPerk(perkId, perkGroupSelection)
       }}
-      onFocus={() => onOpenHover(perkId, perkGroupSelection, pillHoverOptions)}
+      onFocus={(event) =>
+        openTooltipPreviewImmediately(
+          perkId,
+          event.currentTarget,
+          perkGroupSelection,
+          pillHoverOptions,
+        )
+      }
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
-          closeTooltipPreview(perkId)
+          clearPendingTooltip()
+          onCloseTooltip()
+          onCloseHover(perkId)
+          return
+        }
+
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          openTooltipPreviewImmediately(
+            perkId,
+            event.currentTarget,
+            perkGroupSelection,
+            pillHoverOptions,
+          )
+          focusFirstTooltipAction()
         }
       }}
       onMouseEnter={(event) =>

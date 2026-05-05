@@ -368,6 +368,7 @@ export function BackgroundFitPanel({
           data-testid="background-fit-panel-content"
           inert={isExpanded ? undefined : true}
         >
+          <h2 className="visually-hidden">Ranked backgrounds</h2>
           <ClearableSearchField
             className={styles.backgroundFitSearchField}
             clearLabel="Clear background search"

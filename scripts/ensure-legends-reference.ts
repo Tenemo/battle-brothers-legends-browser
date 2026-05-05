@@ -13,11 +13,70 @@ import path from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { fileURLToPath } from 'node:url'
-import { pathExists, runCommand } from './script-utils.mjs'
+import { pathExists, runCommand } from './script-utils.ts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const projectRootDirectoryPath = path.resolve(__dirname, '..')
+
+export type LegendsReferenceMetadata = {
+  archiveDownloadUrl: string
+  cacheFallbackReason?: string
+  cachedAt: string
+  githubRepository: string
+  publishedAt: string
+  referenceRootDirectoryPath: string
+  releasePageUrl: string
+  tagName: string
+}
+
+type LegendsReleaseDescriptor = {
+  archiveDownloadUrl: string
+  publishedAt: string
+  releasePageUrl: string
+  tagName: string
+}
+
+type DownloadArchiveImplementation = (
+  downloadUrl: string,
+  archiveFilePath: string,
+  fetchImpl: typeof fetch,
+) => Promise<void>
+
+type ExtractArchiveImplementation = (
+  archiveFilePath: string,
+  extractionDirectoryPath: string,
+) => Promise<void>
+
+type EnsureLatestLegendsReferenceOptions = {
+  cacheDirectoryPath?: string
+  downloadArchiveImpl?: DownloadArchiveImplementation
+  extractArchiveImpl?: ExtractArchiveImplementation
+  fetchImpl?: typeof fetch
+  githubApiBaseUrl?: string
+  githubRepository?: string
+  requestedTagName?: string | null
+}
+
+type GetLatestReleaseApiUrlOptions = {
+  githubApiBaseUrl?: string
+  githubRepository?: string
+  requestedTagName?: string | null
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function readRequiredStringProperty(value: Record<string, unknown>, propertyName: string): string {
+  const propertyValue = value[propertyName]
+
+  if (typeof propertyValue !== 'string') {
+    throw new Error(`Legends release payload is missing string property ${propertyName}.`)
+  }
+
+  return propertyValue
+}
 
 export const defaultLegendsGithubRepository = 'Battle-Brothers-Legends/Legends-public'
 export const defaultLegendsGithubApiBaseUrl = 'https://api.github.com'
@@ -37,11 +96,11 @@ export const defaultLegendsReferenceMetadataFilePath = path.join(
   'reference-metadata.json',
 )
 
-function normalizeWhitespace(value) {
+function normalizeWhitespace(value: string): string {
   return value.replace(/[ \t]+/g, ' ').trim()
 }
 
-function createFetchHeaders() {
+function createFetchHeaders(): Record<string, string> {
   return {
     Accept: 'application/vnd.github+json',
     'User-Agent': 'battle-brothers-legends-browser',
@@ -52,7 +111,7 @@ export function getLatestReleaseApiUrl({
   githubApiBaseUrl = defaultLegendsGithubApiBaseUrl,
   githubRepository = defaultLegendsGithubRepository,
   requestedTagName = process.env.LEGENDS_REFERENCE_TAG ?? null,
-} = {}) {
+}: GetLatestReleaseApiUrlOptions = {}): string {
   if (requestedTagName) {
     return `${githubApiBaseUrl}/repos/${githubRepository}/releases/tags/${encodeURIComponent(requestedTagName)}`
   }
@@ -60,11 +119,15 @@ export function getLatestReleaseApiUrl({
   return `${githubApiBaseUrl}/repos/${githubRepository}/releases/latest`
 }
 
-function sanitizeReleaseTagName(tagName) {
+function sanitizeReleaseTagName(tagName: string): string {
   return normalizeWhitespace(tagName).replace(/[<>:"/\\|?*]+/g, '-')
 }
 
-async function downloadArchiveFile(downloadUrl, archiveFilePath, fetchImpl) {
+const downloadArchiveFile: DownloadArchiveImplementation = async (
+  downloadUrl,
+  archiveFilePath,
+  fetchImpl,
+) => {
   const response = await fetchImpl(downloadUrl, {
     headers: createFetchHeaders(),
     redirect: 'follow',
@@ -75,19 +138,30 @@ async function downloadArchiveFile(downloadUrl, archiveFilePath, fetchImpl) {
   }
 
   await mkdir(path.dirname(archiveFilePath), { recursive: true })
-  await pipeline(Readable.fromWeb(response.body), createWriteStream(archiveFilePath))
+  await pipeline(
+    Readable.fromWeb(response.body as Parameters<typeof Readable.fromWeb>[0]),
+    createWriteStream(archiveFilePath),
+  )
 }
 
-async function extractArchiveFile(archiveFilePath, extractionDirectoryPath) {
+const extractArchiveFile: ExtractArchiveImplementation = async (
+  archiveFilePath,
+  extractionDirectoryPath,
+) => {
   await mkdir(extractionDirectoryPath, { recursive: true })
   await runCommand('tar', ['-xf', archiveFilePath, '-C', extractionDirectoryPath])
 }
 
-export async function findModLegendsDirectory(rootDirectoryPath) {
+export async function findModLegendsDirectory(rootDirectoryPath: string): Promise<string | null> {
   const pendingDirectoryPaths = [rootDirectoryPath]
 
   while (pendingDirectoryPaths.length > 0) {
     const currentDirectoryPath = pendingDirectoryPaths.shift()
+
+    if (currentDirectoryPath === undefined) {
+      break
+    }
+
     const directoryEntries = await readdir(currentDirectoryPath, { withFileTypes: true })
 
     for (const directoryEntry of directoryEntries) {
@@ -110,12 +184,12 @@ export async function findModLegendsDirectory(rootDirectoryPath) {
 
 export async function readCachedLegendsReferenceMetadata(
   metadataFilePath = defaultLegendsReferenceMetadataFilePath,
-) {
+): Promise<LegendsReferenceMetadata | null> {
   if (!(await pathExists(metadataFilePath))) {
     return null
   }
 
-  return JSON.parse(await readFile(metadataFilePath, 'utf8'))
+  return JSON.parse(await readFile(metadataFilePath, 'utf8')) as LegendsReferenceMetadata
 }
 
 export async function fetchLatestLegendsReleaseDescriptor({
@@ -123,7 +197,12 @@ export async function fetchLatestLegendsReleaseDescriptor({
   githubApiBaseUrl = defaultLegendsGithubApiBaseUrl,
   githubRepository = defaultLegendsGithubRepository,
   requestedTagName = process.env.LEGENDS_REFERENCE_TAG ?? null,
-} = {}) {
+}: {
+  fetchImpl?: typeof fetch
+  githubApiBaseUrl?: string
+  githubRepository?: string
+  requestedTagName?: string | null
+} = {}): Promise<LegendsReleaseDescriptor> {
   const latestReleaseApiUrl = getLatestReleaseApiUrl({
     githubApiBaseUrl,
     githubRepository,
@@ -141,11 +220,15 @@ export async function fetchLatestLegendsReleaseDescriptor({
 
   const releasePayload = await response.json()
 
+  if (!isRecord(releasePayload)) {
+    throw new Error('Legends release payload was not a JSON object.')
+  }
+
   return {
-    archiveDownloadUrl: releasePayload.tarball_url,
-    publishedAt: releasePayload.published_at,
-    releasePageUrl: releasePayload.html_url,
-    tagName: releasePayload.tag_name,
+    archiveDownloadUrl: readRequiredStringProperty(releasePayload, 'tarball_url'),
+    publishedAt: readRequiredStringProperty(releasePayload, 'published_at'),
+    releasePageUrl: readRequiredStringProperty(releasePayload, 'html_url'),
+    tagName: readRequiredStringProperty(releasePayload, 'tag_name'),
   }
 }
 
@@ -153,7 +236,11 @@ function createReferenceMetadata({
   githubRepository,
   releaseDescriptor,
   referenceRootDirectoryPath,
-}) {
+}: {
+  githubRepository: string
+  releaseDescriptor: LegendsReleaseDescriptor
+  referenceRootDirectoryPath: string
+}): LegendsReferenceMetadata {
   return {
     archiveDownloadUrl: releaseDescriptor.archiveDownloadUrl,
     cachedAt: new Date().toISOString(),
@@ -173,7 +260,15 @@ async function populateCurrentReferenceDirectory({
   fetchImpl,
   githubRepository,
   releaseDescriptor,
-}) {
+}: {
+  archiveDownloadUrl: string
+  currentDirectoryPath: string
+  downloadArchiveImpl?: DownloadArchiveImplementation
+  extractArchiveImpl?: ExtractArchiveImplementation
+  fetchImpl: typeof fetch
+  githubRepository: string
+  releaseDescriptor: LegendsReleaseDescriptor
+}): Promise<LegendsReferenceMetadata> {
   const temporaryDirectoryPath = await mkdtemp(path.join(os.tmpdir(), 'legends-reference-'))
 
   try {
@@ -243,7 +338,7 @@ export async function ensureLatestLegendsReference({
   githubApiBaseUrl = defaultLegendsGithubApiBaseUrl,
   githubRepository = defaultLegendsGithubRepository,
   requestedTagName = process.env.LEGENDS_REFERENCE_TAG ?? null,
-} = {}) {
+}: EnsureLatestLegendsReferenceOptions = {}): Promise<LegendsReferenceMetadata> {
   const currentDirectoryPath = path.join(cacheDirectoryPath, 'current')
   const expectedReferenceRootDirectoryPath = path.join(currentDirectoryPath, 'mod_legends')
   const expectedScriptsDirectoryPath = path.join(currentDirectoryPath, 'scripts')

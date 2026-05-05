@@ -8,7 +8,7 @@ import {
 } from 'node:fs/promises'
 import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { createDataset, createImporterDiagnostics } from '../scripts/legends-perks-importer.mjs'
+import { createDataset, createImporterDiagnostics } from '../scripts/legends-perks-importer.ts'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const fixtureReferenceRootDirectoryPath = path.resolve(

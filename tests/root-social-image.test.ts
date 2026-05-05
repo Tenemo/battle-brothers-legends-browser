@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest'
 import {
   createRootSocialImageSvg,
   renderRootSocialImagePng,
-} from '../scripts/generate-root-social-image.mjs'
+} from '../scripts/generate-root-social-image.ts'
 
 describe('root social image generation', () => {
   test('renders the requested default SEO image copy and brand styling', async () => {

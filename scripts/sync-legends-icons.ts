@@ -1,4 +1,4 @@
-import { syncLegendsIcons } from './legends-icon-sync.mjs'
+import { syncLegendsIcons } from './legends-icon-sync.ts'
 
 const result = await syncLegendsIcons()
 

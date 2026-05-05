@@ -80,6 +80,7 @@ function createPlannerVersionPlugin(): Plugin {
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2500,
+    sourcemap: true,
   },
   plugins: [
     react(),

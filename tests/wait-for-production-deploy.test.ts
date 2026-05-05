@@ -10,7 +10,7 @@ import {
   waitForProductionDeploy,
   type ProductionReadinessStatus,
   type WaitForProductionDeployOptions,
-} from '../scripts/wait-for-production-deploy.mjs'
+} from '../scripts/wait-for-production-deploy.ts'
 
 const expectedCommitSha = '0123456789abcdef0123456789abcdef01234567'
 

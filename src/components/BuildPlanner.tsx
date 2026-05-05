@@ -345,6 +345,25 @@ export function BuildPlanner({
           data-build-perk-tooltip="true"
           data-testid="build-perk-tooltip"
           id={hoveredBuildPerkTooltipId}
+          onBlurCapture={(event) => {
+            if (
+              event.relatedTarget instanceof Node &&
+              event.currentTarget.contains(event.relatedTarget)
+            ) {
+              return
+            }
+
+            clearPendingTooltip()
+            onCloseBuildPerkTooltip()
+            onCloseBuildPerkHover(hoveredBuildPerk.id)
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Escape') {
+              clearPendingTooltip()
+              onCloseBuildPerkTooltip()
+              onCloseBuildPerkHover(hoveredBuildPerk.id)
+            }
+          }}
           onMouseEnter={clearTooltipCloseTimer}
           onMouseLeave={() => {
             clearPendingTooltip()
