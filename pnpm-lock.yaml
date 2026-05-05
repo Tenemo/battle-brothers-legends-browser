@@ -7,6 +7,9 @@ settings:
 importers:
   .:
     dependencies:
+      '@fontsource/cinzel':
+        specifier: ^5.2.8
+        version: 5.2.8
       '@fontsource/source-sans-3':
         specifier: ^5.2.9
         version: 5.2.9
@@ -690,6 +693,12 @@ packages:
     peerDependenciesMeta:
       '@noble/hashes':
         optional: true
+
+  '@fontsource/cinzel@5.2.8':
+    resolution:
+      {
+        integrity: sha512-B9WeF/jPlOJOrcXfX96cy4KfM+s1QcU2C9W2hE3azBOBzPvzFkNpBovT5JmhAeicE/s4HZWKF9LF5hmEcqlbsw==,
+      }
 
   '@fontsource/source-sans-3@5.2.9':
     resolution:
@@ -4342,6 +4351,8 @@ snapshots:
       levn: 0.4.1
 
   '@exodus/bytes@1.15.0': {}
+
+  '@fontsource/cinzel@5.2.8': {}
 
   '@fontsource/source-sans-3@5.2.9': {}
 

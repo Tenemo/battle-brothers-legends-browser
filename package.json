@@ -43,6 +43,7 @@
     "sync:perks": "node ./scripts/sync-legends-perks.ts"
   },
   "dependencies": {
+    "@fontsource/cinzel": "^5.2.8",
     "@fontsource/source-sans-3": "^5.2.9",
     "@resvg/resvg-js": "^2.6.2",
     "lucide-react": "^1.11.0",

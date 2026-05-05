@@ -9,9 +9,24 @@ const distAssetsDirectory = path.join(distDirectory, 'assets')
 const distIndexPath = path.join(distDirectory, 'index.html')
 const hydrationLoaderPath = path.join(distDirectory, 'hydrate-loader.js')
 const sourceAssetUrlPattern = /\/src\/assets\/([^"')\s?#]+)/g
+const criticalFontUrlPattern =
+  /url\((\/assets\/(?:cinzel-latin-700|source-sans-3-latin-(?:400|600|700))-normal-[^)]+\.woff2)\)/g
 
 function escapeStyleText(styleText: string): string {
   return styleText.replaceAll('</style', '<\\/style')
+}
+
+function createCriticalFontPreloadTags(stylesheet: string): string {
+  const criticalFontUrls = [...stylesheet.matchAll(criticalFontUrlPattern)].map(
+    (criticalFontUrlMatch) => criticalFontUrlMatch[1],
+  )
+
+  return [...new Set(criticalFontUrls)]
+    .map(
+      (criticalFontUrl) =>
+        `<link rel="preload" href="${criticalFontUrl}" as="font" type="font/woff2" crossorigin />`,
+    )
+    .join('')
 }
 
 function getSingleMatch(html: string, pattern: RegExp, description: string): RegExpExecArray {
@@ -33,6 +48,7 @@ const automaticHydrationDelayMs=5000;
 const manifestUrl="/favicon/site.webmanifest";
 const interactionEvents=["pointerdown","keydown","focusin"];
 const listenerOptions={capture:true,passive:true};
+const shouldClientRenderImmediately=window.location.search!==""||window.location.hash!=="";
 function appendManifestLink(){
   if (document.querySelector('link[rel="manifest"]')) return;
   const manifestLink=document.createElement("link");
@@ -45,6 +61,10 @@ function clearInteractionListeners(){
     window.removeEventListener(eventName,startHydration,listenerOptions);
   }
 }
+function prepareClientRender(){
+  if (!shouldClientRenderImmediately) return;
+  document.getElementById("root")?.replaceChildren();
+}
 function startHydration(){
   if (hasStartedHydration) return;
   hasStartedHydration=true;
@@ -55,11 +75,9 @@ function startHydration(){
   if (automaticHydrationTimeout) {
     window.clearTimeout(automaticHydrationTimeout);
   }
+  prepareClientRender();
   import(entryUrl);
   appendManifestLink();
-}
-for (const eventName of interactionEvents) {
-  window.addEventListener(eventName,startHydration,listenerOptions);
 }
 function scheduleHydration(){
   automaticHydrationTimeout=window.setTimeout(() => {
@@ -75,10 +93,17 @@ function scheduleHydration(){
     appendManifestLink();
   },automaticHydrationDelayMs);
 }
-if (document.readyState==="complete") {
-  scheduleHydration();
+if (shouldClientRenderImmediately) {
+  startHydration();
 } else {
-  window.addEventListener("load",scheduleHydration,{once:true});
+  for (const eventName of interactionEvents) {
+    window.addEventListener(eventName,startHydration,listenerOptions);
+  }
+  if (document.readyState==="complete") {
+    scheduleHydration();
+  } else {
+    window.addEventListener("load",scheduleHydration,{once:true});
+  }
 }
 `
 }
@@ -97,7 +122,7 @@ async function readBuiltStylesheet(html: string): Promise<{
   const stylesheet = await readFile(stylesheetPath, 'utf8')
 
   return {
-    stylesheet: stylesheet.replaceAll('font-display:swap', 'font-display:optional'),
+    stylesheet,
     stylesheetTag: stylesheetMatch[0],
   }
 }
@@ -171,9 +196,10 @@ async function prerenderRoot() {
     }
 
     const htmlWithBuiltAssetUrls = await replaceServerRenderedAssetUrls(htmlWithPrerenderedRoot)
+    const criticalFontPreloadTags = createCriticalFontPreloadTags(stylesheet)
     const htmlWithInlineCss = htmlWithBuiltAssetUrls.replace(
       stylesheetTag,
-      `<style data-battle-brothers-inline-css="true">${escapeStyleText(stylesheet)}</style>`,
+      `${criticalFontPreloadTags}<style data-battle-brothers-inline-css="true">${escapeStyleText(stylesheet)}</style>`,
     )
 
     await Promise.all([
