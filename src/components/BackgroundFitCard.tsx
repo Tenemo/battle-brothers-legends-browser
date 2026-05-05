@@ -1,6 +1,5 @@
 import { Link } from 'lucide-react'
 import type {
-  BackgroundFitStudyResourceChanceBreakdownEntry,
   BackgroundFitMatch,
   BuildTargetPerkGroup,
   RankedBackgroundFit,
@@ -56,18 +55,16 @@ function getBackgroundFitBuildReachabilitySummaryCopy(
   probability: number,
   buildScopeLabel: string,
   studyResourceFilter: BackgroundStudyResourceFilter,
-  chanceBreakdownEntries?: BackgroundFitStudyResourceChanceBreakdownEntry[],
 ): string {
   const studyResourceFilterPhrase = getBackgroundFitStudyResourceFilterPhrase(studyResourceFilter)
-  const chanceBreakdownPhrase = getBackgroundFitChanceBreakdownPhrase(chanceBreakdownEntries)
 
   if (probability <= 0) {
-    return `No legal native background roll ${studyResourceFilterPhrase} can cover every picked perk for ${buildScopeLabel}.${chanceBreakdownPhrase}`
+    return `No legal native background roll ${studyResourceFilterPhrase} can cover every picked perk for ${buildScopeLabel}.`
   }
 
   return `One legal native background roll ${studyResourceFilterPhrase} can cover every picked perk with a ${formatBackgroundFitProbabilityLabel(
     probability,
-  )} chance for ${buildScopeLabel}.${chanceBreakdownPhrase}`
+  )} chance for ${buildScopeLabel}.`
 }
 
 function getBackgroundFitRankTitle(backgroundFit: RankedBackgroundFit, rank: number): string {
@@ -102,43 +99,6 @@ function getBackgroundFitStudyResourceFilterPhrase(
   }
 
   return `plus ${enabledStudyResources.join(' and ')}`
-}
-
-function getBackgroundFitChanceBreakdownLabel(
-  entry: BackgroundFitStudyResourceChanceBreakdownEntry,
-): string {
-  if (entry.shouldAllowBook && entry.shouldAllowScroll) {
-    return entry.shouldAllowSecondScroll
-      ? 'skill book and ancient scrolls'
-      : 'skill book and ancient scroll'
-  }
-
-  if (entry.shouldAllowBook) {
-    return 'skill book'
-  }
-
-  if (entry.shouldAllowScroll) {
-    return entry.shouldAllowSecondScroll ? 'ancient scrolls' : 'ancient scroll'
-  }
-
-  return 'native'
-}
-
-function getBackgroundFitChanceBreakdownPhrase(
-  entries?: BackgroundFitStudyResourceChanceBreakdownEntry[],
-): string {
-  if (!entries || entries.length <= 1) {
-    return ''
-  }
-
-  return ` Breakdown: ${entries
-    .map(
-      (entry) =>
-        `${getBackgroundFitChanceBreakdownLabel(entry)} ${formatBackgroundFitProbabilityLabel(
-          entry.probability,
-        )}`,
-    )
-    .join(', ')}.`
 }
 
 export function BackgroundFitTargetPerkGroup({
@@ -433,7 +393,6 @@ function getBackgroundFitDetailsMetrics({
               backgroundFit.mustHaveBuildReachabilityProbability,
               'the must-have build',
               studyResourceFilter,
-              backgroundFit.mustHaveStudyResourceChanceBreakdown,
             ),
             value: formatBackgroundFitProbabilityLabel(
               backgroundFit.mustHaveBuildReachabilityProbability,
@@ -453,7 +412,6 @@ function getBackgroundFitDetailsMetrics({
               backgroundFit.fullBuildReachabilityProbability,
               'the full build, including optional perks',
               studyResourceFilter,
-              backgroundFit.fullBuildStudyResourceChanceBreakdown,
             ),
             value: formatBackgroundFitProbabilityLabel(
               backgroundFit.fullBuildReachabilityProbability,

@@ -33,6 +33,7 @@ type StudyResourceAssignmentCandidate = {
 export type StudyResourceMaskCoverageProfile = {
   canCoverBuild: (nativeCoveredPickedPerkMask: bigint) => boolean
   getCoveredPickedPerkCount: (coveredPickedPerkMask: bigint) => number
+  getScopedCoveredPickedPerkMask: (coveredPickedPerkMask: bigint) => bigint
 }
 
 const nativeStudyResourceRequirementProfile = {
@@ -552,6 +553,9 @@ export function createStudyResourceMaskCoverageProfile({
       )
     },
     getCoveredPickedPerkCount,
+    getScopedCoveredPickedPerkMask(coveredPickedPerkMask) {
+      return coveredPickedPerkMask & targetMask
+    },
   }
 }
 

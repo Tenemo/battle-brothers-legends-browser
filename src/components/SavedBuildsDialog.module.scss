@@ -7,12 +7,13 @@
 
   .savedBuildsDialog {
     width: min(var(--primitive-length-42rem), 100%);
-    max-height: min(
-      40rem,
-      calc(var(--primitive-length-100vh) - var(--control-height-md))
-    );
+    max-height: min(40rem, calc(var(--primitive-length-100vh) - var(--control-height-md)));
 
     @include dialog-surface;
+
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
 
     h2 {
       margin: 0;
@@ -119,9 +120,13 @@
   }
 
   .savedBuildsList {
+    flex: 1 1 auto;
     gap: var(--space-md);
     min-height: 0;
-    overflow: auto;
+    padding-right: var(--space-xs);
+    overflow: hidden scroll;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   .savedBuildsEmpty {

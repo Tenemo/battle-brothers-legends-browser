@@ -54,10 +54,26 @@ type BackgroundFitProjection = {
 
 type NativeOutcomeSummary = {
   buildReachabilityProbability: number
+  chanceCalculation: BackgroundFitChanceCalculation
   maximumNativeCoveredPickedPerkCount: number
 }
 
+export type BackgroundFitChanceCalculationProbabilityTerm = {
+  nativeCoveredPickedPerkIdsByOutcome: string[][]
+  outcomeCount: number
+  probability: number
+}
+
+export type BackgroundFitChanceCalculation = {
+  isNativeOutcomeIndependent: boolean
+  probability: number
+  successfulNativeOutcomeCount: number
+  successfulNativeOutcomeProbabilityTerms: BackgroundFitChanceCalculationProbabilityTerm[]
+  totalNativeOutcomeCount: number
+}
+
 export type BackgroundFitStudyResourceChanceBreakdownEntry = {
+  calculation?: BackgroundFitChanceCalculation
   key: 'book' | 'book-and-scroll' | 'native' | 'scroll'
   probability: number
   shouldAllowBook: boolean
@@ -1270,36 +1286,135 @@ function getBackgroundNativeOutcomeDistribution({
 
 function calculateNativeOutcomeSummary({
   nativeOutcomeDistribution,
+  projection,
   studyResourceCoverageProfile,
 }: {
   nativeOutcomeDistribution: BackgroundOutcomeDistribution
+  projection: BackgroundFitProjection
   studyResourceCoverageProfile: StudyResourceMaskCoverageProfile
-}): {
-  buildReachabilityProbability: number
-  maximumNativeCoveredPickedPerkCount: number
-} {
+}): NativeOutcomeSummary {
   let buildReachabilityProbability = 0
   let maximumNativeCoveredPickedPerkCount = 0
+  let successfulNativeOutcomeCount = 0
+  let alwaysCoveredPickedPerkMask: CoverageMask | null = null
+  const scopedNativeOutcomeDistribution: BackgroundOutcomeDistribution = new Map()
+  const successfulNativeOutcomeProbabilityTermsByKey = new Map<
+    string,
+    BackgroundFitChanceCalculationProbabilityTerm
+  >()
+
+  const getNativeCoveredPickedPerkIds = (nativeCoveredPickedPerkMask: CoverageMask): string[] => {
+    const nativeCoveredPickedPerkIds: string[] = []
+
+    for (const [pickedPerkId, pickedPerkMask] of projection.pickedPerkMaskById) {
+      if ((nativeCoveredPickedPerkMask & pickedPerkMask) !== 0n) {
+        nativeCoveredPickedPerkIds.push(pickedPerkId)
+      }
+    }
+
+    return nativeCoveredPickedPerkIds
+  }
+
+  const addSuccessfulNativeOutcomeProbabilityTerm = (
+    probability: number,
+    nativeCoveredPickedPerkMask: CoverageMask,
+  ) => {
+    const probabilityKey = probability.toString()
+    const nativeCoveredPickedPerkIds = getNativeCoveredPickedPerkIds(nativeCoveredPickedPerkMask)
+    const existingTerm = successfulNativeOutcomeProbabilityTermsByKey.get(probabilityKey)
+
+    successfulNativeOutcomeCount += 1
+
+    if (existingTerm) {
+      existingTerm.outcomeCount += 1
+      existingTerm.nativeCoveredPickedPerkIdsByOutcome.push(nativeCoveredPickedPerkIds)
+      return
+    }
+
+    successfulNativeOutcomeProbabilityTermsByKey.set(probabilityKey, {
+      nativeCoveredPickedPerkIdsByOutcome: [nativeCoveredPickedPerkIds],
+      outcomeCount: 1,
+      probability,
+    })
+  }
 
   /*
    * Native outcome masks are exact projected intersections between one complete background roll and
-   * the picked perks that roll can cover. Those outcomes are disjoint, so full-build probability is
-   * the direct sum of masks where native groups plus the allowed study resources cover every target
-   * perk. The best-native-roll metric stays exact because it is measured per legal outcome mask.
+   * the picked perks that roll can cover. Collapse them to this scope before calculating
+   * reachability so optional-only roll differences do not create noisy must-have expression terms.
+   * The scoped outcomes are still disjoint after their probabilities are summed by coverage mask.
    */
   for (const [nativeCoveredPickedPerkMask, nativeOutcomeProbability] of nativeOutcomeDistribution) {
+    addOutcomeProbability(
+      scopedNativeOutcomeDistribution,
+      studyResourceCoverageProfile.getScopedCoveredPickedPerkMask(nativeCoveredPickedPerkMask),
+      nativeOutcomeProbability,
+    )
+  }
+
+  for (const nativeCoveredPickedPerkMask of scopedNativeOutcomeDistribution.keys()) {
+    alwaysCoveredPickedPerkMask =
+      alwaysCoveredPickedPerkMask === null
+        ? nativeCoveredPickedPerkMask
+        : alwaysCoveredPickedPerkMask & nativeCoveredPickedPerkMask
     maximumNativeCoveredPickedPerkCount = Math.max(
       maximumNativeCoveredPickedPerkCount,
       studyResourceCoverageProfile.getCoveredPickedPerkCount(nativeCoveredPickedPerkMask),
     )
+  }
 
-    if (studyResourceCoverageProfile.canCoverBuild(nativeCoveredPickedPerkMask)) {
-      buildReachabilityProbability += nativeOutcomeProbability
+  if (
+    alwaysCoveredPickedPerkMask !== null &&
+    studyResourceCoverageProfile.canCoverBuild(alwaysCoveredPickedPerkMask)
+  ) {
+    return {
+      buildReachabilityProbability: 1,
+      chanceCalculation: {
+        isNativeOutcomeIndependent: true,
+        probability: 1,
+        successfulNativeOutcomeCount: 1,
+        successfulNativeOutcomeProbabilityTerms: [
+          {
+            nativeCoveredPickedPerkIdsByOutcome: [
+              getNativeCoveredPickedPerkIds(alwaysCoveredPickedPerkMask),
+            ],
+            outcomeCount: 1,
+            probability: 1,
+          },
+        ],
+        totalNativeOutcomeCount: 1,
+      },
+      maximumNativeCoveredPickedPerkCount,
     }
   }
 
+  for (const [
+    nativeCoveredPickedPerkMask,
+    nativeOutcomeProbability,
+  ] of scopedNativeOutcomeDistribution) {
+    if (studyResourceCoverageProfile.canCoverBuild(nativeCoveredPickedPerkMask)) {
+      buildReachabilityProbability += nativeOutcomeProbability
+      addSuccessfulNativeOutcomeProbabilityTerm(nativeOutcomeProbability, nativeCoveredPickedPerkMask)
+    }
+  }
+
+  const clampedBuildReachabilityProbability = clampProbability(buildReachabilityProbability)
+
   return {
-    buildReachabilityProbability: clampProbability(buildReachabilityProbability),
+    buildReachabilityProbability: clampedBuildReachabilityProbability,
+    chanceCalculation: {
+      isNativeOutcomeIndependent: false,
+      probability: clampedBuildReachabilityProbability,
+      successfulNativeOutcomeCount,
+      successfulNativeOutcomeProbabilityTerms: [
+        ...successfulNativeOutcomeProbabilityTermsByKey.values(),
+      ].toSorted(
+        (leftTerm, rightTerm) =>
+          rightTerm.probability - leftTerm.probability ||
+          rightTerm.outcomeCount - leftTerm.outcomeCount,
+      ),
+      totalNativeOutcomeCount: scopedNativeOutcomeDistribution.size,
+    },
     maximumNativeCoveredPickedPerkCount,
   }
 }
@@ -2807,6 +2922,7 @@ export function createBackgroundFitEngine(
         backgroundFitBuildCache,
         cachedBackgroundFitRecord,
       ),
+      projection: backgroundFitBuildCache.projection,
       studyResourceCoverageProfile,
     })
 
@@ -3318,13 +3434,13 @@ export function createBackgroundFitEngine(
         profiles: StudyResourceChanceBreakdownProfile[],
       ): BackgroundFitStudyResourceChanceBreakdownEntry[] =>
         profiles.map((profile) => {
-          const probability = getCachedNativeOutcomeSummary({
+          const nativeOutcomeSummary = getCachedNativeOutcomeSummary({
             backgroundFitBuildCache,
             cachedBackgroundFitRecord,
             studyResourceCoverageProfile: profile.studyResourceCoverageProfile,
             studyResourceFilterCacheKey: profile.scopeCacheKey,
-          }).buildReachabilityProbability
-          const oneScrollEquivalentProbability =
+          })
+          const oneScrollEquivalentNativeOutcomeSummary =
             profile.oneScrollEquivalentScopeCacheKey &&
             profile.oneScrollEquivalentStudyResourceCoverageProfile
               ? getCachedNativeOutcomeSummary({
@@ -3333,19 +3449,22 @@ export function createBackgroundFitEngine(
                   studyResourceCoverageProfile:
                     profile.oneScrollEquivalentStudyResourceCoverageProfile,
                   studyResourceFilterCacheKey: profile.oneScrollEquivalentScopeCacheKey,
-                }).buildReachabilityProbability
+                })
               : null
           const shouldAllowSecondScroll =
             profile.shouldAllowSecondScroll &&
-            (oneScrollEquivalentProbability === null ||
-              probability - oneScrollEquivalentProbability >
+            (oneScrollEquivalentNativeOutcomeSummary === null ||
+              nativeOutcomeSummary.buildReachabilityProbability -
+                oneScrollEquivalentNativeOutcomeSummary.buildReachabilityProbability >
                 studyResourceStrategyProbabilityEpsilon)
+          const effectiveNativeOutcomeSummary = shouldAllowSecondScroll
+            ? nativeOutcomeSummary
+            : (oneScrollEquivalentNativeOutcomeSummary ?? nativeOutcomeSummary)
 
           return {
+            calculation: effectiveNativeOutcomeSummary.chanceCalculation,
             key: profile.key,
-            probability: shouldAllowSecondScroll
-              ? probability
-              : (oneScrollEquivalentProbability ?? probability),
+            probability: effectiveNativeOutcomeSummary.buildReachabilityProbability,
             shouldAllowBook: profile.shouldAllowBook,
             shouldAllowScroll: profile.shouldAllowScroll,
             shouldAllowSecondScroll,

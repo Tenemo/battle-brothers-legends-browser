@@ -7,6 +7,7 @@ import {
   requestSavedBuildPersistence,
   saveSavedBuildRecord,
   type SavedBuildPersistenceState,
+  type SavedBuildPlannerFilters,
   type SavedBuildRecord,
 } from './saved-builds-storage'
 
@@ -22,12 +23,14 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
     options: {
       optionalPerkIds?: string[]
       pickedPerkIds: string[]
+      plannerFilters?: SavedBuildPlannerFilters
     },
   ) => Promise<SavedBuildRecord>
   saveCurrentBuild: (options: {
     optionalPerkIds?: string[]
     name: string
     pickedPerkIds: string[]
+    plannerFilters?: SavedBuildPlannerFilters
   }) => Promise<SavedBuildRecord>
   savedBuildPersistenceState: SavedBuildPersistenceState
   savedBuilds: SavedBuildRecord[]
@@ -62,10 +65,12 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
       name,
       optionalPerkIds,
       pickedPerkIds,
+      plannerFilters,
     }: {
       name: string
       optionalPerkIds?: string[]
       pickedPerkIds: string[]
+      plannerFilters?: SavedBuildPlannerFilters
     }): Promise<SavedBuildRecord> => {
       try {
         setSavedBuildsErrorMessage(null)
@@ -75,6 +80,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
           name,
           optionalPerkIds,
           pickedPerkIds,
+          plannerFilters,
           referenceVersion,
         })
 
@@ -97,9 +103,11 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
       {
         optionalPerkIds,
         pickedPerkIds,
+        plannerFilters,
       }: {
         optionalPerkIds?: string[]
         pickedPerkIds: string[]
+        plannerFilters?: SavedBuildPlannerFilters
       },
     ): Promise<SavedBuildRecord> => {
       try {
@@ -120,6 +128,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
             name: savedBuildToOverwrite.name,
             optionalPerkIds,
             pickedPerkIds,
+            plannerFilters,
             referenceVersion,
           }),
           createdAt: savedBuildToOverwrite.createdAt,

@@ -262,6 +262,31 @@ function getDuplicateCampResourceModifierEntries(
   return duplicateEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
 }
 
+function getMissingBackgroundTraitDescriptionEntries(
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[],
+): string[] {
+  const missingEntries: string[] = []
+
+  for (const backgroundFitBackground of backgroundFitBackgrounds) {
+    const traitGroups = [
+      ['excluded trait', backgroundFitBackground.excludedTraits],
+      ['guaranteed trait', backgroundFitBackground.guaranteedTraits],
+    ] as const
+
+    for (const [traitGroupLabel, traits] of traitGroups) {
+      for (const trait of traits) {
+        if (!trait.description?.trim()) {
+          missingEntries.push(
+            `${backgroundFitBackground.backgroundName}::${backgroundFitBackground.sourceFilePath}::${traitGroupLabel}::${trait.traitName}`,
+          )
+        }
+      }
+    }
+  }
+
+  return missingEntries.toSorted((leftEntry, rightEntry) => leftEntry.localeCompare(rightEntry))
+}
+
 describe('generated dataset integrity', () => {
   test('keeps only the compact runtime data files in src/data', () => {
     expect(readdirSync(path.join(process.cwd(), 'src', 'data')).toSorted()).toEqual([
@@ -373,6 +398,11 @@ describe('generated dataset integrity', () => {
     ).toEqual([])
     expect(
       getDuplicateCampResourceModifierEntries(legendsBackgroundFitDataset.backgroundFitBackgrounds),
+    ).toEqual([])
+    expect(
+      getMissingBackgroundTraitDescriptionEntries(
+        legendsBackgroundFitDataset.backgroundFitBackgrounds,
+      ),
     ).toEqual([])
   })
 })

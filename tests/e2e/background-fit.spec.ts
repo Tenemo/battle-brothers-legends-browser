@@ -1,7 +1,9 @@
-import { expect, test, type Locator } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
+  backgroundFitCalculationTimeoutMs,
   enableCategory,
+  expectBackgroundFitCalculationComplete,
   expectViewportLocked,
   getBackgroundFitPanel,
   getBuildPerksBar,
@@ -19,43 +21,6 @@ const denseSharedBuildUrl =
   '/?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Fortified+Mind,Hold+Out,Underdog,Assured+Conquest'
 const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
 const denseSharedBuildSearchBackgroundQuery = 'disowned'
-const backgroundFitCalculationTimeoutMs = 30_000
-
-async function expectBackgroundFitCalculationComplete(
-  backgroundFitPanel: Locator,
-  options: { shouldObserveProgress?: boolean } = {},
-) {
-  const backgroundFitProgressBar = backgroundFitPanel.getByRole('progressbar', {
-    name: 'Background fit progress',
-  })
-  const backgroundFitRankingSummary = backgroundFitPanel.getByTestId(
-    'background-fit-ranking-summary',
-  )
-
-  if (options.shouldObserveProgress) {
-    await expect(backgroundFitProgressBar).toBeVisible()
-    await expect
-      .poll(
-        async () => {
-          const checkedBackgroundCount =
-            await backgroundFitProgressBar.getAttribute('aria-valuenow')
-          const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
-
-          return checkedBackgroundCount === totalBackgroundCount
-            ? 'complete'
-            : `${checkedBackgroundCount}/${totalBackgroundCount}`
-        },
-        { timeout: backgroundFitCalculationTimeoutMs },
-      )
-      .toBe('complete')
-  }
-
-  await expect(backgroundFitProgressBar).toHaveCount(0)
-  await expect(backgroundFitRankingSummary).toBeVisible({
-    timeout: backgroundFitCalculationTimeoutMs,
-  })
-  await expect(backgroundFitRankingSummary).toHaveAttribute('aria-hidden', 'false')
-}
 
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
   page,
@@ -1144,7 +1109,7 @@ test('keeps the background filter dropdown above background fit cards', async ({
   )
 })
 
-test('shows probabilistic background fit matches with percentage badges', async ({ page }) => {
+test('shows probabilistic background fit matches with plain percentage text', async ({ page }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
   await searchPerks(page, 'Danger Pay')
   await addPerkToBuildFromResults(page, 'Danger Pay')
@@ -1232,6 +1197,23 @@ test('shows probabilistic background fit matches with percentage badges', async 
   await expect(barterMatchRow.getByTestId('background-fit-match-probability-badge')).toHaveText(
     /\d+(\.\d)?%/,
   )
+  const barterMatchProbabilityStyle = await barterMatchRow
+    .getByTestId('background-fit-match-probability-badge')
+    .evaluate((element) => {
+      const computedStyle = window.getComputedStyle(element)
+
+      return {
+        backgroundImage: computedStyle.backgroundImage,
+        borderRadius: computedStyle.borderTopLeftRadius,
+        paddingLeft: computedStyle.paddingLeft,
+      }
+    })
+
+  expect(barterMatchProbabilityStyle).toEqual({
+    backgroundImage: 'none',
+    borderRadius: '0px',
+    paddingLeft: '0px',
+  })
   await expect(barterMatchRow).not.toContainText(/\/\s*\d+\s+perks?\s*\//)
   await barterMatchButton.click()
   await expect(page.getByLabel('Search perks')).toHaveValue('')

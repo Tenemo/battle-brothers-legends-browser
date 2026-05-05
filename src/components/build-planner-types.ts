@@ -1,4 +1,5 @@
 import type { BuildPerkPillSelection } from './BuildPerkPill'
+import type { SavedBuildPlannerFilters } from '../lib/saved-builds-storage'
 import type { LegendsPerkRecord } from '../types/legends-perks'
 
 export type BuildPlannerPickedPerk = LegendsPerkRecord & {
@@ -13,6 +14,7 @@ export type BuildPlannerSavedBuild = {
   name: string
   perkNames: string[]
   pickedPerkCount: number
+  plannerFilters?: SavedBuildPlannerFilters
   referenceVersion: string
   updatedAt: string
 }

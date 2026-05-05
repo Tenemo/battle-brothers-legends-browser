@@ -266,10 +266,15 @@ $primitive-rgb-colors: (
     --font-size-2xl: 1.125rem;
     --font-size-base: 0.875rem;
     --type-display-size: clamp(var(--primitive-length-1-42rem), 2.8vw, 2.17rem);
-    --type-detail-title-size: clamp(var(--primitive-length-1-35rem), 2.6vw, var(--control-height-md));
+    --type-detail-title-size: clamp(
+      var(--primitive-length-1-35rem),
+      2.6vw,
+      var(--control-height-md)
+    );
     --type-panel-title-size: var(--font-size-2xl);
     --type-section-title-size: var(--font-size-2xl);
     --type-subsection-title-size: var(--font-size-sm);
+    --type-planner-row-heading-size: var(--font-size-xl);
     --type-card-title-size: var(--font-size-lg);
     --type-body-size: var(--font-size-base);
     --type-support-size: var(--font-size-xs);

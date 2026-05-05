@@ -36,6 +36,7 @@
     "eslint:fix": "eslint . --fix",
     "test": "vitest run",
     "test:e2e": "node ./node_modules/@playwright/test/cli.js test",
+    "test:e2e:production": "node ./node_modules/@playwright/test/cli.js test --workers=1",
     "ensure:legends-reference": "node ./scripts/ensure-legends-reference.mjs",
     "sync:icons": "node ./scripts/sync-legends-icons.mjs",
     "sync:perks": "node ./scripts/sync-legends-perks.mjs"

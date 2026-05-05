@@ -9,6 +9,7 @@ const defaultBuildPlannerViewport = {
   height: 720,
   width: 900,
 } as const
+export const backgroundFitCalculationTimeoutMs = 30_000
 
 export const mediumBuildPlannerViewport = {
   height: 720,
@@ -116,6 +117,66 @@ export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
 }
 
+export async function expectBackgroundFitCalculationComplete(
+  backgroundFitPanel: Locator,
+  options: { shouldObserveProgress?: boolean } = {},
+): Promise<void> {
+  const backgroundFitProgressBar = backgroundFitPanel.getByRole('progressbar', {
+    name: 'Background fit progress',
+  })
+  const backgroundFitRankingSummary = backgroundFitPanel.getByTestId(
+    'background-fit-ranking-summary',
+  )
+
+  if (options.shouldObserveProgress) {
+    await expect(backgroundFitProgressBar).toBeVisible()
+    await expect
+      .poll(
+        async () => {
+          const checkedBackgroundCount =
+            await backgroundFitProgressBar.getAttribute('aria-valuenow')
+          const totalBackgroundCount = await backgroundFitProgressBar.getAttribute('aria-valuemax')
+
+          return checkedBackgroundCount === totalBackgroundCount
+            ? 'complete'
+            : `${checkedBackgroundCount}/${totalBackgroundCount}`
+        },
+        { timeout: backgroundFitCalculationTimeoutMs },
+      )
+      .toBe('complete')
+  }
+
+  await expect(backgroundFitProgressBar).toHaveCount(0, {
+    timeout: backgroundFitCalculationTimeoutMs,
+  })
+  await expect(backgroundFitRankingSummary).toBeVisible({
+    timeout: backgroundFitCalculationTimeoutMs,
+  })
+  await expect(backgroundFitRankingSummary).toHaveAttribute('aria-hidden', 'false')
+}
+
+export async function getPlannerBoardVisualVerticalOverflow(page: Page): Promise<number> {
+  return page.evaluate(() => {
+    const plannerBoard = document.querySelector('[data-testid="planner-board"]')
+
+    if (!(plannerBoard instanceof HTMLElement)) {
+      return Number.POSITIVE_INFINITY
+    }
+
+    const plannerBoardRectangle = plannerBoard.getBoundingClientRect()
+    const childRectangles = [...plannerBoard.children].map((child) => child.getBoundingClientRect())
+
+    if (childRectangles.length === 0) {
+      return 0
+    }
+
+    return (
+      Math.max(...childRectangles.map((rectangle) => rectangle.bottom)) -
+      plannerBoardRectangle.bottom
+    )
+  })
+}
+
 export async function expectSearchParam(
   page: Page,
   paramName: string,
@@ -129,7 +190,9 @@ export async function expectSearchParamValues(
   paramName: string,
   expectedValues: string[],
 ): Promise<void> {
-  await expect.poll(() => new URL(page.url()).searchParams.getAll(paramName)).toEqual(expectedValues)
+  await expect
+    .poll(() => new URL(page.url()).searchParams.getAll(paramName))
+    .toEqual(expectedValues)
 }
 
 export async function expectRawAncientScrollMarker(marker: Locator): Promise<void> {

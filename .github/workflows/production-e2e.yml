@@ -15,9 +15,11 @@ concurrency:
 jobs:
   validate-manual-production-mode:
     name: validate manual production mode
-    if: ${{ github.event_name == 'workflow_dispatch' }}
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch'
+      }}
     runs-on: ubuntu-latest
-
     steps:
       - name: reject misleading non-production manual runs
         run: |
@@ -85,7 +87,7 @@ jobs:
     container:
       image: mcr.microsoft.com/playwright:v1.59.1-noble
       options: --ipc=host
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     env:
       CI: true
@@ -110,7 +112,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: run production browser e2e
-        run: pnpm test:e2e
+        # Intentional: production coverage stays full-suite against the
+        # deployed site. The package script lowers worker count for
+        # determinism instead of narrowing this to smoke coverage.
+        run: pnpm run test:e2e:production
 
       - name: upload Playwright artifacts
         if: failure()

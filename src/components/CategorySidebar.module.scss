@@ -7,11 +7,9 @@
     @include rail-panel-shell(
       '.sidebarBody',
       '.categorySidebarRailButtonLabel',
-      translateX(var(--type-panel-title-size)),
+      translateX(var(--primitive-length-0-9rem)),
       translateY(var(--primitive-length-0-45rem))
     );
-
-    flex-direction: row-reverse;
   }
 
   .sidebarBody {
@@ -23,7 +21,7 @@
   }
 
   .categorySidebarRailButton {
-    border-left: var(--primitive-length-1px) solid var(--border-muted);
+    border-right: var(--primitive-length-1px) solid var(--border-muted);
 
     @include rail-button;
   }
@@ -357,7 +355,7 @@
     }
 
     .categorySidebarRailButton {
-      border-left: 0;
+      border-right: 0;
 
       @include mobile-rail;
     }

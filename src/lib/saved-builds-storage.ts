@@ -1,4 +1,21 @@
+import type { CategoryFilterMode } from './category-filter-state'
+import { baselineBackgroundVeteranPerkLevelIntervals } from './background-veteran-perks'
+
 export type SavedBuildPersistenceState = 'best-effort' | 'persistent' | 'unavailable' | 'unknown'
+
+export type SavedBuildPlannerFilters = {
+  categoryFilterMode: CategoryFilterMode
+  query: string
+  selectedBackgroundVeteranPerkLevelIntervals: number[]
+  selectedCategoryNames: string[]
+  selectedPerkGroupIdsByCategory: Record<string, string[]>
+  shouldAllowBackgroundStudyBook: boolean
+  shouldAllowBackgroundStudyScroll: boolean
+  shouldAllowSecondBackgroundStudyScroll: boolean
+  shouldIncludeAncientScrollPerkGroups: boolean
+  shouldIncludeOriginBackgrounds: boolean
+  shouldIncludeOriginPerkGroups: boolean
+}
 
 export type SavedBuildRecord = {
   createdAt: string
@@ -6,6 +23,7 @@ export type SavedBuildRecord = {
   name: string
   optionalPerkIds: string[]
   pickedPerkIds: string[]
+  plannerFilters?: SavedBuildPlannerFilters
   referenceVersion: string
   schemaVersion: 1
   updatedAt: string
@@ -17,6 +35,8 @@ const savedBuildsStoreName = 'saved-builds'
 const savedBuildSchemaVersion = 1
 const maximumSavedBuildNameLength = 80
 const maximumSavedBuildPerkCount = 500
+const maximumSavedBuildFilterValueCount = 500
+const maximumSavedBuildQueryLength = 300
 
 function collapseWhitespace(value: string): string {
   return value.trim().replace(/\s+/gu, ' ')
@@ -66,6 +86,179 @@ function normalizePickedPerkIds(pickedPerkIds: unknown): string[] {
   }
 
   return [...uniquePickedPerkIds]
+}
+
+function normalizeSavedBuildFilterStrings(values: unknown): string[] {
+  if (!Array.isArray(values)) {
+    return []
+  }
+
+  const normalizedValues = new Set<string>()
+
+  for (const value of values) {
+    if (typeof value !== 'string') {
+      continue
+    }
+
+    const normalizedValue = collapseWhitespace(value)
+
+    if (normalizedValue.length === 0) {
+      continue
+    }
+
+    normalizedValues.add(normalizedValue)
+
+    if (normalizedValues.size >= maximumSavedBuildFilterValueCount) {
+      break
+    }
+  }
+
+  return [...normalizedValues]
+}
+
+function normalizeSavedBuildFilterIntervals(
+  values: unknown,
+  defaultIntervals: readonly number[] = [],
+): number[] {
+  if (!Array.isArray(values)) {
+    return [...defaultIntervals]
+  }
+
+  const normalizedIntervals = new Set<number>()
+
+  for (const value of values) {
+    if (!Number.isInteger(value) || value <= 0) {
+      continue
+    }
+
+    normalizedIntervals.add(value)
+
+    if (normalizedIntervals.size >= maximumSavedBuildFilterValueCount) {
+      break
+    }
+  }
+
+  if (values.length > 0 && normalizedIntervals.size === 0) {
+    return [...defaultIntervals]
+  }
+
+  return [...normalizedIntervals].toSorted(
+    (leftInterval, rightInterval) => leftInterval - rightInterval,
+  )
+}
+
+function normalizeSelectedPerkGroupIdsByCategory(
+  selectedPerkGroupIdsByCategory: unknown,
+): Record<string, string[]> {
+  if (selectedPerkGroupIdsByCategory === null || typeof selectedPerkGroupIdsByCategory !== 'object') {
+    return {}
+  }
+
+  const normalizedSelectedPerkGroupIdsByCategory: Record<string, string[]> = {}
+
+  for (const [categoryName, selectedPerkGroupIds] of Object.entries(
+    selectedPerkGroupIdsByCategory,
+  )) {
+    const normalizedCategoryName = collapseWhitespace(categoryName)
+
+    if (normalizedCategoryName.length === 0) {
+      continue
+    }
+
+    const normalizedSelectedPerkGroupIds = normalizeSavedBuildFilterStrings(selectedPerkGroupIds)
+
+    if (normalizedSelectedPerkGroupIds.length > 0) {
+      normalizedSelectedPerkGroupIdsByCategory[normalizedCategoryName] =
+        normalizedSelectedPerkGroupIds
+    }
+
+    if (
+      Object.keys(normalizedSelectedPerkGroupIdsByCategory).length >=
+      maximumSavedBuildFilterValueCount
+    ) {
+      break
+    }
+  }
+
+  return normalizedSelectedPerkGroupIdsByCategory
+}
+
+function readBooleanProperty(
+  value: Record<string, unknown>,
+  key: keyof SavedBuildPlannerFilters,
+  defaultValue: boolean,
+): boolean {
+  return typeof value[key] === 'boolean' ? value[key] : defaultValue
+}
+
+function readCategoryFilterMode(value: unknown): CategoryFilterMode | null {
+  return value === 'all' || value === 'none' || value === 'selection' ? value : null
+}
+
+function readSavedBuildPlannerFilters(value: unknown): SavedBuildPlannerFilters | undefined {
+  if (value === undefined) {
+    return undefined
+  }
+
+  if (value === null || typeof value !== 'object') {
+    return undefined
+  }
+
+  const plannerFilters = value as Record<string, unknown>
+  const selectedCategoryNames = normalizeSavedBuildFilterStrings(
+    plannerFilters.selectedCategoryNames,
+  )
+  const selectedPerkGroupIdsByCategory = normalizeSelectedPerkGroupIdsByCategory(
+    plannerFilters.selectedPerkGroupIdsByCategory,
+  )
+  const inferredCategoryFilterMode =
+    selectedCategoryNames.length > 0 || Object.keys(selectedPerkGroupIdsByCategory).length > 0
+      ? 'selection'
+      : 'all'
+  const shouldAllowBackgroundStudyScroll = readBooleanProperty(
+    plannerFilters,
+    'shouldAllowBackgroundStudyScroll',
+    true,
+  )
+
+  return {
+    categoryFilterMode:
+      readCategoryFilterMode(plannerFilters.categoryFilterMode) ?? inferredCategoryFilterMode,
+    query:
+      typeof plannerFilters.query === 'string'
+        ? collapseWhitespace(plannerFilters.query).slice(0, maximumSavedBuildQueryLength)
+        : '',
+    selectedBackgroundVeteranPerkLevelIntervals: normalizeSavedBuildFilterIntervals(
+      plannerFilters.selectedBackgroundVeteranPerkLevelIntervals,
+      baselineBackgroundVeteranPerkLevelIntervals,
+    ),
+    selectedCategoryNames,
+    selectedPerkGroupIdsByCategory,
+    shouldAllowBackgroundStudyBook: readBooleanProperty(
+      plannerFilters,
+      'shouldAllowBackgroundStudyBook',
+      true,
+    ),
+    shouldAllowBackgroundStudyScroll,
+    shouldAllowSecondBackgroundStudyScroll:
+      shouldAllowBackgroundStudyScroll &&
+      readBooleanProperty(plannerFilters, 'shouldAllowSecondBackgroundStudyScroll', false),
+    shouldIncludeAncientScrollPerkGroups: readBooleanProperty(
+      plannerFilters,
+      'shouldIncludeAncientScrollPerkGroups',
+      true,
+    ),
+    shouldIncludeOriginBackgrounds: readBooleanProperty(
+      plannerFilters,
+      'shouldIncludeOriginBackgrounds',
+      false,
+    ),
+    shouldIncludeOriginPerkGroups: readBooleanProperty(
+      plannerFilters,
+      'shouldIncludeOriginPerkGroups',
+      false,
+    ),
+  }
 }
 
 function isValidDateString(value: string): boolean {
@@ -148,6 +341,7 @@ export function createSavedBuildRecord({
   now = new Date(),
   optionalPerkIds = [],
   pickedPerkIds,
+  plannerFilters,
   referenceVersion,
 }: {
   id?: string
@@ -155,6 +349,7 @@ export function createSavedBuildRecord({
   now?: Date
   optionalPerkIds?: string[]
   pickedPerkIds: string[]
+  plannerFilters?: SavedBuildPlannerFilters
   referenceVersion: string
 }): SavedBuildRecord {
   const normalizedPickedPerkIds = normalizePickedPerkIds(pickedPerkIds)
@@ -168,6 +363,7 @@ export function createSavedBuildRecord({
   }
 
   const savedAt = now.toISOString()
+  const normalizedPlannerFilters = readSavedBuildPlannerFilters(plannerFilters)
 
   return {
     createdAt: savedAt,
@@ -175,6 +371,7 @@ export function createSavedBuildRecord({
     name: normalizeSavedBuildName(name),
     optionalPerkIds: normalizedOptionalPerkIds,
     pickedPerkIds: normalizedPickedPerkIds,
+    ...(normalizedPlannerFilters ? { plannerFilters: normalizedPlannerFilters } : {}),
     referenceVersion,
     schemaVersion: savedBuildSchemaVersion,
     updatedAt: savedAt,
@@ -218,6 +415,7 @@ export function readSavedBuildRecord(value: unknown): SavedBuildRecord | null {
   const optionalPerkIds = normalizePickedPerkIds(savedBuild.optionalPerkIds).filter(
     (optionalPerkId) => pickedPerkIdSet.has(optionalPerkId),
   )
+  const plannerFilters = readSavedBuildPlannerFilters(savedBuild.plannerFilters)
 
   return {
     createdAt,
@@ -227,6 +425,7 @@ export function readSavedBuildRecord(value: unknown): SavedBuildRecord | null {
     ),
     optionalPerkIds,
     pickedPerkIds,
+    ...(plannerFilters ? { plannerFilters } : {}),
     referenceVersion,
     schemaVersion: savedBuildSchemaVersion,
     updatedAt,
