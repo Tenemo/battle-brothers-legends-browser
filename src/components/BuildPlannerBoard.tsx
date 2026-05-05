@@ -1,4 +1,4 @@
-import { lazy, Suspense, useId, type RefObject } from 'react'
+import { useId, type RefObject } from 'react'
 import catenaryChainUrl from '../assets/catenary-chain.svg'
 import { joinClassNames } from '../lib/class-names'
 import type {
@@ -17,17 +17,11 @@ import {
   renderGameIcon,
 } from '../lib/perk-display'
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import type { BuildPerkGroupTileOption } from './BuildPerkGroupTile'
+import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import { BuildRequirementIcon, PlannerSectionChevron } from './SharedControls'
 import type { BuildPlannerPickedPerk, PlannerPerkGroupSelection } from './build-planner-types'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
-
-const BuildPerkGroupTile = lazy(() =>
-  import('./BuildPerkGroupTile').then((componentModule) => ({
-    default: componentModule.BuildPerkGroupTile,
-  })),
-)
 
 const mustHaveLegendTileTitle =
   'This is how must-have perks look in the build. Background fit uses must-have perks for the main build chance.'
@@ -252,23 +246,19 @@ function renderPlannerGroupCard({
   const plannerGroupCardKey = `${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`
 
   return (
-    <Suspense
-      fallback={renderPlannerGroupCardPlaceholder({ groupedPerkGroup, keyPrefix })}
+    <BuildPerkGroupTile
+      groupLabel={plannerGroupLabel}
+      groupOptions={getPlannerGroupTileOptions(groupedPerkGroup.perkGroupOptions)}
       key={plannerGroupCardKey}
-    >
-      <BuildPerkGroupTile
-        groupLabel={plannerGroupLabel}
-        groupOptions={getPlannerGroupTileOptions(groupedPerkGroup.perkGroupOptions)}
-        metaLabel={formatPickedPerkCountLabel(groupedPerkGroup.perkNames.length)}
-        onInspectPerk={onInspectPerk}
-        onInspectPerkGroup={onInspectPerkGroup}
-        perks={groupedPerkGroup.perkNames.map((perkName, perkIndex) => ({
-          iconPath: groupedPerkGroup.perkIconPaths[perkIndex] ?? null,
-          perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
-          perkName,
-        }))}
-      />
-    </Suspense>
+      metaLabel={formatPickedPerkCountLabel(groupedPerkGroup.perkNames.length)}
+      onInspectPerk={onInspectPerk}
+      onInspectPerkGroup={onInspectPerkGroup}
+      perks={groupedPerkGroup.perkNames.map((perkName, perkIndex) => ({
+        iconPath: groupedPerkGroup.perkIconPaths[perkIndex] ?? null,
+        perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
+        perkName,
+      }))}
+    />
   )
 }
 

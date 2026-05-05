@@ -210,22 +210,6 @@
     }
   }
 
-  .workspaceStartupPanel,
-  .workspaceStartupRail {
-    min-height: 0;
-    height: 100%;
-
-    @include rounded-panel;
-  }
-
-  .workspaceStartupPanel {
-    width: 100%;
-  }
-
-  .workspaceStartupRail {
-    width: var(--rail-button-thickness);
-  }
-
   @include below-desktop {
     .appShell {
       height: auto;
@@ -241,12 +225,6 @@
       min-height: 0;
       order: 2;
       overflow: visible;
-    }
-
-    .workspaceStartupPanel,
-    .workspaceStartupRail {
-      width: 100%;
-      min-height: var(--primitive-length-18rem);
     }
   }
 

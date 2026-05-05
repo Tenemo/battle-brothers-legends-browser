@@ -158,15 +158,9 @@ function getSingleMatch(html: string, pattern: RegExp, description: string): Reg
 
 function createHydrationLoader(entryUrl: string): string {
   return `const entryUrl=${JSON.stringify(entryUrl)};
-let idleHydrationHandle=0;
-let automaticHydrationTimeout=0;
-const automaticHydrationDelayMs=5000;
-const automaticClientRenderDelayMs=5000;
 const manifestLoadDelayMs=8000;
 const manifestUrl="/favicon/site.webmanifest";
 const hydrationState=window.__battleBrothersHydrationState??={hasStarted:false};
-const interactionEvents=["pointerdown","keydown","focusin"];
-const listenerOptions={capture:true,passive:true};
 const shouldClientRenderImmediately=window.location.search!==""||window.location.hash!=="";
 function appendManifestLink(){
   if (document.querySelector('link[rel="manifest"]')) return;
@@ -178,11 +172,6 @@ function appendManifestLink(){
 function scheduleManifestLink(){
   window.setTimeout(appendManifestLink,manifestLoadDelayMs);
 }
-function clearInteractionListeners(){
-  for (const eventName of interactionEvents) {
-    window.removeEventListener(eventName,startHydration,listenerOptions);
-  }
-}
 function prepareClientRender(){
   if (!shouldClientRenderImmediately) return;
   document.documentElement.dataset.battleBrothersClientRender="true";
@@ -190,41 +179,14 @@ function prepareClientRender(){
 function startHydration(){
   if (hydrationState.hasStarted) return;
   hydrationState.hasStarted=true;
-  clearInteractionListeners();
-  if (idleHydrationHandle && "cancelIdleCallback" in window) {
-    window.cancelIdleCallback(idleHydrationHandle);
-  }
-  if (automaticHydrationTimeout) {
-    window.clearTimeout(automaticHydrationTimeout);
-  }
   prepareClientRender();
   import(entryUrl);
   scheduleManifestLink();
 }
-function scheduleHydration(){
-  const hydrationDelayMs=shouldClientRenderImmediately?automaticClientRenderDelayMs:automaticHydrationDelayMs;
-  automaticHydrationTimeout=window.setTimeout(() => {
-    automaticHydrationTimeout=0;
-    if ("requestIdleCallback" in window) {
-      idleHydrationHandle=window.requestIdleCallback(() => {
-        startHydration();
-      },{timeout:2000});
-      return;
-    }
-    startHydration();
-  },hydrationDelayMs);
-}
 if (hydrationState.hasStarted) {
   scheduleManifestLink();
 } else {
-  for (const eventName of interactionEvents) {
-    window.addEventListener(eventName,startHydration,listenerOptions);
-  }
-  if (document.readyState==="complete") {
-    scheduleHydration();
-  } else {
-    window.addEventListener("load",scheduleHydration,{once:true});
-  }
+  startHydration();
 }
 `
 }
