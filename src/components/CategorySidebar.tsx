@@ -87,8 +87,13 @@ export function CategorySidebar({
   selectedCategoryNames,
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
-  const { emphasizedCategoryNames, emphasizedPerkGroupKeys, hoveredPerkGroupKey } =
-    usePlannerInteractionState()
+  const {
+    emphasizedCategoryNames,
+    emphasizedPerkGroupKeys,
+    hoveredPerkGroupKey,
+    hoveredPerkPlacementCategoryNames,
+    hoveredPerkPlacementPerkGroupKeys,
+  } = usePlannerInteractionState()
   const {
     closeCategoryHover: onCloseCategoryHover,
     closePerkGroupHover: onClosePerkGroupHover,
@@ -170,19 +175,12 @@ export function CategorySidebar({
           const isAllPerkGroupsSelectionActive = isActive && selectedPerkGroupIds.length === 0
           const isHoveredCategory =
             hoveredPerkGroupKey?.startsWith(`${availableCategoryName}::`) ?? false
-          const hasVisibleHoveredPerkGroup =
-            isHoveredCategory &&
-            activePerkGroupOptions.some(
-              (perkGroupOption) =>
-                hoveredPerkGroupKey ===
-                getPerkGroupHoverKey({
-                  categoryName: availableCategoryName,
-                  perkGroupId: perkGroupOption.perkGroupId,
-                }),
-            )
+          const isHoveredPerkPlacementCategory =
+            hoveredPerkPlacementCategoryNames.has(availableCategoryName)
           const shouldHighlightCategory =
             emphasizedCategoryNames.has(availableCategoryName) ||
-            (isHoveredCategory && (!isCategoryExpanded || !hasVisibleHoveredPerkGroup))
+            isHoveredPerkPlacementCategory ||
+            isHoveredCategory
           return (
             <div
               className={styles.categoryCard}
@@ -290,7 +288,9 @@ export function CategorySidebar({
                       categoryName: availableCategoryName,
                       perkGroupId: perkGroupOption.perkGroupId,
                     })
-                    const isPerkGroupHighlighted = emphasizedPerkGroupKeys.has(perkGroupKey)
+                    const isPerkGroupHighlighted =
+                      emphasizedPerkGroupKeys.has(perkGroupKey) ||
+                      hoveredPerkPlacementPerkGroupKeys.has(perkGroupKey)
                     const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(
                       perkGroupOption.perkGroupId,
                     )

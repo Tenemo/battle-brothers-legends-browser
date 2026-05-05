@@ -42,6 +42,8 @@ function getIsMobilePerkResultViewport() {
 function renderPerkPlacementChip({
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  hoveredPerkPlacementCategoryNames,
+  hoveredPerkPlacementPerkGroupKeys,
   keyPrefix,
   perk,
   selectedEmphasisCategoryNames,
@@ -54,6 +56,8 @@ function renderPerkPlacementChip({
 }: {
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  hoveredPerkPlacementCategoryNames: ReadonlySet<string>
+  hoveredPerkPlacementPerkGroupKeys: ReadonlySet<string>
   keyPrefix: string
   perk: LegendsPerkRecord
   selectedEmphasisCategoryNames: ReadonlySet<string>
@@ -67,7 +71,10 @@ function renderPerkPlacementChip({
   const perkGroupKey = getPerkGroupHoverKey(placement)
   const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(placement.perkGroupId)
   const isHighlighted =
-    emphasizedPerkGroupKeys.has(perkGroupKey) || emphasizedCategoryNames.has(placement.categoryName)
+    emphasizedPerkGroupKeys.has(perkGroupKey) ||
+    emphasizedCategoryNames.has(placement.categoryName) ||
+    hoveredPerkPlacementPerkGroupKeys.has(perkGroupKey) ||
+    hoveredPerkPlacementCategoryNames.has(placement.categoryName)
   const isSelectedHighlighted =
     selectedEmphasisPerkGroupKeys.has(perkGroupKey) ||
     selectedEmphasisCategoryNames.has(placement.categoryName)
@@ -117,6 +124,8 @@ function renderPerkPlacementChip({
 function renderPerkPlacements({
   emphasizedCategoryNames,
   emphasizedPerkGroupKeys,
+  hoveredPerkPlacementCategoryNames,
+  hoveredPerkPlacementPerkGroupKeys,
   selectedEmphasisCategoryNames,
   selectedEmphasisPerkGroupKeys,
   onClosePerkGroupHover,
@@ -127,6 +136,8 @@ function renderPerkPlacements({
 }: {
   emphasizedCategoryNames: ReadonlySet<string>
   emphasizedPerkGroupKeys: ReadonlySet<string>
+  hoveredPerkPlacementCategoryNames: ReadonlySet<string>
+  hoveredPerkPlacementPerkGroupKeys: ReadonlySet<string>
   selectedEmphasisCategoryNames: ReadonlySet<string>
   selectedEmphasisPerkGroupKeys: ReadonlySet<string>
   onClosePerkGroupHover: (perkGroupKey: string) => void
@@ -147,6 +158,8 @@ function renderPerkPlacements({
     renderPerkPlacementChip({
       emphasizedCategoryNames,
       emphasizedPerkGroupKeys,
+      hoveredPerkPlacementCategoryNames,
+      hoveredPerkPlacementPerkGroupKeys,
       keyPrefix: `${perk.id}-placement-${placementIndex}`,
       onClosePerkGroupHover,
       onInspectPerkGroup,
@@ -196,6 +209,8 @@ export function PerkResults({
   const {
     emphasizedCategoryNames,
     emphasizedPerkGroupKeys,
+    hoveredPerkPlacementCategoryNames,
+    hoveredPerkPlacementPerkGroupKeys,
     hoveredPerkId,
     selectedEmphasisCategoryNames,
     selectedEmphasisPerkGroupKeys,
@@ -463,6 +478,8 @@ export function PerkResults({
                         {renderPerkPlacements({
                           emphasizedCategoryNames,
                           emphasizedPerkGroupKeys,
+                          hoveredPerkPlacementCategoryNames,
+                          hoveredPerkPlacementPerkGroupKeys,
                           onClosePerkGroupHover,
                           onInspectPerkGroup,
                           onOpenPerkGroupHover,

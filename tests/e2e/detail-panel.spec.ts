@@ -457,11 +457,40 @@ test('shows the dominant study resource strategy for the reported Peddler build'
 
   expect(mustHaveStudyResourceRowKinds).toEqual(['book', 'scroll'])
   await expect(berserkerStudyResourceTile).toBeVisible()
+  await page.getByRole('button', { name: 'Expand category Magic' }).click()
+
+  const magicCategoryButton = page.getByRole('button', { name: 'Enable category Magic' })
+  const berserkerSidebarGroupButton = getSidebarPerkGroupButton(page, 'Berserker')
+
+  await berserkerStudyResourceTile.hover()
+
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(berserkerSidebarGroupButton).toHaveAttribute('data-highlighted', 'true')
   await expect(berserkerStudyResourceTileIcons).toHaveCount(2)
   await expect(berserkerStudyResourceTileIcons.nth(1)).toHaveAttribute(
     'src',
     /\/game-icons\/ui\/items\/trade\/scroll\.png$/,
   )
+  const studyResourceIconMetrics = await studyResourcePlan.evaluate((plan) =>
+    [...plan.querySelectorAll('[data-testid="planner-group-option-icon"]')].map((element) => {
+      const rectangle = element.getBoundingClientRect()
+
+      return {
+        height: rectangle.height,
+        label: element.getAttribute('alt'),
+        width: rectangle.width,
+      }
+    }),
+  )
+
+  expect(studyResourceIconMetrics.length).toBeGreaterThan(0)
+
+  for (const iconMetric of studyResourceIconMetrics) {
+    expect(iconMetric.width, `${iconMetric.label} width`).toBeGreaterThanOrEqual(20)
+    expect(iconMetric.width, `${iconMetric.label} width`).toBeLessThanOrEqual(32)
+    expect(iconMetric.height, `${iconMetric.label} height`).toBeGreaterThanOrEqual(20)
+    expect(iconMetric.height, `${iconMetric.label} height`).toBeLessThanOrEqual(32)
+  }
   await expect(berserkerStudyResourceTile.getByRole('button', { name: 'Brawny' })).toBeVisible()
   await expect(berserkerStudyResourceTile.getByRole('button', { name: 'Colossus' })).toBeVisible()
   await expect(muscularityCoveredPerkPill).toBeVisible()

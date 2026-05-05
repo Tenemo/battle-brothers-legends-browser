@@ -729,13 +729,13 @@
 
   .plannerGroupCard,
   .plannerSectionPlaceholder {
-    min-height: var(--planner-group-row-min-height);
+    min-height: var(--planner-group-row-min-height, var(--planner-default-group-row-min-height));
     padding: var(--primitive-length-0-46rem) var(--space-md);
   }
 
   .plannerGroupCard {
     position: relative;
-    flex: 0 0 min(var(--planner-tile-width), 100%);
+    flex: 0 0 min(var(--planner-tile-width, var(--primitive-length-14rem)), 100%);
     overflow: hidden;
 
     @include surface-transition;
@@ -869,7 +869,7 @@
   }
 
   .plannerGroupOptionIcon {
-    @include size(var(--planner-icon-frame-size));
+    @include size(var(--planner-icon-frame-size, var(--primitive-length-1-72rem)));
 
     border-radius: var(--radius-sm);
     transition:

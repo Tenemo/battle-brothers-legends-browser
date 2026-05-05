@@ -23,6 +23,8 @@ export function createTestPlannerInteraction(
     hoveredBuildPerkTooltipId: undefined,
     hoveredPerkGroupKey: null,
     hoveredPerkId: null,
+    hoveredPerkPlacementCategoryNames: new Set(),
+    hoveredPerkPlacementPerkGroupKeys: new Set(),
     openBuildPerkHover: noop,
     openBuildPerkTooltip: noop,
     openCategoryHover: noop,

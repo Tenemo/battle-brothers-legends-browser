@@ -2575,10 +2575,24 @@ test('links search result hover highlighting with matching build planner perks',
   const pickedPerfectFocusTile = getBuildPerksBar(page)
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Perfect Focus' })
+  const expandTraitsCategoryButton = page.getByRole('button', { name: 'Expand category Traits' })
+
+  if (await expandTraitsCategoryButton.isVisible()) {
+    await expandTraitsCategoryButton.click()
+  }
+
+  const traitsCategoryButton = page.getByRole('button', { name: 'Enable category Traits' })
+  const calmSidebarGroupButton = getSidebarPerkGroupButton(page, 'Calm')
+  const perfectFocusResultsCalmPlacement = perfectFocusResultsRow.getByRole('button', {
+    name: 'Select perk group Calm',
+  })
 
   await perfectFocusResultsButton.hover()
 
   await expect(perfectFocusResultsRow).toHaveAttribute('data-highlighted', 'true')
+  await expect(traitsCategoryButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(calmSidebarGroupButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(perfectFocusResultsCalmPlacement).toHaveAttribute('data-highlighted', 'true')
   await expect(sharedPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
   await expect(individualPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
   await expect(pickedPerfectFocusTile).toHaveAttribute('data-highlighted', 'true')
@@ -2586,6 +2600,9 @@ test('links search result hover highlighting with matching build planner perks',
   await sharedPerfectFocusButton.hover()
 
   await expect(perfectFocusResultsRow).toHaveAttribute('data-highlighted', 'true')
+  await expect(traitsCategoryButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(calmSidebarGroupButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(perfectFocusResultsCalmPlacement).toHaveAttribute('data-highlighted', 'true')
   await expect(sharedPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
   await expect(individualPerfectFocusButton).toHaveAttribute('data-highlighted', 'true')
   await expect(pickedPerfectFocusTile).toHaveAttribute('data-highlighted', 'true')
@@ -2688,6 +2705,19 @@ test('links planner perk and category hover highlighting both ways', async ({ pa
 
   await expect(traitsCategoryButton).toHaveAttribute('data-highlighted', 'false')
   await expect(calmGroupCard).toHaveAttribute('data-highlighted', 'false')
+
+  await calmGroupCard.hover()
+
+  await expect(traitsCategoryButton).toHaveAttribute('data-highlighted', 'true')
+  await expect(clarityPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+  await expect(perfectFocusPickedPerkTile).toHaveAttribute('data-highlighted', 'true')
+
+  await page.mouse.move(1, 1)
+
+  await expect(traitsCategoryButton).toHaveAttribute('data-highlighted', 'false')
+  await expect(calmGroupCard).toHaveAttribute('data-highlighted', 'false')
+  await expect(clarityPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect(perfectFocusPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
 
   await traitsCategoryButton.hover()
 

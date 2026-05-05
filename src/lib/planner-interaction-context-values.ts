@@ -13,6 +13,8 @@ type PlannerInteractionState = Pick<
   | 'hoveredBuildPerkTooltipId'
   | 'hoveredPerkGroupKey'
   | 'hoveredPerkId'
+  | 'hoveredPerkPlacementCategoryNames'
+  | 'hoveredPerkPlacementPerkGroupKeys'
   | 'selectedEmphasisCategoryNames'
   | 'selectedEmphasisPerkGroupKeys'
 >

@@ -271,6 +271,58 @@ export function getBuildPerkHighlightPerkGroupKeys({
   return buildPerkHighlightPerkGroupKeys
 }
 
+function getHoveredPerkPlacementCategoryNames({
+  allPerksById,
+  hoveredPerkId,
+}: {
+  allPerksById: Map<string, LegendsPerkRecord>
+  hoveredPerkId: string | null
+}): Set<string> {
+  const hoveredPerkPlacementCategoryNames = new Set<string>()
+
+  if (hoveredPerkId === null) {
+    return hoveredPerkPlacementCategoryNames
+  }
+
+  const hoveredPerk = allPerksById.get(hoveredPerkId)
+
+  if (!hoveredPerk) {
+    return hoveredPerkPlacementCategoryNames
+  }
+
+  for (const placement of hoveredPerk.placements) {
+    hoveredPerkPlacementCategoryNames.add(placement.categoryName)
+  }
+
+  return hoveredPerkPlacementCategoryNames
+}
+
+function getHoveredPerkPlacementPerkGroupKeys({
+  allPerksById,
+  hoveredPerkId,
+}: {
+  allPerksById: Map<string, LegendsPerkRecord>
+  hoveredPerkId: string | null
+}): Set<string> {
+  const hoveredPerkPlacementPerkGroupKeys = new Set<string>()
+
+  if (hoveredPerkId === null) {
+    return hoveredPerkPlacementPerkGroupKeys
+  }
+
+  const hoveredPerk = allPerksById.get(hoveredPerkId)
+
+  if (!hoveredPerk) {
+    return hoveredPerkPlacementPerkGroupKeys
+  }
+
+  for (const placement of hoveredPerk.placements) {
+    hoveredPerkPlacementPerkGroupKeys.add(getPerkGroupHoverKey(placement))
+  }
+
+  return hoveredPerkPlacementPerkGroupKeys
+}
+
 export function usePerkInteractionState({
   allPerksById,
   selectedCategoryNames,
@@ -332,6 +384,22 @@ export function usePerkInteractionState({
       state.hoveredPerkGroupReference,
       state.hoveredPerkGroupReferenceSource,
     ],
+  )
+  const hoveredPerkPlacementCategoryNames = useMemo(
+    () =>
+      getHoveredPerkPlacementCategoryNames({
+        allPerksById,
+        hoveredPerkId: state.hoveredPerkId,
+      }),
+    [allPerksById, state.hoveredPerkId],
+  )
+  const hoveredPerkPlacementPerkGroupKeys = useMemo(
+    () =>
+      getHoveredPerkPlacementPerkGroupKeys({
+        allPerksById,
+        hoveredPerkId: state.hoveredPerkId,
+      }),
+    [allPerksById, state.hoveredPerkId],
   )
 
   const clearAllHover = useCallback(function clearAllHover() {
@@ -451,6 +519,8 @@ export function usePerkInteractionState({
     hoveredBuildPerkTooltipId,
     hoveredPerkGroupKey,
     hoveredPerkId: state.hoveredPerkId,
+    hoveredPerkPlacementCategoryNames,
+    hoveredPerkPlacementPerkGroupKeys,
     openCategoryHover,
     openBuildPerkHover,
     openBuildPerkTooltip,

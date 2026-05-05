@@ -637,7 +637,7 @@ test('keeps category hover and disclosure styling separate from perk group highl
 
   await expect(alchemyGroupButton).toHaveAttribute('data-highlighted', 'true')
   await expect(deadeyeGroupButton).toHaveAttribute('data-highlighted', 'false')
-  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'false')
+  await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'true')
 })
 
 test('places ancient scroll markers next to sidebar perk group names', async ({ page }) => {
