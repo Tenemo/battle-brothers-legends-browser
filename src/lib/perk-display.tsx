@@ -105,8 +105,9 @@ export function renderHighlightedText({
 
 export function groupBackgroundSources(
   backgroundSources: LegendsPerkBackgroundSource[],
-  getBackgroundSourceProbability: (backgroundSource: LegendsPerkBackgroundSource) => number = () =>
-    1,
+  getBackgroundSourceProbability: (backgroundSource: LegendsPerkBackgroundSource) => number = (
+    backgroundSource,
+  ) => backgroundSource.probability,
 ): GroupedBackgroundSource[] {
   const groupedBackgroundSources = new Map<string, GroupedBackgroundSource>()
 

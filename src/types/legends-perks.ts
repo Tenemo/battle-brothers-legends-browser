@@ -27,13 +27,10 @@ export type LegendsFavouredEnemyTarget = {
 }
 
 export type LegendsPerkBackgroundSource = {
-  backgroundId: string
   backgroundName: string
-  categoryName: string
-  chance: number | null
-  minimumPerkGroups: number | null
   perkGroupId: string
   perkGroupName: string
+  probability: number
 }
 
 export type LegendsPerkScenarioSource = {
@@ -60,6 +57,15 @@ export type LegendsPerkRecord = {
 }
 
 export type LegendsPerkUrlRecord = Pick<LegendsPerkRecord, 'id' | 'perkName'>
+
+export type LegendsPerkCatalogBackgroundSourceEntry = number[]
+
+export type LegendsPerkCatalogBackgroundSourceTable = {
+  backgroundNames: string[]
+  perkGroupIds: string[]
+  perkSourcesByPerkId: Record<string, LegendsPerkCatalogBackgroundSourceEntry[]>
+  probabilities: number[]
+}
 
 export type LegendsPerkCatalogRecord = Omit<
   LegendsPerkRecord,
@@ -138,6 +144,7 @@ export type LegendsPerksDataset = {
 }
 
 export type LegendsPerkCatalogDataset = {
+  backgroundSourceTable: LegendsPerkCatalogBackgroundSourceTable
   perks: LegendsPerkCatalogRecord[]
   referenceVersion: string
 }
@@ -147,4 +154,12 @@ export type LegendsBackgroundFitDataset = Pick<
   'backgroundFitBackgrounds' | 'backgroundFitRules' | 'referenceVersion'
 > & {
   perks: LegendsBuildSharePreviewPerkRecord[]
+}
+
+export type LegendsPlannerMetadataDataset = {
+  availableBackgroundVeteranPerkLevelIntervals: number[]
+  backgroundUrlOptions: Array<
+    Pick<LegendsBackgroundFitBackgroundDefinition, 'backgroundId' | 'sourceFilePath'>
+  >
+  referenceVersion: string
 }

@@ -3,26 +3,21 @@ import { formatMorePerkResultsLabel, groupBackgroundSources } from '../src/lib/p
 import type { LegendsPerkBackgroundSource } from '../src/types/legends-perks'
 
 function createBackgroundSource({
-  backgroundId,
   backgroundName,
-  categoryName = 'Traits',
   perkGroupId,
   perkGroupName,
+  probability,
 }: {
-  backgroundId: string
   backgroundName: string
-  categoryName?: string
   perkGroupId: string
   perkGroupName: string
+  probability: number
 }): LegendsPerkBackgroundSource {
   return {
-    backgroundId,
     backgroundName,
-    categoryName,
-    chance: null,
-    minimumPerkGroups: null,
     perkGroupId,
     perkGroupName,
+    probability,
   }
 }
 
@@ -36,93 +31,68 @@ describe('perk display', () => {
   test('groups background sources by probability and sorts them from highest chance', () => {
     const backgroundSources = [
       createBackgroundSource({
-        backgroundId: 'background.one_in_eight',
         backgroundName: 'Hedge Knight',
-        categoryName: 'Class',
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
+        probability: 0.125,
       }),
       createBackgroundSource({
-        backgroundId: 'background.guaranteed_one',
         backgroundName: 'Anatomist',
-        categoryName: 'Class',
         perkGroupId: 'FaithTree',
         perkGroupName: 'Faith',
+        probability: 1,
       }),
       createBackgroundSource({
-        backgroundId: 'background.half_duplicate',
         backgroundName: 'Scholar',
-        categoryName: 'Magic',
         perkGroupId: 'CalmTree',
         perkGroupName: 'Study',
+        probability: 0.5,
       }),
       createBackgroundSource({
-        backgroundId: 'background.never',
         backgroundName: 'Dormant',
-        categoryName: 'Weapon',
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
+        probability: 0,
       }),
       createBackgroundSource({
-        backgroundId: 'background.guaranteed_two',
         backgroundName: 'Youngblood',
-        categoryName: 'Magic',
         perkGroupId: 'DruidicArtsTree',
         perkGroupName: 'Druidic Arts',
+        probability: 1,
       }),
       createBackgroundSource({
-        backgroundId: 'background.half',
         backgroundName: 'Scholar',
-        categoryName: 'Profession',
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
+        probability: 0.5,
       }),
       createBackgroundSource({
-        backgroundId: 'background.half_other',
         backgroundName: 'Pilgrim',
-        categoryName: 'Traits',
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
+        probability: 0.5,
       }),
       createBackgroundSource({
-        backgroundId: 'background.rounded_one',
         backgroundName: 'Militia',
-        categoryName: 'Class',
         perkGroupId: 'NetsTree',
         perkGroupName: 'Nets',
+        probability: 0.001,
       }),
       createBackgroundSource({
-        backgroundId: 'background.rounded_two',
         backgroundName: 'Indebted',
-        categoryName: 'Enemy',
         perkGroupId: 'SwordmastersTree',
         perkGroupName: 'Swordmasters',
+        probability: 0.00102,
       }),
       createBackgroundSource({
-        backgroundId: 'background.rounded_three',
         backgroundName: 'Caravan Hand',
-        categoryName: 'Profession',
         perkGroupId: 'TradeTree',
         perkGroupName: 'Trade',
+        probability: 0.000999,
       }),
     ]
-    const probabilityByBackgroundId = new Map([
-      ['background.guaranteed_one', 1],
-      ['background.guaranteed_two', 1],
-      ['background.half', 0.5],
-      ['background.half_duplicate', 0.5],
-      ['background.half_other', 0.5],
-      ['background.one_in_eight', 0.125],
-      ['background.rounded_one', 0.001],
-      ['background.rounded_two', 0.00102],
-      ['background.rounded_three', 0.000999],
-      ['background.never', 0],
-    ])
 
-    const groupedBackgroundSources = groupBackgroundSources(
-      backgroundSources,
-      (backgroundSource) => probabilityByBackgroundId.get(backgroundSource.backgroundId) ?? 0,
-    )
+    const groupedBackgroundSources = groupBackgroundSources(backgroundSources)
 
     expect(groupedBackgroundSources).toEqual([
       {

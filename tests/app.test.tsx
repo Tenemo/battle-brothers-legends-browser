@@ -5,6 +5,7 @@ import packageJson from '../package.json'
 import type {
   LegendsBackgroundFitDataset,
   LegendsPerkCatalogDataset,
+  LegendsPlannerMetadataDataset,
 } from '../src/types/legends-perks'
 
 const { backgroundFitSourceFileNamesForAppTests, perkNamesForAppTests } = vi.hoisted(() => ({
@@ -29,6 +30,7 @@ async function loadFilteredAppTestDatasets() {
     '../src/data/legends-background-fit.json',
   )) as LegendsBackgroundFitDataset
   const perks = actualCatalogDataset.perks.filter((perk) => perkNamesForAppTests.has(perk.perkName))
+  const perkIds = new Set(perks.map((perk) => perk.id))
   const backgroundFitBackgrounds = actualBackgroundFitDataset.backgroundFitBackgrounds.filter(
     (backgroundFit) =>
       backgroundFitSourceFileNamesForAppTests.has(
@@ -40,15 +42,24 @@ async function loadFilteredAppTestDatasets() {
     actualBackgroundFitDataset,
     actualCatalogDataset,
     backgroundFitBackgrounds,
+    backgroundSourceTable: {
+      ...actualCatalogDataset.backgroundSourceTable,
+      perkSourcesByPerkId: Object.fromEntries(
+        Object.entries(actualCatalogDataset.backgroundSourceTable.perkSourcesByPerkId).filter(
+          ([perkId]) => perkIds.has(perkId),
+        ),
+      ),
+    },
     perks,
   }
 }
 
 vi.mock('../src/data/legends-perk-catalog.json', async () => {
-  const { actualCatalogDataset, perks } = await loadFilteredAppTestDatasets()
+  const { actualCatalogDataset, backgroundSourceTable, perks } = await loadFilteredAppTestDatasets()
 
   return {
     default: {
+      backgroundSourceTable,
       referenceVersion: actualCatalogDataset.referenceVersion,
       perks,
     } satisfies LegendsPerkCatalogDataset,
@@ -71,6 +82,22 @@ vi.mock('../src/data/legends-background-fit.json', async () => {
         placements,
       })),
     } satisfies LegendsBackgroundFitDataset,
+  }
+})
+
+vi.mock('../src/data/legends-planner-metadata.json', async () => {
+  const { actualBackgroundFitDataset, backgroundFitBackgrounds } =
+    await loadFilteredAppTestDatasets()
+
+  return {
+    default: {
+      availableBackgroundVeteranPerkLevelIntervals: [2, 3, 4],
+      backgroundUrlOptions: backgroundFitBackgrounds.map(({ backgroundId, sourceFilePath }) => ({
+        backgroundId,
+        sourceFilePath,
+      })),
+      referenceVersion: actualBackgroundFitDataset.referenceVersion,
+    } satisfies LegendsPlannerMetadataDataset,
   }
 })
 

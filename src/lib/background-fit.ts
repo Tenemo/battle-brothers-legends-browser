@@ -320,9 +320,7 @@ function comparePerkBackgroundSources(
 ): number {
   return (
     leftSource.backgroundName.localeCompare(rightSource.backgroundName) ||
-    getCategoryPriority(leftSource.categoryName) - getCategoryPriority(rightSource.categoryName) ||
     leftSource.perkGroupName.localeCompare(rightSource.perkGroupName) ||
-    leftSource.backgroundId.localeCompare(rightSource.backgroundId) ||
     leftSource.perkGroupId.localeCompare(rightSource.perkGroupId)
   )
 }
@@ -3798,13 +3796,10 @@ export function createBackgroundFitEngine(
 
             return [
               {
-                backgroundId: backgroundDefinition.backgroundId,
                 backgroundName: backgroundDefinition.backgroundName,
-                categoryName: placement.categoryName,
-                chance: categoryDefinition.chance ?? null,
-                minimumPerkGroups: categoryDefinition.minimumPerkGroups ?? null,
                 perkGroupId: placement.perkGroupId,
                 perkGroupName: placement.perkGroupName,
+                probability,
               },
             ]
           }),

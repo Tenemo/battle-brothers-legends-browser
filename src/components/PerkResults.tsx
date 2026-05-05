@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef, useState } from 'react'
+import { startTransition, useEffect, useId, useRef, useState } from 'react'
 import {
   getPerkDisplayIconPath,
   getPerkGroupHoverKey,
@@ -25,6 +25,8 @@ import sharedStyles from './SharedControls.module.scss'
 import styles from './PerkResults.module.scss'
 
 const mobilePerkResultBatchSize = 12
+const desktopInitialPerkResultBatchSize = 48
+const desktopPerkResultBatchSize = 48
 const mobilePerkResultMediaQuery = '(max-width: 760px)'
 const perkFilterTooltips = {
   ancientScrollPerks: 'Shows perk groups that are only available through ancient scroll sources.',
@@ -229,6 +231,10 @@ export function PerkResults({
     resultSetKey: '',
     visiblePerkCount: mobilePerkResultBatchSize,
   })
+  const [desktopPerkResultWindow, setDesktopPerkResultWindow] = useState({
+    resultSetKey: '',
+    visiblePerkCount: desktopInitialPerkResultBatchSize,
+  })
   const perkFilterMenuId = useId()
   const perkFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const resultsListRef = useRef<HTMLUListElement | null>(null)
@@ -236,9 +242,14 @@ export function PerkResults({
     mobilePerkResultWindow.resultSetKey === visiblePerkResultSetKey
       ? mobilePerkResultWindow.visiblePerkCount
       : mobilePerkResultBatchSize
-  const displayedPerks = isMobilePerkResultViewport
-    ? visiblePerks.slice(0, effectiveMobileVisiblePerkCount)
-    : visiblePerks
+  const effectiveDesktopVisiblePerkCount =
+    desktopPerkResultWindow.resultSetKey === visiblePerkResultSetKey
+      ? desktopPerkResultWindow.visiblePerkCount
+      : desktopInitialPerkResultBatchSize
+  const displayedPerkCount = isMobilePerkResultViewport
+    ? effectiveMobileVisiblePerkCount
+    : effectiveDesktopVisiblePerkCount
+  const displayedPerks = visiblePerks.slice(0, displayedPerkCount)
   const hiddenMobilePerkCount = isMobilePerkResultViewport
     ? Math.max(visiblePerks.length - displayedPerks.length, 0)
     : 0
@@ -255,6 +266,44 @@ export function PerkResults({
       ),
     })
   }
+
+  useEffect(() => {
+    if (isMobilePerkResultViewport || effectiveDesktopVisiblePerkCount >= visiblePerks.length) {
+      return
+    }
+
+    const desktopPerkResultBatchTimeout = window.setTimeout(() => {
+      startTransition(() => {
+        setDesktopPerkResultWindow((currentDesktopPerkResultWindow) => {
+          const currentDesktopVisiblePerkCount =
+            currentDesktopPerkResultWindow.resultSetKey === visiblePerkResultSetKey
+              ? currentDesktopPerkResultWindow.visiblePerkCount
+              : desktopInitialPerkResultBatchSize
+
+          if (currentDesktopVisiblePerkCount >= visiblePerks.length) {
+            return currentDesktopPerkResultWindow
+          }
+
+          return {
+            resultSetKey: visiblePerkResultSetKey,
+            visiblePerkCount: Math.min(
+              currentDesktopVisiblePerkCount + desktopPerkResultBatchSize,
+              visiblePerks.length,
+            ),
+          }
+        })
+      })
+    }, 16)
+
+    return () => {
+      window.clearTimeout(desktopPerkResultBatchTimeout)
+    }
+  }, [
+    effectiveDesktopVisiblePerkCount,
+    isMobilePerkResultViewport,
+    visiblePerkResultSetKey,
+    visiblePerks.length,
+  ])
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {

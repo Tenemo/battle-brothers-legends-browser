@@ -3,7 +3,7 @@ import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import legendsPerkCatalogDatasetJson from '../src/data/legends-perk-catalog.json'
-import { createBackgroundFitEngine } from '../src/lib/background-fit'
+import legendsPlannerMetadataDatasetJson from '../src/data/legends-planner-metadata.json'
 import { getPerkGroupCount, hydrateCatalogPerks } from '../src/lib/legends-data'
 import { filterAndSortPerks } from '../src/lib/perk-search'
 import type {
@@ -11,10 +11,13 @@ import type {
   LegendsBackgroundFitDataset,
   LegendsPerkCatalogDataset,
   LegendsPerkCatalogRecord,
+  LegendsPlannerMetadataDataset,
 } from '../src/types/legends-perks'
 
 const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
 const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
+const legendsPlannerMetadataDataset =
+  legendsPlannerMetadataDatasetJson as LegendsPlannerMetadataDataset
 
 const expectedDuplicatePerkNamesByName = new Map<string, string[]>([
   ['Chain Lightning', ['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning']],
@@ -292,13 +295,29 @@ describe('generated dataset integrity', () => {
     expect(readdirSync(path.join(process.cwd(), 'src', 'data')).toSorted()).toEqual([
       'legends-background-fit.json',
       'legends-perk-catalog.json',
+      'legends-planner-metadata.json',
     ])
-    expect(Object.keys(legendsPerkCatalogDataset)).toEqual(['referenceVersion', 'perks'])
+    expect(Object.keys(legendsPerkCatalogDataset)).toEqual([
+      'backgroundSourceTable',
+      'referenceVersion',
+      'perks',
+    ])
+    expect(Object.keys(legendsPerkCatalogDataset.backgroundSourceTable)).toEqual([
+      'backgroundNames',
+      'perkGroupIds',
+      'perkSourcesByPerkId',
+      'probabilities',
+    ])
     expect(Object.keys(legendsBackgroundFitDataset)).toEqual([
       'backgroundFitBackgrounds',
       'backgroundFitRules',
       'referenceVersion',
       'perks',
+    ])
+    expect(Object.keys(legendsPlannerMetadataDataset)).toEqual([
+      'availableBackgroundVeteranPerkLevelIntervals',
+      'backgroundUrlOptions',
+      'referenceVersion',
     ])
   })
 
@@ -309,6 +328,17 @@ describe('generated dataset integrity', () => {
 
     expect(legendsPerkCatalogDataset.referenceVersion).toBe(
       legendsBackgroundFitDataset.referenceVersion,
+    )
+    expect(legendsPlannerMetadataDataset.referenceVersion).toBe(
+      legendsBackgroundFitDataset.referenceVersion,
+    )
+    expect(legendsPlannerMetadataDataset.backgroundUrlOptions).toEqual(
+      legendsBackgroundFitDataset.backgroundFitBackgrounds.map(
+        ({ backgroundId, sourceFilePath }) => ({
+          backgroundId,
+          sourceFilePath,
+        }),
+      ),
     )
     expect(backgroundFitPerksById.size).toBe(legendsPerkCatalogDataset.perks.length)
     expect(getPerkGroupCount(legendsPerkCatalogDataset.perks)).toBeGreaterThan(0)
@@ -361,7 +391,7 @@ describe('generated dataset integrity', () => {
   test('hydrates background source search text without storing it in the catalog', () => {
     const runtimePerks = hydrateCatalogPerks(
       legendsPerkCatalogDataset.perks,
-      createBackgroundFitEngine(legendsBackgroundFitDataset),
+      legendsPerkCatalogDataset.backgroundSourceTable,
     )
     const apprenticeSearchResults = filterAndSortPerks(runtimePerks, {
       query: 'Apprentice',
@@ -373,6 +403,9 @@ describe('generated dataset integrity', () => {
     expect(
       legendsPerkCatalogDataset.perks.some((perk) => Object.hasOwn(perk, 'backgroundSources')),
     ).toBe(false)
+    expect(
+      Object.keys(legendsPerkCatalogDataset.backgroundSourceTable.perkSourcesByPerkId).length,
+    ).toBeGreaterThan(0)
   })
 
   test('only references game icons that exist in the served asset directory', () => {

@@ -40,6 +40,9 @@
 
   .perkRow {
     position: relative;
+    contain: layout paint style;
+    content-visibility: auto;
+    contain-intrinsic-size: var(--primitive-length-8-7rem);
     width: 100%;
     border: var(--primitive-length-1px) solid var(--border-muted);
     border-radius: var(--radius-2xl);

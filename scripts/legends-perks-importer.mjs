@@ -10,6 +10,12 @@ import {
 } from '../src/lib/dynamic-background-categories.ts'
 import { isOriginBackgroundSourceLabel } from '../src/lib/background-origin.ts'
 import {
+  calculateBackgroundPerkGroupProbabilities,
+  createBackgroundPerkGroupProbabilityContext,
+  getPerkGroupProbabilityKey,
+} from '../src/lib/background-fit-probabilities.ts'
+import { getAvailableBackgroundVeteranPerkLevelIntervals } from '../src/lib/background-veteran-perks.ts'
+import {
   SquirrelSubsetParser,
   collectTopLevelStatements,
   parseSquirrelValue,
@@ -2890,11 +2896,7 @@ function buildSearchText(perkRecord) {
 
   const backgroundText = perkRecord.backgroundSources
     .map((backgroundSource) =>
-      [
-        backgroundSource.backgroundName,
-        backgroundSource.categoryName,
-        backgroundSource.perkGroupName,
-      ].join(' '),
+      [backgroundSource.backgroundName, backgroundSource.perkGroupName].join(' '),
     )
     .join(' ')
 
@@ -2930,13 +2932,82 @@ function comparePlacements(leftPlacement, rightPlacement, categoryOrder) {
   )
 }
 
-function compareBackgroundSources(leftSource, rightSource, categoryOrder) {
+function compareBackgroundSources(leftSource, rightSource) {
   return (
     leftSource.backgroundName.localeCompare(rightSource.backgroundName) ||
-    getCategoryPriority(categoryOrder, leftSource.categoryName) -
-      getCategoryPriority(categoryOrder, rightSource.categoryName) ||
-    leftSource.perkGroupName.localeCompare(rightSource.perkGroupName)
+    leftSource.perkGroupName.localeCompare(rightSource.perkGroupName) ||
+    leftSource.perkGroupId.localeCompare(rightSource.perkGroupId) ||
+    rightSource.probability - leftSource.probability
   )
+}
+
+function getUniqueDynamicPerkPlacements(perkRecord) {
+  const dynamicPerkPlacements = []
+  const seenPlacementKeys = new Set()
+
+  for (const placement of perkRecord.placements) {
+    if (!dynamicBackgroundCategoryNames.includes(placement.categoryName)) {
+      continue
+    }
+
+    const placementKey = `${placement.categoryName}::${placement.perkGroupId}`
+
+    if (seenPlacementKeys.has(placementKey)) {
+      continue
+    }
+
+    seenPlacementKeys.add(placementKey)
+    dynamicPerkPlacements.push(placement)
+  }
+
+  return dynamicPerkPlacements
+}
+
+function getPerkBackgroundSources({
+  backgroundFitBackgrounds,
+  perkRecord,
+  probabilitiesByBackgroundId,
+}) {
+  const dynamicPerkPlacements = getUniqueDynamicPerkPlacements(perkRecord)
+  const backgroundSources = backgroundFitBackgrounds.flatMap((backgroundDefinition) => {
+    const probabilitiesByPerkGroupKey =
+      probabilitiesByBackgroundId.get(backgroundDefinition.backgroundId) ?? new Map()
+
+    return dynamicPerkPlacements.flatMap((placement) => {
+      const categoryDefinition = backgroundDefinition.categories[placement.categoryName]
+      const probability =
+        probabilitiesByPerkGroupKey.get(
+          getPerkGroupProbabilityKey(placement.categoryName, placement.perkGroupId),
+        ) ?? 0
+
+      if (!categoryDefinition || probability <= 0) {
+        return []
+      }
+
+      return [
+        {
+          backgroundName: backgroundDefinition.backgroundName,
+          perkGroupId: placement.perkGroupId,
+          perkGroupName: placement.perkGroupName,
+          probability,
+        },
+      ]
+    })
+  })
+
+  return backgroundSources
+    .filter((backgroundSource, index, backgroundSourcesList) => {
+      const key = `${backgroundSource.backgroundName}::${backgroundSource.perkGroupId}::${backgroundSource.probability}`
+
+      return (
+        backgroundSourcesList.findIndex(
+          (candidate) =>
+            `${candidate.backgroundName}::${candidate.perkGroupId}::${candidate.probability}` ===
+            key,
+        ) === index
+      )
+    })
+    .toSorted(compareBackgroundSources)
 }
 
 function compareScenarioSources(leftSource, rightSource) {
@@ -3416,44 +3487,6 @@ export async function createDataset(
     }
   }
 
-  const backgroundSourcesByPerkConstName = new Map()
-
-  for (const background of backgrounds) {
-    const dynamicTreeEntries = tableEntriesToMap(background.dynamicTreeValue)
-
-    for (const [categoryName, perkGroupValue] of dynamicTreeEntries.entries()) {
-      const perkGroupConstNames = referenceArrayValue(perkGroupValue).map(getLastPathSegment)
-      const minimumPerkGroups = resolveMinimumValue(background.minimums, categoryName)
-      const chance = resolveChanceValue(background.minimums, categoryName)
-
-      for (const perkGroupConstName of perkGroupConstNames) {
-        const perkGroupDefinition = perkGroupDefinitions.get(perkGroupConstName)
-
-        if (!perkGroupDefinition) {
-          continue
-        }
-
-        for (const perkConstNames of perkGroupDefinition.perkConstNamesByTier) {
-          for (const perkConstName of perkConstNames) {
-            if (!backgroundSourcesByPerkConstName.has(perkConstName)) {
-              backgroundSourcesByPerkConstName.set(perkConstName, [])
-            }
-
-            backgroundSourcesByPerkConstName.get(perkConstName).push({
-              backgroundId: background.backgroundIdentifier,
-              backgroundName: background.backgroundName,
-              categoryName,
-              chance,
-              minimumPerkGroups,
-              perkGroupId: perkGroupDefinition.id,
-              perkGroupName: perkGroupDefinition.name,
-            })
-          }
-        }
-      }
-    }
-  }
-
   const scenarioSourcesByPerkConstName = new Map()
 
   function addScenarioSource(perkConstName, scenarioSource) {
@@ -3527,20 +3560,6 @@ export async function createDataset(
       favouredEnemyConfig.killsPerPercentBonusByEntityConstName,
       entityNamesByConstName,
     )
-    const backgroundSources = (backgroundSourcesByPerkConstName.get(perkDefinition.constName) ?? [])
-      .filter((backgroundSource, index, backgroundSourcesList) => {
-        const key = `${backgroundSource.backgroundId}::${backgroundSource.categoryName}::${backgroundSource.perkGroupId}`
-        return (
-          backgroundSourcesList.findIndex(
-            (candidate) =>
-              `${candidate.backgroundId}::${candidate.categoryName}::${candidate.perkGroupId}` ===
-              key,
-          ) === index
-        )
-      })
-      .toSorted((leftSource, rightSource) =>
-        compareBackgroundSources(leftSource, rightSource, categoryOrder),
-      )
     const scenarioSources = (scenarioSourcesByPerkConstName.get(perkDefinition.constName) ?? [])
       .filter((scenarioSource, index, scenarioSourcesList) => {
         const key = `${scenarioSource.scenarioId}::${scenarioSource.grantType}::${scenarioSource.sourceMethodName}::${scenarioSource.candidatePerkConstNames.join(',')}`
@@ -3570,7 +3589,7 @@ export async function createDataset(
       }))
 
     const perkRecord = {
-      backgroundSources,
+      backgroundSources: [],
       descriptionParagraphs,
       favouredEnemyTargets: favouredEnemyTargets.length > 0 ? favouredEnemyTargets : undefined,
       categoryNames,
@@ -3584,8 +3603,30 @@ export async function createDataset(
       searchText: '',
     }
 
-    perkRecord.searchText = buildSearchText(perkRecord)
     perkRecords.push(perkRecord)
+  }
+
+  const backgroundPerkGroupProbabilityContext = createBackgroundPerkGroupProbabilityContext({
+    perks: perkRecords.map(createBackgroundFitPerkRecord),
+    rules: backgroundFitRules,
+  })
+  const probabilitiesByBackgroundId = new Map(
+    backgroundFitBackgrounds.map((backgroundDefinition) => [
+      backgroundDefinition.backgroundId,
+      calculateBackgroundPerkGroupProbabilities(
+        backgroundDefinition,
+        backgroundPerkGroupProbabilityContext,
+      ),
+    ]),
+  )
+
+  for (const perkRecord of perkRecords) {
+    perkRecord.backgroundSources = getPerkBackgroundSources({
+      backgroundFitBackgrounds,
+      perkRecord,
+      probabilitiesByBackgroundId,
+    })
+    perkRecord.searchText = buildSearchText(perkRecord)
   }
 
   const uniquePerkGroupIdentifiers = new Set(
@@ -3712,8 +3753,60 @@ function createPerkCatalogRecord({
   }
 }
 
+function createPerkBackgroundSourceTable(perks) {
+  const backgroundNames = sortUniqueStrings(
+    perks.flatMap((perk) =>
+      perk.backgroundSources.map((backgroundSource) => backgroundSource.backgroundName),
+    ),
+  )
+  const perkGroupIds = sortUniqueStrings(
+    perks.flatMap((perk) =>
+      perk.backgroundSources.map((backgroundSource) => backgroundSource.perkGroupId),
+    ),
+  )
+  const probabilities = [
+    ...new Set(
+      perks.flatMap((perk) =>
+        perk.backgroundSources.map((backgroundSource) => backgroundSource.probability),
+      ),
+    ),
+  ].toSorted((leftProbability, rightProbability) => rightProbability - leftProbability)
+  const backgroundNameIndexByName = new Map(
+    backgroundNames.map((backgroundName, backgroundNameIndex) => [
+      backgroundName,
+      backgroundNameIndex,
+    ]),
+  )
+  const perkGroupIdIndexById = new Map(
+    perkGroupIds.map((perkGroupId, perkGroupIdIndex) => [perkGroupId, perkGroupIdIndex]),
+  )
+  const probabilityIndexByValue = new Map(
+    probabilities.map((probability, probabilityIndex) => [probability, probabilityIndex]),
+  )
+  const perkSourcesByPerkId = Object.fromEntries(
+    perks
+      .map((perk) => [
+        perk.id,
+        perk.backgroundSources.map((backgroundSource) => [
+          backgroundNameIndexByName.get(backgroundSource.backgroundName),
+          perkGroupIdIndexById.get(backgroundSource.perkGroupId),
+          probabilityIndexByValue.get(backgroundSource.probability),
+        ]),
+      ])
+      .filter(([, backgroundSources]) => backgroundSources.length > 0),
+  )
+
+  return {
+    backgroundNames,
+    perkGroupIds,
+    perkSourcesByPerkId,
+    probabilities,
+  }
+}
+
 function createPerkCatalogDataset(dataset) {
   return {
+    backgroundSourceTable: createPerkBackgroundSourceTable(dataset.perks),
     referenceVersion: dataset.referenceVersion,
     perks: dataset.perks.map(createPerkCatalogRecord),
   }
@@ -3737,6 +3830,21 @@ function createBackgroundFitDataset(dataset) {
   }
 }
 
+function createPlannerMetadataDataset(dataset) {
+  return {
+    availableBackgroundVeteranPerkLevelIntervals: getAvailableBackgroundVeteranPerkLevelIntervals(
+      dataset.backgroundFitBackgrounds,
+    ),
+    backgroundUrlOptions: dataset.backgroundFitBackgrounds.map(
+      ({ backgroundId, sourceFilePath }) => ({
+        backgroundId,
+        sourceFilePath,
+      }),
+    ),
+    referenceVersion: dataset.referenceVersion,
+  }
+}
+
 async function writeJsonFile(outputFilePath, value) {
   await mkdir(path.dirname(outputFilePath), { recursive: true })
   await writeFile(outputFilePath, `${JSON.stringify(value)}\n`, 'utf8')
@@ -3754,6 +3862,10 @@ export async function writeDatasetFile(
     writeJsonFile(
       path.join(outputDirectoryPath, 'legends-perk-catalog.json'),
       createPerkCatalogDataset(dataset),
+    ),
+    writeJsonFile(
+      path.join(outputDirectoryPath, 'legends-planner-metadata.json'),
+      createPlannerMetadataDataset(dataset),
     ),
   ])
 }

@@ -1,9 +1,5 @@
 import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type {
-  BackgroundFitCalculationProgress,
-  BackgroundFitEngine,
-  BackgroundFitView,
-} from './background-fit'
+import type { BackgroundFitCalculationProgress, BackgroundFitView } from './background-fit'
 import {
   createBackgroundFitWorkerClient,
   type BackgroundFitWorkerClient,
@@ -36,7 +32,6 @@ type BackgroundFitProgressState = {
 
 type UseBackgroundFitViewOptions = {
   allPerksById: ReadonlyMap<string, LegendsBackgroundFitPerkRecord>
-  backgroundFitEngine: BackgroundFitEngine
   optionalPickedPerkIds: string[]
   pickedPerkIds: string[]
   shouldAllowBackgroundStudyBook: boolean
@@ -79,7 +74,6 @@ function createBackgroundFitViewKey({
 
 export function useBackgroundFitView({
   allPerksById,
-  backgroundFitEngine,
   optionalPickedPerkIds,
   pickedPerkIds,
   shouldAllowBackgroundStudyBook,
@@ -150,37 +144,28 @@ export function useBackgroundFitView({
 
   const getBackgroundFitWorkerClient = useCallback(() => {
     backgroundFitWorkerClientRef.current ??= createBackgroundFitWorkerClient({
-      calculateOnMainThread(
-        {
-          optionalPickedPerkIds: fallbackOptionalPickedPerkIds,
-          pickedPerkIds: fallbackPickedPerkIds,
-          studyResourceFilter,
-        },
-        options,
-      ) {
-        const fallbackPickedPerks = fallbackPickedPerkIds.flatMap((pickedPerkId) => {
+      calculateOnMainThread(input, options) {
+        const fallbackPickedPerks = input.pickedPerkIds.flatMap((pickedPerkId) => {
           const pickedPerk = allPerksById.get(pickedPerkId)
 
           return pickedPerk ? [pickedPerk] : []
         })
 
-        return backgroundFitEngine.getBackgroundFitView(fallbackPickedPerks, studyResourceFilter, {
-          onPartialView: options?.onPartialView
-            ? (partialView) => {
-                options.onPartialView?.(partialView.view, {
-                  checkedBackgroundCount: partialView.checkedBackgroundCount,
-                  totalBackgroundCount: partialView.totalBackgroundCount,
-                })
-              }
-            : undefined,
-          onProgress: options?.onProgress,
-          optionalPickedPerkIds: new Set(fallbackOptionalPickedPerkIds),
-        })
+        return import('./background-fit-main-thread').then(
+          ({ calculateBackgroundFitViewOnMainThread }) =>
+            calculateBackgroundFitViewOnMainThread(
+              {
+                ...input,
+                pickedPerks: fallbackPickedPerks,
+              },
+              options,
+            ),
+        )
       },
     })
 
     return backgroundFitWorkerClientRef.current
-  }, [allPerksById, backgroundFitEngine])
+  }, [allPerksById])
 
   useEffect(
     () => () => {

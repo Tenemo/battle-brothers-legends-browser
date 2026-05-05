@@ -865,12 +865,10 @@ describe('background fit', () => {
     expect(boldTraitSources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          backgroundId: 'background.traits_fill',
           backgroundName: 'Balanced scholar',
-          categoryName: 'Traits',
-          minimumPerkGroups: 2,
           perkGroupId: 'BoldTree',
           perkGroupName: 'Bold',
+          probability: 0.5,
         }),
       ]),
     )
@@ -1116,9 +1114,9 @@ describe('background fit', () => {
     expect(engine.getPerkBackgroundSources(classFaithPerk)).toEqual([])
     expect(engine.getPerkBackgroundSources(magicFaithPerk)).toEqual([
       expect.objectContaining({
-        backgroundId: 'background.explicit_shared_faith',
-        categoryName: 'Magic',
+        backgroundName: 'Explicit shared faith',
         perkGroupId: 'SharedFaithTree',
+        probability: 1,
       }),
     ])
     expect(backgroundFit.matches).toEqual([

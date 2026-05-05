@@ -17,7 +17,6 @@ import {
   allPerks,
   allPerksById,
   availableBackgroundVeteranPerkLevelIntervals,
-  backgroundFitEngine,
   legendsPerkCatalogDataset,
   mediumDesktopBackgroundFitMediaQuery,
 } from './app-data'
@@ -232,7 +231,6 @@ export function PlannerExperience() {
     isBackgroundFitViewLoading,
   } = useBackgroundFitView({
     allPerksById,
-    backgroundFitEngine,
     optionalPickedPerkIds,
     pickedPerkIds,
     shouldAllowBackgroundStudyBook,
@@ -324,16 +322,7 @@ export function PlannerExperience() {
     ? (pickedPerkRequirementById.get(selectedPerk.id) ?? null)
     : null
   const groupedBackgroundSources = useMemo(
-    () =>
-      selectedPerk
-        ? groupBackgroundSources(selectedPerk.backgroundSources, (backgroundSource) =>
-            backgroundFitEngine.getBackgroundPerkGroupProbability(
-              backgroundSource.backgroundId,
-              backgroundSource.categoryName,
-              backgroundSource.perkGroupId,
-            ),
-          )
-        : [],
+    () => (selectedPerk ? groupBackgroundSources(selectedPerk.backgroundSources) : []),
     [selectedPerk],
   )
   const applyUrlState = useCallback(

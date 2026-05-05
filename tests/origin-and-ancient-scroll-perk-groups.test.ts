@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import legendsPerkCatalogDatasetJson from '../src/data/legends-perk-catalog.json'
-import { createBackgroundFitEngine } from '../src/lib/background-fit'
 import { hydrateCatalogPerks } from '../src/lib/legends-data'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
@@ -11,16 +9,12 @@ import {
   isOriginOrAncientScrollOnlyPerkGroupId,
 } from '../src/lib/origin-and-ancient-scroll-perk-groups'
 import { filterAndSortPerks } from '../src/lib/perk-search'
-import type {
-  LegendsBackgroundFitDataset,
-  LegendsPerkCatalogDataset,
-} from '../src/types/legends-perks'
+import type { LegendsPerkCatalogDataset } from '../src/types/legends-perks'
 
-const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
 const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
 const legendsPerks = hydrateCatalogPerks(
   legendsPerkCatalogDataset.perks,
-  createBackgroundFitEngine(legendsBackgroundFitDataset),
+  legendsPerkCatalogDataset.backgroundSourceTable,
 )
 const filteredPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(legendsPerks)
 const filteredPerksByName = new Map(filteredPerks.map((perk) => [perk.perkName, perk]))

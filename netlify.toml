@@ -73,6 +73,21 @@ for = "/game-icons/*"
 [headers.values]
 Cache-Control = "public, max-age=604800, stale-while-revalidate=31536000"
 
+[[headers]]
+for = "/favicon/*"
+[headers.values]
+Cache-Control = "public, max-age=604800, stale-while-revalidate=31536000"
+
+[[headers]]
+for = "/seo/*"
+[headers.values]
+Cache-Control = "public, max-age=604800, stale-while-revalidate=31536000"
+
+[[headers]]
+for = "/social/*"
+[headers.values]
+Cache-Control = "public, max-age=604800, stale-while-revalidate=31536000"
+
 [[redirects]]
 from = "/index.html"
 to = "/"
