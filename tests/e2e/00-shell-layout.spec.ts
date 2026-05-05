@@ -789,7 +789,7 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
         '[aria-label="Search perks"]',
       ) as HTMLElement | null
       const saveButton = document.querySelector(
-        'button[aria-label="Save / Load build"]',
+        'button[aria-label="Saved builds"]',
       ) as HTMLElement | null
 
       if (

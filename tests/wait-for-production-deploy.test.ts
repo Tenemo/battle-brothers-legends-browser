@@ -165,11 +165,11 @@ describe('wait for production deploy', () => {
   })
 
   test('formats readiness diagnostics with missing markers and version details', () => {
-    const failedHomepageStatus = formatProductionReadinessStatus(createStatus({ homepageOk: false }))
-
-    expect(failedHomepageStatus).toContain(
-      'homepage: status=503, contentType=application/json',
+    const failedHomepageStatus = formatProductionReadinessStatus(
+      createStatus({ homepageOk: false }),
     )
+
+    expect(failedHomepageStatus).toContain('homepage: status=503, contentType=application/json')
     expect(failedHomepageStatus).toContain(
       'markers=missing <title>Battle Brothers Legends build planner</title>',
     )

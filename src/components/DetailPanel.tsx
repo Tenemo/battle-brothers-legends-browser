@@ -32,6 +32,11 @@ import {
   formatBackgroundCampResourceModifierValue,
 } from '../lib/background-camp-resource-display'
 import {
+  getBackgroundTalentAttributeIconPath,
+  getBackgroundTalentAttributeIconTestId,
+  getGroupedCampResourceModifiers,
+} from '../lib/background-metadata-display'
+import {
   formatBackgroundVeteranPerkLevelIntervalBadge,
   formatBackgroundVeteranPerkLevelIntervalTitle,
 } from '../lib/background-veteran-perks'
@@ -2203,59 +2208,6 @@ function BackgroundFitChanceExplanation({
       </div>
     </DetailCollapsibleSection>
   )
-}
-
-const backgroundCampResourceModifierGroupOrder: LegendsBackgroundCampResourceModifierGroup[] = [
-  'capacity',
-  'skill',
-  'terrain',
-]
-
-function getGroupedCampResourceModifiers(
-  campResourceModifiers: LegendsBackgroundCampResourceModifier[],
-): {
-  group: LegendsBackgroundCampResourceModifierGroup
-  modifiers: LegendsBackgroundCampResourceModifier[]
-}[] {
-  return backgroundCampResourceModifierGroupOrder.flatMap((group) => {
-    const modifiers = campResourceModifiers.filter((modifier) => modifier.group === group)
-
-    return modifiers.length > 0 ? [{ group, modifiers }] : []
-  })
-}
-
-const backgroundTalentAttributeIconPathsByNormalizedName: Readonly<Record<string, string>> = {
-  fatigue: 'ui/icons/fatigue_va11.png',
-  hitpoints: 'ui/icons/health_va11.png',
-  initiative: 'ui/icons/initiative_va11.png',
-  'melee defense': 'ui/icons/melee_defense_va11.png',
-  'melee skill': 'ui/icons/melee_skill_va11.png',
-  'ranged defense': 'ui/icons/ranged_defense_va11.png',
-  'ranged skill': 'ui/icons/ranged_skill_va11.png',
-  resolve: 'ui/icons/bravery_va11.png',
-}
-
-function normalizeBackgroundTalentAttributeName(attributeName: string): string {
-  return attributeName
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function getBackgroundTalentAttributeIconPath(attributeName: string): string | null {
-  return (
-    backgroundTalentAttributeIconPathsByNormalizedName[
-      normalizeBackgroundTalentAttributeName(attributeName)
-    ] ?? null
-  )
-}
-
-function getBackgroundTalentAttributeIconTestId(attributeName: string): string {
-  return `detail-background-talent-attribute-icon-${normalizeBackgroundTalentAttributeName(
-    attributeName,
-  ).replaceAll(' ', '-')}`
 }
 
 function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {

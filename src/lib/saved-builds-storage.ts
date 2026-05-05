@@ -150,7 +150,10 @@ function normalizeSavedBuildFilterIntervals(
 function normalizeSelectedPerkGroupIdsByCategory(
   selectedPerkGroupIdsByCategory: unknown,
 ): Record<string, string[]> {
-  if (selectedPerkGroupIdsByCategory === null || typeof selectedPerkGroupIdsByCategory !== 'object') {
+  if (
+    selectedPerkGroupIdsByCategory === null ||
+    typeof selectedPerkGroupIdsByCategory !== 'object'
+  ) {
     return {}
   }
 

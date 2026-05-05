@@ -990,6 +990,15 @@
     z-index: var(--z-index-popover);
     width: max-content;
     padding: var(--space-lg) var(--space-xl);
+    padding-inline-end: calc(var(--space-xl) + var(--space-md) + (var(--control-height-sm) * 1.72));
+  }
+
+  .buildPerkTooltipAction {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    display: inline-flex;
+    z-index: var(--z-index-raised);
   }
 
   .buildPerkTooltipCopy {

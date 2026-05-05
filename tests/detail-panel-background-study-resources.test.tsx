@@ -1163,7 +1163,7 @@ describe('background details study resources', () => {
     expect(screen.getByRole('button', { name: 'Select perk group Heavy Armor' })).toBeVisible()
   })
 
-  test('explains why individual possible native rows combine into a smaller full-build chance', async () => {
+  test('explains why individual possible native rows combine into a smaller full build chance', async () => {
     const nightRaiderAssassinStrategyTarget = {
       ...assassinStrategyTarget,
       coveredPickedPerkIds: ['perk.legend_night_raider'],

@@ -81,7 +81,7 @@ export type LegendsBackgroundFitCategoryDefinition = {
 
 export type LegendsBackgroundCampResourceModifierGroup = 'capacity' | 'skill' | 'terrain'
 
-export type LegendsBackgroundCampResourceModifierValueKind = 'flat' | 'percent'
+type LegendsBackgroundCampResourceModifierValueKind = 'flat' | 'percent'
 
 export type LegendsBackgroundCampResourceModifier = {
   group: LegendsBackgroundCampResourceModifierGroup

@@ -25,7 +25,8 @@ const emptyBackgroundFitView: BackgroundFitView = {
 const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFilterTooltips = {
   originBackgrounds: 'Shows origin-only backgrounds hidden from the default results.',
-  studyBook: 'Counts one eligible skill book when checking whether a background can reach the picked build.',
+  studyBook:
+    'Counts one eligible skill book when checking whether a background can reach the picked build.',
   studyScroll:
     'Counts one eligible ancient scroll when checking whether a background can reach the picked build.',
   secondStudyScroll:

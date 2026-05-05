@@ -162,7 +162,9 @@ function createBackgroundSourceFileToken(sourceFilePath: string): string {
   return createUrlToken(sourceFileBaseName)
 }
 
-function createPerkNameCountByLookupValue(perks: Iterable<LegendsPerkUrlRecord>): Map<string, number> {
+function createPerkNameCountByLookupValue(
+  perks: Iterable<LegendsPerkUrlRecord>,
+): Map<string, number> {
   const perkNameCountByLookupValue = new Map<string, number>()
 
   for (const perk of perks) {

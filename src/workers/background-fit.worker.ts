@@ -1,5 +1,8 @@
 import legendsBackgroundFitDatasetJson from '../data/legends-background-fit.json'
-import { createBackgroundFitEngine } from '../lib/background-fit'
+import {
+  createBackgroundFitEngine,
+  isBackgroundFitCalculationCancelledError,
+} from '../lib/background-fit'
 import type {
   BackgroundFitWorkerRequest,
   BackgroundFitWorkerResponse,
@@ -41,14 +44,17 @@ function yieldToWorkerEventLoop(): Promise<void> {
   })
 }
 
-function calculateBackgroundFitView(request: BackgroundFitWorkerRequest) {
+async function calculateBackgroundFitView(request: BackgroundFitWorkerRequest) {
   const pickedPerks = request.pickedPerkIds.flatMap((pickedPerkId) => {
     const pickedPerk = perksById.get(pickedPerkId)
 
     return pickedPerk ? [pickedPerk] : []
   })
 
-  return backgroundFitEngine.getBackgroundFitView(pickedPerks, request.studyResourceFilter, {
+  return backgroundFitEngine.getBackgroundFitViewAsync(pickedPerks, request.studyResourceFilter, {
+    isCancelled() {
+      return request.requestId !== latestRequestId
+    },
     onPartialView(partialView) {
       if (request.requestId !== latestRequestId) {
         return
@@ -76,6 +82,8 @@ function calculateBackgroundFitView(request: BackgroundFitWorkerRequest) {
       })
     },
     optionalPickedPerkIds: new Set(request.optionalPickedPerkIds),
+    workChunkSize: 1,
+    yieldControl: yieldToWorkerEventLoop,
   })
 }
 
@@ -92,7 +100,7 @@ async function processPendingRequests(): Promise<void> {
       pendingRequest = null
 
       try {
-        const view = calculateBackgroundFitView(request)
+        const view = await calculateBackgroundFitView(request)
 
         if (request.requestId === latestRequestId) {
           postBackgroundFitResponse({
@@ -104,6 +112,14 @@ async function processPendingRequests(): Promise<void> {
           postSupersededBackgroundFitResponse(request.requestId)
         }
       } catch (error) {
+        if (
+          isBackgroundFitCalculationCancelledError(error) &&
+          request.requestId !== latestRequestId
+        ) {
+          postSupersededBackgroundFitResponse(request.requestId)
+          continue
+        }
+
         if (request.requestId === latestRequestId) {
           postBackgroundFitResponse({
             message: error instanceof Error ? error.message : 'Background fit calculation failed.',

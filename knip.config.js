@@ -9,6 +9,7 @@ const isProductionAnalysis = process.argv.includes('--production')
 export default {
   entry: [
     'netlify/edge-functions/build-seo.ts',
+    'src/types/virtual-modules.d.ts',
     'scripts/*.mjs',
     'scripts/*.d.mts',
     'tests/**/*.test.ts',

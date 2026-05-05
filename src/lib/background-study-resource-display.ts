@@ -38,7 +38,7 @@ function compareStudyResourceStrategyTargetsForDisplay(
   )
 }
 
-export function formatStudyResourceStrategyTargetNames(
+function formatStudyResourceStrategyTargetNames(
   targets: BackgroundFitStudyResourceStrategyTarget[],
 ): string {
   const targetNames = targets
@@ -53,7 +53,7 @@ export function formatStudyResourceStrategyTargetNames(
 }
 
 function getStrategyScopeChanceLabel(scope: StudyResourceStrategyScope): string {
-  return scope === 'must-have' ? 'must-have chance' : 'full-build chance'
+  return scope === 'must-have' ? 'must-have chance' : 'full build chance'
 }
 
 function getStudyResourceStrategyBadgeTitle({

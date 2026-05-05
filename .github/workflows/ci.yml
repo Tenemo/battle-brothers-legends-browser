@@ -43,6 +43,18 @@ jobs:
       - name: run lint
         run: pnpm lint
 
+      - name: run format check
+        run: pnpm format:check
+
+      - name: run stylelint
+        run: pnpm stylelint
+
+      - name: run knip
+        run: pnpm knip
+
+      - name: run production knip
+        run: pnpm knip:production
+
   typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 15

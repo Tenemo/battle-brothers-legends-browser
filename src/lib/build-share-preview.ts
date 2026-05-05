@@ -55,9 +55,7 @@ type BuildSharePreviewBuildState = {
   pickedPerkIds: string[]
 }
 
-function getPerksFromPickedPerkIds(
-  pickedPerkIds: string[],
-): LegendsBuildSharePreviewPerkRecord[] {
+function getPerksFromPickedPerkIds(pickedPerkIds: string[]): LegendsBuildSharePreviewPerkRecord[] {
   return pickedPerkIds.flatMap((pickedPerkId) => {
     const perk = allPerksById.get(pickedPerkId)
 
@@ -158,9 +156,7 @@ function getCachedTopBackgroundFits({
 
   topBackgroundFitsByCanonicalSearch.set(canonicalSearch, copyTopBackgroundFits(topBackgroundFits))
 
-  if (
-    topBackgroundFitsByCanonicalSearch.size > maxBuildSharePreviewTopBackgroundFitCacheEntries
-  ) {
+  if (topBackgroundFitsByCanonicalSearch.size > maxBuildSharePreviewTopBackgroundFitCacheEntries) {
     const oldestCanonicalSearch = topBackgroundFitsByCanonicalSearch.keys().next().value
 
     if (oldestCanonicalSearch !== undefined) {

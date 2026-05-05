@@ -477,7 +477,7 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   await expect(studyResourcePlan.getByText('Heavy Armor')).toHaveCount(0)
 })
 
-test('explains the reported Ranger full-build chance from remaining native rows', async ({
+test('explains the reported Ranger full build chance from remaining native rows', async ({
   page,
 }) => {
   await page.setViewportSize({ height: 720, width: 900 })

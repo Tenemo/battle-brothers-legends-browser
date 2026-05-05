@@ -20,6 +20,8 @@ import {
   unwrapTable,
 } from './squirrel-subset-parser.mjs'
 import { sortUniqueStrings } from './script-utils.mjs'
+import { addImporterParseWarning } from './importer-diagnostics.mjs'
+export { createImporterDiagnostics } from './importer-diagnostics.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -30,36 +32,6 @@ export const defaultReferenceRootDirectoryPath = defaultLegendsReferenceDirector
 
 const defaultCategoryOrder = [...dynamicBackgroundCategoryOrder]
 const fallbackVeteranPerkLevelInterval = 4
-
-export function createImporterDiagnostics() {
-  return {
-    warnings: [],
-  }
-}
-
-function summarizeDiagnosticSource(source) {
-  return source.replace(/\s+/g, ' ').trim().slice(0, 180)
-}
-
-function describeDiagnosticError(error) {
-  return error instanceof Error ? error.message : String(error)
-}
-
-function addImporterParseWarning(diagnosticContext, parserContext, source, error) {
-  if (!diagnosticContext?.diagnostics) {
-    return
-  }
-
-  // Keep unsupported Squirrel fragments non-fatal while making skipped parsing visible during sync.
-  diagnosticContext.diagnostics.warnings.push({
-    kind: 'parse-warning',
-    message: `Unable to parse ${parserContext}.`,
-    parserContext,
-    source: summarizeDiagnosticSource(source),
-    sourceFilePath: diagnosticContext.sourceFilePath ?? null,
-    errorMessage: describeDiagnosticError(error),
-  })
-}
 
 const favouredEnemyPerkConstByArrayName = {
   FavoriteBeast: 'LegendFavouredEnemyBeast',

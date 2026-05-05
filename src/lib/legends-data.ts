@@ -29,7 +29,6 @@ export function hydrateCatalogPerks(
 }
 
 export function getPerkGroupCount(perks: readonly Pick<LegendsPerkRecord, 'placements'>[]): number {
-  return new Set(
-    perks.flatMap((perk) => perk.placements.map((placement) => placement.perkGroupId)),
-  ).size
+  return new Set(perks.flatMap((perk) => perk.placements.map((placement) => placement.perkGroupId)))
+    .size
 }

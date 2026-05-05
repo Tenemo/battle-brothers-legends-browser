@@ -23,6 +23,26 @@ type CssRgbColorParts = {
   red: number
 }
 
+type LocatorBoundingBox = {
+  height: number
+  width: number
+  x: number
+  y: number
+}
+
+export async function getRequiredLocatorBoundingBox(
+  locator: Locator,
+  label: string,
+): Promise<LocatorBoundingBox> {
+  const boundingBox = await locator.boundingBox()
+
+  if (boundingBox === null) {
+    throw new Error(`${label} did not have a measurable bounding box.`)
+  }
+
+  return boundingBox
+}
+
 export function getParsedCssRgbColor(cssColor: string): CssRgbColorParts {
   const colorMatch = cssColor.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(0|1|0?\.\d+))?\)$/u)
 

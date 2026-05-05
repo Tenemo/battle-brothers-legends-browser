@@ -28,9 +28,7 @@ async function loadFilteredAppTestDatasets() {
   const actualBackgroundFitDataset = (await vi.importActual(
     '../src/data/legends-background-fit.json',
   )) as LegendsBackgroundFitDataset
-  const perks = actualCatalogDataset.perks.filter((perk) =>
-    perkNamesForAppTests.has(perk.perkName),
-  )
+  const perks = actualCatalogDataset.perks.filter((perk) => perkNamesForAppTests.has(perk.perkName))
   const backgroundFitBackgrounds = actualBackgroundFitDataset.backgroundFitBackgrounds.filter(
     (backgroundFit) =>
       backgroundFitSourceFileNamesForAppTests.has(

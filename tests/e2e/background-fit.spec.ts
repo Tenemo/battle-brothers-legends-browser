@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   backgroundFitCalculationTimeoutMs,
@@ -9,6 +9,7 @@ import {
   getBuildPerksBar,
   getBuildIndividualGroupsList,
   getDetailPanel,
+  getRequiredLocatorBoundingBox,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -21,6 +22,195 @@ const denseSharedBuildUrl =
   '/?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Fortified+Mind,Hold+Out,Underdog,Assured+Conquest'
 const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
 const denseSharedBuildSearchBackgroundQuery = 'disowned'
+const apprenticeDangerPayDetailUrl =
+  '/?detail=background&background=background.apprentice&background-source=apprentice&build=Danger+Pay'
+
+async function openFirstApprenticeOtherNativePerkTooltip(
+  page: Page,
+): Promise<{ perkName: string; tooltip: Locator }> {
+  await page.setViewportSize(mediumBuildPlannerViewport)
+  await page.goto(apprenticeDangerPayDetailUrl)
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const detailPanel = getDetailPanel(page)
+
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
+
+  const otherNativePerkGroupsToggle = detailPanel.getByTestId('detail-other-perk-groups-toggle')
+
+  await otherNativePerkGroupsToggle.scrollIntoViewIfNeeded()
+  await otherNativePerkGroupsToggle.click()
+
+  const otherNativePerkPill = detailPanel
+    .getByTestId('detail-other-perk-groups-section')
+    .getByTestId('planner-pill')
+    .first()
+
+  await expect(otherNativePerkPill).toBeVisible()
+
+  const perkName = ((await otherNativePerkPill.textContent()) ?? '').trim()
+
+  expect(perkName.length).toBeGreaterThan(0)
+
+  await otherNativePerkPill.hover()
+  await expect(otherNativePerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
+
+  const tooltip = page.getByTestId('build-perk-tooltip')
+
+  await expect(tooltip).toBeVisible({ timeout: 2500 })
+
+  return { perkName, tooltip }
+}
+
+async function readButtonInteractiveColorStyle(button: Locator) {
+  return button.evaluate((buttonElement) => {
+    const computedStyle = window.getComputedStyle(buttonElement)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderColor: computedStyle.borderTopColor,
+      color: computedStyle.color,
+    }
+  })
+}
+
+test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }) => {
+  const mustHaveTooltipState = await openFirstApprenticeOtherNativePerkTooltip(page)
+
+  await expect(
+    mustHaveTooltipState.tooltip.getByRole('button', {
+      name: `Add ${mustHaveTooltipState.perkName} to build from tooltip`,
+    }),
+  ).toBeVisible()
+  await expect(
+    mustHaveTooltipState.tooltip.getByRole('button', {
+      name: `Add ${mustHaveTooltipState.perkName} as optional from tooltip`,
+    }),
+  ).toBeVisible()
+
+  const tooltipActionLayout = await mustHaveTooltipState.tooltip
+    .getByTestId('build-perk-tooltip-action')
+    .evaluate((actionElement) => {
+      const tooltipElement = actionElement.closest('[data-testid="build-perk-tooltip"]')
+      const actionRectangle = actionElement.getBoundingClientRect()
+      const tooltipRectangle = tooltipElement?.getBoundingClientRect()
+
+      if (!(tooltipElement instanceof HTMLElement) || tooltipRectangle === undefined) {
+        return null
+      }
+
+      return {
+        actionHeight: actionRectangle.height,
+        rightGap: tooltipRectangle.right - actionRectangle.right,
+        topGap: actionRectangle.top - tooltipRectangle.top,
+      }
+    })
+
+  expect(tooltipActionLayout).toEqual(
+    expect.objectContaining({
+      actionHeight: expect.any(Number),
+      rightGap: expect.any(Number),
+      topGap: expect.any(Number),
+    }),
+  )
+  expect(tooltipActionLayout?.actionHeight ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(34)
+  expect(tooltipActionLayout?.rightGap ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(14)
+  expect(tooltipActionLayout?.topGap ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(14)
+
+  await mustHaveTooltipState.tooltip
+    .getByRole('button', {
+      name: `Add ${mustHaveTooltipState.perkName} to build from tooltip`,
+    })
+    .click()
+
+  await expect(
+    getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
+      hasText: mustHaveTooltipState.perkName,
+    }),
+  ).toHaveAttribute('data-requirement', 'must-have')
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
+
+  const optionalTooltipState = await openFirstApprenticeOtherNativePerkTooltip(page)
+
+  await optionalTooltipState.tooltip
+    .getByRole('button', {
+      name: `Add ${optionalTooltipState.perkName} as optional from tooltip`,
+    })
+    .click()
+
+  await expect(
+    getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
+      hasText: optionalTooltipState.perkName,
+    }),
+  ).toHaveAttribute('data-requirement', 'optional')
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
+})
+
+test('removes picked perks from the timer-launched perk tooltip', async ({ page }) => {
+  await page.setViewportSize(mediumBuildPlannerViewport)
+  await page.goto('/?build=Clarity')
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const pickedPerkTile = getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
+    hasText: 'Clarity',
+  })
+
+  await expect(pickedPerkTile).toBeVisible()
+  await pickedPerkTile.hover()
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
+
+  const tooltip = page.getByTestId('build-perk-tooltip')
+  const removeButton = tooltip.getByRole('button', {
+    name: 'Remove Clarity from build from tooltip',
+  })
+
+  await expect(tooltip).toBeVisible({ timeout: 2500 })
+  const removeButtonStyleBeforeHover = await readButtonInteractiveColorStyle(removeButton)
+  const removeButtonStyleKeyBeforeHover = JSON.stringify(removeButtonStyleBeforeHover)
+
+  await removeButton.hover()
+  await expect
+    .poll(async () => JSON.stringify(await readButtonInteractiveColorStyle(removeButton)))
+    .not.toBe(removeButtonStyleKeyBeforeHover)
+
+  const removeButtonStyleAfterHover = await readButtonInteractiveColorStyle(removeButton)
+
+  expect(removeButtonStyleAfterHover.color).not.toBe(removeButtonStyleBeforeHover.color)
+
+  await removeButton.click()
+  await expect(pickedPerkTile).toHaveCount(0)
+  await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
+})
+
+test('keeps picked search-result remove controls visibly interactive on hover', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  const resultsList = getResultsList(page)
+  const removeButton = resultsList.getByRole('button', {
+    name: 'Remove Clarity from build from results',
+  })
+  const removeButtonStyleBeforeHover = await readButtonInteractiveColorStyle(removeButton)
+  const removeButtonStyleKeyBeforeHover = JSON.stringify(removeButtonStyleBeforeHover)
+
+  await removeButton.hover()
+  await expect
+    .poll(async () => JSON.stringify(await readButtonInteractiveColorStyle(removeButton)))
+    .not.toBe(removeButtonStyleKeyBeforeHover)
+
+  const removeButtonStyleAfterHover = await readButtonInteractiveColorStyle(removeButton)
+
+  expect(removeButtonStyleAfterHover.color).not.toBe(removeButtonStyleBeforeHover.color)
+})
 
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
   page,
@@ -819,13 +1009,11 @@ test('filters origin backgrounds from the background search menu', async ({ page
     name: 'Clear background search',
   })
   const [clearButtonBox, filterButtonBox] = await Promise.all([
-    clearBackgroundSearchButton.boundingBox(),
-    filterBackgroundsButton.boundingBox(),
+    getRequiredLocatorBoundingBox(clearBackgroundSearchButton, 'clear background search button'),
+    getRequiredLocatorBoundingBox(filterBackgroundsButton, 'filter backgrounds button'),
   ])
 
-  expect(clearButtonBox).not.toBeNull()
-  expect(filterButtonBox).not.toBeNull()
-  expect(clearButtonBox!.x).toBeLessThan(filterButtonBox!.x)
+  expect(clearButtonBox.x).toBeLessThan(filterButtonBox.x)
   await expect(
     backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
   ).toBeVisible()

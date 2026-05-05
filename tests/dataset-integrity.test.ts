@@ -379,9 +379,7 @@ describe('generated dataset integrity', () => {
     const missingIconPaths = getReferencedGameIconPaths({
       backgroundFitBackgrounds: legendsBackgroundFitDataset.backgroundFitBackgrounds,
       perks: legendsPerkCatalogDataset.perks,
-    }).filter(
-      (iconPath) => !existsSync(path.join(process.cwd(), 'public', 'game-icons', iconPath)),
-    )
+    }).filter((iconPath) => !existsSync(path.join(process.cwd(), 'public', 'game-icons', iconPath)))
 
     expect(missingIconPaths).toEqual([])
   })

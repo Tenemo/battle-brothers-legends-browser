@@ -71,7 +71,7 @@ function getBackgroundFitRankTitle(backgroundFit: RankedBackgroundFit, rank: num
   const rankLabel = rank + 1
 
   if (backgroundFit.buildReachabilityProbability !== null) {
-    return `Background fit rank ${rankLabel}. Ranked first by must-have build chance, then full-build chance, perk coverage, and background name.`
+    return `Background fit rank ${rankLabel}. Ranked first by must-have build chance, then full build chance, perk coverage, and background name.`
   }
 
   return `Background fit rank ${rankLabel}. Ranked by expected perks pickable, guaranteed perks, best native roll, and background name.`

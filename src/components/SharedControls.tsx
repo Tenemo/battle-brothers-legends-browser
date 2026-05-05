@@ -221,9 +221,10 @@ export function BuildToggleButton({
   onRemove: () => void
   pickedRequirement: BuildRequirement | null
   perkName: string
-  source: 'detail' | 'results'
+  source: 'detail' | 'results' | 'tooltip'
 }) {
-  const locationSuffix = source === 'results' ? ' from results' : ''
+  const locationSuffix =
+    source === 'results' ? ' from results' : source === 'tooltip' ? ' from tooltip' : ''
 
   if (pickedRequirement) {
     const actionLabel = `Remove ${perkName} from build${locationSuffix}`

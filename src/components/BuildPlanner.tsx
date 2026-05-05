@@ -11,6 +11,7 @@ import type { LegendsPerkRecord } from '../types/legends-perks'
 import { BuildPlannerBoard, BuildPlannerRequirementLegend } from './BuildPlannerBoard'
 import { ClearBuildConfirmationDialog } from './ClearBuildConfirmationDialog'
 import { SavedBuildsDialog } from './SavedBuildsDialog'
+import { BuildToggleButton, type BuildRequirement } from './SharedControls'
 import type {
   BuildPlannerPickedPerk,
   BuildPlannerSavedBuild,
@@ -20,11 +21,7 @@ import type {
 import { usePlannerScrollConstraint } from './use-planner-scroll-constraint'
 import styles from './BuildPlanner.module.scss'
 
-export type {
-  BuildPlannerPickedPerk,
-  BuildPlannerSavedBuild,
-  SavedBuildOperationStatus,
-} from './build-planner-types'
+export type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
 
 const buildPlannerGuidance =
   'Use the chain/split control in the detail panel or search results to collect perk picks. Chain adds must-have perks for the main build chance; split adds optional perks for full-build coverage. Optional perks move to the end, stay visible, and are scored separately from must-have perks.'
@@ -98,6 +95,7 @@ export function BuildPlanner({
   hoveredPerkId,
   individualPerkGroups,
   isSavedBuildsLoading,
+  onAddPerkToBuild,
   onClearBuild,
   onCloseBuildPerkHover,
   onCloseBuildPerkTooltip,
@@ -153,6 +151,7 @@ export function BuildPlanner({
   ) => void
   onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onOverwriteSavedBuild: (savedBuildId: string) => Promise<void>
+  onAddPerkToBuild: (perkId: string, requirement: BuildRequirement) => void
   onRemovePickedPerk: (perkId: string) => void
   onTogglePickedPerkOptional: (perkId: string) => void
   onSaveCurrentBuild: (name: string) => Promise<void>
@@ -198,6 +197,17 @@ export function BuildPlanner({
     onOpenHover: onOpenBuildPerkHover,
     onOpenTooltip: onOpenBuildPerkTooltip,
   })
+  const hoveredBuildPerkPickedPerk =
+    hoveredBuildPerk === null
+      ? undefined
+      : pickedPerks.find((pickedPerk) => pickedPerk.id === hoveredBuildPerk.id)
+  const hoveredBuildPerkPickedRequirement: BuildRequirement | null =
+    hoveredBuildPerkPickedPerk === undefined
+      ? null
+      : hoveredBuildPerkPickedPerk.isOptional
+        ? 'optional'
+        : 'must-have'
+
   function handleCloseClearBuildDialog() {
     setIsClearBuildDialogOpen(false)
     window.setTimeout(() => {
@@ -258,13 +268,13 @@ export function BuildPlanner({
                 : `${pickedPerks.length} perk${pickedPerks.length === 1 ? '' : 's'} picked.`}
             </p>
             <button
-              aria-label="Save / Load build"
+              aria-label="Saved builds"
               className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
               onClick={handleOpenSavedBuildsDialog}
               type="button"
             >
               <FolderOpen aria-hidden="true" className={styles.plannerButtonIcon} />
-              Save / Load build
+              Saved builds
             </button>
             <button
               aria-label="Copy build link"
@@ -381,6 +391,17 @@ export function BuildPlanner({
           role="tooltip"
           style={getAnchoredTooltipStyle(hoveredBuildPerkTooltip.anchorRectangle)}
         >
+          <div className={styles.buildPerkTooltipAction} data-testid="build-perk-tooltip-action">
+            <BuildToggleButton
+              isCompact
+              onAddMustHave={() => onAddPerkToBuild(hoveredBuildPerk.id, 'must-have')}
+              onAddOptional={() => onAddPerkToBuild(hoveredBuildPerk.id, 'optional')}
+              onRemove={() => onRemovePickedPerk(hoveredBuildPerk.id)}
+              pickedRequirement={hoveredBuildPerkPickedRequirement}
+              perkName={hoveredBuildPerk.perkName}
+              source="tooltip"
+            />
+          </div>
           <div className={styles.buildPerkTooltipCopy}>
             {getPerkPreviewParagraphs(hoveredBuildPerk).map(
               (previewParagraph, previewParagraphIndex) => (

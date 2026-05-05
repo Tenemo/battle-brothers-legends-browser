@@ -1,7 +1,4 @@
-import type {
-  LegendsPerkPlacement,
-  LegendsPerkRecord,
-} from '../types/legends-perks'
+import type { LegendsPerkPlacement, LegendsPerkRecord } from '../types/legends-perks'
 import { createPerkSearchText } from './perk-search'
 
 const originPerkGroupIds = new Set([
