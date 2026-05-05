@@ -16,7 +16,6 @@ import {
 } from '../lib/perk-display'
 import type {
   BackgroundFitChanceCalculation,
-  BackgroundFitChanceCalculationProbabilityTerm,
   BackgroundFitOtherPerkGroup,
   BackgroundFitStudyResourceChanceBreakdownEntry,
   BackgroundFitStudyResourceStrategy,
@@ -647,222 +646,6 @@ function getScopedBackgroundFitMatches(
   })
 }
 
-function trimFixedDecimalLabel(value: string): string {
-  return value.replace(/\.?0+$/u, '')
-}
-
-function formatChanceCalculationPercentageLabel(probability: number): string {
-  const percentage = Math.abs(probability * 100)
-  const signPrefix = probability < 0 ? '-' : ''
-
-  if (percentage < 1e-12) {
-    return '0%'
-  }
-
-  const fractionDigitCount =
-    percentage >= 10
-      ? 1
-      : percentage >= 0.01
-        ? 2
-        : percentage >= 0.0001
-          ? 4
-          : percentage >= 0.000001
-            ? 8
-            : 10
-
-  return `${signPrefix}${trimFixedDecimalLabel(percentage.toFixed(fractionDigitCount))}%`
-}
-
-function formatChanceCalculationTermText({
-  outcomeCount,
-  probability,
-}: {
-  outcomeCount: number
-  probability: number
-}): string {
-  const probabilityLabel = formatChanceCalculationPercentageLabel(probability)
-
-  return outcomeCount === 1 ? probabilityLabel : `${outcomeCount} x ${probabilityLabel}`
-}
-
-function formatChanceCalculationTermExpression(
-  calculation: BackgroundFitChanceCalculation,
-): string {
-  if (calculation.successfulNativeOutcomeProbabilityTerms.length === 0) {
-    return '0'
-  }
-
-  return calculation.successfulNativeOutcomeProbabilityTerms
-    .map(formatChanceCalculationTermText)
-    .join(' + ')
-}
-
-function formatChanceCalculationOutcomeSummary(
-  calculation: BackgroundFitChanceCalculation,
-): string {
-  const successfulOutcomeLabel =
-    calculation.successfulNativeOutcomeCount === 1 ? 'outcome' : 'outcomes'
-  const totalOutcomeLabel = calculation.totalNativeOutcomeCount === 1 ? 'outcome' : 'outcomes'
-
-  return `The engine summed ${calculation.successfulNativeOutcomeCount} successful grouped native ${successfulOutcomeLabel} out of ${calculation.totalNativeOutcomeCount} grouped native ${totalOutcomeLabel}.`
-}
-
-function getCoverageLabelsForPickedPerkIds({
-  nativeCoveredPickedPerkIds,
-  nativeMatches,
-}: {
-  nativeCoveredPickedPerkIds: string[]
-  nativeMatches: BackgroundFitMatch[]
-}): string[] {
-  const nativeCoveredPickedPerkIdSet = new Set(nativeCoveredPickedPerkIds)
-
-  return nativeMatches.flatMap((nativeMatch) => {
-    const coveredPickedPerkNames = nativeMatch.pickedPerkIds.flatMap(
-      (pickedPerkId, pickedPerkIndex) =>
-        nativeCoveredPickedPerkIdSet.has(pickedPerkId)
-          ? [nativeMatch.pickedPerkNames[pickedPerkIndex] ?? pickedPerkId]
-          : [],
-    )
-
-    if (coveredPickedPerkNames.length === 0) {
-      return []
-    }
-
-    return [`${nativeMatch.perkGroupName} covers ${formatInlineList(coveredPickedPerkNames)}`]
-  })
-}
-
-function getResourceCoverageLabels(
-  resourceLines: BackgroundFitChanceExplanationResourceLine[],
-): string[] {
-  return resourceLines.map(
-    (resourceLine) =>
-      `${resourceLine.resourceLabel} covers ${resourceLine.targetGroupName} for ${formatInlineList(
-        resourceLine.coveredPerkNames,
-      )}`,
-  )
-}
-
-function formatChanceCalculationCoverageSentence({
-  nativeCoverageLabels,
-  resourceCoverageLabels,
-}: {
-  nativeCoverageLabels: string[]
-  resourceCoverageLabels: string[]
-}): string {
-  const coverageLabels = [...nativeCoverageLabels, ...resourceCoverageLabels]
-
-  return coverageLabels.length > 0
-    ? `Coverage: ${coverageLabels.join('; ')}.`
-    : 'No additional perk group coverage is required.'
-}
-
-function getChanceCalculationTermTitle({
-  nativeMatches,
-  resourceLines,
-  scopeLabel,
-  term,
-}: {
-  nativeMatches: BackgroundFitMatch[]
-  resourceLines: BackgroundFitChanceExplanationResourceLine[]
-  scopeLabel: string
-  term: BackgroundFitChanceCalculationProbabilityTerm
-}): string {
-  const { nativeCoveredPickedPerkIdsByOutcome, outcomeCount, probability } = term
-  const probabilityLabel = formatChanceCalculationPercentageLabel(probability)
-  const resourceCoverageLabels = getResourceCoverageLabels(resourceLines)
-  const nativeCoverageLabelGroups = nativeCoveredPickedPerkIdsByOutcome.map(
-    (nativeCoveredPickedPerkIds) =>
-      getCoverageLabelsForPickedPerkIds({
-        nativeCoveredPickedPerkIds,
-        nativeMatches,
-      }),
-  )
-
-  if (outcomeCount === 1) {
-    return `${scopeLabel} term has ${probabilityLabel} probability. ${formatChanceCalculationCoverageSentence(
-      {
-        nativeCoverageLabels: nativeCoverageLabelGroups[0] ?? [],
-        resourceCoverageLabels,
-      },
-    )}`
-  }
-
-  const nativeOutcomeDescriptions = nativeCoverageLabelGroups.map((nativeCoverageLabels) =>
-    nativeCoverageLabels.length > 0 ? nativeCoverageLabels.join('; ') : 'no native perk group',
-  )
-
-  return `${outcomeCount} successful native outcomes each have ${probabilityLabel} probability, for ${formatChanceCalculationPercentageLabel(
-    outcomeCount * probability,
-  )} combined. Native coverage: ${nativeOutcomeDescriptions.join(' | ')}. ${
-    resourceCoverageLabels.length > 0
-      ? `Selected coverage: ${resourceCoverageLabels.join('; ')}.`
-      : 'No book or scroll coverage is used.'
-  }`
-}
-
-function BackgroundFitChanceCalculationExpression({
-  calculation,
-  nativeMatches,
-  resourceLines,
-  scopeLabel,
-}: {
-  calculation: BackgroundFitChanceCalculation
-  nativeMatches: BackgroundFitMatch[]
-  resourceLines: BackgroundFitChanceExplanationResourceLine[]
-  scopeLabel: string
-}) {
-  const resultLabel = formatBackgroundFitProbabilityLabel(calculation.probability)
-  const termExpression = formatChanceCalculationTermExpression(calculation)
-  const shouldShowSeparateResult = termExpression !== resultLabel
-
-  return (
-    <p>
-      Actual engine expression: P ={' '}
-      {calculation.successfulNativeOutcomeProbabilityTerms.length === 0 ? (
-        <span
-          className={styles.detailChanceExplanationProbabilityTerm}
-          data-testid="detail-chance-explanation-probability-result"
-          title={`${scopeLabel} chance after summing successful grouped native outcomes: ${resultLabel}.`}
-        >
-          {resultLabel}
-        </span>
-      ) : (
-        calculation.successfulNativeOutcomeProbabilityTerms.map((term, termIndex) => (
-          <span key={`${term.outcomeCount}-${term.probability}-${termIndex}`}>
-            {termIndex > 0 ? ' + ' : null}
-            <span
-              className={styles.detailChanceExplanationProbabilityTerm}
-              data-testid="detail-chance-explanation-probability-term"
-              title={getChanceCalculationTermTitle({
-                nativeMatches,
-                resourceLines,
-                scopeLabel,
-                term,
-              })}
-            >
-              {formatChanceCalculationTermText(term)}
-            </span>
-          </span>
-        ))
-      )}
-      {shouldShowSeparateResult ? (
-        <>
-          {' = '}
-          <span
-            className={styles.detailChanceExplanationProbabilityTerm}
-            data-testid="detail-chance-explanation-probability-result"
-            title={`${scopeLabel} chance after summing all successful grouped native outcomes: ${resultLabel}.`}
-          >
-            {resultLabel}
-          </span>
-        </>
-      ) : null}
-      .
-    </p>
-  )
-}
-
 type StudyResourceStrategyResourceKind = 'book' | 'scroll'
 
 function getStudyResourceStrategyTargets({
@@ -1261,6 +1044,29 @@ type BackgroundFitChancePlanItem = {
   text: string
 }
 
+type BackgroundFitNativeRollFactor = {
+  categoryName: string
+  explanation: string
+  groupNames: string[]
+  probability: number
+}
+
+type BackgroundFitNativeRollDerivation = {
+  factors: BackgroundFitNativeRollFactor[]
+  probability: number
+}
+
+type BackgroundFitNativeRollPath = {
+  condition: BackgroundFitNativeSuccessCondition
+  probability: number
+  rollPatternCount: number
+}
+
+type SmallProbabilityFraction = {
+  denominator: number
+  numerator: number
+}
+
 function formatInlineList(items: readonly string[]): string {
   if (items.length === 0) {
     return ''
@@ -1291,6 +1097,188 @@ function formatOrList(items: readonly string[]): string {
   }
 
   return `${items.slice(0, -1).join(', ')}, or ${items.at(-1)}`
+}
+
+function countCombinations(totalCount: number, selectedCount: number): number {
+  if (selectedCount < 0 || selectedCount > totalCount) {
+    return 0
+  }
+
+  const smallerSelectedCount = Math.min(selectedCount, totalCount - selectedCount)
+  let combinationCount = 1
+
+  for (let selectedIndex = 1; selectedIndex <= smallerSelectedCount; selectedIndex += 1) {
+    combinationCount =
+      (combinationCount * (totalCount - smallerSelectedCount + selectedIndex)) / selectedIndex
+  }
+
+  return combinationCount
+}
+
+function getSmallProbabilityFraction(
+  probability: number,
+  maximumDenominator = 500,
+): SmallProbabilityFraction | null {
+  let bestFraction: SmallProbabilityFraction | null = null
+  let bestError = Number.POSITIVE_INFINITY
+
+  for (let denominator = 1; denominator <= maximumDenominator; denominator += 1) {
+    const numerator = Math.round(probability * denominator)
+
+    if (numerator < 0 || numerator > denominator) {
+      continue
+    }
+
+    const error = Math.abs(probability - numerator / denominator)
+
+    if (error < bestError) {
+      bestError = error
+      bestFraction = { denominator, numerator }
+    }
+  }
+
+  return bestFraction && bestError <= 1e-8 ? bestFraction : null
+}
+
+function formatNativeRollGroupKind(categoryName: string): string {
+  const normalizedCategoryName = categoryName.trim().toLowerCase()
+
+  if (normalizedCategoryName === 'traits') {
+    return 'trait'
+  }
+
+  if (normalizedCategoryName.endsWith('s') && normalizedCategoryName.length > 1) {
+    return normalizedCategoryName.slice(0, -1)
+  }
+
+  return normalizedCategoryName || 'native'
+}
+
+function getBackgroundFitMatchCategoryFactor(
+  categoryName: string,
+  matches: BackgroundFitMatch[],
+): BackgroundFitNativeRollFactor | null {
+  const groupNames = matches.map((match) => match.perkGroupName)
+
+  if (matches.length === 1) {
+    const nativeMatch = matches[0]!
+    const probabilityLabel = formatBackgroundFitProbabilityLabel(nativeMatch.probability)
+
+    return {
+      categoryName,
+      explanation: `${nativeMatch.perkGroupName} appears in ${probabilityLabel} of native rolls`,
+      groupNames,
+      probability: nativeMatch.probability,
+    }
+  }
+
+  const firstProbability = matches[0]?.probability
+
+  if (
+    firstProbability === undefined ||
+    !matches.every((match) =>
+      areBackgroundFitProbabilitiesEqual(match.probability, firstProbability),
+    )
+  ) {
+    return null
+  }
+
+  const fraction = getSmallProbabilityFraction(firstProbability)
+
+  if (!fraction || fraction.numerator < matches.length) {
+    return null
+  }
+
+  const fixedGroupCount = matches.length
+  const freeSelectedGroupCount = fraction.numerator - fixedGroupCount
+  const remainingGroupCount = fraction.denominator - fixedGroupCount
+  const jointProbability =
+    countCombinations(remainingGroupCount, freeSelectedGroupCount) /
+    countCombinations(fraction.denominator, fraction.numerator)
+  const groupKind = formatNativeRollGroupKind(categoryName)
+  const marginalProbabilityLabel = formatBackgroundFitProbabilityLabel(firstProbability)
+  const jointProbabilityLabel = formatBackgroundFitProbabilityLabel(jointProbability)
+  const combinationExpression = `C(${remainingGroupCount}, ${freeSelectedGroupCount}) / C(${fraction.denominator}, ${fraction.numerator})`
+
+  return {
+    categoryName,
+    explanation: `${categoryName} roll picks ${fraction.numerator} of ${fraction.denominator} ${groupKind} groups (${marginalProbabilityLabel} each), so ${formatInlineList(
+      groupNames,
+    )} together are ${combinationExpression} = ${jointProbabilityLabel}`,
+    groupNames,
+    probability: jointProbability,
+  }
+}
+
+function getNativeRollDerivationForMatches(
+  matches: BackgroundFitMatch[],
+): BackgroundFitNativeRollDerivation | null {
+  if (matches.length === 0) {
+    return null
+  }
+
+  const matchesByCategoryName = new Map<string, BackgroundFitMatch[]>()
+
+  for (const nativeMatch of matches) {
+    const categoryMatches = matchesByCategoryName.get(nativeMatch.categoryName)
+
+    if (categoryMatches) {
+      categoryMatches.push(nativeMatch)
+      continue
+    }
+
+    matchesByCategoryName.set(nativeMatch.categoryName, [nativeMatch])
+  }
+
+  const factors: BackgroundFitNativeRollFactor[] = []
+  let probability = 1
+
+  for (const [categoryName, categoryMatches] of matchesByCategoryName) {
+    const factor = getBackgroundFitMatchCategoryFactor(categoryName, categoryMatches)
+
+    if (!factor) {
+      return null
+    }
+
+    factors.push(factor)
+    probability *= factor.probability
+  }
+
+  return {
+    factors,
+    probability,
+  }
+}
+
+function formatNativeRollDerivationCalculation(
+  derivation: BackgroundFitNativeRollDerivation,
+  probability: number,
+): string {
+  if (derivation.factors.length === 1) {
+    const factor = derivation.factors[0]!
+
+    return factor.groupNames.length === 1
+      ? `${factor.explanation}, so this route is ${formatBackgroundFitProbabilityLabel(
+          probability,
+        )}.`
+      : `${factor.explanation}.`
+  }
+
+  return `${derivation.factors
+    .map((factor) => `${factor.explanation}.`)
+    .join(' ')} Independent roll categories multiply: ${derivation.factors
+    .map((factor) => formatBackgroundFitProbabilityLabel(factor.probability))
+    .join(' x ')} = ${formatBackgroundFitProbabilityLabel(probability)}.`
+}
+
+function formatNativeRollDerivationSummary({
+  derivation,
+  probability,
+}: {
+  derivation: BackgroundFitNativeRollDerivation
+  probability: number
+}): string {
+  return `Chance math: ${formatNativeRollDerivationCalculation(derivation, probability)}`
 }
 
 function getUniquePickedPerkIds(pickedPerkIdGroups: readonly string[][]): string[] {
@@ -1660,6 +1648,68 @@ function getNativeSuccessConditions(
   )
 }
 
+function getNativeSuccessConditionForCoveredPickedPerkIds({
+  nativeCoveredPickedPerkIds,
+  possibleNativeMatches,
+}: {
+  nativeCoveredPickedPerkIds: string[]
+  possibleNativeMatches: BackgroundFitMatch[]
+}): BackgroundFitNativeSuccessCondition {
+  const nativeCoveredPickedPerkIdSet = new Set(nativeCoveredPickedPerkIds)
+
+  return {
+    matches: possibleNativeMatches.filter((nativeMatch) =>
+      nativeMatch.pickedPerkIds.some((pickedPerkId) =>
+        nativeCoveredPickedPerkIdSet.has(pickedPerkId),
+      ),
+    ),
+  }
+}
+
+function getNativeRollPaths(
+  scopeData: BackgroundFitChanceExplanationScopeData,
+): BackgroundFitNativeRollPath[] {
+  const calculation = scopeData.calculation
+
+  if (!calculation || calculation.probability <= 0) {
+    return []
+  }
+
+  const possibleNativeMatches = getPossibleNativeMatches(scopeData)
+  const pathsByKey = new Map<string, BackgroundFitNativeRollPath>()
+
+  for (const term of calculation.successfulNativeOutcomeProbabilityTerms) {
+    for (const nativeCoveredPickedPerkIds of term.nativeCoveredPickedPerkIdsByOutcome) {
+      const condition = getNativeSuccessConditionForCoveredPickedPerkIds({
+        nativeCoveredPickedPerkIds,
+        possibleNativeMatches,
+      })
+      const pathKey = `${getNativeSuccessConditionKey(condition)}::${term.probability}`
+      const existingPath = pathsByKey.get(pathKey)
+
+      if (existingPath) {
+        existingPath.probability += term.probability
+        existingPath.rollPatternCount += 1
+        continue
+      }
+
+      pathsByKey.set(pathKey, {
+        condition,
+        probability: term.probability,
+        rollPatternCount: 1,
+      })
+    }
+  }
+
+  return [...pathsByKey.values()].toSorted(
+    (leftPath, rightPath) =>
+      rightPath.probability - leftPath.probability ||
+      formatNativeSuccessCondition(leftPath.condition).localeCompare(
+        formatNativeSuccessCondition(rightPath.condition),
+      ),
+  )
+}
+
 function formatNativeSuccessCondition(condition: BackgroundFitNativeSuccessCondition): string {
   return formatInlineList(condition.matches.map((nativeMatch) => nativeMatch.perkGroupName))
 }
@@ -1905,35 +1955,108 @@ function getChanceMathSummary({
     }
   }
 
+  if (conditions.length === 1) {
+    const derivation = getNativeRollDerivationForMatches(conditions[0]!.matches)
+
+    if (
+      derivation &&
+      areBackgroundFitProbabilitiesEqual(derivation.probability, scopeData.probability)
+    ) {
+      return formatNativeRollDerivationSummary({
+        derivation,
+        probability: scopeData.probability,
+      })
+    }
+  }
+
   return `Chance math: ${calculation.successfulNativeOutcomeCount} legal native roll ${
     calculation.successfulNativeOutcomeCount === 1 ? 'pattern satisfies' : 'patterns satisfy'
-  } the remaining condition, totaling ${chanceLabel}.`
+  } the remaining condition, totaling ${chanceLabel}. Open native roll details for the path list.`
 }
 
-function BackgroundFitChanceExplanationAdvancedDetails({
+function formatNativeRollPathLabel(path: BackgroundFitNativeRollPath): string {
+  const conditionLabel = formatNativeSuccessCondition(path.condition)
+
+  return conditionLabel || 'No picked native group'
+}
+
+function formatNativeRollPathProbabilityLabel(path: BackgroundFitNativeRollPath): string {
+  const probabilityLabel = formatBackgroundFitProbabilityLabel(path.probability)
+
+  return path.rollPatternCount === 1
+    ? probabilityLabel
+    : `${path.rollPatternCount} matching roll patterns total ${probabilityLabel}`
+}
+
+function getNativeRollPathDerivation(
+  path: BackgroundFitNativeRollPath,
+): BackgroundFitNativeRollDerivation | null {
+  const derivation = getNativeRollDerivationForMatches(path.condition.matches)
+
+  return derivation && areBackgroundFitProbabilitiesEqual(derivation.probability, path.probability)
+    ? derivation
+    : null
+}
+
+function BackgroundFitChanceExplanationNativeRollDetails({
   scopeData,
 }: {
   scopeData: BackgroundFitChanceExplanationScopeData
 }) {
-  if (!scopeData.calculation) {
+  const calculation = scopeData.calculation
+
+  if (!calculation) {
     return null
   }
+
+  const chanceLabel = formatBackgroundFitProbabilityLabel(calculation.probability)
+  const nativeRollPaths = getNativeRollPaths(scopeData)
 
   return (
     <details
       className={styles.detailChanceExplanationAdvanced}
       data-testid="detail-chance-explanation-advanced"
     >
-      <summary>Engine details</summary>
+      <summary>Native roll details</summary>
       <div className={styles.detailChanceExplanationCalculation}>
-        <BackgroundFitChanceCalculationExpression
-          calculation={scopeData.calculation}
-          nativeMatches={scopeData.nativeMatches}
-          resourceLines={scopeData.resourceLines}
-          scopeLabel={scopeData.scopeLabel}
-        />
-        {scopeData.calculation.isNativeOutcomeIndependent ? null : (
-          <p>{formatChanceCalculationOutcomeSummary(scopeData.calculation)}</p>
+        {calculation.isNativeOutcomeIndependent ? (
+          <p>
+            No random native group remains after the selected route, so this scope is {chanceLabel}.
+          </p>
+        ) : (
+          <p>
+            {calculation.successfulNativeOutcomeCount} legal native roll{' '}
+            {calculation.successfulNativeOutcomeCount === 1 ? 'path' : 'paths'} out of{' '}
+            {calculation.totalNativeOutcomeCount} grouped native roll{' '}
+            {calculation.totalNativeOutcomeCount === 1 ? 'pattern' : 'patterns'} total {chanceLabel}
+            .
+          </p>
+        )}
+        {calculation.isNativeOutcomeIndependent || nativeRollPaths.length === 0 ? null : (
+          <ul
+            className={styles.detailChanceNativeRollPathList}
+            data-testid="detail-chance-native-roll-path-list"
+          >
+            {nativeRollPaths.map((path) => {
+              const derivation = getNativeRollPathDerivation(path)
+
+              return (
+                <li
+                  className={styles.detailChanceNativeRollPathItem}
+                  data-testid="detail-chance-native-roll-path"
+                  key={`${formatNativeSuccessCondition(path.condition)}-${path.probability}`}
+                >
+                  <div className={styles.detailChanceNativeRollPathHeader}>
+                    <strong>{formatNativeRollPathLabel(path)}</strong>
+                    <span>{formatNativeRollPathProbabilityLabel(path)}</span>
+                  </div>
+                  {derivation ? (
+                    <p>{formatNativeRollDerivationCalculation(derivation, path.probability)}</p>
+                  ) : null}
+                </li>
+              )
+            })}
+          </ul>
         )}
       </div>
     </details>
@@ -2003,7 +2126,7 @@ function BackgroundFitChanceExplanationScope({
         })}
       </p>
       <BackgroundFitChanceRouteComparison entries={scopeData.chanceBreakdownEntries} />
-      <BackgroundFitChanceExplanationAdvancedDetails scopeData={scopeData} />
+      <BackgroundFitChanceExplanationNativeRollDetails scopeData={scopeData} />
     </section>
   )
 }

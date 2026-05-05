@@ -1333,7 +1333,7 @@ describe('background details study resources', () => {
     expect(fullBuildScope!).toHaveTextContent('Ancient scroll covers Assassin for Night Raider.')
     expect(fullBuildScope!).toHaveTextContent('The remaining native roll needs Calm and Large.')
     expect(fullBuildScope!).toHaveTextContent(
-      'Chance math: 1 legal native roll pattern satisfies the remaining condition, totaling 2.8%.',
+      'Chance math: Traits roll picks 2 of 9 trait groups (22.2% each), so Calm and Large together are C(7, 0) / C(9, 2) = 2.8%.',
     )
     expect(fullBuildScope!).not.toHaveTextContent('those percentages are not added together')
     const routeComparison = within(fullBuildScope!).getByTestId('detail-chance-route-comparison')
@@ -1347,30 +1347,175 @@ describe('background details study resources', () => {
       'detail-chance-explanation-advanced',
     )
 
-    expect(fullBuildScope!).toHaveTextContent('Actual engine expression: P = 2.78% = 2.8%.')
+    expect(advancedDetails).toHaveTextContent('Native roll details')
     expect(advancedDetails).toHaveTextContent(
-      'The engine summed 1 successful grouped native outcome out of 36 grouped native outcomes.',
+      '1 legal native roll path out of 36 grouped native roll patterns total 2.8%.',
     )
-    const probabilityTerm = within(advancedDetails).getByTestId(
-      'detail-chance-explanation-probability-term',
+    expect(advancedDetails).toHaveTextContent('Calm and Large')
+    expect(advancedDetails).toHaveTextContent('2.8%')
+    expect(advancedDetails).toHaveTextContent(
+      'Traits roll picks 2 of 9 trait groups (22.2% each), so Calm and Large together are C(7, 0) / C(9, 2) = 2.8%.',
     )
-    const probabilityResult = within(advancedDetails).getByTestId(
-      'detail-chance-explanation-probability-result',
-    )
-
-    expect(probabilityTerm).toHaveTextContent('2.78%')
-    expect(probabilityTerm.getAttribute('title')).toContain(
-      'Full build term has 2.78% probability.',
-    )
-    expect(probabilityTerm.getAttribute('title')).toContain(
-      'Coverage: Calm covers Alert; Large covers Muscularity; Skill book covers Heavy Armor for Brawny; Ancient scroll covers Assassin for Night Raider.',
-    )
-    expect(probabilityResult).toHaveTextContent('2.8%')
-    expect(probabilityResult.getAttribute('title')).toContain(
-      'Full build chance after summing all successful grouped native outcomes: 2.8%.',
-    )
+    expect(advancedDetails).not.toHaveTextContent('Actual engine expression')
+    expect(advancedDetails).not.toHaveTextContent('The engine summed')
 
     expect(screen.queryByTestId('detail-chance-explanation-native-match')).not.toBeInTheDocument()
+  })
+
+  test('derives same-category native roll chance from visible group probabilities', async () => {
+    const weaponJointProbability = 36 / 330
+    const traitJointProbability = 8 / 120
+    const nativeProbability = weaponJointProbability * traitJointProbability
+    const crossbowPerkId = 'perk.legend_heightened_reflexes'
+    const daggerPerkId = 'perk.legend_double_strike'
+    const calmPerkId = 'perk.legend_clarity'
+    const agilePerkId = 'perk.legend_in_the_zone'
+
+    renderSelectedBackgroundFitDetail({
+      mustHavePickedPerkCount: 4,
+      mustHavePickedPerkIds: [crossbowPerkId, daggerPerkId, calmPerkId, agilePerkId],
+      pickedPerkCount: 4,
+      selectedBackgroundFitDetail: {
+        ...backgroundFit,
+        matches: [
+          {
+            categoryName: 'Weapon',
+            isGuaranteed: false,
+            pickedPerkCount: 1,
+            pickedPerkIconPaths: ['ui/perks/heightened_reflexes.png'],
+            pickedPerkIds: [crossbowPerkId],
+            pickedPerkNames: ['Heightened Reflexes'],
+            perkGroupIconPath: 'ui/perks/perk_01.png',
+            perkGroupId: 'CrossbowTree',
+            perkGroupName: 'Crossbow',
+            probability: 4 / 11,
+          },
+          {
+            categoryName: 'Weapon',
+            isGuaranteed: false,
+            pickedPerkCount: 1,
+            pickedPerkIconPaths: ['ui/perks/double_strike.png'],
+            pickedPerkIds: [daggerPerkId],
+            pickedPerkNames: ['Double Strike'],
+            perkGroupIconPath: 'ui/perks/perk_02.png',
+            perkGroupId: 'DaggerTree',
+            perkGroupName: 'Dagger',
+            probability: 4 / 11,
+          },
+          {
+            categoryName: 'Traits',
+            isGuaranteed: false,
+            pickedPerkCount: 1,
+            pickedPerkIconPaths: ['ui/perks/clarity.png'],
+            pickedPerkIds: [calmPerkId],
+            pickedPerkNames: ['Clarity'],
+            perkGroupIconPath: 'ui/perks/perk_03.png',
+            perkGroupId: 'CalmTree',
+            perkGroupName: 'Calm',
+            probability: 3 / 10,
+          },
+          {
+            categoryName: 'Traits',
+            isGuaranteed: false,
+            pickedPerkCount: 1,
+            pickedPerkIconPaths: ['ui/perks/in_the_zone.png'],
+            pickedPerkIds: [agilePerkId],
+            pickedPerkNames: ['In the Zone'],
+            perkGroupIconPath: 'ui/perks/perk_04.png',
+            perkGroupId: 'AgileTree',
+            perkGroupName: 'Agile',
+            probability: 3 / 10,
+          },
+        ],
+        mustHaveBuildReachabilityProbability: nativeProbability,
+        mustHaveStudyResourceChanceBreakdown: [
+          {
+            calculation: createChanceCalculation({
+              nativeCoveredPickedPerkIdsByOutcome: [
+                [crossbowPerkId, daggerPerkId, calmPerkId, agilePerkId],
+              ],
+              probability: nativeProbability,
+              successfulOutcomeCount: 1,
+              terms: [{ outcomeCount: 1, probability: nativeProbability }],
+              totalOutcomeCount: 450,
+            }),
+            key: 'native',
+            probability: nativeProbability,
+            shouldAllowBook: false,
+            shouldAllowScroll: false,
+            shouldAllowSecondScroll: false,
+          },
+        ],
+        mustHaveStudyResourceStrategy: undefined,
+      },
+      supportedBuildTargetPerkGroups: [
+        {
+          categoryName: 'Weapon',
+          pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/heightened_reflexes.png'],
+          pickedPerkIds: [crossbowPerkId],
+          pickedPerkNames: ['Heightened Reflexes'],
+          perkGroupIconPath: 'ui/perks/perk_01.png',
+          perkGroupId: 'CrossbowTree',
+          perkGroupName: 'Crossbow',
+        },
+        {
+          categoryName: 'Weapon',
+          pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/double_strike.png'],
+          pickedPerkIds: [daggerPerkId],
+          pickedPerkNames: ['Double Strike'],
+          perkGroupIconPath: 'ui/perks/perk_02.png',
+          perkGroupId: 'DaggerTree',
+          perkGroupName: 'Dagger',
+        },
+        {
+          categoryName: 'Traits',
+          pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/clarity.png'],
+          pickedPerkIds: [calmPerkId],
+          pickedPerkNames: ['Clarity'],
+          perkGroupIconPath: 'ui/perks/perk_03.png',
+          perkGroupId: 'CalmTree',
+          perkGroupName: 'Calm',
+        },
+        {
+          categoryName: 'Traits',
+          pickedPerkCount: 1,
+          pickedPerkIconPaths: ['ui/perks/in_the_zone.png'],
+          pickedPerkIds: [agilePerkId],
+          pickedPerkNames: ['In the Zone'],
+          perkGroupIconPath: 'ui/perks/perk_04.png',
+          perkGroupId: 'AgileTree',
+          perkGroupName: 'Agile',
+        },
+      ],
+    })
+    await expandChanceExplanation()
+
+    const mustHaveScope = screen
+      .getAllByTestId('detail-chance-explanation-scope')
+      .find((scope) => scope.textContent?.includes('Must-have chance'))
+
+    expect(mustHaveScope).toBeDefined()
+    expect(mustHaveScope!).toHaveTextContent('Must-have chance')
+    expect(mustHaveScope!).toHaveTextContent('0.73%')
+    expect(mustHaveScope!).toHaveTextContent(
+      'The remaining native roll needs Crossbow, Dagger, Calm, and Agile.',
+    )
+    expect(mustHaveScope!).toHaveTextContent(
+      'Chance math: Weapon roll picks 4 of 11 weapon groups (36.4% each), so Crossbow and Dagger together are C(9, 2) / C(11, 4) = 10.9%. Traits roll picks 3 of 10 trait groups (30% each), so Calm and Agile together are C(8, 1) / C(10, 3) = 6.7%. Independent roll categories multiply: 10.9% x 6.7% = 0.73%.',
+    )
+
+    const nativeRollDetails = within(mustHaveScope!).getByTestId(
+      'detail-chance-explanation-advanced',
+    )
+
+    expect(nativeRollDetails).toHaveTextContent('Native roll details')
+    expect(nativeRollDetails).toHaveTextContent('Crossbow, Dagger, Calm, and Agile')
+    expect(nativeRollDetails).toHaveTextContent('0.73%')
+    expect(nativeRollDetails).not.toHaveTextContent('Actual engine expression')
+    expect(nativeRollDetails).not.toHaveTextContent('The engine summed')
   })
 
   test('explains a resource-only route without inventing a native random requirement', async () => {
@@ -1425,22 +1570,20 @@ describe('background details study resources', () => {
     expect(mustHaveScope!).toHaveTextContent(
       'Chance math: no random native group is required, so the chance is 100%.',
     )
-    expect(mustHaveScope!).toHaveTextContent('Actual engine expression: P = 100%.')
+    expect(mustHaveScope!).toHaveTextContent('Native roll details')
+    expect(mustHaveScope!).toHaveTextContent(
+      'No random native group remains after the selected route, so this scope is 100%.',
+    )
+    expect(mustHaveScope!).not.toHaveTextContent('Actual engine expression')
     expect(mustHaveScope!).not.toHaveTextContent('No native probability terms are needed')
     expect(mustHaveScope!).not.toHaveTextContent('99.8%')
     expect(mustHaveScope!).not.toHaveTextContent('The engine summed')
     expect(
       within(mustHaveScope!).queryByTestId('detail-chance-explanation-native-match'),
     ).not.toBeInTheDocument()
-
-    const probabilityTerm = within(mustHaveScope!).getByTestId(
-      'detail-chance-explanation-probability-term',
-    )
-
-    expect(probabilityTerm).toHaveTextContent('100%')
-    expect(probabilityTerm.getAttribute('title')).toContain(
-      'Must-have term has 100% probability. Coverage: Skill book covers Calm for Clarity.',
-    )
+    expect(
+      within(mustHaveScope!).queryByTestId('detail-chance-native-roll-path'),
+    ).not.toBeInTheDocument()
   })
 
   test('explains a native-only route when books and scrolls are disabled', async () => {

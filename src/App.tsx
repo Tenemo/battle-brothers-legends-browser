@@ -445,9 +445,7 @@ function hasActiveCategoryFilterSelection(
   )
 }
 
-function createSavedBuildPlannerFilters(
-  urlState: BuildPlannerUrlState,
-): SavedBuildPlannerFilters {
+function createSavedBuildPlannerFilters(urlState: BuildPlannerUrlState): SavedBuildPlannerFilters {
   return {
     categoryFilterMode:
       urlState.categoryFilterMode ??
@@ -466,6 +464,22 @@ function createSavedBuildPlannerFilters(
     shouldIncludeAncientScrollPerkGroups: urlState.shouldIncludeAncientScrollPerkGroups,
     shouldIncludeOriginBackgrounds: urlState.shouldIncludeOriginBackgrounds,
     shouldIncludeOriginPerkGroups: urlState.shouldIncludeOriginPerkGroups,
+  }
+}
+
+function createDefaultSavedBuildPlannerFilters(): SavedBuildPlannerFilters {
+  return {
+    categoryFilterMode: 'all',
+    query: '',
+    selectedBackgroundVeteranPerkLevelIntervals: [...availableBackgroundVeteranPerkLevelIntervals],
+    selectedCategoryNames: [],
+    selectedPerkGroupIdsByCategory: {},
+    shouldAllowBackgroundStudyBook: true,
+    shouldAllowBackgroundStudyScroll: true,
+    shouldAllowSecondBackgroundStudyScroll: false,
+    shouldIncludeAncientScrollPerkGroups: true,
+    shouldIncludeOriginBackgrounds: false,
+    shouldIncludeOriginPerkGroups: false,
   }
 }
 
@@ -852,7 +866,9 @@ export default function App() {
   const selectedDetailType: 'background' | 'perk' =
     selectedBackgroundFitDetail === null ? 'perk' : 'background'
   const selectedBackgroundFitKey =
-    selectedBackgroundFitDetail === null ? null : getBackgroundFitKey(selectedBackgroundFitDetail.backgroundFit)
+    selectedBackgroundFitDetail === null
+      ? null
+      : getBackgroundFitKey(selectedBackgroundFitDetail.backgroundFit)
   const detailSelection = useMemo(
     () =>
       createUrlDetailSelection({
@@ -1595,9 +1611,9 @@ export default function App() {
       setPickedBuildPerks(
         createPickedBuildPerkState(savedBuild.availablePerkIds, savedBuild.optionalPerkIds),
       )
-      if (savedBuild.plannerFilters) {
-        applySavedBuildPlannerFilters(savedBuild.plannerFilters)
-      }
+      applySavedBuildPlannerFilters(
+        savedBuild.plannerFilters ?? createDefaultSavedBuildPlannerFilters(),
+      )
       setActiveDetailSelection({ type: 'perk' })
       clearAllHover()
       resetShareBuildStatus()

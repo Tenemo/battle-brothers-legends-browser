@@ -222,6 +222,70 @@ test('saves and restores perk and background filters with a saved build', async 
   await expect(page.getByTestId('background-veteran-perk-4-checkbox')).toBeChecked()
 })
 
+test('loading a legacy saved build clears current planner filters', async ({ page }) => {
+  await gotoBuildPlanner(page)
+  await seedSavedBuildRecords(page, [
+    {
+      createdAt: '2026-05-04T12:00:00.000Z',
+      id: 'legacy-saved-build',
+      name: 'Legacy clarity',
+      optionalPerkIds: [],
+      pickedPerkIds: ['perk.legend_clarity'],
+      referenceVersion: '19.3.21',
+      schemaVersion: 1,
+      updatedAt: '2026-05-04T12:00:00.000Z',
+    },
+  ])
+  await page.reload()
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  await page.getByRole('button', { name: 'Enable category Traits' }).click()
+  await selectPerkGroup(page, 'Calm')
+  await searchPerks(page, 'Berserk')
+
+  await page.getByRole('button', { name: 'Filter perks' }).click()
+  await page.getByTestId('origin-perk-groups-checkbox').check()
+  await page.getByTestId('ancient-scroll-perk-groups-checkbox').uncheck()
+
+  await page.getByRole('button', { name: 'Filter backgrounds' }).click()
+  await page.getByTestId('origin-backgrounds-checkbox').check()
+  await page.getByTestId('background-study-book-checkbox').uncheck()
+  await page.getByTestId('background-study-scroll-checkbox').uncheck()
+  await page.getByTestId('background-veteran-perk-3-checkbox').uncheck()
+
+  await page.getByRole('button', { name: 'Save / Load build' }).click()
+  await page.getByRole('button', { name: 'Load saved build Legacy clarity' }).click()
+
+  await expect(getBuildPerksBar(page).getByText('Clarity')).toBeVisible()
+  await expect(page.getByLabel('Search perks')).toHaveValue('')
+  await expect(page.getByRole('button', { name: 'Show all categories' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  )
+  await expectSearchParam(page, 'search', null)
+  await expectSearchParam(page, 'category', null)
+  await expectSearchParam(page, 'group-traits', null)
+  await expectSearchParam(page, 'origin-perk-groups', null)
+  await expectSearchParam(page, 'ancient-scroll-perk-groups', null)
+  await expectSearchParam(page, 'origin-backgrounds', null)
+  await expectSearchParam(page, 'background-book', null)
+  await expectSearchParam(page, 'background-scroll', null)
+  await expectSearchParam(page, 'background-veteran-perks', null)
+
+  await page.getByRole('button', { name: 'Filter perks' }).click()
+  await expect(page.getByTestId('origin-perk-groups-checkbox')).not.toBeChecked()
+  await expect(page.getByTestId('ancient-scroll-perk-groups-checkbox')).toBeChecked()
+
+  await page.getByRole('button', { name: 'Filter backgrounds' }).click()
+  await expect(page.getByTestId('origin-backgrounds-checkbox')).not.toBeChecked()
+  await expect(page.getByTestId('background-study-book-checkbox')).toBeChecked()
+  await expect(page.getByTestId('background-study-scroll-checkbox')).toBeChecked()
+  await expect(page.getByTestId('background-study-second-scroll-checkbox')).not.toBeChecked()
+  await expect(page.getByTestId('background-veteran-perk-2-checkbox')).toBeChecked()
+  await expect(page.getByTestId('background-veteran-perk-3-checkbox')).toBeChecked()
+  await expect(page.getByTestId('background-veteran-perk-4-checkbox')).toBeChecked()
+})
+
 test('keeps local save and load controls usable on mobile', async ({ page }) => {
   await gotoBuildPlanner(page, { width: 390, height: 760 })
 

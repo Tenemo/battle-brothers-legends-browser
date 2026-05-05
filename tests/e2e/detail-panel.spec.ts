@@ -2,6 +2,7 @@ import { expect, test, type Locator } from '@playwright/test'
 import {
   getDetailPanel,
   expectSearchParam,
+  expectBackgroundFitCalculationComplete,
   getBackgroundFitPanel,
   getSidebarPerkGroupButton,
   getResultsList,
@@ -482,6 +483,7 @@ test('explains the reported Ranger full-build chance from remaining native rows'
   await page.setViewportSize({ height: 720, width: 900 })
   await page.goto(reportedRangerChanceExplanationBuildUrl)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+  await expectBackgroundFitCalculationComplete(getBackgroundFitPanel(page))
 
   const detailPanel = getDetailPanel(page)
   const chanceExplanation = detailPanel.getByTestId('detail-chance-explanation')
@@ -546,13 +548,13 @@ test('explains the reported Ranger full-build chance from remaining native rows'
   await expect(fullBuildScope).toContainText(
     'Chance math: Barter 0.20% + Calm 22.2% - both 0.04% = 22.4%.',
   )
-  await expect(fullBuildScope).toContainText('Actual engine expression:')
-  await expect(fullBuildScope).toContainText('successful grouped native outcome')
-  await expect(
-    fullBuildScope.getByTestId('detail-chance-explanation-probability-term').first(),
-  ).toHaveAttribute(
-    'title',
-    /Full build.*probability.*Skill book covers.*Ancient scroll covers Berserker/,
+  await expect(fullBuildScope).toContainText('Native roll details')
+  await expect(fullBuildScope).toContainText('legal native roll paths')
+  await expect(fullBuildScope).toContainText('grouped native roll patterns total 22.4%.')
+  await expect(fullBuildScope).not.toContainText('Actual engine expression')
+  await expect(fullBuildScope).not.toContainText('successful grouped native outcome')
+  await expect(fullBuildScope.getByTestId('detail-chance-native-roll-path').first()).toContainText(
+    /Barter|Calm/u,
   )
 
   await expect(fullBuildScope.getByTestId('detail-chance-explanation-native-match')).toHaveCount(0)
@@ -562,6 +564,7 @@ test('keeps reported Hunter must-have expressions scoped to must-have rows', asy
   await page.setViewportSize({ height: 720, width: 900 })
   await page.goto(reportedHunterChanceExplanationBuildUrl)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+  await expectBackgroundFitCalculationComplete(getBackgroundFitPanel(page))
 
   const detailPanel = getDetailPanel(page)
   const chanceExplanation = detailPanel.getByTestId('detail-chance-explanation')
@@ -576,21 +579,16 @@ test('keeps reported Hunter must-have expressions scoped to must-have rows', asy
     .getByTestId('detail-chance-explanation-scope')
     .filter({ hasText: 'Must-have chance' })
 
+  await expect(mustHaveScope).toContainText('Native roll details')
   await expect(mustHaveScope).toContainText(
-    'Actual engine expression: P = 36.3% + 0.13% + 0.07% = 36.5%.',
+    '3 legal native roll paths out of 4 grouped native roll patterns total 36.5%.',
   )
-  await expect(mustHaveScope).toContainText(
-    'The engine summed 3 successful grouped native outcomes out of 4 grouped native outcomes.',
-  )
+  await expect(mustHaveScope).not.toContainText('Actual engine expression')
+  await expect(mustHaveScope).not.toContainText('The engine summed')
   await expect(mustHaveScope).not.toContainText('72 successful grouped native outcomes')
-  await expect(mustHaveScope.getByTestId('detail-chance-explanation-probability-term')).toHaveCount(
-    3,
-  )
-  await expect(
-    mustHaveScope.getByTestId('detail-chance-explanation-probability-term').first(),
-  ).toHaveAttribute(
-    'title',
-    /Must-have term has 36\.3% probability\..*(Sling covers Lookout|Barter covers Greed|Skill book covers)/,
+  await expect(mustHaveScope.getByTestId('detail-chance-native-roll-path')).toHaveCount(3)
+  await expect(mustHaveScope.getByTestId('detail-chance-native-roll-path').first()).toContainText(
+    /Sling|Barter|No picked native group/u,
   )
   await expect(mustHaveScope.getByTestId('detail-chance-explanation-native-match')).toHaveCount(0)
 })

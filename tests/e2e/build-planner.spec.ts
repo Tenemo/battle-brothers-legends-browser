@@ -11,6 +11,7 @@ import {
   getBuildSharedGroupsList,
   getParsedCssRgbColor,
   getDetailPanel,
+  getPlannerBoardVisualVerticalOverflow,
   getResolvedCssBackgroundColor,
   getResolvedCssBorderColor,
   getResultsList,
@@ -241,28 +242,6 @@ async function getPlannerWrapMetrics(page: Page) {
           '[data-testid="planner-group-card"]',
         ),
     }
-  })
-}
-
-async function getPlannerBoardVisualVerticalOverflow(page: Page): Promise<number> {
-  return page.evaluate(() => {
-    const plannerBoard = document.querySelector('[data-testid="planner-board"]')
-
-    if (!(plannerBoard instanceof HTMLElement)) {
-      return Number.POSITIVE_INFINITY
-    }
-
-    const plannerBoardRectangle = plannerBoard.getBoundingClientRect()
-    const childRectangles = [...plannerBoard.children].map((child) => child.getBoundingClientRect())
-
-    if (childRectangles.length === 0) {
-      return 0
-    }
-
-    return (
-      Math.max(...childRectangles.map((rectangle) => rectangle.bottom)) -
-      plannerBoardRectangle.bottom
-    )
   })
 }
 

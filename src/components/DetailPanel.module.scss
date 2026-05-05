@@ -672,14 +672,6 @@
     }
   }
 
-  .detailChanceExplanationProbabilityTerm {
-    cursor: help;
-    text-decoration-line: underline;
-    text-decoration-style: dotted;
-    text-decoration-thickness: var(--primitive-length-1px);
-    text-underline-offset: 0.16em;
-  }
-
   .detailChanceExplanationScopes {
     display: grid;
     gap: var(--space-md);
@@ -811,6 +803,46 @@
       min-height: var(--target-size-compact);
       color: var(--accent-soft);
       cursor: pointer;
+    }
+  }
+
+  .detailChanceNativeRollPathList {
+    display: grid;
+    gap: var(--space-xs);
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .detailChanceNativeRollPathItem {
+    display: grid;
+    gap: var(--space-2xs);
+    min-width: 0;
+    padding-top: var(--space-xs);
+    border-top: var(--primitive-length-1px) solid var(--border-subtle);
+
+    p {
+      margin: 0;
+    }
+  }
+
+  .detailChanceNativeRollPathHeader {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: var(--space-sm);
+    align-items: baseline;
+    min-width: 0;
+
+    strong {
+      min-width: 0;
+      color: var(--text-primary);
+      font-weight: var(--font-weight-regular);
+    }
+
+    span {
+      color: var(--accent-soft);
+      white-space: nowrap;
     }
   }
 
