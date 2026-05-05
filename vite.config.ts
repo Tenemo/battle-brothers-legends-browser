@@ -38,6 +38,10 @@ function getBuildCommitSha(): string | null {
   return commitSha
 }
 
+function shouldEmitBuildSourcemaps(): boolean {
+  return process.env.BUILD_SOURCEMAPS === 'true'
+}
+
 function createPlannerVersionPlugin(): Plugin {
   return {
     name: 'battle-brothers-planner-version',
@@ -80,7 +84,7 @@ function createPlannerVersionPlugin(): Plugin {
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 2500,
-    sourcemap: true,
+    sourcemap: shouldEmitBuildSourcemaps(),
   },
   plugins: [
     react(),

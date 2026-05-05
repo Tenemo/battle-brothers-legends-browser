@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { readdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -7,6 +8,7 @@ const repositoryRoot = path.resolve(fileURLToPath(new URL('..', import.meta.url)
 const distDirectory = path.join(repositoryRoot, 'dist')
 const distAssetsDirectory = path.join(distDirectory, 'assets')
 const distIndexPath = path.join(distDirectory, 'index.html')
+const netlifyHeadersPath = path.join(distDirectory, '_headers')
 const hydrationLoaderPath = path.join(distDirectory, 'hydrate-loader.js')
 const sourceAssetUrlPattern = /\/src\/assets\/([^"')\s?#]+)/g
 const criticalFontUrlPattern =
@@ -27,6 +29,74 @@ function createCriticalFontPreloadTags(stylesheet: string): string {
         `<link rel="preload" href="${criticalFontUrl}" as="font" type="font/woff2" crossorigin />`,
     )
     .join('')
+}
+
+function createStyleHashSource(styleText: string): string {
+  const hash = createHash('sha256').update(styleText).digest('base64')
+
+  return `'sha256-${hash}'`
+}
+
+function createContentSecurityPolicy(styleHashSource: string): string {
+  return [
+    "default-src 'self'",
+    "script-src 'self'",
+    `style-src 'self' ${styleHashSource}`,
+    "img-src 'self' data:",
+    "font-src 'self'",
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'none'",
+  ].join('; ')
+}
+
+function createNetlifyHeadersFile(styleHashSource: string): string {
+  const contentSecurityPolicy = createContentSecurityPolicy(styleHashSource)
+
+  return [
+    '/*',
+    '  X-Frame-Options: DENY',
+    '  X-Content-Type-Options: nosniff',
+    '  Referrer-Policy: strict-origin-when-cross-origin',
+    '  Cross-Origin-Opener-Policy: same-origin',
+    '  Strict-Transport-Security: max-age=31536000; includeSubDomains; preload',
+    '  Permissions-Policy: accelerometer=(), autoplay=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), magnetometer=(), microphone=(), payment=(), usb=()',
+    `  Content-Security-Policy: ${contentSecurityPolicy}`,
+    '',
+    '/',
+    '  Cache-Control: public, max-age=0, must-revalidate',
+    '  Netlify-CDN-Cache-Control: public, max-age=300, stale-while-revalidate=3600',
+    '',
+    '/index.html',
+    '  Cache-Control: public, max-age=0, must-revalidate',
+    '  Netlify-CDN-Cache-Control: public, max-age=300, stale-while-revalidate=3600',
+    '',
+    '/hydrate-loader.js',
+    '  Cache-Control: public, max-age=0, must-revalidate',
+    '  Netlify-CDN-Cache-Control: public, max-age=300, stale-while-revalidate=3600',
+    '',
+    '/version.json',
+    '  Cache-Control: public, max-age=0, must-revalidate',
+    '  Netlify-CDN-Cache-Control: no-store',
+    '',
+    '/assets/*',
+    '  Cache-Control: public, max-age=31536000, immutable',
+    '',
+    '/game-icons/*',
+    '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
+    '',
+    '/favicon/*',
+    '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
+    '',
+    '/seo/*',
+    '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
+    '',
+    '/social/*',
+    '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
+    '',
+  ].join('\n')
 }
 
 function getSingleMatch(html: string, pattern: RegExp, description: string): RegExpExecArray {
@@ -197,6 +267,7 @@ async function prerenderRoot() {
 
     const htmlWithBuiltAssetUrls = await replaceServerRenderedAssetUrls(htmlWithPrerenderedRoot)
     const criticalFontPreloadTags = createCriticalFontPreloadTags(stylesheet)
+    const styleHashSource = createStyleHashSource(stylesheet)
     const htmlWithInlineCss = htmlWithBuiltAssetUrls.replace(
       stylesheetTag,
       `${criticalFontPreloadTags}<style data-battle-brothers-inline-css="true">${escapeStyleText(stylesheet)}</style>`,
@@ -205,6 +276,7 @@ async function prerenderRoot() {
     await Promise.all([
       writeFile(distIndexPath, htmlWithInlineCss, 'utf8'),
       writeFile(hydrationLoaderPath, createHydrationLoader(entryUrl), 'utf8'),
+      writeFile(netlifyHeadersPath, createNetlifyHeadersFile(styleHashSource), 'utf8'),
     ])
   } finally {
     await viteServer.close()
