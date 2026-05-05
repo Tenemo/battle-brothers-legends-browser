@@ -18,7 +18,7 @@ type BackgroundPerkGroupProbabilityRules = {
   classWeaponDependencies: LegendsBackgroundFitClassWeaponDependency[]
 }
 
-export type BackgroundPerkGroupProbabilityContext = {
+type BackgroundPerkGroupProbabilityContext = {
   classWeaponDependencyByClassPerkGroupId: ClassWeaponDependencyByClassPerkGroupId
   perkGroupIdsByCategory: Map<LegendsDynamicBackgroundCategoryName, string[]>
 }

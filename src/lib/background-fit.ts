@@ -276,7 +276,7 @@ type BackgroundFitViewOptions = {
 
 type BackgroundFitAsyncViewOptions = BackgroundFitViewOptions & BackgroundFitAsyncControlOptions
 
-export type BackgroundFitEngine = {
+type BackgroundFitEngine = {
   getBackgroundPerkGroupProbability: (
     backgroundId: string,
     categoryName: string,

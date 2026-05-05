@@ -20,6 +20,7 @@
     "build": "tsc -b && vite build",
     "build:netlify": "pnpm run generate:social-image && tsc -b && vite build && node ./scripts/build-netlify-edge-functions.mjs",
     "check:netlify-manifest": "node ./scripts/assert-netlify-edge-manifest.mjs",
+    "check:ci:non-e2e": "pnpm lint && pnpm format:check && pnpm stylelint && pnpm knip && pnpm knip:production && pnpm typecheck && pnpm test && pnpm netlify:build && pnpm check:netlify-manifest",
     "format": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown",
     "knip": "knip --config knip.config.js",

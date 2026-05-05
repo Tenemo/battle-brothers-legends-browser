@@ -58,7 +58,7 @@ export type LegendsPerkRecord = {
 
 export type LegendsPerkUrlRecord = Pick<LegendsPerkRecord, 'id' | 'perkName'>
 
-export type LegendsPerkCatalogBackgroundSourceEntry = number[]
+type LegendsPerkCatalogBackgroundSourceEntry = number[]
 
 export type LegendsPerkCatalogBackgroundSourceTable = {
   backgroundNames: string[]
