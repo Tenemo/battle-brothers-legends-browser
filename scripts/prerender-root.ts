@@ -20,7 +20,7 @@ const criticalFontUrlPriorities = [
   'source-sans-3-latin-700',
 ]
 const prerenderedRootTemplateId = 'battle-brothers-prerendered-root'
-const prerenderedRootActivationScript = `(()=>{const root=document.getElementById("root");const template=document.getElementById("${prerenderedRootTemplateId}");if(!root||!(template instanceof HTMLTemplateElement))return;if(window.location.search!==""||window.location.hash!==""){document.documentElement.dataset.battleBrothersClientRender="true";return}root.append(template.content.cloneNode(true))})()`
+const prerenderedRootActivationScript = `(()=>{const root=document.getElementById("root");const template=document.getElementById("${prerenderedRootTemplateId}");if(!root||!(template instanceof HTMLTemplateElement))return;const shouldClientRender=window.location.search!==""||window.location.hash!=="";if(shouldClientRender){document.documentElement.dataset.battleBrothersClientRender="true";document.documentElement.dataset.battleBrothersStaticShellReady="true"}root.append(template.content.cloneNode(true));if(!shouldClientRender)return;const params=new URLSearchParams(window.location.search);const rawBuild=params.get("build");if(!rawBuild)return;const perkNames=rawBuild.split(",").map((perkName)=>perkName.trim()).filter(Boolean);if(perkNames.length===0)return;const optionalPerkNames=new Set((params.get("optional")??"").split(",").map((perkName)=>perkName.trim()).filter(Boolean));const buildPerksBar=root.querySelector('[data-testid="build-perks-bar"]');const buildPlannerCount=root.querySelector('[data-testid="build-planner-count"]');const mustHaveTileTemplate=root.querySelector('[data-testid="planner-requirement-legend-tile"][data-requirement="must-have"]');const optionalTileTemplate=root.querySelector('[data-testid="planner-requirement-legend-tile"][data-requirement="optional"]');if(!buildPerksBar||!mustHaveTileTemplate||!optionalTileTemplate)return;const perkTiles=perkNames.map((perkName)=>{const perkTile=(optionalPerkNames.has(perkName)?optionalTileTemplate:mustHaveTileTemplate).cloneNode(true);perkTile.setAttribute("data-testid","planner-slot-perk");perkTile.setAttribute("data-planner-item","picked-perk");perkTile.removeAttribute("title");const perkNameElement=perkTile.querySelector('[data-testid="planner-picked-perk-name"]');if(perkNameElement)perkNameElement.textContent=perkName;return perkTile});buildPerksBar.replaceChildren(...perkTiles);if(buildPlannerCount)buildPlannerCount.textContent=perkNames.length+" perk"+(perkNames.length===1?"":"s")+" picked.";const sharedGroupsPlaceholder=root.querySelector('[data-testid="build-shared-groups-list"]')?.firstElementChild;if(sharedGroupsPlaceholder)sharedGroupsPlaceholder.style.minHeight="9.3rem"})()`
 
 function escapeStyleText(styleText: string): string {
   return styleText.replaceAll('</style', '<\\/style')
@@ -77,7 +77,7 @@ function createInlineScriptHashSources(html: string): string[] {
 }
 
 function createClientRenderBootScript(entryUrl: string): string {
-  return `const hydrationLoaderUrl="/hydrate-loader.js";if(window.location.search!==""||window.location.hash!==""){document.documentElement.dataset.battleBrothersClientRender="true";const state=window.__battleBrothersHydrationState??={hasStarted:false};if(!state.hasStarted){state.hasStarted=true;const link=document.createElement("link");link.rel="modulepreload";link.href=${JSON.stringify(entryUrl)};link.setAttribute("fetchpriority","high");document.head.append(link);import(${JSON.stringify(entryUrl)});window.setTimeout(()=>import(hydrationLoaderUrl),8000)}}else{import(hydrationLoaderUrl)}`
+  return `const hydrationLoaderUrl="/hydrate-loader.js";if(window.location.search!==""||window.location.hash!==""){document.documentElement.dataset.battleBrothersClientRender="true";const link=document.createElement("link");link.rel="modulepreload";link.href=${JSON.stringify(entryUrl)};link.setAttribute("fetchpriority","high");document.head.append(link)}import(hydrationLoaderUrl)`
 }
 
 function createEntryModulePreloadTag(entryUrl: string): string {
@@ -161,6 +161,7 @@ function createHydrationLoader(entryUrl: string): string {
 let idleHydrationHandle=0;
 let automaticHydrationTimeout=0;
 const automaticHydrationDelayMs=5000;
+const automaticClientRenderDelayMs=5000;
 const manifestLoadDelayMs=8000;
 const manifestUrl="/favicon/site.webmanifest";
 const hydrationState=window.__battleBrothersHydrationState??={hasStarted:false};
@@ -185,7 +186,6 @@ function clearInteractionListeners(){
 function prepareClientRender(){
   if (!shouldClientRenderImmediately) return;
   document.documentElement.dataset.battleBrothersClientRender="true";
-  document.getElementById("root")?.replaceChildren();
 }
 function startHydration(){
   if (hydrationState.hasStarted) return;
@@ -202,6 +202,7 @@ function startHydration(){
   scheduleManifestLink();
 }
 function scheduleHydration(){
+  const hydrationDelayMs=shouldClientRenderImmediately?automaticClientRenderDelayMs:automaticHydrationDelayMs;
   automaticHydrationTimeout=window.setTimeout(() => {
     automaticHydrationTimeout=0;
     if ("requestIdleCallback" in window) {
@@ -211,14 +212,10 @@ function scheduleHydration(){
       return;
     }
     startHydration();
-  },automaticHydrationDelayMs);
+  },hydrationDelayMs);
 }
-if (shouldClientRenderImmediately) {
-  if (!hydrationState.hasStarted) {
-    startHydration();
-  } else {
-    scheduleManifestLink();
-  }
+if (hydrationState.hasStarted) {
+  scheduleManifestLink();
 } else {
   for (const eventName of interactionEvents) {
     window.addEventListener(eventName,startHydration,listenerOptions);
@@ -232,22 +229,41 @@ if (shouldClientRenderImmediately) {
 `
 }
 
-async function readBuiltStylesheet(html: string): Promise<{
+async function readBuiltStylesheets(html: string): Promise<{
   stylesheet: string
-  stylesheetTag: string
+  mainStylesheetTag: string
+  stylesheetTags: string[]
 }> {
-  const stylesheetMatch = getSingleMatch(
-    html,
-    /<link\b(?=[^>]*\brel=["']stylesheet["'])(?=[^>]*\bhref=["']([^"']+)["'])[^>]*>/i,
-    'stylesheet link',
+  const stylesheetLinkPattern =
+    /<link\b(?=[^>]*\brel=["']stylesheet["'])(?=[^>]*\bhref=["']([^"']+)["'])[^>]*>/gi
+  const stylesheetMatches = [...html.matchAll(stylesheetLinkPattern)].map((stylesheetMatch) => ({
+    href: stylesheetMatch[1],
+    tag: stylesheetMatch[0],
+  }))
+  const mainStylesheet = stylesheetMatches.find((stylesheetMatch) =>
+    /\/assets\/index-[^/]+\.css$/u.test(stylesheetMatch.href),
   )
-  const stylesheetHref = stylesheetMatch[1]
-  const stylesheetPath = path.join(distDirectory, stylesheetHref.replace(/^\//, ''))
-  const stylesheet = await readFile(stylesheetPath, 'utf8')
+
+  if (!mainStylesheet) {
+    throw new Error('Could not find main stylesheet link in built index.html.')
+  }
+
+  const orderedStylesheetMatches = [
+    mainStylesheet,
+    ...stylesheetMatches.filter((stylesheetMatch) => stylesheetMatch !== mainStylesheet),
+  ]
+  const stylesheet = (
+    await Promise.all(
+      orderedStylesheetMatches.map((stylesheetMatch) =>
+        readFile(path.join(distDirectory, stylesheetMatch.href.replace(/^\//, '')), 'utf8'),
+      ),
+    )
+  ).join('\n')
 
   return {
+    mainStylesheetTag: mainStylesheet.tag,
     stylesheet,
-    stylesheetTag: stylesheetMatch[0],
+    stylesheetTags: stylesheetMatches.map((stylesheetMatch) => stylesheetMatch.tag),
   }
 }
 
@@ -308,7 +324,7 @@ async function prerenderRoot() {
       readFile(distIndexPath, 'utf8'),
     ])
     const appHtml = renderAppToHtml()
-    const { stylesheet, stylesheetTag } = await readBuiltStylesheet(html)
+    const { mainStylesheetTag, stylesheet, stylesheetTags } = await readBuiltStylesheets(html)
     const { entryUrl, html: htmlWithEntryModulePreload } =
       replaceEntryScriptWithEntryModulePreload(html)
     const htmlWithPrerenderedRoot = htmlWithEntryModulePreload.replace(
@@ -324,10 +340,12 @@ async function prerenderRoot() {
     const criticalFontPreloadTags = createCriticalFontPreloadTags(stylesheet)
     const clientRenderBootScript = createClientRenderBootScript(entryUrl)
     const styleHashSource = createHashSource(stylesheet)
-    const htmlWithInlineCss = htmlWithBuiltAssetUrls.replace(
-      stylesheetTag,
-      `<script data-battle-brothers-client-render-boot="true">${escapeScriptText(clientRenderBootScript)}</script>${criticalFontPreloadTags}<style data-battle-brothers-inline-css="true">${escapeStyleText(stylesheet)}</style>`,
-    )
+    const inlineCssReplacement = `<script data-battle-brothers-client-render-boot="true">${escapeScriptText(clientRenderBootScript)}</script>${criticalFontPreloadTags}<style data-battle-brothers-inline-css="true">${escapeStyleText(stylesheet)}</style>`
+    let htmlWithInlineCss = htmlWithBuiltAssetUrls.replace(mainStylesheetTag, inlineCssReplacement)
+
+    for (const stylesheetTag of stylesheetTags) {
+      htmlWithInlineCss = htmlWithInlineCss.replaceAll(stylesheetTag, '')
+    }
     const scriptHashSources = createInlineScriptHashSources(htmlWithInlineCss)
 
     await Promise.all([

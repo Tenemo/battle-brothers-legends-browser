@@ -3,7 +3,6 @@ import type {
   LegendsPerkCatalogRecord,
   LegendsPerkRecord,
 } from '../types/legends-perks'
-import { createPerkSearchText } from './perk-search'
 
 export function hydrateCatalogPerks(
   perks: LegendsPerkCatalogRecord[],
@@ -38,8 +37,6 @@ export function hydrateCatalogPerks(
       backgroundSources,
       searchText: '',
     }
-
-    hydratedPerk.searchText = createPerkSearchText(hydratedPerk)
 
     return hydratedPerk
   })

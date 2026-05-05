@@ -103,13 +103,20 @@ vi.mock('../src/data/legends-planner-metadata.json', async () => {
 
 import App from '../src/App'
 
+async function renderInteractiveApp() {
+  render(<App />)
+
+  await screen.findByLabelText('Search perks')
+  await screen.findByRole('complementary', { name: 'Background fit' })
+}
+
 afterEach(() => {
   window.history.replaceState({}, '', '/')
 })
 
 describe('app', () => {
-  test('renders the catalog shell without the old reference root footer', () => {
-    render(<App />)
+  test('renders the catalog shell without the old reference root footer', async () => {
+    await renderInteractiveApp()
     const hero = screen.getByRole('banner')
     const brandEmphasis = screen.getByTestId('hero-brand-emphasis')
     const legendsModRepositoryLink = within(hero).getByRole('link', {
@@ -150,7 +157,7 @@ describe('app', () => {
 
   test('shows the perk search clear button only while search has text', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderInteractiveApp()
     const perkSearchInput = screen.getByLabelText('Search perks')
 
     expect(screen.queryByRole('button', { name: 'Clear perk search' })).not.toBeInTheDocument()
@@ -174,7 +181,7 @@ describe('app', () => {
 
   test('splits origin and ancient scroll perk search filters', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderInteractiveApp()
     const perkSearchInput = screen.getByLabelText('Search perks')
 
     await user.type(perkSearchInput, 'Berserk')
@@ -264,7 +271,7 @@ describe('app', () => {
     const user = userEvent.setup()
 
     window.history.replaceState({}, '', '/?build=Killing+Frenzy,Hold+Out')
-    render(<App />)
+    await renderInteractiveApp()
 
     await waitFor(() => {
       expect(screen.getByText('2 perks picked.')).toBeInTheDocument()
@@ -293,7 +300,7 @@ describe('app', () => {
 
   test('shows the background search clear button only while search has text', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderInteractiveApp()
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
     const backgroundSearchInput = within(backgroundFitPanel).getByLabelText('Search backgrounds')
     const filterBackgroundsButton = within(backgroundFitPanel).getByRole('button', {
@@ -338,7 +345,7 @@ describe('app', () => {
 
   test('keeps default background study filters out of the url and serializes changes', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderInteractiveApp()
     const backgroundFitPanel = screen.getByRole('complementary', { name: 'Background fit' })
 
     await user.click(within(backgroundFitPanel).getByRole('button', { name: 'Filter backgrounds' }))
@@ -410,7 +417,7 @@ describe('app', () => {
   })
 
   test('updates visible state when browser history restores a shared url', async () => {
-    render(<App />)
+    await renderInteractiveApp()
 
     expect(screen.getByLabelText('Search perks')).toHaveValue('')
     expect(screen.getByText('No perks picked yet.')).toBeInTheDocument()
@@ -432,7 +439,7 @@ describe('app', () => {
   })
 
   test('updates selected perk detail state when browser history restores detail url state', async () => {
-    render(<App />)
+    await renderInteractiveApp()
 
     act(() => {
       window.history.pushState({}, '', '/?detail=perk&perk=Berserk&search=Berserk&build=Berserk')
@@ -451,7 +458,7 @@ describe('app', () => {
 
   test('keeps selected perk detail state when a perk group filter hides the selected perk', async () => {
     const user = userEvent.setup()
-    render(<App />)
+    await renderInteractiveApp()
     const perkSearchInput = screen.getByLabelText('Search perks')
 
     await user.type(perkSearchInput, 'Berserk')
@@ -484,7 +491,7 @@ describe('app', () => {
   })
 
   test('loads background fit when browser history restores background detail url state', async () => {
-    render(<App />)
+    await renderInteractiveApp()
 
     act(() => {
       window.history.pushState(

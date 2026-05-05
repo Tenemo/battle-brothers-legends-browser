@@ -6,6 +6,7 @@ import {
   getBackgroundFitPanel,
   expectNoDocumentHorizontalOverflow,
   expectRawAncientScrollMarker,
+  expectPlannerGroupTilesSettled,
   getBuildIndividualGroupsList,
   getBuildPerksBar,
   getBuildSharedGroupsList,
@@ -588,7 +589,7 @@ test('build planner splits shared and individual perk groups without layout drif
   const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
 
   await expect(buildPerkTooltip).toBeVisible({ timeout: 2500 })
-  await expect(buildPerkTooltip).toHaveAttribute('role', 'group')
+  await expect(buildPerkTooltip).toHaveAttribute('role', 'dialog')
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(buildPerkTooltip.getByTestId('build-perk-tooltip-title')).toHaveCount(0)
   await expect(buildPerkTooltip).not.toContainText('Clarity')
@@ -618,6 +619,7 @@ test('build planner splits shared and individual perk groups without layout drif
   )
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expect(getBuildPerksBar(page).getByTestId('planner-slot-perk')).toHaveCount(7)
+  await expectPlannerGroupTilesSettled(page)
   await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute(
     'data-scroll-constrained',
     'false',
@@ -679,6 +681,7 @@ test('scrolls the planner below wide desktop only after compact content exceeds 
   await page.setViewportSize({ width: 1280, height: 720 })
   await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 7)))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+  await expectPlannerGroupTilesSettled(page)
 
   const twoRowPlannerMetrics = await getPlannerWrapMetrics(page)
 
@@ -695,6 +698,7 @@ test('scrolls the planner below wide desktop only after compact content exceeds 
 
   await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 18)))
   await expect(page.getByText('18 perks picked.')).toBeVisible()
+  await expectPlannerGroupTilesSettled(page)
   await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute(
     'data-scroll-constrained',
     'true',
@@ -708,6 +712,7 @@ test('scrolls the planner below wide desktop only after compact content exceeds 
   await page.setViewportSize({ width: 2560, height: 900 })
   await page.goto(createBuildUrl(manyPickedPerkNames))
   await expect(page.getByText('27 perks picked.')).toBeVisible()
+  await expectPlannerGroupTilesSettled(page)
   await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute(
     'data-scroll-constrained',
     'false',
@@ -1490,7 +1495,10 @@ test('opens planner group pill tooltip actions from keyboard focus', async ({ pa
 
   await expect(buildPerkTooltip).toBeVisible()
   await expect(battleForgedPill).toHaveAttribute('aria-expanded', 'true')
+  await expect(battleForgedPill).toHaveAttribute('aria-haspopup', 'dialog')
   await expect(battleForgedPill).toHaveAttribute('aria-controls', /build-perk-tooltip-/u)
+  await expect(battleForgedPill).not.toHaveAttribute('aria-describedby')
+  await expect(buildPerkTooltip).toHaveAttribute('role', 'dialog')
 
   await page.keyboard.press('ArrowDown')
 

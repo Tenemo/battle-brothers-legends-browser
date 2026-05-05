@@ -772,6 +772,14 @@
     }
   }
 
+  .plannerGroupCardPlaceholder {
+    pointer-events: none;
+
+    &[data-placeholder-size='tall'] {
+      min-height: 9.3rem;
+    }
+  }
+
   .plannerGroupCardPointerTarget,
   .plannerGroupCardInspect {
     position: absolute;
@@ -986,11 +994,15 @@
   }
 
   .buildPerkTooltip {
+    --build-perk-tooltip-action-width: calc(var(--control-height-sm) * 2);
+
     position: fixed;
     z-index: var(--z-index-popover);
     width: max-content;
     padding: var(--space-lg) var(--space-xl);
-    padding-inline-end: calc(var(--space-xl) + var(--space-md) + (var(--control-height-sm) * 1.72));
+    padding-inline-end: calc(
+      var(--space-xl) + var(--space-md) + var(--build-perk-tooltip-action-width)
+    );
   }
 
   .buildPerkTooltipAction {
@@ -1096,6 +1108,10 @@
   }
 
   @include mobile {
+    .buildPerkTooltip {
+      --build-perk-tooltip-action-width: calc(var(--primitive-length-2-72rem) * 2);
+    }
+
     .buildPlannerHeader {
       align-items: flex-start;
       flex-direction: column;

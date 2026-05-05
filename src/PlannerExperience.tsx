@@ -1,14 +1,19 @@
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  lazy,
+  startTransition,
+  Suspense,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import styles from './App.module.scss'
-import { BackgroundFitPanel } from './components/BackgroundFitPanel'
 import {
   BuildPlanner,
   type BuildPlannerSavedBuild,
   type SavedBuildOperationStatus,
 } from './components/BuildPlanner'
-import { CategorySidebar } from './components/CategorySidebar'
-import { DetailPanel } from './components/DetailPanel'
-import { PerkResults } from './components/PerkResults'
 import { type BuildRequirement } from './components/SharedControls'
 import {
   allAvailableCategories,
@@ -58,12 +63,70 @@ import {
 } from './lib/saved-build-planner-filters'
 import type { SavedBuildPlannerFilters } from './lib/saved-builds-storage'
 
+const deferredWorkspacePanelIdleTimeoutMs = 2000
+const deferredWorkspacePanelStageCount = 4
+const BackgroundFitPanel = lazy(() =>
+  import('./components/BackgroundFitPanel').then((componentModule) => ({
+    default: componentModule.BackgroundFitPanel,
+  })),
+)
+const CategorySidebar = lazy(() =>
+  import('./components/CategorySidebar').then((componentModule) => ({
+    default: componentModule.CategorySidebar,
+  })),
+)
+const DetailPanel = lazy(() =>
+  import('./components/DetailPanel').then((componentModule) => ({
+    default: componentModule.DetailPanel,
+  })),
+)
+const PerkResults = lazy(() =>
+  import('./components/PerkResults').then((componentModule) => ({
+    default: componentModule.PerkResults,
+  })),
+)
+
 function getInitialBackgroundFitExpandedState() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return true
   }
 
   return !window.matchMedia(mediumDesktopBackgroundFitMediaQuery).matches
+}
+
+function shouldStartWithDeferredWorkspacePanels() {
+  return (
+    typeof document !== 'undefined' &&
+    document.documentElement.dataset.battleBrothersClientRender === 'true' &&
+    document.documentElement.dataset.battleBrothersStaticShellReady === 'true'
+  )
+}
+
+function scheduleDeferredWorkspacePanels(callback: () => void) {
+  if (typeof window.requestIdleCallback === 'function') {
+    const idleCallbackId = window.requestIdleCallback(callback, {
+      timeout: deferredWorkspacePanelIdleTimeoutMs,
+    })
+
+    return () => {
+      window.cancelIdleCallback(idleCallbackId)
+    }
+  }
+
+  const timeoutId = window.setTimeout(callback, deferredWorkspacePanelIdleTimeoutMs)
+
+  return () => {
+    window.clearTimeout(timeoutId)
+  }
+}
+
+function WorkspaceStartupPanel({ isRail = false }: { isRail?: boolean }) {
+  return (
+    <div
+      aria-hidden="true"
+      className={isRail ? styles.workspaceStartupRail : styles.workspaceStartupPanel}
+    />
+  )
 }
 
 export function PlannerExperience() {
@@ -74,6 +137,9 @@ export function PlannerExperience() {
     perks: allPerks,
     perkGroupOptionsByCategory: allPerkGroupOptionsByCategory,
   })
+  const [deferredWorkspacePanelStage, setDeferredWorkspacePanelStage] = useState(() =>
+    shouldStartWithDeferredWorkspacePanels() ? 0 : deferredWorkspacePanelStageCount,
+  )
   const urlHistoryWriteModeRef = useRef<BuildPlannerUrlHistoryWriteMode>('replace')
   const perkFilters = usePerkFilters({
     allPerks,
@@ -784,6 +850,18 @@ export function PlannerExperience() {
   }
 
   useEffect(() => {
+    if (deferredWorkspacePanelStage >= deferredWorkspacePanelStageCount) {
+      return
+    }
+
+    return scheduleDeferredWorkspacePanels(() => {
+      startTransition(() => {
+        setDeferredWorkspacePanelStage(deferredWorkspacePanelStageCount)
+      })
+    })
+  }, [deferredWorkspacePanelStage])
+
+  useEffect(() => {
     if (activeDetailSelection.type !== 'background' || completedBackgroundFitView === null) {
       return
     }
@@ -797,6 +875,11 @@ export function PlannerExperience() {
       startTransition(() => setActiveDetailSelection({ type: 'perk' }))
     }
   }, [activeDetailSelection, completedBackgroundFitView])
+
+  const isBackgroundFitPanelReady = deferredWorkspacePanelStage >= 1
+  const isDetailPanelReady = deferredWorkspacePanelStage >= 2
+  const arePerkResultsReady = deferredWorkspacePanelStage >= 3
+  const isCategorySidebarReady = deferredWorkspacePanelStage >= 4
 
   return (
     <PlannerInteractionProvider interaction={plannerInteraction}>
@@ -825,6 +908,7 @@ export function PlannerExperience() {
           selectedDetailType === 'perk' && selectedPerk !== null ? selectedPerk.id : null
         }
         shareBuildStatus={shareBuildStatus}
+        shouldRenderPerkGroupCards={deferredWorkspacePanelStage >= 1}
         sharedPerkGroups={buildPlannerGroups.sharedPerkGroups}
       />
 
@@ -835,100 +919,130 @@ export function PlannerExperience() {
         data-category-collapsed={!isCategorySidebarExpanded}
         data-testid="workspace"
       >
-        <BackgroundFitPanel
-          backgroundFitView={backgroundFitView}
-          backgroundFitErrorMessage={backgroundFitErrorMessage}
-          backgroundFitProgress={backgroundFitProgress}
-          isExpanded={isBackgroundFitPanelExpanded}
-          isLoadingBackgroundFitView={isBackgroundFitViewLoading || isBackgroundFitProgressVisible}
-          onSelectBackgroundFit={handleSelectBackgroundFit}
-          onBackgroundStudyBookChange={handleBackgroundStudyBookChange}
-          onBackgroundStudyScrollChange={handleBackgroundStudyScrollChange}
-          onBackgroundVeteranPerkLevelIntervalChange={
-            handleBackgroundVeteranPerkLevelIntervalChange
-          }
-          onOriginBackgroundsChange={handleOriginBackgroundsChange}
-          onSearchActivityChange={setHasActiveBackgroundFitSearch}
-          onSecondBackgroundStudyScrollChange={handleSecondBackgroundStudyScrollChange}
-          onToggleExpanded={() => setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)}
-          pickedPerkCount={pickedPerks.length}
-          mustHavePickedPerkCount={mustHavePickedPerks.length}
-          optionalPickedPerkCount={optionalPickedPerkIds.length}
-          shouldAllowBackgroundStudyBook={shouldAllowBackgroundStudyBook}
-          shouldAllowBackgroundStudyScroll={shouldAllowBackgroundStudyScroll}
-          shouldAllowSecondBackgroundStudyScroll={shouldAllowSecondBackgroundStudyScroll}
-          availableBackgroundVeteranPerkLevelIntervals={
-            availableBackgroundVeteranPerkLevelIntervals
-          }
-          selectedBackgroundVeteranPerkLevelIntervals={selectedBackgroundVeteranPerkLevelIntervals}
-          selectedBackgroundFitKey={selectedBackgroundFitKey}
-          shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
-        />
+        {isBackgroundFitPanelReady ? (
+          <Suspense fallback={<WorkspaceStartupPanel isRail={!isBackgroundFitPanelExpanded} />}>
+            <BackgroundFitPanel
+              backgroundFitView={backgroundFitView}
+              backgroundFitErrorMessage={backgroundFitErrorMessage}
+              backgroundFitProgress={backgroundFitProgress}
+              isExpanded={isBackgroundFitPanelExpanded}
+              isLoadingBackgroundFitView={
+                isBackgroundFitViewLoading || isBackgroundFitProgressVisible
+              }
+              onSelectBackgroundFit={handleSelectBackgroundFit}
+              onBackgroundStudyBookChange={handleBackgroundStudyBookChange}
+              onBackgroundStudyScrollChange={handleBackgroundStudyScrollChange}
+              onBackgroundVeteranPerkLevelIntervalChange={
+                handleBackgroundVeteranPerkLevelIntervalChange
+              }
+              onOriginBackgroundsChange={handleOriginBackgroundsChange}
+              onSearchActivityChange={setHasActiveBackgroundFitSearch}
+              onSecondBackgroundStudyScrollChange={handleSecondBackgroundStudyScrollChange}
+              onToggleExpanded={() => setIsBackgroundFitPanelExpanded((isExpanded) => !isExpanded)}
+              pickedPerkCount={pickedPerks.length}
+              mustHavePickedPerkCount={mustHavePickedPerks.length}
+              optionalPickedPerkCount={optionalPickedPerkIds.length}
+              shouldAllowBackgroundStudyBook={shouldAllowBackgroundStudyBook}
+              shouldAllowBackgroundStudyScroll={shouldAllowBackgroundStudyScroll}
+              shouldAllowSecondBackgroundStudyScroll={shouldAllowSecondBackgroundStudyScroll}
+              availableBackgroundVeteranPerkLevelIntervals={
+                availableBackgroundVeteranPerkLevelIntervals
+              }
+              selectedBackgroundVeteranPerkLevelIntervals={
+                selectedBackgroundVeteranPerkLevelIntervals
+              }
+              selectedBackgroundFitKey={selectedBackgroundFitKey}
+              shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
+            />
+          </Suspense>
+        ) : (
+          <WorkspaceStartupPanel isRail={!isBackgroundFitPanelExpanded} />
+        )}
 
-        <DetailPanel
-          selectedDetailType={selectedDetailType}
-          selectedBackgroundFitDetail={selectedBackgroundFitDetail}
-          detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
-          groupedBackgroundSources={groupedBackgroundSources}
-          mustHavePickedPerkIds={mustHavePickedPerkIds}
-          onAddPerkToBuild={handleAddPickedPerk}
-          onInspectPerk={handleInspectPlannerPerk}
-          onInspectPerkGroup={handleInspectPerkGroup}
-          onNavigateDetailHistory={handleNavigateDetailHistory}
-          onRemovePerkFromBuild={handleRemovePickedPerk}
-          optionalPickedPerkIds={optionalPickedPerkIds}
-          mustHavePickedPerkCount={mustHavePickedPerks.length}
-          optionalPickedPerkCount={optionalPickedPerkIds.length}
-          pickedPerkCount={pickedPerks.length}
-          selectedPerkRequirement={selectedPerkRequirement}
-          selectedPerk={selectedPerk}
-          studyResourceFilter={{
-            shouldAllowBook: shouldAllowBackgroundStudyBook,
-            shouldAllowScroll: shouldAllowBackgroundStudyScroll,
-            shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
-          }}
-          supportedBuildTargetPerkGroups={backgroundFitView?.supportedBuildTargetPerkGroups ?? []}
-        />
+        {isDetailPanelReady ? (
+          <Suspense fallback={<WorkspaceStartupPanel />}>
+            <DetailPanel
+              selectedDetailType={selectedDetailType}
+              selectedBackgroundFitDetail={selectedBackgroundFitDetail}
+              detailHistoryNavigationAvailability={detailHistoryNavigationAvailability}
+              groupedBackgroundSources={groupedBackgroundSources}
+              mustHavePickedPerkIds={mustHavePickedPerkIds}
+              onAddPerkToBuild={handleAddPickedPerk}
+              onInspectPerk={handleInspectPlannerPerk}
+              onInspectPerkGroup={handleInspectPerkGroup}
+              onNavigateDetailHistory={handleNavigateDetailHistory}
+              onRemovePerkFromBuild={handleRemovePickedPerk}
+              optionalPickedPerkIds={optionalPickedPerkIds}
+              mustHavePickedPerkCount={mustHavePickedPerks.length}
+              optionalPickedPerkCount={optionalPickedPerkIds.length}
+              pickedPerkCount={pickedPerks.length}
+              selectedPerkRequirement={selectedPerkRequirement}
+              selectedPerk={selectedPerk}
+              studyResourceFilter={{
+                shouldAllowBook: shouldAllowBackgroundStudyBook,
+                shouldAllowScroll: shouldAllowBackgroundStudyScroll,
+                shouldAllowSecondScroll: shouldAllowSecondBackgroundStudyScroll,
+              }}
+              supportedBuildTargetPerkGroups={
+                backgroundFitView?.supportedBuildTargetPerkGroups ?? []
+              }
+            />
+          </Suspense>
+        ) : (
+          <WorkspaceStartupPanel />
+        )}
 
-        <PerkResults
-          onAncientScrollPerkGroupsChange={handleAncientScrollPerkGroupsChange}
-          onInspectPerkGroup={handleInspectPerkGroup}
-          onOriginPerkGroupsChange={handleOriginPerkGroupsChange}
-          onAddPerkToBuild={handleAddPickedPerk}
-          onRemovePerkFromBuild={handleRemovePickedPerk}
-          onSelectPerk={handleSelectPerk}
-          pickedPerkRequirementById={pickedPerkRequirementById}
-          query={query}
-          selectedPerk={selectedPerk}
-          setQuery={handlePerkSearchChange}
-          shouldIncludeAncientScrollPerkGroups={shouldIncludeAncientScrollPerkGroups}
-          shouldIncludeOriginPerkGroups={shouldIncludeOriginPerkGroups}
-          perkResultListScrollResetKey={perkResultListScrollResetKey}
-          visiblePerkResultSetKey={visiblePerkResultSetKey}
-          visiblePerks={visiblePerks}
-        />
+        {arePerkResultsReady ? (
+          <Suspense fallback={<WorkspaceStartupPanel />}>
+            <PerkResults
+              onAncientScrollPerkGroupsChange={handleAncientScrollPerkGroupsChange}
+              onInspectPerkGroup={handleInspectPerkGroup}
+              onOriginPerkGroupsChange={handleOriginPerkGroupsChange}
+              onAddPerkToBuild={handleAddPickedPerk}
+              onRemovePerkFromBuild={handleRemovePickedPerk}
+              onSelectPerk={handleSelectPerk}
+              pickedPerkRequirementById={pickedPerkRequirementById}
+              query={query}
+              selectedPerk={selectedPerk}
+              setQuery={handlePerkSearchChange}
+              shouldIncludeAncientScrollPerkGroups={shouldIncludeAncientScrollPerkGroups}
+              shouldIncludeOriginPerkGroups={shouldIncludeOriginPerkGroups}
+              perkResultListScrollResetKey={perkResultListScrollResetKey}
+              visiblePerkResultSetKey={visiblePerkResultSetKey}
+              visiblePerks={visiblePerks}
+            />
+          </Suspense>
+        ) : (
+          <WorkspaceStartupPanel />
+        )}
 
-        <CategorySidebar
-          allPerkCount={catalogPerks.length}
-          categoryFilterMode={categoryFilterMode}
-          displayedCategoryNames={displayedCategoryNames}
-          displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
-          expandedCategoryNames={expandedCategoryNames}
-          categoryCounts={categoryCounts}
-          isExpanded={isCategorySidebarExpanded}
-          onCategoryExpandToggle={handleCategoryExpandToggle}
-          onCategoryToggle={handleCategoryToggle}
-          onClearCategorySelection={handleClearCategorySelection}
-          onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
-          onPerkGroupSelect={handlePerkGroupSelect}
-          onSelectAllCategories={handleSelectAllCategories}
-          onToggleExpanded={() => setIsCategorySidebarExpanded((isExpanded) => !isExpanded)}
-          pickedPerkRequirementCountsByCategory={pickedPerkRequirementCountsByCategory}
-          pickedPerkRequirementCountsByPerkGroup={pickedPerkRequirementCountsByPerkGroup}
-          query={query}
-          selectedCategoryNames={selectedCategoryNames}
-          selectedPerkGroupIdsByCategory={selectedPerkGroupIdsByCategory}
-        />
+        {isCategorySidebarReady ? (
+          <Suspense fallback={<WorkspaceStartupPanel isRail={!isCategorySidebarExpanded} />}>
+            <CategorySidebar
+              allPerkCount={catalogPerks.length}
+              categoryFilterMode={categoryFilterMode}
+              displayedCategoryNames={displayedCategoryNames}
+              displayedPerkGroupOptionsByCategory={displayedPerkGroupOptionsByCategory}
+              expandedCategoryNames={expandedCategoryNames}
+              categoryCounts={categoryCounts}
+              isExpanded={isCategorySidebarExpanded}
+              onCategoryExpandToggle={handleCategoryExpandToggle}
+              onCategoryToggle={handleCategoryToggle}
+              onClearCategorySelection={handleClearCategorySelection}
+              onResetCategoryPerkGroups={handleResetCategoryPerkGroups}
+              onPerkGroupSelect={handlePerkGroupSelect}
+              onSelectAllCategories={handleSelectAllCategories}
+              onToggleExpanded={() => setIsCategorySidebarExpanded((isExpanded) => !isExpanded)}
+              pickedPerkRequirementCountsByCategory={pickedPerkRequirementCountsByCategory}
+              pickedPerkRequirementCountsByPerkGroup={pickedPerkRequirementCountsByPerkGroup}
+              query={query}
+              selectedCategoryNames={selectedCategoryNames}
+              selectedPerkGroupIdsByCategory={selectedPerkGroupIdsByCategory}
+            />
+          </Suspense>
+        ) : (
+          <WorkspaceStartupPanel isRail={!isCategorySidebarExpanded} />
+        )}
       </main>
     </PlannerInteractionProvider>
   )

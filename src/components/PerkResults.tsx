@@ -28,18 +28,18 @@ import styles from './PerkResults.module.scss'
 
 const mobilePerkResultMediaQuery = '(max-width: 760px)'
 const perkResultDefaultItemHeight = 244
-const perkResultInitialItemCount = 18
+const perkResultInitialItemCount = 6
 const perkResultViewportIncrease = {
-  bottom: 1800,
-  top: 1200,
+  bottom: 720,
+  top: 360,
 } as const
 const perkResultMinimumOverscanItemCount = {
-  bottom: 8,
-  top: 5,
+  bottom: 3,
+  top: 2,
 } as const
 const perkResultOverscan = {
-  main: 720,
-  reverse: 420,
+  main: 360,
+  reverse: 180,
 } as const
 const perkFilterTooltips = {
   ancientScrollPerks: 'Shows perk groups that are only available through ancient scroll sources.',

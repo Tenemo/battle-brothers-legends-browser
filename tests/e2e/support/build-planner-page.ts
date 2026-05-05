@@ -444,6 +444,10 @@ export async function gotoBuildPlanner(
   await expect(getBuildIndividualGroupsList(page)).toBeVisible()
 }
 
+export async function expectPlannerGroupTilesSettled(page: Page): Promise<void> {
+  await expect(page.locator('[data-planner-item="group-card-placeholder"]')).toHaveCount(0)
+}
+
 export async function expectViewportLocked(page: Page): Promise<void> {
   await expect
     .poll(async () =>

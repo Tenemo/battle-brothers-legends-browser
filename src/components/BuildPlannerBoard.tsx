@@ -1,4 +1,4 @@
-import { useId, type RefObject } from 'react'
+import { lazy, Suspense, useId, type RefObject } from 'react'
 import catenaryChainUrl from '../assets/catenary-chain.svg'
 import { joinClassNames } from '../lib/class-names'
 import type {
@@ -17,11 +17,17 @@ import {
   renderGameIcon,
 } from '../lib/perk-display'
 import type { LegendsPerkRecord } from '../types/legends-perks'
-import { BuildPerkGroupTile, type BuildPerkGroupTileOption } from './BuildPerkGroupTile'
+import type { BuildPerkGroupTileOption } from './BuildPerkGroupTile'
 import { BuildRequirementIcon, PlannerSectionChevron } from './SharedControls'
 import type { BuildPlannerPickedPerk, PlannerPerkGroupSelection } from './build-planner-types'
 import sharedStyles from './SharedControls.module.scss'
 import styles from './BuildPlanner.module.scss'
+
+const BuildPerkGroupTile = lazy(() =>
+  import('./BuildPerkGroupTile').then((componentModule) => ({
+    default: componentModule.BuildPerkGroupTile,
+  })),
+)
 
 const mustHaveLegendTileTitle =
   'This is how must-have perks look in the build. Background fit uses must-have perks for the main build chance.'
@@ -243,20 +249,45 @@ function renderPlannerGroupCard({
   onInspectPerk: (perkId: string, perkGroupSelection?: PlannerPerkGroupSelection) => void
 }) {
   const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
+  const plannerGroupCardKey = `${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`
 
   return (
-    <BuildPerkGroupTile
-      groupLabel={plannerGroupLabel}
-      groupOptions={getPlannerGroupTileOptions(groupedPerkGroup.perkGroupOptions)}
+    <Suspense
+      fallback={renderPlannerGroupCardPlaceholder({ groupedPerkGroup, keyPrefix })}
+      key={plannerGroupCardKey}
+    >
+      <BuildPerkGroupTile
+        groupLabel={plannerGroupLabel}
+        groupOptions={getPlannerGroupTileOptions(groupedPerkGroup.perkGroupOptions)}
+        metaLabel={formatPickedPerkCountLabel(groupedPerkGroup.perkNames.length)}
+        onInspectPerk={onInspectPerk}
+        onInspectPerkGroup={onInspectPerkGroup}
+        perks={groupedPerkGroup.perkNames.map((perkName, perkIndex) => ({
+          iconPath: groupedPerkGroup.perkIconPaths[perkIndex] ?? null,
+          perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
+          perkName,
+        }))}
+      />
+    </Suspense>
+  )
+}
+
+function renderPlannerGroupCardPlaceholder({
+  groupedPerkGroup,
+  keyPrefix,
+}: {
+  groupedPerkGroup: BuildPlannerGroupedPerkGroup
+  keyPrefix: string
+}) {
+  const plannerGroupLabel = getPlannerGroupLabel(groupedPerkGroup.perkGroupOptions)
+
+  return (
+    <div
+      aria-hidden="true"
+      className={joinClassNames(styles.plannerGroupCard, styles.plannerGroupCardPlaceholder)}
+      data-planner-item="group-card-placeholder"
+      data-placeholder-size={groupedPerkGroup.perkIds.length >= 4 ? 'tall' : 'default'}
       key={`${keyPrefix}-${groupedPerkGroup.perkIds.join('::')}::${plannerGroupLabel}`}
-      metaLabel={formatPickedPerkCountLabel(groupedPerkGroup.perkNames.length)}
-      onInspectPerk={onInspectPerk}
-      onInspectPerkGroup={onInspectPerkGroup}
-      perks={groupedPerkGroup.perkNames.map((perkName, perkIndex) => ({
-        iconPath: groupedPerkGroup.perkIconPaths[perkIndex] ?? null,
-        perkId: groupedPerkGroup.perkIds[perkIndex] ?? null,
-        perkName,
-      }))}
     />
   )
 }
@@ -279,6 +310,7 @@ export function BuildPlannerBoard({
   pickedPerks,
   plannerBoardRef,
   selectedBuildPlannerPerkId,
+  shouldRenderPerkGroupCards,
   sharedPerkGroups,
   suppressBuildPerkTooltipPreviewUntilPointerMove,
 }: {
@@ -303,6 +335,7 @@ export function BuildPlannerBoard({
   pickedPerks: BuildPlannerPickedPerk[]
   plannerBoardRef: RefObject<HTMLDivElement | null>
   selectedBuildPlannerPerkId: string | null
+  shouldRenderPerkGroupCards: boolean
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
   suppressBuildPerkTooltipPreviewUntilPointerMove: () => void
 }) {
@@ -589,12 +622,17 @@ export function BuildPlannerBoard({
             {sharedPerkGroups.length > 0 ? (
               <div className={styles.plannerGroupList} data-planner-collection="shared-groups">
                 {sharedPerkGroups.map((sharedPerkGroup) =>
-                  renderPlannerGroupCard({
-                    groupedPerkGroup: sharedPerkGroup,
-                    keyPrefix: 'shared',
-                    onInspectPerkGroup,
-                    onInspectPerk: onInspectPlannerPerk,
-                  }),
+                  shouldRenderPerkGroupCards
+                    ? renderPlannerGroupCard({
+                        groupedPerkGroup: sharedPerkGroup,
+                        keyPrefix: 'shared',
+                        onInspectPerkGroup,
+                        onInspectPerk: onInspectPlannerPerk,
+                      })
+                    : renderPlannerGroupCardPlaceholder({
+                        groupedPerkGroup: sharedPerkGroup,
+                        keyPrefix: 'shared',
+                      }),
                 )}
               </div>
             ) : (
@@ -644,12 +682,17 @@ export function BuildPlannerBoard({
                   data-planner-collection="individual-groups"
                 >
                   {individualPerkGroups.map((individualPerkGroup) =>
-                    renderPlannerGroupCard({
-                      groupedPerkGroup: individualPerkGroup,
-                      keyPrefix: 'individual',
-                      onInspectPerkGroup,
-                      onInspectPerk: onInspectPlannerPerk,
-                    }),
+                    shouldRenderPerkGroupCards
+                      ? renderPlannerGroupCard({
+                          groupedPerkGroup: individualPerkGroup,
+                          keyPrefix: 'individual',
+                          onInspectPerkGroup,
+                          onInspectPerk: onInspectPlannerPerk,
+                        })
+                      : renderPlannerGroupCardPlaceholder({
+                          groupedPerkGroup: individualPerkGroup,
+                          keyPrefix: 'individual',
+                        }),
                   )}
                 </div>
               ) : (

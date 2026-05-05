@@ -70,8 +70,8 @@ export function BuildPerkPill({
   return (
     <button
       aria-controls={isTooltipOpenForPerk ? controlledTooltipId : undefined}
-      aria-describedby={isTooltipOpenForPerk ? controlledTooltipId : undefined}
       aria-expanded={isTooltipOpenForPerk}
+      aria-haspopup="dialog"
       aria-keyshortcuts="ArrowDown"
       className={styles.plannerPill}
       data-highlighted={hoveredPerkId === perkId}

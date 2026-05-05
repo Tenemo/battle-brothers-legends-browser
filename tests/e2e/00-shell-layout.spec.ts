@@ -4,6 +4,7 @@ import {
   expectBackgroundFitCalculationComplete,
   expectNoDocumentHorizontalOverflow,
   expectNoWorkspaceHorizontalClip,
+  expectPlannerGroupTilesSettled,
   expectViewportLocked,
   getBackgroundFitPanel,
   getPlannerBoardVisualVerticalOverflow,
@@ -653,9 +654,10 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
     { height: 1080, width: 1920 },
     { height: 1440, width: 2560 },
   ]) {
-    await page.setViewportSize(viewportSize)
-    await page.goto('/')
-    await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+    await gotoBuildPlanner(page, viewportSize)
+    for (const selector of desktopScrollbarTargets) {
+      await expect(page.locator(selector)).toBeVisible()
+    }
 
     scrollbarMeasurements.push(
       await page.evaluate((selectors) => {
@@ -811,6 +813,14 @@ test('virtualizes unfiltered phone results without restoring the nested scroll t
 
   await expect(page.getByTestId('results-list').getByTestId('perk-row').first()).toBeVisible()
   await expect(page.getByRole('button', { name: /Show \d+ more perks/u })).toHaveCount(0)
+  await expect
+    .poll(async () =>
+      page
+        .getByTestId('results-list')
+        .getByTestId('perk-row')
+        .evaluateAll((rows) => rows.length),
+    )
+    .toBeGreaterThan(4)
 
   const initialPhoneResultsMetrics = await page.evaluate(() => {
     const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
@@ -826,7 +836,7 @@ test('virtualizes unfiltered phone results without restoring the nested scroll t
     }
   })
 
-  expect(initialPhoneResultsMetrics.resultRowCount).toBeGreaterThan(8)
+  expect(initialPhoneResultsMetrics.resultRowCount).toBeGreaterThan(4)
   expect(initialPhoneResultsMetrics.resultRowCount).toBeLessThan(40)
   expect(initialPhoneResultsMetrics.resultsListOverflowY).toBe('visible')
   expect(initialPhoneResultsMetrics.documentScrollHeight).toBeGreaterThan(30000)
@@ -846,7 +856,7 @@ test('virtualizes unfiltered phone results without restoring the nested scroll t
         .getByTestId('perk-row')
         .evaluateAll((rows) => rows.length),
     )
-    .toBeGreaterThan(12)
+    .toBeGreaterThan(8)
 })
 
 test('keeps dense mobile builds compact without pushing search multiple screens down', async ({
@@ -869,6 +879,8 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expectNoDocumentHorizontalOverflow(page)
     await expect(page.getByText('12 perks picked.')).toBeVisible()
+    await expect(page.getByLabel('Search perks')).toBeVisible()
+    await expectPlannerGroupTilesSettled(page)
 
     const denseMobileMetrics = await page.evaluate(() => {
       const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null

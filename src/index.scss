@@ -93,10 +93,12 @@
   }
 
   html[data-battle-brothers-client-render='true']:not(
-      [data-battle-brothers-client-render-ready='true']
+      [data-battle-brothers-client-render-ready='true'],
+      [data-battle-brothers-static-shell-ready='true']
     )
     #root {
-    display: none;
+    visibility: hidden;
+    pointer-events: none;
   }
 
   @media (max-width: 1279px) {

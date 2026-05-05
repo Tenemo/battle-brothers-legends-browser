@@ -46,6 +46,8 @@ describe('build perk pill', () => {
     const icon = screen.getByTestId('planner-pill-icon')
 
     expect(button).toHaveAccessibleName('Battle Forged')
+    expect(button).toHaveAttribute('aria-haspopup', 'dialog')
+    expect(button).not.toHaveAttribute('aria-describedby')
     expect(icon).toHaveAttribute('alt', '')
     expect(icon).toHaveAttribute('aria-hidden', 'true')
     expect(icon).toHaveAttribute(

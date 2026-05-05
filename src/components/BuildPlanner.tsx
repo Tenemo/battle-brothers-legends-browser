@@ -109,6 +109,7 @@ export function BuildPlanner({
   savedBuildsErrorMessage,
   selectedBuildPlannerPerkId,
   shareBuildStatus,
+  shouldRenderPerkGroupCards,
   sharedPerkGroups,
 }: {
   hasActiveBackgroundFitSearch: boolean
@@ -133,6 +134,7 @@ export function BuildPlanner({
   savedBuildsErrorMessage: string | null
   selectedBuildPlannerPerkId: string | null
   shareBuildStatus: 'copied' | 'error' | 'idle'
+  shouldRenderPerkGroupCards: boolean
   sharedPerkGroups: BuildPlannerGroupedPerkGroup[]
 }) {
   const { hoveredBuildPerk, hoveredBuildPerkTooltip, hoveredBuildPerkTooltipId } =
@@ -308,6 +310,7 @@ export function BuildPlanner({
           pickedPerks={pickedPerks}
           plannerBoardRef={plannerBoardRef}
           selectedBuildPlannerPerkId={selectedBuildPlannerPerkId}
+          shouldRenderPerkGroupCards={shouldRenderPerkGroupCards}
           sharedPerkGroups={sharedPerkGroups}
           suppressBuildPerkTooltipPreviewUntilPointerMove={suppressTooltipPreviewUntilPointerMove}
         />
@@ -370,7 +373,7 @@ export function BuildPlanner({
             onCloseBuildPerkTooltip()
             onCloseBuildPerkHover(hoveredBuildPerk.id)
           }}
-          role="group"
+          role="dialog"
           style={getAnchoredTooltipStyle(hoveredBuildPerkTooltip.anchorRectangle)}
         >
           <div className={styles.buildPerkTooltipAction} data-testid="build-perk-tooltip-action">

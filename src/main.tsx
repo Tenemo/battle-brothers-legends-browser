@@ -20,17 +20,37 @@ function markClientRenderedRootReady() {
   }
 
   documentElement.dataset.battleBrothersClientRenderReady = 'true'
+  delete documentElement.dataset.battleBrothersStaticShellReady
 }
 
-if (rootElement.hasChildNodes()) {
+if (rootElement.hasChildNodes() && !shouldRevealClientRenderedRoot) {
   hydrateRoot(rootElement, app)
 } else {
-  const root = createRoot(rootElement)
+  const shouldReplaceStaticShell = shouldRevealClientRenderedRoot && rootElement.hasChildNodes()
+  const renderContainer = shouldReplaceStaticShell ? document.createElement('div') : rootElement
+
+  if (shouldReplaceStaticShell) {
+    renderContainer.style.position = 'absolute'
+    renderContainer.style.inset = '0'
+    renderContainer.style.width = '100%'
+    renderContainer.style.visibility = 'hidden'
+    rootElement.append(renderContainer)
+  }
+
+  const root = createRoot(renderContainer)
 
   if (shouldRevealClientRenderedRoot) {
     flushSync(() => {
       root.render(app)
     })
+
+    if (shouldReplaceStaticShell) {
+      renderContainer.style.visibility = ''
+      rootElement.replaceChildren(renderContainer)
+      renderContainer.style.position = ''
+      renderContainer.style.inset = ''
+      renderContainer.style.width = ''
+    }
   } else {
     root.render(app)
   }
