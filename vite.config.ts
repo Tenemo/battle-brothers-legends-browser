@@ -1,4 +1,4 @@
-import { createReadStream, existsSync, readFileSync, statSync } from 'node:fs'
+import { createReadStream, readFileSync, statSync } from 'node:fs'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -113,14 +113,26 @@ function serveLocalNetlifyImage(
   response: ServerResponse,
   next: MiddlewareNext,
 ) {
-  const imageFilePath = getLocalNetlifyImageFilePath(request.url)
-
-  if (!imageFilePath || !existsSync(imageFilePath)) {
+  if (request.method !== 'GET' && request.method !== 'HEAD') {
     next()
     return
   }
 
-  const imageFileStat = statSync(imageFilePath)
+  const imageFilePath = getLocalNetlifyImageFilePath(request.url)
+
+  if (!imageFilePath) {
+    next()
+    return
+  }
+
+  let imageFileStat: ReturnType<typeof statSync>
+
+  try {
+    imageFileStat = statSync(imageFilePath)
+  } catch {
+    next()
+    return
+  }
 
   if (!imageFileStat.isFile()) {
     next()
@@ -135,7 +147,23 @@ function serveLocalNetlifyImage(
   )
   response.setHeader('Content-Length', String(imageFileStat.size))
   response.setHeader('Cache-Control', 'public, max-age=0, must-revalidate')
-  createReadStream(imageFilePath).pipe(response)
+
+  if (request.method === 'HEAD') {
+    response.end()
+    return
+  }
+
+  const imageFileStream = createReadStream(imageFilePath)
+
+  imageFileStream.on('error', (error) => {
+    if (!response.headersSent) {
+      next(error)
+      return
+    }
+
+    response.destroy(error)
+  })
+  imageFileStream.pipe(response)
 }
 
 function createPlannerVersionPlugin(): Plugin {

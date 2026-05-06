@@ -134,7 +134,7 @@ function createNetlifyHeadersFile(styleHashSource: string, scriptHashSources: st
     '  Cache-Control: public, max-age=31536000, immutable',
     '',
     '/game-icons/*',
-    '  Cache-Control: public, max-age=31536000, immutable',
+    '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
     '',
     '/favicon/*',
     '  Cache-Control: public, max-age=604800, stale-while-revalidate=31536000',
