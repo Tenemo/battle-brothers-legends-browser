@@ -1,5 +1,5 @@
 import { type ComponentProps } from 'react'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, test, vi } from 'vitest'
 import { BuildPerkPill } from '../src/components/BuildPerkPill'
 import { gameIconImageWidths, getGameIconUrl } from '../src/lib/game-icon-url'
@@ -86,6 +86,36 @@ describe('build perk pill', () => {
       perkGroupSelection,
       pillHoverOptions,
     )
+  })
+
+  test('closes a pointer-opened tooltip when the pointer leaves before hover state rerenders', () => {
+    vi.useFakeTimers()
+
+    try {
+      const { button, interaction, props } = renderBuildPerkPill()
+
+      fireEvent.mouseEnter(button)
+
+      act(() => {
+        vi.advanceTimersByTime(750)
+      })
+
+      expect(interaction.openBuildPerkTooltip).toHaveBeenLastCalledWith(
+        props.perkId,
+        button,
+        undefined,
+        pillHoverOptions,
+      )
+
+      interaction.closeBuildPerkTooltip.mockClear()
+
+      fireEvent.mouseLeave(button, { relatedTarget: null })
+
+      expect(interaction.closeBuildPerkTooltip).toHaveBeenCalledTimes(1)
+      expect(interaction.closeBuildPerkHover).toHaveBeenCalledWith(props.perkId)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   test('moves keyboard users from the focused pill into the tooltip action', async () => {

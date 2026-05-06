@@ -196,16 +196,10 @@ function createBuildDescription(
 }
 
 function createBuildImagePath(canonicalSearch: string): string {
-  const searchParams = new URLSearchParams(canonicalSearch)
-  const canonicalBuild = searchParams.get('build') ?? ''
-  const canonicalOptionalPerks = searchParams.get('optional') ?? ''
   const encodedReference = encodeURIComponent(legendsBackgroundFitDataset.referenceVersion)
-  const encodedBuild = encodeURIComponent(canonicalBuild)
-  const optionalPerksSearch = canonicalOptionalPerks
-    ? `?optional=${encodeURIComponent(canonicalOptionalPerks)}`
-    : ''
+  const encodedBuildSearch = encodeURIComponent(canonicalSearch.replace(/^\?/u, ''))
 
-  return `${buildSocialImagePathPrefix}/${encodedReference}/${encodedBuild}.png${optionalPerksSearch}`
+  return `${buildSocialImagePathPrefix}/${encodedReference}/${encodedBuildSearch}.png`
 }
 
 function createBuildSharePreviewPayloadFromPickedPerkIds(

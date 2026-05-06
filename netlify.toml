@@ -36,6 +36,9 @@ excludedPath = [
   "/social/*",
 ]
 
+[edge_functions.header]
+netlify-agent-category = "^(page-preview|crawler|ai-agent|tooling|other|none)(;|$)"
+
 [[redirects]]
 from = "/index.html"
 to = "/"

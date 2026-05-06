@@ -17,7 +17,7 @@ import buildSocialImage, {
 const pngSignature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])
 const buildSocialImageContext = {
   params: {
-    buildSlug: 'Clarity',
+    buildSlug: 'build%3DClarity',
     reference: 'reference-mod_19.3.21',
   },
 } as unknown as Context
@@ -150,21 +150,40 @@ describe('build social image', () => {
     expect(Buffer.from(body).subarray(0, 8)).toEqual(pngSignature)
   })
 
-  test('extracts canonical build search params from the path route', () => {
+  test('ignores obsolete build-only image path routes', () => {
     const searchParams = createBuildSocialImageSearchParamsFromPathname(
       '/social/builds/reference-mod_19.3.21/Clarity%2CPerfect%20Focus.png',
     )
 
-    expect(searchParams?.get('build')).toBe('Clarity,Perfect Focus')
+    expect(searchParams?.has('build')).toBe(false)
   })
 
-  test('extracts canonical build search params from Netlify route params', () => {
+  test('extracts full canonical build search params from the path route', () => {
+    const searchParams = createBuildSocialImageSearchParamsFromPathname(
+      '/social/builds/reference-mod_19.3.21/build%3DClarity%2CPerfect%2BFocus%26optional%3DPerfect%2BFocus.png',
+    )
+
+    expect(searchParams?.get('build')).toBe('Clarity,Perfect Focus')
+    expect(searchParams?.get('optional')).toBe('Perfect Focus')
+  })
+
+  test('ignores obsolete build-only Netlify route params', () => {
     const searchParams = createBuildSocialImageSearchParamsFromRouteParams({
       buildSlug: 'Browbeater%27s%20Bludgeon%2CBlacksmiths%20Technique',
       reference: '19.3.21',
     })
 
-    expect(searchParams?.get('build')).toBe("Browbeater's Bludgeon,Blacksmiths Technique")
+    expect(searchParams).toBeNull()
+  })
+
+  test('extracts full canonical build search params from Netlify route params', () => {
+    const searchParams = createBuildSocialImageSearchParamsFromRouteParams({
+      buildSlug: 'build%3DClarity%2CPerfect%2BFocus%26optional%3DPerfect%2BFocus',
+      reference: '19.3.21',
+    })
+
+    expect(searchParams?.get('build')).toBe('Clarity,Perfect Focus')
+    expect(searchParams?.get('optional')).toBe('Perfect Focus')
   })
 
   test('uses Netlify route params before falling back to the request path', async () => {
@@ -178,7 +197,7 @@ describe('build social image', () => {
           return pngSignature
         },
         routeParams: {
-          buildSlug: 'Clarity%2CPerfect%20Focus',
+          buildSlug: 'build%3DClarity%2CPerfect%2BFocus',
           reference: 'reference-mod_19.3.21',
         },
       },
@@ -188,11 +207,30 @@ describe('build social image', () => {
     expect(renderedBuilds).toEqual(['Clarity,Perfect Focus'])
   })
 
-  test('keeps optional perks from the image request query', async () => {
+  test('ignores obsolete optional perks from the image request query', async () => {
     const renderedSearches: string[] = []
     const response = await createBuildSocialImageResponse(
       new URL(
         'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/Clarity%2CPerfect%20Focus.png?optional=Perfect%20Focus',
+      ),
+      {
+        renderPng: (payload) => {
+          renderedSearches.push(payload.canonicalSearch)
+
+          return pngSignature
+        },
+      },
+    )
+
+    expect(response.status).toBe(200)
+    expect(renderedSearches).toEqual([''])
+  })
+
+  test('keeps optional perks from queryless canonical image paths', async () => {
+    const renderedSearches: string[] = []
+    const response = await createBuildSocialImageResponse(
+      new URL(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/build%3DClarity%2CPerfect%2BFocus%26optional%3DPerfect%2BFocus.png',
       ),
       {
         renderPng: (payload) => {
@@ -234,7 +272,9 @@ describe('build social image', () => {
     }
 
     await createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.21/Student.png'),
+      new URL(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/build%3DStudent.png',
+      ),
       {
         previewOptions: {
           shouldIncludeTopBackgroundFits: false,
@@ -243,7 +283,9 @@ describe('build social image', () => {
       },
     )
     await createBuildSocialImageResponse(
-      new URL('https://battlebrothers.academy/social/builds/reference-mod_19.3.21/Colossus.png'),
+      new URL(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/build%3DColossus.png',
+      ),
       {
         previewOptions: {
           shouldIncludeTopBackgroundFits: false,
@@ -258,7 +300,7 @@ describe('build social image', () => {
   test('returns a PNG with durable cache headers for a valid build', async () => {
     const response = await createBuildSocialImageResponse(
       new URL(
-        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/Clarity%2CPerfect%20Focus.png',
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/build%3DClarity%2CPerfect%2BFocus.png',
       ),
     )
 
@@ -364,7 +406,7 @@ describe('build social image', () => {
 
     const response = await handler(
       new Request(
-        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/Clarity%2CPerfect%20Focus.png',
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/build%3DClarity%2CPerfect%2BFocus.png',
       ),
     )
 
