@@ -5,15 +5,31 @@ type BuildSeoHandlerOptions = {
   renderHtml?: typeof renderDocumentHtml
 }
 
+const browserAgentCategoryPattern = /^browser(?:;|$)/u
+
 function isHtmlResponse(response: Response): boolean {
   return (response.headers.get('content-type') ?? '').includes('text/html')
+}
+
+function hasBrowserAgentCategory(request: Request): boolean {
+  const agentCategory = request.headers.get('netlify-agent-category')
+
+  if (!agentCategory) {
+    return false
+  }
+
+  return agentCategory
+    .split(',')
+    .some((agentCategoryPart) =>
+      browserAgentCategoryPattern.test(agentCategoryPart.trim().toLowerCase()),
+    )
 }
 
 export function createBuildSeoHandler({
   renderHtml = renderDocumentHtml,
 }: BuildSeoHandlerOptions = {}): (request: Request, context: Context) => Promise<Response> {
   return async function buildSeo(request: Request, context: Context): Promise<Response> {
-    if (request.method !== 'GET') {
+    if (request.method !== 'GET' || hasBrowserAgentCategory(request)) {
       return context.next()
     }
 

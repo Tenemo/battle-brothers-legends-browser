@@ -20,6 +20,9 @@ const requiredExcludedPaths = [
   '/sitemap.xml',
   '/social/*',
 ]
+const requiredAgentCategoryHeaderName = 'netlify-agent-category'
+const requiredAgentCategoryHeaderPattern =
+  '^(page-preview|crawler|ai-agent|tooling|other|none)(;|$)'
 
 type EdgeManifestRoute = Record<string, unknown>
 
@@ -74,6 +77,37 @@ function getExcludedPatterns(route: EdgeManifestRoute): unknown[] {
     ...normalizeArray(route.excludedPatterns),
     ...normalizeArray(route.excluded_patterns),
   ]
+}
+
+function normalizeRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : null
+}
+
+function getHeaderPattern(route: EdgeManifestRoute, headerName: string): string | null {
+  const headerSources = [route.header, route.headers]
+
+  for (const headerSource of headerSources) {
+    const headers = normalizeRecord(headerSource)
+
+    if (!headers) {
+      continue
+    }
+
+    const headerCondition = headers[headerName] ?? headers[headerName.toLowerCase()]
+
+    if (typeof headerCondition === 'string') {
+      return headerCondition
+    }
+
+    const normalizedHeaderCondition = normalizeRecord(headerCondition)
+    const pattern = normalizedHeaderCondition?.pattern ?? normalizedHeaderCondition?.value
+
+    if (typeof pattern === 'string') {
+      return pattern
+    }
+  }
+
+  return null
 }
 
 function excludedPatternMatchesRequiredPath(
@@ -134,4 +168,16 @@ for (const requiredExcludedPath of requiredExcludedPaths) {
   }
 }
 
-console.log('Netlify edge manifest contains the expected build-seo route and exclusions.')
+const agentCategoryHeaderPattern = getHeaderPattern(buildSeoRoute, requiredAgentCategoryHeaderName)
+
+if (agentCategoryHeaderPattern !== requiredAgentCategoryHeaderPattern) {
+  fail(
+    `build-seo route must only run for non-browser Netlify user-agent categories. Expected ${requiredAgentCategoryHeaderName}=${requiredAgentCategoryHeaderPattern}, got ${String(
+      agentCategoryHeaderPattern,
+    )}.`,
+  )
+}
+
+console.log(
+  'Netlify edge manifest contains the expected build-seo route, exclusions, and user-agent category condition.',
+)

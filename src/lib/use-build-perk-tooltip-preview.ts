@@ -80,18 +80,33 @@ export function useBuildPerkTooltipPreview({
 
   const closeTooltipPreview = useCallback(
     (perkId: string, relatedTarget?: EventTarget | null) => {
+      const isPointerPreviewForPerk = pointerPreviewPerkIdRef.current === perkId
+      const isTooltipRelatedTarget = isBuildPerkTooltipTarget(
+        relatedTarget ?? null,
+        tooltipTargetSelector,
+      )
+
       pointerPreviewPerkIdRef.current = null
       isPointerPreviewSuppressedRef.current = false
       clearTooltipOpenTimers()
 
       if (hoveredBuildPerkId !== perkId) {
+        if (isPointerPreviewForPerk && isTooltipRelatedTarget) {
+          return
+        }
+
         clearTooltipCloseTimer()
         setActiveTooltipIndicatorPerkId(null)
+
+        if (isPointerPreviewForPerk) {
+          onCloseTooltip()
+        }
+
         onCloseHover(perkId)
         return
       }
 
-      if (isBuildPerkTooltipTarget(relatedTarget ?? null, tooltipTargetSelector)) {
+      if (isTooltipRelatedTarget) {
         return
       }
 

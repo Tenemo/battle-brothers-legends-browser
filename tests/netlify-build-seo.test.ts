@@ -15,7 +15,11 @@ const baseHtml = `<!doctype html>
 describe('build SEO edge function', () => {
   test('injects build metadata into HTML responses', async () => {
     const response = await buildSeo(
-      new Request('https://battlebrothers.academy/?build=Clarity,Perfect+Focus'),
+      new Request('https://battlebrothers.academy/?build=Clarity,Perfect+Focus', {
+        headers: {
+          'netlify-agent-category': 'page-preview',
+        },
+      }),
       {
         next: async () =>
           new Response(baseHtml, {
@@ -42,6 +46,28 @@ describe('build SEO edge function', () => {
     expect(response.headers.get('last-modified')).toBeNull()
     expect(html).toContain('<title>Battle Brothers Legends build: 2 perks</title>')
     expect(html).toContain('content="noindex, follow, noarchive, max-image-preview:large"')
+  })
+
+  test('injects build metadata for crawler user-agent categories', async () => {
+    const response = await buildSeo(
+      new Request('https://battlebrothers.academy/?build=Clarity,Perfect+Focus', {
+        headers: {
+          'netlify-agent-category': 'crawler;social',
+        },
+      }),
+      {
+        next: async () =>
+          new Response(baseHtml, {
+            headers: {
+              'content-type': 'text/html; charset=utf-8',
+            },
+          }),
+      } as never,
+    )
+    const html = await response.text()
+
+    expect(html).toContain('<title>Battle Brothers Legends build: 2 perks</title>')
+    expect(html).toContain('/social/builds/')
   })
 
   test('replaces root metadata after Vite has injected the static SEO head', async () => {
@@ -109,6 +135,32 @@ describe('build SEO edge function', () => {
 
     expect(response.status).toBe(202)
     await expect(response.text()).resolves.toBe('passed through')
+  })
+
+  test('passes through browser user-agent categories without metadata injection', async () => {
+    const renderHtml = vi.fn(() => {
+      throw new Error('browser traffic should not render dynamic SEO metadata.')
+    })
+    const handler = createBuildSeoHandler({ renderHtml })
+    const originalResponse = new Response(baseHtml, {
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+      },
+    })
+    const next = vi.fn(async () => originalResponse)
+    const response = await handler(
+      new Request('https://battlebrothers.academy/?build=Clarity,Perfect+Focus', {
+        headers: {
+          'netlify-agent-category': 'browser',
+        },
+      }),
+      { next } as never,
+    )
+
+    expect(response).toBe(originalResponse)
+    expect(next).toHaveBeenCalledTimes(1)
+    expect(renderHtml).not.toHaveBeenCalled()
+    await expect(response.text()).resolves.toBe(baseHtml)
   })
 
   test('passes through non-HTML responses', async () => {
