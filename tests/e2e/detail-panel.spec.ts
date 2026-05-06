@@ -455,6 +455,9 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const berserkerStudyResourceTileIcons = berserkerStudyResourceTile.getByTestId(
     'planner-group-option-icon',
   )
+  const berserkerStudyResourceTileMarker = berserkerStudyResourceTile.getByRole('button', {
+    name: 'Learnable using an ancient scroll',
+  })
   const muscularityCoveredPerkPill = berserkerStudyResourceTile.getByRole('button', {
     name: 'Muscularity',
   })
@@ -467,7 +470,7 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const magicCategoryButton = page.getByRole('button', { name: 'Enable category Magic' })
   const berserkerSidebarGroupButton = getSidebarPerkGroupButton(page, 'Berserker')
 
-  await berserkerStudyResourceTile.hover()
+  await berserkerStudyResourceTileMarker.hover()
 
   await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'true')
   await expect(berserkerSidebarGroupButton).toHaveAttribute('data-highlighted', 'true')

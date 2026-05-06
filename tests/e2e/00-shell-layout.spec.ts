@@ -641,6 +641,20 @@ test('keeps desktop side rail buttons on the workspace-facing edges', async ({ p
     'false',
   )
 
+  await expect
+    .poll(async () => {
+      const metrics = await readDesktopRailEdgeMetrics(page)
+
+      return {
+        backgroundFitMovedTowardWorkspace: metrics.backgroundFit.transformX < 0,
+        categorySidebarMovedTowardWorkspace: metrics.categorySidebar.transformX > 0,
+      }
+    })
+    .toEqual({
+      backgroundFitMovedTowardWorkspace: true,
+      categorySidebarMovedTowardWorkspace: true,
+    })
+
   const collapsedMetrics = await readDesktopRailEdgeMetrics(page)
 
   expect(collapsedMetrics.backgroundFit.transformX).toBeLessThan(0)

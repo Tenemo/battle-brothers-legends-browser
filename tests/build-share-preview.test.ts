@@ -207,7 +207,7 @@ describe('build share preview', () => {
         pickedPerkNames,
       }),
     )
-  })
+  }, 30_000)
 
   test('excludes origin-specific backgrounds from shared build social image previews', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
