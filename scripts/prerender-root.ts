@@ -89,6 +89,8 @@ function createContentSecurityPolicy(styleHashSource: string, scriptHashSources:
     "default-src 'self'",
     `script-src 'self' ${scriptHashSources.join(' ')}`,
     `style-src 'self' ${styleHashSource}`,
+    `style-src-elem 'self' ${styleHashSource}`,
+    "style-src-attr 'unsafe-inline'",
     "img-src 'self' data:",
     "font-src 'self'",
     "connect-src 'self'",

@@ -1,4 +1,4 @@
-import { type MouseEvent, useId, useRef, useState } from 'react'
+import { type MouseEvent, Suspense, lazy, useId, useRef, useState } from 'react'
 import { Check, CircleAlert, Copy, FolderOpen, RotateCcw } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import type { BuildPlannerGroupedPerkGroup } from '../lib/build-planner'
@@ -11,8 +11,6 @@ import { getPerkPreviewParagraphs } from '../lib/perk-search'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
 import type { SavedBuildPersistenceState } from '../lib/saved-builds-storage'
 import { BuildPlannerBoard, BuildPlannerRequirementLegend } from './BuildPlannerBoard'
-import { ClearBuildConfirmationDialog } from './ClearBuildConfirmationDialog'
-import { SavedBuildsDialog } from './SavedBuildsDialog'
 import { BuildToggleButton, type BuildRequirement } from './SharedControls'
 import type {
   BuildPlannerPickedPerk,
@@ -27,6 +25,26 @@ export type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-
 
 const buildPlannerGuidance =
   'Use the chain/split control in the detail panel or search results to collect perk picks. Chain adds must-have perks for the main build chance; split adds optional perks for full-build coverage. Optional perks move to the end, stay visible, and are scored separately from must-have perks.'
+
+function loadClearBuildConfirmationDialogModule() {
+  return import('./ClearBuildConfirmationDialog')
+}
+
+function loadSavedBuildsDialogModule() {
+  return import('./SavedBuildsDialog')
+}
+
+const ClearBuildConfirmationDialog = lazy(() =>
+  loadClearBuildConfirmationDialogModule().then((dialogModule) => ({
+    default: dialogModule.ClearBuildConfirmationDialog,
+  })),
+)
+
+const SavedBuildsDialog = lazy(() =>
+  loadSavedBuildsDialogModule().then((dialogModule) => ({
+    default: dialogModule.SavedBuildsDialog,
+  })),
+)
 
 function BuildPlannerInfoButton() {
   const tooltipId = useId()
@@ -249,6 +267,15 @@ export function BuildPlanner({
               aria-label="Saved builds"
               className={joinClassNames(styles.plannerActionButton, styles.savedBuildActionButton)}
               onClick={handleOpenSavedBuildsDialog}
+              onFocus={() => {
+                void loadSavedBuildsDialogModule()
+              }}
+              onPointerEnter={() => {
+                void loadSavedBuildsDialogModule()
+              }}
+              onPointerDown={() => {
+                void loadSavedBuildsDialogModule()
+              }}
               type="button"
             >
               <FolderOpen aria-hidden="true" className={styles.plannerButtonIcon} />
@@ -283,6 +310,15 @@ export function BuildPlanner({
               data-testid="clear-build-button"
               disabled={pickedPerks.length === 0}
               onClick={() => setIsClearBuildDialogOpen(true)}
+              onFocus={() => {
+                void loadClearBuildConfirmationDialogModule()
+              }}
+              onPointerEnter={() => {
+                void loadClearBuildConfirmationDialogModule()
+              }}
+              onPointerDown={() => {
+                void loadClearBuildConfirmationDialogModule()
+              }}
               ref={clearBuildButtonRef}
               type="button"
             >
@@ -316,30 +352,32 @@ export function BuildPlanner({
         />
       </section>
 
-      {isSavedBuildsDialogOpen ? (
-        <SavedBuildsDialog
-          isSavedBuildsLoading={isSavedBuildsLoading}
-          onClose={handleCloseSavedBuildsDialog}
-          onCopySavedBuildLink={onCopySavedBuildLink}
-          onDeleteSavedBuild={onDeleteSavedBuild}
-          onLoadSavedBuild={onLoadSavedBuild}
-          onOverwriteSavedBuild={onOverwriteSavedBuild}
-          onSaveCurrentBuild={onSaveCurrentBuild}
-          pickedPerks={pickedPerks}
-          savedBuildOperationStatus={savedBuildOperationStatus}
-          savedBuildPersistenceState={savedBuildPersistenceState}
-          savedBuilds={savedBuilds}
-          savedBuildsErrorMessage={savedBuildsErrorMessage}
-        />
-      ) : null}
+      <Suspense fallback={null}>
+        {isSavedBuildsDialogOpen ? (
+          <SavedBuildsDialog
+            isSavedBuildsLoading={isSavedBuildsLoading}
+            onClose={handleCloseSavedBuildsDialog}
+            onCopySavedBuildLink={onCopySavedBuildLink}
+            onDeleteSavedBuild={onDeleteSavedBuild}
+            onLoadSavedBuild={onLoadSavedBuild}
+            onOverwriteSavedBuild={onOverwriteSavedBuild}
+            onSaveCurrentBuild={onSaveCurrentBuild}
+            pickedPerks={pickedPerks}
+            savedBuildOperationStatus={savedBuildOperationStatus}
+            savedBuildPersistenceState={savedBuildPersistenceState}
+            savedBuilds={savedBuilds}
+            savedBuildsErrorMessage={savedBuildsErrorMessage}
+          />
+        ) : null}
 
-      {isClearBuildDialogOpen && hasPickedPerks ? (
-        <ClearBuildConfirmationDialog
-          onCancel={handleCloseClearBuildDialog}
-          onConfirm={handleConfirmClearBuild}
-          pickedPerkCount={pickedPerks.length}
-        />
-      ) : null}
+        {isClearBuildDialogOpen && hasPickedPerks ? (
+          <ClearBuildConfirmationDialog
+            onCancel={handleCloseClearBuildDialog}
+            onConfirm={handleConfirmClearBuild}
+            pickedPerkCount={pickedPerks.length}
+          />
+        ) : null}
+      </Suspense>
 
       {hoveredBuildPerk !== null && hoveredBuildPerkTooltip !== null ? (
         <div

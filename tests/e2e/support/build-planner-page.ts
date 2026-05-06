@@ -191,6 +191,9 @@ export async function expectLocatorVisibleInVirtualizedScrollContainer({
   maximumScrollStepCount?: number
 }): Promise<void> {
   await expect(scrollContainer).toBeVisible()
+  await expect(scrollContainer.getByRole('listitem').first()).toBeVisible({
+    timeout: backgroundFitCalculationTimeoutMs,
+  })
   await scrollContainer.evaluate((element) => {
     const scrollElement = element as HTMLElement
 
