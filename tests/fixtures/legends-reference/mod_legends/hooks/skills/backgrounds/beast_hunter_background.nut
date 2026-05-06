@@ -51,4 +51,52 @@
   {
     ::Legends.Traits.grant(this, ::Legends.Trait.Quick);
   }
+
+  o.setGender <- function (_gender = -1)
+  {
+    if (_gender == -1) _gender = ::Legends.Mod.ModSettings.getSetting("GenderEquality").getValue() == "Disabled" ? 0 : ::Math.rand(0, 1);
+
+    if (_gender != 1) return;
+
+    this.addBackgroundType(this.Const.BackgroundType.Female);
+  }
+
+  o.onChangeAttributes = function ()
+  {
+    local c = {
+      Hitpoints = [
+        1,
+        3
+      ],
+      Bravery = [
+        -1,
+        2
+      ],
+      Stamina = [
+        4,
+        4
+      ],
+      MeleeSkill = [
+        5,
+        3
+      ],
+      RangedSkill = [
+        0,
+        0
+      ],
+      MeleeDefense = [
+        -2,
+        1
+      ],
+      RangedDefense = [
+        0,
+        2
+      ],
+      Initiative = [
+        10,
+        12
+      ]
+    };
+    return c;
+  }
 });

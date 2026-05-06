@@ -130,6 +130,7 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
     mustHaveStudyResourceRequirement: nativeStudyResourceRequirement,
     otherPerkGroups: [],
     sourceFilePath: 'backgrounds/study_resource_badges_background.nut',
+    startingAttributeRanges: [],
     veteranPerkLevelInterval: 4,
     ...overrides,
   }

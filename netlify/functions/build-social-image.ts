@@ -319,6 +319,16 @@ function createBuildSocialImageErrorResponse(requestMethod: string): Response {
   })
 }
 
+function createBuildSocialImageHeadResponse(): Response {
+  return new Response(null, {
+    headers: {
+      'cache-control': 'no-store, max-age=0',
+      'content-type': 'image/png',
+    },
+    status: 200,
+  })
+}
+
 export function createBuildSocialImageHandler({
   createResponse = createBuildSocialImageResponse,
 }: BuildSocialImageHandlerOptions = {}): (
@@ -335,12 +345,16 @@ export function createBuildSocialImageHandler({
       })
     }
 
+    if (request.method === 'HEAD') {
+      return createBuildSocialImageHeadResponse()
+    }
+
     try {
       const imageResponse = await createResponse(new URL(request.url), {
         routeParams: context?.params,
       })
 
-      return new Response(request.method === 'HEAD' ? null : Buffer.from(imageResponse.body), {
+      return new Response(Buffer.from(imageResponse.body), {
         headers: imageResponse.headers,
         status: imageResponse.status,
       })

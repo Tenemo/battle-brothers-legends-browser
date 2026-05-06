@@ -167,6 +167,14 @@ describe('build social image', () => {
     expect(searchParams?.get('optional')).toBe('Perfect Focus')
   })
 
+  test('extracts apostrophes from fully encoded canonical path routes', () => {
+    const searchParams = createBuildSocialImageSearchParamsFromPathname(
+      '/social/builds/reference-mod_19.3.21/build%3DBrowbeater%27s%2BBludgeon.png',
+    )
+
+    expect(searchParams?.get('build')).toBe("Browbeater's Bludgeon")
+  })
+
   test('ignores obsolete build-only Netlify route params', () => {
     const searchParams = createBuildSocialImageSearchParamsFromRouteParams({
       buildSlug: 'Browbeater%27s%20Bludgeon%2CBlacksmiths%20Technique',
@@ -336,7 +344,31 @@ describe('build social image', () => {
     expect(response.headers['netlify-vary']).toBeUndefined()
   })
 
-  test('serves HEAD without a response body and rejects unsupported methods', async () => {
+  test('serves HEAD without rendering or caching a response body', async () => {
+    const createResponse = vi.fn()
+    const handler = createBuildSocialImageHandler({
+      createResponse,
+    })
+    const headResponse = await handler(
+      new Request(
+        'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/build%3DClarity.png',
+        {
+          method: 'HEAD',
+        },
+      ),
+      buildSocialImageContext,
+    )
+
+    expect(headResponse.status).toBe(200)
+    expect(headResponse.headers.get('content-type')).toBe('image/png')
+    expect(headResponse.headers.get('cache-control')).toBe('no-store, max-age=0')
+    expect(headResponse.headers.get('cdn-cache-control')).toBeNull()
+    expect(headResponse.headers.get('netlify-cdn-cache-control')).toBeNull()
+    expect(await headResponse.text()).toBe('')
+    expect(createResponse).not.toHaveBeenCalled()
+  })
+
+  test('rejects unsupported methods', async () => {
     const headResponse = await buildSocialImage(
       new Request(
         'https://battlebrothers.academy/social/builds/reference-mod_19.3.21/Clarity.png',

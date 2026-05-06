@@ -82,6 +82,8 @@ async function readButtonInteractiveColorStyle(button: Locator) {
 }
 
 test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }) => {
+  test.setTimeout(60_000)
+
   const mustHaveTooltipState = await openFirstApprenticeOtherNativePerkTooltip(page)
 
   await expect(

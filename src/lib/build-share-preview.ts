@@ -1,5 +1,5 @@
 import legendsBackgroundFitDatasetJson from '../data/legends-background-fit.json'
-import type { RankedBackgroundFit } from './background-fit'
+import type { RankedBackgroundFitPreview } from './background-fit'
 import { createBackgroundFitEngine, getGuaranteedCoveredPickedPerkCount } from './background-fit'
 import { isOriginBackgroundFit } from './background-origin'
 import { createSharedBuildUrlSearch, readBuildPlannerUrlState } from './build-planner-url-state'
@@ -99,7 +99,7 @@ function formatPerkListForSentence(perkNames: string[], maxVisiblePerks: number)
 }
 
 function createBackgroundFitPreview(
-  backgroundFit: RankedBackgroundFit,
+  backgroundFit: RankedBackgroundFitPreview,
 ): BuildSharePreviewBackgroundFit {
   return {
     backgroundName: backgroundFit.backgroundName,
@@ -110,7 +110,7 @@ function createBackgroundFitPreview(
 }
 
 function getTopBackgroundFits(
-  rankedBackgroundFits: RankedBackgroundFit[],
+  rankedBackgroundFits: RankedBackgroundFitPreview[],
 ): BuildSharePreviewBackgroundFit[] {
   return rankedBackgroundFits
     .filter(
@@ -149,9 +149,13 @@ function getCachedTopBackgroundFits({
   }
 
   const topBackgroundFits = getTopBackgroundFits(
-    backgroundFitEngine.getBackgroundFitView(pickedPerks, defaultBackgroundStudyResourceFilter, {
-      optionalPickedPerkIds: new Set(availableOptionalPerkIds),
-    }).rankedBackgroundFits,
+    backgroundFitEngine.getBackgroundFitPreviewView(
+      pickedPerks,
+      defaultBackgroundStudyResourceFilter,
+      {
+        optionalPickedPerkIds: new Set(availableOptionalPerkIds),
+      },
+    ).rankedBackgroundFitPreviews,
   )
 
   topBackgroundFitsByCanonicalSearch.set(canonicalSearch, copyTopBackgroundFits(topBackgroundFits))
@@ -197,9 +201,16 @@ function createBuildDescription(
 
 function createBuildImagePath(canonicalSearch: string): string {
   const encodedReference = encodeURIComponent(legendsBackgroundFitDataset.referenceVersion)
-  const encodedBuildSearch = encodeURIComponent(canonicalSearch.replace(/^\?/u, ''))
+  const encodedBuildSearch = encodePathSegment(canonicalSearch.replace(/^\?/u, ''))
 
   return `${buildSocialImagePathPrefix}/${encodedReference}/${encodedBuildSearch}.png`
+}
+
+function encodePathSegment(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/gu,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  )
 }
 
 function createBuildSharePreviewPayloadFromPickedPerkIds(

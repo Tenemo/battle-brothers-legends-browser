@@ -1,6 +1,9 @@
 import { describe, expect, test } from 'vitest'
 import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
-import { createBackgroundFitEngine } from '../src/lib/background-fit'
+import {
+  createBackgroundFitEngine,
+  getGuaranteedCoveredPickedPerkCount,
+} from '../src/lib/background-fit'
 import { isOriginBackgroundFit } from '../src/lib/background-origin'
 import { defaultBackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
 import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share-preview'
@@ -11,6 +14,52 @@ const backgroundFitEngine = createBackgroundFitEngine(legendsBackgroundFitDatase
 const allPerksByName = new Map(
   legendsBackgroundFitDataset.perks.map((perk) => [perk.perkName, perk]),
 )
+
+function getRequiredPerkByName(perkName: string) {
+  const perk = allPerksByName.get(perkName)
+
+  if (!perk) {
+    throw new Error(`Missing perk fixture: ${perkName}`)
+  }
+
+  return perk
+}
+
+function encodeBuildParam(perkNames: string[]): string {
+  return perkNames.map((perkName) => perkName.replaceAll(' ', '+')).join(',')
+}
+
+function getExpectedTopBackgroundFits({
+  optionalPerkNames = [],
+  pickedPerkNames,
+}: {
+  optionalPerkNames?: string[]
+  pickedPerkNames: string[]
+}) {
+  const pickedPerks = pickedPerkNames.map(getRequiredPerkByName)
+  const optionalPickedPerkIds = new Set(
+    optionalPerkNames.map((perkName) => getRequiredPerkByName(perkName).id),
+  )
+
+  return backgroundFitEngine
+    .getBackgroundFitView(pickedPerks, defaultBackgroundStudyResourceFilter, {
+      optionalPickedPerkIds,
+    })
+    .rankedBackgroundFits.filter(
+      (backgroundFit) =>
+        !isOriginBackgroundFit(backgroundFit) &&
+        (backgroundFit.matches.length > 0 ||
+          backgroundFit.guaranteedMatchedPerkGroupCount > 0 ||
+          backgroundFit.expectedMatchedPerkGroupCount > 0),
+    )
+    .slice(0, 3)
+    .map((backgroundFit) => ({
+      backgroundName: backgroundFit.backgroundName,
+      expectedCoveredPickedPerkCount: backgroundFit.expectedCoveredPickedPerkCount,
+      guaranteedCoveredPickedPerkCount: getGuaranteedCoveredPickedPerkCount(backgroundFit.matches),
+      iconPath: backgroundFit.iconPath,
+    }))
+}
 
 describe('build share preview', () => {
   test('returns the empty preview for missing or invalid build params', () => {
@@ -77,6 +126,17 @@ describe('build share preview', () => {
     )
   })
 
+  test('fully encodes apostrophes in social image path segments', () => {
+    const payload = createBuildSharePreviewPayloadFromSearch('?build=Browbeater%27s+Bludgeon', {
+      shouldIncludeTopBackgroundFits: false,
+    })
+
+    expect(payload.status).toBe('found')
+    expect(payload.canonicalSearch).toBe("?build=Browbeater's+Bludgeon")
+    expect(payload.imagePath).toContain('Browbeater%27s%2BBludgeon')
+    expect(payload.imagePath).not.toContain("'")
+  })
+
   test('uses a path-keyed social image url for dense shared builds', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       '?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Hold+Out,Underdog,Assured+Conquest,Colossus,Tactical+Maneuvers,Nine+Lives,Crippling+Strikes,Perfect+Focus',
@@ -97,36 +157,57 @@ describe('build share preview', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(
       `?build=${pickedPerkNames.map((perkName) => perkName.replaceAll(' ', '+')).join(',')}`,
     )
-    const pickedPerks = pickedPerkNames.map((perkName) => {
-      const perk = allPerksByName.get(perkName)
-
-      if (!perk) {
-        throw new Error(`Missing perk fixture: ${perkName}`)
-      }
-
-      return perk
-    })
-    const expectedPreviewBackgroundNames = backgroundFitEngine
-      .getBackgroundFitView(pickedPerks, defaultBackgroundStudyResourceFilter)
-      .rankedBackgroundFits.filter(
-        (backgroundFit) =>
-          !isOriginBackgroundFit(backgroundFit) &&
-          (backgroundFit.matches.length > 0 ||
-            backgroundFit.guaranteedMatchedPerkGroupCount > 0 ||
-            backgroundFit.expectedMatchedPerkGroupCount > 0),
-      )
-      .slice(0, payload.topBackgroundFits.length)
-      .map((backgroundFit) => backgroundFit.backgroundName)
+    const expectedPreviewBackgroundFits = getExpectedTopBackgroundFits({ pickedPerkNames })
 
     expect(payload.status).toBe('found')
     expect(payload.topBackgroundFits.length).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].backgroundName).toBeTruthy()
     expect(payload.topBackgroundFits[0].expectedCoveredPickedPerkCount).toBeGreaterThan(0)
     expect(payload.topBackgroundFits[0].guaranteedCoveredPickedPerkCount).toBeGreaterThan(0)
-    expect(payload.topBackgroundFits.map((backgroundFit) => backgroundFit.backgroundName)).toEqual(
-      expectedPreviewBackgroundNames,
+    expect(payload.topBackgroundFits).toEqual(
+      expectedPreviewBackgroundFits.slice(0, payload.topBackgroundFits.length),
     )
   })
+
+  test('keeps fast social background previews aligned with the full optional-perk ranking', () => {
+    const pickedPerkNames = [
+      'Pathfinder',
+      'Lookout',
+      'Keen Eyesight',
+      'Dodge',
+      'Relentless',
+      'Heightened Reflexes',
+      'Berserk',
+      'Vengeance',
+      'Alert',
+      'Blacksmiths Technique',
+      'Prayer of Hope',
+      'Ballistics',
+      'Anticipation',
+      'Perfect Fit',
+      'Brawny',
+      'Muscularity',
+      'Mind over Body',
+    ]
+    const optionalPerkNames = [
+      'Ballistics',
+      'Anticipation',
+      'Perfect Fit',
+      'Brawny',
+      'Muscularity',
+      'Mind over Body',
+    ]
+    const payload = createBuildSharePreviewPayloadFromSearch(
+      `?build=${encodeBuildParam(pickedPerkNames)}&optional=${encodeBuildParam(optionalPerkNames)}`,
+    )
+
+    expect(payload.topBackgroundFits).toEqual(
+      getExpectedTopBackgroundFits({
+        optionalPerkNames,
+        pickedPerkNames,
+      }),
+    )
+  }, 30_000)
 
   test('excludes origin-specific backgrounds from shared build social image previews', () => {
     const payload = createBuildSharePreviewPayloadFromSearch(

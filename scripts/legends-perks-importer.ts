@@ -42,6 +42,7 @@ import type {
   LegendsBackgroundFitBackgroundDefinition,
   LegendsBackgroundFitClassWeaponDependency,
   LegendsBackgroundFitPerkRecord,
+  LegendsBackgroundStartingAttributeKey,
   LegendsBackgroundTrait,
   LegendsDynamicBackgroundCategoryName,
   LegendsFavouredEnemyTarget,
@@ -102,6 +103,21 @@ type BackgroundCampResourceModifierValueKind = 'flat' | 'percent'
 
 type BackgroundCampResourceModifierRecord = Record<string, number | number[]>
 
+type BackgroundAttributeRange = {
+  maximum: number
+  minimum: number
+}
+
+type BackgroundAttributeRangeRecord = Record<
+  LegendsBackgroundStartingAttributeKey,
+  BackgroundAttributeRange
+>
+
+type BackgroundAttributeRangeVariants = {
+  defaultRanges: BackgroundAttributeRangeRecord | null
+  femaleRanges: BackgroundAttributeRangeRecord | null
+}
+
 type BackgroundTypeMetadata = {
   backgroundTypeNamesByKey: Map<string, string>
   backgroundTypeValuesByKey: Map<string, number>
@@ -140,9 +156,12 @@ type BackgroundMinimums = Record<string, number>
 
 type ImportedBackgroundDefinition = BackgroundMetadataDefaults & {
   backgroundIdentifier: string | null
+  attributeModifierRanges: BackgroundAttributeRangeRecord
   backgroundName: string | null
   backgroundScriptId: string
+  canUseFemaleBackgroundTypeFromGenderSetting: boolean
   dynamicTreeValue: SquirrelValue
+  femaleAttributeModifierRanges: BackgroundAttributeRangeRecord | null
   iconPath: string | null
   minimums: BackgroundMinimums
   modifiers: BackgroundCampResourceModifierRecord
@@ -156,8 +175,11 @@ type ImportedResolvedBackgroundDefinition = ImportedBackgroundDefinition & {
 }
 
 type RawScriptBackgroundDefinition = {
+  attributeModifierRanges: BackgroundAttributeRangeRecord | null
   backgroundScriptId: string
+  canUseFemaleBackgroundTypeFromGenderSetting: boolean | null
   createBody: string
+  femaleAttributeModifierRanges: BackgroundAttributeRangeRecord | null
   metadataSource: string
   parentBackgroundScriptId: string
   sourceFilePath: string
@@ -340,6 +362,45 @@ const backgroundTalentAttributeLabelsByConstName: Record<string, string> = {
   MeleeSkill: 'Melee skill',
   RangedDefense: 'Ranged defense',
   RangedSkill: 'Ranged skill',
+}
+
+const backgroundStartingAttributeKeys: LegendsBackgroundStartingAttributeKey[] = [
+  'Hitpoints',
+  'Bravery',
+  'Stamina',
+  'Initiative',
+  'MeleeSkill',
+  'RangedSkill',
+  'MeleeDefense',
+  'RangedDefense',
+]
+
+const backgroundStartingAttributeLabelsByKey: Record<
+  LegendsBackgroundStartingAttributeKey,
+  string
+> = {
+  Bravery: backgroundTalentAttributeLabelsByConstName.Bravery,
+  Hitpoints: backgroundTalentAttributeLabelsByConstName.Hitpoints,
+  Initiative: backgroundTalentAttributeLabelsByConstName.Initiative,
+  MeleeDefense: backgroundTalentAttributeLabelsByConstName.MeleeDefense,
+  MeleeSkill: backgroundTalentAttributeLabelsByConstName.MeleeSkill,
+  RangedDefense: backgroundTalentAttributeLabelsByConstName.RangedDefense,
+  RangedSkill: backgroundTalentAttributeLabelsByConstName.RangedSkill,
+  Stamina: backgroundTalentAttributeLabelsByConstName.Fatigue,
+}
+
+const backgroundStartingAttributeIconPathsByKey: Record<
+  LegendsBackgroundStartingAttributeKey,
+  string
+> = {
+  Bravery: 'ui/icons/bravery_va11.png',
+  Hitpoints: 'ui/icons/health_va11.png',
+  Initiative: 'ui/icons/initiative_va11.png',
+  MeleeDefense: 'ui/icons/melee_defense_va11.png',
+  MeleeSkill: 'ui/icons/melee_skill_va11.png',
+  RangedDefense: 'ui/icons/ranged_defense_va11.png',
+  RangedSkill: 'ui/icons/ranged_skill_va11.png',
+  Stamina: 'ui/icons/fatigue_va11.png',
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -710,6 +771,187 @@ function referenceArrayValue(
   return arrayValues(value, localValues)
     .map((item) => referenceValue(item, localValues))
     .filter((item) => item !== null)
+}
+
+function createZeroBackgroundAttributeRanges(): BackgroundAttributeRangeRecord {
+  return Object.fromEntries(
+    backgroundStartingAttributeKeys.map((attributeKey) => [
+      attributeKey,
+      {
+        maximum: 0,
+        minimum: 0,
+      },
+    ]),
+  ) as BackgroundAttributeRangeRecord
+}
+
+function cloneBackgroundAttributeRanges(
+  attributeRanges: BackgroundAttributeRangeRecord,
+): BackgroundAttributeRangeRecord {
+  return Object.fromEntries(
+    backgroundStartingAttributeKeys.map((attributeKey) => {
+      const attributeRange = attributeRanges[attributeKey]
+
+      return [
+        attributeKey,
+        {
+          maximum: attributeRange.maximum,
+          minimum: attributeRange.minimum,
+        },
+      ]
+    }),
+  ) as BackgroundAttributeRangeRecord
+}
+
+function normalizeBackgroundAttributeRange(
+  firstValue: number,
+  secondValue: number,
+): BackgroundAttributeRange {
+  return {
+    maximum: Math.max(firstValue, secondValue),
+    minimum: Math.min(firstValue, secondValue),
+  }
+}
+
+function parseBackgroundAttributeRangesFromTableValue(
+  tableValue: SquirrelValue | null | undefined,
+  localValues: LocalSquirrelValues = new Map(),
+): BackgroundAttributeRangeRecord | null {
+  const tableEntries = tableEntriesToMap(tableValue, localValues)
+
+  if (tableEntries.size === 0) {
+    return null
+  }
+
+  const attributeRanges = createZeroBackgroundAttributeRanges()
+  let parsedAttributeCount = 0
+
+  for (const attributeKey of backgroundStartingAttributeKeys) {
+    const rangeValues = numberArrayValue(tableEntries.get(attributeKey), localValues)
+
+    if (rangeValues.length < 2) {
+      continue
+    }
+
+    attributeRanges[attributeKey] = normalizeBackgroundAttributeRange(
+      rangeValues[0],
+      rangeValues[1],
+    )
+    parsedAttributeCount += 1
+  }
+
+  return parsedAttributeCount === 0 ? null : attributeRanges
+}
+
+function addBackgroundAttributeRanges(
+  leftRanges: BackgroundAttributeRangeRecord,
+  rightRanges: BackgroundAttributeRangeRecord,
+): BackgroundAttributeRangeRecord {
+  return Object.fromEntries(
+    backgroundStartingAttributeKeys.map((attributeKey) => {
+      const leftRange = leftRanges[attributeKey]
+      const rightRange = rightRanges[attributeKey]
+
+      return [
+        attributeKey,
+        {
+          maximum: leftRange.maximum + rightRange.maximum,
+          minimum: leftRange.minimum + rightRange.minimum,
+        },
+      ]
+    }),
+  ) as BackgroundAttributeRangeRecord
+}
+
+function mergeBackgroundAttributeRangeBounds(
+  attributeRangeRecords: BackgroundAttributeRangeRecord[],
+): BackgroundAttributeRangeRecord {
+  if (attributeRangeRecords.length === 0) {
+    return createZeroBackgroundAttributeRanges()
+  }
+
+  return Object.fromEntries(
+    backgroundStartingAttributeKeys.map((attributeKey) => {
+      const attributeRanges = attributeRangeRecords.map(
+        (attributeRangeRecord) => attributeRangeRecord[attributeKey],
+      )
+
+      return [
+        attributeKey,
+        {
+          maximum: Math.max(...attributeRanges.map((attributeRange) => attributeRange.maximum)),
+          minimum: Math.min(...attributeRanges.map((attributeRange) => attributeRange.minimum)),
+        },
+      ]
+    }),
+  ) as BackgroundAttributeRangeRecord
+}
+
+function buildBackgroundStartingAttributeRanges({
+  baseAttributeRanges,
+  femaleBaseAttributeModifierRanges,
+  background,
+}: {
+  baseAttributeRanges: BackgroundAttributeRangeRecord
+  femaleBaseAttributeModifierRanges: BackgroundAttributeRangeRecord
+  background: ImportedBackgroundDefinition
+}): LegendsBackgroundFitBackgroundDefinition['startingAttributeRanges'] {
+  const hasFixedFemaleBackgroundType = background.backgroundTypeNames.includes('Female')
+  const canUseFemaleBackgroundType =
+    hasFixedFemaleBackgroundType || background.canUseFemaleBackgroundTypeFromGenderSetting
+  const femaleAttributeModifierRanges =
+    background.femaleAttributeModifierRanges ?? background.attributeModifierRanges
+  const attributeRangeVariants: {
+    attributeModifierRanges: BackgroundAttributeRangeRecord
+    baseAttributeRanges: BackgroundAttributeRangeRecord
+  }[] = []
+
+  if (!hasFixedFemaleBackgroundType) {
+    attributeRangeVariants.push({
+      attributeModifierRanges: background.attributeModifierRanges,
+      baseAttributeRanges,
+    })
+  }
+
+  if (canUseFemaleBackgroundType) {
+    attributeRangeVariants.push(
+      {
+        attributeModifierRanges: femaleAttributeModifierRanges,
+        baseAttributeRanges,
+      },
+      {
+        attributeModifierRanges: femaleAttributeModifierRanges,
+        baseAttributeRanges: addBackgroundAttributeRanges(
+          baseAttributeRanges,
+          femaleBaseAttributeModifierRanges,
+        ),
+      },
+    )
+  }
+
+  const startingAttributeRanges = mergeBackgroundAttributeRangeBounds(
+    attributeRangeVariants.map((variant) =>
+      addBackgroundAttributeRanges(variant.baseAttributeRanges, variant.attributeModifierRanges),
+    ),
+  )
+  const modifierAttributeRanges = mergeBackgroundAttributeRangeBounds(
+    attributeRangeVariants.map((variant) => variant.attributeModifierRanges),
+  )
+
+  return backgroundStartingAttributeKeys.map((attributeKey) => {
+    const startingAttributeRange = startingAttributeRanges[attributeKey]
+    const modifierAttributeRange = modifierAttributeRanges[attributeKey]
+
+    return {
+      attributeKey,
+      attributeName: backgroundStartingAttributeLabelsByKey[attributeKey],
+      iconPath: backgroundStartingAttributeIconPathsByKey[attributeKey],
+      maximum: startingAttributeRange.maximum,
+      minimum: startingAttributeRange.minimum,
+      modifierMaximum: modifierAttributeRange.maximum,
+      modifierMinimum: modifierAttributeRange.minimum,
+    }
+  })
 }
 
 function resolveReferenceConstName(reference: string | null): string | null {
@@ -1591,6 +1833,135 @@ function parseExcludedTalentAttributeNames(value: SquirrelValue): string[] {
   )
 }
 
+function parseBackgroundBaseAttributeRanges(
+  fileSource: string,
+  diagnosticContext: ImporterDiagnosticContext,
+): {
+  defaultRanges: BackgroundAttributeRangeRecord
+  femaleModifierRanges: BackgroundAttributeRangeRecord
+} {
+  const baseAttributeAssignment = collectTopLevelStatements(fileSource).find(
+    (statement): statement is SquirrelAssignmentStatement =>
+      isAssignmentStatement(statement) && statement.target === '::Legends.Backgrounds.BaseAttr',
+  )
+  const baseAttributeEntries = tableEntriesToMap(baseAttributeAssignment?.value)
+  const defaultRanges = parseBackgroundAttributeRangesFromTableValue(
+    baseAttributeEntries.get('Default'),
+  )
+  const femaleModifierRanges =
+    parseBackgroundAttributeRangesFromTableValue(baseAttributeEntries.get('Female')) ??
+    createZeroBackgroundAttributeRanges()
+
+  if (defaultRanges === null) {
+    addImporterParseWarning(
+      diagnosticContext,
+      'background base attribute ranges',
+      fileSource,
+      new Error('Missing ::Legends.Backgrounds.BaseAttr.Default'),
+    )
+
+    return {
+      defaultRanges: createZeroBackgroundAttributeRanges(),
+      femaleModifierRanges,
+    }
+  }
+
+  return {
+    defaultRanges,
+    femaleModifierRanges,
+  }
+}
+
+function extractReturnedBackgroundAttributeRangeRecords(
+  source: string,
+  localValues: LocalSquirrelValues,
+  diagnosticContext: ImporterDiagnosticContext,
+): BackgroundAttributeRangeRecord[] {
+  const returnedAttributeRangeRecords: BackgroundAttributeRangeRecord[] = []
+  const returnPattern = /\breturn\s+/g
+
+  for (const match of source.matchAll(returnPattern)) {
+    try {
+      const parsedValue = parseSquirrelValue(source, match.index + match[0].length).value
+      const attributeRanges = parseBackgroundAttributeRangesFromTableValue(parsedValue, localValues)
+
+      if (attributeRanges !== null) {
+        returnedAttributeRangeRecords.push(attributeRanges)
+      }
+    } catch (error) {
+      addImporterParseWarning(
+        diagnosticContext,
+        'background onChangeAttributes return value',
+        source.slice(match.index),
+        error,
+      )
+    }
+  }
+
+  return returnedAttributeRangeRecords
+}
+
+function parseBackgroundAttributeRangeVariantsFromFunction(
+  functionValue: SquirrelFunctionValue | null,
+  diagnosticContext: ImporterDiagnosticContext,
+): BackgroundAttributeRangeVariants {
+  if (functionValue === null) {
+    return {
+      defaultRanges: null,
+      femaleRanges: null,
+    }
+  }
+
+  const uncommentedFunctionBody = stripSquirrelComments(functionValue.body)
+  const localValues = extractLocalAssignments(uncommentedFunctionBody, diagnosticContext)
+  const returnedAttributeRangeRecords = extractReturnedBackgroundAttributeRangeRecords(
+    uncommentedFunctionBody,
+    localValues,
+    diagnosticContext,
+  )
+
+  if (returnedAttributeRangeRecords.length === 0) {
+    return {
+      defaultRanges: null,
+      femaleRanges: null,
+    }
+  }
+
+  if (
+    returnedAttributeRangeRecords.length > 1 &&
+    /Const\.BackgroundType\.Female/u.test(uncommentedFunctionBody)
+  ) {
+    return {
+      defaultRanges: returnedAttributeRangeRecords[returnedAttributeRangeRecords.length - 1],
+      femaleRanges: returnedAttributeRangeRecords[0],
+    }
+  }
+
+  return {
+    defaultRanges: returnedAttributeRangeRecords[returnedAttributeRangeRecords.length - 1],
+    femaleRanges: null,
+  }
+}
+
+function parseCanUseFemaleBackgroundTypeFromGenderSetting(
+  setGenderFunctionValue: SquirrelFunctionValue | null,
+): boolean | null {
+  if (setGenderFunctionValue === null) {
+    return null
+  }
+
+  const uncommentedFunctionBody = stripSquirrelComments(setGenderFunctionValue.body)
+
+  return (
+    /\baddBackgroundType\s*\(\s*(?:::|this\.)?Const\.BackgroundType\.Female\s*\)/u.test(
+      uncommentedFunctionBody,
+    ) ||
+    /\bm\.BackgroundType\s*(?:=|\|=)[^;]*\bConst\.BackgroundType\.Female\b/u.test(
+      uncommentedFunctionBody,
+    )
+  )
+}
+
 function addTraitMetadataRecordToMaps(
   { traitRecordsByConstName, traitRecordsByName, traitRecordsByScriptId }: TraitMetadata,
   {
@@ -2295,9 +2666,12 @@ function createDefaultBackgroundDefinition(
 ): ImportedBackgroundDefinition {
   return {
     backgroundIdentifier: null,
+    attributeModifierRanges: createZeroBackgroundAttributeRanges(),
     backgroundName: null,
     backgroundScriptId,
+    canUseFemaleBackgroundTypeFromGenderSetting: false,
     dynamicTreeValue: baseDynamicTreeValue,
+    femaleAttributeModifierRanges: null,
     iconPath: null,
     ...cloneBackgroundDefinitionMetadata(backgroundMetadataDefaults),
     minimums: cloneMinimums(baseMinimums),
@@ -2307,9 +2681,11 @@ function createDefaultBackgroundDefinition(
 }
 
 function applyBackgroundCreateBody({
+  attributeRangeVariants,
   backgroundTypeMetadata,
   backgroundScriptId,
   baseBackgroundDefinition,
+  canUseFemaleBackgroundTypeFromGenderSetting,
   createBody,
   diagnostics,
   metadataSource,
@@ -2318,9 +2694,11 @@ function applyBackgroundCreateBody({
   sourceFilePath,
   traitMetadata,
 }: {
+  attributeRangeVariants?: BackgroundAttributeRangeVariants | null
   backgroundScriptId: string
   backgroundTypeMetadata: BackgroundTypeMetadata
   baseBackgroundDefinition: ImportedBackgroundDefinition
+  canUseFemaleBackgroundTypeFromGenderSetting?: boolean | null
   createBody: string
   diagnostics: ImporterDiagnosticContext['diagnostics']
   metadataSource?: string | null
@@ -2399,6 +2777,14 @@ function applyBackgroundCreateBody({
     excludedTalentAttributeValue === null
       ? baseBackgroundDefinition.excludedTalentAttributeNames
       : parseExcludedTalentAttributeNames(excludedTalentAttributeValue)
+  const attributeModifierRanges =
+    attributeRangeVariants?.defaultRanges ??
+    cloneBackgroundAttributeRanges(baseBackgroundDefinition.attributeModifierRanges)
+  const femaleAttributeModifierRanges =
+    attributeRangeVariants?.femaleRanges ??
+    (baseBackgroundDefinition.femaleAttributeModifierRanges === null
+      ? null
+      : cloneBackgroundAttributeRanges(baseBackgroundDefinition.femaleAttributeModifierRanges))
   const minimums = cloneMinimums(baseBackgroundDefinition.minimums)
 
   for (const operation of extractNumericOperations(
@@ -2430,15 +2816,20 @@ function applyBackgroundCreateBody({
       (preferScriptIdWhenIdentifierIsInherited
         ? backgroundScriptId
         : (baseBackgroundDefinition.backgroundIdentifier ?? backgroundScriptId)),
+    attributeModifierRanges,
     backgroundName,
     backgroundScriptId,
     backgroundTypeNames,
+    canUseFemaleBackgroundTypeFromGenderSetting:
+      canUseFemaleBackgroundTypeFromGenderSetting ??
+      baseBackgroundDefinition.canUseFemaleBackgroundTypeFromGenderSetting,
     campResourceModifiers: buildBackgroundCampResourceModifiers(modifiers),
     dailyCost,
     dynamicTreeValue,
     excludedTalentAttributeNames,
     excludedTraits,
     excludedTraitNames,
+    femaleAttributeModifierRanges,
     guaranteedTraits,
     guaranteedTraitNames,
     iconPath,
@@ -2471,12 +2862,18 @@ function parseBackgroundHookFile(
 
   const wrapperStatements = collectTopLevelStatements(wrapperFunction.body)
   const createFunctionLiteral = readFunctionAssignmentBody(wrapperStatements, 'o.create')
+  const setGenderFunctionLiteral = readFunctionAssignmentBody(wrapperStatements, 'o.setGender')
+  const attributeRangeVariants = parseBackgroundAttributeRangeVariantsFromFunction(
+    readFunctionAssignmentBody(wrapperStatements, 'o.onChangeAttributes'),
+    { diagnostics, sourceFilePath },
+  )
 
   if (createFunctionLiteral === null) {
     return null
   }
 
   const backgroundDefinition = applyBackgroundCreateBody({
+    attributeRangeVariants,
     backgroundTypeMetadata,
     backgroundScriptId: getBackgroundScriptIdFromSourceFilePath(sourceFilePath),
     baseBackgroundDefinition: createDefaultBackgroundDefinition(
@@ -2487,6 +2884,8 @@ function parseBackgroundHookFile(
       defaultVeteranPerkLevelInterval,
       sourceFilePath,
     ),
+    canUseFemaleBackgroundTypeFromGenderSetting:
+      parseCanUseFemaleBackgroundTypeFromGenderSetting(setGenderFunctionLiteral),
     createBody: createFunctionLiteral.body,
     diagnostics,
     metadataSource: wrapperFunction.body,
@@ -2516,6 +2915,7 @@ function parseBackgroundHookFile(
 function parseBackgroundScriptFileDefinition(
   fileSource: string,
   sourceFilePath: string,
+  diagnostics: ImporterDiagnosticContext['diagnostics'],
 ): RawScriptBackgroundDefinition | null {
   const backgroundScriptId = getBackgroundScriptIdFromSourceFilePath(sourceFilePath)
   const rootAssignment = collectTopLevelStatements(fileSource).find(
@@ -2547,14 +2947,50 @@ function parseBackgroundScriptFileDefinition(
     (entry): entry is SquirrelTableFunctionEntry =>
       entry.type === 'function-entry' && entry.name === 'create',
   )
+  const attributeFunctionEntry =
+    backgroundDefinitionTable.entries.find(
+      (entry): entry is SquirrelTableFunctionEntry =>
+        entry.type === 'function-entry' && entry.name === 'onChangeAttributes',
+    ) ?? null
+  const setGenderFunctionEntry =
+    backgroundDefinitionTable.entries.find(
+      (entry): entry is SquirrelTableFunctionEntry =>
+        entry.type === 'function-entry' && entry.name === 'setGender',
+    ) ?? null
 
   if (!createFunctionEntry) {
     return null
   }
 
+  const attributeRangeVariants = parseBackgroundAttributeRangeVariantsFromFunction(
+    attributeFunctionEntry === null
+      ? null
+      : {
+          body: attributeFunctionEntry.body,
+          name: attributeFunctionEntry.name,
+          parameters: attributeFunctionEntry.parameters,
+          source: attributeFunctionEntry.body,
+          type: 'function',
+        },
+    { diagnostics, sourceFilePath },
+  )
+
   return {
+    attributeModifierRanges: attributeRangeVariants.defaultRanges,
     backgroundScriptId,
+    canUseFemaleBackgroundTypeFromGenderSetting: parseCanUseFemaleBackgroundTypeFromGenderSetting(
+      setGenderFunctionEntry === null
+        ? null
+        : {
+            body: setGenderFunctionEntry.body,
+            name: setGenderFunctionEntry.name,
+            parameters: setGenderFunctionEntry.parameters,
+            source: setGenderFunctionEntry.body,
+            type: 'function',
+          },
+    ),
     createBody: createFunctionEntry.body,
+    femaleAttributeModifierRanges: attributeRangeVariants.femaleRanges,
     metadataSource: fileSource,
     parentBackgroundScriptId: path.posix.basename(inheritedBackgroundScriptPath),
     sourceFilePath,
@@ -2602,7 +3038,18 @@ function resolveScriptBackgroundDefinitions(
     const baseBackgroundDefinition = parentBackgroundDefinition
       ? {
           ...parentBackgroundDefinition,
+          attributeModifierRanges: cloneBackgroundAttributeRanges(
+            parentBackgroundDefinition.attributeModifierRanges,
+          ),
           backgroundScriptId,
+          canUseFemaleBackgroundTypeFromGenderSetting:
+            parentBackgroundDefinition.canUseFemaleBackgroundTypeFromGenderSetting,
+          femaleAttributeModifierRanges:
+            parentBackgroundDefinition.femaleAttributeModifierRanges === null
+              ? null
+              : cloneBackgroundAttributeRanges(
+                  parentBackgroundDefinition.femaleAttributeModifierRanges,
+                ),
           ...cloneBackgroundDefinitionMetadata(parentBackgroundDefinition),
           minimums: cloneMinimums(parentBackgroundDefinition.minimums),
           sourceFilePath: rawBackgroundDefinition.sourceFilePath,
@@ -2617,9 +3064,15 @@ function resolveScriptBackgroundDefinitions(
         )
 
     const resolvedBackgroundDefinition = applyBackgroundCreateBody({
+      attributeRangeVariants: {
+        defaultRanges: rawBackgroundDefinition.attributeModifierRanges,
+        femaleRanges: rawBackgroundDefinition.femaleAttributeModifierRanges,
+      },
       backgroundTypeMetadata,
       backgroundScriptId,
       baseBackgroundDefinition,
+      canUseFemaleBackgroundTypeFromGenderSetting:
+        rawBackgroundDefinition.canUseFemaleBackgroundTypeFromGenderSetting,
       createBody: rawBackgroundDefinition.createBody,
       diagnostics,
       metadataSource: rawBackgroundDefinition.metadataSource,
@@ -2733,6 +3186,8 @@ function parseBackgroundFitRulesFile(
 function buildBackgroundFitBackgrounds(
   backgrounds: ImportedBackgroundDefinition[],
   perkGroupDefinitions: Map<string, PerkGroupDefinition>,
+  baseAttributeRanges: BackgroundAttributeRangeRecord,
+  femaleBaseAttributeModifierRanges: BackgroundAttributeRangeRecord,
 ): LegendsBackgroundFitBackgroundDefinition[] {
   return backgrounds
     .filter(hasResolvedBackgroundIdentity)
@@ -2775,6 +3230,11 @@ function buildBackgroundFitBackgrounds(
         guaranteedTraitNames: background.guaranteedTraitNames,
         iconPath: background.iconPath,
         sourceFilePath: background.sourceFilePath,
+        startingAttributeRanges: buildBackgroundStartingAttributeRanges({
+          background,
+          baseAttributeRanges,
+          femaleBaseAttributeModifierRanges,
+        }),
         veteranPerkLevelInterval: background.veteranPerkLevelInterval,
       }
     })
@@ -3830,6 +4290,13 @@ export async function createDataset(
   }
 
   const baseMinimums = buildMinimumsObject(baseMinimumsValue)
+  const baseAttributeRangeDefinitions = parseBackgroundBaseAttributeRanges(
+    characterBackgroundReferencesFileSource ?? '',
+    {
+      diagnostics,
+      sourceFilePath: toPosixRelativePath(characterBackgroundReferencesFilePath),
+    },
+  )
   const backgroundMetadataDefaults = createBackgroundMetadataDefaults({
     backgroundTypeMetadata,
     characterBackgroundFileSource: characterBackgroundWrapperFunction.body,
@@ -3866,6 +4333,7 @@ export async function createDataset(
         parseBackgroundScriptFileDefinition(
           backgroundFileEntry.fileSource,
           backgroundFileEntry.sourceFilePath,
+          diagnostics,
         ),
       )
       .filter(
@@ -3946,7 +4414,12 @@ export async function createDataset(
     perkGroupDefinitions,
     { diagnostics, sourceFilePath: toPosixRelativePath(perkGroupRulesFilePath) },
   )
-  const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(backgrounds, perkGroupDefinitions)
+  const backgroundFitBackgrounds = buildBackgroundFitBackgrounds(
+    backgrounds,
+    perkGroupDefinitions,
+    baseAttributeRangeDefinitions.defaultRanges,
+    baseAttributeRangeDefinitions.femaleModifierRanges,
+  )
 
   const scenarios = scenarioFileEntries
     .map((scenarioFileEntry) =>

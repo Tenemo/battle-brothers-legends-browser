@@ -41,6 +41,7 @@ const chanceDynamicBackgroundCategoryNameSet = new Set<LegendsDynamicBackgroundC
 const maximumBackgroundFitBuildCacheEntries = 8
 const nativeOnlySummaryCacheKey = 'native-only'
 const studyResourceStrategyProbabilityEpsilon = 1e-12
+const brightTraitName = 'Bright'
 
 type BackgroundProbabilityRecord = {
   backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
@@ -116,6 +117,16 @@ type StudyResourceChanceBreakdownProfile = {
   shouldAllowScroll: boolean
   shouldAllowSecondScroll: boolean
   studyResourceCoverageProfile: StudyResourceMaskCoverageProfile
+}
+
+type StudyResourceScopeCache = {
+  mustHaveScopeCacheKey: string
+  mustHaveStudyResourceChanceBreakdownProfiles: StudyResourceChanceBreakdownProfile[]
+  mustHaveStudyResourceCoverageProfile: StudyResourceMaskCoverageProfile
+  optionalScopeCacheKey: string
+  totalScopeCacheKey: string
+  totalStudyResourceChanceBreakdownProfiles: StudyResourceChanceBreakdownProfile[]
+  totalStudyResourceCoverageProfile: StudyResourceMaskCoverageProfile
 }
 
 export type BackgroundFitSummary = Omit<
@@ -243,11 +254,52 @@ export type RankedBackgroundFit = {
   mustHaveStudyResourceRequirement: StudyResourceRequirementProfile | null
   otherPerkGroups: BackgroundFitOtherPerkGroup[]
   sourceFilePath: string
+  startingAttributeRanges: LegendsBackgroundFitBackgroundDefinition['startingAttributeRanges']
   veteranPerkLevelInterval: number
 }
 
+type RankedBackgroundFitRankingFields = Pick<
+  RankedBackgroundFit,
+  | 'backgroundId'
+  | 'backgroundName'
+  | 'buildReachabilityProbability'
+  | 'expectedCoveredMustHavePerkCount'
+  | 'expectedCoveredOptionalPerkCount'
+  | 'fullBuildReachabilityProbability'
+  | 'guaranteedCoveredMustHavePerkCount'
+  | 'guaranteedCoveredOptionalPerkCount'
+  | 'maximumNativeCoveredPickedPerkCount'
+  | 'sourceFilePath'
+>
+
+export type RankedBackgroundFitPreview = Pick<
+  RankedBackgroundFit,
+  | 'backgroundId'
+  | 'backgroundName'
+  | 'buildReachabilityProbability'
+  | 'disambiguator'
+  | 'expectedCoveredMustHavePerkCount'
+  | 'expectedCoveredOptionalPerkCount'
+  | 'expectedCoveredPickedPerkCount'
+  | 'expectedMatchedPerkGroupCount'
+  | 'fullBuildReachabilityProbability'
+  | 'guaranteedCoveredMustHavePerkCount'
+  | 'guaranteedCoveredOptionalPerkCount'
+  | 'guaranteedMatchedPerkGroupCount'
+  | 'iconPath'
+  | 'matches'
+  | 'maximumNativeCoveredPickedPerkCount'
+  | 'sourceFilePath'
+>
+
 export type BackgroundFitView = {
   rankedBackgroundFits: RankedBackgroundFit[]
+  supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+  unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
+}
+
+export type BackgroundFitPreviewView = {
+  rankedBackgroundFitPreviews: RankedBackgroundFitPreview[]
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
   unsupportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }
@@ -295,6 +347,11 @@ type BackgroundFitEngine = {
   getBackgroundFitSummaryView: (
     pickedPerks: LegendsBackgroundFitPerkRecord[],
   ) => BackgroundFitSummaryView
+  getBackgroundFitPreviewView: (
+    pickedPerks: LegendsBackgroundFitPerkRecord[],
+    studyResourceFilter?: BackgroundStudyResourceFilter,
+    options?: BackgroundFitViewOptions,
+  ) => BackgroundFitPreviewView
   getPerkBackgroundSources: (perk: LegendsBackgroundFitPerkRecord) => LegendsPerkBackgroundSource[]
 }
 
@@ -2443,8 +2500,8 @@ function getGuaranteedCoveredPickedPerkCountForPerkIds(
 }
 
 function compareRankedBackgroundFits(
-  leftBackgroundFit: RankedBackgroundFit,
-  rightBackgroundFit: RankedBackgroundFit,
+  leftBackgroundFit: RankedBackgroundFitRankingFields,
+  rightBackgroundFit: RankedBackgroundFitRankingFields,
 ): number {
   const leftGuaranteedCoveredPickedPerkCount =
     leftBackgroundFit.guaranteedCoveredMustHavePerkCount +
@@ -2567,6 +2624,36 @@ function getStudyResourceFilterCacheKey(
     studyResourceFilter.shouldAllowScroll ? 'scroll' : 'no-scroll',
     studyResourceFilter.shouldAllowSecondScroll ? 'second-scroll' : 'one-scroll',
   ].join('|')
+}
+
+function doesBackgroundExcludeBright(
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition,
+): boolean {
+  return (
+    backgroundDefinition.excludedTraitNames.includes(brightTraitName) ||
+    backgroundDefinition.excludedTraits.some((trait) => trait.traitName === brightTraitName)
+  )
+}
+
+function getEffectiveBackgroundStudyResourceFilter({
+  backgroundDefinition,
+  studyResourceFilter,
+}: {
+  backgroundDefinition: LegendsBackgroundFitBackgroundDefinition
+  studyResourceFilter: BackgroundStudyResourceFilter | undefined
+}): BackgroundStudyResourceFilter | undefined {
+  if (
+    studyResourceFilter === undefined ||
+    !studyResourceFilter.shouldAllowSecondScroll ||
+    !doesBackgroundExcludeBright(backgroundDefinition)
+  ) {
+    return studyResourceFilter
+  }
+
+  return {
+    ...studyResourceFilter,
+    shouldAllowSecondScroll: false,
+  }
 }
 
 function getStudyResourceChanceBreakdownFilters(
@@ -2843,6 +2930,7 @@ export function createBackgroundFitEngine(
         supportedBuildTargetPerkGroups: [],
       }),
       sourceFilePath: backgroundDefinition.sourceFilePath,
+      startingAttributeRanges: backgroundDefinition.startingAttributeRanges,
       veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
     }
   }
@@ -3094,6 +3182,7 @@ export function createBackgroundFitEngine(
         supportedBuildTargetPerkGroups,
       }),
       sourceFilePath: backgroundDefinition.sourceFilePath,
+      startingAttributeRanges: backgroundDefinition.startingAttributeRanges,
       veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
     }
 
@@ -3134,6 +3223,278 @@ export function createBackgroundFitEngine(
     return expectedCoveredPickedPerkCount
   }
 
+  function createRankedBackgroundFitPreview({
+    backgroundFitBase,
+    buildReachabilityProbability,
+    expectedCoveredMustHavePerkCount,
+    expectedCoveredOptionalPerkCount,
+    fullBuildReachabilityProbability,
+    guaranteedCoveredMustHavePerkCount,
+    guaranteedCoveredOptionalPerkCount,
+    maximumNativeCoveredPickedPerkCount,
+  }: {
+    backgroundFitBase: BackgroundFitSummary
+    buildReachabilityProbability: number | null
+    expectedCoveredMustHavePerkCount: number
+    expectedCoveredOptionalPerkCount: number
+    fullBuildReachabilityProbability: number | null
+    guaranteedCoveredMustHavePerkCount: number
+    guaranteedCoveredOptionalPerkCount: number
+    maximumNativeCoveredPickedPerkCount: number
+  }): RankedBackgroundFitPreview {
+    return {
+      backgroundId: backgroundFitBase.backgroundId,
+      backgroundName: backgroundFitBase.backgroundName,
+      buildReachabilityProbability,
+      disambiguator: backgroundFitBase.disambiguator,
+      expectedCoveredMustHavePerkCount,
+      expectedCoveredOptionalPerkCount,
+      expectedCoveredPickedPerkCount: backgroundFitBase.expectedCoveredPickedPerkCount,
+      expectedMatchedPerkGroupCount: backgroundFitBase.expectedMatchedPerkGroupCount,
+      fullBuildReachabilityProbability,
+      guaranteedCoveredMustHavePerkCount,
+      guaranteedCoveredOptionalPerkCount,
+      guaranteedMatchedPerkGroupCount: backgroundFitBase.guaranteedMatchedPerkGroupCount,
+      iconPath: backgroundFitBase.iconPath,
+      matches: backgroundFitBase.matches,
+      maximumNativeCoveredPickedPerkCount,
+      sourceFilePath: backgroundFitBase.sourceFilePath,
+    }
+  }
+
+  function createBackgroundFitPreviewView(
+    pickedPerks: LegendsBackgroundFitPerkRecord[],
+    studyResourceFilter: BackgroundStudyResourceFilter | undefined,
+    options: BackgroundFitViewOptions,
+  ): BackgroundFitPreviewView {
+    if (pickedPerks.length === 0) {
+      const buildReachabilityProbability = studyResourceFilter === undefined ? null : 1
+
+      return {
+        rankedBackgroundFitPreviews: getEmptyBackgroundFitSummaries()
+          .map((backgroundFitBase) =>
+            createRankedBackgroundFitPreview({
+              backgroundFitBase,
+              buildReachabilityProbability,
+              expectedCoveredMustHavePerkCount: 0,
+              expectedCoveredOptionalPerkCount: 0,
+              fullBuildReachabilityProbability: buildReachabilityProbability,
+              guaranteedCoveredMustHavePerkCount: 0,
+              guaranteedCoveredOptionalPerkCount: 0,
+              maximumNativeCoveredPickedPerkCount: 0,
+            }),
+          )
+          .toSorted(compareRankedBackgroundFits),
+        supportedBuildTargetPerkGroups: [],
+        unsupportedBuildTargetPerkGroups: [],
+      }
+    }
+
+    const backgroundFitBuildCache = getBackgroundFitBuildCache(pickedPerks)
+    const optionalPickedPerkIdSet = options.optionalPickedPerkIds ?? new Set<string>()
+    const mustHavePickedPerks = pickedPerks.filter(
+      (pickedPerk) => !optionalPickedPerkIdSet.has(pickedPerk.id),
+    )
+    const optionalPickedPerks = pickedPerks.filter((pickedPerk) =>
+      optionalPickedPerkIdSet.has(pickedPerk.id),
+    )
+    const mustHavePickedPerkIdSet = new Set(mustHavePickedPerks.map((pickedPerk) => pickedPerk.id))
+    const effectiveOptionalPickedPerkIdSet = new Set(
+      optionalPickedPerks.map((pickedPerk) => pickedPerk.id),
+    )
+    const getRequirementCoverageMask = (requirementKey: string) =>
+      backgroundFitBuildCache.projection.groupCoverageMaskByRequirementKey.get(requirementKey) ?? 0n
+    const mustHavePickedPerksMask = getPickedPerksCoverageMask(
+      mustHavePickedPerks,
+      backgroundFitBuildCache.projection,
+    )
+    const studyResourceScopeCacheByFilterKey = new Map<
+      string,
+      Pick<
+        StudyResourceScopeCache,
+        | 'mustHaveScopeCacheKey'
+        | 'mustHaveStudyResourceCoverageProfile'
+        | 'optionalScopeCacheKey'
+        | 'totalScopeCacheKey'
+        | 'totalStudyResourceCoverageProfile'
+      >
+    >()
+    const getStudyResourcePreviewScopeCache = (
+      effectiveStudyResourceFilter: BackgroundStudyResourceFilter | undefined,
+    ) => {
+      const studyResourceFilterCacheKey = getStudyResourceFilterCacheKey(
+        effectiveStudyResourceFilter,
+      )
+      const cachedStudyResourceScopeCache = studyResourceScopeCacheByFilterKey.get(
+        studyResourceFilterCacheKey,
+      )
+
+      if (cachedStudyResourceScopeCache) {
+        return cachedStudyResourceScopeCache
+      }
+
+      const totalScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'total',
+        pickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const mustHaveScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'must-have',
+        mustHavePickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const optionalScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'optional',
+        optionalPickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const totalStudyResourceCoverageProfile = createStudyResourceMaskCoverageProfile({
+        filter: effectiveStudyResourceFilter ?? null,
+        getRequirementCoverageMask,
+        pickedPerks,
+        targetMask: backgroundFitBuildCache.projection.allPickedMask,
+      })
+      const mustHaveStudyResourceCoverageProfile =
+        optionalPickedPerks.length === 0
+          ? totalStudyResourceCoverageProfile
+          : createStudyResourceMaskCoverageProfile({
+              filter: effectiveStudyResourceFilter ?? null,
+              getRequirementCoverageMask,
+              pickedPerks: mustHavePickedPerks,
+              targetMask: mustHavePickedPerksMask,
+            })
+      const studyResourceScopeCache = {
+        mustHaveScopeCacheKey,
+        mustHaveStudyResourceCoverageProfile,
+        optionalScopeCacheKey,
+        totalScopeCacheKey,
+        totalStudyResourceCoverageProfile,
+      }
+
+      studyResourceScopeCacheByFilterKey.set(studyResourceFilterCacheKey, studyResourceScopeCache)
+
+      return studyResourceScopeCache
+    }
+    const rankedBackgroundFitPreviews: RankedBackgroundFitPreview[] = []
+
+    for (const cachedBackgroundFitRecord of backgroundFitBuildCache.cachedBackgroundFitRecords) {
+      const backgroundDefinition =
+        cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition
+      const effectiveStudyResourceFilter = getEffectiveBackgroundStudyResourceFilter({
+        backgroundDefinition,
+        studyResourceFilter,
+      })
+      const studyResourceScopeCache = getStudyResourcePreviewScopeCache(
+        effectiveStudyResourceFilter,
+      )
+      const mustHaveStudyResourceRequirement =
+        effectiveStudyResourceFilter === undefined
+          ? null
+          : getCachedStudyResourceRequirement({
+              cachedBackgroundFitRecord,
+              pickedPerks: mustHavePickedPerks,
+              studyResourceFilter: effectiveStudyResourceFilter,
+              studyResourceRequirementCacheKey: studyResourceScopeCache.mustHaveScopeCacheKey,
+            })
+
+      if (
+        effectiveStudyResourceFilter !== undefined &&
+        mustHavePickedPerks.length > 0 &&
+        !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(
+          studyResourceScopeCache.mustHaveScopeCacheKey,
+        ) &&
+        mustHaveStudyResourceRequirement === null
+      ) {
+        continue
+      }
+
+      const mustHaveNativeOutcomeSummary = getCachedNativeOutcomeSummary({
+        backgroundFitBuildCache,
+        cachedBackgroundFitRecord,
+        studyResourceCoverageProfile: studyResourceScopeCache.mustHaveStudyResourceCoverageProfile,
+        studyResourceFilterCacheKey: studyResourceScopeCache.mustHaveScopeCacheKey,
+      })
+
+      if (
+        effectiveStudyResourceFilter !== undefined &&
+        mustHavePickedPerks.length > 0 &&
+        mustHaveNativeOutcomeSummary.buildReachabilityProbability <= 0
+      ) {
+        continue
+      }
+
+      const totalNativeOutcomeSummary =
+        optionalPickedPerks.length === 0
+          ? mustHaveNativeOutcomeSummary
+          : getCachedNativeOutcomeSummary({
+              backgroundFitBuildCache,
+              cachedBackgroundFitRecord,
+              studyResourceCoverageProfile:
+                studyResourceScopeCache.totalStudyResourceCoverageProfile,
+              studyResourceFilterCacheKey: studyResourceScopeCache.totalScopeCacheKey,
+            })
+      const backgroundFitBase = getCachedBackgroundFitBase({
+        backgroundFitBuildCache,
+        cachedBackgroundFitRecord,
+        pickedPerks,
+        supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+      })
+
+      rankedBackgroundFitPreviews.push(
+        createRankedBackgroundFitPreview({
+          backgroundFitBase,
+          buildReachabilityProbability:
+            effectiveStudyResourceFilter === undefined
+              ? null
+              : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
+          expectedCoveredMustHavePerkCount:
+            optionalPickedPerks.length === 0
+              ? backgroundFitBase.expectedCoveredPickedPerkCount
+              : getCachedExpectedCoveredPickedPerkCount({
+                  backgroundFitBuildCache,
+                  cachedBackgroundFitRecord,
+                  pickedPerks: mustHavePickedPerks,
+                  scopeCacheKey: studyResourceScopeCache.mustHaveScopeCacheKey,
+                }),
+          expectedCoveredOptionalPerkCount:
+            optionalPickedPerks.length === 0
+              ? 0
+              : getCachedExpectedCoveredPickedPerkCount({
+                  backgroundFitBuildCache,
+                  cachedBackgroundFitRecord,
+                  pickedPerks: optionalPickedPerks,
+                  scopeCacheKey: studyResourceScopeCache.optionalScopeCacheKey,
+                }),
+          fullBuildReachabilityProbability:
+            effectiveStudyResourceFilter === undefined
+              ? null
+              : totalNativeOutcomeSummary.buildReachabilityProbability,
+          guaranteedCoveredMustHavePerkCount: getGuaranteedCoveredPickedPerkCountForPerkIds(
+            backgroundFitBase.matches,
+            mustHavePickedPerkIdSet,
+          ),
+          guaranteedCoveredOptionalPerkCount:
+            optionalPickedPerks.length === 0
+              ? 0
+              : getGuaranteedCoveredPickedPerkCountForPerkIds(
+                  backgroundFitBase.matches,
+                  effectiveOptionalPickedPerkIdSet,
+                ),
+          maximumNativeCoveredPickedPerkCount:
+            totalNativeOutcomeSummary.maximumNativeCoveredPickedPerkCount,
+        }),
+      )
+    }
+
+    return {
+      rankedBackgroundFitPreviews: rankedBackgroundFitPreviews.toSorted(
+        compareRankedBackgroundFits,
+      ),
+      supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
+      unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
+    }
+  }
+
   function* createBackgroundFitViewGenerator(
     pickedPerks: LegendsBackgroundFitPerkRecord[],
     studyResourceFilter: BackgroundStudyResourceFilter | undefined,
@@ -3172,7 +3533,6 @@ export function createBackgroundFitEngine(
     }
 
     const backgroundFitBuildCache = getBackgroundFitBuildCache(pickedPerks)
-    const studyResourceFilterCacheKey = getStudyResourceFilterCacheKey(studyResourceFilter)
     const optionalPickedPerkIdSet = options.optionalPickedPerkIds ?? new Set<string>()
     /*
      * Background eligibility is based only on must-have perks. Optional perks are still scored
@@ -3191,48 +3551,22 @@ export function createBackgroundFitEngine(
     const effectiveOptionalPickedPerkIdSet = new Set(
       optionalPickedPerks.map((pickedPerk) => pickedPerk.id),
     )
-    const totalScopeCacheKey = getBackgroundFitScopeCacheKey(
-      'total',
-      pickedPerks,
-      studyResourceFilterCacheKey,
-    )
-    const mustHaveScopeCacheKey = getBackgroundFitScopeCacheKey(
-      'must-have',
-      mustHavePickedPerks,
-      studyResourceFilterCacheKey,
-    )
-    const optionalScopeCacheKey = getBackgroundFitScopeCacheKey(
-      'optional',
-      optionalPickedPerks,
-      studyResourceFilterCacheKey,
-    )
     const getRequirementCoverageMask = (requirementKey: string) =>
       backgroundFitBuildCache.projection.groupCoverageMaskByRequirementKey.get(requirementKey) ?? 0n
-    const totalStudyResourceCoverageProfile = createStudyResourceMaskCoverageProfile({
-      filter: studyResourceFilter ?? null,
-      getRequirementCoverageMask,
-      pickedPerks,
-      targetMask: backgroundFitBuildCache.projection.allPickedMask,
-    })
-    const mustHaveStudyResourceCoverageProfile =
-      optionalPickedPerks.length === 0
-        ? totalStudyResourceCoverageProfile
-        : createStudyResourceMaskCoverageProfile({
-            filter: studyResourceFilter ?? null,
-            getRequirementCoverageMask,
-            pickedPerks: mustHavePickedPerks,
-            targetMask: getPickedPerksCoverageMask(
-              mustHavePickedPerks,
-              backgroundFitBuildCache.projection,
-            ),
-          })
+    const mustHavePickedPerksMask = getPickedPerksCoverageMask(
+      mustHavePickedPerks,
+      backgroundFitBuildCache.projection,
+    )
+    const studyResourceScopeCacheByFilterKey = new Map<string, StudyResourceScopeCache>()
     const createStudyResourceChanceBreakdownProfiles = ({
       pickedPerks,
       scopePrefix,
+      studyResourceFilter,
       targetMask,
     }: {
       pickedPerks: LegendsBackgroundFitPerkRecord[]
       scopePrefix: string
+      studyResourceFilter: BackgroundStudyResourceFilter | undefined
       targetMask: CoverageMask
     }): StudyResourceChanceBreakdownProfile[] =>
       getStudyResourceChanceBreakdownFilters(studyResourceFilter).map((breakdownFilter) => {
@@ -3275,24 +3609,80 @@ export function createBackgroundFitEngine(
           studyResourceCoverageProfile: createCoverageProfile(filter),
         }
       })
-    const mustHaveStudyResourceChanceBreakdownProfiles = createStudyResourceChanceBreakdownProfiles(
-      {
-        pickedPerks: mustHavePickedPerks,
-        scopePrefix: 'must-have',
-        targetMask: getPickedPerksCoverageMask(
-          mustHavePickedPerks,
-          backgroundFitBuildCache.projection,
-        ),
-      },
-    )
-    const totalStudyResourceChanceBreakdownProfiles =
-      optionalPickedPerks.length === 0
-        ? mustHaveStudyResourceChanceBreakdownProfiles
-        : createStudyResourceChanceBreakdownProfiles({
-            pickedPerks,
-            scopePrefix: 'total',
-            targetMask: backgroundFitBuildCache.projection.allPickedMask,
-          })
+    const getStudyResourceScopeCache = (
+      effectiveStudyResourceFilter: BackgroundStudyResourceFilter | undefined,
+    ): StudyResourceScopeCache => {
+      const studyResourceFilterCacheKey = getStudyResourceFilterCacheKey(
+        effectiveStudyResourceFilter,
+      )
+      const cachedStudyResourceScopeCache = studyResourceScopeCacheByFilterKey.get(
+        studyResourceFilterCacheKey,
+      )
+
+      if (cachedStudyResourceScopeCache) {
+        return cachedStudyResourceScopeCache
+      }
+
+      const totalScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'total',
+        pickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const mustHaveScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'must-have',
+        mustHavePickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const optionalScopeCacheKey = getBackgroundFitScopeCacheKey(
+        'optional',
+        optionalPickedPerks,
+        studyResourceFilterCacheKey,
+      )
+      const totalStudyResourceCoverageProfile = createStudyResourceMaskCoverageProfile({
+        filter: effectiveStudyResourceFilter ?? null,
+        getRequirementCoverageMask,
+        pickedPerks,
+        targetMask: backgroundFitBuildCache.projection.allPickedMask,
+      })
+      const mustHaveStudyResourceCoverageProfile =
+        optionalPickedPerks.length === 0
+          ? totalStudyResourceCoverageProfile
+          : createStudyResourceMaskCoverageProfile({
+              filter: effectiveStudyResourceFilter ?? null,
+              getRequirementCoverageMask,
+              pickedPerks: mustHavePickedPerks,
+              targetMask: mustHavePickedPerksMask,
+            })
+      const mustHaveStudyResourceChanceBreakdownProfiles =
+        createStudyResourceChanceBreakdownProfiles({
+          pickedPerks: mustHavePickedPerks,
+          scopePrefix: 'must-have',
+          studyResourceFilter: effectiveStudyResourceFilter,
+          targetMask: mustHavePickedPerksMask,
+        })
+      const totalStudyResourceChanceBreakdownProfiles =
+        optionalPickedPerks.length === 0
+          ? mustHaveStudyResourceChanceBreakdownProfiles
+          : createStudyResourceChanceBreakdownProfiles({
+              pickedPerks,
+              scopePrefix: 'total',
+              studyResourceFilter: effectiveStudyResourceFilter,
+              targetMask: backgroundFitBuildCache.projection.allPickedMask,
+            })
+      const studyResourceScopeCache = {
+        mustHaveScopeCacheKey,
+        mustHaveStudyResourceChanceBreakdownProfiles,
+        mustHaveStudyResourceCoverageProfile,
+        optionalScopeCacheKey,
+        totalScopeCacheKey,
+        totalStudyResourceChanceBreakdownProfiles,
+        totalStudyResourceCoverageProfile,
+      } satisfies StudyResourceScopeCache
+
+      studyResourceScopeCacheByFilterKey.set(studyResourceFilterCacheKey, studyResourceScopeCache)
+
+      return studyResourceScopeCache
+    }
 
     const rankedBackgroundFits: RankedBackgroundFit[] = []
     let sortedRankedBackgroundFitsSnapshot: RankedBackgroundFit[] = []
@@ -3578,20 +3968,29 @@ export function createBackgroundFitEngine(
     reportProgress({ shouldForce: true })
 
     for (const cachedBackgroundFitRecord of backgroundFitBuildCache.cachedBackgroundFitRecords) {
+      const backgroundDefinition =
+        cachedBackgroundFitRecord.backgroundProbabilityRecord.backgroundDefinition
+      const effectiveStudyResourceFilter = getEffectiveBackgroundStudyResourceFilter({
+        backgroundDefinition,
+        studyResourceFilter,
+      })
+      const studyResourceScopeCache = getStudyResourceScopeCache(effectiveStudyResourceFilter)
       const mustHaveStudyResourceRequirement =
-        studyResourceFilter === undefined
+        effectiveStudyResourceFilter === undefined
           ? null
           : getCachedStudyResourceRequirement({
               cachedBackgroundFitRecord,
               pickedPerks: mustHavePickedPerks,
-              studyResourceFilter,
-              studyResourceRequirementCacheKey: mustHaveScopeCacheKey,
+              studyResourceFilter: effectiveStudyResourceFilter,
+              studyResourceRequirementCacheKey: studyResourceScopeCache.mustHaveScopeCacheKey,
             })
 
       if (
-        studyResourceFilter !== undefined &&
+        effectiveStudyResourceFilter !== undefined &&
         mustHavePickedPerks.length > 0 &&
-        !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(mustHaveScopeCacheKey) &&
+        !cachedBackgroundFitRecord.nativeOutcomeSummaryByFilterKey.has(
+          studyResourceScopeCache.mustHaveScopeCacheKey,
+        ) &&
         mustHaveStudyResourceRequirement === null
       ) {
         reportCheckedBackground()
@@ -3602,12 +4001,12 @@ export function createBackgroundFitEngine(
       const mustHaveNativeOutcomeSummary = getCachedNativeOutcomeSummary({
         backgroundFitBuildCache,
         cachedBackgroundFitRecord,
-        studyResourceCoverageProfile: mustHaveStudyResourceCoverageProfile,
-        studyResourceFilterCacheKey: mustHaveScopeCacheKey,
+        studyResourceCoverageProfile: studyResourceScopeCache.mustHaveStudyResourceCoverageProfile,
+        studyResourceFilterCacheKey: studyResourceScopeCache.mustHaveScopeCacheKey,
       })
 
       if (
-        studyResourceFilter !== undefined &&
+        effectiveStudyResourceFilter !== undefined &&
         mustHavePickedPerks.length > 0 &&
         mustHaveNativeOutcomeSummary.buildReachabilityProbability <= 0
       ) {
@@ -3622,11 +4021,12 @@ export function createBackgroundFitEngine(
           : getCachedNativeOutcomeSummary({
               backgroundFitBuildCache,
               cachedBackgroundFitRecord,
-              studyResourceCoverageProfile: totalStudyResourceCoverageProfile,
-              studyResourceFilterCacheKey: totalScopeCacheKey,
+              studyResourceCoverageProfile:
+                studyResourceScopeCache.totalStudyResourceCoverageProfile,
+              studyResourceFilterCacheKey: studyResourceScopeCache.totalScopeCacheKey,
             })
       const fullBuildStudyResourceRequirement =
-        studyResourceFilter === undefined ||
+        effectiveStudyResourceFilter === undefined ||
         totalNativeOutcomeSummary.buildReachabilityProbability <= 0
           ? null
           : optionalPickedPerks.length === 0
@@ -3634,8 +4034,8 @@ export function createBackgroundFitEngine(
             : getCachedStudyResourceRequirement({
                 cachedBackgroundFitRecord,
                 pickedPerks,
-                studyResourceFilter,
-                studyResourceRequirementCacheKey: totalScopeCacheKey,
+                studyResourceFilter: effectiveStudyResourceFilter,
+                studyResourceRequirementCacheKey: studyResourceScopeCache.totalScopeCacheKey,
               })
       const backgroundFitBase = getCachedBackgroundFitBase({
         backgroundFitBuildCache,
@@ -3644,24 +4044,24 @@ export function createBackgroundFitEngine(
         supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
       })
       const fullBuildStudyResourceChanceBreakdown =
-        studyResourceFilter === undefined
+        effectiveStudyResourceFilter === undefined
           ? undefined
           : getStudyResourceChanceBreakdown(
               cachedBackgroundFitRecord,
-              totalStudyResourceChanceBreakdownProfiles,
+              studyResourceScopeCache.totalStudyResourceChanceBreakdownProfiles,
             )
       const mustHaveStudyResourceChanceBreakdown =
-        studyResourceFilter === undefined
+        effectiveStudyResourceFilter === undefined
           ? undefined
           : getStudyResourceChanceBreakdown(
               cachedBackgroundFitRecord,
-              mustHaveStudyResourceChanceBreakdownProfiles,
+              studyResourceScopeCache.mustHaveStudyResourceChanceBreakdownProfiles,
             )
 
       const rankedBackgroundFit: RankedBackgroundFit = {
         ...backgroundFitBase,
         buildReachabilityProbability:
-          studyResourceFilter === undefined
+          effectiveStudyResourceFilter === undefined
             ? null
             : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
         expectedCoveredMustHavePerkCount:
@@ -3671,7 +4071,7 @@ export function createBackgroundFitEngine(
                 backgroundFitBuildCache,
                 cachedBackgroundFitRecord,
                 pickedPerks: mustHavePickedPerks,
-                scopeCacheKey: mustHaveScopeCacheKey,
+                scopeCacheKey: studyResourceScopeCache.mustHaveScopeCacheKey,
               }),
         expectedCoveredOptionalPerkCount:
           optionalPickedPerks.length === 0
@@ -3680,7 +4080,7 @@ export function createBackgroundFitEngine(
                 backgroundFitBuildCache,
                 cachedBackgroundFitRecord,
                 pickedPerks: optionalPickedPerks,
-                scopeCacheKey: optionalScopeCacheKey,
+                scopeCacheKey: studyResourceScopeCache.optionalScopeCacheKey,
               }),
         fullBuildStudyResourceChanceBreakdown: fullBuildStudyResourceChanceBreakdown,
         fullBuildStudyResourceStrategy:
@@ -3695,7 +4095,7 @@ export function createBackgroundFitEngine(
               }),
         fullBuildStudyResourceRequirement,
         fullBuildReachabilityProbability:
-          studyResourceFilter === undefined
+          effectiveStudyResourceFilter === undefined
             ? null
             : totalNativeOutcomeSummary.buildReachabilityProbability,
         guaranteedCoveredMustHavePerkCount: getGuaranteedCoveredPickedPerkCountForPerkIds(
@@ -3712,7 +4112,7 @@ export function createBackgroundFitEngine(
         maximumNativeCoveredPickedPerkCount:
           totalNativeOutcomeSummary.maximumNativeCoveredPickedPerkCount,
         mustHaveBuildReachabilityProbability:
-          studyResourceFilter === undefined
+          effectiveStudyResourceFilter === undefined
             ? null
             : mustHaveNativeOutcomeSummary.buildReachabilityProbability,
         mustHaveStudyResourceChanceBreakdown: mustHaveStudyResourceChanceBreakdown,
@@ -3724,10 +4124,7 @@ export function createBackgroundFitEngine(
                 chanceBreakdown: mustHaveStudyResourceChanceBreakdown,
                 pickedPerks: mustHavePickedPerks,
                 scopePrefix: 'must-have',
-                targetMask: getPickedPerksCoverageMask(
-                  mustHavePickedPerks,
-                  backgroundFitBuildCache.projection,
-                ),
+                targetMask: mustHavePickedPerksMask,
               }),
         mustHaveStudyResourceRequirement,
       }
@@ -3777,6 +4174,9 @@ export function createBackgroundFitEngine(
         supportedBuildTargetPerkGroups: backgroundFitBuildCache.supportedBuildTargetPerkGroups,
         unsupportedBuildTargetPerkGroups: backgroundFitBuildCache.unsupportedBuildTargetPerkGroups,
       }
+    },
+    getBackgroundFitPreviewView(pickedPerks, studyResourceFilter, options = {}) {
+      return createBackgroundFitPreviewView(pickedPerks, studyResourceFilter, options)
     },
     getPerkBackgroundSources(perk) {
       const dynamicPlacements = getUniqueDynamicPerkPlacements(perk)

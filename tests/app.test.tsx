@@ -116,6 +116,12 @@ afterEach(() => {
 
 describe('app', () => {
   test('renders the catalog shell without the old reference root footer', async () => {
+    const { actualCatalogDataset } = await loadFilteredAppTestDatasets()
+    const expectedLegendsReferenceVersion = actualCatalogDataset.referenceVersion.replace(
+      /^reference-mod_/u,
+      '',
+    )
+
     await renderInteractiveApp()
     const hero = screen.getByRole('banner')
     const brandEmphasis = screen.getByTestId('hero-brand-emphasis')
@@ -132,7 +138,7 @@ describe('app', () => {
     expect(brandEmphasis).toHaveTextContent('Legends')
     expect(within(hero).getByText('Perk groups')).toBeInTheDocument()
     expect(within(hero).getByText('Mod version')).toBeInTheDocument()
-    expect(within(hero).getByText('19.3.22')).toBeInTheDocument()
+    expect(within(hero).getByText(expectedLegendsReferenceVersion)).toBeInTheDocument()
     expect(within(hero).getByText('Planner version')).toBeInTheDocument()
     expect(within(hero).getByText(packageJson.version)).toBeInTheDocument()
     expect(

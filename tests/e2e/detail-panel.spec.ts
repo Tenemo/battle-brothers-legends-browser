@@ -150,7 +150,11 @@ test('shows imported background metadata only in the background detail panel', a
 
   await expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
   await expect(metadataSection.getByText('Daily cost:')).toBeVisible()
-  await expect(metadataSection.getByText('6')).toBeVisible()
+  await expect(
+    metadataSection
+      .locator('dt', { hasText: /^Daily cost:$/u })
+      .locator('xpath=following-sibling::dd'),
+  ).toHaveText('6')
   await expect(metadataSection.getByText('Background type:')).toBeVisible()
   await expect(metadataSection.getByText('Lowborn')).toBeVisible()
   await expect(metadataSection.getByText('Bartering')).toBeVisible()
@@ -451,6 +455,9 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const berserkerStudyResourceTileIcons = berserkerStudyResourceTile.getByTestId(
     'planner-group-option-icon',
   )
+  const berserkerStudyResourceTileMarker = berserkerStudyResourceTile.getByRole('button', {
+    name: 'Learnable using an ancient scroll',
+  })
   const muscularityCoveredPerkPill = berserkerStudyResourceTile.getByRole('button', {
     name: 'Muscularity',
   })
@@ -463,7 +470,7 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   const magicCategoryButton = page.getByRole('button', { name: 'Enable category Magic' })
   const berserkerSidebarGroupButton = getSidebarPerkGroupButton(page, 'Berserker')
 
-  await berserkerStudyResourceTile.hover()
+  await berserkerStudyResourceTileMarker.hover()
 
   await expect(magicCategoryButton).toHaveAttribute('data-highlighted', 'true')
   await expect(berserkerSidebarGroupButton).toHaveAttribute('data-highlighted', 'true')

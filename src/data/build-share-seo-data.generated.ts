@@ -1479,7 +1479,7 @@ export const buildShareSeoData = {
       perkName: 'Zombie bite',
     },
   ],
-  referenceVersion: '19.3.22',
+  referenceVersion: '19.3.24',
 } satisfies BuildShareSeoData
 
 export type { BuildShareSeoPerkRecord }

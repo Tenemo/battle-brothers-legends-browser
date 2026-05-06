@@ -48,6 +48,7 @@ function createBackgroundFit({
     mustHaveStudyResourceRequirement: null,
     otherPerkGroups: [],
     sourceFilePath: `.cache/legends-public/current/scripts/skills/backgrounds/${sourceFileName}`,
+    startingAttributeRanges: [],
     veteranPerkLevelInterval: 4,
   }
 }

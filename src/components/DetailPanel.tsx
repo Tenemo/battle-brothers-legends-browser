@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowLeft, ArrowRight, Split } from 'lucide-react'
 import { formatDisplayBulletText } from '../lib/bullet-display'
@@ -44,7 +44,9 @@ import {
 import { joinClassNames } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
+import { useIdleImagePreload, type IdleImagePreload } from '../lib/use-idle-image-preload'
 import type {
+  LegendsBackgroundStartingAttributeRange,
   LegendsBackgroundTrait,
   LegendsFavouredEnemyTarget,
   LegendsPerkRecord,
@@ -2161,6 +2163,73 @@ function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
   )
 }
 
+function formatBackgroundStartingAttributeRange({
+  maximum,
+  minimum,
+}: LegendsBackgroundStartingAttributeRange) {
+  return minimum === maximum ? `${minimum}` : `${minimum}-${maximum}`
+}
+
+function getBackgroundStartingAttributeIconTestId(attributeKey: string) {
+  return `detail-background-starting-attribute-icon-${attributeKey
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .toLowerCase()}`
+}
+
+function renderBackgroundStartingAttributeRanges(
+  attributeRanges: readonly LegendsBackgroundStartingAttributeRange[],
+) {
+  if (attributeRanges.length === 0) {
+    return <span className={styles.detailMetadataNone}>None</span>
+  }
+
+  return (
+    <ul
+      className={styles.detailStartingAttributeList}
+      data-testid="detail-background-starting-attribute-list"
+    >
+      {attributeRanges.map((attributeRange) => {
+        const iconSrc = getGameIconUrl(attributeRange.iconPath, gameIconImageWidths.compact)
+
+        return (
+          <li key={attributeRange.attributeKey}>
+            {iconSrc ? (
+              <img
+                alt=""
+                aria-hidden="true"
+                className={styles.detailStartingAttributeIcon}
+                data-testid={getBackgroundStartingAttributeIconTestId(attributeRange.attributeKey)}
+                decoding="async"
+                height={gameIconImageWidths.compact}
+                loading="lazy"
+                src={iconSrc}
+                srcSet={getGameIconSrcSet(attributeRange.iconPath, gameIconImageWidths.compact)}
+                width={gameIconImageWidths.compact}
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className={styles.detailStartingAttributeIcon}
+                data-placeholder="true"
+                data-testid={getBackgroundStartingAttributeIconTestId(attributeRange.attributeKey)}
+              />
+            )}
+            <span className={styles.detailStartingAttributeLabel}>
+              {attributeRange.attributeName}
+            </span>
+            <span
+              className={styles.detailStartingAttributeValue}
+              data-testid="detail-background-starting-attribute-value"
+            >
+              {formatBackgroundStartingAttributeRange(attributeRange)}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function renderBackgroundMetadataPlainTextValues(values: readonly string[]) {
   if (values.length === 0) {
     return <span className={styles.detailMetadataNone}>None</span>
@@ -2366,6 +2435,35 @@ function renderBackgroundMetadataScalar(value: number | null) {
   return <span className={styles.detailMetadataValueText}>{value}</span>
 }
 
+function getBackgroundMetadataTraitIconPreloads(
+  backgroundFit: RankedBackgroundFit,
+): IdleImagePreload[] {
+  const iconPaths = new Set<string>()
+
+  for (const trait of [...backgroundFit.excludedTraits, ...backgroundFit.guaranteedTraits]) {
+    if (trait.iconPath) {
+      iconPaths.add(trait.iconPath)
+    }
+  }
+
+  for (const attributeRange of backgroundFit.startingAttributeRanges) {
+    iconPaths.add(attributeRange.iconPath)
+  }
+
+  return [...iconPaths].flatMap((iconPath) => {
+    const src = getGameIconUrl(iconPath, gameIconImageWidths.compact)
+
+    return src === null
+      ? []
+      : [
+          {
+            src,
+            srcSet: getGameIconSrcSet(iconPath, gameIconImageWidths.compact),
+          },
+        ]
+  })
+}
+
 function BackgroundMetadataSubsection({ children, title }: { children: ReactNode; title: string }) {
   return (
     <section className={styles.detailMetadataSection}>
@@ -2492,6 +2590,9 @@ function BackgroundMetadataSectionContent({
       <BackgroundMetadataSubsection title="Excluded talent attributes">
         {renderBackgroundTalentAttributes(backgroundFit.excludedTalentAttributeNames)}
       </BackgroundMetadataSubsection>
+      <BackgroundMetadataSubsection title="Starting attributes (level 1)">
+        {renderBackgroundStartingAttributeRanges(backgroundFit.startingAttributeRanges)}
+      </BackgroundMetadataSubsection>
 
       {columnCampResourceModifierGroups.length > 0 ? (
         <div
@@ -2536,6 +2637,12 @@ function BackgroundMetadataSection({
   onExpandedChange: (nextIsExpanded: boolean) => void
 }) {
   const backgroundFitIdentityKey = getBackgroundFitKey(backgroundFit)
+  const backgroundMetadataTraitIconPreloads = useMemo(
+    () => getBackgroundMetadataTraitIconPreloads(backgroundFit),
+    [backgroundFit],
+  )
+
+  useIdleImagePreload(backgroundMetadataTraitIconPreloads)
 
   return (
     <DetailCollapsibleSection
