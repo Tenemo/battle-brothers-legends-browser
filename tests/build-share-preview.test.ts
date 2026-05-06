@@ -33,7 +33,7 @@ describe('build share preview', () => {
     expect(payload.pickedPerks.map((perk) => perk.perkName)).toEqual(['Clarity', 'Perfect Focus'])
     expect(payload.canonicalSearch).toBe('?build=Clarity,Perfect+Focus')
     expect(payload.imagePath).toBe(
-      `/social/builds/${encodeURIComponent(payload.referenceVersion)}/Clarity%2CPerfect%20Focus.png`,
+      `/social/builds/${encodeURIComponent(payload.referenceVersion)}/build%3DClarity%2CPerfect%2BFocus.png`,
     )
     expect(payload.title).toBe('Battle Brothers Legends build: 2 perks')
     expect(payload.description).toContain('Clarity')
@@ -52,7 +52,7 @@ describe('build share preview', () => {
     expect(payload.imagePath).toBe(
       `/social/builds/${encodeURIComponent(
         payload.referenceVersion,
-      )}/Clarity%2CPerfect%20Focus%2CPeaceable.png?optional=Perfect%20Focus%2CPeaceable`,
+      )}/build%3DClarity%2CPerfect%2BFocus%2CPeaceable%26optional%3DPerfect%2BFocus%2CPeaceable.png`,
     )
   })
 
@@ -73,7 +73,7 @@ describe('build share preview', () => {
     expect(payload.imagePath).toBe(
       `/social/builds/${encodeURIComponent(
         payload.referenceVersion,
-      )}/Chain%20Lightning--perk.legend_chain_lightning%2CChain%20Lightning--perk.legend_magic_chain_lightning.png`,
+      )}/build%3DChain%2BLightning--perk.legend_chain_lightning%2CChain%2BLightning--perk.legend_magic_chain_lightning.png`,
     )
   })
 

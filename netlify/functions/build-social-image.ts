@@ -242,13 +242,7 @@ export function createBuildSocialImageSearchParamsFromPathname(
     const encodedBuild = encodedBuildFileName.slice(0, -'.png'.length)
     const build = decodeURIComponent(encodedBuild)
 
-    if (!build.trim()) {
-      return new URLSearchParams()
-    }
-
-    return new URLSearchParams({
-      build,
-    })
+    return createBuildSocialImageSearchParamsFromDecodedBuildSlug(build) ?? new URLSearchParams()
   } catch {
     return new URLSearchParams()
   }
@@ -262,6 +256,20 @@ function decodeRouteParam(value: string): string | null {
   }
 }
 
+function createBuildSocialImageSearchParamsFromDecodedBuildSlug(
+  decodedBuildSlug: string,
+): URLSearchParams | null {
+  const normalizedBuildSlug = decodedBuildSlug.trim()
+
+  if (!normalizedBuildSlug.includes('=')) {
+    return null
+  }
+
+  const searchParams = new URLSearchParams(normalizedBuildSlug)
+
+  return searchParams.has('build') ? searchParams : null
+}
+
 export function createBuildSocialImageSearchParamsFromRouteParams(
   routeParams: Record<string, string | undefined> | undefined,
 ): URLSearchParams | null {
@@ -273,42 +281,17 @@ export function createBuildSocialImageSearchParamsFromRouteParams(
 
   const build = decodeRouteParam(rawBuild)
 
-  if (!build?.trim()) {
-    return null
-  }
-
-  return new URLSearchParams({
-    build,
-  })
-}
-
-function applyBuildSocialImageSearchParamOverrides(
-  searchParams: URLSearchParams,
-  requestSearchParams: URLSearchParams,
-): URLSearchParams {
-  const optionalPerks = requestSearchParams.get('optional')
-
-  if (!searchParams.has('build') || optionalPerks === null) {
-    return searchParams
-  }
-
-  const nextSearchParams = new URLSearchParams(searchParams)
-
-  nextSearchParams.set('optional', optionalPerks)
-
-  return nextSearchParams
+  return build ? createBuildSocialImageSearchParamsFromDecodedBuildSlug(build) : null
 }
 
 export async function createBuildSocialImageResponse(
   requestUrl: URL,
   { previewOptions, renderPng, routeParams }: BuildSocialImageResponseOptions = {},
 ): Promise<BuildSocialImageResponse> {
-  const searchParams = applyBuildSocialImageSearchParamOverrides(
+  const searchParams =
     createBuildSocialImageSearchParamsFromRouteParams(routeParams) ??
-      createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ??
-      new URLSearchParams(),
-    requestUrl.searchParams,
-  )
+    createBuildSocialImageSearchParamsFromPathname(requestUrl.pathname) ??
+    new URLSearchParams()
   const payload = createBuildSharePreviewPayloadFromSearch(searchParams, previewOptions)
   const renderedImage = await renderBuildSocialImagePngWithFallback(payload, renderPng)
   const cachePolicy =

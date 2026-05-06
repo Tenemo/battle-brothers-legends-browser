@@ -237,7 +237,8 @@ if (!buildImagePathMatch) {
 }
 
 const [, sharedBuildReferencePathSegment, sharedBuildPathSegment] = buildImagePathMatch
-const openGraphImageBuildPerks = decodeURIComponent(sharedBuildPathSegment).split(',')
+const openGraphImageSearchParams = new URLSearchParams(decodeURIComponent(sharedBuildPathSegment))
+const openGraphImageBuildPerks = (openGraphImageSearchParams.get('build') ?? '').split(',')
 
 for (const perkName of buildPerks) {
   if (!openGraphImageBuildPerks.includes(perkName)) {
@@ -257,7 +258,9 @@ if (!sharedBuildNetlifyCache.includes('max-age=2592000')) {
 
 const comparisonImageUrl = new URL(
   `/social/builds/${sharedBuildReferencePathSegment}/${encodeURIComponent(
-    comparisonBuildPerks.join(','),
+    new URLSearchParams({
+      build: comparisonBuildPerks.join(','),
+    }).toString(),
   )}.png`,
   baseUrl,
 )

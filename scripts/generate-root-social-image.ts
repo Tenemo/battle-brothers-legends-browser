@@ -75,11 +75,9 @@ export async function createRootSocialImageSvg({
         : ''
     }
   </g>
-  <text x="430" y="320" fill="${socialImageColors.textPrimary}" font-family="${socialImageFontFamilies.brand}" font-size="41" font-weight="700" letter-spacing="0.02em">
-    <tspan x="430" dy="0">Search perks, inspect perk groups</tspan>
-    <tspan x="430" dy="48">placement, and plan builds</tspan>
-    <tspan x="430" dy="48">with exact in-mod labels</tspan>
-    <tspan x="430" dy="48">and real game icons.</tspan>
+  <text x="430" y="344" fill="${socialImageColors.textPrimary}" font-family="${socialImageFontFamilies.brand}" font-size="40" font-weight="700" letter-spacing="0.02em">
+    <tspan x="430" dy="0">Search perks, perk groups,</tspan>
+    <tspan x="430" dy="50">and plan Legends mod builds.</tspan>
   </text>
   ${renderSocialImageFooter({
     referenceVersion,
