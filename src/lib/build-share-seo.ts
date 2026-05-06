@@ -205,9 +205,16 @@ function createBuildDescription(pickedPerks: BuildShareSeoPerk[]): string {
 
 function createBuildImagePath(canonicalSearch: string): string {
   const encodedReference = encodeURIComponent(buildShareSeoData.referenceVersion)
-  const encodedBuildSearch = encodeURIComponent(canonicalSearch.replace(/^\?/u, ''))
+  const encodedBuildSearch = encodePathSegment(canonicalSearch.replace(/^\?/u, ''))
 
   return `${buildSocialImagePathPrefix}/${encodedReference}/${encodedBuildSearch}.png`
+}
+
+function encodePathSegment(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/gu,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  )
 }
 
 function createBuildShareSeoPayloadFromPickedPerkIds(

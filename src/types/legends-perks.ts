@@ -97,6 +97,26 @@ export type LegendsBackgroundCampResourceModifier = {
   valueKind: LegendsBackgroundCampResourceModifierValueKind
 }
 
+export type LegendsBackgroundStartingAttributeKey =
+  | 'Bravery'
+  | 'Hitpoints'
+  | 'Initiative'
+  | 'MeleeDefense'
+  | 'MeleeSkill'
+  | 'RangedDefense'
+  | 'RangedSkill'
+  | 'Stamina'
+
+export type LegendsBackgroundStartingAttributeRange = {
+  attributeKey: LegendsBackgroundStartingAttributeKey
+  attributeName: string
+  iconPath: string
+  maximum: number
+  minimum: number
+  modifierMaximum: number
+  modifierMinimum: number
+}
+
 export type LegendsBackgroundTrait = {
   description: string | null
   iconPath: string | null
@@ -119,6 +139,7 @@ export type LegendsBackgroundFitBackgroundDefinition = {
   guaranteedTraitNames: string[]
   iconPath: string | null
   sourceFilePath: string
+  startingAttributeRanges: LegendsBackgroundStartingAttributeRange[]
   veteranPerkLevelInterval: number
 }
 

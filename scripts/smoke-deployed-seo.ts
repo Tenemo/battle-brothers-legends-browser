@@ -17,6 +17,13 @@ function fail(message: string): never {
   throw new Error(`Deployed SEO smoke check failed: ${message}`)
 }
 
+function encodePathSegment(value: string): string {
+  return encodeURIComponent(value).replace(
+    /[!'()*]/gu,
+    (character) => `%${character.charCodeAt(0).toString(16).toUpperCase()}`,
+  )
+}
+
 function normalizeBaseUrl(value: string | undefined): URL {
   if (!value) {
     printUsage()
@@ -257,7 +264,7 @@ if (!sharedBuildNetlifyCache.includes('max-age=2592000')) {
 }
 
 const comparisonImageUrl = new URL(
-  `/social/builds/${sharedBuildReferencePathSegment}/${encodeURIComponent(
+  `/social/builds/${sharedBuildReferencePathSegment}/${encodePathSegment(
     new URLSearchParams({
       build: comparisonBuildPerks.join(','),
     }).toString(),

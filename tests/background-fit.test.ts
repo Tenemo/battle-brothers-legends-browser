@@ -124,6 +124,7 @@ function createBackgroundDefinition({
     guaranteedTraitNames: [],
     iconPath: null,
     sourceFilePath: `backgrounds/${backgroundId}.nut`,
+    startingAttributeRanges: [],
     veteranPerkLevelInterval: 4,
   }
 }

@@ -46,6 +46,7 @@ import { getTierLabel } from '../lib/perk-search'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
 import { useIdleImagePreload, type IdleImagePreload } from '../lib/use-idle-image-preload'
 import type {
+  LegendsBackgroundStartingAttributeRange,
   LegendsBackgroundTrait,
   LegendsFavouredEnemyTarget,
   LegendsPerkRecord,
@@ -2162,6 +2163,73 @@ function renderBackgroundTalentAttributes(attributeNames: readonly string[]) {
   )
 }
 
+function formatBackgroundStartingAttributeRange({
+  maximum,
+  minimum,
+}: LegendsBackgroundStartingAttributeRange) {
+  return minimum === maximum ? `${minimum}` : `${minimum}-${maximum}`
+}
+
+function getBackgroundStartingAttributeIconTestId(attributeKey: string) {
+  return `detail-background-starting-attribute-icon-${attributeKey
+    .replace(/([a-z])([A-Z])/g, '$1-$2')
+    .toLowerCase()}`
+}
+
+function renderBackgroundStartingAttributeRanges(
+  attributeRanges: readonly LegendsBackgroundStartingAttributeRange[],
+) {
+  if (attributeRanges.length === 0) {
+    return <span className={styles.detailMetadataNone}>None</span>
+  }
+
+  return (
+    <ul
+      className={styles.detailStartingAttributeList}
+      data-testid="detail-background-starting-attribute-list"
+    >
+      {attributeRanges.map((attributeRange) => {
+        const iconSrc = getGameIconUrl(attributeRange.iconPath, gameIconImageWidths.compact)
+
+        return (
+          <li key={attributeRange.attributeKey}>
+            {iconSrc ? (
+              <img
+                alt=""
+                aria-hidden="true"
+                className={styles.detailStartingAttributeIcon}
+                data-testid={getBackgroundStartingAttributeIconTestId(attributeRange.attributeKey)}
+                decoding="async"
+                height={gameIconImageWidths.compact}
+                loading="lazy"
+                src={iconSrc}
+                srcSet={getGameIconSrcSet(attributeRange.iconPath, gameIconImageWidths.compact)}
+                width={gameIconImageWidths.compact}
+              />
+            ) : (
+              <span
+                aria-hidden="true"
+                className={styles.detailStartingAttributeIcon}
+                data-placeholder="true"
+                data-testid={getBackgroundStartingAttributeIconTestId(attributeRange.attributeKey)}
+              />
+            )}
+            <span className={styles.detailStartingAttributeLabel}>
+              {attributeRange.attributeName}
+            </span>
+            <span
+              className={styles.detailStartingAttributeValue}
+              data-testid="detail-background-starting-attribute-value"
+            >
+              {formatBackgroundStartingAttributeRange(attributeRange)}
+            </span>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function renderBackgroundMetadataPlainTextValues(values: readonly string[]) {
   if (values.length === 0) {
     return <span className={styles.detailMetadataNone}>None</span>
@@ -2378,6 +2446,10 @@ function getBackgroundMetadataTraitIconPreloads(
     }
   }
 
+  for (const attributeRange of backgroundFit.startingAttributeRanges) {
+    iconPaths.add(attributeRange.iconPath)
+  }
+
   return [...iconPaths].flatMap((iconPath) => {
     const src = getGameIconUrl(iconPath, gameIconImageWidths.compact)
 
@@ -2517,6 +2589,9 @@ function BackgroundMetadataSectionContent({
       </BackgroundMetadataSubsection>
       <BackgroundMetadataSubsection title="Excluded talent attributes">
         {renderBackgroundTalentAttributes(backgroundFit.excludedTalentAttributeNames)}
+      </BackgroundMetadataSubsection>
+      <BackgroundMetadataSubsection title="Starting attributes (level 1)">
+        {renderBackgroundStartingAttributeRanges(backgroundFit.startingAttributeRanges)}
       </BackgroundMetadataSubsection>
 
       {columnCampResourceModifierGroups.length > 0 ? (

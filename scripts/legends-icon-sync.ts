@@ -112,6 +112,10 @@ export function collectRequiredGameIconPaths(dataset: LegendsIconSourceDataset):
         iconPaths.add(normalizeRelativeIconPath(trait.iconPath))
       }
     }
+
+    for (const attributeRange of backgroundFitBackground.startingAttributeRanges ?? []) {
+      iconPaths.add(normalizeRelativeIconPath(attributeRange.iconPath))
+    }
   }
 
   for (const perk of dataset.perks) {

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
+import { buildShareSeoData } from '../src/data/build-share-seo-data.generated'
 import { injectRootSeoIntoHtml, injectSeoIntoHtml, rootSeoMetadata } from '../src/lib/seo-metadata'
 import { renderDocumentHtml, resolveSeoMetadataForUrl } from '../src/lib/build-seo-metadata'
 
@@ -13,6 +14,7 @@ const baseHtml = `<!doctype html>
   </head>
   <body><div id="root"></div></body>
 </html>`
+const buildShareSeoReferenceVersion = encodeURIComponent(buildShareSeoData.referenceVersion)
 
 function sortJsonValue(value: unknown): unknown {
   if (Array.isArray(value)) {
@@ -115,7 +117,7 @@ describe('SEO metadata', () => {
     expect(metadata.canonicalUrl).toBe('https://battlebrothers.academy/')
     expect(metadata.url).toBe('https://battlebrothers.academy/?build=Clarity,Perfect+Focus')
     expect(metadata.image.url).toBe(
-      'https://battlebrothers.academy/social/builds/19.3.22/build%3DClarity%2CPerfect%2BFocus.png',
+      `https://battlebrothers.academy/social/builds/${buildShareSeoReferenceVersion}/build%3DClarity%2CPerfect%2BFocus.png`,
     )
   })
 
@@ -131,7 +133,7 @@ describe('SEO metadata', () => {
       'https://battlebrothers.academy/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
     )
     expect(metadata.image.url).toBe(
-      'https://battlebrothers.academy/social/builds/19.3.22/build%3DChain%2BLightning--perk.legend_chain_lightning%2CChain%2BLightning--perk.legend_magic_chain_lightning.png',
+      `https://battlebrothers.academy/social/builds/${buildShareSeoReferenceVersion}/build%3DChain%2BLightning--perk.legend_chain_lightning%2CChain%2BLightning--perk.legend_magic_chain_lightning.png`,
     )
   })
 
@@ -144,8 +146,17 @@ describe('SEO metadata', () => {
       'https://battlebrothers.academy/?build=Clarity,Perfect+Focus&optional=Perfect+Focus',
     )
     expect(metadata.image.url).toBe(
-      'https://battlebrothers.academy/social/builds/19.3.22/build%3DClarity%2CPerfect%2BFocus%26optional%3DPerfect%2BFocus.png',
+      `https://battlebrothers.academy/social/builds/${buildShareSeoReferenceVersion}/build%3DClarity%2CPerfect%2BFocus%26optional%3DPerfect%2BFocus.png`,
     )
+  })
+
+  test('fully encodes apostrophes in shared SEO image urls', () => {
+    const metadata = resolveSeoMetadataForUrl(
+      new URL('https://battlebrothers.academy/?build=Browbeater%27s+Bludgeon'),
+    )
+
+    expect(metadata.image.url).toContain('Browbeater%27s%2BBludgeon')
+    expect(metadata.image.url).not.toContain("'")
   })
 
   test('injects request-origin root metadata into preview documents', () => {

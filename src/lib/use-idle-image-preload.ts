@@ -1,14 +1,37 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 
 export type IdleImagePreload = {
   src: string
   srcSet?: string
 }
 
-const attemptedIdleImagePreloadKeys = new Set<string>()
+const maximumAttemptedIdleImagePreloadKeyCount = 128
 
 function getIdleImagePreloadKey(imagePreload: IdleImagePreload): string {
   return `${imagePreload.src}\u0000${imagePreload.srcSet ?? ''}`
+}
+
+function addAttemptedIdleImagePreloadKey(
+  attemptedIdleImagePreloadKeys: Set<string>,
+  imagePreloadKey: string,
+): boolean {
+  if (attemptedIdleImagePreloadKeys.has(imagePreloadKey)) {
+    return false
+  }
+
+  attemptedIdleImagePreloadKeys.add(imagePreloadKey)
+
+  while (attemptedIdleImagePreloadKeys.size > maximumAttemptedIdleImagePreloadKeyCount) {
+    const oldestImagePreloadKey = attemptedIdleImagePreloadKeys.values().next().value
+
+    if (oldestImagePreloadKey === undefined) {
+      break
+    }
+
+    attemptedIdleImagePreloadKeys.delete(oldestImagePreloadKey)
+  }
+
+  return true
 }
 
 function scheduleIdleImagePreload(callback: () => void): () => void {
@@ -43,10 +66,18 @@ function preloadImage({ src, srcSet }: IdleImagePreload): void {
 }
 
 export function useIdleImagePreload(imagePreloads: readonly IdleImagePreload[]): void {
+  const attemptedIdleImagePreloadKeysRef = useRef<Set<string>>(new Set())
+  const imagePreloadsRef = useRef(imagePreloads)
   const imagePreloadKeys = imagePreloads.map(getIdleImagePreloadKey).join('\u0001')
 
   useEffect(() => {
-    if (imagePreloads.length === 0 || typeof Image === 'undefined') {
+    imagePreloadsRef.current = imagePreloads
+  }, [imagePreloads])
+
+  useEffect(() => {
+    const scheduledImagePreloads = imagePreloadsRef.current
+
+    if (scheduledImagePreloads.length === 0 || typeof Image === 'undefined') {
       return
     }
 
@@ -56,14 +87,18 @@ export function useIdleImagePreload(imagePreloads: readonly IdleImagePreload[]):
         return
       }
 
-      for (const imagePreload of imagePreloads) {
+      for (const imagePreload of scheduledImagePreloads) {
         const imagePreloadKey = getIdleImagePreloadKey(imagePreload)
 
-        if (attemptedIdleImagePreloadKeys.has(imagePreloadKey)) {
+        if (
+          !addAttemptedIdleImagePreloadKey(
+            attemptedIdleImagePreloadKeysRef.current,
+            imagePreloadKey,
+          )
+        ) {
           continue
         }
 
-        attemptedIdleImagePreloadKeys.add(imagePreloadKey)
         preloadImage(imagePreload)
       }
     })
@@ -72,5 +107,5 @@ export function useIdleImagePreload(imagePreloads: readonly IdleImagePreload[]):
       isCancelled = true
       cancelIdleImagePreload()
     }
-  }, [imagePreloadKeys, imagePreloads])
+  }, [imagePreloadKeys])
 }

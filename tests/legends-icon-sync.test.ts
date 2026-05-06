@@ -39,6 +39,7 @@ const sampleDataset: LegendsPerksDataset = {
       guaranteedTraitNames: ['Bright'],
       iconPath: 'ui/backgrounds/background_09.png',
       sourceFilePath: 'scripts/skills/backgrounds/farmhand_background.nut',
+      startingAttributeRanges: [],
       veteranPerkLevelInterval: 4,
     },
   ],

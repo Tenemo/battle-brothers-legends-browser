@@ -150,7 +150,11 @@ test('shows imported background metadata only in the background detail panel', a
 
   await expect(metadataToggle).toHaveAttribute('aria-expanded', 'true')
   await expect(metadataSection.getByText('Daily cost:')).toBeVisible()
-  await expect(metadataSection.getByText('6')).toBeVisible()
+  await expect(
+    metadataSection
+      .locator('dt', { hasText: /^Daily cost:$/u })
+      .locator('xpath=following-sibling::dd'),
+  ).toHaveText('6')
   await expect(metadataSection.getByText('Background type:')).toBeVisible()
   await expect(metadataSection.getByText('Lowborn')).toBeVisible()
   await expect(metadataSection.getByText('Bartering')).toBeVisible()

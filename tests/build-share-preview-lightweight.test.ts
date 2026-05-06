@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest'
 import type {
+  BackgroundFitPreviewView,
   BackgroundFitSummary,
-  BackgroundFitView,
   RankedBackgroundFit,
 } from '../src/lib/background-fit'
 import { defaultBackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
@@ -14,11 +14,13 @@ import type {
 const {
   getBackgroundFitSummaryView,
   getBackgroundFitView,
+  getBackgroundFitPreviewView,
   getBackgroundPerkGroupProbability,
   getPerkBackgroundSources,
 } = vi.hoisted(() => ({
   getBackgroundFitSummaryView: vi.fn(),
   getBackgroundFitView: vi.fn(),
+  getBackgroundFitPreviewView: vi.fn(),
   getBackgroundPerkGroupProbability: vi.fn(),
   getPerkBackgroundSources: vi.fn(),
 }))
@@ -31,6 +33,7 @@ vi.mock('../src/lib/background-fit', async (importOriginal) => {
     createBackgroundFitEngine: () => ({
       getBackgroundFitSummaryView,
       getBackgroundFitView,
+      getBackgroundFitPreviewView,
       getBackgroundPerkGroupProbability,
       getPerkBackgroundSources,
     }),
@@ -103,6 +106,7 @@ function createSummary({
     maximumTotalPerkGroupCount: 1,
     otherPerkGroups: [],
     sourceFilePath,
+    startingAttributeRanges: [],
     veteranPerkLevelInterval: 4,
   }
 }
@@ -142,9 +146,9 @@ function createRankedBackgroundFit({
 }
 
 describe('build share preview background fits', () => {
-  test('uses full background fit ranking and filters origin backgrounds from social previews', () => {
-    const backgroundFitView = {
-      rankedBackgroundFits: [
+  test('uses fast background fit ranking and filters origin backgrounds from social previews', () => {
+    const backgroundFitPreviewView = {
+      rankedBackgroundFitPreviews: [
         createRankedBackgroundFit({
           backgroundId: 'background.legend_berserker',
           backgroundName: 'Berserker',
@@ -167,11 +171,14 @@ describe('build share preview background fits', () => {
       ],
       supportedBuildTargetPerkGroups: [],
       unsupportedBuildTargetPerkGroups: [],
-    } satisfies BackgroundFitView
+    } satisfies BackgroundFitPreviewView
 
-    getBackgroundFitView.mockReturnValue(backgroundFitView)
+    getBackgroundFitPreviewView.mockReturnValue(backgroundFitPreviewView)
+    getBackgroundFitView.mockImplementation(() => {
+      throw new Error('Social previews should not use the full interactive ranking view.')
+    })
     getBackgroundFitSummaryView.mockImplementation(() => {
-      throw new Error('Social previews should use the same ranking view as the app.')
+      throw new Error('Social previews should not use the summary ranking view.')
     })
 
     const firstPayload = createBuildSharePreviewPayloadFromSearch(
@@ -182,8 +189,9 @@ describe('build share preview background fits', () => {
     )
 
     expect(getBackgroundFitSummaryView).not.toHaveBeenCalled()
-    expect(getBackgroundFitView).toHaveBeenCalledTimes(1)
-    const [pickedPerks, studyResourceFilter, options] = getBackgroundFitView.mock.calls[0]
+    expect(getBackgroundFitView).not.toHaveBeenCalled()
+    expect(getBackgroundFitPreviewView).toHaveBeenCalledTimes(1)
+    const [pickedPerks, studyResourceFilter, options] = getBackgroundFitPreviewView.mock.calls[0]
     const pickedPerkNames = (pickedPerks as Array<{ perkName: string }>).map(
       (perk) => perk.perkName,
     )
@@ -205,12 +213,13 @@ describe('build share preview background fits', () => {
     expect(payload.status).toBe('found')
     expect(payload.topBackgroundFits).toEqual([])
     expect(getBackgroundFitView).not.toHaveBeenCalled()
+    expect(getBackgroundFitPreviewView).not.toHaveBeenCalled()
     expect(getBackgroundFitSummaryView).not.toHaveBeenCalled()
   })
 
   test('bounds cached top background fits and evicts the least recently used build', () => {
-    const backgroundFitView = {
-      rankedBackgroundFits: [
+    const backgroundFitPreviewView = {
+      rankedBackgroundFitPreviews: [
         createRankedBackgroundFit({
           backgroundId: 'background.apprentice',
           backgroundName: 'Apprentice',
@@ -219,7 +228,7 @@ describe('build share preview background fits', () => {
       ],
       supportedBuildTargetPerkGroups: [],
       unsupportedBuildTargetPerkGroups: [],
-    } satisfies BackgroundFitView
+    } satisfies BackgroundFitPreviewView
     const searchForPerk = (perk: LegendsBuildSharePreviewPerkRecord) =>
       `?${new URLSearchParams({ build: perk.id }).toString()}`
     const cachedPerk = getRequiredPerkFixture(0)
@@ -233,7 +242,7 @@ describe('build share preview background fits', () => {
       .slice(2, maxBuildSharePreviewTopBackgroundFitCacheEntries + 1)
       .map(searchForPerk)
 
-    getBackgroundFitView.mockReturnValue(backgroundFitView)
+    getBackgroundFitPreviewView.mockReturnValue(backgroundFitPreviewView)
 
     createBuildSharePreviewPayloadFromSearch(cachedSearch)
     createBuildSharePreviewPayloadFromSearch(evictedSearch)
@@ -243,19 +252,19 @@ describe('build share preview background fits', () => {
       createBuildSharePreviewPayloadFromSearch(search)
     }
 
-    expect(getBackgroundFitView).toHaveBeenCalledTimes(
+    expect(getBackgroundFitPreviewView).toHaveBeenCalledTimes(
       maxBuildSharePreviewTopBackgroundFitCacheEntries + 1,
     )
 
     createBuildSharePreviewPayloadFromSearch(cachedSearch)
 
-    expect(getBackgroundFitView).toHaveBeenCalledTimes(
+    expect(getBackgroundFitPreviewView).toHaveBeenCalledTimes(
       maxBuildSharePreviewTopBackgroundFitCacheEntries + 1,
     )
 
     createBuildSharePreviewPayloadFromSearch(evictedSearch)
 
-    expect(getBackgroundFitView).toHaveBeenCalledTimes(
+    expect(getBackgroundFitPreviewView).toHaveBeenCalledTimes(
       maxBuildSharePreviewTopBackgroundFitCacheEntries + 2,
     )
   })

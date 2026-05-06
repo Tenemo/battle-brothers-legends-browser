@@ -234,6 +234,26 @@ const backgroundFit = {
   }),
   otherPerkGroups: [],
   sourceFilePath: 'scripts/skills/backgrounds/apprentice_background.nut',
+  startingAttributeRanges: [
+    {
+      attributeKey: 'Hitpoints',
+      attributeName: 'Hitpoints',
+      iconPath: 'ui/icons/health_va11.png',
+      maximum: 63,
+      minimum: 61,
+      modifierMaximum: 3,
+      modifierMinimum: 1,
+    },
+    {
+      attributeKey: 'Bravery',
+      attributeName: 'Resolve',
+      iconPath: 'ui/icons/bravery_va11.png',
+      maximum: 42,
+      minimum: 39,
+      modifierMaximum: 2,
+      modifierMinimum: -1,
+    },
+  ],
   veteranPerkLevelInterval: 4,
 } satisfies RankedBackgroundFit
 
@@ -346,7 +366,7 @@ function renderSelectedBackgroundFitDetail(
 }
 
 describe('background details study resources', () => {
-  test('preloads background trait icons while metadata stays collapsed', async () => {
+  test('preloads background metadata icons while metadata stays collapsed', async () => {
     const preloadedImages: Array<{
       decoding: string
       fetchPriority: string
@@ -395,6 +415,8 @@ describe('background details study resources', () => {
         expect(preloadedImages.map((image) => image.src)).toEqual([
           getGameIconUrl('ui/traits/trait_icon_50.png', gameIconImageWidths.compact),
           getGameIconUrl('ui/traits/trait_icon_32.png', gameIconImageWidths.compact),
+          getGameIconUrl('ui/icons/health_va11.png', gameIconImageWidths.compact),
+          getGameIconUrl('ui/icons/bravery_va11.png', gameIconImageWidths.compact),
         ])
       })
       expect(preloadedImages).toEqual([
@@ -407,6 +429,14 @@ describe('background details study resources', () => {
           decoding: 'async',
           fetchPriority: 'low',
           srcset: '',
+        }),
+        expect.objectContaining({
+          decoding: 'async',
+          fetchPriority: 'low',
+        }),
+        expect.objectContaining({
+          decoding: 'async',
+          fetchPriority: 'low',
         }),
       ])
       expect(requestIdleCallback).toHaveBeenCalledTimes(1)
@@ -489,6 +519,23 @@ describe('background details study resources', () => {
       'src',
       getGameIconUrl('ui/icons/ranged_skill_va11.png', gameIconImageWidths.compact),
     )
+    expect(within(metadataSection).getByText('Starting attributes (level 1)')).toBeVisible()
+    const startingAttributeList = within(metadataSection).getByTestId(
+      'detail-background-starting-attribute-list',
+    )
+
+    expect(within(startingAttributeList).getByText('Hitpoints')).toBeVisible()
+    expect(within(startingAttributeList).getByText('61-63')).toBeVisible()
+    expect(
+      within(startingAttributeList).getByTestId(
+        'detail-background-starting-attribute-icon-hitpoints',
+      ),
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/icons/health_va11.png', gameIconImageWidths.compact),
+    )
+    expect(within(startingAttributeList).getByText('Resolve')).toBeVisible()
+    expect(within(startingAttributeList).getByText('39-42')).toBeVisible()
     expect(within(metadataSection).getByText('Company capacity')).toBeVisible()
     expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
     expect(within(metadataSection).getByText('+13')).toBeVisible()
