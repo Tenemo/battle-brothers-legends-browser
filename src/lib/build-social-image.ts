@@ -15,7 +15,7 @@ import {
 import { socialImageColors, socialImageFontFamilies } from './social-image-style.ts'
 
 export const buildSocialImageWidth = socialImageWidth
-export const buildSocialImageHeight = socialImageHeight
+const buildSocialImageHeight = socialImageHeight
 
 type BuildSocialImageOptions = {
   resolveBackgroundIconDataUrl?: (backgroundFit: BuildSharePreviewBackgroundFit) => string | null

@@ -4,9 +4,12 @@ import {
   rootSeoMetadata,
   type SeoMetadata,
 } from './seo-metadata'
-import { createBuildSharePreviewPayloadFromSearch } from './build-share-preview'
-import { buildSocialImageHeight, buildSocialImageWidth } from './build-social-image'
+import { createBuildShareSeoPayloadFromSearch } from './build-share-seo'
 import { createSeoStructuredData } from './seo-structured-data'
+import {
+  socialImageHeight as buildSocialImageHeight,
+  socialImageWidth as buildSocialImageWidth,
+} from './social-image-markup.ts'
 
 const sitePath = '/'
 const buildShareRobots = 'noindex, follow, noarchive, max-image-preview:large'
@@ -22,17 +25,17 @@ function createBuildSeoMetadata({
   origin: string
   search: string | URLSearchParams
 }): SeoMetadata {
-  const buildSharePreviewPayload = createBuildSharePreviewPayloadFromSearch(search)
+  const buildShareSeoPayload = createBuildShareSeoPayloadFromSearch(search)
 
-  if (buildSharePreviewPayload.status === 'empty') {
+  if (buildShareSeoPayload.status === 'empty') {
     return createRootSeoMetadata(origin)
   }
 
   const rootUrlForOrigin = createAbsoluteUrl(sitePath, origin)
-  const buildUrl = createAbsoluteUrl(`/${buildSharePreviewPayload.canonicalSearch}`, origin)
-  const imageUrl = createAbsoluteUrl(buildSharePreviewPayload.imagePath, origin)
+  const buildUrl = createAbsoluteUrl(`/${buildShareSeoPayload.canonicalSearch}`, origin)
+  const imageUrl = createAbsoluteUrl(buildShareSeoPayload.imagePath, origin)
   const image: SeoMetadata['image'] = {
-    alt: buildSharePreviewPayload.imageAlt,
+    alt: buildShareSeoPayload.imageAlt,
     height: buildSocialImageHeight,
     type: 'image/png',
     url: imageUrl,
@@ -43,7 +46,7 @@ function createBuildSeoMetadata({
     applicationName: rootSeoMetadata.applicationName,
     canonicalUrl: rootUrlForOrigin,
     colorScheme: rootSeoMetadata.colorScheme,
-    description: buildSharePreviewPayload.description,
+    description: buildShareSeoPayload.description,
     image,
     keywords: rootSeoMetadata.keywords,
     locale: rootSeoMetadata.locale,
@@ -52,15 +55,15 @@ function createBuildSeoMetadata({
     structuredData: createSeoStructuredData({
       applicationTitle: rootSeoMetadata.title,
       applicationUrl: rootUrlForOrigin,
-      description: buildSharePreviewPayload.description,
+      description: buildShareSeoPayload.description,
       image,
-      pageTitle: buildSharePreviewPayload.title,
+      pageTitle: buildShareSeoPayload.title,
       pageUrl: buildUrl,
       websiteTitle: rootSeoMetadata.title,
       websiteUrl: rootUrlForOrigin,
     }),
     themeColor: rootSeoMetadata.themeColor,
-    title: buildSharePreviewPayload.title,
+    title: buildShareSeoPayload.title,
     url: buildUrl,
   }
 }

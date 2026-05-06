@@ -293,6 +293,7 @@ function getMissingBackgroundTraitDescriptionEntries(
 describe('generated dataset integrity', () => {
   test('keeps only the compact runtime data files in src/data', () => {
     expect(readdirSync(path.join(process.cwd(), 'src', 'data')).toSorted()).toEqual([
+      'build-share-seo-data.generated.ts',
       'legends-background-fit.json',
       'legends-perk-catalog.json',
       'legends-planner-metadata.json',
