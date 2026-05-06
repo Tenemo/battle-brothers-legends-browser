@@ -813,33 +813,42 @@ test('virtualizes unfiltered phone results without restoring the nested scroll t
 
   await expect(page.getByTestId('results-list').getByTestId('perk-row').first()).toBeVisible()
   await expect(page.getByRole('button', { name: /Show \d+ more perks/u })).toHaveCount(0)
+  let initialPhoneResultsMetrics: {
+    documentScrollHeight: number
+    resultsListOverflowY: string
+    resultRowCount: number
+  } | null = null
   await expect
-    .poll(async () =>
-      page
-        .getByTestId('results-list')
-        .getByTestId('perk-row')
-        .evaluateAll((rows) => rows.length),
-    )
-    .toBeGreaterThan(4)
+    .poll(async () => {
+      const metrics = await page.evaluate(() => {
+        const resultsList = document.querySelector(
+          '[data-testid="results-list"]',
+        ) as HTMLElement | null
 
-  const initialPhoneResultsMetrics = await page.evaluate(() => {
-    const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
+        if (resultsList === null) {
+          throw new Error('Missing phone result virtualization target.')
+        }
 
-    if (resultsList === null) {
-      throw new Error('Missing phone result virtualization target.')
-    }
+        return {
+          documentScrollHeight: document.documentElement.scrollHeight,
+          resultsListOverflowY: window.getComputedStyle(resultsList).overflowY,
+          resultRowCount: resultsList.querySelectorAll('[data-testid="perk-row"]').length,
+        }
+      })
+      const isReady =
+        metrics.resultRowCount > 4 &&
+        metrics.resultRowCount < 40 &&
+        metrics.resultsListOverflowY === 'visible' &&
+        metrics.documentScrollHeight > 30000
 
-    return {
-      documentScrollHeight: document.documentElement.scrollHeight,
-      resultsListOverflowY: window.getComputedStyle(resultsList).overflowY,
-      resultRowCount: resultsList.querySelectorAll('[data-testid="perk-row"]').length,
-    }
-  })
+      if (isReady) {
+        initialPhoneResultsMetrics = metrics
+      }
 
-  expect(initialPhoneResultsMetrics.resultRowCount).toBeGreaterThan(4)
-  expect(initialPhoneResultsMetrics.resultRowCount).toBeLessThan(40)
-  expect(initialPhoneResultsMetrics.resultsListOverflowY).toBe('visible')
-  expect(initialPhoneResultsMetrics.documentScrollHeight).toBeGreaterThan(30000)
+      return isReady
+    })
+    .toBe(true)
+  expect(initialPhoneResultsMetrics).not.toBeNull()
 
   await page.getByLabel('Search perks').fill('Student')
   await expect(page.getByRole('button', { name: 'Inspect Student' })).toBeVisible()

@@ -346,6 +346,77 @@ function renderSelectedBackgroundFitDetail(
 }
 
 describe('background details study resources', () => {
+  test('preloads background trait icons while metadata stays collapsed', async () => {
+    const preloadedImages: Array<{
+      decoding: string
+      fetchPriority: string
+      src: string
+      srcset: string
+    }> = []
+    const requestIdleCallback = vi.fn((callback: IdleRequestCallback) => {
+      callback({
+        didTimeout: false,
+        timeRemaining: () => 50,
+      })
+
+      return 1
+    })
+    const cancelIdleCallback = vi.fn()
+
+    class MockImage {
+      decoding = ''
+      fetchPriority = ''
+      srcset = ''
+
+      set src(src: string) {
+        preloadedImages.push({
+          decoding: this.decoding,
+          fetchPriority: this.fetchPriority,
+          src,
+          srcset: this.srcset,
+        })
+      }
+    }
+
+    vi.stubGlobal('Image', MockImage)
+    vi.stubGlobal('requestIdleCallback', requestIdleCallback)
+    vi.stubGlobal('cancelIdleCallback', cancelIdleCallback)
+
+    const { renderResult } = renderSelectedBackgroundFitDetail()
+
+    try {
+      const metadataSection = screen.getByTestId('detail-background-metadata-section')
+
+      expect(
+        within(metadataSection).queryByTestId('detail-background-metadata-content'),
+      ).not.toBeInTheDocument()
+
+      await waitFor(() => {
+        expect(preloadedImages.map((image) => image.src)).toEqual([
+          getGameIconUrl('ui/traits/trait_icon_50.png', gameIconImageWidths.compact),
+          getGameIconUrl('ui/traits/trait_icon_32.png', gameIconImageWidths.compact),
+        ])
+      })
+      expect(preloadedImages).toEqual([
+        expect.objectContaining({
+          decoding: 'async',
+          fetchPriority: 'low',
+          srcset: '',
+        }),
+        expect.objectContaining({
+          decoding: 'async',
+          fetchPriority: 'low',
+          srcset: '',
+        }),
+      ])
+      expect(requestIdleCallback).toHaveBeenCalledTimes(1)
+      expect(cancelIdleCallback).not.toHaveBeenCalled()
+    } finally {
+      renderResult.unmount()
+      vi.unstubAllGlobals()
+    }
+  })
+
   test('keeps imported background metadata collapsed until expanded', async () => {
     const user = userEvent.setup()
 

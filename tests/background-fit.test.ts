@@ -89,10 +89,14 @@ function createEmptyCategoryDefinitions(): Record<
 function createBackgroundDefinition({
   backgroundId,
   backgroundName,
+  excludedTraitNames = [],
+  excludedTraits = [],
   overrides,
 }: {
   backgroundId: string
   backgroundName: string
+  excludedTraitNames?: string[]
+  excludedTraits?: LegendsBackgroundFitBackgroundDefinition['excludedTraits']
   overrides: Partial<
     Record<LegendsDynamicBackgroundCategoryName, Partial<LegendsBackgroundFitCategoryDefinition>>
   >
@@ -114,8 +118,8 @@ function createBackgroundDefinition({
     campResourceModifiers: [],
     dailyCost: null,
     excludedTalentAttributeNames: [],
-    excludedTraits: [],
-    excludedTraitNames: [],
+    excludedTraits,
+    excludedTraitNames,
     guaranteedTraits: [],
     guaranteedTraitNames: [],
     iconPath: null,
@@ -1423,23 +1427,31 @@ describe('background fit', () => {
       backgroundName: 'Empty',
       overrides: {},
     })
+    const brightExcludedEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.bright_excluded_empty',
+      backgroundName: 'Bright excluded empty',
+      excludedTraitNames: ['Bright'],
+      overrides: {},
+    })
     const engine = createBackgroundFitEngine({
       ...sampleDataset,
-      backgroundFitBackgrounds: [emptyBackground],
+      backgroundFitBackgrounds: [emptyBackground, brightExcludedEmptyBackground],
       perks: [...samplePerks, berserkerPerk, evocationPerk],
     })
+    const twoScrollBackgroundFits = engine.getBackgroundFitView([berserkerPerk, evocationPerk], {
+      shouldAllowBook: false,
+      shouldAllowScroll: true,
+      shouldAllowSecondScroll: true,
+    }).rankedBackgroundFits
 
     expect(
       engine.getBackgroundFitView([berserkerPerk, evocationPerk], defaultStudyResources)
         .rankedBackgroundFits,
     ).toEqual([])
-    expect(
-      engine.getBackgroundFitView([berserkerPerk, evocationPerk], {
-        shouldAllowBook: false,
-        shouldAllowScroll: true,
-        shouldAllowSecondScroll: true,
-      }).rankedBackgroundFits[0],
-    ).toEqual(
+    expect(twoScrollBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId)).toEqual([
+      'background.empty',
+    ])
+    expect(twoScrollBackgroundFits[0]).toEqual(
       expect.objectContaining({
         backgroundId: 'background.empty',
         buildReachabilityProbability: 1,
@@ -1475,6 +1487,76 @@ describe('background fit', () => {
             },
           ],
         },
+      }),
+    )
+  })
+
+  test('keeps one-scroll routes when Bright is excluded', () => {
+    const berserkerPerk = createPerk({
+      id: 'perk.magic.actual_berserker',
+      perkConstName: 'LegendActualBerserker',
+      perkName: 'Actual berserker',
+      placements: [
+        createPlacement({
+          categoryName: 'Magic',
+          perkGroupId: 'BerserkerMagicTree',
+          perkGroupName: 'Berserker',
+        }),
+      ],
+    })
+    const brightExcludedEmptyBackground = createBackgroundDefinition({
+      backgroundId: 'background.bright_excluded_empty',
+      backgroundName: 'Bright excluded empty',
+      excludedTraitNames: ['Bright'],
+      overrides: {},
+    })
+    const engine = createBackgroundFitEngine({
+      ...sampleDataset,
+      backgroundFitBackgrounds: [brightExcludedEmptyBackground],
+      perks: [...samplePerks, berserkerPerk],
+    })
+    const [backgroundFit] = engine.getBackgroundFitView([berserkerPerk], {
+      shouldAllowBook: false,
+      shouldAllowScroll: true,
+      shouldAllowSecondScroll: true,
+    }).rankedBackgroundFits
+
+    expect(backgroundFit).toEqual(
+      expect.objectContaining({
+        backgroundId: 'background.bright_excluded_empty',
+        buildReachabilityProbability: 1,
+        mustHaveStudyResourceRequirement: {
+          bookRequirement: null,
+          requiredScrollCount: 1,
+          requiresBook: false,
+          requiresBright: false,
+          scrollRequirements: [
+            {
+              categoryName: 'Magic',
+              perkGroupId: 'BerserkerMagicTree',
+            },
+          ],
+        },
+      }),
+    )
+    expect(
+      backgroundFit.mustHaveStudyResourceChanceBreakdown
+        ?.filter((entry) => entry.shouldAllowScroll)
+        .map((entry) => ({
+          key: entry.key,
+          shouldAllowSecondScroll: entry.shouldAllowSecondScroll,
+        })),
+    ).toEqual([{ key: 'scroll', shouldAllowSecondScroll: false }])
+    expect(backgroundFit.mustHaveStudyResourceStrategy).toEqual(
+      expect.objectContaining({
+        selectedCombinationKey: 'scroll',
+        shouldAllowSecondScroll: false,
+        scrollTargets: [
+          expect.objectContaining({
+            coveredPickedPerkNames: ['Actual berserker'],
+            perkGroupName: 'Berserker',
+          }),
+        ],
       }),
     )
   })

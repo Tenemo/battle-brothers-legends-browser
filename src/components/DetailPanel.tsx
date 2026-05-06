@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from 'react'
+import { useId, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowLeft, ArrowRight, Split } from 'lucide-react'
 import { formatDisplayBulletText } from '../lib/bullet-display'
@@ -44,6 +44,7 @@ import {
 import { joinClassNames } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
+import { useIdleImagePreload, type IdleImagePreload } from '../lib/use-idle-image-preload'
 import type {
   LegendsBackgroundTrait,
   LegendsFavouredEnemyTarget,
@@ -2366,6 +2367,31 @@ function renderBackgroundMetadataScalar(value: number | null) {
   return <span className={styles.detailMetadataValueText}>{value}</span>
 }
 
+function getBackgroundMetadataTraitIconPreloads(
+  backgroundFit: RankedBackgroundFit,
+): IdleImagePreload[] {
+  const iconPaths = new Set<string>()
+
+  for (const trait of [...backgroundFit.excludedTraits, ...backgroundFit.guaranteedTraits]) {
+    if (trait.iconPath) {
+      iconPaths.add(trait.iconPath)
+    }
+  }
+
+  return [...iconPaths].flatMap((iconPath) => {
+    const src = getGameIconUrl(iconPath, gameIconImageWidths.compact)
+
+    return src === null
+      ? []
+      : [
+          {
+            src,
+            srcSet: getGameIconSrcSet(iconPath, gameIconImageWidths.compact),
+          },
+        ]
+  })
+}
+
 function BackgroundMetadataSubsection({ children, title }: { children: ReactNode; title: string }) {
   return (
     <section className={styles.detailMetadataSection}>
@@ -2536,6 +2562,12 @@ function BackgroundMetadataSection({
   onExpandedChange: (nextIsExpanded: boolean) => void
 }) {
   const backgroundFitIdentityKey = getBackgroundFitKey(backgroundFit)
+  const backgroundMetadataTraitIconPreloads = useMemo(
+    () => getBackgroundMetadataTraitIconPreloads(backgroundFit),
+    [backgroundFit],
+  )
+
+  useIdleImagePreload(backgroundMetadataTraitIconPreloads)
 
   return (
     <DetailCollapsibleSection
