@@ -41,10 +41,17 @@ const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Sem
 const sourceSansBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Bold.ttf')
 const fallbackLegendsReferenceVersion = '19.3.22'
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 export async function createRootSocialImageSvg({
   bookIconDataUrl = '',
   referenceVersion = fallbackLegendsReferenceVersion,
-} = {}) {
+}: {
+  bookIconDataUrl?: string
+  referenceVersion?: string
+} = {}): Promise<string> {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${socialImageWidth}" height="${socialImageHeight}" viewBox="0 0 ${socialImageWidth} ${socialImageHeight}" role="img" aria-label="${escapeXml(
     'Battle Brothers Legends build planner social preview.',
   )}">
@@ -82,16 +89,19 @@ export async function createRootSocialImageSvg({
 </svg>`
 }
 
-async function createBookIconDataUrl() {
+async function createBookIconDataUrl(): Promise<string> {
   const bookIcon = await readFile(bookIconPath)
   return `data:image/png;base64,${bookIcon.toString('base64')}`
 }
 
-async function readLegendsReferenceVersion() {
+async function readLegendsReferenceVersion(): Promise<string> {
   try {
-    const legendsPerkCatalogData = JSON.parse(await readFile(legendsPerkCatalogDataPath, 'utf8'))
+    const legendsPerkCatalogData = JSON.parse(
+      await readFile(legendsPerkCatalogDataPath, 'utf8'),
+    ) as unknown
 
-    return typeof legendsPerkCatalogData.referenceVersion === 'string'
+    return isRecord(legendsPerkCatalogData) &&
+      typeof legendsPerkCatalogData.referenceVersion === 'string'
       ? legendsPerkCatalogData.referenceVersion
       : fallbackLegendsReferenceVersion
   } catch {
@@ -99,7 +109,7 @@ async function readLegendsReferenceVersion() {
   }
 }
 
-export async function renderRootSocialImagePng() {
+export async function renderRootSocialImagePng(): Promise<Uint8Array> {
   const svg = await createRootSocialImageSvg({
     bookIconDataUrl: await createBookIconDataUrl(),
     referenceVersion: await readLegendsReferenceVersion(),
@@ -127,7 +137,10 @@ export async function renderRootSocialImagePng() {
   return renderer.render().asPng()
 }
 
-export async function generateRootSocialImage() {
+export async function generateRootSocialImage(): Promise<{
+  byteLength: number
+  path: string
+}> {
   const png = await renderRootSocialImagePng()
 
   await mkdir(path.dirname(socialImagePath), {

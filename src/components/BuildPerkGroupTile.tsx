@@ -1,6 +1,11 @@
 import { getPerkGroupHoverKey } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
 import { hasAncientScrollLearnablePerkGroup } from '../lib/ancient-scroll-perk-group-display'
+import { gameIconImageWidths, getGameIconSrcSet, getGameIconUrl } from '../lib/game-icon-url'
+import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
 import { BuildPerkPill, type BuildPerkPillSelection } from './BuildPerkPill'
 import { AncientScrollPerkGroupMarker, PerkGroupIcon } from './PerkGroupIcon'
 import sharedStyles from './SharedControls.module.scss'
@@ -130,60 +135,39 @@ function renderPerkGroupOptionIcon({
 export function BuildPerkGroupTile({
   arePerkGroupOptionsInteractive = true,
   className,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
   groupLabel,
   groupOptions,
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
   isWide = false,
   metaClassName,
   metaLabel,
   metaTestId,
-  onCloseBuildPerkHover,
-  onCloseBuildPerkTooltip,
-  onClosePerkGroupHover,
   onInspectPerk,
   onInspectPerkGroup,
-  onOpenBuildPerkHover,
-  onOpenBuildPerkTooltip,
-  onOpenPerkGroupHover,
   optionIconClassName,
   perks,
-  selectedEmphasisCategoryNames,
-  selectedEmphasisPerkGroupKeys,
 }: {
   arePerkGroupOptionsInteractive?: boolean
   className?: string
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
   groupLabel: string
   groupOptions: BuildPerkGroupTileOption[]
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
   isWide?: boolean
   metaClassName?: string
   metaLabel?: string
   metaTestId?: string
-  onCloseBuildPerkHover: (perkId: string) => void
-  onCloseBuildPerkTooltip: () => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
   onInspectPerkGroup: (categoryName: string, perkGroupId: string) => void
-  onOpenBuildPerkHover: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenBuildPerkTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-  ) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   optionIconClassName?: string
   perks: BuildPerkGroupTilePerk[]
-  selectedEmphasisCategoryNames: ReadonlySet<string>
-  selectedEmphasisPerkGroupKeys: ReadonlySet<string>
 }) {
+  const {
+    emphasizedCategoryNames,
+    emphasizedPerkGroupKeys,
+    hoveredPerkId,
+    selectedEmphasisCategoryNames,
+    selectedEmphasisPerkGroupKeys,
+  } = usePlannerInteractionState()
+  const { closePerkGroupHover: onClosePerkGroupHover, openPerkGroupHover: onOpenPerkGroupHover } =
+    usePlannerInteractionActions()
   const selectablePerkGroupOptions = groupOptions.filter(isSelectablePerkGroupOption)
   const primaryPerkGroupOption = selectablePerkGroupOptions[0]
   const areOptionIconsInteractive =
@@ -326,15 +310,8 @@ export function BuildPerkGroupTile({
         {perks.map((perk) =>
           perk.perkId ? (
             <BuildPerkPill
-              hoveredBuildPerkId={hoveredBuildPerkId}
-              hoveredBuildPerkTooltipId={hoveredBuildPerkTooltipId}
-              hoveredPerkId={hoveredPerkId}
               key={`${groupLabel}-${perk.perkId}`}
-              onCloseHover={onCloseBuildPerkHover}
-              onCloseTooltip={onCloseBuildPerkTooltip}
               onInspectPerk={onInspectPerk}
-              onOpenHover={onOpenBuildPerkHover}
-              onOpenTooltip={onOpenBuildPerkTooltip}
               perkGroupSelection={perk.perkGroupSelection ?? primaryPerkGroupSelection}
               perkIconPath={perk.iconPath}
               perkId={perk.perkId}
@@ -352,8 +329,11 @@ export function BuildPerkGroupTile({
                   className={styles.plannerPillIcon}
                   data-testid="planner-pill-icon"
                   decoding="async"
+                  height={gameIconImageWidths.compact}
                   loading="lazy"
-                  src={`/game-icons/${perk.iconPath}`}
+                  src={getGameIconUrl(perk.iconPath, gameIconImageWidths.compact) ?? ''}
+                  srcSet={getGameIconSrcSet(perk.iconPath, gameIconImageWidths.compact)}
+                  width={gameIconImageWidths.compact}
                 />
               ) : null}
               <span className={styles.plannerPillLabel}>{perk.perkName}</span>

@@ -62,8 +62,7 @@
   }
 
   .backgroundFitTargetList,
-  .backgroundFitMatchList,
-  .backgroundFitRanking {
+  .backgroundFitMatchList {
     display: grid;
     gap: var(--space-md);
     min-width: 0;
@@ -72,8 +71,16 @@
     list-style: none;
   }
 
-  .backgroundFitRanking li {
+  .backgroundFitRanking {
     min-width: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .backgroundFitRankingItem {
+    min-width: 0;
+    padding-bottom: var(--space-md);
   }
 
   .backgroundFitTarget {
@@ -118,10 +125,7 @@
 
   .backgroundFitResultsScroll {
     position: relative;
-    display: grid;
     flex: 1 1 auto;
-    align-content: start;
-    gap: var(--space-md);
     min-width: 0;
     min-height: 0;
     overflow: hidden auto;
@@ -533,6 +537,8 @@
   }
 
   .backgroundFitSearchField {
+    position: relative;
+    z-index: var(--z-index-popover);
     flex: 0 0 auto;
   }
 
@@ -604,9 +610,12 @@
       max-height: var(--primitive-length-24rem);
     }
 
-    .backgroundFitRanking,
     .backgroundFitMatchList {
       gap: var(--space-sm);
+    }
+
+    .backgroundFitRankingItem {
+      padding-bottom: var(--space-sm);
     }
 
     .backgroundFitAccordionTrigger {

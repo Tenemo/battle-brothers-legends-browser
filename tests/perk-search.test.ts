@@ -6,13 +6,10 @@ const samplePerks: LegendsPerkRecord[] = [
   {
     backgroundSources: [
       {
-        backgroundId: 'background.legend_vala',
         backgroundName: 'Vala',
-        categoryName: 'Magic',
-        chance: 0.2,
-        minimumPerkGroups: 1,
         perkGroupId: 'ValaChantMagicTree',
         perkGroupName: 'Vala Chant',
+        probability: 0.2,
       },
     ],
     descriptionParagraphs: ['Gain heightened senses for nearby allies.'],
@@ -58,13 +55,10 @@ const samplePerks: LegendsPerkRecord[] = [
   {
     backgroundSources: [
       {
-        backgroundId: 'background.beast_slayer',
         backgroundName: 'Beast Slayer',
-        categoryName: 'Enemy',
-        chance: 0.05,
-        minimumPerkGroups: 2,
         perkGroupId: 'BeastTree',
         perkGroupName: 'Beasts',
+        probability: 0.05,
       },
     ],
     descriptionParagraphs: ['Favoured enemy bonuses scale with kills.'],
@@ -104,13 +98,10 @@ const samplePerks: LegendsPerkRecord[] = [
   {
     backgroundSources: [
       {
-        backgroundId: 'background.hedge_knight',
         backgroundName: 'Hedge Knight',
-        categoryName: 'Traits',
-        chance: null,
-        minimumPerkGroups: 7,
         perkGroupId: 'CalmTree',
         perkGroupName: 'Calm',
+        probability: 0.125,
       },
     ],
     descriptionParagraphs: ['Remain calm and ignore armor more effectively.'],

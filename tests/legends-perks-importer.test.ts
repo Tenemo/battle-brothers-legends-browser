@@ -8,7 +8,7 @@ import {
 } from 'node:fs/promises'
 import path from 'node:path'
 import { beforeAll, describe, expect, test } from 'vitest'
-import { createDataset, createImporterDiagnostics } from '../scripts/legends-perks-importer.mjs'
+import { createDataset, createImporterDiagnostics } from '../scripts/legends-perks-importer.ts'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const fixtureReferenceRootDirectoryPath = path.resolve(
@@ -52,12 +52,9 @@ describe('legends perks importer', () => {
     expect(clarity?.backgroundSources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          backgroundId: 'background.beast_slayer',
           backgroundName: 'Beast Slayer',
-          categoryName: 'Traits',
-          chance: null,
-          minimumPerkGroups: 7,
           perkGroupName: 'Calm',
+          probability: expect.any(Number),
         }),
       ]),
     )
@@ -509,23 +506,23 @@ describe('legends perks importer', () => {
     expect(clarity?.backgroundSources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          backgroundId: 'legend_gladiator_prizefighter_background',
           backgroundName: 'Gladiator Prizefighter',
           perkGroupName: 'Calm',
+          probability: expect.any(Number),
         }),
       ]),
     )
     expect(axeMastery?.backgroundSources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          backgroundId: 'legend_gladiator_prizefighter_background',
           backgroundName: 'Gladiator Prizefighter',
           perkGroupName: 'Axe',
+          probability: expect.any(Number),
         }),
         expect.objectContaining({
-          backgroundId: 'background.legend_legionary',
           backgroundName: 'Legionary',
           perkGroupName: 'Axe',
+          probability: expect.any(Number),
         }),
       ]),
     )

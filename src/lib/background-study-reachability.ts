@@ -23,7 +23,7 @@ export type StudyResourceRequirementProfile = {
   scrollRequirements: StudyReachabilityRequirement[]
 }
 
-export type StudyResourceKind = 'book' | 'scroll'
+type StudyResourceKind = 'book' | 'scroll'
 
 type StudyResourceAssignmentCandidate = {
   assignedBookRequirementKey: string | null

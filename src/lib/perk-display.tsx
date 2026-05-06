@@ -8,6 +8,12 @@ import type {
   LegendsPerkScenarioSource,
 } from '../types/legends-perks'
 import { formatBackgroundVeteranPerkLevelIntervalBadge } from './background-veteran-perks'
+import {
+  gameIconImageWidths,
+  getGameIconSrcSet,
+  getGameIconUrl,
+  type GameIconImageWidth,
+} from './game-icon-url'
 
 export type GroupedBackgroundSource = {
   backgroundNames: string[]
@@ -105,8 +111,9 @@ export function renderHighlightedText({
 
 export function groupBackgroundSources(
   backgroundSources: LegendsPerkBackgroundSource[],
-  getBackgroundSourceProbability: (backgroundSource: LegendsPerkBackgroundSource) => number = () =>
-    1,
+  getBackgroundSourceProbability: (backgroundSource: LegendsPerkBackgroundSource) => number = (
+    backgroundSource,
+  ) => backgroundSource.probability,
 ): GroupedBackgroundSource[] {
   const groupedBackgroundSources = new Map<string, GroupedBackgroundSource>()
 
@@ -384,22 +391,20 @@ export function getPerkGroupHoverKey({ categoryName, perkGroupId }: PerkGroupHov
   return `${categoryName}::${perkGroupId}`
 }
 
-function getGameIconUrl(iconPath: string | null): string | null {
-  return iconPath ? `/game-icons/${iconPath}` : null
-}
-
 export function renderGameIcon({
   className,
+  imageWidth = gameIconImageWidths.large,
   iconPath,
   label,
   testId,
 }: {
   className: string
+  imageWidth?: GameIconImageWidth
   iconPath: string | null
   label: string
   testId?: string
 }) {
-  const iconUrl = getGameIconUrl(iconPath)
+  const iconUrl = getGameIconUrl(iconPath, imageWidth)
 
   if (!iconUrl) {
     return (
@@ -413,8 +418,11 @@ export function renderGameIcon({
       className={className}
       data-testid={testId}
       decoding="async"
+      height={imageWidth}
       loading="lazy"
       src={iconUrl}
+      srcSet={getGameIconSrcSet(iconPath, imageWidth)}
+      width={imageWidth}
     />
   )
 }

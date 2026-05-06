@@ -16,11 +16,46 @@ export const mediumBuildPlannerViewport = {
   width: 820,
 } as const
 
+function escapeRegularExpressionText(text: string): string {
+  return text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')
+}
+
+export function getGameIconImageCdnSrcPattern(iconPath: string, width: number): RegExp {
+  const directSourcePath = `/game-icons/${iconPath}`
+  const encodedSourcePath = encodeURIComponent(`/game-icons/${iconPath}`)
+  const directSourcePattern = escapeRegularExpressionText(directSourcePath)
+  const imageCdnSourcePattern = `/\\.netlify/images\\?q=90&url=${escapeRegularExpressionText(
+    encodedSourcePath,
+  )}(?:%3Fv%3D[^&]+)?&w=${width}`
+
+  return new RegExp(`^(?:${directSourcePattern}|${imageCdnSourcePattern})$`, 'u')
+}
+
 type CssRgbColorParts = {
   alpha: number
   blue: number
   green: number
   red: number
+}
+
+type LocatorBoundingBox = {
+  height: number
+  width: number
+  x: number
+  y: number
+}
+
+export async function getRequiredLocatorBoundingBox(
+  locator: Locator,
+  label: string,
+): Promise<LocatorBoundingBox> {
+  const boundingBox = await locator.boundingBox()
+
+  if (boundingBox === null) {
+    throw new Error(`${label} did not have a measurable bounding box.`)
+  }
+
+  return boundingBox
 }
 
 export function getParsedCssRgbColor(cssColor: string): CssRgbColorParts {
@@ -115,6 +150,180 @@ export function getDetailPanel(page: Page): Locator {
 
 export function getResultsList(page: Page): Locator {
   return page.getByTestId('results-list')
+}
+
+async function waitForVirtualizedScrollRender(page: Page): Promise<void> {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => resolve())
+        })
+      }),
+  )
+}
+
+async function waitForLocatorVisible(locator: Locator, timeout: number): Promise<boolean> {
+  try {
+    await expect(locator.first()).toBeVisible({ timeout })
+
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function isLocatorCurrentlyVisible(locator: Locator): Promise<boolean> {
+  return locator.first().isVisible()
+}
+
+export async function expectLocatorVisibleInVirtualizedScrollContainer({
+  label,
+  page,
+  scrollContainer,
+  target,
+  maximumScrollStepCount = 180,
+}: {
+  label: string
+  page: Page
+  scrollContainer: Locator
+  target: Locator
+  maximumScrollStepCount?: number
+}): Promise<void> {
+  await expect(scrollContainer).toBeVisible()
+  await expect(scrollContainer.getByRole('listitem').first()).toBeVisible({
+    timeout: backgroundFitCalculationTimeoutMs,
+  })
+  await scrollContainer.evaluate((element) => {
+    const scrollElement = element as HTMLElement
+
+    scrollElement.scrollTop = 0
+  })
+  await waitForVirtualizedScrollRender(page)
+
+  if (await waitForLocatorVisible(target, 500)) {
+    return
+  }
+
+  for (let scrollStepIndex = 0; scrollStepIndex < maximumScrollStepCount; scrollStepIndex += 1) {
+    const scrollMetrics = await scrollContainer.evaluate((element) => {
+      const scrollElement = element as HTMLElement
+      const scrollTopBeforeStep = scrollElement.scrollTop
+      const maximumScrollTop = Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight)
+      const scrollDelta = Math.max(160, scrollElement.clientHeight * 0.65)
+      const nextScrollTop = Math.min(maximumScrollTop, scrollTopBeforeStep + scrollDelta)
+
+      scrollElement.scrollTop = nextScrollTop
+
+      return {
+        maximumScrollTop,
+        scrollTopAfterStep: scrollElement.scrollTop,
+        scrollTopBeforeStep,
+      }
+    })
+
+    await waitForVirtualizedScrollRender(page)
+
+    if (await isLocatorCurrentlyVisible(target)) {
+      return
+    }
+
+    if (
+      scrollMetrics.scrollTopAfterStep >= scrollMetrics.maximumScrollTop ||
+      scrollMetrics.scrollTopAfterStep === scrollMetrics.scrollTopBeforeStep
+    ) {
+      break
+    }
+  }
+
+  throw new Error(`Could not find visible ${label} in the virtualized scroll container.`)
+}
+
+export async function collectVirtualizedTextContentInScrollContainer({
+  page,
+  scrollContainer,
+  selector,
+  maximumScrollStepCount = 180,
+}: {
+  page: Page
+  scrollContainer: Locator
+  selector: string
+  maximumScrollStepCount?: number
+}): Promise<string[]> {
+  const collectedTextContent: string[] = []
+  const seenTextContent = new Set<string>()
+
+  await expect(scrollContainer).toBeVisible()
+  await scrollContainer.evaluate((element) => {
+    const scrollElement = element as HTMLElement
+
+    scrollElement.scrollTop = 0
+  })
+
+  for (let scrollStepIndex = 0; scrollStepIndex < maximumScrollStepCount; scrollStepIndex += 1) {
+    await waitForVirtualizedScrollRender(page)
+
+    const visibleTextContent = await page
+      .locator(selector)
+      .evaluateAll((elements) =>
+        elements
+          .map((element) => element.textContent?.trim() ?? '')
+          .filter((textContent) => textContent.length > 0),
+      )
+
+    for (const textContent of visibleTextContent) {
+      if (seenTextContent.has(textContent)) {
+        continue
+      }
+
+      seenTextContent.add(textContent)
+      collectedTextContent.push(textContent)
+    }
+
+    const scrollMetrics = await scrollContainer.evaluate((element) => {
+      const scrollElement = element as HTMLElement
+      const scrollTopBeforeStep = scrollElement.scrollTop
+      const maximumScrollTop = Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight)
+      const scrollDelta = Math.max(160, scrollElement.clientHeight * 0.65)
+      const nextScrollTop = Math.min(maximumScrollTop, scrollTopBeforeStep + scrollDelta)
+
+      scrollElement.scrollTop = nextScrollTop
+
+      return {
+        maximumScrollTop,
+        scrollTopAfterStep: scrollElement.scrollTop,
+        scrollTopBeforeStep,
+      }
+    })
+
+    if (
+      scrollMetrics.scrollTopAfterStep >= scrollMetrics.maximumScrollTop ||
+      scrollMetrics.scrollTopAfterStep === scrollMetrics.scrollTopBeforeStep
+    ) {
+      await waitForVirtualizedScrollRender(page)
+
+      const finalVisibleTextContent = await page
+        .locator(selector)
+        .evaluateAll((elements) =>
+          elements
+            .map((element) => element.textContent?.trim() ?? '')
+            .filter((textContent) => textContent.length > 0),
+        )
+
+      for (const textContent of finalVisibleTextContent) {
+        if (seenTextContent.has(textContent)) {
+          continue
+        }
+
+        seenTextContent.add(textContent)
+        collectedTextContent.push(textContent)
+      }
+
+      break
+    }
+  }
+
+  return collectedTextContent
 }
 
 export async function expectBackgroundFitCalculationComplete(
@@ -236,6 +445,10 @@ export async function gotoBuildPlanner(
   await expect(getBuildPerksBar(page)).toBeVisible()
   await expect(getBuildSharedGroupsList(page)).toBeVisible()
   await expect(getBuildIndividualGroupsList(page)).toBeVisible()
+}
+
+export async function expectPlannerGroupTilesSettled(page: Page): Promise<void> {
+  await expect(page.locator('[data-planner-item="group-card-placeholder"]')).toHaveCount(0)
 }
 
 export async function expectViewportLocked(page: Page): Promise<void> {

@@ -2,9 +2,9 @@ import {
   createDataset,
   createImporterDiagnostics,
   writeDatasetFile,
-} from './legends-perks-importer.mjs'
-import { ensureLatestLegendsReference } from './ensure-legends-reference.mjs'
-import { syncLegendsIcons } from './legends-icon-sync.mjs'
+} from './legends-perks-importer.ts'
+import { ensureLatestLegendsReference } from './ensure-legends-reference.ts'
+import { syncLegendsIcons } from './legends-icon-sync.ts'
 
 const referenceMetadata = await ensureLatestLegendsReference()
 const importerDiagnostics = createImporterDiagnostics()

@@ -25,6 +25,9 @@ importers:
       react-dom:
         specifier: ^19.2.5
         version: 19.2.5(react@19.2.5)
+      react-virtuoso:
+        specifier: ^4.18.6
+        version: 4.18.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
     devDependencies:
       '@eslint/js':
         specifier: ^9.39.4
@@ -3357,6 +3360,15 @@ packages:
         integrity: sha512-w2GsyukL62IJnlaff/nRegPQR94C/XXamvMWmSHRJ4y7Ts/4ocGRmTHvOs8PSE6pB3dWOrD/nueuU5sduBsQ4w==,
       }
 
+  react-virtuoso@4.18.6:
+    resolution:
+      {
+        integrity: sha512-CrT3P6HyjJMHZVWSste2bG2q5aWGlHfW2QuySZjiFwB2Qok/xsvgy+k8Z2jeDP8PP5KsBip7zNrl/F0QoxeyKw==,
+      }
+    peerDependencies:
+      react: '>=16 || >=17 || >= 18 || >= 19'
+      react-dom: '>=16 || >=17 || >= 18 || >=19'
+
   react@19.2.5:
     resolution:
       {
@@ -5760,6 +5772,11 @@ snapshots:
       scheduler: 0.27.0
 
   react-is@17.0.2: {}
+
+  react-virtuoso@4.18.6(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
+    dependencies:
+      react: 19.2.5
+      react-dom: 19.2.5(react@19.2.5)
 
   react@19.2.5: {}
 

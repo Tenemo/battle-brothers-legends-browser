@@ -335,6 +335,13 @@
       @include focus-ring;
     }
 
+    &[aria-pressed='true']:hover,
+    &[aria-pressed='true']:focus-visible {
+      border-color: var(--border-danger-hover);
+      background: var(--surface-danger-hover);
+      color: var(--text-danger);
+    }
+
     &[data-compact='true'] {
       @include size(var(--control-height-sm));
 
@@ -366,7 +373,7 @@
     }
 
     &[data-compact='true'] {
-      width: calc(var(--control-height-sm) * 1.72);
+      width: calc(var(--control-height-sm) * 2);
       height: var(--control-height-sm);
 
       .buildRequirementIcon {

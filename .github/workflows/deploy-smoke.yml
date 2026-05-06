@@ -28,4 +28,4 @@ jobs:
           node-version: 24.14.1
 
       - name: run deployed SEO smoke checks
-        run: node ./scripts/smoke-deployed-seo.mjs "${{ inputs.base_url }}"
+        run: node ./scripts/smoke-deployed-seo.ts "${{ inputs.base_url }}"

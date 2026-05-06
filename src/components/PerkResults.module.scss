@@ -25,21 +25,29 @@
     align-items: stretch;
   }
 
-  .resultsList {
-    display: flex;
+  .resultsListScroller {
     flex: 1 1 auto;
-    flex-direction: column;
-    gap: var(--space-md);
     min-height: 0;
-    margin: 0;
     overflow: hidden auto;
     padding: var(--primitive-length-0-28rem) var(--primitive-length-0-18rem) 0 0;
+    row-gap: 0;
+  }
+
+  .resultsList {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
     list-style: none;
-    content-visibility: auto;
+  }
+
+  .resultsListItem {
+    min-width: 0;
+    padding-bottom: var(--space-md);
   }
 
   .perkRow {
     position: relative;
+    contain: layout paint style;
     width: 100%;
     border: var(--primitive-length-1px) solid var(--border-muted);
     border-radius: var(--radius-2xl);
@@ -229,46 +237,18 @@
     pointer-events: auto;
   }
 
-  .showMoreResultsItem {
-    display: flex;
-    justify-content: center;
-    padding: var(--space-sm) 0 var(--space-xs);
-  }
-
-  .showMoreResultsButton {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: var(--control-height-lg);
-    border-radius: var(--radius-lg);
-    padding: var(--space-sm) var(--space-xl);
-    color: var(--text-primary);
-    font: inherit;
-    cursor: pointer;
-
-    @include control-surface;
-
-    &:hover,
-    &:focus-visible {
-      border-color: var(--border-strong);
-      background: var(--surface-result-active);
-    }
-
-    &:focus-visible {
-      @include focus-ring;
-    }
-  }
-
   @include compact-desktop {
     .resultsPanel {
       gap: var(--space-sm);
       padding: var(--space-lg);
     }
 
-    .resultsList {
-      gap: var(--space-sm);
+    .resultsListScroller {
       padding-top: var(--space-xs);
+    }
+
+    .resultsListItem {
+      padding-bottom: var(--space-sm);
     }
 
     .perkRow {
@@ -323,12 +303,11 @@
       overflow: visible;
     }
 
-    .resultsList {
+    .resultsListScroller {
       flex: 0 1 auto;
       max-height: min(var(--primitive-length-42rem), 68vh);
       min-height: var(--primitive-length-18rem);
       overflow: hidden auto;
-      content-visibility: visible;
     }
   }
 
@@ -351,19 +330,18 @@
       grid-column: 1;
     }
 
-    .resultsList {
+    .resultsListScroller {
       max-height: none;
       min-height: 0;
       overflow: visible;
       padding-right: 0;
     }
 
-    .perkPlacementChip {
-      min-height: var(--primitive-length-2-72rem);
+    .resultsListItem {
+      padding-bottom: var(--space-sm);
     }
 
-    .showMoreResultsButton {
-      width: 100%;
+    .perkPlacementChip {
       min-height: var(--primitive-length-2-72rem);
     }
   }

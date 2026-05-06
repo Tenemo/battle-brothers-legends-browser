@@ -1,4 +1,86 @@
-function createError(message, index, source) {
+export type SquirrelReferenceValue = {
+  type: 'reference'
+  value: string
+}
+
+export type SquirrelFunctionValue = {
+  body: string
+  name: string | null
+  parameters: string[]
+  source: string
+  type: 'function'
+}
+
+export type SquirrelArrayValue = {
+  type: 'array'
+  values: SquirrelValue[]
+}
+
+export type SquirrelTablePropertyEntry = {
+  key: string
+  type: 'property'
+  value: SquirrelValue
+}
+
+export type SquirrelTableFunctionEntry = {
+  body: string
+  name: string | null
+  parameters: string[]
+  type: 'function-entry'
+}
+
+export type SquirrelTableValue = {
+  entries: Array<SquirrelTablePropertyEntry | SquirrelTableFunctionEntry>
+  type: 'table'
+}
+
+export type SquirrelCallValue = {
+  arguments: SquirrelValue[]
+  callee: string
+  type: 'call'
+}
+
+export type SquirrelValue =
+  | SquirrelArrayValue
+  | SquirrelCallValue
+  | SquirrelFunctionValue
+  | SquirrelReferenceValue
+  | SquirrelTableValue
+  | boolean
+  | null
+  | number
+  | string
+
+export type SquirrelAssignmentStatement = {
+  operator: '<-' | '=' | '+=' | '-='
+  target: string
+  type: 'assignment'
+  value: SquirrelValue
+}
+
+export type SquirrelExpressionStatement = {
+  expression: SquirrelValue
+  type: 'expression'
+}
+
+export type SquirrelLocalAssignmentStatement = {
+  target: string
+  type: 'local-assignment'
+  value: SquirrelValue
+}
+
+export type SquirrelUnknownStatement = {
+  source: string
+  type: 'unknown'
+}
+
+export type SquirrelStatement =
+  | SquirrelAssignmentStatement
+  | SquirrelExpressionStatement
+  | SquirrelLocalAssignmentStatement
+  | SquirrelUnknownStatement
+
+function createError(message: string, index: number, source: string): Error {
   const previewStart = Math.max(0, index - 40)
   const previewEnd = Math.min(source.length, index + 40)
   const preview = source.slice(previewStart, previewEnd).replace(/\s+/g, ' ')
@@ -6,24 +88,27 @@ function createError(message, index, source) {
 }
 
 export class SquirrelSubsetParser {
-  constructor(source, startIndex = 0) {
+  index: number
+  source: string
+
+  constructor(source: string, startIndex = 0) {
     this.source = source
     this.index = startIndex
   }
 
-  clone(startIndex = this.index) {
+  clone(startIndex = this.index): SquirrelSubsetParser {
     return new SquirrelSubsetParser(this.source, startIndex)
   }
 
-  isAtEnd() {
+  isAtEnd(): boolean {
     return this.index >= this.source.length
   }
 
-  peek(length = 1) {
+  peek(length = 1): string {
     return this.source.slice(this.index, this.index + length)
   }
 
-  skipIgnored() {
+  skipIgnored(): void {
     while (!this.isAtEnd()) {
       const character = this.source[this.index]
 
@@ -57,7 +142,7 @@ export class SquirrelSubsetParser {
     }
   }
 
-  readKeyword(keyword) {
+  readKeyword(keyword: string): boolean {
     this.skipIgnored()
 
     if (!this.source.startsWith(keyword, this.index)) {
@@ -74,7 +159,7 @@ export class SquirrelSubsetParser {
     return true
   }
 
-  readSymbol(symbol) {
+  readSymbol(symbol: string): boolean {
     this.skipIgnored()
 
     if (!this.source.startsWith(symbol, this.index)) {
@@ -85,13 +170,13 @@ export class SquirrelSubsetParser {
     return true
   }
 
-  expectSymbol(symbol) {
+  expectSymbol(symbol: string): void {
     if (!this.readSymbol(symbol)) {
       throw createError(`Expected "${symbol}"`, this.index, this.source)
     }
   }
 
-  readIdentifier() {
+  readIdentifier(): string | null {
     this.skipIgnored()
     const match = /^[A-Za-z_][A-Za-z0-9_]*/.exec(this.source.slice(this.index))
 
@@ -103,7 +188,7 @@ export class SquirrelSubsetParser {
     return match[0]
   }
 
-  expectIdentifier() {
+  expectIdentifier(): string {
     const identifier = this.readIdentifier()
 
     if (identifier === null) {
@@ -113,7 +198,7 @@ export class SquirrelSubsetParser {
     return identifier
   }
 
-  readNumber() {
+  readNumber(): number | null {
     this.skipIgnored()
     const match = /^[+-]?(?:\d+\.\d+|\d+|\.\d+)/.exec(this.source.slice(this.index))
 
@@ -125,7 +210,7 @@ export class SquirrelSubsetParser {
     return Number(match[0])
   }
 
-  readQuotedString() {
+  readQuotedString(): string | null {
     this.skipIgnored()
 
     if (this.source[this.index] !== '"') {
@@ -178,7 +263,7 @@ export class SquirrelSubsetParser {
     throw createError('Unterminated string literal', this.index, this.source)
   }
 
-  readRawString() {
+  readRawString(): string | null {
     this.skipIgnored()
 
     if (this.peek(2) !== '@"') {
@@ -197,7 +282,7 @@ export class SquirrelSubsetParser {
     return this.source.slice(startIndex, endIndex)
   }
 
-  readReference() {
+  readReference(): string | null {
     this.skipIgnored()
     const startIndex = this.index
     let value = ''
@@ -237,7 +322,7 @@ export class SquirrelSubsetParser {
     return value
   }
 
-  parseFunctionLiteral() {
+  parseFunctionLiteral(): SquirrelFunctionValue | null {
     const functionStartIndex = this.index
 
     if (!this.readKeyword('function')) {
@@ -245,7 +330,7 @@ export class SquirrelSubsetParser {
     }
 
     this.skipIgnored()
-    let name = null
+    let name: string | null = null
 
     if (/[A-Za-z_:]/.test(this.source[this.index] ?? '')) {
       const checkpoint = this.index
@@ -288,12 +373,12 @@ export class SquirrelSubsetParser {
     }
   }
 
-  parseArrayLiteral() {
+  parseArrayLiteral(): SquirrelArrayValue | null {
     if (!this.readSymbol('[')) {
       return null
     }
 
-    const values = []
+    const values: SquirrelValue[] = []
 
     while (true) {
       this.skipIgnored()
@@ -319,12 +404,12 @@ export class SquirrelSubsetParser {
     }
   }
 
-  parseTableLiteral() {
+  parseTableLiteral(): SquirrelTableValue | null {
     if (!this.readSymbol('{')) {
       return null
     }
 
-    const entries = []
+    const entries: Array<SquirrelTableFunctionEntry | SquirrelTablePropertyEntry> = []
 
     while (true) {
       this.skipIgnored()
@@ -370,7 +455,7 @@ export class SquirrelSubsetParser {
     }
   }
 
-  parsePrimaryValue() {
+  parsePrimaryValue(): SquirrelValue {
     this.skipIgnored()
     const rawString = this.readRawString()
 
@@ -432,7 +517,7 @@ export class SquirrelSubsetParser {
     throw createError('Unable to parse value', this.index, this.source)
   }
 
-  parseValue() {
+  parseValue(): SquirrelValue {
     const primaryValue = this.parsePrimaryValue()
 
     if (
@@ -443,7 +528,7 @@ export class SquirrelSubsetParser {
       return primaryValue
     }
 
-    let currentValue = primaryValue
+    let currentValue: SquirrelReferenceValue = primaryValue
 
     while (true) {
       this.skipIgnored()
@@ -465,7 +550,7 @@ export class SquirrelSubsetParser {
       return currentValue
     }
 
-    const argumentsList = []
+    const argumentsList: SquirrelValue[] = []
 
     while (true) {
       this.skipIgnored()
@@ -492,7 +577,7 @@ export class SquirrelSubsetParser {
     }
   }
 
-  parseStatement() {
+  parseStatement(): SquirrelStatement | null {
     this.skipIgnored()
 
     if (this.isAtEnd()) {
@@ -639,7 +724,7 @@ export class SquirrelSubsetParser {
     }
   }
 
-  skipUnknownStatement() {
+  skipUnknownStatement(): void {
     this.skipIgnored()
 
     while (!this.isAtEnd()) {
@@ -675,7 +760,11 @@ export class SquirrelSubsetParser {
     }
   }
 
-  findMatchingBoundary(openCharacter, closeCharacter, openCharacterIndex) {
+  findMatchingBoundary(
+    openCharacter: string,
+    closeCharacter: string,
+    openCharacterIndex: number,
+  ): number {
     let depth = 0
     let position = openCharacterIndex
 
@@ -764,7 +853,13 @@ export class SquirrelSubsetParser {
   }
 }
 
-export function parseSquirrelValue(source, startIndex = 0) {
+export function parseSquirrelValue(
+  source: string,
+  startIndex = 0,
+): {
+  endIndex: number
+  value: SquirrelValue
+} {
   const parser = new SquirrelSubsetParser(source, startIndex)
   const value = parser.parseValue()
   return {
@@ -773,9 +868,9 @@ export function parseSquirrelValue(source, startIndex = 0) {
   }
 }
 
-export function collectTopLevelStatements(source) {
+export function collectTopLevelStatements(source: string): SquirrelStatement[] {
   const parser = new SquirrelSubsetParser(source)
-  const statements = []
+  const statements: SquirrelStatement[] = []
 
   while (true) {
     parser.skipIgnored()
@@ -796,8 +891,8 @@ export function collectTopLevelStatements(source) {
   return statements
 }
 
-export function splitTopLevelCommaSeparated(source) {
-  const items = []
+export function splitTopLevelCommaSeparated(source: string): string[] {
+  const items: string[] = []
   let startIndex = 0
   let braceDepth = 0
   let bracketDepth = 0
@@ -919,20 +1014,20 @@ export function splitTopLevelCommaSeparated(source) {
   return items
 }
 
-export function unwrapReference(value) {
+export function unwrapReference(value: SquirrelValue | null | undefined): string | null {
   return typeof value === 'object' && value !== null && value.type === 'reference'
     ? value.value
     : null
 }
 
-export function unwrapCall(value) {
+export function unwrapCall(value: SquirrelValue | null | undefined): SquirrelCallValue | null {
   return typeof value === 'object' && value !== null && value.type === 'call' ? value : null
 }
 
-export function unwrapTable(value) {
+export function unwrapTable(value: SquirrelValue | null | undefined): SquirrelTableValue | null {
   return typeof value === 'object' && value !== null && value.type === 'table' ? value : null
 }
 
-export function unwrapArray(value) {
+export function unwrapArray(value: SquirrelValue | null | undefined): SquirrelArrayValue | null {
   return typeof value === 'object' && value !== null && value.type === 'array' ? value : null
 }

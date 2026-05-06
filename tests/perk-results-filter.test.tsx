@@ -3,38 +3,32 @@ import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, test, vi } from 'vitest'
 import { PerkResults } from '../src/components/PerkResults'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 type PerkResultsProps = ComponentProps<typeof PerkResults>
 
 function createPerkResults(overrides: Partial<PerkResultsProps> = {}) {
   return (
-    <PerkResults
-      emphasizedCategoryNames={new Set()}
-      emphasizedPerkGroupKeys={new Set()}
-      hoveredPerkId={null}
-      onAddPerkToBuild={vi.fn()}
-      onAncientScrollPerkGroupsChange={vi.fn()}
-      onClosePerkGroupHover={vi.fn()}
-      onCloseResultsPerkHover={vi.fn()}
-      onInspectPerkGroup={vi.fn()}
-      onOpenPerkGroupHover={vi.fn()}
-      onOpenResultsPerkHover={vi.fn()}
-      onOriginPerkGroupsChange={vi.fn()}
-      onRemovePerkFromBuild={vi.fn()}
-      onSelectPerk={vi.fn()}
-      pickedPerkRequirementById={new Map()}
-      perkResultListScrollResetKey={0}
-      query=""
-      selectedEmphasisCategoryNames={new Set()}
-      selectedEmphasisPerkGroupKeys={new Set()}
-      selectedPerk={null}
-      setQuery={vi.fn()}
-      shouldIncludeAncientScrollPerkGroups
-      shouldIncludeOriginPerkGroups={false}
-      visiblePerkResultSetKey="empty"
-      visiblePerks={[]}
-      {...overrides}
-    />
+    <PlannerInteractionTestProvider>
+      <PerkResults
+        onAddPerkToBuild={vi.fn()}
+        onAncientScrollPerkGroupsChange={vi.fn()}
+        onInspectPerkGroup={vi.fn()}
+        onOriginPerkGroupsChange={vi.fn()}
+        onRemovePerkFromBuild={vi.fn()}
+        onSelectPerk={vi.fn()}
+        pickedPerkRequirementById={new Map()}
+        perkResultListScrollResetKey={0}
+        query=""
+        selectedPerk={null}
+        setQuery={vi.fn()}
+        shouldIncludeAncientScrollPerkGroups
+        shouldIncludeOriginPerkGroups={false}
+        visiblePerkResultSetKey="empty"
+        visiblePerks={[]}
+        {...overrides}
+      />
+    </PlannerInteractionTestProvider>
   )
 }
 

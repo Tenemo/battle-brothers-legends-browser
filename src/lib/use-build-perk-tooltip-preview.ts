@@ -162,6 +162,24 @@ export function useBuildPerkTooltipPreview({
     ],
   )
 
+  const openTooltipPreviewImmediately = useCallback(
+    (
+      perkId: string,
+      currentTarget: HTMLElement,
+      perkGroupReference?: PerkGroupReference,
+      options?: BuildPerkHoverOptions,
+    ) => {
+      pointerPreviewPerkIdRef.current = null
+      isPointerPreviewSuppressedRef.current = false
+      clearTooltipCloseTimer()
+      clearTooltipOpenTimers()
+      setActiveTooltipIndicatorPerkId(perkId)
+      onOpenHover(perkId, perkGroupReference, options)
+      onOpenTooltip(perkId, currentTarget, perkGroupReference, options)
+    },
+    [clearTooltipCloseTimer, clearTooltipOpenTimers, onOpenHover, onOpenTooltip],
+  )
+
   const clearPointerPreviewSuppression = useCallback(() => {
     isPointerPreviewSuppressedRef.current = false
   }, [])
@@ -195,6 +213,7 @@ export function useBuildPerkTooltipPreview({
     clearTooltipCloseTimer,
     closeTooltipPreview,
     openTooltipPreview,
+    openTooltipPreviewImmediately,
     suppressTooltipPreviewUntilPointerMove,
   }
 }

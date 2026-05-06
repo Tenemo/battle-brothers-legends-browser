@@ -12,12 +12,54 @@ const homepageExpectedSnippets = [
 ]
 const currentFilePath = fileURLToPath(import.meta.url)
 
-function fail(message) {
+export type WaitForProductionDeployOptions = {
+  expectedCommitSha: string
+  intervalMs: number
+  requestTimeoutMs: number
+  requiredStableChecks: number
+  timeoutMs: number
+  webBaseUrl: string
+}
+
+export type JsonProbeStatus = {
+  commitSha: string | null
+  ok: boolean
+  statusCode: number | null
+  url: string
+}
+
+export type HtmlProbeStatus = {
+  contentType: string | null
+  missingSnippet: string | null
+  ok: boolean
+  statusCode: number | null
+  url: string
+}
+
+export type ProductionReadinessStatus = {
+  homepage: HtmlProbeStatus
+  version: JsonProbeStatus
+}
+
+export type WaitForProductionDeployDependencies = {
+  loadReadinessStatus?: (
+    options: WaitForProductionDeployOptions,
+  ) => ProductionReadinessStatus | Promise<ProductionReadinessStatus>
+  log?: (message: string) => void
+  now?: () => number
+  sleep?: (delayMs: number) => Promise<void>
+}
+
+function fail(message: string): never {
   throw new Error(message)
 }
 
-export function normalizeAbsoluteOrigin(rawUrl, label) {
-  let parsedUrl
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+export function normalizeAbsoluteOrigin(rawUrl: string, label: string): string {
+  let parsedUrl: URL
 
   try {
     parsedUrl = new URL(rawUrl)
@@ -32,7 +74,7 @@ export function normalizeAbsoluteOrigin(rawUrl, label) {
   return parsedUrl.origin
 }
 
-export function normalizeCommitSha(rawCommitSha) {
+export function normalizeCommitSha(rawCommitSha: string): string {
   const commitSha = rawCommitSha.trim().toLowerCase()
 
   if (!commitShaPattern.test(commitSha)) {
@@ -42,7 +84,11 @@ export function normalizeCommitSha(rawCommitSha) {
   return commitSha
 }
 
-export function parsePositiveInteger(rawValue, fallback, label) {
+export function parsePositiveInteger(
+  rawValue: string | undefined,
+  fallback: number,
+  label: string,
+): number {
   if (!rawValue) {
     return fallback
   }
@@ -56,8 +102,8 @@ export function parsePositiveInteger(rawValue, fallback, label) {
   return parsedValue
 }
 
-export function parseWaitForProductionDeployArgs(args) {
-  const getArgValue = (flag) => {
+export function parseWaitForProductionDeployArgs(args: string[]): WaitForProductionDeployOptions {
+  const getArgValue = (flag: string): string | undefined => {
     const flagIndex = args.indexOf(flag)
 
     if (flagIndex === -1) {
@@ -100,7 +146,7 @@ export function parseWaitForProductionDeployArgs(args) {
   }
 }
 
-function createNoStoreUrl(baseUrl, endpointPath) {
+function createNoStoreUrl(baseUrl: string, endpointPath: string): URL {
   const url = new URL(endpointPath, baseUrl)
 
   url.searchParams.set('t', `${Date.now()}`)
@@ -108,7 +154,10 @@ function createNoStoreUrl(baseUrl, endpointPath) {
   return url
 }
 
-async function getJsonResponse(url, requestTimeoutMs) {
+async function getJsonResponse(
+  url: URL,
+  requestTimeoutMs: number,
+): Promise<{ body: unknown; statusCode: number }> {
   const response = await fetch(url, {
     cache: 'no-store',
     headers: {
@@ -132,7 +181,10 @@ async function getJsonResponse(url, requestTimeoutMs) {
   }
 }
 
-async function getHtmlResponse(url, requestTimeoutMs) {
+async function getHtmlResponse(
+  url: URL,
+  requestTimeoutMs: number,
+): Promise<{ body: string; contentType: string | null; statusCode: number }> {
   const response = await fetch(url, {
     cache: 'no-store',
     headers: {
@@ -150,8 +202,8 @@ async function getHtmlResponse(url, requestTimeoutMs) {
   }
 }
 
-export function readCommitSha(body) {
-  if (typeof body !== 'object' || body === null) {
+export function readCommitSha(body: unknown): string | null {
+  if (!isRecord(body)) {
     return null
   }
 
@@ -166,7 +218,10 @@ export function readCommitSha(body) {
   return commitShaPattern.test(normalizedCommitSha) ? normalizedCommitSha : null
 }
 
-async function loadVersionStatus(webBaseUrl, requestTimeoutMs) {
+async function loadVersionStatus(
+  webBaseUrl: string,
+  requestTimeoutMs: number,
+): Promise<JsonProbeStatus> {
   const url = createNoStoreUrl(webBaseUrl, '/version.json')
 
   try {
@@ -188,7 +243,10 @@ async function loadVersionStatus(webBaseUrl, requestTimeoutMs) {
   }
 }
 
-async function loadHomepageStatus(webBaseUrl, requestTimeoutMs) {
+async function loadHomepageStatus(
+  webBaseUrl: string,
+  requestTimeoutMs: number,
+): Promise<HtmlProbeStatus> {
   const url = createNoStoreUrl(webBaseUrl, '/')
 
   try {
@@ -215,7 +273,9 @@ async function loadHomepageStatus(webBaseUrl, requestTimeoutMs) {
   }
 }
 
-export async function loadProductionReadinessStatus(options) {
+export async function loadProductionReadinessStatus(
+  options: WaitForProductionDeployOptions,
+): Promise<ProductionReadinessStatus> {
   const [version, homepage] = await Promise.all([
     loadVersionStatus(options.webBaseUrl, options.requestTimeoutMs),
     loadHomepageStatus(options.webBaseUrl, options.requestTimeoutMs),
@@ -227,15 +287,18 @@ export async function loadProductionReadinessStatus(options) {
   }
 }
 
-export function isProductionReadinessStatusSuccessful(status, expectedCommitSha) {
+export function isProductionReadinessStatusSuccessful(
+  status: ProductionReadinessStatus,
+  expectedCommitSha: string,
+): boolean {
   return status.version.ok && status.version.commitSha === expectedCommitSha && status.homepage.ok
 }
 
-function formatVersionStatus(status) {
+function formatVersionStatus(status: JsonProbeStatus): string {
   return `version: status=${status.statusCode ?? 'unreachable'}, commitSha=${status.commitSha ?? 'missing'}`
 }
 
-function formatHomepageStatus(status) {
+function formatHomepageStatus(status: HtmlProbeStatus): string {
   const markerStatus =
     status.statusCode == null
       ? 'markers=unreachable'
@@ -248,17 +311,20 @@ function formatHomepageStatus(status) {
   return `homepage: status=${status.statusCode ?? 'unreachable'}, contentType=${status.contentType ?? 'missing'}, ${markerStatus}`
 }
 
-export function formatProductionReadinessStatus(status) {
+export function formatProductionReadinessStatus(status: ProductionReadinessStatus): string {
   return [formatVersionStatus(status.version), formatHomepageStatus(status.homepage)].join(' ')
 }
 
-const sleep = async (delayMs) => {
+const sleep = async (delayMs: number): Promise<void> => {
   await new Promise((resolve) => {
     setTimeout(resolve, delayMs)
   })
 }
 
-export async function waitForProductionDeploy(options, dependencies = {}) {
+export async function waitForProductionDeploy(
+  options: WaitForProductionDeployOptions,
+  dependencies: WaitForProductionDeployDependencies = {},
+): Promise<void> {
   const loadStatus = dependencies.loadReadinessStatus ?? loadProductionReadinessStatus
   const log = dependencies.log ?? console.log
   const resolveNow = dependencies.now ?? Date.now

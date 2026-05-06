@@ -729,13 +729,13 @@
 
   .plannerGroupCard,
   .plannerSectionPlaceholder {
-    min-height: var(--planner-group-row-min-height);
+    min-height: var(--planner-group-row-min-height, var(--planner-default-group-row-min-height));
     padding: var(--primitive-length-0-46rem) var(--space-md);
   }
 
   .plannerGroupCard {
     position: relative;
-    flex: 0 0 min(var(--planner-tile-width), 100%);
+    flex: 0 0 min(var(--planner-tile-width, var(--primitive-length-14rem)), 100%);
     overflow: hidden;
 
     @include surface-transition;
@@ -769,6 +769,14 @@
     .plannerSlotMeta {
       margin-top: var(--space-3xs);
       font-size: var(--type-compact-size);
+    }
+  }
+
+  .plannerGroupCardPlaceholder {
+    pointer-events: none;
+
+    &[data-placeholder-size='tall'] {
+      min-height: 9.3rem;
     }
   }
 
@@ -869,7 +877,7 @@
   }
 
   .plannerGroupOptionIcon {
-    @include size(var(--planner-icon-frame-size));
+    @include size(var(--planner-icon-frame-size, var(--primitive-length-1-72rem)));
 
     border-radius: var(--radius-sm);
     transition:
@@ -986,10 +994,23 @@
   }
 
   .buildPerkTooltip {
+    --build-perk-tooltip-action-width: calc(var(--control-height-sm) * 2);
+
     position: fixed;
     z-index: var(--z-index-popover);
     width: max-content;
     padding: var(--space-lg) var(--space-xl);
+    padding-inline-end: calc(
+      var(--space-xl) + var(--space-md) + var(--build-perk-tooltip-action-width)
+    );
+  }
+
+  .buildPerkTooltipAction {
+    position: absolute;
+    top: var(--space-sm);
+    right: var(--space-sm);
+    display: inline-flex;
+    z-index: var(--z-index-raised);
   }
 
   .buildPerkTooltipCopy {
@@ -1087,6 +1108,10 @@
   }
 
   @include mobile {
+    .buildPerkTooltip {
+      --build-perk-tooltip-action-width: calc(var(--primitive-length-2-72rem) * 2);
+    }
+
     .buildPlannerHeader {
       align-items: flex-start;
       flex-direction: column;
@@ -1140,6 +1165,34 @@
         max-height: min(var(--primitive-length-24rem), var(--primitive-length-38vh));
         overflow: auto;
         padding-right: var(--space-2xs);
+      }
+    }
+
+    .plannerSectionPlaceholder {
+      .plannerSlotName {
+        width: auto;
+        max-width: var(--primitive-length-12rem);
+        margin-top: 0;
+        -webkit-line-clamp: 1;
+        font-size: var(--type-meta-size);
+        line-height: var(--type-meta-line-height);
+      }
+
+      .plannerSlotMeta {
+        display: none;
+      }
+    }
+
+    .plannerSlot[data-placeholder='true'] {
+      .plannerSlotName,
+      .plannerSlotMeta {
+        display: -webkit-box;
+        max-width: var(--primitive-length-12rem);
+        overflow: hidden;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 1;
+        font-size: var(--type-meta-size);
+        line-height: var(--type-meta-line-height);
       }
     }
 

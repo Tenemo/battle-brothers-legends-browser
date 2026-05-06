@@ -1,7 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import legendsPerkCatalogDatasetJson from '../src/data/legends-perk-catalog.json'
-import { createBackgroundFitEngine } from '../src/lib/background-fit'
 import { hydrateCatalogPerks } from '../src/lib/legends-data'
 import {
   getPerksWithOriginAndAncientScrollPerkGroupsFiltered,
@@ -11,13 +9,12 @@ import {
   isOriginOrAncientScrollOnlyPerkGroupId,
 } from '../src/lib/origin-and-ancient-scroll-perk-groups'
 import { filterAndSortPerks } from '../src/lib/perk-search'
-import type { LegendsBackgroundFitDataset, LegendsPerkCatalogDataset } from '../src/types/legends-perks'
+import type { LegendsPerkCatalogDataset } from '../src/types/legends-perks'
 
-const legendsBackgroundFitDataset = legendsBackgroundFitDatasetJson as LegendsBackgroundFitDataset
 const legendsPerkCatalogDataset = legendsPerkCatalogDatasetJson as LegendsPerkCatalogDataset
 const legendsPerks = hydrateCatalogPerks(
   legendsPerkCatalogDataset.perks,
-  createBackgroundFitEngine(legendsBackgroundFitDataset),
+  legendsPerkCatalogDataset.backgroundSourceTable,
 )
 const filteredPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(legendsPerks)
 const filteredPerksByName = new Map(filteredPerks.map((perk) => [perk.perkName, perk]))
@@ -42,13 +39,10 @@ describe('origin and ancient scroll perk groups', () => {
   })
 
   test('can include origin perk groups without ancient scroll perk groups', () => {
-    const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerks,
-      {
-        shouldIncludeAncientScrollPerkGroups: false,
-        shouldIncludeOriginPerkGroups: true,
-      },
-    )
+    const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(legendsPerks, {
+      shouldIncludeAncientScrollPerkGroups: false,
+      shouldIncludeOriginPerkGroups: true,
+    })
     const originPerksByName = new Map(originPerks.map((perk) => [perk.perkName, perk]))
     const ammunitionBinding = originPerksByName.get('Ammunition Binding')
     const magicMissileFocus = originPerksByName.get('Magic Missile Focus')
@@ -72,13 +66,10 @@ describe('origin and ancient scroll perk groups', () => {
   })
 
   test('can include ancient scroll perk groups without origin perk groups', () => {
-    const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerks,
-      {
-        shouldIncludeAncientScrollPerkGroups: true,
-        shouldIncludeOriginPerkGroups: false,
-      },
-    )
+    const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(legendsPerks, {
+      shouldIncludeAncientScrollPerkGroups: true,
+      shouldIncludeOriginPerkGroups: false,
+    })
     const ancientScrollPerksByName = new Map(
       ancientScrollPerks.map((perk) => [perk.perkName, perk]),
     )
@@ -105,20 +96,14 @@ describe('origin and ancient scroll perk groups', () => {
   })
 
   test('keeps overlapping origin and ancient scroll perk groups when either source filter is enabled', () => {
-    const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerks,
-      {
-        shouldIncludeAncientScrollPerkGroups: false,
-        shouldIncludeOriginPerkGroups: true,
-      },
-    )
-    const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(
-      legendsPerks,
-      {
-        shouldIncludeAncientScrollPerkGroups: true,
-        shouldIncludeOriginPerkGroups: false,
-      },
-    )
+    const originPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(legendsPerks, {
+      shouldIncludeAncientScrollPerkGroups: false,
+      shouldIncludeOriginPerkGroups: true,
+    })
+    const ancientScrollPerks = getPerksWithOriginAndAncientScrollPerkGroupsFiltered(legendsPerks, {
+      shouldIncludeAncientScrollPerkGroups: true,
+      shouldIncludeOriginPerkGroups: false,
+    })
     const originBerserk = originPerks.find((perk) => perk.perkName === 'Berserk')
     const ancientScrollBerserk = ancientScrollPerks.find((perk) => perk.perkName === 'Berserk')
 

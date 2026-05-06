@@ -1,8 +1,10 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
+  expectBackgroundFitCalculationComplete,
   expectNoDocumentHorizontalOverflow,
   expectNoWorkspaceHorizontalClip,
+  expectPlannerGroupTilesSettled,
   expectViewportLocked,
   getBackgroundFitPanel,
   getPlannerBoardVisualVerticalOverflow,
@@ -179,6 +181,75 @@ async function readDenseDesktopLayoutMetrics(page: Page) {
       workspaceHeight: workspace?.clientHeight ?? 0,
     }
   })
+}
+
+async function expectScrollStepsDoNotMoveBackward({
+  page,
+  scrollDelta,
+  selector,
+  stepCount,
+}: {
+  page: Page
+  scrollDelta: number
+  selector: string
+  stepCount: number
+}) {
+  let positiveScrollStepCount = 0
+
+  for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
+    const scrollTopBeforeStep = await page.evaluate((targetSelector) => {
+      const scrollContainer = document.querySelector(targetSelector) as HTMLElement | null
+
+      if (scrollContainer === null) {
+        throw new Error(`Missing scroll container: ${targetSelector}`)
+      }
+
+      return scrollContainer.scrollTop
+    }, selector)
+
+    await page.evaluate(
+      ({ scrollDelta, targetSelector }) => {
+        const scrollContainer = document.querySelector(targetSelector) as HTMLElement | null
+
+        if (scrollContainer === null) {
+          throw new Error(`Missing scroll container: ${targetSelector}`)
+        }
+
+        scrollContainer.scrollTop += scrollDelta
+      },
+      { scrollDelta, targetSelector: selector },
+    )
+
+    await expect
+      .poll(async () =>
+        page.evaluate((targetSelector) => {
+          const scrollContainer = document.querySelector(targetSelector) as HTMLElement | null
+
+          if (scrollContainer === null) {
+            throw new Error(`Missing scroll container: ${targetSelector}`)
+          }
+
+          return scrollContainer.scrollTop
+        }, selector),
+      )
+      .toBeGreaterThanOrEqual(scrollTopBeforeStep)
+
+    const scrollTopAfterStep = await page.evaluate((targetSelector) => {
+      const scrollContainer = document.querySelector(targetSelector) as HTMLElement | null
+
+      if (scrollContainer === null) {
+        throw new Error(`Missing scroll container: ${targetSelector}`)
+      }
+
+      return scrollContainer.scrollTop
+    }, selector)
+
+    if (scrollTopAfterStep > scrollTopBeforeStep) {
+      positiveScrollStepCount += 1
+    }
+  }
+
+  expect(positiveScrollStepCount).toBeGreaterThan(0)
 }
 
 async function readRailControlMetrics(page: Page) {
@@ -438,7 +509,7 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expect(page.getByLabel('Search perks')).toBeVisible()
     await getBuildPerksBar(page)
-      .getByRole('button', { name: 'View Axe Mastery from build planner' })
+      .getByRole('button', { name: 'Axe Mastery, view from build planner' })
       .click()
     await expect(page.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
     await expectViewportLocked(page)
@@ -583,9 +654,10 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
     { height: 1080, width: 1920 },
     { height: 1440, width: 2560 },
   ]) {
-    await page.setViewportSize(viewportSize)
-    await page.goto('/')
-    await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+    await gotoBuildPlanner(page, viewportSize)
+    for (const selector of desktopScrollbarTargets) {
+      await expect(page.locator(selector)).toBeVisible()
+    }
 
     scrollbarMeasurements.push(
       await page.evaluate((selectors) => {
@@ -635,6 +707,39 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
       expect(scrollbarMeasurement!.standardScrollbarColor).not.toBe('auto')
     }
   }
+})
+
+test('keeps virtualized desktop lists scrolling forward', async ({ page }) => {
+  await gotoBuildPlanner(page, { height: 768, width: 1366 })
+
+  const resultsList = page.getByTestId('results-list')
+
+  await expect(resultsList.getByTestId('perk-row').first()).toBeVisible()
+  await expect
+    .poll(async () => resultsList.getByTestId('perk-row').evaluateAll((rows) => rows.length))
+    .toBeLessThan(60)
+  await expectScrollStepsDoNotMoveBackward({
+    page,
+    scrollDelta: 240,
+    selector: '[data-testid="results-list"]',
+    stepCount: 12,
+  })
+
+  await page.setViewportSize({ height: 768, width: 1366 })
+  await page.goto(denseDesktopBuildUrl)
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+
+  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
+  await expect(backgroundFitPanel.getByTestId('background-fit-card').first()).toBeVisible()
+  await expectScrollStepsDoNotMoveBackward({
+    page,
+    scrollDelta: 220,
+    selector: '[data-testid="background-fit-panel-body"]',
+    stepCount: 6,
+  })
 })
 
 test('uses normal page scrolling on mobile while keeping core controls usable', async ({
@@ -694,61 +799,56 @@ test('uses normal page scrolling on mobile while keeping core controls usable', 
   await page.getByRole('button', { name: 'Add Student to build from results' }).click()
   await expect(
     getBuildPerksBar(page).getByRole('button', {
-      name: 'View Student from build planner',
+      name: 'Student, view from build planner',
     }),
   ).toBeVisible()
 })
 
-test('limits unfiltered phone results without restoring the nested scroll trap', async ({
+test('virtualizes unfiltered phone results without restoring the nested scroll trap', async ({
   page,
 }) => {
   await gotoBuildPlanner(page, { height: 844, width: 390 })
   await page.getByRole('button', { name: 'Show all categories' }).click()
   await expectNoDocumentHorizontalOverflow(page)
 
-  await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toBeVisible()
+  await expect(page.getByTestId('results-list').getByTestId('perk-row').first()).toBeVisible()
+  await expect(page.getByRole('button', { name: /Show \d+ more perks/u })).toHaveCount(0)
+  await expect
+    .poll(async () =>
+      page
+        .getByTestId('results-list')
+        .getByTestId('perk-row')
+        .evaluateAll((rows) => rows.length),
+    )
+    .toBeGreaterThan(4)
 
   const initialPhoneResultsMetrics = await page.evaluate(() => {
     const resultsList = document.querySelector('[data-testid="results-list"]') as HTMLElement | null
-    const showMoreButton = document.querySelector(
-      '[data-testid="show-more-results-button"]',
-    ) as HTMLElement | null
 
-    if (resultsList === null || showMoreButton === null) {
-      throw new Error('Missing phone result limiter target.')
+    if (resultsList === null) {
+      throw new Error('Missing phone result virtualization target.')
     }
 
     return {
       documentScrollHeight: document.documentElement.scrollHeight,
       resultsListOverflowY: window.getComputedStyle(resultsList).overflowY,
       resultRowCount: resultsList.querySelectorAll('[data-testid="perk-row"]').length,
-      showMoreButtonHeight: showMoreButton.getBoundingClientRect().height,
     }
   })
 
-  expect(initialPhoneResultsMetrics.resultRowCount).toBe(12)
+  expect(initialPhoneResultsMetrics.resultRowCount).toBeGreaterThan(4)
+  expect(initialPhoneResultsMetrics.resultRowCount).toBeLessThan(40)
   expect(initialPhoneResultsMetrics.resultsListOverflowY).toBe('visible')
-  expect(initialPhoneResultsMetrics.documentScrollHeight).toBeLessThan(10000)
-  expect(initialPhoneResultsMetrics.showMoreButtonHeight).toBeGreaterThanOrEqual(40)
-
-  await page.getByRole('button', { name: 'Show 12 more perks' }).click()
-  await expect
-    .poll(async () =>
-      page
-        .getByTestId('results-list')
-        .getByTestId('perk-row')
-        .evaluateAll((rows) => rows.length),
-    )
-    .toBe(24)
+  expect(initialPhoneResultsMetrics.documentScrollHeight).toBeGreaterThan(30000)
 
   await page.getByLabel('Search perks').fill('Student')
   await expect(page.getByRole('button', { name: 'Inspect Student' })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Show \d+ more perks/u })).toHaveCount(0)
   await expect(page.getByTestId('results-list').getByTestId('perk-row')).toHaveCount(1)
 
   await gotoBuildPlanner(page, { height: 740, width: 761 })
   await page.getByRole('button', { name: 'Show all categories' }).click()
-  await expect(page.getByRole('button', { name: 'Show 12 more perks' })).toHaveCount(0)
+  await expect(page.getByRole('button', { name: /Show \d+ more perks/u })).toHaveCount(0)
   await expect
     .poll(async () =>
       page
@@ -756,7 +856,7 @@ test('limits unfiltered phone results without restoring the nested scroll trap',
         .getByTestId('perk-row')
         .evaluateAll((rows) => rows.length),
     )
-    .toBeGreaterThan(12)
+    .toBeGreaterThan(8)
 })
 
 test('keeps dense mobile builds compact without pushing search multiple screens down', async ({
@@ -779,6 +879,8 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expectNoDocumentHorizontalOverflow(page)
     await expect(page.getByText('12 perks picked.')).toBeVisible()
+    await expect(page.getByLabel('Search perks')).toBeVisible()
+    await expectPlannerGroupTilesSettled(page)
 
     const denseMobileMetrics = await page.evaluate(() => {
       const planner = document.querySelector('[aria-label="Build planner"]') as HTMLElement | null
@@ -789,7 +891,7 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
         '[aria-label="Search perks"]',
       ) as HTMLElement | null
       const saveButton = document.querySelector(
-        'button[aria-label="Save / Load build"]',
+        'button[aria-label="Saved builds"]',
       ) as HTMLElement | null
 
       if (

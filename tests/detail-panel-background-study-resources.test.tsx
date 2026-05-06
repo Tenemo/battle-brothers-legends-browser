@@ -14,8 +14,10 @@ import {
   backgroundStudyResourceBadgesTestId,
   skillBookIconPath,
 } from '../src/lib/background-study-resource-display'
+import { gameIconImageWidths, getGameIconUrl } from '../src/lib/game-icon-url'
 import type { StudyResourceRequirementProfile } from '../src/lib/background-study-reachability'
 import type { LegendsPerkRecord } from '../src/types/legends-perks'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 type TestChanceCalculationTerm = Omit<
   BackgroundFitChanceCalculation['successfulNativeOutcomeProbabilityTerms'][number],
@@ -301,26 +303,13 @@ function createDetailPanelProps({
       next: false,
       previous: false,
     },
-    emphasizedCategoryNames: new Set(),
-    emphasizedPerkGroupKeys: new Set(),
-    selectedEmphasisCategoryNames: new Set(),
-    selectedEmphasisPerkGroupKeys: new Set(),
     groupedBackgroundSources: [],
-    hoveredBuildPerkId: null,
-    hoveredBuildPerkTooltipId: undefined,
-    hoveredPerkId: null,
     mustHavePickedPerkCount,
     mustHavePickedPerkIds,
     onAddPerkToBuild: vi.fn(),
-    onCloseBuildPerkHover: vi.fn(),
-    onCloseBuildPerkTooltip: vi.fn(),
-    onClosePerkGroupHover: vi.fn(),
     onInspectPerk,
     onInspectPerkGroup,
     onNavigateDetailHistory: vi.fn(),
-    onOpenBuildPerkHover: vi.fn(),
-    onOpenBuildPerkTooltip: vi.fn(),
-    onOpenPerkGroupHover: vi.fn(),
     onRemovePerkFromBuild: vi.fn(),
     optionalPickedPerkCount,
     optionalPickedPerkIds,
@@ -332,13 +321,21 @@ function createDetailPanelProps({
   }
 }
 
+function createDetailPanelElement(options: Parameters<typeof createDetailPanelProps>[0] = {}) {
+  return (
+    <PlannerInteractionTestProvider>
+      <DetailPanel {...createDetailPanelProps(options)} />
+    </PlannerInteractionTestProvider>
+  )
+}
+
 function renderSelectedBackgroundFitDetail(
   options: Parameters<typeof createDetailPanelProps>[0] = {},
 ) {
   const onInspectPerk = options.onInspectPerk ?? vi.fn()
   const onInspectPerkGroup = options.onInspectPerkGroup ?? vi.fn()
   const renderResult = render(
-    <DetailPanel {...createDetailPanelProps({ ...options, onInspectPerk, onInspectPerkGroup })} />,
+    createDetailPanelElement({ ...options, onInspectPerk, onInspectPerkGroup }),
   )
 
   return {
@@ -400,10 +397,13 @@ describe('background details study resources', () => {
     expect(quickTraitPill).toBeVisible()
     expect(
       within(fearOfUndeadTraitPill).getByTestId('detail-background-trait-icon'),
-    ).toHaveAttribute('src', '/game-icons/ui/traits/trait_icon_50.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/traits/trait_icon_50.png', gameIconImageWidths.compact),
+    )
     expect(within(quickTraitPill).getByTestId('detail-background-trait-icon')).toHaveAttribute(
       'src',
-      '/game-icons/ui/traits/trait_icon_32.png',
+      getGameIconUrl('ui/traits/trait_icon_32.png', gameIconImageWidths.compact),
     )
     expect(within(metadataSection).getByText('Ranged skill')).toBeVisible()
     const talentAttributeList = within(metadataSection).getByTestId(
@@ -414,7 +414,10 @@ describe('background details study resources', () => {
       within(talentAttributeList).getByTestId(
         'detail-background-talent-attribute-icon-ranged-skill',
       ),
-    ).toHaveAttribute('src', '/game-icons/ui/icons/ranged_skill_va11.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/icons/ranged_skill_va11.png', gameIconImageWidths.compact),
+    )
     expect(within(metadataSection).getByText('Company capacity')).toBeVisible()
     expect(within(metadataSection).getByText('Tools and supplies capacity')).toBeVisible()
     expect(within(metadataSection).getByText('+13')).toBeVisible()
@@ -461,12 +464,18 @@ describe('background details study resources', () => {
       within(talentAttributeList).getByTestId(
         'detail-background-talent-attribute-icon-ranged-skill',
       ),
-    ).toHaveAttribute('src', '/game-icons/ui/icons/ranged_skill_va11.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/icons/ranged_skill_va11.png', gameIconImageWidths.compact),
+    )
     expect(
       within(talentAttributeList).getByTestId(
         'detail-background-talent-attribute-icon-melee-defense',
       ),
-    ).toHaveAttribute('src', '/game-icons/ui/icons/melee_defense_va11.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/icons/melee_defense_va11.png', gameIconImageWidths.compact),
+    )
     expect(talentAttributeList.querySelector('[data-placeholder="true"]')).not.toBeInTheDocument()
   })
 
@@ -514,9 +523,7 @@ describe('background details study resources', () => {
     expect(screen.getByText('Daily cost:')).toBeVisible()
 
     renderResult.rerender(
-      <DetailPanel
-        {...createDetailPanelProps({ selectedBackgroundFitDetail: alternateBackgroundFit })}
-      />,
+      createDetailPanelElement({ selectedBackgroundFitDetail: alternateBackgroundFit }),
     )
 
     expect(screen.getByRole('button', { name: 'Background details' })).toHaveAttribute(
@@ -526,20 +533,16 @@ describe('background details study resources', () => {
     expect(screen.getByText('8')).toBeVisible()
 
     renderResult.rerender(
-      <DetailPanel
-        {...createDetailPanelProps({
-          selectedBackgroundFitDetail: null,
-          selectedDetailType: 'perk',
-          selectedPerkDetail: selectedPerk,
-        })}
-      />,
+      createDetailPanelElement({
+        selectedBackgroundFitDetail: null,
+        selectedDetailType: 'perk',
+        selectedPerkDetail: selectedPerk,
+      }),
     )
 
     expect(screen.getByRole('heading', { name: 'Clarity' })).toBeVisible()
 
-    renderResult.rerender(
-      <DetailPanel {...createDetailPanelProps({ selectedBackgroundFitDetail: backgroundFit })} />,
-    )
+    renderResult.rerender(createDetailPanelElement({ selectedBackgroundFitDetail: backgroundFit }))
 
     expect(screen.getByRole('button', { name: 'Background details' })).toHaveAttribute(
       'aria-expanded',
@@ -608,9 +611,7 @@ describe('background details study resources', () => {
     expect(traitTooltip).toHaveTextContent('Afraid of walking dead.')
 
     renderResult.rerender(
-      <DetailPanel
-        {...createDetailPanelProps({ selectedBackgroundFitDetail: alternateBackgroundFit })}
-      />,
+      createDetailPanelElement({ selectedBackgroundFitDetail: alternateBackgroundFit }),
     )
 
     await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument())
@@ -833,13 +834,19 @@ describe('background details study resources', () => {
 
     expect(calmStudyResourceTile).toBeVisible()
     expect(calmStudyResourceTileIcons).toHaveLength(2)
-    expect(calmStudyResourceTileIcons[0]).toHaveAttribute('src', '/game-icons/ui/perks/perk_01.png')
-    expect(calmStudyResourceTileIcons[1]).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
+    expect(calmStudyResourceTileIcons[0]).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/perks/perk_01.png', gameIconImageWidths.compact),
+    )
+    expect(calmStudyResourceTileIcons[1]).toHaveAttribute(
+      'src',
+      getGameIconUrl(skillBookIconPath, gameIconImageWidths.compact),
+    )
 
     expect(coveredClarityPill).toBeVisible()
     expect(within(coveredClarityPill).getByTestId('planner-pill-icon')).toHaveAttribute(
       'src',
-      '/game-icons/ui/perks/clarity.png',
+      getGameIconUrl('ui/perks/clarity.png', gameIconImageWidths.compact),
     )
     expect(screen.queryByText('Must-have study route')).not.toBeInTheDocument()
     expect(screen.queryByTestId('detail-study-resource-tile-frame')).not.toBeInTheDocument()
@@ -1159,11 +1166,14 @@ describe('background details study resources', () => {
       within(
         within(berserkerStudyResourceTile!).getByRole('button', { name: 'Muscularity' }),
       ).getByTestId('planner-pill-icon'),
-    ).toHaveAttribute('src', '/game-icons/ui/perks/muscularity.png')
+    ).toHaveAttribute(
+      'src',
+      getGameIconUrl('ui/perks/muscularity.png', gameIconImageWidths.compact),
+    )
     expect(screen.getByRole('button', { name: 'Select perk group Heavy Armor' })).toBeVisible()
   })
 
-  test('explains why individual possible native rows combine into a smaller full-build chance', async () => {
+  test('explains why individual possible native rows combine into a smaller full build chance', async () => {
     const nightRaiderAssassinStrategyTarget = {
       ...assassinStrategyTarget,
       coveredPickedPerkIds: ['perk.legend_night_raider'],

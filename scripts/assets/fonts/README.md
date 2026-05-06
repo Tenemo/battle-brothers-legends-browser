@@ -1,6 +1,6 @@
 # Social image fonts
 
-These TTF files are used by `scripts/generate-root-social-image.mjs` because `@resvg/resvg-js` needs TTF/OTF font files to render text reliably in generated PNGs.
+These TTF files are used by `scripts/generate-root-social-image.ts` because `@resvg/resvg-js` needs TTF/OTF font files to render text reliably in generated PNGs.
 
 - Source Sans 3 is from `adobe-fonts/source-sans`, release TTF files.
 - `Cinzel.ttf` is from `google/fonts`, `ofl/cinzel/Cinzel[wght].ttf`.

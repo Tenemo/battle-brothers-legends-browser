@@ -2,6 +2,10 @@ import type { CategoryPerkGroupOption } from '../lib/category-filter-model'
 import type { CategoryFilterMode } from '../lib/category-filter-state'
 import { getPerkGroupHoverKey, renderHighlightedText } from '../lib/perk-display'
 import { joinClassNames } from '../lib/class-names'
+import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { AncientScrollPerkGroupMarker } from './PerkGroupIcon'
 import { BuildRequirementIcon, CategoryChevron, CategorySidebarRailChevron } from './SharedControls'
@@ -17,20 +21,13 @@ type CategorySidebarProps = {
   allPerkCount: number
   displayedCategoryNames: string[]
   displayedPerkGroupOptionsByCategory: Map<string, CategoryPerkGroupOption[]>
-  emphasizedCategoryNames: ReadonlySet<string>
-  emphasizedPerkGroupKeys: ReadonlySet<string>
   expandedCategoryNames: string[]
   categoryCounts: Map<string, number>
   categoryFilterMode: CategoryFilterMode
-  hoveredPerkGroupKey: string | null
   isExpanded: boolean
   onCategoryExpandToggle: (categoryName: string) => void
   onCategoryToggle: (categoryName: string) => void
   onClearCategorySelection: () => void
-  onCloseCategoryHover: (categoryName: string) => void
-  onClosePerkGroupHover: (perkGroupKey: string) => void
-  onOpenCategoryHover: (categoryName: string) => void
-  onOpenPerkGroupHover: (categoryName: string, perkGroupId: string) => void
   onResetCategoryPerkGroups: (categoryName: string) => void
   onPerkGroupSelect: (categoryName: string, perkGroupId: string) => void
   onSelectAllCategories: () => void
@@ -73,20 +70,13 @@ export function CategorySidebar({
   allPerkCount,
   displayedCategoryNames,
   displayedPerkGroupOptionsByCategory,
-  emphasizedCategoryNames,
-  emphasizedPerkGroupKeys,
   expandedCategoryNames,
   categoryCounts,
   categoryFilterMode,
-  hoveredPerkGroupKey,
   isExpanded,
   onCategoryExpandToggle,
   onCategoryToggle,
   onClearCategorySelection,
-  onCloseCategoryHover,
-  onClosePerkGroupHover,
-  onOpenCategoryHover,
-  onOpenPerkGroupHover,
   onResetCategoryPerkGroups,
   onPerkGroupSelect,
   onSelectAllCategories,
@@ -97,6 +87,19 @@ export function CategorySidebar({
   selectedCategoryNames,
   selectedPerkGroupIdsByCategory,
 }: CategorySidebarProps) {
+  const {
+    emphasizedCategoryNames,
+    emphasizedPerkGroupKeys,
+    hoveredPerkGroupKey,
+    hoveredPerkPlacementCategoryNames,
+    hoveredPerkPlacementPerkGroupKeys,
+  } = usePlannerInteractionState()
+  const {
+    closeCategoryHover: onCloseCategoryHover,
+    closePerkGroupHover: onClosePerkGroupHover,
+    openCategoryHover: onOpenCategoryHover,
+    openPerkGroupHover: onOpenPerkGroupHover,
+  } = usePlannerInteractionActions()
   const hasActiveCategoryFilter =
     categoryFilterMode !== 'none' ||
     Object.values(selectedPerkGroupIdsByCategory).some(
@@ -172,19 +175,12 @@ export function CategorySidebar({
           const isAllPerkGroupsSelectionActive = isActive && selectedPerkGroupIds.length === 0
           const isHoveredCategory =
             hoveredPerkGroupKey?.startsWith(`${availableCategoryName}::`) ?? false
-          const hasVisibleHoveredPerkGroup =
-            isHoveredCategory &&
-            activePerkGroupOptions.some(
-              (perkGroupOption) =>
-                hoveredPerkGroupKey ===
-                getPerkGroupHoverKey({
-                  categoryName: availableCategoryName,
-                  perkGroupId: perkGroupOption.perkGroupId,
-                }),
-            )
+          const isHoveredPerkPlacementCategory =
+            hoveredPerkPlacementCategoryNames.has(availableCategoryName)
           const shouldHighlightCategory =
             emphasizedCategoryNames.has(availableCategoryName) ||
-            (isHoveredCategory && (!isCategoryExpanded || !hasVisibleHoveredPerkGroup))
+            isHoveredPerkPlacementCategory ||
+            isHoveredCategory
           return (
             <div
               className={styles.categoryCard}
@@ -292,7 +288,9 @@ export function CategorySidebar({
                       categoryName: availableCategoryName,
                       perkGroupId: perkGroupOption.perkGroupId,
                     })
-                    const isPerkGroupHighlighted = emphasizedPerkGroupKeys.has(perkGroupKey)
+                    const isPerkGroupHighlighted =
+                      emphasizedPerkGroupKeys.has(perkGroupKey) ||
+                      hoveredPerkPlacementPerkGroupKeys.has(perkGroupKey)
                     const isAncientScrollPerkGroup = isAncientScrollLearnablePerkGroupId(
                       perkGroupOption.perkGroupId,
                     )

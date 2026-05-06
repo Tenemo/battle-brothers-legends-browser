@@ -1,3 +1,8 @@
+import {
+  usePlannerInteractionActions,
+  usePlannerInteractionState,
+} from '../lib/planner-interaction-context-values'
+import { gameIconImageWidths, getGameIconSrcSet, getGameIconUrl } from '../lib/game-icon-url'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
 import type { BuildPerkHoverOptions } from '../lib/use-perk-interaction-state'
 import styles from './BuildPlanner.module.scss'
@@ -12,45 +17,32 @@ const pillHoverOptions = {
 } as const satisfies BuildPerkHoverOptions
 
 export function BuildPerkPill({
-  hoveredBuildPerkId,
-  hoveredBuildPerkTooltipId,
-  hoveredPerkId,
-  onCloseHover,
-  onCloseTooltip,
   onInspectPerk,
-  onOpenHover,
-  onOpenTooltip,
   perkGroupSelection,
   perkIconPath,
   perkId,
   perkName,
 }: {
-  hoveredBuildPerkId: string | null
-  hoveredBuildPerkTooltipId: string | undefined
-  hoveredPerkId: string | null
-  onCloseHover: (perkId: string) => void
-  onCloseTooltip: () => void
   onInspectPerk: (perkId: string, perkGroupSelection?: BuildPerkPillSelection) => void
-  onOpenHover: (
-    perkId: string,
-    perkGroupSelection?: BuildPerkPillSelection,
-    options?: BuildPerkHoverOptions,
-  ) => void
-  onOpenTooltip: (
-    perkId: string,
-    currentTarget: HTMLElement,
-    perkGroupSelection?: BuildPerkPillSelection,
-    options?: BuildPerkHoverOptions,
-  ) => void
   perkGroupSelection?: BuildPerkPillSelection
   perkIconPath: string | null
   perkId: string
   perkName: string
 }) {
+  const { hoveredBuildPerk, hoveredBuildPerkTooltipId, hoveredPerkId } =
+    usePlannerInteractionState()
+  const {
+    closeBuildPerkHover: onCloseHover,
+    closeBuildPerkTooltip: onCloseTooltip,
+    openBuildPerkHover: onOpenHover,
+    openBuildPerkTooltip: onOpenTooltip,
+  } = usePlannerInteractionActions()
+  const hoveredBuildPerkId = hoveredBuildPerk?.id ?? null
   const {
     activeTooltipIndicatorPerkId,
     clearPendingTooltip,
     closeTooltipPreview,
+    openTooltipPreviewImmediately,
     openTooltipPreview,
   } = useBuildPerkTooltipPreview({
     hoveredBuildPerkId,
@@ -59,24 +51,63 @@ export function BuildPerkPill({
     onOpenHover,
     onOpenTooltip,
   })
+  const isTooltipOpenForPerk = hoveredBuildPerkId === perkId
+  const controlledTooltipId =
+    isTooltipOpenForPerk && hoveredBuildPerkTooltipId
+      ? hoveredBuildPerkTooltipId
+      : `build-perk-tooltip-${perkId}`
+
+  function focusFirstTooltipAction() {
+    window.setTimeout(() => {
+      const tooltipElement = document.getElementById(controlledTooltipId)
+      const firstTooltipAction =
+        tooltipElement?.querySelector<HTMLButtonElement>('button:not([disabled])')
+
+      firstTooltipAction?.focus()
+    }, 0)
+  }
 
   return (
     <button
-      aria-describedby={hoveredBuildPerkId === perkId ? hoveredBuildPerkTooltipId : undefined}
+      aria-controls={isTooltipOpenForPerk ? controlledTooltipId : undefined}
+      aria-expanded={isTooltipOpenForPerk}
+      aria-haspopup="dialog"
+      aria-keyshortcuts="ArrowDown"
       className={styles.plannerPill}
       data-highlighted={hoveredPerkId === perkId}
       data-testid="planner-pill"
       data-tooltip-pending={activeTooltipIndicatorPerkId === perkId}
-      onBlur={() => closeTooltipPreview(perkId)}
+      onBlur={(event) => closeTooltipPreview(perkId, event.relatedTarget)}
       onClick={() => {
         clearPendingTooltip()
         onCloseTooltip()
         onInspectPerk(perkId, perkGroupSelection)
       }}
-      onFocus={() => onOpenHover(perkId, perkGroupSelection, pillHoverOptions)}
+      onFocus={(event) =>
+        openTooltipPreviewImmediately(
+          perkId,
+          event.currentTarget,
+          perkGroupSelection,
+          pillHoverOptions,
+        )
+      }
       onKeyDown={(event) => {
         if (event.key === 'Escape') {
-          closeTooltipPreview(perkId)
+          clearPendingTooltip()
+          onCloseTooltip()
+          onCloseHover(perkId)
+          return
+        }
+
+        if (event.key === 'ArrowDown') {
+          event.preventDefault()
+          openTooltipPreviewImmediately(
+            perkId,
+            event.currentTarget,
+            perkGroupSelection,
+            pillHoverOptions,
+          )
+          focusFirstTooltipAction()
         }
       }}
       onMouseEnter={(event) =>
@@ -92,8 +123,11 @@ export function BuildPerkPill({
           className={styles.plannerPillIcon}
           data-testid="planner-pill-icon"
           decoding="async"
+          height={gameIconImageWidths.compact}
           loading="lazy"
-          src={`/game-icons/${perkIconPath}`}
+          src={getGameIconUrl(perkIconPath, gameIconImageWidths.compact) ?? ''}
+          srcSet={getGameIconSrcSet(perkIconPath, gameIconImageWidths.compact)}
+          width={gameIconImageWidths.compact}
         />
       ) : null}
       <span className={styles.plannerPillLabel}>{perkName}</span>

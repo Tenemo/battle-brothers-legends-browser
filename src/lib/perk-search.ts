@@ -37,6 +37,8 @@ type PerkSearchTextSource = {
   scenarioSources: LegendsPerkScenarioSource[]
 }
 
+const normalizedPerkSearchTextCache = new WeakMap<LegendsPerkRecord, string>()
+
 function normalizeSearchValue(value: string): string {
   return value.trim().toLowerCase()
 }
@@ -66,7 +68,6 @@ export function createPerkSearchText(perk: PerkSearchTextSource): string {
       ]),
       ...perk.backgroundSources.flatMap((backgroundSource) => [
         backgroundSource.backgroundName,
-        backgroundSource.categoryName,
         backgroundSource.perkGroupName,
       ]),
       ...perk.scenarioSources.flatMap((scenarioSource) => [
@@ -82,20 +83,31 @@ export function createPerkSearchText(perk: PerkSearchTextSource): string {
   )
 }
 
+function getNormalizedPerkSearchText(perk: LegendsPerkRecord): string {
+  const cachedSearchText = normalizedPerkSearchTextCache.get(perk)
+
+  if (cachedSearchText !== undefined) {
+    return cachedSearchText
+  }
+
+  const searchText = perk.searchText.length > 0 ? perk.searchText : createPerkSearchText(perk)
+  const normalizedSearchText = searchText.toLowerCase()
+
+  normalizedPerkSearchTextCache.set(perk, normalizedSearchText)
+
+  return normalizedSearchText
+}
+
 function getNormalizedPerkSearchIndex(perk: LegendsPerkRecord): NormalizedPerkSearchIndex {
   const backgroundNames = perk.backgroundSources.map((backgroundSource) =>
     backgroundSource.backgroundName.toLowerCase(),
   )
   const backgroundSourceSearchText = perk.backgroundSources
     .map((backgroundSource) =>
-      [
-        backgroundSource.backgroundName,
-        backgroundSource.categoryName,
-        backgroundSource.perkGroupName,
-      ].join(' '),
+      [backgroundSource.backgroundName, backgroundSource.perkGroupName].join(' '),
     )
     .join(' ')
-  const normalizedSearchText = perk.searchText.toLowerCase()
+  const normalizedSearchText = getNormalizedPerkSearchText(perk)
   const normalizedBackgroundSourceSearchText = backgroundSourceSearchText.toLowerCase()
 
   const normalizedSearchIndex = {

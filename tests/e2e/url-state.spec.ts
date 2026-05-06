@@ -93,7 +93,7 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
   await expect(page.getByText('2 perks picked.')).toBeVisible()
   await expect(
     getBuildPerksBar(page).getByRole('button', {
-      name: 'View Chain Lightning from build planner',
+      name: 'Chain Lightning, view from build planner',
     }),
   ).toHaveCount(2)
   await expectSearchParam(

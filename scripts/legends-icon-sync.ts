@@ -10,7 +10,11 @@ import {
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { pathExists, runCommand, sortUniqueStrings } from './script-utils.mjs'
+import { pathExists, runCommand, sortUniqueStrings } from './script-utils.ts'
+import type {
+  LegendsBackgroundFitBackgroundDefinition,
+  LegendsPerkCatalogRecord,
+} from '../src/types/legends-perks.ts'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -52,12 +56,38 @@ const defaultSteamRootDirectoryPaths = [
   process.env.PROGRAMFILES ? path.join(process.env.PROGRAMFILES, 'Steam') : null,
 ]
 
-function normalizeRelativeIconPath(relativeIconPath) {
+type LegendsIconSourceDataset = {
+  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[]
+  perks: Pick<LegendsPerkCatalogRecord, 'iconPath' | 'placements'>[]
+}
+
+type IconExtractionPlan = {
+  entriesByArchivePath: Map<string, string[]>
+  missingIconPaths: string[]
+}
+
+type SyncLegendsIconsOptions = {
+  backgroundFitDatasetFilePath?: string
+  catalogDatasetFilePath?: string
+  dataset?: LegendsIconSourceDataset | null
+  gameDirectoryPath?: string | null
+  outputDirectoryPath?: string
+}
+
+type SyncLegendsIconsResult = {
+  archivePaths: string[]
+  extractedIconCount: number
+  gameDirectoryPath: string
+  missingIconPaths: string[]
+  outputDirectoryPath: string
+}
+
+function normalizeRelativeIconPath(relativeIconPath: string): string {
   return relativeIconPath.replaceAll('\\', '/').replace(/^\/+/, '')
 }
 
-function chunkValues(values, maximumChunkLength) {
-  const chunks = []
+function chunkValues<T>(values: T[], maximumChunkLength: number): T[][] {
+  const chunks: T[][] = []
 
   for (let index = 0; index < values.length; index += maximumChunkLength) {
     chunks.push(values.slice(index, index + maximumChunkLength))
@@ -66,7 +96,7 @@ function chunkValues(values, maximumChunkLength) {
   return chunks
 }
 
-export function collectRequiredGameIconPaths(dataset) {
+export function collectRequiredGameIconPaths(dataset: LegendsIconSourceDataset): string[] {
   const iconPaths = new Set(appRequiredGameIconPaths.map(normalizeRelativeIconPath))
 
   for (const backgroundFitBackground of dataset.backgroundFitBackgrounds) {
@@ -99,18 +129,21 @@ export function collectRequiredGameIconPaths(dataset) {
   return [...iconPaths].toSorted((leftValue, rightValue) => leftValue.localeCompare(rightValue))
 }
 
-export function getArchiveEntryPathFromIconPath(iconPath) {
+export function getArchiveEntryPathFromIconPath(iconPath: string): string {
   return `gfx/${normalizeRelativeIconPath(iconPath)}`
 }
 
-export function buildIconExtractionPlan(iconPaths, archiveEntriesByArchivePath) {
-  const entriesByArchivePath = new Map()
-  const missingIconPaths = []
+export function buildIconExtractionPlan(
+  iconPaths: string[],
+  archiveEntriesByArchivePath: Map<string, Set<string>>,
+): IconExtractionPlan {
+  const entriesByArchivePath = new Map<string, string[]>()
+  const missingIconPaths: string[] = []
 
   for (const iconPath of iconPaths) {
     const archiveEntryPath = getArchiveEntryPathFromIconPath(iconPath)
     const matchingArchivePath = [...archiveEntriesByArchivePath.keys()].find((archivePath) =>
-      archiveEntriesByArchivePath.get(archivePath).has(archiveEntryPath),
+      archiveEntriesByArchivePath.get(archivePath)?.has(archiveEntryPath),
     )
 
     if (!matchingArchivePath) {
@@ -118,11 +151,10 @@ export function buildIconExtractionPlan(iconPaths, archiveEntriesByArchivePath) 
       continue
     }
 
-    if (!entriesByArchivePath.has(matchingArchivePath)) {
-      entriesByArchivePath.set(matchingArchivePath, [])
-    }
-
-    entriesByArchivePath.get(matchingArchivePath).push(archiveEntryPath)
+    entriesByArchivePath.set(matchingArchivePath, [
+      ...(entriesByArchivePath.get(matchingArchivePath) ?? []),
+      archiveEntryPath,
+    ])
   }
 
   for (const [archivePath, archiveEntryPaths] of entriesByArchivePath.entries()) {
@@ -140,10 +172,23 @@ export function buildIconExtractionPlan(iconPaths, archiveEntriesByArchivePath) 
 async function readIconSourceDataset({
   backgroundFitDatasetFilePath = defaultBackgroundFitDatasetFilePath,
   catalogDatasetFilePath = defaultCatalogDatasetFilePath,
-} = {}) {
+}: {
+  backgroundFitDatasetFilePath?: string
+  catalogDatasetFilePath?: string
+} = {}): Promise<LegendsIconSourceDataset> {
   const [backgroundFitDataset, catalogDataset] = await Promise.all([
-    readFile(backgroundFitDatasetFilePath, 'utf8').then(JSON.parse),
-    readFile(catalogDatasetFilePath, 'utf8').then(JSON.parse),
+    readFile(backgroundFitDatasetFilePath, 'utf8').then(
+      (source) =>
+        JSON.parse(source) as {
+          backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[]
+        },
+    ),
+    readFile(catalogDatasetFilePath, 'utf8').then(
+      (source) =>
+        JSON.parse(source) as {
+          perks: Pick<LegendsPerkCatalogRecord, 'iconPath' | 'placements'>[]
+        },
+    ),
   ])
 
   return {
@@ -152,10 +197,12 @@ async function readIconSourceDataset({
   }
 }
 
-async function findSteamLibraryDirectoryPaths() {
-  const steamLibraryDirectoryPaths = new Set()
+async function findSteamLibraryDirectoryPaths(): Promise<string[]> {
+  const steamLibraryDirectoryPaths = new Set<string>()
 
-  for (const steamRootDirectoryPath of defaultSteamRootDirectoryPaths.filter(Boolean)) {
+  for (const steamRootDirectoryPath of defaultSteamRootDirectoryPaths.filter(
+    (value): value is string => typeof value === 'string' && value.length > 0,
+  )) {
     if (!(await pathExists(steamRootDirectoryPath))) {
       continue
     }
@@ -185,7 +232,7 @@ async function findSteamLibraryDirectoryPaths() {
 
 export async function findBattleBrothersGameDirectoryPath(
   requestedGameDirectoryPath = process.env.BATTLE_BROTHERS_GAME_DIR ?? null,
-) {
+): Promise<string | null> {
   if (requestedGameDirectoryPath) {
     const normalizedRequestedGameDirectoryPath = path.resolve(requestedGameDirectoryPath)
 
@@ -212,7 +259,7 @@ export async function findBattleBrothersGameDirectoryPath(
   return null
 }
 
-async function getRelevantArchivePaths(gameDirectoryPath) {
+async function getRelevantArchivePaths(gameDirectoryPath: string): Promise<string[]> {
   const dataDirectoryPath = path.join(gameDirectoryPath, 'data')
   const dataFileNames = await readdir(dataDirectoryPath)
   const legendsAssetArchiveFileNames = dataFileNames
@@ -228,7 +275,7 @@ async function getRelevantArchivePaths(gameDirectoryPath) {
   ]
 }
 
-async function listArchiveEntries(archivePath) {
+async function listArchiveEntries(archivePath: string): Promise<Set<string>> {
   const archiveListingOutput = await runCommand('tar', ['-tf', archivePath])
 
   return new Set(
@@ -239,7 +286,11 @@ async function listArchiveEntries(archivePath) {
   )
 }
 
-async function extractArchiveEntries(archivePath, archiveEntryPaths, extractionDirectoryPath) {
+async function extractArchiveEntries(
+  archivePath: string,
+  archiveEntryPaths: string[],
+  extractionDirectoryPath: string,
+): Promise<void> {
   for (const archiveEntryPathChunk of chunkValues(archiveEntryPaths, 48)) {
     await runCommand('tar', [
       '-xf',
@@ -255,7 +306,11 @@ async function copyExtractedIconsToOutputDirectory({
   iconPaths,
   extractionDirectoryPath,
   outputDirectoryPath,
-}) {
+}: {
+  iconPaths: string[]
+  extractionDirectoryPath: string
+  outputDirectoryPath: string
+}): Promise<number> {
   let copiedIconCount = 0
 
   for (const iconPath of iconPaths) {
@@ -284,7 +339,7 @@ export async function syncLegendsIcons({
   dataset = null,
   gameDirectoryPath = null,
   outputDirectoryPath = defaultIconOutputDirectoryPath,
-} = {}) {
+}: SyncLegendsIconsOptions = {}): Promise<SyncLegendsIconsResult> {
   const resolvedDataset =
     dataset ??
     (await readIconSourceDataset({
@@ -308,7 +363,7 @@ export async function syncLegendsIcons({
     )
   }
 
-  const archiveEntriesByArchivePath = new Map()
+  const archiveEntriesByArchivePath = new Map<string, Set<string>>()
 
   for (const archivePath of archivePaths) {
     archiveEntriesByArchivePath.set(archivePath, await listArchiveEntries(archivePath))

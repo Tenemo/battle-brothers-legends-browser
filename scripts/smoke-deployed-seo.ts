@@ -7,23 +7,23 @@ const comparisonBuildPerks = ['Student']
 const pngSignature = [137, 80, 78, 71, 13, 10, 26, 10]
 const productionOrigin = 'https://battlebrothers.academy'
 
-function printUsage() {
+function printUsage(): void {
   console.log(
-    'Usage: node ./scripts/smoke-deployed-seo.mjs https://deploy-preview.example.netlify.app/',
+    'Usage: node ./scripts/smoke-deployed-seo.ts https://deploy-preview.example.netlify.app/',
   )
 }
 
-function fail(message) {
+function fail(message: string): never {
   throw new Error(`Deployed SEO smoke check failed: ${message}`)
 }
 
-function normalizeBaseUrl(value) {
+function normalizeBaseUrl(value: string | undefined): URL {
   if (!value) {
     printUsage()
     fail('Pass a deployed site URL as the first argument or DEPLOY_SMOKE_BASE_URL.')
   }
 
-  let baseUrl
+  let baseUrl: URL
 
   try {
     baseUrl = new URL(value)
@@ -39,17 +39,25 @@ function normalizeBaseUrl(value) {
   return baseUrl
 }
 
-function expectIncludes({ label, text, value }) {
+function expectIncludes({
+  label,
+  text,
+  value,
+}: {
+  label: string
+  text: string
+  value: string
+}): void {
   if (!text.includes(value)) {
     fail(`${label} did not include ${value}.`)
   }
 }
 
-function escapeRegExp(value) {
+function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
-function decodeHtmlAttribute(value) {
+function decodeHtmlAttribute(value: string): string {
   return value
     .replaceAll('&quot;', '"')
     .replaceAll('&#39;', "'")
@@ -58,7 +66,7 @@ function decodeHtmlAttribute(value) {
     .replaceAll('&amp;', '&')
 }
 
-function readMetaContent(html, attributeName, attributeValue) {
+function readMetaContent(html: string, attributeName: string, attributeValue: string): string {
   const pattern = new RegExp(
     `<meta\\s+${attributeName}="${escapeRegExp(attributeValue)}"\\s+content="([^"]*)"\\s*/?>`,
     'iu',
@@ -72,7 +80,7 @@ function readMetaContent(html, attributeName, attributeValue) {
   return decodeHtmlAttribute(match[1])
 }
 
-function assertNoPreviewProductionOrigin(html, label, baseUrl) {
+function assertNoPreviewProductionOrigin(html: string, label: string, baseUrl: URL): void {
   if (baseUrl.origin === productionOrigin) {
     return
   }
@@ -82,7 +90,7 @@ function assertNoPreviewProductionOrigin(html, label, baseUrl) {
   }
 }
 
-async function fetchHtml(url) {
+async function fetchHtml(url: URL): Promise<string> {
   const response = await fetch(url, {
     headers: {
       'user-agent': crawlerUserAgent,
@@ -103,7 +111,10 @@ async function fetchHtml(url) {
   return response.text()
 }
 
-async function fetchImage(url) {
+async function fetchImage(url: URL): Promise<{
+  response: Response
+  sha256: string
+}> {
   const response = await fetch(url, {
     headers: {
       'user-agent': crawlerUserAgent,

@@ -430,6 +430,49 @@ describe('background fit', () => {
     expect(formatBackgroundFitProbabilityLabel(0.0000001)).toBe('<0.0001%')
   })
 
+  test('yields and cancels async background fit calculations between background chunks', async () => {
+    const engine = createBackgroundFitEngine(sampleDataset)
+    const pickedPerks = [samplePerks[0], samplePerks[2]]
+    const synchronousView = engine.getBackgroundFitView(pickedPerks, noStudyResources)
+    let completedYieldCount = 0
+
+    const asyncView = await engine.getBackgroundFitViewAsync(pickedPerks, noStudyResources, {
+      workChunkSize: 2,
+      yieldControl: async () => {
+        completedYieldCount += 1
+      },
+    })
+
+    expect(
+      asyncView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId),
+    ).toEqual(
+      synchronousView.rankedBackgroundFits.map((backgroundFit) => backgroundFit.backgroundId),
+    )
+    expect(completedYieldCount).toBeGreaterThan(0)
+
+    let cancelledYieldCount = 0
+    const progressLabels: string[] = []
+
+    await expect(
+      engine.getBackgroundFitViewAsync(pickedPerks, noStudyResources, {
+        isCancelled: () => cancelledYieldCount > 0,
+        onProgress(progress) {
+          progressLabels.push(`${progress.checkedBackgroundCount}/${progress.totalBackgroundCount}`)
+        },
+        workChunkSize: 1,
+        yieldControl: async () => {
+          cancelledYieldCount += 1
+        },
+      }),
+    ).rejects.toThrow('Background fit calculation was cancelled.')
+
+    expect(cancelledYieldCount).toBe(1)
+    expect(progressLabels[0]).toBe(`0/${sampleDataset.backgroundFitBackgrounds.length}`)
+    expect(progressLabels).not.toContain(
+      `${sampleDataset.backgroundFitBackgrounds.length}/${sampleDataset.backgroundFitBackgrounds.length}`,
+    )
+  })
+
   test('derives shared supported targets and separates unsupported categories', () => {
     expect(getBuildTargetPerkGroups([samplePerks[0], samplePerks[1], samplePerks[14]])).toEqual({
       supportedBuildTargetPerkGroups: [
@@ -822,12 +865,10 @@ describe('background fit', () => {
     expect(boldTraitSources).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          backgroundId: 'background.traits_fill',
           backgroundName: 'Balanced scholar',
-          categoryName: 'Traits',
-          minimumPerkGroups: 2,
           perkGroupId: 'BoldTree',
           perkGroupName: 'Bold',
+          probability: 0.5,
         }),
       ]),
     )
@@ -1073,9 +1114,9 @@ describe('background fit', () => {
     expect(engine.getPerkBackgroundSources(classFaithPerk)).toEqual([])
     expect(engine.getPerkBackgroundSources(magicFaithPerk)).toEqual([
       expect.objectContaining({
-        backgroundId: 'background.explicit_shared_faith',
-        categoryName: 'Magic',
+        backgroundName: 'Explicit shared faith',
         perkGroupId: 'SharedFaithTree',
+        probability: 1,
       }),
     ])
     expect(backgroundFit.matches).toEqual([
@@ -2128,11 +2169,12 @@ describe('background fit', () => {
       .getBackgroundFitView(reportedBuildPerks, defaultStudyResources, {
         optionalPickedPerkIds,
       })
-      .rankedBackgroundFits.find((backgroundFit) => backgroundFit.backgroundId === 'background.hunter')
-    const bookAndScrollBreakdown =
-      hunterBackgroundFit?.mustHaveStudyResourceChanceBreakdown?.find(
-        (entry) => entry.key === 'book-and-scroll',
+      .rankedBackgroundFits.find(
+        (backgroundFit) => backgroundFit.backgroundId === 'background.hunter',
       )
+    const bookAndScrollBreakdown = hunterBackgroundFit?.mustHaveStudyResourceChanceBreakdown?.find(
+      (entry) => entry.key === 'book-and-scroll',
+    )
 
     if (!hunterBackgroundFit || !bookAndScrollBreakdown?.calculation) {
       throw new Error('Missing Hunter background fit fixture')

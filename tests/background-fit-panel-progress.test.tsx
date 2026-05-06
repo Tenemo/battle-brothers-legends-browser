@@ -3,38 +3,37 @@ import { StrictMode } from 'react'
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { BackgroundFitPanel } from '../src/components/BackgroundFitPanel'
 import type { BackgroundFitCalculationProgress } from '../src/lib/background-fit'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 function createBackgroundFitPanelProgress(progress: BackgroundFitCalculationProgress) {
   return (
-    <BackgroundFitPanel
-      availableBackgroundVeteranPerkLevelIntervals={[2, 3, 4]}
-      backgroundFitErrorMessage={null}
-      backgroundFitProgress={progress}
-      backgroundFitView={null}
-      hoveredPerkId={null}
-      isExpanded
-      isLoadingBackgroundFitView
-      mustHavePickedPerkCount={1}
-      onBackgroundStudyBookChange={vi.fn()}
-      onBackgroundStudyScrollChange={vi.fn()}
-      onBackgroundVeteranPerkLevelIntervalChange={vi.fn()}
-      onClearPerkGroupHover={vi.fn()}
-      onCloseBuildPerkHover={vi.fn()}
-      onCloseBuildPerkTooltip={vi.fn()}
-      onOriginBackgroundsChange={vi.fn()}
-      onSearchActivityChange={vi.fn()}
-      onSecondBackgroundStudyScrollChange={vi.fn()}
-      onSelectBackgroundFit={vi.fn()}
-      onToggleExpanded={vi.fn()}
-      optionalPickedPerkCount={0}
-      pickedPerkCount={1}
-      selectedBackgroundFitKey={null}
-      selectedBackgroundVeteranPerkLevelIntervals={[2, 3, 4]}
-      shouldAllowBackgroundStudyBook
-      shouldAllowBackgroundStudyScroll
-      shouldAllowSecondBackgroundStudyScroll={false}
-      shouldIncludeOriginBackgrounds={false}
-    />
+    <PlannerInteractionTestProvider>
+      <BackgroundFitPanel
+        availableBackgroundVeteranPerkLevelIntervals={[2, 3, 4]}
+        backgroundFitErrorMessage={null}
+        backgroundFitProgress={progress}
+        backgroundFitView={null}
+        isExpanded
+        isLoadingBackgroundFitView
+        mustHavePickedPerkCount={1}
+        onBackgroundStudyBookChange={vi.fn()}
+        onBackgroundStudyScrollChange={vi.fn()}
+        onBackgroundVeteranPerkLevelIntervalChange={vi.fn()}
+        onOriginBackgroundsChange={vi.fn()}
+        onSearchActivityChange={vi.fn()}
+        onSecondBackgroundStudyScrollChange={vi.fn()}
+        onSelectBackgroundFit={vi.fn()}
+        onToggleExpanded={vi.fn()}
+        optionalPickedPerkCount={0}
+        pickedPerkCount={1}
+        selectedBackgroundFitKey={null}
+        selectedBackgroundVeteranPerkLevelIntervals={[2, 3, 4]}
+        shouldAllowBackgroundStudyBook
+        shouldAllowBackgroundStudyScroll
+        shouldAllowSecondBackgroundStudyScroll={false}
+        shouldIncludeOriginBackgrounds={false}
+      />
+    </PlannerInteractionTestProvider>
   )
 }
 

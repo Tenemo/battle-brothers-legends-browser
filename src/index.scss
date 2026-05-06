@@ -92,6 +92,15 @@
     overflow: hidden;
   }
 
+  html[data-battle-brothers-client-render='true']:not(
+      [data-battle-brothers-client-render-ready='true'],
+      [data-battle-brothers-static-shell-ready='true']
+    )
+    #root {
+    visibility: hidden;
+    pointer-events: none;
+  }
+
   @media (max-width: 1279px) {
     html {
       height: auto;

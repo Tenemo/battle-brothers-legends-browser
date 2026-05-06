@@ -2,6 +2,7 @@ const productionOnlyIgnoredDependencies = [
   '@fontsource/cinzel',
   '@fontsource/source-sans-3',
   'lucide-react',
+  'react-virtuoso',
 ]
 
 const isProductionAnalysis = process.argv.includes('--production')
@@ -9,8 +10,9 @@ const isProductionAnalysis = process.argv.includes('--production')
 export default {
   entry: [
     'netlify/edge-functions/build-seo.ts',
-    'scripts/*.mjs',
-    'scripts/*.d.mts',
+    'src/entry-server.tsx',
+    'src/types/virtual-modules.d.ts',
+    'scripts/*.ts',
     'tests/**/*.test.ts',
     'tests/**/*.test.tsx',
     'tests/e2e/**/*.spec.ts',
@@ -20,11 +22,9 @@ export default {
     'src/**/*.ts',
     'src/**/*.tsx',
     'netlify/**/*.ts',
-    'scripts/**/*.mjs',
-    'scripts/**/*.mts',
+    'scripts/**/*.ts',
     'tests/**/*.ts',
     'tests/**/*.tsx',
     '*.config.ts',
-    '*.config.js',
   ],
 }

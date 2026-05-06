@@ -199,9 +199,7 @@ describe('background fit worker client', () => {
       view: emptyBackgroundFitView,
     })
 
-    await expect(firstCalculation.promise).rejects.toThrow(
-      'Background fit request was superseded.',
-    )
+    await expect(firstCalculation.promise).rejects.toThrow('Background fit request was superseded.')
     await expect(secondCalculation.promise).resolves.toBe(emptyBackgroundFitView)
   })
 

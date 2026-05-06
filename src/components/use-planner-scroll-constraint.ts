@@ -1,58 +1,23 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 const buildPlannerScrollConstraintMinimumWidth = 1280
 const buildPlannerScrollConstraintMaximumWidth = 2560
 const maximumVisiblePlannerContentRows = 2
 const maximumVisibleCompactPlannerContentRows = 4
-
-const plannerCollections = [
-  {
-    itemSelector: '[data-planner-item="picked-perk"]',
-    listSelector: '[data-planner-collection="picked-perks"]',
-  },
-  {
-    itemSelector: '[data-planner-item="group-card"]',
-    listSelector: '[data-planner-collection="shared-groups"]',
-  },
-  {
-    itemSelector: '[data-planner-item="group-card"]',
-    listSelector: '[data-planner-collection="individual-groups"]',
-  },
-]
-
-function getVisualRowCount(elements: HTMLElement[]): number {
-  const rowTops: number[] = []
-
-  for (const element of elements) {
-    const elementBox = element.getBoundingClientRect()
-
-    if (elementBox.width === 0 || elementBox.height === 0) {
-      continue
-    }
-
-    if (!rowTops.some((rowTop) => Math.abs(rowTop - elementBox.top) <= 2)) {
-      rowTops.push(elementBox.top)
-    }
-  }
-
-  return rowTops.length
-}
-
-function getPlannerContentRowCounts(plannerBoard: HTMLElement): number[] {
-  return plannerCollections.map(({ itemSelector, listSelector }) => {
-    const plannerCollection = plannerBoard.querySelector(listSelector)
-
-    if (!(plannerCollection instanceof HTMLElement)) {
-      return 0
-    }
-
-    const plannerItems = [...plannerCollection.querySelectorAll(itemSelector)].filter(
-      (element): element is HTMLElement => element instanceof HTMLElement,
-    )
-
-    return getVisualRowCount(plannerItems)
-  })
-}
+const compactDesktopMediaQuery =
+  '(min-width: 1280px) and (max-width: 1919px), (min-width: 1920px) and (max-height: 1200px)'
+const rootFontSizeFallback = 16
+const defaultAppInlinePaddingRem = 0.8 * 2
+const defaultPlannerInlinePaddingRem = 0.56 * 2
+const compactPlannerInlinePaddingRem = 0.42 * 2
+const defaultPlannerRowLabelWidthRem = 10.4
+const defaultPlannerRowGapRem = 0.56
+const compactPlannerRowGapRem = 0.42
+const pickedPerkItemWidthRem = 8.04
+const defaultGroupItemWidthRem = 14
+const compactGroupItemWidthRem = 11.4
+const defaultPlannerTrackGapRem = 0.42
+const compactPlannerTrackGapRem = 0.34
 
 function hasPlannerContentPastVisibleRows(plannerContentRowCounts: number[]): boolean {
   return plannerContentRowCounts.some(
@@ -70,6 +35,127 @@ function hasPlannerContentPastCompactBudget(plannerContentRowCounts: number[]): 
   )
 }
 
+function isPlannerScrollConstraintViewport(): boolean {
+  return (
+    typeof window !== 'undefined' &&
+    window.innerWidth >= buildPlannerScrollConstraintMinimumWidth &&
+    window.innerWidth < buildPlannerScrollConstraintMaximumWidth
+  )
+}
+
+function getRootFontSize(): number {
+  if (typeof window === 'undefined') {
+    return rootFontSizeFallback
+  }
+
+  const rootFontSize = Number.parseFloat(window.getComputedStyle(document.documentElement).fontSize)
+
+  return Number.isFinite(rootFontSize) && rootFontSize > 0 ? rootFontSize : rootFontSizeFallback
+}
+
+function getPlannerContentWidthRem(): number {
+  const rootFontSize = getRootFontSize()
+  const isCompactDesktop =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(compactDesktopMediaQuery).matches
+  const plannerInlinePaddingRem = isCompactDesktop
+    ? compactPlannerInlinePaddingRem
+    : defaultPlannerInlinePaddingRem
+  const plannerRowGapRem = isCompactDesktop ? compactPlannerRowGapRem : defaultPlannerRowGapRem
+
+  return Math.max(
+    window.innerWidth / rootFontSize -
+      defaultAppInlinePaddingRem -
+      plannerInlinePaddingRem -
+      defaultPlannerRowLabelWidthRem -
+      plannerRowGapRem,
+    0,
+  )
+}
+
+function getItemsPerPlannerRow(itemWidthRem: number, trackGapRem: number): number {
+  const contentWidthRem = getPlannerContentWidthRem()
+
+  if (contentWidthRem <= 0) {
+    return 1
+  }
+
+  return Math.max(Math.floor((contentWidthRem + trackGapRem) / (itemWidthRem + trackGapRem)), 1)
+}
+
+function getPlannerRowCount(itemCount: number, itemWidthRem: number, trackGapRem: number): number {
+  if (itemCount <= 0) {
+    return 0
+  }
+
+  return Math.ceil(itemCount / getItemsPerPlannerRow(itemWidthRem, trackGapRem))
+}
+
+function getEstimatedPlannerContentRowCounts({
+  individualPerkGroupCount,
+  isIndividualPerkGroupsSectionExpanded,
+  isSharedPerkGroupsSectionExpanded,
+  pickedPerkCount,
+  sharedPerkGroupCount,
+}: {
+  individualPerkGroupCount: number
+  isIndividualPerkGroupsSectionExpanded: boolean
+  isSharedPerkGroupsSectionExpanded: boolean
+  pickedPerkCount: number
+  sharedPerkGroupCount: number
+}): number[] {
+  const isCompactDesktop =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia(compactDesktopMediaQuery).matches
+  const plannerTrackGapRem = isCompactDesktop
+    ? compactPlannerTrackGapRem
+    : defaultPlannerTrackGapRem
+  const groupItemWidthRem = isCompactDesktop ? compactGroupItemWidthRem : defaultGroupItemWidthRem
+
+  return [
+    getPlannerRowCount(pickedPerkCount, pickedPerkItemWidthRem, plannerTrackGapRem),
+    isSharedPerkGroupsSectionExpanded
+      ? getPlannerRowCount(sharedPerkGroupCount, groupItemWidthRem, plannerTrackGapRem)
+      : 0,
+    isIndividualPerkGroupsSectionExpanded
+      ? getPlannerRowCount(individualPerkGroupCount, groupItemWidthRem, plannerTrackGapRem)
+      : 0,
+  ]
+}
+
+function shouldConstrainPlannerScroll({
+  individualPerkGroupCount,
+  isIndividualPerkGroupsSectionExpanded,
+  isSharedPerkGroupsSectionExpanded,
+  pickedPerkCount,
+  sharedPerkGroupCount,
+}: {
+  individualPerkGroupCount: number
+  isIndividualPerkGroupsSectionExpanded: boolean
+  isSharedPerkGroupsSectionExpanded: boolean
+  pickedPerkCount: number
+  sharedPerkGroupCount: number
+}): boolean {
+  if (!isPlannerScrollConstraintViewport()) {
+    return false
+  }
+
+  const plannerContentRowCounts = getEstimatedPlannerContentRowCounts({
+    individualPerkGroupCount,
+    isIndividualPerkGroupsSectionExpanded,
+    isSharedPerkGroupsSectionExpanded,
+    pickedPerkCount,
+    sharedPerkGroupCount,
+  })
+
+  return (
+    hasPlannerContentPastVisibleRows(plannerContentRowCounts) ||
+    hasPlannerContentPastCompactBudget(plannerContentRowCounts)
+  )
+}
+
 export function usePlannerScrollConstraint({
   individualPerkGroupCount,
   isIndividualPerkGroupsSectionExpanded,
@@ -84,61 +170,39 @@ export function usePlannerScrollConstraint({
   sharedPerkGroupCount: number
 }) {
   const plannerBoardRef = useRef<HTMLDivElement | null>(null)
-  const [isPlannerScrollConstrained, setIsPlannerScrollConstrained] = useState(false)
-  const updatePlannerScrollConstraint = useCallback(() => {
-    const plannerBoard = plannerBoardRef.current
-    const plannerContentRowCounts =
-      plannerBoard === null ? [] : getPlannerContentRowCounts(plannerBoard)
-    const shouldConstrainPlanner =
-      plannerBoard !== null &&
-      window.innerWidth >= buildPlannerScrollConstraintMinimumWidth &&
-      window.innerWidth < buildPlannerScrollConstraintMaximumWidth &&
-      (hasPlannerContentPastVisibleRows(plannerContentRowCounts) ||
-        hasPlannerContentPastCompactBudget(plannerContentRowCounts))
-
-    setIsPlannerScrollConstrained((currentShouldConstrainPlanner) =>
-      currentShouldConstrainPlanner === shouldConstrainPlanner
-        ? currentShouldConstrainPlanner
-        : shouldConstrainPlanner,
-    )
-  }, [])
+  const [viewportResizeRevision, setViewportResizeRevision] = useState(0)
 
   useEffect(() => {
-    let animationFrameId = 0
-
-    function schedulePlannerScrollConstraintUpdate() {
-      window.cancelAnimationFrame(animationFrameId)
-      animationFrameId = window.requestAnimationFrame(updatePlannerScrollConstraint)
+    function handleResize() {
+      setViewportResizeRevision(
+        (currentViewportResizeRevision) => currentViewportResizeRevision + 1,
+      )
     }
 
-    schedulePlannerScrollConstraintUpdate()
-    window.addEventListener('resize', schedulePlannerScrollConstraintUpdate)
-
-    const plannerBoard = plannerBoardRef.current
-    const plannerResizeObserver =
-      typeof ResizeObserver === 'undefined'
-        ? null
-        : new ResizeObserver(schedulePlannerScrollConstraintUpdate)
-
-    if (plannerBoard !== null) {
-      plannerResizeObserver?.observe(plannerBoard)
-      plannerBoard
-        .querySelectorAll('[data-planner-collection]')
-        .forEach((plannerCollection) => plannerResizeObserver?.observe(plannerCollection))
-    }
+    window.addEventListener('resize', handleResize)
 
     return () => {
-      window.cancelAnimationFrame(animationFrameId)
-      window.removeEventListener('resize', schedulePlannerScrollConstraintUpdate)
-      plannerResizeObserver?.disconnect()
+      window.removeEventListener('resize', handleResize)
     }
+  }, [])
+
+  const isPlannerScrollConstrained = useMemo(() => {
+    void viewportResizeRevision
+
+    return shouldConstrainPlannerScroll({
+      individualPerkGroupCount,
+      isIndividualPerkGroupsSectionExpanded,
+      isSharedPerkGroupsSectionExpanded,
+      pickedPerkCount,
+      sharedPerkGroupCount,
+    })
   }, [
     individualPerkGroupCount,
     isIndividualPerkGroupsSectionExpanded,
     isSharedPerkGroupsSectionExpanded,
     pickedPerkCount,
     sharedPerkGroupCount,
-    updatePlannerScrollConstraint,
+    viewportResizeRevision,
   ])
 
   return {

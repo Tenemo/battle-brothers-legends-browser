@@ -1,14 +1,18 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   backgroundFitCalculationTimeoutMs,
+  collectVirtualizedTextContentInScrollContainer,
   enableCategory,
   expectBackgroundFitCalculationComplete,
+  expectLocatorVisibleInVirtualizedScrollContainer,
   expectViewportLocked,
   getBackgroundFitPanel,
+  getGameIconImageCdnSrcPattern,
   getBuildPerksBar,
   getBuildIndividualGroupsList,
   getDetailPanel,
+  getRequiredLocatorBoundingBox,
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
@@ -21,6 +25,195 @@ const denseSharedBuildUrl =
   '/?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Fortified+Mind,Hold+Out,Underdog,Assured+Conquest'
 const denseSharedBuildSearchBackgroundName = 'Disowned Noble'
 const denseSharedBuildSearchBackgroundQuery = 'disowned'
+const apprenticeDangerPayDetailUrl =
+  '/?detail=background&background=background.apprentice&background-source=apprentice&build=Danger+Pay'
+
+async function openFirstApprenticeOtherNativePerkTooltip(
+  page: Page,
+): Promise<{ perkName: string; tooltip: Locator }> {
+  await page.setViewportSize(mediumBuildPlannerViewport)
+  await page.goto(apprenticeDangerPayDetailUrl)
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const detailPanel = getDetailPanel(page)
+
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
+  await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
+
+  const otherNativePerkGroupsToggle = detailPanel.getByTestId('detail-other-perk-groups-toggle')
+
+  await otherNativePerkGroupsToggle.scrollIntoViewIfNeeded()
+  await otherNativePerkGroupsToggle.click()
+
+  const otherNativePerkPill = detailPanel
+    .getByTestId('detail-other-perk-groups-section')
+    .getByTestId('planner-pill')
+    .first()
+
+  await expect(otherNativePerkPill).toBeVisible()
+
+  const perkName = ((await otherNativePerkPill.textContent()) ?? '').trim()
+
+  expect(perkName.length).toBeGreaterThan(0)
+
+  await otherNativePerkPill.hover()
+  await expect(otherNativePerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
+
+  const tooltip = page.getByTestId('build-perk-tooltip')
+
+  await expect(tooltip).toBeVisible({ timeout: 2500 })
+
+  return { perkName, tooltip }
+}
+
+async function readButtonInteractiveColorStyle(button: Locator) {
+  return button.evaluate((buttonElement) => {
+    const computedStyle = window.getComputedStyle(buttonElement)
+
+    return {
+      backgroundColor: computedStyle.backgroundColor,
+      borderColor: computedStyle.borderTopColor,
+      color: computedStyle.color,
+    }
+  })
+}
+
+test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }) => {
+  const mustHaveTooltipState = await openFirstApprenticeOtherNativePerkTooltip(page)
+
+  await expect(
+    mustHaveTooltipState.tooltip.getByRole('button', {
+      name: `Add ${mustHaveTooltipState.perkName} to build from tooltip`,
+    }),
+  ).toBeVisible()
+  await expect(
+    mustHaveTooltipState.tooltip.getByRole('button', {
+      name: `Add ${mustHaveTooltipState.perkName} as optional from tooltip`,
+    }),
+  ).toBeVisible()
+
+  const tooltipActionLayout = await mustHaveTooltipState.tooltip
+    .getByTestId('build-perk-tooltip-action')
+    .evaluate((actionElement) => {
+      const tooltipElement = actionElement.closest('[data-testid="build-perk-tooltip"]')
+      const actionRectangle = actionElement.getBoundingClientRect()
+      const tooltipRectangle = tooltipElement?.getBoundingClientRect()
+
+      if (!(tooltipElement instanceof HTMLElement) || tooltipRectangle === undefined) {
+        return null
+      }
+
+      return {
+        actionHeight: actionRectangle.height,
+        rightGap: tooltipRectangle.right - actionRectangle.right,
+        topGap: actionRectangle.top - tooltipRectangle.top,
+      }
+    })
+
+  expect(tooltipActionLayout).toEqual(
+    expect.objectContaining({
+      actionHeight: expect.any(Number),
+      rightGap: expect.any(Number),
+      topGap: expect.any(Number),
+    }),
+  )
+  expect(tooltipActionLayout?.actionHeight ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(34)
+  expect(tooltipActionLayout?.rightGap ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(14)
+  expect(tooltipActionLayout?.topGap ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(14)
+
+  await mustHaveTooltipState.tooltip
+    .getByRole('button', {
+      name: `Add ${mustHaveTooltipState.perkName} to build from tooltip`,
+    })
+    .click()
+
+  await expect(
+    getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
+      hasText: mustHaveTooltipState.perkName,
+    }),
+  ).toHaveAttribute('data-requirement', 'must-have')
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
+
+  const optionalTooltipState = await openFirstApprenticeOtherNativePerkTooltip(page)
+
+  await optionalTooltipState.tooltip
+    .getByRole('button', {
+      name: `Add ${optionalTooltipState.perkName} as optional from tooltip`,
+    })
+    .click()
+
+  await expect(
+    getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
+      hasText: optionalTooltipState.perkName,
+    }),
+  ).toHaveAttribute('data-requirement', 'optional')
+  await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
+})
+
+test('removes picked perks from the timer-launched perk tooltip', async ({ page }) => {
+  await page.setViewportSize(mediumBuildPlannerViewport)
+  await page.goto('/?build=Clarity')
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+
+  const pickedPerkTile = getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
+    hasText: 'Clarity',
+  })
+
+  await expect(pickedPerkTile).toBeVisible()
+  await pickedPerkTile.hover()
+  await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: 2500,
+  })
+
+  const tooltip = page.getByTestId('build-perk-tooltip')
+  const removeButton = tooltip.getByRole('button', {
+    name: 'Remove Clarity from build from tooltip',
+  })
+
+  await expect(tooltip).toBeVisible({ timeout: 2500 })
+  const removeButtonStyleBeforeHover = await readButtonInteractiveColorStyle(removeButton)
+  const removeButtonStyleKeyBeforeHover = JSON.stringify(removeButtonStyleBeforeHover)
+
+  await removeButton.hover()
+  await expect
+    .poll(async () => JSON.stringify(await readButtonInteractiveColorStyle(removeButton)))
+    .not.toBe(removeButtonStyleKeyBeforeHover)
+
+  const removeButtonStyleAfterHover = await readButtonInteractiveColorStyle(removeButton)
+
+  expect(removeButtonStyleAfterHover.color).not.toBe(removeButtonStyleBeforeHover.color)
+
+  await removeButton.click()
+  await expect(pickedPerkTile).toHaveCount(0)
+  await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
+})
+
+test('keeps picked search-result remove controls visibly interactive on hover', async ({
+  page,
+}) => {
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
+  await searchPerks(page, 'Clarity')
+  await addPerkToBuildFromResults(page, 'Clarity')
+
+  const resultsList = getResultsList(page)
+  const removeButton = resultsList.getByRole('button', {
+    name: 'Remove Clarity from build from results',
+  })
+  const removeButtonStyleBeforeHover = await readButtonInteractiveColorStyle(removeButton)
+  const removeButtonStyleKeyBeforeHover = JSON.stringify(removeButtonStyleBeforeHover)
+
+  await removeButton.hover()
+  await expect
+    .poll(async () => JSON.stringify(await readButtonInteractiveColorStyle(removeButton)))
+    .not.toBe(removeButtonStyleKeyBeforeHover)
+
+  const removeButtonStyleAfterHover = await readButtonInteractiveColorStyle(removeButton)
+
+  expect(removeButtonStyleAfterHover.color).not.toBe(removeButtonStyleBeforeHover.color)
+})
 
 test('shows the background fit panel for a picked build and keeps the shell viewport-locked', async ({
   page,
@@ -123,7 +316,7 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(apprenticeBackgroundIcon).toBeVisible()
   await expect(apprenticeBackgroundIcon).toHaveAttribute(
     'src',
-    '/game-icons/ui/backgrounds/background_40.png',
+    getGameIconImageCdnSrcPattern('ui/backgrounds/background_40.png', 32),
   )
   await expect
     .poll(async () =>
@@ -460,11 +653,13 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 2500 })
   await expect(pickedAxePerkTile).toHaveAttribute('data-highlighted', 'true')
   await expect(pickedAxePerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(page.getByRole('tooltip')).toBeVisible({ timeout: 2500 })
+  const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
+
+  await expect(buildPerkTooltip).toBeVisible({ timeout: 2500 })
   await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(pickedAxePerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await expect(page.getByRole('tooltip')).not.toContainText('Axe Mastery')
-  await expect(page.getByRole('tooltip')).toContainText(/Skills build up 25% less Fatigue/i)
+  await expect(buildPerkTooltip).not.toContainText('Axe Mastery')
+  await expect(buildPerkTooltip).toContainText(/Skills build up 25% less Fatigue/i)
   await expect(axeResultGroupButton).toBeVisible()
   await axeResultGroupButton.hover()
   await expect(axeResultGroupButton).toHaveAttribute('data-highlighted', 'true')
@@ -578,6 +773,12 @@ test('filters the background fit list with the background search field', async (
   await expectBackgroundFitCalculationComplete(backgroundFitPanel, {
     shouldObserveProgress: true,
   })
+  await expectLocatorVisibleInVirtualizedScrollContainer({
+    label: 'Oathtaker background fit card',
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    target: oathtakerCard,
+  })
   await expect(
     oathtakerCard.getByTestId('background-fit-summary-value').filter({ hasText: '0.3/1' }),
   ).toBeVisible()
@@ -690,10 +891,8 @@ test('filters the background fit list with the background search field', async (
     })
     .toBe(true)
   await expect
-    .poll(async () =>
-      backgroundFitPanelBody.evaluate((element) => element.scrollHeight - element.clientHeight),
-    )
-    .toBeLessThanOrEqual(1)
+    .poll(async () => backgroundFitPanelBody.evaluate((element) => element.scrollHeight))
+    .toBeLessThanOrEqual(220)
   await expect(
     backgroundFitPanel.getByRole('button', {
       name: 'Inspect background Apprentice',
@@ -726,6 +925,7 @@ test('positions veteran interval pills at the bottom right without reserving tab
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const oathtakerCard = backgroundFitPanel
     .getByTestId('background-fit-card')
     .filter({ hasText: 'Oathtaker' })
@@ -734,7 +934,12 @@ test('positions veteran interval pills at the bottom right without reserving tab
   await expectBackgroundFitCalculationComplete(backgroundFitPanel, {
     shouldObserveProgress: true,
   })
-  await expect(oathtakerCard).toBeVisible()
+  await expectLocatorVisibleInVirtualizedScrollContainer({
+    label: 'Oathtaker background fit card',
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    target: oathtakerCard,
+  })
 
   const veteranBadgeMetrics = await oathtakerCard.evaluate((card) => {
     const trigger = card.querySelector('button')
@@ -819,13 +1024,11 @@ test('filters origin backgrounds from the background search menu', async ({ page
     name: 'Clear background search',
   })
   const [clearButtonBox, filterButtonBox] = await Promise.all([
-    clearBackgroundSearchButton.boundingBox(),
-    filterBackgroundsButton.boundingBox(),
+    getRequiredLocatorBoundingBox(clearBackgroundSearchButton, 'clear background search button'),
+    getRequiredLocatorBoundingBox(filterBackgroundsButton, 'filter backgrounds button'),
   ])
 
-  expect(clearButtonBox).not.toBeNull()
-  expect(filterButtonBox).not.toBeNull()
-  expect(clearButtonBox!.x).toBeLessThan(filterButtonBox!.x)
+  expect(clearButtonBox.x).toBeLessThan(filterButtonBox.x)
   await expect(
     backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
   ).toBeVisible()
@@ -944,8 +1147,18 @@ test('filters origin backgrounds from the background search menu', async ({ page
     const sharedFilterBackgroundsButton = sharedBackgroundFitPanel.getByRole('button', {
       name: 'Filter backgrounds',
     })
+    const sharedBackgroundFitPanelBody = sharedBackgroundFitPanel.getByTestId(
+      'background-fit-panel-body',
+    )
 
-    await expect(sharedBackgroundFitPanel.getByText('Origin: Crusader').first()).toBeVisible()
+    await expect(sharedPage.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+    await expectLocatorVisibleInVirtualizedScrollContainer({
+      label: 'Crusader origin background text',
+      maximumScrollStepCount: 260,
+      page: sharedPage,
+      scrollContainer: sharedBackgroundFitPanelBody,
+      target: sharedBackgroundFitPanel.getByText('Origin: Crusader').first(),
+    })
     await sharedFilterBackgroundsButton.click()
     await expect(
       sharedBackgroundFitPanel.getByRole('checkbox', {
@@ -1042,69 +1255,78 @@ test('keeps the background filter dropdown above background fit cards', async ({
 
   const stackingProbe = await backgroundFiltersGroup.evaluate((filterPopover) => {
     const filterPopoverRectangle = filterPopover.getBoundingClientRect()
-    const overlappingVeteranPerkBadge = [
-      ...document.querySelectorAll<HTMLElement>(
-        '[data-testid="background-fit-veteran-perk-badge"]',
-      ),
-    ]
-      .map((veteranPerkBadge) => {
-        const veteranPerkBadgeRectangle = veteranPerkBadge.getBoundingClientRect()
+    const backgroundFitResultsScroll = document.querySelector(
+      '[data-testid="background-fit-panel-body"]',
+    )
 
-        return {
-          element: veteranPerkBadge,
-          x: veteranPerkBadgeRectangle.left + veteranPerkBadgeRectangle.width / 2,
-          y: veteranPerkBadgeRectangle.top + veteranPerkBadgeRectangle.height / 2,
-        }
-      })
-      .find(
-        ({ x, y }) =>
-          x >= filterPopoverRectangle.left &&
-          x <= filterPopoverRectangle.right &&
-          y >= filterPopoverRectangle.top &&
-          y <= filterPopoverRectangle.bottom,
-      )
-
-    if (!overlappingVeteranPerkBadge) {
+    if (!(backgroundFitResultsScroll instanceof HTMLElement)) {
       return {
+        backgroundFitCardStackIndex: -1,
         filterPopoverOwnsTopElement: false,
         filterPopoverStackIndex: -1,
-        overlappingVeteranPerkBadgeFound: false,
+        overlappingBackgroundFitCardFound: false,
         topElementTestId: null,
-        veteranPerkBadgeStackIndex: -1,
       }
     }
 
-    const elementsAtBadgeCenter = document.elementsFromPoint(
-      overlappingVeteranPerkBadge.x,
-      overlappingVeteranPerkBadge.y,
+    const backgroundFitResultsScrollRectangle = backgroundFitResultsScroll.getBoundingClientRect()
+    const overlapLeft = Math.max(
+      filterPopoverRectangle.left,
+      backgroundFitResultsScrollRectangle.left,
     )
-    const topElement = elementsAtBadgeCenter[0] ?? null
-    const filterPopoverStackIndex = elementsAtBadgeCenter.findIndex(
+    const overlapRight = Math.min(
+      filterPopoverRectangle.right,
+      backgroundFitResultsScrollRectangle.right,
+      window.innerWidth,
+    )
+    const overlapTop = Math.max(filterPopoverRectangle.top, backgroundFitResultsScrollRectangle.top)
+    const overlapBottom = Math.min(
+      filterPopoverRectangle.bottom,
+      backgroundFitResultsScrollRectangle.bottom,
+      window.innerHeight,
+    )
+
+    if (overlapLeft >= overlapRight || overlapTop >= overlapBottom) {
+      return {
+        backgroundFitCardStackIndex: -1,
+        filterPopoverOwnsTopElement: false,
+        filterPopoverStackIndex: -1,
+        overlappingBackgroundFitCardFound: false,
+        topElementTestId: null,
+      }
+    }
+
+    const elementsAtOverlap = document.elementsFromPoint(
+      (overlapLeft + overlapRight) / 2,
+      (overlapTop + overlapBottom) / 2,
+    )
+    const topElement = elementsAtOverlap[0] ?? null
+    const filterPopoverStackIndex = elementsAtOverlap.findIndex(
       (element) => element === filterPopover || filterPopover.contains(element),
     )
-    const veteranPerkBadgeStackIndex = elementsAtBadgeCenter.findIndex(
+    const backgroundFitCardStackIndex = elementsAtOverlap.findIndex(
       (element) =>
-        element === overlappingVeteranPerkBadge.element ||
-        overlappingVeteranPerkBadge.element.contains(element),
+        element instanceof HTMLElement &&
+        element.closest('[data-testid="background-fit-card"]') !== null,
     )
 
     return {
+      backgroundFitCardStackIndex,
       filterPopoverOwnsTopElement:
         topElement !== null && (topElement === filterPopover || filterPopover.contains(topElement)),
       filterPopoverStackIndex,
-      overlappingVeteranPerkBadgeFound: true,
+      overlappingBackgroundFitCardFound: backgroundFitCardStackIndex >= 0,
       topElementTestId:
         topElement instanceof HTMLElement ? (topElement.dataset.testid ?? null) : null,
-      veteranPerkBadgeStackIndex,
     }
   })
 
   expect(stackingProbe).toMatchObject({
     filterPopoverOwnsTopElement: true,
-    overlappingVeteranPerkBadgeFound: true,
+    overlappingBackgroundFitCardFound: true,
   })
   expect(stackingProbe.filterPopoverStackIndex).toBeGreaterThanOrEqual(0)
-  expect(stackingProbe.veteranPerkBadgeStackIndex).toBeGreaterThan(
+  expect(stackingProbe.backgroundFitCardStackIndex).toBeGreaterThan(
     stackingProbe.filterPopoverStackIndex,
   )
 })
@@ -1115,6 +1337,7 @@ test('shows probabilistic background fit matches with plain percentage text', as
   await addPerkToBuildFromResults(page, 'Danger Pay')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const detailPanel = getDetailPanel(page)
   const apprenticeCard = backgroundFitPanel
     .getByTestId('background-fit-card')
@@ -1124,7 +1347,13 @@ test('shows probabilistic background fit matches with plain percentage text', as
     name: 'Inspect background Apprentice',
   })
 
-  await apprenticeCard.scrollIntoViewIfNeeded()
+  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
+  await expectLocatorVisibleInVirtualizedScrollContainer({
+    label: 'Apprentice background fit card',
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    target: apprenticeCard,
+  })
   await apprenticeToggle.click()
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
@@ -1283,17 +1512,18 @@ test('keeps zero-match backgrounds after matching backgrounds in the full ranked
   await addPerkToBuildFromResults(page, 'Axe Mastery')
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
 
   await expect(
     backgroundFitPanel.getByRole('button', { name: 'Inspect background Apprentice' }),
   ).toBeVisible()
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
 
-  const backgroundNameOrder = await page.evaluate(() =>
-    [...document.querySelectorAll('[data-testid="background-fit-card"] h3')].map((heading) =>
-      heading.textContent?.trim(),
-    ),
-  )
+  const backgroundNameOrder = await collectVirtualizedTextContentInScrollContainer({
+    page,
+    scrollContainer: backgroundFitPanelBody,
+    selector: '[data-testid="background-fit-card"] h3',
+  })
 
   expect(backgroundNameOrder).toContain('Apprentice')
   expect(backgroundNameOrder).toContain('Oathtaker')

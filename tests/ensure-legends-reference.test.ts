@@ -6,7 +6,7 @@ import {
   ensureLatestLegendsReference,
   findModLegendsDirectory,
   getLatestReleaseApiUrl,
-} from '../scripts/ensure-legends-reference.mjs'
+} from '../scripts/ensure-legends-reference.ts'
 
 const temporaryDirectoryPaths: string[] = []
 

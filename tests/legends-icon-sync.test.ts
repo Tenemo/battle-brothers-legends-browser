@@ -3,7 +3,7 @@ import {
   buildIconExtractionPlan,
   collectRequiredGameIconPaths,
   getArchiveEntryPathFromIconPath,
-} from '../scripts/legends-icon-sync.mjs'
+} from '../scripts/legends-icon-sync.ts'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const sampleDataset: LegendsPerksDataset = {

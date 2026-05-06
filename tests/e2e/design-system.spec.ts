@@ -56,9 +56,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
   await page.getByRole('button', { name: 'Expand background fit' }).click()
-  await expect(
-    page.getByRole('button', { name: 'Inspect background Apprentice' }),
-  ).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Inspect background Apprentice' })).toBeVisible()
   await page.getByRole('button', { name: 'Inspect Axe Mastery' }).click()
   await expect(page.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
   await page.mouse.move(0, 0)
@@ -138,7 +136,10 @@ test('keeps compact desktop controls above the minimum target size', async ({ pa
   const targetMetrics = await page.evaluate(() => {
     const selectors = [
       { name: 'search input', selector: '[aria-label="Search perks"]' },
-      { name: 'result build toggle', selector: '[aria-label="Remove Axe Mastery from build from results"]' },
+      {
+        name: 'result build toggle',
+        selector: '[aria-label="Remove Axe Mastery from build from results"]',
+      },
       { name: 'clear build', selector: '[data-testid="clear-build-button"]' },
       {
         minimumWidth: 16,

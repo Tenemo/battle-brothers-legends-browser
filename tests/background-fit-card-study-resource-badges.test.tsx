@@ -9,6 +9,7 @@ import {
   brightTraitIconPath,
   skillBookIconPath,
 } from '../src/lib/background-study-resource-display'
+import { gameIconImageWidths, getGameIconUrl } from '../src/lib/game-icon-url'
 import { ancientScrollIconPath } from '../src/lib/ancient-scroll-perk-group-display'
 import type {
   BackgroundFitStudyResourceStrategy,
@@ -19,6 +20,7 @@ import type {
   BackgroundStudyResourceFilter,
   StudyResourceRequirementProfile,
 } from '../src/lib/background-study-reachability'
+import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
 
 const nativeStudyResourceRequirement = {
   bookRequirement: null,
@@ -135,22 +137,23 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
 
 function renderBackgroundFitCard(backgroundFit: RankedBackgroundFit, rank = 0) {
   return render(
-    <BackgroundFitCard
-      backgroundFit={backgroundFit}
-      isSelected={false}
-      mustHavePickedPerkCount={1}
-      onClearPerkGroupHover={vi.fn()}
-      onSelect={vi.fn()}
-      optionalPickedPerkCount={1}
-      pickedPerkCount={2}
-      query=""
-      rank={rank}
-      studyResourceFilter={{
-        shouldAllowBook: true,
-        shouldAllowScroll: true,
-        shouldAllowSecondScroll: false,
-      }}
-    />,
+    <PlannerInteractionTestProvider>
+      <BackgroundFitCard
+        backgroundFit={backgroundFit}
+        isSelected={false}
+        mustHavePickedPerkCount={1}
+        onSelect={vi.fn()}
+        optionalPickedPerkCount={1}
+        pickedPerkCount={2}
+        query=""
+        rank={rank}
+        studyResourceFilter={{
+          shouldAllowBook: true,
+          shouldAllowScroll: true,
+          shouldAllowSecondScroll: false,
+        }}
+      />
+    </PlannerInteractionTestProvider>,
   )
 }
 
@@ -158,18 +161,19 @@ function renderBackgroundFitCardWithStudyResourceFilter(
   studyResourceFilter: BackgroundStudyResourceFilter,
 ) {
   return render(
-    <BackgroundFitCard
-      backgroundFit={createBackgroundFit()}
-      isSelected={false}
-      mustHavePickedPerkCount={1}
-      onClearPerkGroupHover={vi.fn()}
-      onSelect={vi.fn()}
-      optionalPickedPerkCount={0}
-      pickedPerkCount={1}
-      query=""
-      rank={0}
-      studyResourceFilter={studyResourceFilter}
-    />,
+    <PlannerInteractionTestProvider>
+      <BackgroundFitCard
+        backgroundFit={createBackgroundFit()}
+        isSelected={false}
+        mustHavePickedPerkCount={1}
+        onSelect={vi.fn()}
+        optionalPickedPerkCount={0}
+        pickedPerkCount={1}
+        query=""
+        rank={0}
+        studyResourceFilter={studyResourceFilter}
+      />
+    </PlannerInteractionTestProvider>,
   )
 }
 
@@ -231,7 +235,7 @@ describe('background fit card study resource badges', () => {
     const badgeContainer = screen.getByTestId(backgroundStudyResourceBadgesTestId)
     const badges = screen.getAllByTestId(backgroundStudyResourceBadgeTestId)
 
-    expect(badgeContainer).toHaveAccessibleName('Study resources improve full-build chance')
+    expect(badgeContainer).toHaveAccessibleName('Study resources improve full build chance')
     expect(badges).toHaveLength(4)
     expect(badges.map((badge) => badge.getAttribute('data-study-resource-kind'))).toEqual([
       'book',
@@ -239,25 +243,37 @@ describe('background fit card study resource badges', () => {
       'scroll',
       'bright',
     ])
-    expect(badges[0]).toHaveAttribute('src', `/game-icons/${skillBookIconPath}`)
-    expect(badges[0]).toHaveAttribute('title', 'Skill book improves full-build chance: Calm')
+    expect(badges[0]).toHaveAttribute(
+      'src',
+      getGameIconUrl(skillBookIconPath, gameIconImageWidths.compact),
+    )
+    expect(badges[0]).toHaveAttribute('title', 'Skill book improves full build chance: Calm')
     expect(badges[0]).toHaveAttribute('data-optional-only', 'false')
-    expect(badges[1]).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(badges[1]).toHaveAttribute(
+      'src',
+      getGameIconUrl(ancientScrollIconPath, gameIconImageWidths.compact),
+    )
     expect(badges[1]).toHaveAttribute(
       'title',
-      'Ancient scroll improves full-build chance: Berserker or Evocation',
+      'Ancient scroll improves full build chance: Berserker or Evocation',
     )
     expect(badges[1]).toHaveAttribute('data-optional-only', 'false')
-    expect(badges[2]).toHaveAttribute('src', `/game-icons/${ancientScrollIconPath}`)
+    expect(badges[2]).toHaveAttribute(
+      'src',
+      getGameIconUrl(ancientScrollIconPath, gameIconImageWidths.compact),
+    )
     expect(badges[2]).toHaveAttribute(
       'title',
-      'Ancient scroll improves full-build chance: Berserker or Evocation',
+      'Ancient scroll improves full build chance: Berserker or Evocation',
     )
     expect(badges[2]).toHaveAttribute('data-optional-only', 'false')
-    expect(badges[3]).toHaveAttribute('src', `/game-icons/${brightTraitIconPath}`)
+    expect(badges[3]).toHaveAttribute(
+      'src',
+      getGameIconUrl(brightTraitIconPath, gameIconImageWidths.compact),
+    )
     expect(badges[3]).toHaveAttribute(
       'title',
-      'Bright enables the second ancient scroll for full-build chance: Berserker or Evocation',
+      'Bright enables the second ancient scroll for full build chance: Berserker or Evocation',
     )
     expect(brightTraitIconPath).toBe('ui/traits/trait_icon_11.png')
     expect(badges[3]).toHaveAttribute('data-optional-only', 'false')
@@ -293,7 +309,7 @@ describe('background fit card study resource badges', () => {
     ])
     expect(badges[1]).toHaveAttribute(
       'title',
-      'Ancient scroll improves full-build chance: Berserker',
+      'Ancient scroll improves full build chance: Berserker',
     )
     expect(
       screen.queryByAltText(/Bright enables the second ancient scroll/),
@@ -493,7 +509,7 @@ describe('background fit card study resource badges', () => {
     expect(rankedByBuildChanceBadge).toHaveAccessibleName('Background fit rank 3')
     expect(rankedByBuildChanceBadge).toHaveAttribute(
       'title',
-      'Background fit rank 3. Ranked first by must-have build chance, then full-build chance, perk coverage, and background name.',
+      'Background fit rank 3. Ranked first by must-have build chance, then full build chance, perk coverage, and background name.',
     )
 
     unmount()
