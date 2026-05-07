@@ -166,8 +166,12 @@ describe('legends icon sync', () => {
   })
 
   test('fails sync when required game icons are missing from local archives', async () => {
+    const temporaryRootDirectoryPath = path.join(process.cwd(), 'node_modules', '.tmp')
+
+    await mkdir(temporaryRootDirectoryPath, { recursive: true })
+
     const temporaryDirectoryPath = await mkdtemp(
-      path.join(process.cwd(), 'node_modules', '.tmp', 'legends-icon-sync-'),
+      path.join(temporaryRootDirectoryPath, 'legends-icon-sync-'),
     )
     const gameDirectoryPath = path.join(temporaryDirectoryPath, 'game')
     const gameDataDirectoryPath = path.join(gameDirectoryPath, 'data')
