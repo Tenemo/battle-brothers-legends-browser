@@ -8,6 +8,7 @@ import {
   getSidebarPerkGroupButton,
   getResultsList,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   inspectPerkFromResults,
   searchPerks,
 } from './support/build-planner-page'
@@ -355,8 +356,7 @@ test('keeps camp skill metadata rows tucked under their heading', async ({ page 
 test('shows the dominant study resource strategy for the reported Peddler build', async ({
   page,
 }) => {
-  await page.setViewportSize({ height: 720, width: 900 })
-  await page.goto(reportedPeddlerStudyResourceBuildUrl)
+  await gotoBuildPlannerUrl(page, reportedPeddlerStudyResourceBuildUrl, { height: 720, width: 900 })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
@@ -517,8 +517,10 @@ test('shows the dominant study resource strategy for the reported Peddler build'
 test('explains the reported Ranger full build chance from remaining native rows', async ({
   page,
 }) => {
-  await page.setViewportSize({ height: 720, width: 900 })
-  await page.goto(reportedRangerChanceExplanationBuildUrl)
+  await gotoBuildPlannerUrl(page, reportedRangerChanceExplanationBuildUrl, {
+    height: 720,
+    width: 900,
+  })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expectBackgroundFitCalculationComplete(getBackgroundFitPanel(page))
 
@@ -598,8 +600,10 @@ test('explains the reported Ranger full build chance from remaining native rows'
 })
 
 test('keeps reported Hunter must-have expressions scoped to must-have rows', async ({ page }) => {
-  await page.setViewportSize({ height: 720, width: 900 })
-  await page.goto(reportedHunterChanceExplanationBuildUrl)
+  await gotoBuildPlannerUrl(page, reportedHunterChanceExplanationBuildUrl, {
+    height: 720,
+    width: 900,
+  })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expectBackgroundFitCalculationComplete(getBackgroundFitPanel(page))
 

@@ -4,6 +4,7 @@ import {
   backgroundFitCalculationTimeoutMs,
   collectVirtualizedTextContentInScrollContainer,
   enableCategory,
+  ensureBackgroundFitPanelExpanded,
   expectBackgroundFitCalculationComplete,
   expectLocatorVisibleInVirtualizedScrollContainer,
   expectViewportLocked,
@@ -16,6 +17,7 @@ import {
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   mediumBuildPlannerViewport,
   searchPerks,
   selectPerkGroup,
@@ -31,8 +33,7 @@ const apprenticeDangerPayDetailUrl =
 async function openFirstApprenticeOtherNativePerkTooltip(
   page: Page,
 ): Promise<{ perkName: string; tooltip: Locator }> {
-  await page.setViewportSize(mediumBuildPlannerViewport)
-  await page.goto(apprenticeDangerPayDetailUrl)
+  await gotoBuildPlannerUrl(page, apprenticeDangerPayDetailUrl, mediumBuildPlannerViewport)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
@@ -79,6 +80,20 @@ async function readButtonInteractiveColorStyle(button: Locator) {
       color: computedStyle.color,
     }
   })
+}
+
+async function expectImageToLoad(imageLocator: Locator): Promise<void> {
+  await expect
+    .poll(() =>
+      imageLocator.evaluate(
+        (element) =>
+          element instanceof HTMLImageElement &&
+          element.complete &&
+          element.naturalWidth > 0 &&
+          element.naturalHeight > 0,
+      ),
+    )
+    .toBe(true)
 }
 
 test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }) => {
@@ -156,8 +171,7 @@ test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }
 })
 
 test('removes picked perks from the timer-launched perk tooltip', async ({ page }) => {
-  await page.setViewportSize(mediumBuildPlannerViewport)
-  await page.goto('/?build=Clarity')
+  await gotoBuildPlannerUrl(page, '/?build=Clarity', mediumBuildPlannerViewport)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const pickedPerkTile = getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
@@ -576,10 +590,14 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
   await expect(detailPanel.getByText('Must-have study route')).toHaveCount(0)
   await expect(detailPanel.getByText('Additional optional-only study route')).toHaveCount(0)
-  await expect(detailPanel.getByTestId('detail-background-veteran-perk-badge')).toHaveCSS(
-    'cursor',
-    'help',
-  )
+  const detailVeteranPerkBadges = detailPanel.getByTestId('detail-background-veteran-perk-badge')
+  const detailVeteranPerkBadgeCount = await detailVeteranPerkBadges.count()
+
+  expect(detailVeteranPerkBadgeCount).toBeGreaterThan(0)
+
+  for (let badgeIndex = 0; badgeIndex < detailVeteranPerkBadgeCount; badgeIndex += 1) {
+    await expect(detailVeteranPerkBadges.nth(badgeIndex)).toHaveCSS('cursor', 'help')
+  }
 
   const axeMatchButton = detailPanel.getByRole('button', { name: 'Select perk group Axe' })
   const axeMatchRow = axeMatchButton.locator(
@@ -745,8 +763,7 @@ test('restores build and detail state with browser back and forward', async ({ p
   const sharedPage = await page.context().newPage()
 
   try {
-    await sharedPage.setViewportSize(mediumBuildPlannerViewport)
-    await sharedPage.goto(restoredBackgroundDetailUrl)
+    await gotoBuildPlannerUrl(sharedPage, restoredBackgroundDetailUrl, mediumBuildPlannerViewport)
     await expect(
       getDetailPanel(sharedPage).getByRole('heading', {
         level: 2,
@@ -919,6 +936,30 @@ test('filters the background fit list with the background search field', async (
   ).toBeLessThanOrEqual(1)
 })
 
+test('serves the Shepherd background icon used by background fit cards', async ({ page }) => {
+  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+
+  await backgroundSearchInput.fill('Shepherd')
+
+  const shepherdCard = backgroundFitPanel
+    .getByTestId('background-fit-card')
+    .filter({ hasText: 'Shepherd' })
+    .first()
+  const shepherdBackgroundIcon = shepherdCard.getByRole('img', {
+    name: 'Shepherd background icon',
+  })
+
+  await expect(shepherdCard.getByRole('heading', { level: 3, name: 'Shepherd' })).toBeVisible()
+  await expect(shepherdBackgroundIcon).toHaveAttribute(
+    'src',
+    getGameIconImageCdnSrcPattern('ui/backgrounds/background_44.png', 32),
+  )
+  await expectImageToLoad(shepherdBackgroundIcon)
+})
+
 test('positions veteran interval pills at the bottom right without reserving table space', async ({
   page,
 }) => {
@@ -949,14 +990,21 @@ test('positions veteran interval pills at the bottom right without reserving tab
     const metricTable = card.querySelector('[data-testid="background-fit-summary-table"]')
     const metricValues = [...card.querySelectorAll('[data-testid="background-fit-summary-value"]')]
     const rankBadge = card.querySelector('[data-testid="background-fit-rank"]')
-    const veteranBadge = card.querySelector('[data-testid="background-fit-veteran-perk-badge"]')
+    const veteranBadgeGroup = card.querySelector(
+      '[data-testid="background-fit-veteran-perk-badges"]',
+    )
+    const veteranBadges = [
+      ...card.querySelectorAll('[data-testid="background-fit-veteran-perk-badge"]'),
+    ]
 
     if (
       !(trigger instanceof HTMLElement) ||
       !(headerMain instanceof HTMLElement) ||
       !(metricTable instanceof HTMLElement) ||
       !(rankBadge instanceof HTMLElement) ||
-      !(veteranBadge instanceof HTMLElement) ||
+      !(veteranBadgeGroup instanceof HTMLElement) ||
+      veteranBadges.length === 0 ||
+      veteranBadges.some((veteranBadge) => !(veteranBadge instanceof HTMLElement)) ||
       metricValues.some((metricValue) => !(metricValue instanceof HTMLElement))
     ) {
       return null
@@ -966,23 +1014,25 @@ test('positions veteran interval pills at the bottom right without reserving tab
     const triggerStyle = window.getComputedStyle(trigger)
     const headerMainRectangle = headerMain.getBoundingClientRect()
     const metricTableRectangle = metricTable.getBoundingClientRect()
-    const veteranBadgeRectangle = veteranBadge.getBoundingClientRect()
+    const veteranBadgeGroupRectangle = veteranBadgeGroup.getBoundingClientRect()
     const metricValueRight = Math.max(
       ...metricValues.map((metricValue) => metricValue.getBoundingClientRect().right),
     )
 
     return {
-      badgeBottomGap: triggerRectangle.bottom - veteranBadgeRectangle.bottom,
-      badgeLeft: veteranBadgeRectangle.left,
-      badgeRightGap: triggerRectangle.right - veteranBadgeRectangle.right,
-      badgeTop: veteranBadgeRectangle.top,
+      badgeBottomGap: triggerRectangle.bottom - veteranBadgeGroupRectangle.bottom,
+      badgeLeft: veteranBadgeGroupRectangle.left,
+      badgeRightGap: triggerRectangle.right - veteranBadgeGroupRectangle.right,
+      badgeTop: veteranBadgeGroupRectangle.top,
       headerMainBottom: headerMainRectangle.bottom,
       metricTableRightGap: triggerRectangle.right - metricTableRectangle.right,
       metricValueRight,
       paddingBottom: Number.parseFloat(triggerStyle.paddingBottom),
       paddingRight: Number.parseFloat(triggerStyle.paddingRight),
       rankCursor: window.getComputedStyle(rankBadge).cursor,
-      veteranCursor: window.getComputedStyle(veteranBadge).cursor,
+      veteranCursors: veteranBadges.map(
+        (veteranBadge) => window.getComputedStyle(veteranBadge).cursor,
+      ),
     }
   })
 
@@ -1001,10 +1051,12 @@ test('positions veteran interval pills at the bottom right without reserving tab
     veteranBadgeMetrics!.headerMainBottom,
   )
   expect(veteranBadgeMetrics!.rankCursor).toBe('help')
-  expect(veteranBadgeMetrics!.veteranCursor).toBe('help')
+  expect(veteranBadgeMetrics!.veteranCursors).toEqual(
+    veteranBadgeMetrics!.veteranCursors.map(() => 'help'),
+  )
 })
 
-test('filters origin backgrounds from the background search menu', async ({ page }) => {
+test('filters source backgrounds from the background search menu', async ({ page }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
@@ -1020,7 +1072,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
     'currentColor',
   )
   await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
-  await backgroundSearchInput.fill('origin: crusader')
+  await backgroundSearchInput.fill('crusader starting roster')
 
   const clearBackgroundSearchButton = backgroundFitPanel.getByRole('button', {
     name: 'Clear background search',
@@ -1032,7 +1084,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
 
   expect(clearButtonBox.x).toBeLessThan(filterButtonBox.x)
   await expect(
-    backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
+    backgroundFitPanel.getByText('No backgrounds match "crusader starting roster".'),
   ).toBeVisible()
 
   await filterBackgroundsButton.click()
@@ -1050,7 +1102,13 @@ test('filters origin backgrounds from the background search menu', async ({ page
   const backgroundFilterOptions = [
     {
       labelText: 'Origin backgrounds',
-      title: 'Shows origin-only backgrounds hidden from the default results.',
+      title:
+        'Shows backgrounds that are not available from regular recruitment but can be gained from origin starts or origin hiring rosters.',
+    },
+    {
+      labelText: 'Event backgrounds',
+      title:
+        'Shows backgrounds that are not available from regular recruitment but can be gained from events, contracts, encounters, or settlement situations.',
     },
     {
       labelText: 'Allow a book',
@@ -1069,7 +1127,8 @@ test('filters origin backgrounds from the background search menu', async ({ page
     },
     {
       labelText: 'Perk every 2 veteran levels',
-      title: 'Shows backgrounds that gain 1 perk point every 2 veteran levels after level 12.',
+      title:
+        'Shows backgrounds that gain 1 perk point every 2 veteran levels after level 12. Random Solo and The Free Company origin overrides are excluded because they cover most backgrounds in the game and cause their starting brothers to use this interval.',
     },
     {
       labelText: 'Perk every 3 veteran levels',
@@ -1131,7 +1190,13 @@ test('filters origin backgrounds from the background search menu', async ({ page
   ).toBeVisible()
   await expect(originBackgroundsCheckbox).toBeChecked()
   await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBe('true')
-  await expect(backgroundFitPanel.getByText('Origin: Crusader').first()).toBeVisible()
+  const holyCrusaderCard = backgroundFitPanel
+    .getByTestId('background-fit-card')
+    .filter({ hasText: 'Holy Crusader' })
+  await expect(holyCrusaderCard.locator('[data-background-pill-kind="origin"]')).toHaveText(
+    'Origin',
+  )
+  await expect(holyCrusaderCard.locator('[data-background-pill-kind="event"]')).toHaveText('Event')
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
     'fill',
@@ -1142,8 +1207,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
   const sharedPage = await page.context().newPage()
 
   try {
-    await sharedPage.setViewportSize(mediumBuildPlannerViewport)
-    await sharedPage.goto(savedUrl)
+    await gotoBuildPlannerUrl(sharedPage, savedUrl, mediumBuildPlannerViewport)
 
     const sharedBackgroundFitPanel = getBackgroundFitPanel(sharedPage)
     const sharedFilterBackgroundsButton = sharedBackgroundFitPanel.getByRole('button', {
@@ -1155,11 +1219,14 @@ test('filters origin backgrounds from the background search menu', async ({ page
 
     await expect(sharedPage.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expectLocatorVisibleInVirtualizedScrollContainer({
-      label: 'Crusader origin background text',
+      label: 'Holy Crusader origin background',
       maximumScrollStepCount: 260,
       page: sharedPage,
       scrollContainer: sharedBackgroundFitPanelBody,
-      target: sharedBackgroundFitPanel.getByText('Origin: Crusader').first(),
+      target: sharedBackgroundFitPanel.getByRole('heading', {
+        level: 3,
+        name: 'Holy Crusader',
+      }),
     })
     await sharedFilterBackgroundsButton.click()
     await expect(
@@ -1176,7 +1243,7 @@ test('filters origin backgrounds from the background search menu', async ({ page
   await expect(originBackgroundsCheckbox).not.toBeChecked()
   await expect.poll(() => new URL(page.url()).searchParams.get('origin-backgrounds')).toBeNull()
   await expect(
-    backgroundFitPanel.getByText('No backgrounds match "origin: crusader".'),
+    backgroundFitPanel.getByText('No backgrounds match "crusader starting roster".'),
   ).toBeVisible()
   await expect(filterBackgroundsButton).toHaveAttribute('data-active-filter', 'true')
   await expect(filterBackgroundsButton.getByTestId('background-fit-filter-icon')).toHaveAttribute(
@@ -1230,18 +1297,11 @@ test('filters origin backgrounds from the background search menu', async ({ page
 })
 
 test('keeps the background filter dropdown above background fit cards', async ({ page }) => {
-  await page.setViewportSize({ height: 980, width: 390 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { height: 980, width: 390 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
-    name: 'Expand background fit',
-  })
 
-  if ((await expandBackgroundFitButton.count()) > 0) {
-    await expandBackgroundFitButton.click()
-  }
-
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(
     backgroundFitPanel.getByTestId('background-fit-card').filter({ hasText: 'Bastard' }).first(),
@@ -1482,7 +1542,7 @@ test('hides redundant background disambiguator pills when they only repeat the n
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
-  await backgroundSearchInput.fill('Gladiator')
+  await backgroundSearchInput.fill('Assassin')
 
   await expect
     .poll(async () =>
@@ -1497,12 +1557,12 @@ test('hides redundant background disambiguator pills when they only repeat the n
 
             return { disambiguator, heading }
           })
-          .filter((backgroundFitCard) => backgroundFitCard.heading === 'Gladiator'),
+          .filter((backgroundFitCard) => backgroundFitCard.heading === 'Assassin'),
       ),
     )
     .toContainEqual({
       disambiguator: null,
-      heading: 'Gladiator',
+      heading: 'Assassin',
     })
 })
 
@@ -1537,8 +1597,7 @@ test('keeps zero-match backgrounds after matching backgrounds in the full ranked
 test('keeps dense background names readable from a shared build url and starts collapsed', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1400, height: 900 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { width: 1400, height: 900 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
@@ -1592,15 +1651,14 @@ test('keeps dense background names readable from a shared build url and starts c
 test('keeps the dense build workspace visible while filtering backgrounds on desktop', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1365, height: 900 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { width: 1365, height: 900 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-content')
   const backgroundFitResultsScroll = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await backgroundSearchInput.fill(denseSharedBuildSearchBackgroundQuery)
 
   const denseBuildBackgroundHeading = backgroundFitPanel.getByRole('heading', {
@@ -1672,14 +1730,13 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
 })
 
 test('does not stretch the background search field on tall desktop screens', async ({ page }) => {
-  await page.setViewportSize({ width: 1365, height: 1300 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { width: 1365, height: 1300 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await backgroundSearchInput.fill(denseSharedBuildSearchBackgroundQuery)
   await expect(
     backgroundFitPanel.getByRole('heading', {

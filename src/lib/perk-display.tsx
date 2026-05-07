@@ -1,13 +1,20 @@
 import type { CSSProperties, ReactNode } from 'react'
 import type { RankedBackgroundFit } from './background-fit'
-import { getBackgroundSourceLabel, getOriginBackgroundPillLabel } from './background-origin'
+import {
+  getBackgroundAccessPills,
+  getBackgroundSourceLabel,
+  type BackgroundAccessPill,
+} from './background-origin'
 import { formatDisplayBulletText } from './bullet-display'
 import type {
   LegendsPerkBackgroundSource,
   LegendsPerkRecord,
   LegendsPerkScenarioSource,
 } from '../types/legends-perks'
-import { formatBackgroundVeteranPerkLevelIntervalBadge } from './background-veteran-perks'
+import {
+  formatBackgroundVeteranPerkLevelIntervalBadge,
+  getBackgroundVeteranPerkLevelIntervals,
+} from './background-veteran-perks'
 import {
   gameIconImageWidths,
   getGameIconSrcSet,
@@ -19,6 +26,14 @@ export type GroupedBackgroundSource = {
   backgroundNames: string[]
   probability: number
 }
+
+type VisibleBackgroundPill =
+  | BackgroundAccessPill
+  | {
+      kind: 'disambiguator'
+      label: string
+      title?: undefined
+    }
 
 type PerkGroupHoverTarget = {
   categoryName: string
@@ -289,13 +304,22 @@ function getVisibleBackgroundDisambiguatorLabel(backgroundFit: RankedBackgroundF
     : disambiguatorLabel
 }
 
-export function getVisibleBackgroundPillLabel(backgroundFit: RankedBackgroundFit): string | null {
-  // Unique origin backgrounds are not duplicate-name disambiguation cases, but still need a
-  // visible source label so the origin filter is understandable from the list.
-  return (
-    getOriginBackgroundPillLabel(backgroundFit) ??
-    getVisibleBackgroundDisambiguatorLabel(backgroundFit)
-  )
+export function getVisibleBackgroundPills(
+  backgroundFit: RankedBackgroundFit,
+): VisibleBackgroundPill[] {
+  const visibleBackgroundDisambiguatorLabel = getVisibleBackgroundDisambiguatorLabel(backgroundFit)
+
+  return [
+    ...getBackgroundAccessPills(backgroundFit),
+    ...(visibleBackgroundDisambiguatorLabel === null
+      ? []
+      : [
+          {
+            kind: 'disambiguator',
+            label: visibleBackgroundDisambiguatorLabel,
+          } satisfies VisibleBackgroundPill,
+        ]),
+  ]
 }
 
 type BackgroundFitKeyParts = {
@@ -331,18 +355,23 @@ export function getBackgroundFitKey(backgroundFit: RankedBackgroundFit): string 
 export function getBackgroundFitSearchText(backgroundFit: RankedBackgroundFit): string {
   const sourceFileName =
     backgroundFit.sourceFilePath.split('/').at(-1) ?? backgroundFit.sourceFilePath
-  const visibleBackgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
+  const visibleBackgroundPills = getVisibleBackgroundPills(backgroundFit)
+  const veteranPerkLevelIntervalSearchParts = getBackgroundVeteranPerkLevelIntervals(
+    backgroundFit,
+  ).flatMap((interval) => [
+    formatBackgroundVeteranPerkLevelIntervalBadge(interval),
+    `+${interval}`,
+    `${interval} veteran levels`,
+  ])
   const searchParts = [
     backgroundFit.backgroundName,
     backgroundFit.disambiguator,
     backgroundFit.disambiguator === null
       ? null
       : formatBackgroundDisambiguatorLabel(backgroundFit.disambiguator),
-    visibleBackgroundPillLabel,
+    ...visibleBackgroundPills.flatMap((pill) => [pill.label, pill.title]),
     backgroundFit.backgroundId,
-    formatBackgroundVeteranPerkLevelIntervalBadge(backgroundFit.veteranPerkLevelInterval),
-    `+${backgroundFit.veteranPerkLevelInterval}`,
-    `${backgroundFit.veteranPerkLevelInterval} veteran levels`,
+    ...veteranPerkLevelIntervalSearchParts,
     sourceFileName,
     backgroundFit.sourceFilePath,
   ]

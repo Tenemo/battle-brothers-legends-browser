@@ -48,14 +48,6 @@ const perkFilterTooltips = {
 
 const getPerkResultItemKey: ComputeItemKey<LegendsPerkRecord, unknown> = (_index, perk) => perk.id
 
-function getInitialShouldUseWindowPerkResultScroll(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return false
-  }
-
-  return window.matchMedia(mobilePerkResultMediaQuery).matches
-}
-
 function getEstimatedPerkResultHeight(perk: LegendsPerkRecord): number {
   const previewTextLength = getPerkPreviewParagraphs(perk).join(' ').length
   const placementLineCount = Math.max(1, Math.ceil(perk.placements.length / 3))
@@ -392,9 +384,7 @@ export function PerkResults({
     openResultsPerkHover: onOpenResultsPerkHover,
   } = usePlannerInteractionActions()
   const [isPerkFilterMenuOpen, setIsPerkFilterMenuOpen] = useState(false)
-  const [shouldUseWindowPerkResultScroll, setShouldUseWindowPerkResultScroll] = useState(
-    getInitialShouldUseWindowPerkResultScroll,
-  )
+  const [shouldUseWindowPerkResultScroll, setShouldUseWindowPerkResultScroll] = useState(false)
   const perkFilterMenuId = useId()
   const perkFilterMenuRef = useRef<HTMLDivElement | null>(null)
   const resultsListRef = useRef<HTMLElement | null>(null)

@@ -403,17 +403,25 @@
     white-space: nowrap;
   }
 
+  .backgroundFitVeteranPerkBadges {
+    display: inline-flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2xs);
+    position: absolute;
+    right: var(--background-fit-card-padding-inline);
+    bottom: var(--background-fit-card-padding-block);
+    z-index: var(--z-index-indicator);
+    max-width: calc(100% - var(--background-fit-card-padding-inline) * 2);
+    pointer-events: none;
+  }
+
   .backgroundFitVeteranPerkBadge {
     --background-fit-veteran-perk-badge-border: var(--primitive-color-rgb-190-128-73-alpha-0-68);
     --background-fit-veteran-perk-badge-background: var(--primitive-color-rgb-120-72-43-alpha-0-22);
     --background-fit-veteran-perk-badge-color: var(--primitive-color-rgb-236-176-116);
 
     flex: 0 0 auto;
-    position: absolute;
-    right: var(--background-fit-card-padding-inline);
-    bottom: var(--background-fit-card-padding-block);
-    z-index: var(--z-index-indicator);
-    max-width: 100%;
     min-height: var(--target-size-compact);
     border-color: var(--background-fit-veteran-perk-badge-border);
     padding: var(--space-3xs) var(--space-sm);
@@ -426,6 +434,7 @@
     line-height: var(--type-compact-line-height);
     white-space: nowrap;
     cursor: help;
+    pointer-events: auto;
 
     &[data-veteran-perk-interval='2'] {
       --background-fit-veteran-perk-badge-border: rgb(236 196 95 / 0.82);

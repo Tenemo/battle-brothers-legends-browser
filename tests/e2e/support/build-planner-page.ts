@@ -10,6 +10,7 @@ const defaultBuildPlannerViewport = {
   width: 900,
 } as const
 export const backgroundFitCalculationTimeoutMs = 30_000
+const buildPlannerAppReadyTimeoutMs = process.env.PLAYWRIGHT_BASE_URL ? 15_000 : 10_000
 
 export const mediumBuildPlannerViewport = {
   height: 720,
@@ -142,6 +143,20 @@ export function getBuildPerksBar(page: Page): Locator {
 
 export function getBackgroundFitPanel(page: Page): Locator {
   return page.getByTestId('background-fit-panel')
+}
+
+export async function ensureBackgroundFitPanelExpanded(backgroundFitPanel: Locator): Promise<void> {
+  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
+    name: 'Expand background fit',
+  })
+
+  if (await expandBackgroundFitButton.isVisible()) {
+    await expandBackgroundFitButton.click()
+  }
+
+  await expect(
+    backgroundFitPanel.getByRole('button', { name: 'Collapse background fit' }),
+  ).toHaveAttribute('aria-expanded', 'true')
 }
 
 export function getDetailPanel(page: Page): Locator {
@@ -438,8 +453,54 @@ export async function gotoBuildPlanner(
   page: Page,
   viewport: BuildPlannerViewport = defaultBuildPlannerViewport,
 ): Promise<void> {
-  await page.setViewportSize(viewport)
-  await page.goto('/')
+  await gotoBuildPlannerUrl(page, '/', viewport)
+}
+
+async function expectBuildPlannerAppReady(page: Page): Promise<void> {
+  await expect
+    .poll(
+      async () => {
+        try {
+          return await page.evaluate(() => {
+            if (document.documentElement.dataset.battleBrothersAppReady === 'true') {
+              return 'ready'
+            }
+
+            const bodyText = document.body?.innerText ?? ''
+
+            if (
+              bodyText.includes('We are verifying your connection') &&
+              bodyText.includes('Security by Netlify')
+            ) {
+              return 'netlify-challenge'
+            }
+
+            if (document.querySelector('[data-testid="app-shell"]')) {
+              return 'static-shell'
+            }
+
+            return document.readyState === 'loading' ? 'loading' : 'missing-app'
+          })
+        } catch {
+          return 'navigating'
+        }
+      },
+      { timeout: buildPlannerAppReadyTimeoutMs },
+    )
+    .toBe('ready')
+}
+
+export async function gotoBuildPlannerUrl(
+  page: Page,
+  url: string,
+  viewport?: BuildPlannerViewport,
+): Promise<void> {
+  if (viewport) {
+    await page.setViewportSize(viewport)
+  }
+
+  await page.goto(url)
+  await expectBuildPlannerAppReady(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expect(page.getByLabel('Search perks')).toBeVisible()
   await expect(getBuildPerksBar(page)).toBeVisible()

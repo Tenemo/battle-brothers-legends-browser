@@ -13,6 +13,7 @@ export type SavedBuildPlannerFilters = {
   shouldAllowBackgroundStudyScroll: boolean
   shouldAllowSecondBackgroundStudyScroll: boolean
   shouldIncludeAncientScrollPerkGroups: boolean
+  shouldIncludeEventBackgrounds?: boolean
   shouldIncludeOriginBackgrounds: boolean
   shouldIncludeOriginPerkGroups: boolean
 }
@@ -250,6 +251,11 @@ function readSavedBuildPlannerFilters(value: unknown): SavedBuildPlannerFilters 
       plannerFilters,
       'shouldIncludeAncientScrollPerkGroups',
       true,
+    ),
+    shouldIncludeEventBackgrounds: readBooleanProperty(
+      plannerFilters,
+      'shouldIncludeEventBackgrounds',
+      false,
     ),
     shouldIncludeOriginBackgrounds: readBooleanProperty(
       plannerFilters,

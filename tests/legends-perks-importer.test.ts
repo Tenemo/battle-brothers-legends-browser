@@ -387,7 +387,7 @@ describe('legends perks importer', () => {
     )
   })
 
-  test('applies fixed origin roster veteran intervals without changing normal backgrounds', () => {
+  test('keeps native veteran intervals and adds origin veteran interval contexts', () => {
     const loneWolfBackground = dataset.backgroundFitBackgrounds.find(
       (background) => background.backgroundId === 'background.legend_lonewolf',
     )
@@ -397,6 +397,9 @@ describe('legends perks importer', () => {
     const valaBackground = dataset.backgroundFitBackgrounds.find(
       (background) => background.backgroundId === 'background.legend_vala',
     )
+    const prizefighterBackground = dataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'legend_gladiator_prizefighter_background',
+    )
 
     expect(loneWolfBackground).toEqual(
       expect.objectContaining({
@@ -404,7 +407,24 @@ describe('legends perks importer', () => {
         backgroundName: 'Lone Wolf',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_lonewolf_background.nut',
-        veteranPerkLevelInterval: 2,
+        veteranPerkLevelInterval: 4,
+        veteranPerkLevelIntervalContexts: [
+          {
+            interval: 2,
+            kind: 'origin',
+            label: 'Origin: Lone Wolf',
+            scenarioId: 'scenario.lone_wolf',
+            scenarioName: 'Lone Wolf',
+            sourceFilePath:
+              'tests/fixtures/legends-reference/mod_legends/hooks/scenarios/world/lone_wolf_scenario.nut',
+          },
+          {
+            interval: 4,
+            kind: 'native',
+            label: 'Native background',
+          },
+        ],
+        veteranPerkLevelIntervals: [2, 4],
       }),
     )
     expect(valaBackground).toEqual(
@@ -413,7 +433,24 @@ describe('legends perks importer', () => {
         backgroundName: 'Vala',
         sourceFilePath:
           'tests/fixtures/legends-reference/scripts/skills/backgrounds/legend_vala_background.nut',
-        veteranPerkLevelInterval: 2,
+        veteranPerkLevelInterval: 3,
+        veteranPerkLevelIntervalContexts: [
+          {
+            interval: 2,
+            kind: 'origin',
+            label: 'Origin: Trader',
+            scenarioId: 'scenario.trader',
+            scenarioName: 'Trader',
+            sourceFilePath:
+              'tests/fixtures/legends-reference/mod_legends/hooks/scenarios/world/trader_scenario.nut',
+          },
+          {
+            interval: 3,
+            kind: 'native',
+            label: 'Native background',
+          },
+        ],
+        veteranPerkLevelIntervals: [2, 3],
       }),
     )
     expect(beastSlayerBackground).toEqual(
@@ -421,6 +458,48 @@ describe('legends perks importer', () => {
         backgroundId: 'background.beast_slayer',
         backgroundName: 'Beast Slayer',
         veteranPerkLevelInterval: 4,
+        veteranPerkLevelIntervalContexts: [
+          {
+            interval: 2,
+            kind: 'origin',
+            label: 'Origin: Beast Slayers',
+            scenarioId: 'scenario.beast_hunters',
+            scenarioName: 'Beast Slayers',
+            sourceFilePath:
+              'tests/fixtures/legends-reference/mod_legends/hooks/scenarios/world/beast_hunters_scenario.nut',
+          },
+          {
+            interval: 4,
+            kind: 'native',
+            label: 'Native background',
+          },
+        ],
+        veteranPerkLevelIntervals: [2, 4],
+      }),
+    )
+    expect(prizefighterBackground).toEqual(
+      expect.objectContaining({
+        backgroundAccessContexts: expect.arrayContaining([
+          expect.objectContaining({
+            kind: 'origin',
+            label: 'Random Solo starting roster',
+          }),
+          expect.objectContaining({
+            kind: 'origin',
+            label: 'The Free Company starting roster',
+          }),
+        ]),
+        backgroundId: 'legend_gladiator_prizefighter_background',
+        backgroundName: 'Gladiator Prizefighter',
+        veteranPerkLevelInterval: 3,
+        veteranPerkLevelIntervalContexts: [
+          {
+            interval: 3,
+            kind: 'native',
+            label: 'Native background',
+          },
+        ],
+        veteranPerkLevelIntervals: [3],
       }),
     )
   })

@@ -77,6 +77,13 @@ describe('wait for production deploy', () => {
       timeoutMs: 30000,
       webBaseUrl: 'https://battlebrothers.academy',
     })
+
+    expect(
+      parseWaitForProductionDeployArgs(['--web', 'https://battlebrothers.academy']),
+    ).toMatchObject({
+      expectedCommitSha: null,
+      webBaseUrl: 'https://battlebrothers.academy',
+    })
   })
 
   test('rejects misleading production wait inputs', () => {
@@ -98,8 +105,9 @@ describe('wait for production deploy', () => {
     expect(readCommitSha(null)).toBeNull()
   })
 
-  test('requires both exact version commit and healthy homepage markers', () => {
+  test('requires healthy homepage markers and exact commit when requested', () => {
     expect(isProductionReadinessStatusSuccessful(createStatus(), expectedCommitSha)).toBe(true)
+    expect(isProductionReadinessStatusSuccessful(createStatus(), null)).toBe(true)
     expect(
       isProductionReadinessStatusSuccessful(
         createStatus({ commitSha: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa' }),
@@ -109,6 +117,9 @@ describe('wait for production deploy', () => {
     expect(
       isProductionReadinessStatusSuccessful(createStatus({ homepageOk: false }), expectedCommitSha),
     ).toBe(false)
+    expect(isProductionReadinessStatusSuccessful(createStatus({ commitSha: null }), null)).toBe(
+      false,
+    )
   })
 
   test('waits for consecutive stable readiness checks and resets after failures', async () => {
@@ -120,7 +131,7 @@ describe('wait for production deploy', () => {
       createStatus(),
     ]
 
-    await waitForProductionDeploy(createOptions(), {
+    const readinessStatus = await waitForProductionDeploy(createOptions(), {
       loadReadinessStatus: () => {
         const status = statuses.shift()
 
@@ -137,6 +148,7 @@ describe('wait for production deploy', () => {
     })
 
     expect(statuses).toHaveLength(0)
+    expect(readinessStatus.version.commitSha).toBe(expectedCommitSha)
     expect(observedLogMessages).toEqual([
       expect.stringContaining('Production readiness check 1/2 succeeded.'),
       expect.stringContaining('Waiting for production deploy'),
@@ -161,6 +173,22 @@ describe('wait for production deploy', () => {
       }),
     ).rejects.toThrow(
       `Timed out waiting for production site https://battlebrothers.academy to stably serve commit ${expectedCommitSha}.`,
+    )
+  })
+
+  test('can wait for healthy production without requiring a specific commit', async () => {
+    const observedLogMessages: string[] = []
+
+    await waitForProductionDeploy(createOptions({ expectedCommitSha: null }), {
+      loadReadinessStatus: () => createStatus(),
+      log: (message) => {
+        observedLogMessages.push(message)
+      },
+      sleep: async () => {},
+    })
+
+    expect(observedLogMessages).toContainEqual(
+      expect.stringContaining(`Production site is stably ready at commit ${expectedCommitSha}.`),
     )
   })
 

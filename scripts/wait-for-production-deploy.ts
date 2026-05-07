@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -13,7 +14,7 @@ const homepageExpectedSnippets = [
 const currentFilePath = fileURLToPath(import.meta.url)
 
 export type WaitForProductionDeployOptions = {
-  expectedCommitSha: string
+  expectedCommitSha: string | null
   intervalMs: number
   requestTimeoutMs: number
   requiredStableChecks: number
@@ -116,16 +117,12 @@ export function parseWaitForProductionDeployArgs(args: string[]): WaitForProduct
   const rawCommitSha = getArgValue('--commit')
   const rawWebBaseUrl = getArgValue('--web')
 
-  if (!rawCommitSha) {
-    fail('Missing required --commit argument.')
-  }
-
   if (!rawWebBaseUrl) {
     fail('Missing required --web argument.')
   }
 
   return {
-    expectedCommitSha: normalizeCommitSha(rawCommitSha),
+    expectedCommitSha: rawCommitSha ? normalizeCommitSha(rawCommitSha) : null,
     intervalMs: parsePositiveInteger(
       getArgValue('--interval-ms'),
       defaultIntervalMs,
@@ -289,9 +286,14 @@ export async function loadProductionReadinessStatus(
 
 export function isProductionReadinessStatusSuccessful(
   status: ProductionReadinessStatus,
-  expectedCommitSha: string,
+  expectedCommitSha: string | null,
 ): boolean {
-  return status.version.ok && status.version.commitSha === expectedCommitSha && status.homepage.ok
+  const isVersionSuccessful =
+    status.version.ok &&
+    status.version.commitSha !== null &&
+    (expectedCommitSha === null || status.version.commitSha === expectedCommitSha)
+
+  return isVersionSuccessful && status.homepage.ok
 }
 
 function formatVersionStatus(status: JsonProbeStatus): string {
@@ -324,7 +326,7 @@ const sleep = async (delayMs: number): Promise<void> => {
 export async function waitForProductionDeploy(
   options: WaitForProductionDeployOptions,
   dependencies: WaitForProductionDeployDependencies = {},
-): Promise<void> {
+): Promise<ProductionReadinessStatus> {
   const loadStatus = dependencies.loadReadinessStatus ?? loadProductionReadinessStatus
   const log = dependencies.log ?? console.log
   const resolveNow = dependencies.now ?? Date.now
@@ -346,14 +348,20 @@ export async function waitForProductionDeploy(
       )
 
       if (stableChecks >= options.requiredStableChecks) {
-        log(`Production site is stably serving commit ${options.expectedCommitSha}.`)
-        return
+        log(
+          options.expectedCommitSha === null
+            ? `Production site is stably ready at commit ${readinessStatus.version.commitSha ?? 'unknown'}.`
+            : `Production site is stably serving commit ${options.expectedCommitSha}.`,
+        )
+        return readinessStatus
       }
     } else {
       stableChecks = 0
       log(
         [
-          `Waiting for production deploy ${options.expectedCommitSha}.`,
+          options.expectedCommitSha === null
+            ? 'Waiting for production readiness.'
+            : `Waiting for production deploy ${options.expectedCommitSha}.`,
           formatProductionReadinessStatus(readinessStatus),
         ].join(' '),
       )
@@ -363,10 +371,21 @@ export async function waitForProductionDeploy(
   }
 
   fail(
-    `Timed out waiting for production site ${options.webBaseUrl} to stably serve commit ${options.expectedCommitSha}.`,
+    options.expectedCommitSha === null
+      ? `Timed out waiting for production site ${options.webBaseUrl} to become stably ready.`
+      : `Timed out waiting for production site ${options.webBaseUrl} to stably serve commit ${options.expectedCommitSha}.`,
   )
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === currentFilePath) {
-  await waitForProductionDeploy(parseWaitForProductionDeployArgs(process.argv.slice(2)))
+  const readinessStatus = await waitForProductionDeploy(
+    parseWaitForProductionDeployArgs(process.argv.slice(2)),
+  )
+
+  if (process.env.GITHUB_OUTPUT && readinessStatus.version.commitSha) {
+    appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `production-commit-sha=${readinessStatus.version.commitSha}\n`,
+    )
+  }
 }

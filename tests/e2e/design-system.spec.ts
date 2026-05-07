@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
+  ensureBackgroundFitPanelExpanded,
+  getBackgroundFitPanel,
   getResolvedCssBorderColor,
   gotoBuildPlanner,
   searchPerks,
@@ -55,7 +57,7 @@ test('keeps repeated surfaces aligned through shared design primitives', async (
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
-  await page.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(getBackgroundFitPanel(page))
   await expect(page.getByRole('button', { name: 'Inspect background Apprentice' })).toBeVisible()
   await page.getByRole('button', { name: 'Inspect Axe Mastery' }).click()
   await expect(page.getByRole('heading', { level: 2, name: 'Axe Mastery' })).toBeVisible()
@@ -130,7 +132,7 @@ test('keeps compact desktop controls above the minimum target size', async ({ pa
   await gotoBuildPlanner(page, { height: 720, width: 1280 })
   await searchPerks(page, 'Axe Mastery')
   await addPerkToBuildFromResults(page, 'Axe Mastery')
-  await page.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(getBackgroundFitPanel(page))
   await expect(page.getByRole('button', { name: 'Inspect background Apprentice' })).toBeVisible()
 
   const targetMetrics = await page.evaluate(() => {

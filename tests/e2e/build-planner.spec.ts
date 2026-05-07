@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
+  ensureBackgroundFitPanelExpanded,
   expectCssRgbColorsToMatch,
   getBackgroundFitPanel,
   expectNoDocumentHorizontalOverflow,
@@ -19,6 +20,7 @@ import {
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   inspectPerkFromResults,
   mediumBuildPlannerViewport,
   searchPerks,
@@ -140,7 +142,7 @@ async function getRequirementChainScaleMetrics(
   viewport: { height: number; width: number },
 ) {
   await gotoBuildPlanner(page, viewport)
-  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   return page.evaluate(() => {
@@ -614,7 +616,8 @@ test('build planner splits shared and individual perk groups without layout drif
   await page.mouse.move(1, 1)
   await expect(buildPerkTooltip).toHaveCount(0)
 
-  await page.goto(
+  await gotoBuildPlannerUrl(
+    page,
     '/?build=Clarity,Peaceable,Perfect+Focus,Berserk,Killing+Frenzy,Fearsome,Colossus',
   )
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
@@ -679,7 +682,7 @@ test('scrolls the planner below wide desktop only after compact content exceeds 
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 720 })
-  await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 7)))
+  await gotoBuildPlannerUrl(page, createBuildUrl(manyPickedPerkNames.slice(0, 7)))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expectPlannerGroupTilesSettled(page)
 
@@ -696,7 +699,7 @@ test('scrolls the planner below wide desktop only after compact content exceeds 
   ).toBeLessThanOrEqual(2)
   expect(twoRowPlannerMetrics.totalContentRows).toBeLessThanOrEqual(4)
 
-  await page.goto(createBuildUrl(manyPickedPerkNames.slice(0, 18)))
+  await gotoBuildPlannerUrl(page, createBuildUrl(manyPickedPerkNames.slice(0, 18)))
   await expect(page.getByText('18 perks picked.')).toBeVisible()
   await expectPlannerGroupTilesSettled(page)
   await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute(
@@ -710,7 +713,7 @@ test('scrolls the planner below wide desktop only after compact content exceeds 
   expect(overflowingPlannerMetrics.totalContentRows).toBeGreaterThan(4)
 
   await page.setViewportSize({ width: 2560, height: 900 })
-  await page.goto(createBuildUrl(manyPickedPerkNames))
+  await gotoBuildPlannerUrl(page, createBuildUrl(manyPickedPerkNames))
   await expect(page.getByText('27 perks picked.')).toBeVisible()
   await expectPlannerGroupTilesSettled(page)
   await expect(page.getByRole('region', { name: 'Build planner' })).toHaveAttribute(
@@ -726,7 +729,7 @@ test('scrolls the planner below wide desktop only after compact content exceeds 
 test('groups perk groups by shared and individual perk coverage', async ({ page }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const buildSharedGroupsList = getBuildSharedGroupsList(page)
@@ -747,7 +750,7 @@ test('groups perk groups by shared and individual perk coverage', async ({ page 
 
 test('collapses and restores build planner perk group sections independently', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
-  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const buildSharedGroupsList = getBuildSharedGroupsList(page)
@@ -982,7 +985,7 @@ test('collapses and restores build planner perk group sections independently', a
 
 test('wraps collapsible planner group labels on mobile without hiding text', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 844, width: 390 })
-  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expectNoDocumentHorizontalOverflow(page)
 
@@ -1120,7 +1123,7 @@ test('wraps collapsible planner group labels on mobile without hiding text', asy
 test('selects build planner perk groups from their group tiles', async ({ page }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await searchPerks(page, 'temporary search')
 
@@ -1261,7 +1264,7 @@ test('resets perk result scrolling when selecting the same build planner perk gr
 test('filters multi-option planner group icons individually', async ({ page }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto('/?build=Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const activePlannerBorderColor = await getResolvedCssBorderColor(page, 'var(--border-strong)')
@@ -1318,7 +1321,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
 }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const activePlannerSurfaceColor = await getResolvedCssBackgroundColor(
@@ -1481,7 +1484,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
 test('opens planner group pill tooltip actions from keyboard focus', async ({ page }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto('/?build=Battle+Forged,Immovable+Object,Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Battle+Forged,Immovable+Object,Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const heavyArmorGroupCard = getBuildSharedGroupsList(page)
@@ -1517,7 +1520,10 @@ test('keeps picked perk hover from highlighting peer picked perks in the same gr
 }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto(createBuildUrl(['Battle Forged', 'Immovable Object', 'Steadfast', 'Brawny']))
+  await gotoBuildPlannerUrl(
+    page,
+    createBuildUrl(['Battle Forged', 'Immovable Object', 'Steadfast', 'Brawny']),
+  )
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const buildPerksBar = getBuildPerksBar(page)
@@ -1549,7 +1555,10 @@ test('keeps picked perk hover from highlighting peer picked perks in the same gr
 test('visually highlights optional picked perks from matching group hover', async ({ page }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto(createBuildUrl(['Battle Forged', 'Immovable Object', 'Steadfast', 'Brawny']))
+  await gotoBuildPlannerUrl(
+    page,
+    createBuildUrl(['Battle Forged', 'Immovable Object', 'Steadfast', 'Brawny']),
+  )
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const activePlannerSurfaceColor = await getResolvedCssBackgroundColor(
@@ -1625,7 +1634,7 @@ test('visually highlights optional picked perks from matching group hover', asyn
 test('keeps long planner group names compact without category text', async ({ page }) => {
   await gotoBuildPlanner(page)
 
-  await page.goto('/?build=Steadfast')
+  await gotoBuildPlannerUrl(page, '/?build=Steadfast')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const plannerGroupCard = getBuildIndividualGroupsList(page)
@@ -1727,7 +1736,7 @@ test('keeps ancient scroll group tile markers from reserving header space', asyn
 
 test('wraps picked perk names at spaces inside compact fixed tiles', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
-  await page.goto(createBuildUrl(['Ammunition Bundles', 'Clarity']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Ammunition Bundles', 'Clarity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const ammunitionBundlesPickedPerkTile = getBuildPerksBar(page)
@@ -2032,7 +2041,7 @@ test('keeps requirement chains scaled with picked perk tiles on compact desktop'
 
 test('marks picked perks as optional and separates them from must-have perks', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
-  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const buildPerksBar = getBuildPerksBar(page)
@@ -2338,7 +2347,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await expect(
     backgroundFitPanel
       .getByTestId('background-fit-summary-label')
@@ -2407,7 +2416,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
 
 test('cancels a picked perk tooltip timer before marking the perk optional', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
-  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const buildPerksBar = getBuildPerksBar(page)
@@ -2438,7 +2447,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
   page,
 }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
-  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Clarity', 'Perfect Focus', 'Student']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const buildPerksBar = getBuildPerksBar(page)
@@ -2475,7 +2484,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
 
 test('keeps picked perk word layout unchanged on hover', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
-  await page.goto(createBuildUrl(['Anticipation', 'Clarity']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Anticipation', 'Clarity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const anticipationPickedPerkTile = getBuildPerksBar(page)
@@ -2656,7 +2665,7 @@ test('links search result hover highlighting with matching build planner perks',
 
 test('keeps sidebar perk group selection emphasized in the build planner', async ({ page }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
-  await page.goto(createBuildUrl(['Colossus', 'Muscularity']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Colossus', 'Muscularity']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const sharedLargeGroupCard = getBuildSharedGroupsList(page)
@@ -2686,7 +2695,7 @@ test('deselects a picked perk group from the build planner when clicked again', 
   page,
 }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
-  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Clarity', 'Perfect Focus']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const traitsCategoryButton = page.getByRole('button', { name: 'Enable category Traits' })
@@ -2716,7 +2725,7 @@ test('deselects a picked perk group from the build planner when clicked again', 
 
 test('links planner perk and category hover highlighting both ways', async ({ page }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
-  await page.goto(createBuildUrl(['Clarity', 'Perfect Focus']))
+  await gotoBuildPlannerUrl(page, createBuildUrl(['Clarity', 'Perfect Focus']))
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const traitsCategoryButton = page.getByRole('button', { name: 'Enable category Traits' })
@@ -2918,7 +2927,7 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
 
 test('keeps the picked count and clear action aligned for dense builds', async ({ page }) => {
   await gotoBuildPlanner(page, mediumBuildPlannerViewport)
-  await page.goto(createBuildUrl(manyPickedPerkNames))
+  await gotoBuildPlannerUrl(page, createBuildUrl(manyPickedPerkNames))
 
   await expect(page.getByText('27 perks picked.')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Clear build' })).toBeEnabled()

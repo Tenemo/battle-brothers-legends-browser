@@ -43,6 +43,7 @@ export function useBuildPlannerUrlSync(
     shouldAllowBackgroundStudyScroll,
     shouldAllowSecondBackgroundStudyScroll,
     shouldIncludeAncientScrollPerkGroups,
+    shouldIncludeEventBackgrounds,
     shouldIncludeOriginBackgrounds,
     shouldIncludeOriginPerkGroups,
   } = urlState
@@ -66,6 +67,7 @@ export function useBuildPlannerUrlSync(
         shouldAllowBackgroundStudyScroll,
         shouldAllowSecondBackgroundStudyScroll,
         shouldIncludeAncientScrollPerkGroups,
+        shouldIncludeEventBackgrounds,
         shouldIncludeOriginBackgrounds,
         shouldIncludeOriginPerkGroups,
       },
@@ -114,6 +116,7 @@ export function useBuildPlannerUrlSync(
     shouldAllowBackgroundStudyScroll,
     shouldAllowSecondBackgroundStudyScroll,
     shouldIncludeAncientScrollPerkGroups,
+    shouldIncludeEventBackgrounds,
     shouldIncludeOriginBackgrounds,
     shouldIncludeOriginPerkGroups,
   ])

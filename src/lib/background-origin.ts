@@ -1,122 +1,91 @@
-import type { RankedBackgroundFit } from './background-fit'
+import type { RankedBackgroundFit, RankedBackgroundFitPreview } from './background-fit'
+import type { LegendsBackgroundAccessContextKind } from '../types/legends-perks'
 
-type BackgroundFitOriginCandidate = Pick<
-  RankedBackgroundFit,
-  'backgroundId' | 'disambiguator' | 'sourceFilePath'
+type BackgroundAccessCandidate = Pick<
+  RankedBackgroundFit | RankedBackgroundFitPreview,
+  'backgroundAccessContexts' | 'hasRegularRecruitment'
 >
+
+export type BackgroundAccessPill = {
+  kind: LegendsBackgroundAccessContextKind
+  label: 'Event' | 'Origin'
+  title: string
+}
+
+const backgroundAccessPillLabelsByKind = {
+  event: 'Event',
+  origin: 'Origin',
+} satisfies Record<LegendsBackgroundAccessContextKind, BackgroundAccessPill['label']>
+
+const backgroundAccessTitlePrefixesByKind = {
+  event: 'Event access',
+  origin: 'Origin access',
+} satisfies Record<LegendsBackgroundAccessContextKind, string>
+
+const backgroundAccessKindOrder: LegendsBackgroundAccessContextKind[] = ['origin', 'event']
 
 export function getBackgroundSourceLabel(label: string): string {
   return label.replace(/^background\./, '').toLowerCase()
 }
 
-function getBackgroundSourceFileLabel(sourceFilePath: string): string {
-  const sourceFileName = sourceFilePath.split('/').at(-1) ?? sourceFilePath
-
-  return sourceFileName
-    .replace(/_background\.nut$/u, '')
-    .replace(/\.nut$/u, '')
-    .toLowerCase()
-}
-
-function getBackgroundFitOriginCandidateLabels(
-  backgroundFit: BackgroundFitOriginCandidate,
+function getUniqueBackgroundAccessContextLabels(
+  backgroundFit: BackgroundAccessCandidate,
+  kind: LegendsBackgroundAccessContextKind,
 ): string[] {
   return [
-    backgroundFit.backgroundId,
-    backgroundFit.disambiguator,
-    getBackgroundSourceFileLabel(backgroundFit.sourceFilePath),
-  ].filter((candidateLabel): candidateLabel is string => typeof candidateLabel === 'string')
+    ...new Set(
+      (backgroundFit.backgroundAccessContexts ?? [])
+        .filter((context) => context.kind === kind)
+        .map((context) => context.label),
+    ),
+  ].toSorted((leftLabel, rightLabel) => leftLabel.localeCompare(rightLabel))
 }
 
-const originBackgroundPillLabelsBySourceLabel = new Map<string, string>([
-  ['crusader', 'Origin: Crusader/Inquisition'],
-  ['legend_battle_sister', 'Origin: Sisterhood'],
-  ['legend_berserker', 'Origin: Berserker'],
-  ['legend_bladedancer', 'Origin: Nomad'],
-  ['legend_bounty_hunter', 'Origin: Assassin'],
-  ['legend_crusader', 'Origin: Crusader'],
-  ['legend_guildmaster', 'Origin: Beast slayers'],
-  ['legend_husk', 'Origin: Davkul'],
-  ['legend_leech_peddler', 'Origin: Peasant militia'],
-  ['legend_lonewolf', 'Origin: Lone wolf'],
-  ['legend_lurker', 'Origin: Davkul'],
-  ['legend_magister', 'Origin: Davkul'],
-  ['legend_man_at_arms', 'Origin: Peasant militia'],
-  ['legend_nightwatch', 'Origin: Peasant militia'],
-  ['legend_pilgrim', 'Origin: Crusader'],
-  ['legend_preserver', 'Origin: Necromancer'],
-  ['legend_puppet_master', 'Origin: Necromancer'],
-  ['legend_warlock_summoner', 'Origin: Necromancer'],
-  ['legend_youngblood', 'Origin: Crusader/Inquisition'],
-])
+export function getBackgroundAccessPills(
+  backgroundFit: BackgroundAccessCandidate,
+): BackgroundAccessPill[] {
+  if (backgroundFit.hasRegularRecruitment ?? false) {
+    return []
+  }
 
-const legionOriginBackgroundSourceLabels = new Set([
-  'legend_legion_auxiliary',
-  'legend_legion_centurion',
-  'legend_legion_gladiator',
-  'legend_legion_honour_guard',
-  'legend_legion_legate',
-  'legend_legion_legionary',
-  'legend_legion_prefect',
-  'legend_legion_slave',
-])
+  return backgroundAccessKindOrder.flatMap((kind) => {
+    const contextLabels = getUniqueBackgroundAccessContextLabels(backgroundFit, kind)
 
-function isCommanderOriginBackgroundSourceLabel(sourceLabel: string): boolean {
-  return (
-    /^legend_.+_commander(?:_op)?$/u.test(sourceLabel) ||
-    /^.+_legend_.+_commander$/u.test(sourceLabel)
-  )
+    if (contextLabels.length === 0) {
+      return []
+    }
+
+    return [
+      {
+        kind,
+        label: backgroundAccessPillLabelsByKind[kind],
+        title: `${backgroundAccessTitlePrefixesByKind[kind]}: ${contextLabels.join('; ')}. This background is not available from regular recruitment.`,
+      },
+    ]
+  })
 }
 
-function getOriginBackgroundPillLabelForSourceLabel(label: string): string | null {
-  const sourceLabel = getBackgroundSourceLabel(label)
-  const pillLabel = originBackgroundPillLabelsBySourceLabel.get(sourceLabel)
-
-  if (pillLabel !== undefined) {
-    return pillLabel
-  }
-
-  if (legionOriginBackgroundSourceLabels.has(sourceLabel)) {
-    return 'Origin: Legion'
-  }
-
-  if (isCommanderOriginBackgroundSourceLabel(sourceLabel)) {
-    return 'Origin: Commander'
-  }
-
-  return null
+export function hasDisplayedBackgroundAccessKind(
+  backgroundFit: BackgroundAccessCandidate,
+  kind: LegendsBackgroundAccessContextKind,
+): boolean {
+  return getBackgroundAccessPills(backgroundFit).some((pill) => pill.kind === kind)
 }
 
-export function isOriginBackgroundSourceLabel(label: string): boolean {
-  const sourceLabel = getBackgroundSourceLabel(label)
+export function hasAnyDisplayedBackgroundAccess(backgroundFit: BackgroundAccessCandidate): boolean {
+  return getBackgroundAccessPills(backgroundFit).length > 0
+}
 
-  return (
-    /^companion_(1h|2h|ranged)$/.test(sourceLabel) ||
-    /^legend_companion_(melee|ranged)$/.test(sourceLabel) ||
-    originBackgroundPillLabelsBySourceLabel.has(sourceLabel) ||
-    legionOriginBackgroundSourceLabels.has(sourceLabel) ||
-    isCommanderOriginBackgroundSourceLabel(sourceLabel)
-  )
+export function isOriginBackgroundFit(backgroundFit: BackgroundAccessCandidate): boolean {
+  return hasDisplayedBackgroundAccessKind(backgroundFit, 'origin')
+}
+
+export function isEventBackgroundFit(backgroundFit: BackgroundAccessCandidate): boolean {
+  return hasDisplayedBackgroundAccessKind(backgroundFit, 'event')
 }
 
 export function getOriginBackgroundPillLabel(
-  backgroundFit: BackgroundFitOriginCandidate,
+  backgroundFit: BackgroundAccessCandidate,
 ): string | null {
-  for (const candidateLabel of getBackgroundFitOriginCandidateLabels(backgroundFit)) {
-    const pillLabel = getOriginBackgroundPillLabelForSourceLabel(candidateLabel)
-
-    if (pillLabel !== null) {
-      return pillLabel
-    }
-  }
-
-  return null
-}
-
-export function isOriginBackgroundFit(backgroundFit: BackgroundFitOriginCandidate): boolean {
-  const candidateLabels = getBackgroundFitOriginCandidateLabels(backgroundFit)
-
-  // The imported background model has no explicit origin flag, so this mirrors the source names
-  // that already drive origin disambiguator labels such as "Origin: Melee" and "Origin: Commander".
-  return candidateLabels.some((candidateLabel) => isOriginBackgroundSourceLabel(candidateLabel))
+  return isOriginBackgroundFit(backgroundFit) ? backgroundAccessPillLabelsByKind.origin : null
 }

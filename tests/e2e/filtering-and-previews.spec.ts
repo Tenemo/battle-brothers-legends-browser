@@ -10,6 +10,7 @@ import {
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   inspectPerkFromResults,
   searchPerks,
   selectPerkGroup,
@@ -449,8 +450,7 @@ test('splits origin and ancient scroll perk search filters', async ({ page }) =>
   const sharedPage = await page.context().newPage()
 
   try {
-    await sharedPage.setViewportSize({ width: 900, height: 720 })
-    await sharedPage.goto(savedUrl)
+    await gotoBuildPlannerUrl(sharedPage, savedUrl, { width: 900, height: 720 })
 
     await expect(
       getResultsList(sharedPage).getByRole('button', { exact: true, name: 'Inspect Berserk' }),

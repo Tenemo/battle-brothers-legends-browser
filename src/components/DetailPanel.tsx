@@ -8,7 +8,7 @@ import {
   formatScenarioGrantLabel,
   getAnchoredTooltipStyle,
   getBackgroundFitKey,
-  getVisibleBackgroundPillLabel,
+  getVisibleBackgroundPills,
   getPerkDisplayIconPath,
   renderGameIcon,
   type GroupedBackgroundSource,
@@ -37,10 +37,7 @@ import {
   getBackgroundTalentAttributeIconTestId,
   getGroupedCampResourceModifiers,
 } from '../lib/background-metadata-display'
-import {
-  formatBackgroundVeteranPerkLevelIntervalBadge,
-  formatBackgroundVeteranPerkLevelIntervalTitle,
-} from '../lib/background-veteran-perks'
+import { getBackgroundVeteranPerkLevelIntervalBadges } from '../lib/background-veteran-perks'
 import { joinClassNames } from '../lib/class-names'
 import { getTierLabel } from '../lib/perk-search'
 import { useBuildPerkTooltipPreview } from '../lib/use-build-perk-tooltip-preview'
@@ -2916,13 +2913,8 @@ function BackgroundDetail({
   studyResourceFilter: BackgroundStudyResourceFilter
   supportedBuildTargetPerkGroups: BuildTargetPerkGroup[]
 }) {
-  const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
-  const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
-    backgroundFit.veteranPerkLevelInterval,
-  )
-  const veteranPerkLevelIntervalTitle = formatBackgroundVeteranPerkLevelIntervalTitle(
-    backgroundFit.veteranPerkLevelInterval,
-  )
+  const backgroundPills = getVisibleBackgroundPills(backgroundFit)
+  const veteranPerkLevelIntervalBadges = getBackgroundVeteranPerkLevelIntervalBadges(backgroundFit)
   const mustHaveBackgroundFit = {
     ...backgroundFit,
     matches: getScopedBackgroundFitMatches(backgroundFit.matches, mustHavePickedPerkIds),
@@ -2937,19 +2929,28 @@ function BackgroundDetail({
       <DetailHeader
         badgeRow={
           <div className={styles.detailBadgeRow} data-testid="detail-badge-row">
-            {backgroundPillLabel ? (
-              <span className={styles.detailBadge} data-testid="detail-background-pill">
-                {backgroundPillLabel}
+            {backgroundPills.map((pill) => (
+              <span
+                className={styles.detailBadge}
+                data-background-pill-kind={pill.kind}
+                data-testid="detail-background-pill"
+                key={`${pill.kind}-${pill.label}`}
+                title={pill.title}
+              >
+                {pill.label}
               </span>
-            ) : null}
-            <span
-              aria-label={`${veteranPerkLevelIntervalLabel} veteran perk interval`}
-              className={styles.detailBadge}
-              data-testid="detail-background-veteran-perk-badge"
-              title={veteranPerkLevelIntervalTitle}
-            >
-              {veteranPerkLevelIntervalLabel}
-            </span>
+            ))}
+            {veteranPerkLevelIntervalBadges.map((badge) => (
+              <span
+                aria-label={`${badge.label} veteran perk interval`}
+                className={styles.detailBadge}
+                data-testid="detail-background-veteran-perk-badge"
+                key={badge.interval}
+                title={badge.title}
+              >
+                {badge.label}
+              </span>
+            ))}
             <BackgroundFitStudyResourceBadges backgroundFit={backgroundFit} />
           </div>
         }

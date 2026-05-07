@@ -123,7 +123,25 @@ export type LegendsBackgroundTrait = {
   traitName: string
 }
 
+export type LegendsBackgroundVeteranPerkLevelIntervalContext = {
+  interval: number
+  kind: 'native' | 'origin'
+  label: string
+  scenarioId?: string
+  scenarioName?: string
+  sourceFilePath?: string
+}
+
+export type LegendsBackgroundAccessContextKind = 'event' | 'origin'
+
+export type LegendsBackgroundAccessContext = {
+  kind: LegendsBackgroundAccessContextKind
+  label: string
+  sourceFilePath: string
+}
+
 export type LegendsBackgroundFitBackgroundDefinition = {
+  backgroundAccessContexts: LegendsBackgroundAccessContext[]
   backgroundId: string
   backgroundName: string
   backgroundTypeNames: string[]
@@ -137,10 +155,13 @@ export type LegendsBackgroundFitBackgroundDefinition = {
   excludedTraitNames: string[]
   guaranteedTraits: LegendsBackgroundTrait[]
   guaranteedTraitNames: string[]
+  hasRegularRecruitment: boolean
   iconPath: string | null
   sourceFilePath: string
   startingAttributeRanges: LegendsBackgroundStartingAttributeRange[]
   veteranPerkLevelInterval: number
+  veteranPerkLevelIntervalContexts: LegendsBackgroundVeteranPerkLevelIntervalContext[]
+  veteranPerkLevelIntervals: number[]
 }
 
 export type LegendsBackgroundFitClassWeaponDependency = {

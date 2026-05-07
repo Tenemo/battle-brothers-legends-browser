@@ -65,15 +65,20 @@ function getRequiredPerkFixture(index: number): LegendsBuildSharePreviewPerkReco
 }
 
 function createSummary({
+  backgroundAccessContexts = [],
   backgroundId,
   backgroundName,
+  hasRegularRecruitment = true,
   sourceFilePath,
 }: {
+  backgroundAccessContexts?: BackgroundFitSummary['backgroundAccessContexts']
   backgroundId: string
   backgroundName: string
+  hasRegularRecruitment?: boolean
   sourceFilePath: string
 }): BackgroundFitSummary {
   return {
+    backgroundAccessContexts,
     backgroundId,
     backgroundName,
     backgroundTypeNames: [],
@@ -88,6 +93,7 @@ function createSummary({
     guaranteedMatchedPerkGroupCount: 1,
     guaranteedTraits: [],
     guaranteedTraitNames: [],
+    hasRegularRecruitment,
     iconPath: null,
     matches: [
       {
@@ -108,28 +114,42 @@ function createSummary({
     sourceFilePath,
     startingAttributeRanges: [],
     veteranPerkLevelInterval: 4,
+    veteranPerkLevelIntervalContexts: [
+      {
+        interval: 4,
+        kind: 'native',
+        label: 'Native background',
+      },
+    ],
+    veteranPerkLevelIntervals: [4],
   }
 }
 
 function createRankedBackgroundFit({
+  backgroundAccessContexts,
   backgroundId,
   backgroundName,
   buildReachabilityProbability = 1,
   expectedCoveredMustHavePerkCount = 1,
   expectedCoveredOptionalPerkCount = 0,
+  hasRegularRecruitment,
   sourceFilePath,
 }: {
+  backgroundAccessContexts?: BackgroundFitSummary['backgroundAccessContexts']
   backgroundId: string
   backgroundName: string
   buildReachabilityProbability?: number
   expectedCoveredMustHavePerkCount?: number
   expectedCoveredOptionalPerkCount?: number
+  hasRegularRecruitment?: boolean
   sourceFilePath: string
 }): RankedBackgroundFit {
   return {
     ...createSummary({
+      backgroundAccessContexts,
       backgroundId,
       backgroundName,
+      hasRegularRecruitment,
       sourceFilePath,
     }),
     buildReachabilityProbability,
@@ -146,13 +166,21 @@ function createRankedBackgroundFit({
 }
 
 describe('build share preview background fits', () => {
-  test('uses fast background fit ranking and filters origin backgrounds from social previews', () => {
+  test('uses fast background fit ranking and filters source backgrounds from social previews', () => {
     const backgroundFitPreviewView = {
       rankedBackgroundFitPreviews: [
         createRankedBackgroundFit({
+          backgroundAccessContexts: [
+            {
+              kind: 'origin',
+              label: 'Berserker hiring roster',
+              sourceFilePath: 'scripts/scenarios/world/legends_berserker_scenario.nut',
+            },
+          ],
           backgroundId: 'background.legend_berserker',
           backgroundName: 'Berserker',
           buildReachabilityProbability: 1,
+          hasRegularRecruitment: false,
           sourceFilePath: 'scripts/skills/backgrounds/legend_berserker_background.nut',
         }),
         createRankedBackgroundFit({

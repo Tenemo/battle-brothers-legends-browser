@@ -58,7 +58,7 @@ import {
 } from './lib/saved-build-planner-filters'
 import type { SavedBuildPlannerFilters } from './lib/saved-builds-storage'
 
-function getInitialBackgroundFitExpandedState() {
+function getViewportBackgroundFitExpandedState() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return true
   }
@@ -120,13 +120,14 @@ export function PlannerExperience() {
   const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(
     initialUrlState.shouldIncludeOriginBackgrounds,
   )
+  const [shouldIncludeEventBackgrounds, setShouldIncludeEventBackgrounds] = useState(
+    initialUrlState.shouldIncludeEventBackgrounds ?? false,
+  )
   const [
     selectedBackgroundVeteranPerkLevelIntervals,
     setSelectedBackgroundVeteranPerkLevelIntervals,
   ] = useState(initialUrlState.selectedBackgroundVeteranPerkLevelIntervals)
-  const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(
-    getInitialBackgroundFitExpandedState,
-  )
+  const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [isCategorySidebarExpanded, setIsCategorySidebarExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const [detailHistoryState, setDetailHistoryState] = useState(() =>
@@ -220,6 +221,7 @@ export function PlannerExperience() {
   )
   const shouldLoadBackgroundFitView =
     hasActiveBackgroundFitSearch ||
+    shouldIncludeEventBackgrounds ||
     shouldIncludeOriginBackgrounds ||
     activeDetailSelection.type === 'background' ||
     (pickedPerks.length > 0 && isBackgroundFitPanelExpanded)
@@ -289,6 +291,7 @@ export function PlannerExperience() {
       shouldAllowBackgroundStudyScroll,
       shouldAllowSecondBackgroundStudyScroll,
       shouldIncludeAncientScrollPerkGroups,
+      shouldIncludeEventBackgrounds,
       shouldIncludeOriginBackgrounds,
       shouldIncludeOriginPerkGroups,
     }),
@@ -305,6 +308,7 @@ export function PlannerExperience() {
       shouldAllowBackgroundStudyScroll,
       shouldAllowSecondBackgroundStudyScroll,
       shouldIncludeAncientScrollPerkGroups,
+      shouldIncludeEventBackgrounds,
       shouldIncludeOriginBackgrounds,
       shouldIncludeOriginPerkGroups,
     ],
@@ -340,6 +344,7 @@ export function PlannerExperience() {
         setShouldAllowBackgroundStudyBook(urlState.shouldAllowBackgroundStudyBook)
         setShouldAllowBackgroundStudyScroll(urlState.shouldAllowBackgroundStudyScroll)
         setShouldAllowSecondBackgroundStudyScroll(urlState.shouldAllowSecondBackgroundStudyScroll)
+        setShouldIncludeEventBackgrounds(urlState.shouldIncludeEventBackgrounds ?? false)
         setShouldIncludeOriginBackgrounds(urlState.shouldIncludeOriginBackgrounds)
         setSelectedBackgroundVeteranPerkLevelIntervals(
           urlState.selectedBackgroundVeteranPerkLevelIntervals,
@@ -414,6 +419,29 @@ export function PlannerExperience() {
     }
   }, [])
 
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    if (
+      typeof window !== 'undefined' &&
+      isBackgroundFitPanelExpanded !== getViewportBackgroundFitExpandedState()
+    ) {
+      delete document.documentElement.dataset.battleBrothersAppReady
+      return
+    }
+
+    const appReadyAnimationFrame = window.requestAnimationFrame(() => {
+      document.documentElement.dataset.battleBrothersAppReady = 'true'
+    })
+
+    return () => {
+      window.cancelAnimationFrame(appReadyAnimationFrame)
+      delete document.documentElement.dataset.battleBrothersAppReady
+    }
+  }, [isBackgroundFitPanelExpanded])
+
   function requestNextUrlHistoryEntry() {
     urlHistoryWriteModeRef.current = 'push'
   }
@@ -447,6 +475,7 @@ export function PlannerExperience() {
         plannerFilters.shouldAllowSecondBackgroundStudyScroll,
     )
     setShouldIncludeOriginBackgrounds(plannerFilters.shouldIncludeOriginBackgrounds)
+    setShouldIncludeEventBackgrounds(plannerFilters.shouldIncludeEventBackgrounds ?? false)
     setSelectedBackgroundVeteranPerkLevelIntervals(
       getRestoredBackgroundVeteranPerkLevelIntervals(plannerFilters),
     )
@@ -536,6 +565,11 @@ export function PlannerExperience() {
   function handleOriginBackgroundsChange(shouldIncludeNextOriginBackgrounds: boolean) {
     requestNextUrlHistoryEntry()
     setShouldIncludeOriginBackgrounds(shouldIncludeNextOriginBackgrounds)
+  }
+
+  function handleEventBackgroundsChange(shouldIncludeNextEventBackgrounds: boolean) {
+    requestNextUrlHistoryEntry()
+    setShouldIncludeEventBackgrounds(shouldIncludeNextEventBackgrounds)
   }
 
   function handleBackgroundStudyBookChange(shouldAllowNextBackgroundStudyBook: boolean) {
@@ -848,6 +882,7 @@ export function PlannerExperience() {
           onBackgroundVeteranPerkLevelIntervalChange={
             handleBackgroundVeteranPerkLevelIntervalChange
           }
+          onEventBackgroundsChange={handleEventBackgroundsChange}
           onOriginBackgroundsChange={handleOriginBackgroundsChange}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}
           onSecondBackgroundStudyScrollChange={handleSecondBackgroundStudyScrollChange}
@@ -863,6 +898,7 @@ export function PlannerExperience() {
           }
           selectedBackgroundVeteranPerkLevelIntervals={selectedBackgroundVeteranPerkLevelIntervals}
           selectedBackgroundFitKey={selectedBackgroundFitKey}
+          shouldIncludeEventBackgrounds={shouldIncludeEventBackgrounds}
           shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 

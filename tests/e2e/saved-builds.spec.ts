@@ -8,6 +8,7 @@ import {
   getBuildSharedGroupsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   searchPerks,
   selectPerkGroup,
 } from './support/build-planner-page'
@@ -133,7 +134,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
   await clearBuildWithConfirmation(page)
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 
-  await page.goto('/')
+  await gotoBuildPlannerUrl(page, '/')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await page.getByRole('button', { name: 'Saved builds' }).click()
 
@@ -175,6 +176,7 @@ test('saves and restores perk and background filters with a saved build', async 
 
   await page.getByRole('button', { name: 'Filter backgrounds' }).click()
   await page.getByTestId('origin-backgrounds-checkbox').check()
+  await page.getByTestId('event-backgrounds-checkbox').check()
   await page.getByTestId('background-study-book-checkbox').uncheck()
   await page.getByTestId('background-study-second-scroll-checkbox').check()
   await page.getByTestId('background-veteran-perk-3-checkbox').uncheck()
@@ -185,7 +187,7 @@ test('saves and restores perk and background filters with a saved build', async 
   await expect(page.getByRole('status')).toHaveText('Saved build')
   await page.getByRole('button', { name: 'Close saved builds' }).click()
 
-  await page.goto('/')
+  await gotoBuildPlannerUrl(page, '/')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await page.getByRole('button', { name: 'Saved builds' }).click()
 
@@ -204,6 +206,7 @@ test('saves and restores perk and background filters with a saved build', async 
   await expectSearchParam(page, 'origin-perk-groups', 'true')
   await expectSearchParam(page, 'ancient-scroll-perk-groups', 'false')
   await expectSearchParam(page, 'origin-backgrounds', 'true')
+  await expectSearchParam(page, 'event-backgrounds', 'true')
   await expectSearchParam(page, 'background-book', 'false')
   await expectSearchParam(page, 'background-two-scrolls', 'true')
   await expectSearchParam(page, 'background-veteran-perks', '2,4')
@@ -214,6 +217,7 @@ test('saves and restores perk and background filters with a saved build', async 
 
   await page.getByRole('button', { name: 'Filter backgrounds' }).click()
   await expect(page.getByTestId('origin-backgrounds-checkbox')).toBeChecked()
+  await expect(page.getByTestId('event-backgrounds-checkbox')).toBeChecked()
   await expect(page.getByTestId('background-study-book-checkbox')).not.toBeChecked()
   await expect(page.getByTestId('background-study-scroll-checkbox')).toBeChecked()
   await expect(page.getByTestId('background-study-second-scroll-checkbox')).toBeChecked()
@@ -249,6 +253,7 @@ test('loading a legacy saved build clears current planner filters', async ({ pag
 
   await page.getByRole('button', { name: 'Filter backgrounds' }).click()
   await page.getByTestId('origin-backgrounds-checkbox').check()
+  await page.getByTestId('event-backgrounds-checkbox').check()
   await page.getByTestId('background-study-book-checkbox').uncheck()
   await page.getByTestId('background-study-scroll-checkbox').uncheck()
   await page.getByTestId('background-veteran-perk-3-checkbox').uncheck()
@@ -268,6 +273,7 @@ test('loading a legacy saved build clears current planner filters', async ({ pag
   await expectSearchParam(page, 'origin-perk-groups', null)
   await expectSearchParam(page, 'ancient-scroll-perk-groups', null)
   await expectSearchParam(page, 'origin-backgrounds', null)
+  await expectSearchParam(page, 'event-backgrounds', null)
   await expectSearchParam(page, 'background-book', null)
   await expectSearchParam(page, 'background-scroll', null)
   await expectSearchParam(page, 'background-veteran-perks', null)
@@ -278,6 +284,7 @@ test('loading a legacy saved build clears current planner filters', async ({ pag
 
   await page.getByRole('button', { name: 'Filter backgrounds' }).click()
   await expect(page.getByTestId('origin-backgrounds-checkbox')).not.toBeChecked()
+  await expect(page.getByTestId('event-backgrounds-checkbox')).not.toBeChecked()
   await expect(page.getByTestId('background-study-book-checkbox')).toBeChecked()
   await expect(page.getByTestId('background-study-scroll-checkbox')).toBeChecked()
   await expect(page.getByTestId('background-study-second-scroll-checkbox')).not.toBeChecked()

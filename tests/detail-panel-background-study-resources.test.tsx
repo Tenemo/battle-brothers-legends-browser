@@ -255,6 +255,14 @@ const backgroundFit = {
     },
   ],
   veteranPerkLevelInterval: 4,
+  veteranPerkLevelIntervalContexts: [
+    {
+      interval: 4,
+      kind: 'native',
+      label: 'Native background',
+    },
+  ],
+  veteranPerkLevelIntervals: [4],
 } satisfies RankedBackgroundFit
 
 const selectedPerk = {
