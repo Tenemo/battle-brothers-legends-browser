@@ -4,6 +4,7 @@ import { describe, expect, test } from 'vitest'
 import legendsBackgroundFitDatasetJson from '../src/data/legends-background-fit.json'
 import legendsPerkCatalogDatasetJson from '../src/data/legends-perk-catalog.json'
 import legendsPlannerMetadataDatasetJson from '../src/data/legends-planner-metadata.json'
+import { collectRequiredGameIconPaths } from '../scripts/legends-icon-sync.ts'
 import { getPerkGroupCount, hydrateCatalogPerks } from '../src/lib/legends-data'
 import { filterAndSortPerks } from '../src/lib/perk-search'
 import type {
@@ -116,47 +117,6 @@ function getDuplicatePerkNames(
   }
 
   return new Map([...perkIdsByName.entries()].filter(([, perkIds]) => perkIds.length > 1))
-}
-
-function getReferencedGameIconPaths({
-  backgroundFitBackgrounds,
-  perks,
-}: {
-  backgroundFitBackgrounds: LegendsBackgroundFitBackgroundDefinition[]
-  perks: LegendsPerkCatalogRecord[]
-}): string[] {
-  const iconPaths = new Set<string>()
-
-  for (const backgroundFitBackground of backgroundFitBackgrounds) {
-    if (backgroundFitBackground.iconPath) {
-      iconPaths.add(backgroundFitBackground.iconPath)
-    }
-
-    for (const trait of [
-      ...backgroundFitBackground.excludedTraits,
-      ...backgroundFitBackground.guaranteedTraits,
-    ]) {
-      if (trait.iconPath) {
-        iconPaths.add(trait.iconPath)
-      }
-    }
-  }
-
-  for (const perk of perks) {
-    if (perk.iconPath) {
-      iconPaths.add(perk.iconPath)
-    }
-
-    for (const placement of perk.placements) {
-      if (placement.perkGroupIconPath) {
-        iconPaths.add(placement.perkGroupIconPath)
-      }
-    }
-  }
-
-  return [...iconPaths].toSorted((leftIconPath, rightIconPath) =>
-    leftIconPath.localeCompare(rightIconPath),
-  )
 }
 
 function getDuplicateBackgroundFitTreeEntries(
@@ -410,7 +370,7 @@ describe('generated dataset integrity', () => {
   })
 
   test('only references game icons that exist in the served asset directory', () => {
-    const missingIconPaths = getReferencedGameIconPaths({
+    const missingIconPaths = collectRequiredGameIconPaths({
       backgroundFitBackgrounds: legendsBackgroundFitDataset.backgroundFitBackgrounds,
       perks: legendsPerkCatalogDataset.perks,
     }).filter((iconPath) => !existsSync(path.join(process.cwd(), 'public', 'game-icons', iconPath)))

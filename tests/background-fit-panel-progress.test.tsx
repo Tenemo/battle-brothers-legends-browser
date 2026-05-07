@@ -19,6 +19,7 @@ function createBackgroundFitPanelProgress(progress: BackgroundFitCalculationProg
         onBackgroundStudyBookChange={vi.fn()}
         onBackgroundStudyScrollChange={vi.fn()}
         onBackgroundVeteranPerkLevelIntervalChange={vi.fn()}
+        onEventBackgroundsChange={vi.fn()}
         onOriginBackgroundsChange={vi.fn()}
         onSearchActivityChange={vi.fn()}
         onSecondBackgroundStudyScrollChange={vi.fn()}
@@ -31,6 +32,7 @@ function createBackgroundFitPanelProgress(progress: BackgroundFitCalculationProg
         shouldAllowBackgroundStudyBook
         shouldAllowBackgroundStudyScroll
         shouldAllowSecondBackgroundStudyScroll={false}
+        shouldIncludeEventBackgrounds={false}
         shouldIncludeOriginBackgrounds={false}
       />
     </PlannerInteractionTestProvider>

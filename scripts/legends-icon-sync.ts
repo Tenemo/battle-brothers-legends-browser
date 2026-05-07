@@ -314,14 +314,16 @@ async function copyExtractedIconsToOutputDirectory({
   iconPaths: string[]
   extractionDirectoryPath: string
   outputDirectoryPath: string
-}): Promise<number> {
+}): Promise<{ copiedIconCount: number; missingIconPaths: string[] }> {
   let copiedIconCount = 0
+  const missingIconPaths: string[] = []
 
   for (const iconPath of iconPaths) {
     const archiveEntryPath = getArchiveEntryPathFromIconPath(iconPath)
     const sourceFilePath = path.join(extractionDirectoryPath, ...archiveEntryPath.split('/'))
 
     if (!(await pathExists(sourceFilePath))) {
+      missingIconPaths.push(iconPath)
       continue
     }
 
@@ -334,7 +336,16 @@ async function copyExtractedIconsToOutputDirectory({
     copiedIconCount += 1
   }
 
-  return copiedIconCount
+  return {
+    copiedIconCount,
+    missingIconPaths: missingIconPaths.toSorted((leftValue, rightValue) =>
+      leftValue.localeCompare(rightValue),
+    ),
+  }
+}
+
+function formatMissingIconPathsError(message: string, missingIconPaths: string[]): string {
+  return `${message}:\n${missingIconPaths.join('\n')}`
 }
 
 export async function syncLegendsIcons({
@@ -374,6 +385,16 @@ export async function syncLegendsIcons({
   }
 
   const extractionPlan = buildIconExtractionPlan(iconPaths, archiveEntriesByArchivePath)
+
+  if (extractionPlan.missingIconPaths.length > 0) {
+    throw new Error(
+      formatMissingIconPathsError(
+        'Unable to find required game icons in the local Battle Brothers archives',
+        extractionPlan.missingIconPaths,
+      ),
+    )
+  }
+
   const extractionDirectoryPath = await mkdtemp(path.join(os.tmpdir(), 'battle-brothers-icons-'))
   const stagingOutputDirectoryPath =
     outputDirectoryPath === defaultIconOutputDirectoryPath
@@ -388,20 +409,29 @@ export async function syncLegendsIcons({
       await extractArchiveEntries(archivePath, archiveEntryPaths, extractionDirectoryPath)
     }
 
-    const extractedIconCount = await copyExtractedIconsToOutputDirectory({
+    const extractionResult = await copyExtractedIconsToOutputDirectory({
       extractionDirectoryPath,
       iconPaths,
       outputDirectoryPath: stagingOutputDirectoryPath,
     })
+
+    if (extractionResult.missingIconPaths.length > 0) {
+      throw new Error(
+        formatMissingIconPathsError(
+          'Unable to copy required game icons after archive extraction',
+          extractionResult.missingIconPaths,
+        ),
+      )
+    }
 
     await removePath(outputDirectoryPath, { force: true, recursive: true })
     await copyDirectory(stagingOutputDirectoryPath, outputDirectoryPath, { recursive: true })
 
     return {
       archivePaths,
-      extractedIconCount,
+      extractedIconCount: extractionResult.copiedIconCount,
       gameDirectoryPath: resolvedGameDirectoryPath,
-      missingIconPaths: extractionPlan.missingIconPaths,
+      missingIconPaths: [],
       outputDirectoryPath,
     }
   } finally {

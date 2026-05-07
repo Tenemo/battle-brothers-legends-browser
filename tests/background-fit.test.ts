@@ -111,6 +111,7 @@ function createBackgroundDefinition({
   }
 
   return {
+    backgroundAccessContexts: [],
     backgroundId,
     backgroundName,
     backgroundTypeNames: [],
@@ -122,10 +123,19 @@ function createBackgroundDefinition({
     excludedTraitNames,
     guaranteedTraits: [],
     guaranteedTraitNames: [],
+    hasRegularRecruitment: true,
     iconPath: null,
     sourceFilePath: `backgrounds/${backgroundId}.nut`,
     startingAttributeRanges: [],
     veteranPerkLevelInterval: 4,
+    veteranPerkLevelIntervalContexts: [
+      {
+        interval: 4,
+        kind: 'native',
+        label: 'Native background',
+      },
+    ],
+    veteranPerkLevelIntervals: [4],
   }
 }
 

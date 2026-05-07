@@ -221,6 +221,7 @@ export type BackgroundFitOtherPerkGroup = BackgroundFitPerkGroupMetadata & {
 }
 
 export type RankedBackgroundFit = {
+  backgroundAccessContexts?: LegendsBackgroundFitBackgroundDefinition['backgroundAccessContexts']
   backgroundId: string
   backgroundName: string
   backgroundTypeNames: string[]
@@ -244,6 +245,7 @@ export type RankedBackgroundFit = {
   guaranteedMatchedPerkGroupCount: number
   guaranteedTraits: LegendsBackgroundFitBackgroundDefinition['guaranteedTraits']
   guaranteedTraitNames: string[]
+  hasRegularRecruitment?: boolean
   iconPath: string | null
   maximumNativeCoveredPickedPerkCount: number
   maximumTotalPerkGroupCount: number
@@ -256,6 +258,8 @@ export type RankedBackgroundFit = {
   sourceFilePath: string
   startingAttributeRanges: LegendsBackgroundFitBackgroundDefinition['startingAttributeRanges']
   veteranPerkLevelInterval: number
+  veteranPerkLevelIntervalContexts: LegendsBackgroundFitBackgroundDefinition['veteranPerkLevelIntervalContexts']
+  veteranPerkLevelIntervals: number[]
 }
 
 type RankedBackgroundFitRankingFields = Pick<
@@ -286,6 +290,8 @@ export type RankedBackgroundFitPreview = Pick<
   | 'guaranteedCoveredMustHavePerkCount'
   | 'guaranteedCoveredOptionalPerkCount'
   | 'guaranteedMatchedPerkGroupCount'
+  | 'backgroundAccessContexts'
+  | 'hasRegularRecruitment'
   | 'iconPath'
   | 'matches'
   | 'maximumNativeCoveredPickedPerkCount'
@@ -2903,6 +2909,7 @@ export function createBackgroundFitEngine(
       backgroundProbabilityRecord
 
     return {
+      backgroundAccessContexts: backgroundDefinition.backgroundAccessContexts,
       backgroundId: backgroundDefinition.backgroundId,
       backgroundName: backgroundDefinition.backgroundName,
       backgroundTypeNames: backgroundDefinition.backgroundTypeNames,
@@ -2920,6 +2927,7 @@ export function createBackgroundFitEngine(
       guaranteedMatchedPerkGroupCount: 0,
       guaranteedTraits: backgroundDefinition.guaranteedTraits,
       guaranteedTraitNames: backgroundDefinition.guaranteedTraitNames,
+      hasRegularRecruitment: backgroundDefinition.hasRegularRecruitment,
       iconPath: backgroundDefinition.iconPath ?? null,
       maximumTotalPerkGroupCount,
       matches: [],
@@ -2932,6 +2940,8 @@ export function createBackgroundFitEngine(
       sourceFilePath: backgroundDefinition.sourceFilePath,
       startingAttributeRanges: backgroundDefinition.startingAttributeRanges,
       veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
+      veteranPerkLevelIntervalContexts: backgroundDefinition.veteranPerkLevelIntervalContexts,
+      veteranPerkLevelIntervals: backgroundDefinition.veteranPerkLevelIntervals,
     }
   }
 
@@ -3143,6 +3153,7 @@ export function createBackgroundFitEngine(
     )
 
     cachedBackgroundFitRecord.baseBackgroundFit = {
+      backgroundAccessContexts: backgroundDefinition.backgroundAccessContexts,
       backgroundId: backgroundDefinition.backgroundId,
       backgroundName: backgroundDefinition.backgroundName,
       backgroundTypeNames: backgroundDefinition.backgroundTypeNames,
@@ -3172,6 +3183,7 @@ export function createBackgroundFitEngine(
       guaranteedMatchedPerkGroupCount: matches.filter((match) => match.isGuaranteed).length,
       guaranteedTraits: backgroundDefinition.guaranteedTraits,
       guaranteedTraitNames: backgroundDefinition.guaranteedTraitNames,
+      hasRegularRecruitment: backgroundDefinition.hasRegularRecruitment,
       iconPath: backgroundDefinition.iconPath ?? null,
       maximumTotalPerkGroupCount,
       matches,
@@ -3184,6 +3196,8 @@ export function createBackgroundFitEngine(
       sourceFilePath: backgroundDefinition.sourceFilePath,
       startingAttributeRanges: backgroundDefinition.startingAttributeRanges,
       veteranPerkLevelInterval: backgroundDefinition.veteranPerkLevelInterval,
+      veteranPerkLevelIntervalContexts: backgroundDefinition.veteranPerkLevelIntervalContexts,
+      veteranPerkLevelIntervals: backgroundDefinition.veteranPerkLevelIntervals,
     }
 
     return cachedBackgroundFitRecord.baseBackgroundFit
@@ -3243,6 +3257,7 @@ export function createBackgroundFitEngine(
     maximumNativeCoveredPickedPerkCount: number
   }): RankedBackgroundFitPreview {
     return {
+      backgroundAccessContexts: backgroundFitBase.backgroundAccessContexts,
       backgroundId: backgroundFitBase.backgroundId,
       backgroundName: backgroundFitBase.backgroundName,
       buildReachabilityProbability,
@@ -3255,6 +3270,7 @@ export function createBackgroundFitEngine(
       guaranteedCoveredMustHavePerkCount,
       guaranteedCoveredOptionalPerkCount,
       guaranteedMatchedPerkGroupCount: backgroundFitBase.guaranteedMatchedPerkGroupCount,
+      hasRegularRecruitment: backgroundFitBase.hasRegularRecruitment,
       iconPath: backgroundFitBase.iconPath,
       matches: backgroundFitBase.matches,
       maximumNativeCoveredPickedPerkCount,

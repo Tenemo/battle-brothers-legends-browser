@@ -19,8 +19,14 @@ import type {
   BackgroundFitView,
   RankedBackgroundFit,
 } from '../lib/background-fit'
-import { isOriginBackgroundFit } from '../lib/background-origin'
-import { formatBackgroundVeteranPerkLevelIntervalFilterLabel } from '../lib/background-veteran-perks'
+import {
+  hasAnyDisplayedBackgroundAccess,
+  hasDisplayedBackgroundAccessKind,
+} from '../lib/background-origin'
+import {
+  formatBackgroundVeteranPerkLevelIntervalFilterLabel,
+  getBackgroundVeteranPerkLevelIntervals,
+} from '../lib/background-veteran-perks'
 import { getBackgroundFitKey, getBackgroundFitSearchText } from '../lib/perk-display'
 import { BackgroundFitCard, BackgroundFitTargetPerkGroup } from './BackgroundFitCard'
 import { BackgroundFitRailChevron, ClearableSearchField, FunnelIcon } from './SharedControls'
@@ -49,7 +55,10 @@ const emptyBackgroundFitView: BackgroundFitView = {
 }
 const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFilterTooltips = {
-  originBackgrounds: 'Shows origin-only backgrounds hidden from the default results.',
+  eventBackgrounds:
+    'Shows backgrounds that are not available from regular recruitment but can be gained from events, contracts, encounters, or settlement situations.',
+  originBackgrounds:
+    'Shows backgrounds that are not available from regular recruitment but can be gained from origin starts or origin hiring rosters.',
   studyBook:
     'Counts one eligible skill book when checking whether a background can reach the picked build.',
   studyScroll:
@@ -76,6 +85,10 @@ function getEstimatedBackgroundFitHeight(backgroundFit: RankedBackgroundFit): nu
 }
 
 function formatBackgroundVeteranPerkLevelIntervalFilterTitle(interval: number): string {
+  if (interval === 2) {
+    return 'Shows backgrounds that gain 1 perk point every 2 veteran levels after level 12. Random Solo and The Free Company origin overrides are excluded because they cover most backgrounds in the game and cause their starting brothers to use this interval.'
+  }
+
   return `Shows backgrounds that gain 1 perk point every ${interval} veteran levels after level 12.`
 }
 
@@ -209,6 +222,7 @@ export function BackgroundFitPanel({
   onBackgroundStudyBookChange,
   onBackgroundStudyScrollChange,
   onBackgroundVeteranPerkLevelIntervalChange,
+  onEventBackgroundsChange,
   onOriginBackgroundsChange,
   onSearchActivityChange,
   onSecondBackgroundStudyScrollChange,
@@ -222,6 +236,7 @@ export function BackgroundFitPanel({
   availableBackgroundVeteranPerkLevelIntervals,
   selectedBackgroundVeteranPerkLevelIntervals,
   selectedBackgroundFitKey,
+  shouldIncludeEventBackgrounds,
   shouldIncludeOriginBackgrounds,
 }: {
   backgroundFitView: BackgroundFitView | null
@@ -236,6 +251,7 @@ export function BackgroundFitPanel({
     interval: number,
     shouldIncludeInterval: boolean,
   ) => void
+  onEventBackgroundsChange: (shouldIncludeEventBackgrounds: boolean) => void
   onOriginBackgroundsChange: (shouldIncludeOriginBackgrounds: boolean) => void
   onSearchActivityChange: (hasActiveSearch: boolean) => void
   onSecondBackgroundStudyScrollChange: (shouldAllowSecondBackgroundStudyScroll: boolean) => void
@@ -249,6 +265,7 @@ export function BackgroundFitPanel({
   availableBackgroundVeteranPerkLevelIntervals: number[]
   selectedBackgroundVeteranPerkLevelIntervals: number[]
   selectedBackgroundFitKey: string | null
+  shouldIncludeEventBackgrounds: boolean
   shouldIncludeOriginBackgrounds: boolean
 }) {
   const { hoveredPerkId } = usePlannerInteractionState()
@@ -278,6 +295,7 @@ export function BackgroundFitPanel({
     [selectedBackgroundVeteranPerkLevelIntervals],
   )
   const hasActiveBackgroundFilter =
+    shouldIncludeEventBackgrounds ||
     shouldIncludeOriginBackgrounds ||
     shouldAllowBackgroundStudyBook ||
     shouldAllowBackgroundStudyScroll ||
@@ -300,12 +318,22 @@ export function BackgroundFitPanel({
   const visibleRankedBackgroundFits = useMemo(
     () =>
       effectiveBackgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
-        if (!shouldIncludeOriginBackgrounds && isOriginBackgroundFit(backgroundFit)) {
-          return false
+        if (hasAnyDisplayedBackgroundAccess(backgroundFit)) {
+          const shouldIncludeSpecialBackground =
+            (shouldIncludeOriginBackgrounds &&
+              hasDisplayedBackgroundAccessKind(backgroundFit, 'origin')) ||
+            (shouldIncludeEventBackgrounds &&
+              hasDisplayedBackgroundAccessKind(backgroundFit, 'event'))
+
+          if (!shouldIncludeSpecialBackground) {
+            return false
+          }
         }
 
         if (
-          !selectedBackgroundVeteranPerkLevelIntervalSet.has(backgroundFit.veteranPerkLevelInterval)
+          !getBackgroundVeteranPerkLevelIntervals(backgroundFit).some((interval) =>
+            selectedBackgroundVeteranPerkLevelIntervalSet.has(interval),
+          )
         ) {
           return false
         }
@@ -319,6 +347,7 @@ export function BackgroundFitPanel({
       effectiveBackgroundFitView,
       normalizedBackgroundFitQuery,
       selectedBackgroundVeteranPerkLevelIntervalSet,
+      shouldIncludeEventBackgrounds,
       shouldIncludeOriginBackgrounds,
     ],
   )
@@ -416,6 +445,7 @@ export function BackgroundFitPanel({
     isExpanded,
     normalizedBackgroundFitQuery,
     selectedBackgroundVeteranPerkLevelIntervalSet,
+    shouldIncludeEventBackgrounds,
     shouldIncludeOriginBackgrounds,
   ])
 
@@ -528,6 +558,21 @@ export function BackgroundFitPanel({
                         type="checkbox"
                       />
                       <span>Origin backgrounds</span>
+                    </label>
+                    <label
+                      className={sharedStyles.filterOption}
+                      title={backgroundFilterTooltips.eventBackgrounds}
+                    >
+                      <input
+                        checked={shouldIncludeEventBackgrounds}
+                        data-testid="event-backgrounds-checkbox"
+                        onChange={(event) => {
+                          clearBackgroundFitInteractiveHover()
+                          onEventBackgroundsChange(event.target.checked)
+                        }}
+                        type="checkbox"
+                      />
+                      <span>Event backgrounds</span>
                     </label>
                     <label
                       className={sharedStyles.filterOption}

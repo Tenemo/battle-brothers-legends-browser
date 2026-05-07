@@ -18,6 +18,7 @@ const plannerFilters = {
   shouldAllowBackgroundStudyScroll: true,
   shouldAllowSecondBackgroundStudyScroll: true,
   shouldIncludeAncientScrollPerkGroups: false,
+  shouldIncludeEventBackgrounds: true,
   shouldIncludeOriginBackgrounds: true,
   shouldIncludeOriginPerkGroups: true,
 } satisfies SavedBuildPlannerFilters
@@ -179,6 +180,7 @@ describe('saved builds storage records', () => {
       shouldAllowBackgroundStudyScroll: false,
       shouldAllowSecondBackgroundStudyScroll: false,
       shouldIncludeAncientScrollPerkGroups: false,
+      shouldIncludeEventBackgrounds: false,
       shouldIncludeOriginBackgrounds: true,
       shouldIncludeOriginPerkGroups: true,
     })

@@ -12,7 +12,7 @@ import {
   formatBackgroundFitScoreLabel,
   formatPickedPerkCountLabel,
   getBackgroundFitKey,
-  getVisibleBackgroundPillLabel,
+  getVisibleBackgroundPills,
   renderGameIcon,
   renderHighlightedText,
 } from '../lib/perk-display'
@@ -24,10 +24,7 @@ import {
   backgroundStudyResourceBadgeTestId,
   getBackgroundStudyResourceBadgeDisplay,
 } from '../lib/background-study-resource-display'
-import {
-  formatBackgroundVeteranPerkLevelIntervalBadge,
-  formatBackgroundVeteranPerkLevelIntervalTitle,
-} from '../lib/background-veteran-perks'
+import { getBackgroundVeteranPerkLevelIntervalBadges } from '../lib/background-veteran-perks'
 import type { BackgroundStudyResourceFilter } from '../lib/background-study-reachability'
 import { isAncientScrollLearnablePerkGroupId } from '../lib/origin-and-ancient-scroll-perk-groups'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
@@ -541,13 +538,15 @@ export function BackgroundFitCard({
 }) {
   const { clearPerkGroupHover } = usePlannerInteractionActions()
   const backgroundFitKey = getBackgroundFitKey(backgroundFit)
-  const backgroundPillLabel = getVisibleBackgroundPillLabel(backgroundFit)
-  const veteranPerkLevelIntervalLabel = formatBackgroundVeteranPerkLevelIntervalBadge(
-    backgroundFit.veteranPerkLevelInterval,
-  )
-  const veteranPerkLevelIntervalTitle = formatBackgroundVeteranPerkLevelIntervalTitle(
-    backgroundFit.veteranPerkLevelInterval,
-  )
+  const backgroundPills = getVisibleBackgroundPills(backgroundFit)
+  const backgroundPillLabels = backgroundPills.map((pill) => pill.label)
+  const veteranPerkLevelIntervalBadges = getBackgroundVeteranPerkLevelIntervalBadges(backgroundFit)
+  const veteranPerkLevelIntervalSummaryLabel = veteranPerkLevelIntervalBadges
+    .map((badge) => badge.label)
+    .join(' and ')
+  const veteranPerkLevelIntervalSummaryNoun =
+    veteranPerkLevelIntervalBadges.length === 1 ? 'interval' : 'intervals'
+  const veteranPerkLevelIntervalSummary = `${veteranPerkLevelIntervalSummaryLabel} veteran perk ${veteranPerkLevelIntervalSummaryNoun}`
   const rankTitle = getBackgroundFitRankTitle(backgroundFit, rank)
   const summaryMetrics = getBackgroundFitDetailsMetrics({
     backgroundFit,
@@ -566,8 +565,8 @@ export function BackgroundFitCard({
     >
       <button
         aria-label={`Inspect background ${backgroundFit.backgroundName}${
-          backgroundPillLabel ? ` (${backgroundPillLabel})` : ''
-        } (${veteranPerkLevelIntervalLabel} veteran perk interval)`}
+          backgroundPillLabels.length > 0 ? ` (${backgroundPillLabels.join(', ')})` : ''
+        } (${veteranPerkLevelIntervalSummary})`}
         aria-pressed={isSelected}
         className={styles.backgroundFitAccordionTrigger}
         onClick={() => {
@@ -603,19 +602,22 @@ export function BackgroundFitCard({
                     text: backgroundFit.backgroundName,
                   })}
                 </h3>
-                {backgroundPillLabel ? (
+                {backgroundPills.map((pill, pillIndex) => (
                   <span
                     className={styles.backgroundFitDisambiguator}
+                    data-background-pill-kind={pill.kind}
                     data-testid="background-fit-disambiguator"
+                    key={`${backgroundFitKey}-${pill.kind}-${pill.label}`}
+                    title={pill.title}
                   >
                     {renderHighlightedText({
                       highlightClassName: sharedStyles.searchHighlight,
-                      keyPrefix: `${backgroundFitKey}-disambiguator`,
+                      keyPrefix: `${backgroundFitKey}-${pill.kind}-${pillIndex}`,
                       query,
-                      text: backgroundPillLabel,
+                      text: pill.label,
                     })}
                   </span>
-                ) : null}
+                ))}
               </div>
             </div>
 
@@ -632,13 +634,21 @@ export function BackgroundFitCard({
           </div>
         </div>
         <span
-          aria-label={`${veteranPerkLevelIntervalLabel} veteran perk interval`}
-          className={styles.backgroundFitVeteranPerkBadge}
-          data-testid="background-fit-veteran-perk-badge"
-          data-veteran-perk-interval={backgroundFit.veteranPerkLevelInterval}
-          title={veteranPerkLevelIntervalTitle}
+          className={styles.backgroundFitVeteranPerkBadges}
+          data-testid="background-fit-veteran-perk-badges"
         >
-          {veteranPerkLevelIntervalLabel}
+          {veteranPerkLevelIntervalBadges.map((badge) => (
+            <span
+              aria-label={`${badge.label} veteran perk interval`}
+              className={styles.backgroundFitVeteranPerkBadge}
+              data-testid="background-fit-veteran-perk-badge"
+              data-veteran-perk-interval={badge.interval}
+              key={`${backgroundFitKey}-${badge.interval}`}
+              title={badge.title}
+            >
+              {badge.label}
+            </span>
+          ))}
         </span>
       </button>
     </article>

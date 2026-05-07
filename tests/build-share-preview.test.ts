@@ -4,7 +4,7 @@ import {
   createBackgroundFitEngine,
   getGuaranteedCoveredPickedPerkCount,
 } from '../src/lib/background-fit'
-import { isOriginBackgroundFit } from '../src/lib/background-origin'
+import { hasAnyDisplayedBackgroundAccess } from '../src/lib/background-origin'
 import { defaultBackgroundStudyResourceFilter } from '../src/lib/background-study-reachability'
 import { createBuildSharePreviewPayloadFromSearch } from '../src/lib/build-share-preview'
 import type { LegendsBackgroundFitDataset } from '../src/types/legends-perks'
@@ -47,7 +47,7 @@ function getExpectedTopBackgroundFits({
     })
     .rankedBackgroundFits.filter(
       (backgroundFit) =>
-        !isOriginBackgroundFit(backgroundFit) &&
+        !hasAnyDisplayedBackgroundAccess(backgroundFit) &&
         (backgroundFit.matches.length > 0 ||
           backgroundFit.guaranteedMatchedPerkGroupCount > 0 ||
           backgroundFit.expectedMatchedPerkGroupCount > 0),

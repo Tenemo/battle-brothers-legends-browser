@@ -120,6 +120,9 @@ export function PlannerExperience() {
   const [shouldIncludeOriginBackgrounds, setShouldIncludeOriginBackgrounds] = useState(
     initialUrlState.shouldIncludeOriginBackgrounds,
   )
+  const [shouldIncludeEventBackgrounds, setShouldIncludeEventBackgrounds] = useState(
+    initialUrlState.shouldIncludeEventBackgrounds ?? false,
+  )
   const [
     selectedBackgroundVeteranPerkLevelIntervals,
     setSelectedBackgroundVeteranPerkLevelIntervals,
@@ -220,6 +223,7 @@ export function PlannerExperience() {
   )
   const shouldLoadBackgroundFitView =
     hasActiveBackgroundFitSearch ||
+    shouldIncludeEventBackgrounds ||
     shouldIncludeOriginBackgrounds ||
     activeDetailSelection.type === 'background' ||
     (pickedPerks.length > 0 && isBackgroundFitPanelExpanded)
@@ -289,6 +293,7 @@ export function PlannerExperience() {
       shouldAllowBackgroundStudyScroll,
       shouldAllowSecondBackgroundStudyScroll,
       shouldIncludeAncientScrollPerkGroups,
+      shouldIncludeEventBackgrounds,
       shouldIncludeOriginBackgrounds,
       shouldIncludeOriginPerkGroups,
     }),
@@ -305,6 +310,7 @@ export function PlannerExperience() {
       shouldAllowBackgroundStudyScroll,
       shouldAllowSecondBackgroundStudyScroll,
       shouldIncludeAncientScrollPerkGroups,
+      shouldIncludeEventBackgrounds,
       shouldIncludeOriginBackgrounds,
       shouldIncludeOriginPerkGroups,
     ],
@@ -340,6 +346,7 @@ export function PlannerExperience() {
         setShouldAllowBackgroundStudyBook(urlState.shouldAllowBackgroundStudyBook)
         setShouldAllowBackgroundStudyScroll(urlState.shouldAllowBackgroundStudyScroll)
         setShouldAllowSecondBackgroundStudyScroll(urlState.shouldAllowSecondBackgroundStudyScroll)
+        setShouldIncludeEventBackgrounds(urlState.shouldIncludeEventBackgrounds ?? false)
         setShouldIncludeOriginBackgrounds(urlState.shouldIncludeOriginBackgrounds)
         setSelectedBackgroundVeteranPerkLevelIntervals(
           urlState.selectedBackgroundVeteranPerkLevelIntervals,
@@ -447,6 +454,7 @@ export function PlannerExperience() {
         plannerFilters.shouldAllowSecondBackgroundStudyScroll,
     )
     setShouldIncludeOriginBackgrounds(plannerFilters.shouldIncludeOriginBackgrounds)
+    setShouldIncludeEventBackgrounds(plannerFilters.shouldIncludeEventBackgrounds ?? false)
     setSelectedBackgroundVeteranPerkLevelIntervals(
       getRestoredBackgroundVeteranPerkLevelIntervals(plannerFilters),
     )
@@ -536,6 +544,11 @@ export function PlannerExperience() {
   function handleOriginBackgroundsChange(shouldIncludeNextOriginBackgrounds: boolean) {
     requestNextUrlHistoryEntry()
     setShouldIncludeOriginBackgrounds(shouldIncludeNextOriginBackgrounds)
+  }
+
+  function handleEventBackgroundsChange(shouldIncludeNextEventBackgrounds: boolean) {
+    requestNextUrlHistoryEntry()
+    setShouldIncludeEventBackgrounds(shouldIncludeNextEventBackgrounds)
   }
 
   function handleBackgroundStudyBookChange(shouldAllowNextBackgroundStudyBook: boolean) {
@@ -848,6 +861,7 @@ export function PlannerExperience() {
           onBackgroundVeteranPerkLevelIntervalChange={
             handleBackgroundVeteranPerkLevelIntervalChange
           }
+          onEventBackgroundsChange={handleEventBackgroundsChange}
           onOriginBackgroundsChange={handleOriginBackgroundsChange}
           onSearchActivityChange={setHasActiveBackgroundFitSearch}
           onSecondBackgroundStudyScrollChange={handleSecondBackgroundStudyScrollChange}
@@ -863,6 +877,7 @@ export function PlannerExperience() {
           }
           selectedBackgroundVeteranPerkLevelIntervals={selectedBackgroundVeteranPerkLevelIntervals}
           selectedBackgroundFitKey={selectedBackgroundFitKey}
+          shouldIncludeEventBackgrounds={shouldIncludeEventBackgrounds}
           shouldIncludeOriginBackgrounds={shouldIncludeOriginBackgrounds}
         />
 

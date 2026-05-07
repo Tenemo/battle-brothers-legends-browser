@@ -27,6 +27,7 @@ export function createSavedBuildPlannerFilters(
     shouldAllowBackgroundStudyScroll: urlState.shouldAllowBackgroundStudyScroll,
     shouldAllowSecondBackgroundStudyScroll: urlState.shouldAllowSecondBackgroundStudyScroll,
     shouldIncludeAncientScrollPerkGroups: urlState.shouldIncludeAncientScrollPerkGroups,
+    shouldIncludeEventBackgrounds: urlState.shouldIncludeEventBackgrounds ?? false,
     shouldIncludeOriginBackgrounds: urlState.shouldIncludeOriginBackgrounds,
     shouldIncludeOriginPerkGroups: urlState.shouldIncludeOriginPerkGroups,
   }
@@ -45,6 +46,7 @@ export function createDefaultSavedBuildPlannerFilters(
     shouldAllowBackgroundStudyScroll: true,
     shouldAllowSecondBackgroundStudyScroll: false,
     shouldIncludeAncientScrollPerkGroups: true,
+    shouldIncludeEventBackgrounds: false,
     shouldIncludeOriginBackgrounds: false,
     shouldIncludeOriginPerkGroups: false,
   }

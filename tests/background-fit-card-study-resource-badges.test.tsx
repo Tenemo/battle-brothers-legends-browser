@@ -101,6 +101,7 @@ function createStudyResourceStrategy(
 
 function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): RankedBackgroundFit {
   return {
+    backgroundAccessContexts: [],
     backgroundId: 'background.study_resource_badges',
     backgroundName: 'Study resource badges',
     backgroundTypeNames: [],
@@ -122,6 +123,7 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
     guaranteedMatchedPerkGroupCount: 0,
     guaranteedTraits: [],
     guaranteedTraitNames: [],
+    hasRegularRecruitment: true,
     iconPath: null,
     matches: [],
     maximumNativeCoveredPickedPerkCount: 1,
@@ -132,6 +134,14 @@ function createBackgroundFit(overrides: Partial<RankedBackgroundFit> = {}): Rank
     sourceFilePath: 'backgrounds/study_resource_badges_background.nut',
     startingAttributeRanges: [],
     veteranPerkLevelInterval: 4,
+    veteranPerkLevelIntervalContexts: [
+      {
+        interval: 4,
+        kind: 'native',
+        label: 'Native background',
+      },
+    ],
+    veteranPerkLevelIntervals: [4],
     ...overrides,
   }
 }
@@ -179,6 +189,44 @@ function renderBackgroundFitCardWithStudyResourceFilter(
 }
 
 describe('background fit card study resource badges', () => {
+  test('shows separate source pills with native tooltip reasons', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        backgroundAccessContexts: [
+          {
+            kind: 'origin',
+            label: 'Berserker hiring roster',
+            sourceFilePath: 'scripts/scenarios/world/legends_berserker_scenario.nut',
+          },
+          {
+            kind: 'event',
+            label: 'Facing Justice (Legendary) contract',
+            sourceFilePath: 'scripts/contracts/contracts/legend_barbarian_prisoner_contract.nut',
+          },
+        ],
+        backgroundId: 'background.legend_berserker',
+        backgroundName: 'Berserker',
+        hasRegularRecruitment: false,
+      }),
+    )
+
+    const sourcePills = screen.getAllByTestId('background-fit-disambiguator')
+
+    expect(sourcePills).toHaveLength(2)
+    expect(sourcePills[0]).toHaveTextContent('Origin')
+    expect(sourcePills[0]).toHaveAttribute('data-background-pill-kind', 'origin')
+    expect(sourcePills[0]).toHaveAttribute(
+      'title',
+      'Origin access: Berserker hiring roster. This background is not available from regular recruitment.',
+    )
+    expect(sourcePills[1]).toHaveTextContent('Event')
+    expect(sourcePills[1]).toHaveAttribute('data-background-pill-kind', 'event')
+    expect(sourcePills[1]).toHaveAttribute(
+      'title',
+      'Event access: Facing Justice (Legendary) contract. This background is not available from regular recruitment.',
+    )
+  })
+
   test('does not render imported detail-only metadata on the card', () => {
     renderBackgroundFitCard(
       createBackgroundFit({
@@ -487,6 +535,14 @@ describe('background fit card study resource badges', () => {
     renderBackgroundFitCard(
       createBackgroundFit({
         veteranPerkLevelInterval: 3,
+        veteranPerkLevelIntervalContexts: [
+          {
+            interval: 3,
+            kind: 'native',
+            label: 'Native background',
+          },
+        ],
+        veteranPerkLevelIntervals: [3],
       }),
     )
 
@@ -497,7 +553,47 @@ describe('background fit card study resource badges', () => {
     expect(veteranPerkBadge).toHaveAttribute('data-veteran-perk-interval', '3')
     expect(veteranPerkBadge).toHaveAttribute(
       'title',
-      '1 / 3 means this background gains 1 perk point every 3 veteran levels after level 12. The first veteran perk point is at level 15.',
+      "1 / 3 is set by this background's game script. The character gains 1 perk point every 3 veteran levels after level 12. The first veteran perk point is at level 15.",
+    )
+  })
+
+  test('shows one veteran perk interval badge per context with separate tooltips', () => {
+    renderBackgroundFitCard(
+      createBackgroundFit({
+        veteranPerkLevelInterval: 3,
+        veteranPerkLevelIntervalContexts: [
+          {
+            interval: 2,
+            kind: 'origin',
+            label: 'Origin: Trader',
+            scenarioId: 'scenario.trader',
+            scenarioName: 'Trader',
+            sourceFilePath: 'scripts/scenarios/world/trader_scenario.nut',
+          },
+          {
+            interval: 3,
+            kind: 'native',
+            label: 'Native background',
+          },
+        ],
+        veteranPerkLevelIntervals: [2, 3],
+      }),
+    )
+
+    const veteranPerkBadges = screen.getAllByTestId('background-fit-veteran-perk-badge')
+
+    expect(veteranPerkBadges).toHaveLength(2)
+    expect(veteranPerkBadges[0]).toHaveTextContent('1 / 2')
+    expect(veteranPerkBadges[0]).toHaveAttribute('data-veteran-perk-interval', '2')
+    expect(veteranPerkBadges[0]).toHaveAttribute(
+      'title',
+      '1 / 2 is set by the Trader origin for starting characters with this background. The character gains 1 perk point every 2 veteran levels after level 12. The first veteran perk point is at level 14.',
+    )
+    expect(veteranPerkBadges[1]).toHaveTextContent('1 / 3')
+    expect(veteranPerkBadges[1]).toHaveAttribute('data-veteran-perk-interval', '3')
+    expect(veteranPerkBadges[1]).toHaveAttribute(
+      'title',
+      "1 / 3 is set by this background's game script. The character gains 1 perk point every 3 veteran levels after level 12. The first veteran perk point is at level 15.",
     )
   })
 

@@ -46,6 +46,7 @@ export type BuildPlannerUrlState = {
   shouldAllowBackgroundStudyScroll: boolean
   shouldAllowSecondBackgroundStudyScroll: boolean
   shouldIncludeAncientScrollPerkGroups: boolean
+  shouldIncludeEventBackgrounds?: boolean
   shouldIncludeOriginBackgrounds: boolean
   shouldIncludeOriginPerkGroups: boolean
 }
@@ -69,6 +70,7 @@ export type BuildPlannerUrlStateWriteOptions = {
   shouldWriteBackgroundVeteranPerkLevelIntervalsParam?: boolean
   shouldWriteSecondBackgroundStudyScrollParam?: boolean
   shouldWriteAncientScrollPerkGroupsParam?: boolean
+  shouldWriteEventBackgroundsParam?: boolean
   shouldWriteNoCategoryParam?: boolean
   shouldWriteOriginBackgroundsParam?: boolean
   shouldWriteOriginPerkGroupsParam?: boolean
@@ -86,6 +88,7 @@ const detailParamName = 'detail'
 const optionalPerksParamName = 'optional'
 const perkDetailParamName = 'perk'
 const secondBackgroundStudyScrollParamName = 'background-two-scrolls'
+const eventBackgroundsParamName = 'event-backgrounds'
 const originBackgroundsParamName = 'origin-backgrounds'
 const originPerkGroupsParamName = 'origin-perk-groups'
 const perkGroupParamKeyPrefix = 'group-'
@@ -340,6 +343,7 @@ function createDefaultUrlState(): BuildPlannerUrlState {
     shouldAllowBackgroundStudyScroll: true,
     shouldAllowSecondBackgroundStudyScroll: false,
     shouldIncludeAncientScrollPerkGroups: true,
+    shouldIncludeEventBackgrounds: false,
     shouldIncludeOriginBackgrounds: false,
     shouldIncludeOriginPerkGroups: false,
   }
@@ -461,6 +465,11 @@ export function readBuildPlannerUrlState(
     ancientScrollPerkGroupsParamName,
     true,
   )
+  const shouldIncludeEventBackgrounds = readBooleanSearchParam(
+    params,
+    eventBackgroundsParamName,
+    false,
+  )
   const shouldIncludeOriginBackgrounds = readBooleanSearchParam(
     params,
     originBackgroundsParamName,
@@ -566,6 +575,7 @@ export function readBuildPlannerUrlState(
     shouldAllowBackgroundStudyBook,
     ...backgroundStudyScrollState,
     shouldIncludeAncientScrollPerkGroups,
+    shouldIncludeEventBackgrounds,
     shouldIncludeOriginBackgrounds,
     shouldIncludeOriginPerkGroups,
   }
@@ -599,6 +609,7 @@ export function createBuildPlannerUrlSearch(
     options.shouldWriteBackgroundVeteranPerkLevelIntervalsParam ?? true
   const shouldWriteSecondBackgroundStudyScrollParam =
     options.shouldWriteSecondBackgroundStudyScrollParam ?? true
+  const shouldWriteEventBackgroundsParam = options.shouldWriteEventBackgroundsParam ?? true
   const shouldWriteOriginBackgroundsParam = options.shouldWriteOriginBackgroundsParam ?? true
   const shouldWriteOriginPerkGroupsParam = options.shouldWriteOriginPerkGroupsParam ?? true
   const shouldWriteNoCategoryParam = options.shouldWriteNoCategoryParam ?? true
@@ -681,6 +692,10 @@ export function createBuildPlannerUrlSearch(
     appendScalarQueryEntry(entries, originBackgroundsParamName, 'true')
   }
 
+  if (shouldWriteEventBackgroundsParam && urlState.shouldIncludeEventBackgrounds) {
+    appendScalarQueryEntry(entries, eventBackgroundsParamName, 'true')
+  }
+
   if (categoryFilterMode === 'none' && shouldWriteNoCategoryParam) {
     appendGroupedQueryEntry(entries, categoryParamName, [noCategoriesParamValue])
   } else if (categoryFilterMode === 'selection') {
@@ -749,6 +764,7 @@ export function createSharedBuildUrlSearch(
       shouldAllowBackgroundStudyScroll: true,
       shouldAllowSecondBackgroundStudyScroll: false,
       shouldIncludeAncientScrollPerkGroups: false,
+      shouldIncludeEventBackgrounds: false,
       shouldIncludeOriginBackgrounds: false,
       shouldIncludeOriginPerkGroups: false,
     },
@@ -761,6 +777,7 @@ export function createSharedBuildUrlSearch(
       shouldWriteBackgroundStudyBookParam: false,
       shouldWriteBackgroundStudyScrollParam: false,
       shouldWriteBackgroundVeteranPerkLevelIntervalsParam: false,
+      shouldWriteEventBackgroundsParam: false,
       shouldWriteSecondBackgroundStudyScrollParam: false,
       shouldWriteOriginBackgroundsParam: false,
       shouldWriteOriginPerkGroupsParam: false,

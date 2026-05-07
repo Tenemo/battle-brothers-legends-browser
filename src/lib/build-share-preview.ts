@@ -1,7 +1,7 @@
 import legendsBackgroundFitDatasetJson from '../data/legends-background-fit.json'
 import type { RankedBackgroundFitPreview } from './background-fit'
 import { createBackgroundFitEngine, getGuaranteedCoveredPickedPerkCount } from './background-fit'
-import { isOriginBackgroundFit } from './background-origin'
+import { hasAnyDisplayedBackgroundAccess } from './background-origin'
 import { createSharedBuildUrlSearch, readBuildPlannerUrlState } from './build-planner-url-state'
 import { defaultBackgroundStudyResourceFilter } from './background-study-reachability'
 import type {
@@ -115,7 +115,7 @@ function getTopBackgroundFits(
   return rankedBackgroundFits
     .filter(
       (backgroundFit) =>
-        !isOriginBackgroundFit(backgroundFit) &&
+        !hasAnyDisplayedBackgroundAccess(backgroundFit) &&
         (backgroundFit.matches.length > 0 ||
           backgroundFit.guaranteedMatchedPerkGroupCount > 0 ||
           backgroundFit.expectedMatchedPerkGroupCount > 0),

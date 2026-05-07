@@ -99,6 +99,7 @@ const defaultBackgroundStudyUrlState = {
   shouldAllowBackgroundStudyBook: true,
   shouldAllowBackgroundStudyScroll: true,
   shouldAllowSecondBackgroundStudyScroll: false,
+  shouldIncludeEventBackgrounds: false,
 }
 const sampleBackgrounds = [
   {
@@ -481,6 +482,36 @@ describe('build planner url state', () => {
         perks: samplePerks,
         perkGroupOptionsByCategory,
       }).shouldIncludeOriginBackgrounds,
+    ).toBe(true)
+  })
+
+  test('serializes and restores the non-default event background filter', () => {
+    const search = createBuildPlannerUrlSearch(
+      {
+        pickedPerkIds: [],
+        query: '',
+        selectedCategoryNames: [],
+        selectedPerkGroupIdsByCategory: {},
+        ...defaultBackgroundStudyUrlState,
+        shouldIncludeAncientScrollPerkGroups: true,
+        shouldIncludeEventBackgrounds: true,
+        shouldIncludeOriginBackgrounds: false,
+        shouldIncludeOriginPerkGroups: false,
+      },
+      {
+        availableCategoryNames,
+        perksById,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(search).toBe('?event-backgrounds=true')
+    expect(
+      readBuildPlannerUrlState(search, {
+        availableCategoryNames,
+        perks: samplePerks,
+        perkGroupOptionsByCategory,
+      }).shouldIncludeEventBackgrounds,
     ).toBe(true)
   })
 

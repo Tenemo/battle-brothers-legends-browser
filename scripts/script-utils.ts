@@ -1,5 +1,7 @@
 import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import { access } from 'node:fs/promises'
+import path from 'node:path'
 
 export async function pathExists(targetPath: string): Promise<boolean> {
   try {
@@ -10,9 +12,21 @@ export async function pathExists(targetPath: string): Promise<boolean> {
   }
 }
 
+function resolvePortableCommandName(commandName: string): string {
+  if (process.platform !== 'win32' || commandName !== 'tar') {
+    return commandName
+  }
+
+  const windowsDirectoryPath = process.env.SystemRoot ?? process.env.WINDIR ?? 'C:\\Windows'
+  const windowsSystemTarPath = path.join(windowsDirectoryPath, 'System32', 'tar.exe')
+
+  return existsSync(windowsSystemTarPath) ? windowsSystemTarPath : commandName
+}
+
 export function runCommand(commandName: string, commandArguments: string[]): Promise<string> {
   return new Promise((resolve, reject) => {
-    const childProcess = spawn(commandName, commandArguments, {
+    const portableCommandName = resolvePortableCommandName(commandName)
+    const childProcess = spawn(portableCommandName, commandArguments, {
       shell: false,
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true,
@@ -38,7 +52,7 @@ export function runCommand(commandName: string, commandArguments: string[]): Pro
 
       reject(
         new Error(
-          `Command failed: ${commandName} ${commandArguments.join(' ')}\n${standardError.trim()}`,
+          `Command failed: ${portableCommandName} ${commandArguments.join(' ')}\n${standardError.trim()}`,
         ),
       )
     })

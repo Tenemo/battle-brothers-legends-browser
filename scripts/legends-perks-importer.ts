@@ -10,7 +10,6 @@ import {
   dynamicBackgroundCategoryOrder,
   isDynamicBackgroundCategoryName,
 } from '../src/lib/dynamic-background-categories.ts'
-import { isOriginBackgroundSourceLabel } from '../src/lib/background-origin.ts'
 import {
   calculateBackgroundPerkGroupProbabilities,
   createBackgroundPerkGroupProbabilityContext,
@@ -36,6 +35,7 @@ import {
 import { sortUniqueStrings } from './script-utils.ts'
 import { addImporterParseWarning, type ImporterDiagnosticContext } from './importer-diagnostics.ts'
 import type {
+  LegendsBackgroundAccessContext,
   LegendsBackgroundCampResourceModifier,
   LegendsBackgroundCampResourceModifierGroup,
   LegendsBackgroundFitDataset,
@@ -44,6 +44,7 @@ import type {
   LegendsBackgroundFitPerkRecord,
   LegendsBackgroundStartingAttributeKey,
   LegendsBackgroundTrait,
+  LegendsBackgroundVeteranPerkLevelIntervalContext,
   LegendsDynamicBackgroundCategoryName,
   LegendsFavouredEnemyTarget,
   LegendsPerkBackgroundSource,
@@ -66,6 +67,10 @@ export const defaultReferenceRootDirectoryPath = defaultLegendsReferenceDirector
 
 const defaultCategoryOrder = [...dynamicBackgroundCategoryOrder]
 const fallbackVeteranPerkLevelInterval = 4
+const ignoredVeteranPerkLevelIntervalScenarioIds = new Set([
+  'scenario.legend_random_solo',
+  'scenario.legends_free_company',
+])
 
 type NutFileEntry = {
   fileSource: string
@@ -201,15 +206,28 @@ type BackgroundScriptReferenceResolutionContext = {
   localValues: LocalSquirrelValues
 }
 
-type ScenarioVeteranPerkLevelRecord = {
-  isAvatar: boolean
-  veteranPerkLevelInterval: number
+type ScenarioVeteranPerkLevelEvent =
+  | {
+      sourceIndex: number
+      type: 'start-values'
+      backgroundScriptIds: string[]
+      receiver: string
+    }
+  | {
+      sourceIndex: number
+      type: 'veteran-perks'
+      interval: number
+      receiver: string
+    }
+
+type ScenarioActorVeteranPerkBackgroundState = {
+  backgroundScriptId: string
+  interval: number
 }
 
-type ScenarioActorRecord = {
-  backgroundScriptIds: string[]
-  isAvatar: boolean
-  veteranPerkLevelIntervals: number[]
+type ScenarioActorVeteranPerkState = {
+  activeBackgrounds: ScenarioActorVeteranPerkBackgroundState[]
+  defaultInterval: number
 }
 
 type ScenarioDefinition = {
@@ -2217,12 +2235,12 @@ function resolveActorReceiverAlias(receiver: string, receiverAliases: Map<string
   return resolvedReceiver
 }
 
-function extractReceiverMethodCallArgumentLists(
+function extractReceiverMethodCallArgumentListEvents(
   source: string,
   methodName: string,
   diagnosticContext: ImporterDiagnosticContext | null = null,
-): Array<{ argumentList: string[]; receiver: string }> {
-  const calls: Array<{ argumentList: string[]; receiver: string }> = []
+): Array<{ argumentList: string[]; receiver: string; sourceIndex: number }> {
+  const calls: Array<{ argumentList: string[]; receiver: string; sourceIndex: number }> = []
   const pattern = new RegExp(
     `((?:[A-Za-z_][A-Za-z0-9_]*)(?:\\s*\\[[^\\]]+\\])?)\\s*\\.\\s*${escapeForRegularExpression(
       methodName,
@@ -2244,6 +2262,7 @@ function extractReceiverMethodCallArgumentLists(
       calls.push({
         argumentList: splitTopLevelCommaSeparated(argumentsSource),
         receiver: normalizeActorReceiver(match[1]),
+        sourceIndex: match.index,
       })
     } catch (error) {
       addImporterParseWarning(
@@ -2258,48 +2277,28 @@ function extractReceiverMethodCallArgumentLists(
   return calls
 }
 
-function collectPlayerTraitReceivers(source: string): Set<string> {
-  const receivers = new Set<string>()
-
-  for (const argumentList of extractCallArgumentLists(source, '::Legends.Traits.grant')) {
-    const receiver = argumentList[0]
-    const trait = argumentList[1]
-
-    if (receiver && trait && /(?:^|\.)Player\b/.test(trait)) {
-      receivers.add(normalizeActorReceiver(receiver))
-    }
-  }
-
-  return receivers
-}
-
-function collectPlayerCharacterFlagReceivers(source: string): Set<string> {
-  const receivers = new Set<string>()
-  const pattern =
-    /((?:[A-Za-z_][A-Za-z0-9_]*)(?:\s*\[[^\]]+\])?)\s*\.\s*getFlags\s*\(\s*\)\s*\.\s*set\s*\(\s*"IsPlayerCharacter"\s*,\s*true\s*\)/g
-
-  for (const match of source.matchAll(pattern)) {
-    receivers.add(normalizeActorReceiver(match[1]))
-  }
-
-  return receivers
-}
-
 function extractLocalAssignments(
   source: string,
   diagnosticContext: ImporterDiagnosticContext | null = null,
+  allowedLocalNames: Set<string> | null = null,
 ): LocalSquirrelValues {
   const assignments: LocalSquirrelValues = new Map()
   const pattern = /\blocal\s+([A-Za-z_][A-Za-z0-9_]*)\s*=\s*/g
 
   for (const match of source.matchAll(pattern)) {
+    const localName = match[1]
+
+    if (allowedLocalNames !== null && !allowedLocalNames.has(localName)) {
+      continue
+    }
+
     try {
       const parsedValue = parseSquirrelValue(source, match.index + match[0].length).value
-      assignments.set(match[1], parsedValue)
+      assignments.set(localName, parsedValue)
     } catch (error) {
       addImporterParseWarning(
         diagnosticContext,
-        `local ${match[1]} assignment`,
+        `local ${localName} assignment`,
         source.slice(match.index),
         error,
       )
@@ -2308,6 +2307,19 @@ function extractLocalAssignments(
   }
 
   return assignments
+}
+
+function collectPotentialLocalNamesFromSources(sources: string[]): Set<string> {
+  const localNames = new Set<string>()
+  const identifierPattern = /\b[A-Za-z_][A-Za-z0-9_]*\b/g
+
+  for (const source of sources) {
+    for (const match of source.matchAll(identifierPattern)) {
+      localNames.add(match[0])
+    }
+  }
+
+  return localNames
 }
 
 function parseCategoryOrderFile(fileSource: string): string[] {
@@ -3183,18 +3195,75 @@ function parseBackgroundFitRulesFile(
   }
 }
 
+function createBackgroundVeteranPerkLevelIntervalContexts(
+  background: ImportedBackgroundDefinition,
+  scenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId: Map<
+    string,
+    LegendsBackgroundVeteranPerkLevelIntervalContext[]
+  >,
+): LegendsBackgroundVeteranPerkLevelIntervalContext[] {
+  const nativeContext: LegendsBackgroundVeteranPerkLevelIntervalContext = {
+    interval: background.veteranPerkLevelInterval,
+    kind: 'native',
+    label: 'Native background',
+  }
+  const contexts = [
+    nativeContext,
+    ...(scenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId.get(
+      background.backgroundScriptId,
+    ) ?? []),
+  ]
+
+  return contexts
+    .filter(
+      (context, index, contextList) =>
+        contextList.findIndex(
+          (candidateContext) =>
+            candidateContext.interval === context.interval &&
+            candidateContext.kind === context.kind &&
+            candidateContext.scenarioId === context.scenarioId,
+        ) === index,
+    )
+    .toSorted(
+      (leftContext, rightContext) =>
+        leftContext.interval - rightContext.interval ||
+        leftContext.kind.localeCompare(rightContext.kind) ||
+        leftContext.label.localeCompare(rightContext.label),
+    )
+}
+
+function getBackgroundVeteranPerkLevelIntervalsFromContexts(
+  contexts: LegendsBackgroundVeteranPerkLevelIntervalContext[],
+): number[] {
+  return [...new Set(contexts.map((context) => context.interval))].toSorted(
+    (leftInterval, rightInterval) => leftInterval - rightInterval,
+  )
+}
+
 function buildBackgroundFitBackgrounds(
   backgrounds: ImportedBackgroundDefinition[],
   perkGroupDefinitions: Map<string, PerkGroupDefinition>,
   baseAttributeRanges: BackgroundAttributeRangeRecord,
   femaleBaseAttributeModifierRanges: BackgroundAttributeRangeRecord,
+  backgroundAccessContextsByBackgroundScriptId: Map<string, LegendsBackgroundAccessContext[]>,
+  regularRecruitmentBackgroundScriptIds: Set<string>,
+  scenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId: Map<
+    string,
+    LegendsBackgroundVeteranPerkLevelIntervalContext[]
+  >,
 ): LegendsBackgroundFitBackgroundDefinition[] {
   return backgrounds
     .filter(hasResolvedBackgroundIdentity)
     .map((background) => {
       const dynamicTreeEntries = tableEntriesToMap(background.dynamicTreeValue)
+      const veteranPerkLevelIntervalContexts = createBackgroundVeteranPerkLevelIntervalContexts(
+        background,
+        scenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId,
+      )
 
       return {
+        backgroundAccessContexts:
+          backgroundAccessContextsByBackgroundScriptId.get(background.backgroundScriptId) ?? [],
         backgroundId: background.backgroundIdentifier,
         backgroundName: background.backgroundName,
         backgroundTypeNames: background.backgroundTypeNames,
@@ -3228,6 +3297,9 @@ function buildBackgroundFitBackgrounds(
         excludedTraitNames: background.excludedTraitNames,
         guaranteedTraits: background.guaranteedTraits,
         guaranteedTraitNames: background.guaranteedTraitNames,
+        hasRegularRecruitment: regularRecruitmentBackgroundScriptIds.has(
+          background.backgroundScriptId,
+        ),
         iconPath: background.iconPath,
         sourceFilePath: background.sourceFilePath,
         startingAttributeRanges: buildBackgroundStartingAttributeRanges({
@@ -3236,6 +3308,10 @@ function buildBackgroundFitBackgrounds(
           femaleBaseAttributeModifierRanges,
         }),
         veteranPerkLevelInterval: background.veteranPerkLevelInterval,
+        veteranPerkLevelIntervalContexts,
+        veteranPerkLevelIntervals: getBackgroundVeteranPerkLevelIntervalsFromContexts(
+          veteranPerkLevelIntervalContexts,
+        ),
       }
     })
     .toSorted(
@@ -3377,40 +3453,56 @@ function collectPlayableBackgroundScriptIdsFromFileEntries(
   for (const fileEntry of fileEntries) {
     const uncommentedFileSource = stripSquirrelComments(fileEntry.fileSource)
     const diagnosticContext = { diagnostics, sourceFilePath: fileEntry.sourceFilePath }
-    const localValues = extractLocalAssignments(uncommentedFileSource, diagnosticContext)
+    const callees = ['setStartValuesEx', 'setStartValues', 'addBroToRoster']
 
-    for (const callee of ['setStartValuesEx', 'setStartValues', 'addBroToRoster']) {
+    if (!callees.some((callee) => uncommentedFileSource.includes(`${callee}(`))) {
+      continue
+    }
+
+    const backgroundArgumentSources: Array<{ argumentSource: string; callee: string }> = []
+
+    for (const callee of callees) {
       for (const argumentList of extractCallArgumentLists(uncommentedFileSource, callee)) {
         const candidateArgumentSources =
           callee === 'addBroToRoster' ? argumentList : argumentList.slice(0, 1)
 
         for (const candidateArgumentSource of candidateArgumentSources) {
-          if (!candidateArgumentSource) {
-            continue
-          }
-
-          let parsedValue: SquirrelValue
-
-          try {
-            parsedValue = parseSquirrelValue(candidateArgumentSource).value
-          } catch (error) {
-            addImporterParseWarning(
-              diagnosticContext,
-              `${callee} background argument`,
-              candidateArgumentSource,
-              error,
-            )
-            continue
-          }
-
-          for (const backgroundScriptId of resolveBackgroundScriptIdsFromValue(parsedValue, {
-            backgroundScriptIdsByReference,
-            knownBackgroundScriptIds,
-            localValues,
-          })) {
-            playableBackgroundScriptIds.add(backgroundScriptId)
+          if (candidateArgumentSource) {
+            backgroundArgumentSources.push({ argumentSource: candidateArgumentSource, callee })
           }
         }
+      }
+    }
+
+    const localValues = extractLocalAssignments(
+      uncommentedFileSource,
+      diagnosticContext,
+      collectPotentialLocalNamesFromSources(
+        backgroundArgumentSources.map(({ argumentSource }) => argumentSource),
+      ),
+    )
+
+    for (const { argumentSource, callee } of backgroundArgumentSources) {
+      let parsedValue: SquirrelValue
+
+      try {
+        parsedValue = parseSquirrelValue(argumentSource).value
+      } catch (error) {
+        addImporterParseWarning(
+          diagnosticContext,
+          `${callee} background argument`,
+          argumentSource,
+          error,
+        )
+        continue
+      }
+
+      for (const backgroundScriptId of resolveBackgroundScriptIdsFromValue(parsedValue, {
+        backgroundScriptIdsByReference,
+        knownBackgroundScriptIds,
+        localValues,
+      })) {
+        playableBackgroundScriptIds.add(backgroundScriptId)
       }
     }
   }
@@ -3418,205 +3510,674 @@ function collectPlayableBackgroundScriptIdsFromFileEntries(
   return playableBackgroundScriptIds
 }
 
-function resolveFixedLiteralBackgroundScriptIdsFromValue(
-  value: SquirrelValue | null | undefined,
-  knownBackgroundScriptIds: Set<string>,
-): string[] {
-  const directString = stringValue(value)
-
-  if (directString !== null) {
-    return knownBackgroundScriptIds.has(directString) ? [directString] : []
-  }
-
-  const arrayValue = unwrapArray(value)
-
-  if (arrayValue === null) {
-    return []
-  }
-
-  const backgroundScriptIds = arrayValue.values
-    .map((item) => stringValue(item))
-    .filter(
-      (backgroundScriptId): backgroundScriptId is string =>
-        backgroundScriptId !== null && knownBackgroundScriptIds.has(backgroundScriptId),
-    )
-
-  return backgroundScriptIds.length === 1 ? backgroundScriptIds : []
+function capitalizeFirstCharacter(value: string): string {
+  return value.length === 0 ? value : `${value.charAt(0).toUpperCase()}${value.slice(1)}`
 }
 
-function collectScenarioVeteranPerkLevelIntervalsByBackgroundScriptId(
+function removeKnownFileSuffixes(value: string, suffixes: string[]): string {
+  for (const suffix of suffixes) {
+    if (value.endsWith(suffix)) {
+      return value.slice(0, -suffix.length)
+    }
+  }
+
+  return value
+}
+
+function getFallbackScriptDisplayName(sourceFilePath: string, suffixes: string[]): string {
+  const fileName = path.posix.basename(sourceFilePath, path.posix.extname(sourceFilePath))
+  return capitalizeFirstCharacter(prettifyIdentifier(removeKnownFileSuffixes(fileName, suffixes)))
+}
+
+function getAssignedScriptDisplayName(
+  fileSource: string,
+  sourceFilePath: string,
+  assignmentTargets: string[],
+  fallbackSuffixes: string[],
+  diagnostics: ImporterDiagnosticContext['diagnostics'],
+): string {
+  const diagnosticContext = { diagnostics, sourceFilePath }
+
+  for (const assignmentTarget of assignmentTargets) {
+    const assignedName = stringValue(
+      extractAssignedValue(fileSource, assignmentTarget, diagnosticContext),
+    )
+
+    if (assignedName !== null && assignedName.trim().length > 0) {
+      return normalizeWhitespace(assignedName)
+    }
+  }
+
+  return getFallbackScriptDisplayName(sourceFilePath, fallbackSuffixes)
+}
+
+function normalizeBackgroundScriptIdReference(
+  value: string,
+  knownBackgroundScriptIds: Set<string>,
+): string | null {
+  const normalizedValue = value.replaceAll('\\', '/')
+  const lastSegment = normalizedValue.split('/').at(-1) ?? normalizedValue
+  const scriptId = lastSegment.replace(/\.nut$/u, '')
+
+  if (knownBackgroundScriptIds.has(scriptId)) {
+    return scriptId
+  }
+
+  return null
+}
+
+function extractQuotedStringValues(source: string): string[] {
+  return [...source.matchAll(/"((?:\\.|[^"\\])*)"/g)].map((match) =>
+    match[1].replace(/\\"/g, '"').replace(/\\\\/g, '\\'),
+  )
+}
+
+function collectBackgroundScriptIdsFromQuotedStrings(
+  source: string,
+  knownBackgroundScriptIds: Set<string>,
+): string[] {
+  return [
+    ...new Set(
+      extractQuotedStringValues(source).flatMap((quotedStringValue) => {
+        const backgroundScriptId = normalizeBackgroundScriptIdReference(
+          quotedStringValue,
+          knownBackgroundScriptIds,
+        )
+
+        return backgroundScriptId === null ? [] : [backgroundScriptId]
+      }),
+    ),
+  ].toSorted((leftBackgroundScriptId, rightBackgroundScriptId) =>
+    leftBackgroundScriptId.localeCompare(rightBackgroundScriptId),
+  )
+}
+
+function addBackgroundAccessContext(
+  contextsByBackgroundScriptId: Map<string, LegendsBackgroundAccessContext[]>,
+  backgroundScriptId: string,
+  context: LegendsBackgroundAccessContext,
+): void {
+  const contexts = contextsByBackgroundScriptId.get(backgroundScriptId) ?? []
+
+  if (
+    !contexts.some(
+      (candidateContext) =>
+        candidateContext.kind === context.kind &&
+        candidateContext.label === context.label &&
+        candidateContext.sourceFilePath === context.sourceFilePath,
+    )
+  ) {
+    contexts.push(context)
+    contextsByBackgroundScriptId.set(backgroundScriptId, contexts)
+  }
+}
+
+function sortBackgroundAccessContexts(
+  contextsByBackgroundScriptId: Map<string, LegendsBackgroundAccessContext[]>,
+): Map<string, LegendsBackgroundAccessContext[]> {
+  return new Map(
+    [...contextsByBackgroundScriptId.entries()].map(([backgroundScriptId, contexts]) => [
+      backgroundScriptId,
+      contexts.toSorted(
+        (leftContext, rightContext) =>
+          leftContext.kind.localeCompare(rightContext.kind) ||
+          leftContext.label.localeCompare(rightContext.label) ||
+          leftContext.sourceFilePath.localeCompare(rightContext.sourceFilePath),
+      ),
+    ]),
+  )
+}
+
+function collectBackgroundScriptIdsFromArgumentSource(
+  argumentSource: string,
+  {
+    backgroundScriptIdsByReference,
+    diagnostics,
+    knownBackgroundScriptIds,
+    localValues,
+    parseContextLabel,
+    sourceFilePath,
+  }: BackgroundScriptReferenceResolutionContext & {
+    diagnostics: ImporterDiagnosticContext['diagnostics']
+    parseContextLabel: string
+    sourceFilePath: string
+  },
+): string[] {
+  const diagnosticContext = { diagnostics, sourceFilePath }
+
+  try {
+    const parsedValue = parseSquirrelValue(argumentSource).value
+
+    return resolveBackgroundScriptIdsFromValue(parsedValue, {
+      backgroundScriptIdsByReference,
+      knownBackgroundScriptIds,
+      localValues,
+    })
+  } catch (error) {
+    addImporterParseWarning(diagnosticContext, parseContextLabel, argumentSource, error)
+    return []
+  }
+}
+
+function isScenarioBackgroundAccessSource(fileSource: string): boolean {
+  const invalidFunctionMatch = /\bfunction\s+isValid\s*\([^)]*\)\s*\{([\s\S]*?)\}/u.exec(fileSource)
+
+  if (!invalidFunctionMatch) {
+    return true
+  }
+
+  return !/\breturn\s+(?:false|(?:this|::)\.Const\.LegendMod\.DebugMode)\s*;/u.test(
+    invalidFunctionMatch[1],
+  )
+}
+
+function collectScenarioDraftListBackgroundScriptIds(
+  fileSource: string,
+  knownBackgroundScriptIds: Set<string>,
+): string[] {
+  const backgroundScriptIds = new Set<string>()
+  const patterns = [
+    /\bfunction\s+onUpdateDraftList\s*\([^)]*\)\s*\{/g,
+    /\bonUpdateDraftList\s*(?:<-|=)\s*function\s*\([^)]*\)\s*\{/g,
+  ]
+
+  for (const pattern of patterns) {
+    for (const match of fileSource.matchAll(pattern)) {
+      const openBraceIndex = match.index + match[0].lastIndexOf('{')
+
+      try {
+        const closeBraceIndex = new SquirrelSubsetParser(fileSource).findMatchingBoundary(
+          '{',
+          '}',
+          openBraceIndex,
+        )
+        const functionBodySource = fileSource.slice(openBraceIndex + 1, closeBraceIndex)
+
+        for (const backgroundScriptId of collectBackgroundScriptIdsFromQuotedStrings(
+          functionBodySource,
+          knownBackgroundScriptIds,
+        )) {
+          backgroundScriptIds.add(backgroundScriptId)
+        }
+      } catch {
+        continue
+      }
+    }
+  }
+
+  return [...backgroundScriptIds].toSorted((leftBackgroundScriptId, rightBackgroundScriptId) =>
+    leftBackgroundScriptId.localeCompare(rightBackgroundScriptId),
+  )
+}
+
+function collectScenarioBackgroundAccessContextsByBackgroundScriptId(
   fileEntries: NutFileEntry[],
   knownBackgroundScriptIds: Set<string>,
+  backgroundScriptIdsByReference: Map<string, string[]>,
   diagnostics: ImporterDiagnosticContext['diagnostics'],
-): Map<string, ScenarioVeteranPerkLevelRecord> {
-  const recordsByBackgroundScriptId = new Map<string, ScenarioVeteranPerkLevelRecord>()
+): Map<string, LegendsBackgroundAccessContext[]> {
+  const contextsByBackgroundScriptId = new Map<string, LegendsBackgroundAccessContext[]>()
 
   for (const fileEntry of fileEntries) {
     const uncommentedFileSource = stripSquirrelComments(fileEntry.fileSource)
-    const diagnosticContext = { diagnostics, sourceFilePath: fileEntry.sourceFilePath }
-    const receiverAliases = extractActorReceiverAliases(uncommentedFileSource)
-    const playerTraitReceivers = collectPlayerTraitReceivers(uncommentedFileSource)
-    const playerCharacterFlagReceivers = collectPlayerCharacterFlagReceivers(uncommentedFileSource)
-    const actorsByReceiver = new Map<string, ScenarioActorRecord>()
 
-    function getActorRecord(receiver: string): ScenarioActorRecord {
-      const resolvedReceiver = resolveActorReceiverAlias(receiver, receiverAliases)
-
-      if (!actorsByReceiver.has(resolvedReceiver)) {
-        actorsByReceiver.set(resolvedReceiver, {
-          backgroundScriptIds: [],
-          isAvatar: false,
-          veteranPerkLevelIntervals: [],
-        })
-      }
-
-      return actorsByReceiver.get(resolvedReceiver) as ScenarioActorRecord
+    if (!isScenarioBackgroundAccessSource(uncommentedFileSource)) {
+      continue
     }
 
-    for (const receiver of [...playerTraitReceivers, ...playerCharacterFlagReceivers]) {
-      getActorRecord(receiver).isAvatar = true
+    const { scenarioName } = parseScenarioIdentity(
+      uncommentedFileSource,
+      fileEntry.sourceFilePath,
+      diagnostics,
+    )
+    const diagnosticContext = { diagnostics, sourceFilePath: fileEntry.sourceFilePath }
+    const backgroundArgumentSourcesForLocalAssignments: string[] = []
+
+    for (const methodName of ['setStartValuesEx', 'setStartValues']) {
+      for (const argumentList of extractCallArgumentLists(uncommentedFileSource, methodName)) {
+        const backgroundArgumentSource = argumentList[0]
+
+        if (backgroundArgumentSource) {
+          backgroundArgumentSourcesForLocalAssignments.push(backgroundArgumentSource)
+        }
+      }
+    }
+
+    for (const argumentList of extractCallArgumentLists(uncommentedFileSource, 'addBroToRoster')) {
+      backgroundArgumentSourcesForLocalAssignments.push(...argumentList)
+    }
+
+    const localValues = extractLocalAssignments(
+      uncommentedFileSource,
+      diagnosticContext,
+      collectPotentialLocalNamesFromSources(backgroundArgumentSourcesForLocalAssignments),
+    )
+    const resolutionContext = {
+      backgroundScriptIdsByReference,
+      diagnostics,
+      knownBackgroundScriptIds,
+      localValues,
+      sourceFilePath: fileEntry.sourceFilePath,
     }
 
     for (const methodName of ['setStartValuesEx', 'setStartValues']) {
-      for (const call of extractReceiverMethodCallArgumentLists(
-        uncommentedFileSource,
-        methodName,
-        diagnosticContext,
-      )) {
-        const backgroundArgumentSource = call.argumentList[0]
+      for (const argumentList of extractCallArgumentLists(uncommentedFileSource, methodName)) {
+        const backgroundArgumentSource = argumentList[0]
 
         if (!backgroundArgumentSource) {
           continue
         }
 
-        let parsedValue: SquirrelValue
-
-        try {
-          parsedValue = parseSquirrelValue(backgroundArgumentSource).value
-        } catch (error) {
-          addImporterParseWarning(
-            diagnosticContext,
-            `${methodName} scenario veteran background argument`,
-            backgroundArgumentSource,
-            error,
-          )
-          continue
-        }
-
-        const fixedBackgroundScriptIds = resolveFixedLiteralBackgroundScriptIdsFromValue(
-          parsedValue,
-          knownBackgroundScriptIds,
-        )
-
-        if (fixedBackgroundScriptIds.length !== 1) {
-          continue
-        }
-
-        getActorRecord(call.receiver).backgroundScriptIds.push(...fixedBackgroundScriptIds)
-      }
-    }
-
-    for (const call of extractReceiverMethodCallArgumentLists(
-      uncommentedFileSource,
-      'setVeteranPerks',
-      diagnosticContext,
-    )) {
-      const intervalArgumentSource = call.argumentList[0]
-
-      if (!intervalArgumentSource) {
-        continue
-      }
-
-      try {
-        const interval = normalizeVeteranPerkLevelInterval(
-          numberValue(parseSquirrelValue(intervalArgumentSource).value),
-        )
-
-        if (interval !== null) {
-          getActorRecord(call.receiver).veteranPerkLevelIntervals.push(interval)
-        }
-      } catch (error) {
-        addImporterParseWarning(
-          diagnosticContext,
-          'setVeteranPerks scenario veteran interval argument',
-          intervalArgumentSource,
-          error,
-        )
-      }
-    }
-
-    for (const actorRecord of actorsByReceiver.values()) {
-      const interval = actorRecord.veteranPerkLevelIntervals.at(-1)
-
-      if (interval === undefined || actorRecord.backgroundScriptIds.length === 0) {
-        continue
-      }
-
-      for (const backgroundScriptId of actorRecord.backgroundScriptIds) {
-        const previousRecord = recordsByBackgroundScriptId.get(backgroundScriptId)
-
-        if (previousRecord === undefined) {
-          recordsByBackgroundScriptId.set(backgroundScriptId, {
-            isAvatar: actorRecord.isAvatar,
-            veteranPerkLevelInterval: interval,
+        for (const backgroundScriptId of collectBackgroundScriptIdsFromArgumentSource(
+          backgroundArgumentSource,
+          {
+            ...resolutionContext,
+            parseContextLabel: `${methodName} origin background argument`,
+          },
+        )) {
+          addBackgroundAccessContext(contextsByBackgroundScriptId, backgroundScriptId, {
+            kind: 'origin',
+            label: `${scenarioName} starting roster`,
+            sourceFilePath: fileEntry.sourceFilePath,
           })
+        }
+      }
+    }
+
+    for (const argumentList of extractCallArgumentLists(uncommentedFileSource, 'addBroToRoster')) {
+      const backgroundArgumentSource = argumentList[1]
+
+      if (!backgroundArgumentSource) {
+        continue
+      }
+
+      for (const backgroundScriptId of collectBackgroundScriptIdsFromArgumentSource(
+        backgroundArgumentSource,
+        {
+          ...resolutionContext,
+          parseContextLabel: 'addBroToRoster origin background argument',
+        },
+      )) {
+        addBackgroundAccessContext(contextsByBackgroundScriptId, backgroundScriptId, {
+          kind: 'origin',
+          label: `${scenarioName} hiring roster`,
+          sourceFilePath: fileEntry.sourceFilePath,
+        })
+      }
+    }
+
+    for (const backgroundScriptId of collectScenarioDraftListBackgroundScriptIds(
+      uncommentedFileSource,
+      knownBackgroundScriptIds,
+    )) {
+      addBackgroundAccessContext(contextsByBackgroundScriptId, backgroundScriptId, {
+        kind: 'origin',
+        label: `${scenarioName} draft list`,
+        sourceFilePath: fileEntry.sourceFilePath,
+      })
+    }
+  }
+
+  return sortBackgroundAccessContexts(contextsByBackgroundScriptId)
+}
+
+function collectBackgroundAccessContextsFromQuotedFiles({
+  assignmentTargets,
+  contextKind,
+  fileEntries,
+  knownBackgroundScriptIds,
+  labelSuffix,
+  sourceFileFallbackSuffixes,
+  diagnostics,
+}: {
+  assignmentTargets: string[]
+  contextKind: LegendsBackgroundAccessContext['kind']
+  fileEntries: NutFileEntry[]
+  knownBackgroundScriptIds: Set<string>
+  labelSuffix: string
+  sourceFileFallbackSuffixes: string[]
+  diagnostics: ImporterDiagnosticContext['diagnostics']
+}): Map<string, LegendsBackgroundAccessContext[]> {
+  const contextsByBackgroundScriptId = new Map<string, LegendsBackgroundAccessContext[]>()
+
+  for (const fileEntry of fileEntries) {
+    const uncommentedFileSource = stripSquirrelComments(fileEntry.fileSource)
+    const displayName = getAssignedScriptDisplayName(
+      uncommentedFileSource,
+      fileEntry.sourceFilePath,
+      assignmentTargets,
+      sourceFileFallbackSuffixes,
+      diagnostics,
+    )
+    const context: LegendsBackgroundAccessContext = {
+      kind: contextKind,
+      label: `${displayName} ${labelSuffix}`,
+      sourceFilePath: fileEntry.sourceFilePath,
+    }
+
+    for (const backgroundScriptId of collectBackgroundScriptIdsFromQuotedStrings(
+      uncommentedFileSource,
+      knownBackgroundScriptIds,
+    )) {
+      addBackgroundAccessContext(contextsByBackgroundScriptId, backgroundScriptId, context)
+    }
+  }
+
+  return sortBackgroundAccessContexts(contextsByBackgroundScriptId)
+}
+
+function mergeBackgroundAccessContextMaps(
+  contextMaps: Array<Map<string, LegendsBackgroundAccessContext[]>>,
+): Map<string, LegendsBackgroundAccessContext[]> {
+  const contextsByBackgroundScriptId = new Map<string, LegendsBackgroundAccessContext[]>()
+
+  for (const contextMap of contextMaps) {
+    for (const [backgroundScriptId, contexts] of contextMap.entries()) {
+      for (const context of contexts) {
+        addBackgroundAccessContext(contextsByBackgroundScriptId, backgroundScriptId, context)
+      }
+    }
+  }
+
+  return sortBackgroundAccessContexts(contextsByBackgroundScriptId)
+}
+
+function collectBackgroundScriptIdsFromQuotedFileEntries(
+  fileEntries: NutFileEntry[],
+  knownBackgroundScriptIds: Set<string>,
+): Set<string> {
+  const backgroundScriptIds = new Set<string>()
+
+  for (const fileEntry of fileEntries) {
+    for (const backgroundScriptId of collectBackgroundScriptIdsFromQuotedStrings(
+      stripSquirrelComments(fileEntry.fileSource),
+      knownBackgroundScriptIds,
+    )) {
+      backgroundScriptIds.add(backgroundScriptId)
+    }
+  }
+
+  return backgroundScriptIds
+}
+
+function parseScenarioIdentity(
+  fileSource: string,
+  sourceFilePath: string,
+  diagnostics: ImporterDiagnosticContext['diagnostics'],
+): { scenarioIdentifier: string; scenarioName: string } {
+  const diagnosticContext = { diagnostics, sourceFilePath }
+  const scenarioIdentifier =
+    stringValue(extractAssignedValue(fileSource, 'this.m.ID', diagnosticContext)) ??
+    `scenario.${path.posix.basename(sourceFilePath, path.posix.extname(sourceFilePath))}`
+  const scenarioName =
+    stringValue(extractAssignedValue(fileSource, 'this.m.Name', diagnosticContext)) ??
+    prettifyIdentifier(path.posix.basename(sourceFilePath, path.posix.extname(sourceFilePath)))
+
+  return {
+    scenarioIdentifier,
+    scenarioName,
+  }
+}
+
+function getScenarioActorState(
+  actorsByReceiver: Map<string, ScenarioActorVeteranPerkState>,
+  receiver: string,
+): ScenarioActorVeteranPerkState {
+  if (!actorsByReceiver.has(receiver)) {
+    actorsByReceiver.set(receiver, {
+      activeBackgrounds: [],
+      defaultInterval: fallbackVeteranPerkLevelInterval,
+    })
+  }
+
+  return actorsByReceiver.get(receiver) as ScenarioActorVeteranPerkState
+}
+
+function getScenarioStartValueInterval({
+  backgroundScriptId,
+  defaultInterval,
+  nativeVeteranPerkLevelIntervalsByBackgroundScriptId,
+}: {
+  backgroundScriptId: string
+  defaultInterval: number
+  nativeVeteranPerkLevelIntervalsByBackgroundScriptId: Map<string, number>
+}): number {
+  const nativeVeteranPerkLevelInterval =
+    nativeVeteranPerkLevelIntervalsByBackgroundScriptId.get(backgroundScriptId) ??
+    fallbackVeteranPerkLevelInterval
+
+  return nativeVeteranPerkLevelInterval === fallbackVeteranPerkLevelInterval
+    ? defaultInterval
+    : nativeVeteranPerkLevelInterval
+}
+
+function collectScenarioVeteranPerkLevelEvents({
+  backgroundScriptIdsByReference,
+  diagnostics,
+  fileSource,
+  knownBackgroundScriptIds,
+  sourceFilePath,
+}: {
+  backgroundScriptIdsByReference: Map<string, string[]>
+  diagnostics: ImporterDiagnosticContext['diagnostics']
+  fileSource: string
+  knownBackgroundScriptIds: Set<string>
+  sourceFilePath: string
+}): ScenarioVeteranPerkLevelEvent[] {
+  const diagnosticContext = { diagnostics, sourceFilePath }
+  const startValueCalls = ['setStartValuesEx', 'setStartValues'].flatMap((methodName) =>
+    extractReceiverMethodCallArgumentListEvents(fileSource, methodName, diagnosticContext).map(
+      (call) => ({ call, methodName }),
+    ),
+  )
+  const localValues = extractLocalAssignments(
+    fileSource,
+    diagnosticContext,
+    collectPotentialLocalNamesFromSources(
+      startValueCalls.flatMap(({ call }) => call.argumentList.slice(0, 1)),
+    ),
+  )
+  const events: ScenarioVeteranPerkLevelEvent[] = []
+
+  for (const { call, methodName } of startValueCalls) {
+    const backgroundArgumentSource = call.argumentList[0]
+
+    if (!backgroundArgumentSource) {
+      continue
+    }
+
+    try {
+      const parsedValue = parseSquirrelValue(backgroundArgumentSource).value
+      const backgroundScriptIds = resolveBackgroundScriptIdsFromValue(parsedValue, {
+        backgroundScriptIdsByReference,
+        knownBackgroundScriptIds,
+        localValues,
+      })
+
+      if (backgroundScriptIds.length > 0) {
+        events.push({
+          backgroundScriptIds,
+          receiver: call.receiver,
+          sourceIndex: call.sourceIndex,
+          type: 'start-values',
+        })
+      }
+    } catch (error) {
+      addImporterParseWarning(
+        diagnosticContext,
+        `${methodName} scenario veteran background argument`,
+        backgroundArgumentSource,
+        error,
+      )
+    }
+  }
+
+  for (const call of extractReceiverMethodCallArgumentListEvents(
+    fileSource,
+    'setVeteranPerks',
+    diagnosticContext,
+  )) {
+    const intervalArgumentSource = call.argumentList[0]
+
+    if (!intervalArgumentSource) {
+      continue
+    }
+
+    try {
+      const interval = normalizeVeteranPerkLevelInterval(
+        numberValue(parseSquirrelValue(intervalArgumentSource).value),
+      )
+
+      if (interval !== null) {
+        events.push({
+          interval,
+          receiver: call.receiver,
+          sourceIndex: call.sourceIndex,
+          type: 'veteran-perks',
+        })
+      }
+    } catch (error) {
+      addImporterParseWarning(
+        diagnosticContext,
+        'setVeteranPerks scenario veteran interval argument',
+        intervalArgumentSource,
+        error,
+      )
+    }
+  }
+
+  return events.toSorted((leftEvent, rightEvent) => leftEvent.sourceIndex - rightEvent.sourceIndex)
+}
+
+function resolveScenarioVeteranPerkEventReceiver({
+  receiver,
+  receiverAliases,
+  singleStartReceiver,
+}: {
+  receiver: string
+  receiverAliases: Map<string, string>
+  singleStartReceiver: string | null
+}): string {
+  const resolvedReceiver = resolveActorReceiverAlias(receiver, receiverAliases)
+
+  if (
+    singleStartReceiver !== null &&
+    resolvedReceiver !== singleStartReceiver &&
+    /\[[^\]]*0[^\]]*\]$/u.test(resolvedReceiver)
+  ) {
+    return singleStartReceiver
+  }
+
+  return resolvedReceiver
+}
+
+function collectScenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId(
+  fileEntries: NutFileEntry[],
+  knownBackgroundScriptIds: Set<string>,
+  backgroundScriptIdsByReference: Map<string, string[]>,
+  nativeVeteranPerkLevelIntervalsByBackgroundScriptId: Map<string, number>,
+  diagnostics: ImporterDiagnosticContext['diagnostics'],
+): Map<string, LegendsBackgroundVeteranPerkLevelIntervalContext[]> {
+  const contextsByBackgroundScriptId = new Map<
+    string,
+    LegendsBackgroundVeteranPerkLevelIntervalContext[]
+  >()
+
+  for (const fileEntry of fileEntries) {
+    const uncommentedFileSource = stripSquirrelComments(fileEntry.fileSource)
+    const { scenarioIdentifier, scenarioName } = parseScenarioIdentity(
+      uncommentedFileSource,
+      fileEntry.sourceFilePath,
+      diagnostics,
+    )
+    const receiverAliases = extractActorReceiverAliases(uncommentedFileSource)
+    const events = collectScenarioVeteranPerkLevelEvents({
+      backgroundScriptIdsByReference,
+      diagnostics,
+      fileSource: uncommentedFileSource,
+      knownBackgroundScriptIds,
+      sourceFilePath: fileEntry.sourceFilePath,
+    })
+    const startReceivers = [
+      ...new Set(
+        events
+          .filter((event) => event.type === 'start-values')
+          .map((event) => resolveActorReceiverAlias(event.receiver, receiverAliases)),
+      ),
+    ]
+    const singleStartReceiver = startReceivers.length === 1 ? startReceivers[0] : null
+    const actorsByReceiver = new Map<string, ScenarioActorVeteranPerkState>()
+
+    for (const event of events) {
+      const receiver = resolveScenarioVeteranPerkEventReceiver({
+        receiver: event.receiver,
+        receiverAliases,
+        singleStartReceiver,
+      })
+      const actorState = getScenarioActorState(actorsByReceiver, receiver)
+
+      if (event.type === 'veteran-perks') {
+        actorState.defaultInterval = event.interval
+        actorState.activeBackgrounds = actorState.activeBackgrounds.map((backgroundState) => ({
+          ...backgroundState,
+          interval: event.interval,
+        }))
+        continue
+      }
+
+      actorState.activeBackgrounds = event.backgroundScriptIds.map((backgroundScriptId) => ({
+        backgroundScriptId,
+        interval: getScenarioStartValueInterval({
+          backgroundScriptId,
+          defaultInterval: actorState.defaultInterval,
+          nativeVeteranPerkLevelIntervalsByBackgroundScriptId,
+        }),
+      }))
+    }
+
+    for (const actorState of actorsByReceiver.values()) {
+      for (const backgroundState of actorState.activeBackgrounds) {
+        const nativeVeteranPerkLevelInterval =
+          nativeVeteranPerkLevelIntervalsByBackgroundScriptId.get(
+            backgroundState.backgroundScriptId,
+          ) ?? fallbackVeteranPerkLevelInterval
+
+        if (backgroundState.interval === nativeVeteranPerkLevelInterval) {
           continue
         }
 
-        previousRecord.isAvatar ||= actorRecord.isAvatar
+        if (
+          backgroundState.interval === 2 &&
+          ignoredVeteranPerkLevelIntervalScenarioIds.has(scenarioIdentifier)
+        ) {
+          continue
+        }
 
-        if (interval < previousRecord.veteranPerkLevelInterval) {
-          previousRecord.veteranPerkLevelInterval = interval
+        const context: LegendsBackgroundVeteranPerkLevelIntervalContext = {
+          interval: backgroundState.interval,
+          kind: 'origin',
+          label: `Origin: ${scenarioName}`,
+          scenarioId: scenarioIdentifier,
+          scenarioName,
+          sourceFilePath: fileEntry.sourceFilePath,
+        }
+        const contexts = contextsByBackgroundScriptId.get(backgroundState.backgroundScriptId) ?? []
+
+        if (
+          !contexts.some(
+            (candidateContext) =>
+              candidateContext.interval === context.interval &&
+              candidateContext.scenarioId === context.scenarioId,
+          )
+        ) {
+          contexts.push(context)
+          contextsByBackgroundScriptId.set(backgroundState.backgroundScriptId, contexts)
         }
       }
     }
   }
 
-  return recordsByBackgroundScriptId
-}
-
-function getBackgroundOriginCandidateLabels(background: ImportedBackgroundDefinition): string[] {
-  return [
-    background.backgroundIdentifier,
-    background.backgroundScriptId.replace(/_background$/u, ''),
-    path.posix
-      .basename(background.sourceFilePath, path.posix.extname(background.sourceFilePath))
-      .replace(/_background$/u, ''),
-  ].filter((label) => typeof label === 'string')
-}
-
-function isScenarioVeteranPerkLevelIntervalEligibleBackground(
-  background: ImportedBackgroundDefinition,
-): boolean {
-  return getBackgroundOriginCandidateLabels(background).some((label) =>
-    isOriginBackgroundSourceLabel(label),
-  )
-}
-
-function applyScenarioVeteranPerkLevelIntervals(
-  backgrounds: ImportedBackgroundDefinition[],
-  scenarioVeteranPerkLevelRecordsByBackgroundScriptId: Map<string, ScenarioVeteranPerkLevelRecord>,
-): ImportedBackgroundDefinition[] {
-  return backgrounds.map((background) => {
-    const scenarioVeteranPerkLevelRecord =
-      scenarioVeteranPerkLevelRecordsByBackgroundScriptId.get(background.backgroundScriptId) ?? null
-
-    if (
-      scenarioVeteranPerkLevelRecord === null ||
-      (!scenarioVeteranPerkLevelRecord.isAvatar &&
-        !isScenarioVeteranPerkLevelIntervalEligibleBackground(background))
-    ) {
-      return background
-    }
-
-    return {
-      ...background,
-      veteranPerkLevelInterval: Math.min(
-        background.veteranPerkLevelInterval,
-        scenarioVeteranPerkLevelRecord.veteranPerkLevelInterval,
-      ),
-    }
-  })
+  return contextsByBackgroundScriptId
 }
 
 function parseScenarioHookFile(
@@ -4020,19 +4581,49 @@ export async function createDataset(
   const scriptTraitDirectoryPath = path.join(scriptsRootDirectoryPath, 'skills', 'traits')
   const scenarioDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'scenarios', 'world')
   const scriptScenarioDirectoryPath = path.join(scriptsRootDirectoryPath, 'scenarios', 'world')
+  const hookSettlementDirectoryPath = path.join(
+    referenceRootDirectoryPath,
+    'hooks',
+    'entity',
+    'world',
+    'settlements',
+  )
+  const scriptSettlementDirectoryPath = path.join(
+    scriptsRootDirectoryPath,
+    'entity',
+    'world',
+    'settlements',
+  )
+  const hookSettlementSituationDirectoryPath = path.join(hookSettlementDirectoryPath, 'situations')
+  const scriptSettlementSituationDirectoryPath = path.join(
+    scriptSettlementDirectoryPath,
+    'situations',
+  )
+  const hookAttachedLocationDirectoryPath = path.join(
+    referenceRootDirectoryPath,
+    'hooks',
+    'entity',
+    'world',
+    'attached_location',
+  )
+  const scriptAttachedLocationDirectoryPath = path.join(
+    scriptsRootDirectoryPath,
+    'entity',
+    'world',
+    'attached_location',
+  )
+  const hookEventDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'events', 'events')
+  const scriptEventDirectoryPath = path.join(scriptsRootDirectoryPath, 'events', 'events')
+  const hookContractDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'contracts')
+  const scriptContractDirectoryPath = path.join(scriptsRootDirectoryPath, 'contracts')
+  const hookEncounterDirectoryPath = path.join(referenceRootDirectoryPath, 'hooks', 'encounters')
+  const scriptEncounterDirectoryPath = path.join(scriptsRootDirectoryPath, 'encounters')
   const perkGroupDirectoryPath = path.join(referenceRootDirectoryPath, 'config')
   const characterBackgroundFilePath = path.join(
     hookBackgroundDirectoryPath,
     'character_background.nut',
   )
-  const playableBackgroundScanDirectoryPaths = [
-    path.join(referenceRootDirectoryPath, 'hooks', 'entity', 'world', 'settlements', 'buildings'),
-    path.join(referenceRootDirectoryPath, 'hooks', 'events', 'events'),
-    path.join(referenceRootDirectoryPath, 'hooks', 'scenarios', 'world'),
-    path.join(scriptsRootDirectoryPath, 'entity', 'world', 'settlements', 'buildings'),
-    path.join(scriptsRootDirectoryPath, 'events', 'events'),
-    path.join(scriptsRootDirectoryPath, 'scenarios', 'world'),
-  ]
+  const playableBackgroundScanDirectoryPaths = [scenarioDirectoryPath, scriptScenarioDirectoryPath]
 
   const [
     characterBackgroundReferencesFileSource,
@@ -4169,6 +4760,100 @@ export async function createDataset(
   const playableBackgroundScanFileEntries = (
     await Promise.all(
       playableBackgroundScanDirectoryPaths.map((directoryPath) =>
+        collectNutFileEntriesRecursively(directoryPath),
+      ),
+    )
+  )
+    .flat()
+    .filter(
+      (fileEntry, index, fileEntries) =>
+        fileEntries.findIndex(
+          (candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath,
+        ) === index,
+    )
+    .toSorted((leftEntry, rightEntry) =>
+      leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+    )
+
+  const regularRecruitmentScanFileEntries = (
+    await Promise.all(
+      [
+        hookAttachedLocationDirectoryPath,
+        hookSettlementDirectoryPath,
+        scriptAttachedLocationDirectoryPath,
+        scriptSettlementDirectoryPath,
+      ].map((directoryPath) => collectNutFileEntriesRecursively(directoryPath)),
+    )
+  )
+    .flat()
+    .filter(
+      (fileEntry, index, fileEntries) =>
+        !fileEntry.sourceFilePath.includes('/settlements/situations/') &&
+        fileEntries.findIndex(
+          (candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath,
+        ) === index,
+    )
+    .toSorted((leftEntry, rightEntry) =>
+      leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+    )
+
+  const settlementSituationFileEntries = (
+    await Promise.all(
+      [hookSettlementSituationDirectoryPath, scriptSettlementSituationDirectoryPath].map(
+        (directoryPath) => collectNutFileEntriesRecursively(directoryPath),
+      ),
+    )
+  )
+    .flat()
+    .filter(
+      (fileEntry, index, fileEntries) =>
+        fileEntries.findIndex(
+          (candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath,
+        ) === index,
+    )
+    .toSorted((leftEntry, rightEntry) =>
+      leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+    )
+
+  const eventFileEntries = (
+    await Promise.all(
+      [hookEventDirectoryPath, scriptEventDirectoryPath].map((directoryPath) =>
+        collectNutFileEntriesRecursively(directoryPath),
+      ),
+    )
+  )
+    .flat()
+    .filter(
+      (fileEntry, index, fileEntries) =>
+        fileEntries.findIndex(
+          (candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath,
+        ) === index,
+    )
+    .toSorted((leftEntry, rightEntry) =>
+      leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+    )
+
+  const contractFileEntries = (
+    await Promise.all(
+      [hookContractDirectoryPath, scriptContractDirectoryPath].map((directoryPath) =>
+        collectNutFileEntriesRecursively(directoryPath),
+      ),
+    )
+  )
+    .flat()
+    .filter(
+      (fileEntry, index, fileEntries) =>
+        fileEntries.findIndex(
+          (candidate) => candidate.sourceFilePath === fileEntry.sourceFilePath,
+        ) === index,
+    )
+    .toSorted((leftEntry, rightEntry) =>
+      leftEntry.sourceFilePath.localeCompare(rightEntry.sourceFilePath),
+    )
+
+  const encounterFileEntries = (
+    await Promise.all(
+      [hookEncounterDirectoryPath, scriptEncounterDirectoryPath].map((directoryPath) =>
         collectNutFileEntriesRecursively(directoryPath),
       ),
     )
@@ -4387,6 +5072,28 @@ export async function createDataset(
     playableBackgroundScriptIds.add(backgroundScriptId)
   }
 
+  const regularRecruitmentBackgroundScriptIds = collectBackgroundScriptIdsFromQuotedFileEntries(
+    regularRecruitmentScanFileEntries,
+    knownBackgroundScriptIds,
+  )
+  const accessScanBackgroundScriptIds = collectBackgroundScriptIdsFromQuotedFileEntries(
+    [
+      ...eventFileEntries,
+      ...contractFileEntries,
+      ...encounterFileEntries,
+      ...settlementSituationFileEntries,
+    ],
+    knownBackgroundScriptIds,
+  )
+
+  for (const backgroundScriptId of regularRecruitmentBackgroundScriptIds) {
+    playableBackgroundScriptIds.add(backgroundScriptId)
+  }
+
+  for (const backgroundScriptId of accessScanBackgroundScriptIds) {
+    playableBackgroundScriptIds.add(backgroundScriptId)
+  }
+
   const hookBackgroundScriptIds = new Set(
     hookBackgrounds.map((background) => background.backgroundScriptId),
   )
@@ -4399,16 +5106,70 @@ export async function createDataset(
         ? [backgroundDefinition]
         : []
     })
-  const scenarioVeteranPerkLevelRecordsByBackgroundScriptId =
-    collectScenarioVeteranPerkLevelIntervalsByBackgroundScriptId(
+  const backgrounds = [...hookBackgrounds, ...scriptBackgrounds]
+  const originBackgroundAccessContextsByBackgroundScriptId =
+    collectScenarioBackgroundAccessContextsByBackgroundScriptId(
       scenarioVeteranPerkFileEntries,
       knownBackgroundScriptIds,
+      backgroundScriptIdsByReference,
       diagnostics,
     )
-  const backgrounds = applyScenarioVeteranPerkLevelIntervals(
-    [...hookBackgrounds, ...scriptBackgrounds],
-    scenarioVeteranPerkLevelRecordsByBackgroundScriptId,
+  const eventBackgroundAccessContextsByBackgroundScriptId = mergeBackgroundAccessContextMaps([
+    collectBackgroundAccessContextsFromQuotedFiles({
+      assignmentTargets: ['this.m.Title', 'this.m.Name', 'o.m.Title', 'o.m.Name'],
+      contextKind: 'event',
+      diagnostics,
+      fileEntries: eventFileEntries,
+      knownBackgroundScriptIds,
+      labelSuffix: 'event',
+      sourceFileFallbackSuffixes: ['_event'],
+    }),
+    collectBackgroundAccessContextsFromQuotedFiles({
+      assignmentTargets: ['this.m.Name', 'this.m.Title', 'o.m.Name', 'o.m.Title'],
+      contextKind: 'event',
+      diagnostics,
+      fileEntries: contractFileEntries,
+      knownBackgroundScriptIds,
+      labelSuffix: 'contract',
+      sourceFileFallbackSuffixes: ['_contract'],
+    }),
+    collectBackgroundAccessContextsFromQuotedFiles({
+      assignmentTargets: ['this.m.Name', 'this.m.Title', 'o.m.Name', 'o.m.Title'],
+      contextKind: 'event',
+      diagnostics,
+      fileEntries: encounterFileEntries,
+      knownBackgroundScriptIds,
+      labelSuffix: 'encounter',
+      sourceFileFallbackSuffixes: ['_encounter'],
+    }),
+    collectBackgroundAccessContextsFromQuotedFiles({
+      assignmentTargets: ['this.m.Name', 'this.m.Title', 'o.m.Name', 'o.m.Title'],
+      contextKind: 'event',
+      diagnostics,
+      fileEntries: settlementSituationFileEntries,
+      knownBackgroundScriptIds,
+      labelSuffix: 'settlement situation',
+      sourceFileFallbackSuffixes: ['_situation'],
+    }),
+  ])
+  const backgroundAccessContextsByBackgroundScriptId = mergeBackgroundAccessContextMaps([
+    originBackgroundAccessContextsByBackgroundScriptId,
+    eventBackgroundAccessContextsByBackgroundScriptId,
+  ])
+  const nativeVeteranPerkLevelIntervalsByBackgroundScriptId = new Map(
+    backgrounds.map((background) => [
+      background.backgroundScriptId,
+      background.veteranPerkLevelInterval,
+    ]),
   )
+  const scenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId =
+    collectScenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId(
+      scenarioVeteranPerkFileEntries,
+      knownBackgroundScriptIds,
+      backgroundScriptIdsByReference,
+      nativeVeteranPerkLevelIntervalsByBackgroundScriptId,
+      diagnostics,
+    )
   const backgroundFitRules = parseBackgroundFitRulesFile(
     perkGroupRulesFileSource,
     perkGroupDefinitions,
@@ -4419,6 +5180,9 @@ export async function createDataset(
     perkGroupDefinitions,
     baseAttributeRangeDefinitions.defaultRanges,
     baseAttributeRangeDefinitions.femaleModifierRanges,
+    backgroundAccessContextsByBackgroundScriptId,
+    regularRecruitmentBackgroundScriptIds,
+    scenarioVeteranPerkLevelIntervalContextsByBackgroundScriptId,
   )
 
   const scenarios = scenarioFileEntries
@@ -4674,6 +5438,26 @@ export async function createDataset(
     ...scenarioVeteranPerkFileEntries.map((scenarioFileEntry) => ({
       path: scenarioFileEntry.sourceFilePath,
       role: 'scenario perk sources',
+    })),
+    ...regularRecruitmentScanFileEntries.map((sourceFileEntry) => ({
+      path: sourceFileEntry.sourceFilePath,
+      role: 'regular recruitment background sources',
+    })),
+    ...eventFileEntries.map((sourceFileEntry) => ({
+      path: sourceFileEntry.sourceFilePath,
+      role: 'event background sources',
+    })),
+    ...contractFileEntries.map((sourceFileEntry) => ({
+      path: sourceFileEntry.sourceFilePath,
+      role: 'contract background sources',
+    })),
+    ...encounterFileEntries.map((sourceFileEntry) => ({
+      path: sourceFileEntry.sourceFilePath,
+      role: 'encounter background sources',
+    })),
+    ...settlementSituationFileEntries.map((sourceFileEntry) => ({
+      path: sourceFileEntry.sourceFilePath,
+      role: 'settlement situation background sources',
     })),
   ]
     .filter(

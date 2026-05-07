@@ -1,14 +1,19 @@
+import { mkdir, mkdtemp, rm as removePath, writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import { describe, expect, test } from 'vitest'
 import {
   buildIconExtractionPlan,
   collectRequiredGameIconPaths,
   getArchiveEntryPathFromIconPath,
+  syncLegendsIcons,
 } from '../scripts/legends-icon-sync.ts'
+import { runCommand } from '../scripts/script-utils.ts'
 import type { LegendsPerksDataset } from '../src/types/legends-perks'
 
 const sampleDataset: LegendsPerksDataset = {
   backgroundFitBackgrounds: [
     {
+      backgroundAccessContexts: [],
       backgroundId: 'background.farmhand',
       backgroundName: 'Farmhand',
       backgroundTypeNames: [],
@@ -37,10 +42,19 @@ const sampleDataset: LegendsPerksDataset = {
         },
       ],
       guaranteedTraitNames: ['Bright'],
+      hasRegularRecruitment: true,
       iconPath: 'ui/backgrounds/background_09.png',
       sourceFilePath: 'scripts/skills/backgrounds/farmhand_background.nut',
       startingAttributeRanges: [],
       veteranPerkLevelInterval: 4,
+      veteranPerkLevelIntervalContexts: [
+        {
+          interval: 4,
+          kind: 'native',
+          label: 'Native background',
+        },
+      ],
+      veteranPerkLevelIntervals: [4],
     },
   ],
   backgroundFitRules: {
@@ -149,5 +163,42 @@ describe('legends icon sync', () => {
       'gfx/skills/passive_03.png',
     ])
     expect(extractionPlan.missingIconPaths).toEqual(['ui/perks/missing_icon.png'])
+  })
+
+  test('fails sync when required game icons are missing from local archives', async () => {
+    const temporaryDirectoryPath = await mkdtemp(
+      path.join(process.cwd(), 'node_modules', '.tmp', 'legends-icon-sync-'),
+    )
+    const gameDirectoryPath = path.join(temporaryDirectoryPath, 'game')
+    const gameDataDirectoryPath = path.join(gameDirectoryPath, 'data')
+    const archiveSourceDirectoryPath = path.join(temporaryDirectoryPath, 'archive-source')
+    const archivePath = path.join(gameDataDirectoryPath, 'data_001.dat')
+    const outputDirectoryPath = path.join(temporaryDirectoryPath, 'output')
+
+    try {
+      await mkdir(gameDataDirectoryPath, { recursive: true })
+      await mkdir(archiveSourceDirectoryPath, { recursive: true })
+      await writeFile(path.join(archiveSourceDirectoryPath, 'placeholder.txt'), 'placeholder')
+      await runCommand('tar', [
+        '-cf',
+        archivePath,
+        '-C',
+        archiveSourceDirectoryPath,
+        'placeholder.txt',
+      ])
+
+      await expect(
+        syncLegendsIcons({
+          dataset: {
+            backgroundFitBackgrounds: [],
+            perks: [],
+          },
+          gameDirectoryPath,
+          outputDirectoryPath,
+        }),
+      ).rejects.toThrow(/Unable to find required game icons/)
+    } finally {
+      await removePath(temporaryDirectoryPath, { force: true, recursive: true })
+    }
   })
 })
