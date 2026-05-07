@@ -58,7 +58,7 @@ import {
 } from './lib/saved-build-planner-filters'
 import type { SavedBuildPlannerFilters } from './lib/saved-builds-storage'
 
-function getInitialBackgroundFitExpandedState() {
+function getViewportBackgroundFitExpandedState() {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return true
   }
@@ -127,9 +127,7 @@ export function PlannerExperience() {
     selectedBackgroundVeteranPerkLevelIntervals,
     setSelectedBackgroundVeteranPerkLevelIntervals,
   ] = useState(initialUrlState.selectedBackgroundVeteranPerkLevelIntervals)
-  const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(
-    getInitialBackgroundFitExpandedState,
-  )
+  const [isBackgroundFitPanelExpanded, setIsBackgroundFitPanelExpanded] = useState(true)
   const [isCategorySidebarExpanded, setIsCategorySidebarExpanded] = useState(true)
   const [hasActiveBackgroundFitSearch, setHasActiveBackgroundFitSearch] = useState(false)
   const [detailHistoryState, setDetailHistoryState] = useState(() =>
@@ -420,6 +418,29 @@ export function PlannerExperience() {
       backgroundFitMediaQueryList.removeEventListener('change', handleBackgroundFitMediaChange)
     }
   }, [])
+
+  useEffect(() => {
+    if (typeof document === 'undefined') {
+      return
+    }
+
+    if (
+      typeof window !== 'undefined' &&
+      isBackgroundFitPanelExpanded !== getViewportBackgroundFitExpandedState()
+    ) {
+      delete document.documentElement.dataset.battleBrothersAppReady
+      return
+    }
+
+    const appReadyAnimationFrame = window.requestAnimationFrame(() => {
+      document.documentElement.dataset.battleBrothersAppReady = 'true'
+    })
+
+    return () => {
+      window.cancelAnimationFrame(appReadyAnimationFrame)
+      delete document.documentElement.dataset.battleBrothersAppReady
+    }
+  }, [isBackgroundFitPanelExpanded])
 
   function requestNextUrlHistoryEntry() {
     urlHistoryWriteModeRef.current = 'push'

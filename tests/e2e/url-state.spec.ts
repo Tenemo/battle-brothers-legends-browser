@@ -8,6 +8,7 @@ import {
   getBuildSharedGroupsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   inspectPerkFromResults,
   searchPerks,
   selectPerkGroup,
@@ -51,8 +52,7 @@ test('stores readable filters and build state in the url and restores them on a 
   const sharedPage = await page.context().newPage()
 
   try {
-    await sharedPage.setViewportSize({ width: 900, height: 720 })
-    await sharedPage.goto(savedUrl)
+    await gotoBuildPlannerUrl(sharedPage, savedUrl, { width: 900, height: 720 })
 
     await expect(sharedPage.getByLabel('Search perks')).toHaveValue('')
     await expect(sharedPage.getByLabel('Filter by tier')).toHaveCount(0)
@@ -86,9 +86,10 @@ test('stores readable filters and build state in the url and restores them on a 
 })
 
 test('restores duplicate-name build perks from disambiguated shared links', async ({ page }) => {
-  await page.setViewportSize({ width: 900, height: 720 })
-  await page.goto(
+  await gotoBuildPlannerUrl(
+    page,
     '/?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+    { width: 900, height: 720 },
   )
 
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()

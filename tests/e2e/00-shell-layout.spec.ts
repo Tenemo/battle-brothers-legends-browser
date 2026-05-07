@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
+  ensureBackgroundFitPanelExpanded,
   expectBackgroundFitCalculationComplete,
   expectNoDocumentHorizontalOverflow,
   expectNoWorkspaceHorizontalClip,
@@ -12,6 +13,7 @@ import {
   getBuildPerksBar,
   getBuildSharedGroupsList,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   searchPerks,
 } from './support/build-planner-page'
 
@@ -503,8 +505,7 @@ test('keeps the below-desktop section order consistent across the mobile boundar
 
 test('keeps dense picked builds compact across desktop viewport sizes', async ({ page }) => {
   for (const expectation of denseDesktopViewportExpectations) {
-    await page.setViewportSize(expectation.viewportSize)
-    await page.goto(denseDesktopBuildUrl)
+    await gotoBuildPlannerUrl(page, denseDesktopBuildUrl, expectation.viewportSize)
 
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expect(page.getByLabel('Search perks')).toBeVisible()
@@ -739,13 +740,12 @@ test('keeps virtualized desktop lists scrolling forward', async ({ page }) => {
     stepCount: 12,
   })
 
-  await page.setViewportSize({ height: 768, width: 1366 })
-  await page.goto(denseDesktopBuildUrl)
+  await gotoBuildPlannerUrl(page, denseDesktopBuildUrl, { height: 768, width: 1366 })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(backgroundFitPanel.getByTestId('background-fit-card').first()).toBeVisible()
   await expectScrollStepsDoNotMoveBackward({
@@ -897,8 +897,7 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
       viewportSize: { height: 568, width: 320 },
     },
   ]) {
-    await page.setViewportSize(expectation.viewportSize)
-    await page.goto(denseDesktopBuildUrl)
+    await gotoBuildPlannerUrl(page, denseDesktopBuildUrl, expectation.viewportSize)
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
     await expectNoDocumentHorizontalOverflow(page)
     await expect(page.getByText('12 perks picked.')).toBeVisible()
@@ -1000,8 +999,7 @@ test('keeps key mobile touch targets large enough', async ({ page }) => {
 })
 
 test('keeps mobile background fit cards compact while preserving tap targets', async ({ page }) => {
-  await page.setViewportSize({ height: 844, width: 390 })
-  await page.goto(denseDesktopBuildUrl)
+  await gotoBuildPlannerUrl(page, denseDesktopBuildUrl, { height: 844, width: 390 })
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expectNoDocumentHorizontalOverflow(page)
   await expect(page.getByTestId('background-fit-card').nth(4)).toBeAttached()

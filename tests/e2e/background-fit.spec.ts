@@ -4,6 +4,7 @@ import {
   backgroundFitCalculationTimeoutMs,
   collectVirtualizedTextContentInScrollContainer,
   enableCategory,
+  ensureBackgroundFitPanelExpanded,
   expectBackgroundFitCalculationComplete,
   expectLocatorVisibleInVirtualizedScrollContainer,
   expectViewportLocked,
@@ -16,6 +17,7 @@ import {
   getResultsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   mediumBuildPlannerViewport,
   searchPerks,
   selectPerkGroup,
@@ -31,8 +33,7 @@ const apprenticeDangerPayDetailUrl =
 async function openFirstApprenticeOtherNativePerkTooltip(
   page: Page,
 ): Promise<{ perkName: string; tooltip: Locator }> {
-  await page.setViewportSize(mediumBuildPlannerViewport)
-  await page.goto(apprenticeDangerPayDetailUrl)
+  await gotoBuildPlannerUrl(page, apprenticeDangerPayDetailUrl, mediumBuildPlannerViewport)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
@@ -170,8 +171,7 @@ test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }
 })
 
 test('removes picked perks from the timer-launched perk tooltip', async ({ page }) => {
-  await page.setViewportSize(mediumBuildPlannerViewport)
-  await page.goto('/?build=Clarity')
+  await gotoBuildPlannerUrl(page, '/?build=Clarity', mediumBuildPlannerViewport)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   const pickedPerkTile = getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
@@ -763,8 +763,7 @@ test('restores build and detail state with browser back and forward', async ({ p
   const sharedPage = await page.context().newPage()
 
   try {
-    await sharedPage.setViewportSize(mediumBuildPlannerViewport)
-    await sharedPage.goto(restoredBackgroundDetailUrl)
+    await gotoBuildPlannerUrl(sharedPage, restoredBackgroundDetailUrl, mediumBuildPlannerViewport)
     await expect(
       getDetailPanel(sharedPage).getByRole('heading', {
         level: 2,
@@ -1208,8 +1207,7 @@ test('filters source backgrounds from the background search menu', async ({ page
   const sharedPage = await page.context().newPage()
 
   try {
-    await sharedPage.setViewportSize(mediumBuildPlannerViewport)
-    await sharedPage.goto(savedUrl)
+    await gotoBuildPlannerUrl(sharedPage, savedUrl, mediumBuildPlannerViewport)
 
     const sharedBackgroundFitPanel = getBackgroundFitPanel(sharedPage)
     const sharedFilterBackgroundsButton = sharedBackgroundFitPanel.getByRole('button', {
@@ -1299,18 +1297,11 @@ test('filters source backgrounds from the background search menu', async ({ page
 })
 
 test('keeps the background filter dropdown above background fit cards', async ({ page }) => {
-  await page.setViewportSize({ height: 980, width: 390 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { height: 980, width: 390 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const expandBackgroundFitButton = backgroundFitPanel.getByRole('button', {
-    name: 'Expand background fit',
-  })
 
-  if ((await expandBackgroundFitButton.count()) > 0) {
-    await expandBackgroundFitButton.click()
-  }
-
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(
     backgroundFitPanel.getByTestId('background-fit-card').filter({ hasText: 'Bastard' }).first(),
@@ -1606,8 +1597,7 @@ test('keeps zero-match backgrounds after matching backgrounds in the full ranked
 test('keeps dense background names readable from a shared build url and starts collapsed', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1400, height: 900 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { width: 1400, height: 900 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
 
@@ -1661,15 +1651,14 @@ test('keeps dense background names readable from a shared build url and starts c
 test('keeps the dense build workspace visible while filtering backgrounds on desktop', async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1365, height: 900 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { width: 1365, height: 900 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-content')
   const backgroundFitResultsScroll = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await backgroundSearchInput.fill(denseSharedBuildSearchBackgroundQuery)
 
   const denseBuildBackgroundHeading = backgroundFitPanel.getByRole('heading', {
@@ -1741,14 +1730,13 @@ test('keeps the dense build workspace visible while filtering backgrounds on des
 })
 
 test('does not stretch the background search field on tall desktop screens', async ({ page }) => {
-  await page.setViewportSize({ width: 1365, height: 1300 })
-  await page.goto(denseSharedBuildUrl)
+  await gotoBuildPlannerUrl(page, denseSharedBuildUrl, { width: 1365, height: 1300 })
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
 
-  await backgroundFitPanel.getByRole('button', { name: 'Expand background fit' }).click()
+  await ensureBackgroundFitPanelExpanded(backgroundFitPanel)
   await backgroundSearchInput.fill(denseSharedBuildSearchBackgroundQuery)
   await expect(
     backgroundFitPanel.getByRole('heading', {

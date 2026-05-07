@@ -8,6 +8,7 @@ import {
   getBuildSharedGroupsList,
   getSidebarPerkGroupButton,
   gotoBuildPlanner,
+  gotoBuildPlannerUrl,
   searchPerks,
   selectPerkGroup,
 } from './support/build-planner-page'
@@ -133,7 +134,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
   await clearBuildWithConfirmation(page)
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 
-  await page.goto('/')
+  await gotoBuildPlannerUrl(page, '/')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await page.getByRole('button', { name: 'Saved builds' }).click()
 
@@ -186,7 +187,7 @@ test('saves and restores perk and background filters with a saved build', async 
   await expect(page.getByRole('status')).toHaveText('Saved build')
   await page.getByRole('button', { name: 'Close saved builds' }).click()
 
-  await page.goto('/')
+  await gotoBuildPlannerUrl(page, '/')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await page.getByRole('button', { name: 'Saved builds' }).click()
 
