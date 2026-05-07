@@ -1,3 +1,4 @@
+import { appendFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -325,7 +326,7 @@ const sleep = async (delayMs: number): Promise<void> => {
 export async function waitForProductionDeploy(
   options: WaitForProductionDeployOptions,
   dependencies: WaitForProductionDeployDependencies = {},
-): Promise<void> {
+): Promise<ProductionReadinessStatus> {
   const loadStatus = dependencies.loadReadinessStatus ?? loadProductionReadinessStatus
   const log = dependencies.log ?? console.log
   const resolveNow = dependencies.now ?? Date.now
@@ -352,7 +353,7 @@ export async function waitForProductionDeploy(
             ? `Production site is stably ready at commit ${readinessStatus.version.commitSha ?? 'unknown'}.`
             : `Production site is stably serving commit ${options.expectedCommitSha}.`,
         )
-        return
+        return readinessStatus
       }
     } else {
       stableChecks = 0
@@ -377,5 +378,14 @@ export async function waitForProductionDeploy(
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === currentFilePath) {
-  await waitForProductionDeploy(parseWaitForProductionDeployArgs(process.argv.slice(2)))
+  const readinessStatus = await waitForProductionDeploy(
+    parseWaitForProductionDeployArgs(process.argv.slice(2)),
+  )
+
+  if (process.env.GITHUB_OUTPUT && readinessStatus.version.commitSha) {
+    appendFileSync(
+      process.env.GITHUB_OUTPUT,
+      `production-commit-sha=${readinessStatus.version.commitSha}\n`,
+    )
+  }
 }

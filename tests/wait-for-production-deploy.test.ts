@@ -131,7 +131,7 @@ describe('wait for production deploy', () => {
       createStatus(),
     ]
 
-    await waitForProductionDeploy(createOptions(), {
+    const readinessStatus = await waitForProductionDeploy(createOptions(), {
       loadReadinessStatus: () => {
         const status = statuses.shift()
 
@@ -148,6 +148,7 @@ describe('wait for production deploy', () => {
     })
 
     expect(statuses).toHaveLength(0)
+    expect(readinessStatus.version.commitSha).toBe(expectedCommitSha)
     expect(observedLogMessages).toEqual([
       expect.stringContaining('Production readiness check 1/2 succeeded.'),
       expect.stringContaining('Waiting for production deploy'),

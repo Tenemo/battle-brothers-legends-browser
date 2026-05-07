@@ -17,6 +17,8 @@ jobs:
     name: wait for production deploy
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    outputs:
+      production-commit-sha: ${{ steps.wait-for-production-deploy.outputs.production-commit-sha }}
 
     steps:
       - uses: actions/checkout@v6
@@ -28,6 +30,7 @@ jobs:
           node-version: 24.14.1
 
       - name: wait for stable production readiness
+        id: wait-for-production-deploy
         run: |
           production_readiness_args=(
             --web https://battlebrothers.academy
@@ -41,6 +44,7 @@ jobs:
             production_readiness_args=(--commit ${{ github.sha }} "${production_readiness_args[@]}")
           else
             echo "Manual branch production e2e targets the live site without requiring branch commit ${{ github.sha }} to be deployed."
+            echo "Browser tests will checkout the live production commit reported by version.json."
           fi
 
           node scripts/wait-for-production-deploy.ts "${production_readiness_args[@]}"
@@ -68,6 +72,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ needs.wait-for-production-deploy.outputs.production-commit-sha }}
 
       - uses: pnpm/action-setup@v5
         with:
