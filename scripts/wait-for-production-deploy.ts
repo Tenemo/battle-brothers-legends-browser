@@ -30,7 +30,17 @@ export type JsonProbeStatus = {
 }
 
 export type HtmlProbeStatus = {
+  assetUrls: string[]
   contentType: string | null
+  missingSnippet: string | null
+  ok: boolean
+  statusCode: number | null
+  url: string
+}
+
+export type StaticProbeStatus = {
+  contentType: string | null
+  label: string
   missingSnippet: string | null
   ok: boolean
   statusCode: number | null
@@ -39,6 +49,7 @@ export type HtmlProbeStatus = {
 
 export type ProductionReadinessStatus = {
   homepage: HtmlProbeStatus
+  staticFiles: StaticProbeStatus[]
   version: JsonProbeStatus
 }
 
@@ -111,7 +122,13 @@ export function parseWaitForProductionDeployArgs(args: string[]): WaitForProduct
       return undefined
     }
 
-    return args[flagIndex + 1]
+    const rawValue = args[flagIndex + 1]
+
+    if (!rawValue || rawValue.startsWith('--')) {
+      fail(`Missing value for ${flag} argument.`)
+    }
+
+    return rawValue
   }
 
   const rawCommitSha = getArgValue('--commit')
@@ -149,6 +166,27 @@ function createNoStoreUrl(baseUrl: string, endpointPath: string): URL {
   url.searchParams.set('t', `${Date.now()}`)
 
   return url
+}
+
+function getHomepageAssetUrls(body: string, webBaseUrl: string): string[] {
+  const webOrigin = new URL(webBaseUrl).origin
+  const assetUrls = new Set<string>()
+
+  for (const match of body.matchAll(/\b(?:href|src)="([^"]+)"/gu)) {
+    const rawAssetUrl = match[1]
+
+    if (!rawAssetUrl) {
+      continue
+    }
+
+    const assetUrl = new URL(rawAssetUrl, webBaseUrl)
+
+    if (assetUrl.origin === webOrigin && assetUrl.pathname.startsWith('/assets/')) {
+      assetUrls.add(assetUrl.toString())
+    }
+  }
+
+  return [...assetUrls].toSorted((leftUrl, rightUrl) => leftUrl.localeCompare(rightUrl))
 }
 
 async function getJsonResponse(
@@ -194,6 +232,28 @@ async function getHtmlResponse(
 
   return {
     body: await response.text(),
+    contentType: response.headers.get('content-type'),
+    statusCode: response.status,
+  }
+}
+
+async function getStaticResponse(
+  url: URL,
+  requestTimeoutMs: number,
+  shouldReadText: boolean,
+): Promise<{ body: string | null; contentType: string | null; statusCode: number }> {
+  const response = await fetch(url, {
+    cache: 'no-store',
+    headers: {
+      accept: '*/*',
+      'cache-control': 'no-store',
+      pragma: 'no-cache',
+    },
+    signal: AbortSignal.timeout(requestTimeoutMs),
+  })
+
+  return {
+    body: shouldReadText ? await response.text() : null,
     contentType: response.headers.get('content-type'),
     statusCode: response.status,
   }
@@ -253,6 +313,7 @@ async function loadHomepageStatus(
     const isHtmlResponse = (contentType ?? '').includes('text/html')
 
     return {
+      assetUrls: getHomepageAssetUrls(body, webBaseUrl),
       contentType,
       missingSnippet,
       ok: statusCode >= 200 && statusCode < 300 && isHtmlResponse && missingSnippet === null,
@@ -261,6 +322,7 @@ async function loadHomepageStatus(
     }
   } catch {
     return {
+      assetUrls: [],
       contentType: null,
       missingSnippet: null,
       ok: false,
@@ -270,6 +332,98 @@ async function loadHomepageStatus(
   }
 }
 
+function getRequiredStaticFileProbes(webBaseUrl: string) {
+  return [
+    {
+      contentTypeIncludes: 'text/plain',
+      expectedSnippets: ['User-agent: *', `Sitemap: ${webBaseUrl}/sitemap.xml`],
+      label: 'robots.txt',
+      url: new URL('/robots.txt', webBaseUrl),
+    },
+    {
+      contentTypeIncludes: 'xml',
+      expectedSnippets: [`<loc>${webBaseUrl}/</loc>`],
+      label: 'sitemap.xml',
+      url: new URL('/sitemap.xml', webBaseUrl),
+    },
+    {
+      contentTypeIncludes: 'image/png',
+      expectedSnippets: [],
+      label: 'social image',
+      url: new URL('/seo/og-image-v2.png', webBaseUrl),
+    },
+  ]
+}
+
+async function loadStaticFileStatus({
+  contentTypeIncludes,
+  expectedSnippets,
+  label,
+  requestTimeoutMs,
+  url,
+}: {
+  contentTypeIncludes?: string
+  expectedSnippets: string[]
+  label: string
+  requestTimeoutMs: number
+  url: URL
+}): Promise<StaticProbeStatus> {
+  const noStoreUrl = createNoStoreUrl(url.toString(), '')
+
+  try {
+    const { body, contentType, statusCode } = await getStaticResponse(
+      noStoreUrl,
+      requestTimeoutMs,
+      expectedSnippets.length > 0,
+    )
+    const missingSnippet =
+      expectedSnippets.find((expectedSnippet) => !(body ?? '').includes(expectedSnippet)) ?? null
+    const hasExpectedContentType =
+      contentTypeIncludes === undefined || (contentType ?? '').includes(contentTypeIncludes)
+
+    return {
+      contentType,
+      label,
+      missingSnippet,
+      ok:
+        statusCode >= 200 && statusCode < 300 && hasExpectedContentType && missingSnippet === null,
+      statusCode,
+      url: noStoreUrl.toString(),
+    }
+  } catch {
+    return {
+      contentType: null,
+      label,
+      missingSnippet: null,
+      ok: false,
+      statusCode: null,
+      url: noStoreUrl.toString(),
+    }
+  }
+}
+
+async function loadStaticFileStatuses(
+  webBaseUrl: string,
+  homepageAssetUrls: string[],
+  requestTimeoutMs: number,
+): Promise<StaticProbeStatus[]> {
+  const requiredStaticFileProbes = getRequiredStaticFileProbes(webBaseUrl)
+  const homepageAssetProbes = homepageAssetUrls.map((assetUrl) => ({
+    expectedSnippets: [],
+    label: new URL(assetUrl).pathname,
+    url: new URL(assetUrl),
+  }))
+
+  return Promise.all(
+    [...requiredStaticFileProbes, ...homepageAssetProbes].map((probe) =>
+      loadStaticFileStatus({
+        ...probe,
+        requestTimeoutMs,
+      }),
+    ),
+  )
+}
+
 export async function loadProductionReadinessStatus(
   options: WaitForProductionDeployOptions,
 ): Promise<ProductionReadinessStatus> {
@@ -277,9 +431,15 @@ export async function loadProductionReadinessStatus(
     loadVersionStatus(options.webBaseUrl, options.requestTimeoutMs),
     loadHomepageStatus(options.webBaseUrl, options.requestTimeoutMs),
   ])
+  const staticFiles = await loadStaticFileStatuses(
+    options.webBaseUrl,
+    homepage.assetUrls,
+    options.requestTimeoutMs,
+  )
 
   return {
     homepage,
+    staticFiles,
     version,
   }
 }
@@ -292,8 +452,9 @@ export function isProductionReadinessStatusSuccessful(
     status.version.ok &&
     status.version.commitSha !== null &&
     (expectedCommitSha === null || status.version.commitSha === expectedCommitSha)
+  const areStaticFilesSuccessful = status.staticFiles.every((staticFile) => staticFile.ok)
 
-  return isVersionSuccessful && status.homepage.ok
+  return isVersionSuccessful && status.homepage.ok && areStaticFilesSuccessful
 }
 
 function formatVersionStatus(status: JsonProbeStatus): string {
@@ -313,8 +474,32 @@ function formatHomepageStatus(status: HtmlProbeStatus): string {
   return `homepage: status=${status.statusCode ?? 'unreachable'}, contentType=${status.contentType ?? 'missing'}, ${markerStatus}`
 }
 
+function formatStaticFileStatuses(statuses: StaticProbeStatus[]): string {
+  const failedStatuses = statuses.filter((status) => !status.ok)
+
+  if (failedStatuses.length === 0) {
+    return `static: ok (${statuses.length})`
+  }
+
+  return `static: ${failedStatuses
+    .map((status) =>
+      [
+        `${status.label}=${status.statusCode ?? 'unreachable'}`,
+        `contentType=${status.contentType ?? 'missing'}`,
+        status.missingSnippet ? `missing ${status.missingSnippet}` : null,
+      ]
+        .filter((statusPart): statusPart is string => statusPart !== null)
+        .join(' '),
+    )
+    .join('; ')}`
+}
+
 export function formatProductionReadinessStatus(status: ProductionReadinessStatus): string {
-  return [formatVersionStatus(status.version), formatHomepageStatus(status.homepage)].join(' ')
+  return [
+    formatVersionStatus(status.version),
+    formatHomepageStatus(status.homepage),
+    formatStaticFileStatuses(status.staticFiles),
+  ].join(' ')
 }
 
 const sleep = async (delayMs: number): Promise<void> => {

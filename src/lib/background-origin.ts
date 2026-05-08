@@ -65,7 +65,7 @@ export function getBackgroundAccessPills(
   })
 }
 
-export function hasDisplayedBackgroundAccessKind(
+function hasDisplayedBackgroundAccessKind(
   backgroundFit: BackgroundAccessCandidate,
   kind: LegendsBackgroundAccessContextKind,
 ): boolean {

@@ -19,10 +19,7 @@ import type {
   BackgroundFitView,
   RankedBackgroundFit,
 } from '../lib/background-fit'
-import {
-  hasAnyDisplayedBackgroundAccess,
-  hasDisplayedBackgroundAccessKind,
-} from '../lib/background-origin'
+import { getBackgroundAccessPills } from '../lib/background-origin'
 import {
   formatBackgroundVeteranPerkLevelIntervalFilterLabel,
   getBackgroundVeteranPerkLevelIntervals,
@@ -318,12 +315,14 @@ export function BackgroundFitPanel({
   const visibleRankedBackgroundFits = useMemo(
     () =>
       effectiveBackgroundFitView.rankedBackgroundFits.filter((backgroundFit) => {
-        if (hasAnyDisplayedBackgroundAccess(backgroundFit)) {
-          const shouldIncludeSpecialBackground =
-            (shouldIncludeOriginBackgrounds &&
-              hasDisplayedBackgroundAccessKind(backgroundFit, 'origin')) ||
-            (shouldIncludeEventBackgrounds &&
-              hasDisplayedBackgroundAccessKind(backgroundFit, 'event'))
+        const backgroundAccessPills = getBackgroundAccessPills(backgroundFit)
+
+        if (backgroundAccessPills.length > 0) {
+          const shouldIncludeSpecialBackground = backgroundAccessPills.some(
+            (backgroundAccessPill) =>
+              (shouldIncludeOriginBackgrounds && backgroundAccessPill.kind === 'origin') ||
+              (shouldIncludeEventBackgrounds && backgroundAccessPill.kind === 'event'),
+          )
 
           if (!shouldIncludeSpecialBackground) {
             return false

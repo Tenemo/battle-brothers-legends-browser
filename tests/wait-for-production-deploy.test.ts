@@ -9,28 +9,45 @@ import {
   readCommitSha,
   waitForProductionDeploy,
   type ProductionReadinessStatus,
+  type StaticProbeStatus,
   type WaitForProductionDeployOptions,
 } from '../scripts/wait-for-production-deploy.ts'
 
 const expectedCommitSha = '0123456789abcdef0123456789abcdef01234567'
 
+function createStaticStatus(overrides: Partial<StaticProbeStatus> = {}): StaticProbeStatus {
+  return {
+    contentType: 'text/plain; charset=utf-8',
+    label: 'robots.txt',
+    missingSnippet: null,
+    ok: true,
+    statusCode: 200,
+    url: 'https://battlebrothers.academy/robots.txt',
+    ...overrides,
+  }
+}
+
 function createStatus({
   commitSha = expectedCommitSha,
   homepageOk = true,
+  staticFiles = [createStaticStatus()],
   versionOk = true,
 }: {
   commitSha?: string | null
   homepageOk?: boolean
+  staticFiles?: StaticProbeStatus[]
   versionOk?: boolean
 } = {}): ProductionReadinessStatus {
   return {
     homepage: {
+      assetUrls: ['https://battlebrothers.academy/assets/index.js'],
       contentType: homepageOk ? 'text/html; charset=utf-8' : 'application/json',
       missingSnippet: homepageOk ? null : '<title>Battle Brothers Legends build planner</title>',
       ok: homepageOk,
       statusCode: homepageOk ? 200 : 503,
       url: 'https://battlebrothers.academy/',
     },
+    staticFiles,
     version: {
       commitSha,
       ok: versionOk,
@@ -98,6 +115,27 @@ describe('wait for production deploy', () => {
     )
   })
 
+  test('rejects present flags without usable values', () => {
+    const cases = [
+      {
+        args: ['--web', 'https://battlebrothers.academy', '--commit'],
+        errorMessage: 'Missing value for --commit argument.',
+      },
+      {
+        args: ['--commit', '--web', 'https://battlebrothers.academy'],
+        errorMessage: 'Missing value for --commit argument.',
+      },
+      {
+        args: ['--web', 'https://battlebrothers.academy', '--interval-ms', '--timeout-ms', '1000'],
+        errorMessage: 'Missing value for --interval-ms argument.',
+      },
+    ]
+
+    for (const { args, errorMessage } of cases) {
+      expect(() => parseWaitForProductionDeployArgs(args)).toThrow(errorMessage)
+    }
+  })
+
   test('reads only valid commit values from version payloads', () => {
     expect(readCommitSha({ commitSha: expectedCommitSha.toUpperCase() })).toBe(expectedCommitSha)
     expect(readCommitSha({ commitSha: 'local' })).toBeNull()
@@ -116,6 +154,21 @@ describe('wait for production deploy', () => {
     ).toBe(false)
     expect(
       isProductionReadinessStatusSuccessful(createStatus({ homepageOk: false }), expectedCommitSha),
+    ).toBe(false)
+    expect(
+      isProductionReadinessStatusSuccessful(
+        createStatus({
+          staticFiles: [
+            createStaticStatus({
+              contentType: 'text/html',
+              label: 'robots.txt',
+              ok: false,
+              statusCode: 404,
+            }),
+          ],
+        }),
+        expectedCommitSha,
+      ),
     ).toBe(false)
     expect(isProductionReadinessStatusSuccessful(createStatus({ commitSha: null }), null)).toBe(
       false,
@@ -204,5 +257,20 @@ describe('wait for production deploy', () => {
     expect(
       formatProductionReadinessStatus(createStatus({ commitSha: null, versionOk: false })),
     ).toContain('version: status=404, commitSha=missing')
+    expect(
+      formatProductionReadinessStatus(
+        createStatus({
+          staticFiles: [
+            createStaticStatus({
+              contentType: 'text/plain',
+              missingSnippet: 'Sitemap: https://battlebrothers.academy/sitemap.xml',
+              ok: false,
+            }),
+          ],
+        }),
+      ),
+    ).toContain(
+      'static: robots.txt=200 contentType=text/plain missing Sitemap: https://battlebrothers.academy/sitemap.xml',
+    )
   })
 })
