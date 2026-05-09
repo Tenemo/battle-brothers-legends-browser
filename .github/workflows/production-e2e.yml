@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  PRODUCTION_WEB_BASE_URL: https://battlebrothers.academy
+  PLAYWRIGHT_BASE_URL: https://battlebrothers.academy
 
 concurrency:
   group: production-e2e-${{ github.ref }}
@@ -33,7 +33,7 @@ jobs:
       - name: wait for stable production readiness
         run: |
           set -- \
-            --web "$PRODUCTION_WEB_BASE_URL" \
+            --web "$PLAYWRIGHT_BASE_URL" \
             --timeout-ms 1800000 \
             --interval-ms 15000 \
             --request-timeout-ms 10000 \
@@ -43,7 +43,7 @@ jobs:
             set -- --commit ${{ github.sha }} "$@"
           else
             echo "Branch ${{ github.ref_name }} production e2e targets the live site without requiring branch commit ${{ github.sha }} to be deployed."
-            echo "Browser tests will run from ${{ github.ref_name }} against $PRODUCTION_WEB_BASE_URL."
+            echo "Browser tests will run from ${{ github.ref_name }} against $PLAYWRIGHT_BASE_URL."
           fi
 
           node scripts/wait-for-production-deploy.ts "$@"
@@ -65,7 +65,6 @@ jobs:
     env:
       CI: true
       HOME: /root
-      PLAYWRIGHT_BASE_URL: https://battlebrothers.academy
 
     steps:
       - uses: actions/checkout@v6
