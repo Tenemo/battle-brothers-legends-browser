@@ -2,7 +2,7 @@ name: production e2e
 
 on:
   push:
-    branches: [development, master, main]
+    branches: [master, main]
   workflow_dispatch:
 
 permissions:
