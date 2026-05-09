@@ -251,11 +251,23 @@ async function getStaticResponse(
     },
     signal: AbortSignal.timeout(requestTimeoutMs),
   })
+  const contentType = response.headers.get('content-type')
+  const statusCode = response.status
+
+  if (!shouldReadText) {
+    await response.body?.cancel()
+
+    return {
+      body: null,
+      contentType,
+      statusCode,
+    }
+  }
 
   return {
-    body: shouldReadText ? await response.text() : null,
-    contentType: response.headers.get('content-type'),
-    statusCode: response.status,
+    body: await response.text(),
+    contentType,
+    statusCode,
   }
 }
 

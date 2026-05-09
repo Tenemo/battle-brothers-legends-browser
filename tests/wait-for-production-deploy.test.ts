@@ -1,7 +1,8 @@
-import { describe, expect, test } from 'vitest'
+import { afterEach, describe, expect, test, vi } from 'vitest'
 import {
   formatProductionReadinessStatus,
   isProductionReadinessStatusSuccessful,
+  loadProductionReadinessStatus,
   normalizeAbsoluteOrigin,
   normalizeCommitSha,
   parsePositiveInteger,
@@ -70,6 +71,10 @@ function createOptions(overrides: Partial<WaitForProductionDeployOptions> = {}) 
 }
 
 describe('wait for production deploy', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   test('parses and normalizes commit, url, and timing arguments', () => {
     const options = parseWaitForProductionDeployArgs([
       '--commit',
@@ -272,5 +277,86 @@ describe('wait for production deploy', () => {
     ).toContain(
       'static: robots.txt=200 contentType=text/plain missing Sitemap: https://battlebrothers.academy/sitemap.xml',
     )
+  })
+
+  test('cancels unread static response bodies after recording their status and headers', async () => {
+    const cancelledPaths: string[] = []
+    const createTextResponse = (body: string, contentType: string) =>
+      new Response(body, {
+        headers: {
+          'content-type': contentType,
+        },
+        status: 200,
+      })
+    const createUnreadStaticResponse = (pathname: string, contentType: string) =>
+      new Response(
+        new ReadableStream<Uint8Array>({
+          start(controller) {
+            controller.enqueue(new TextEncoder().encode(pathname))
+          },
+          cancel() {
+            cancelledPaths.push(pathname)
+          },
+        }),
+        {
+          headers: {
+            'content-type': contentType,
+          },
+          status: 200,
+        },
+      )
+
+    vi.stubGlobal('fetch', async (input: Parameters<typeof fetch>[0]) => {
+      const requestUrl = new URL(input instanceof Request ? input.url : input.toString())
+
+      switch (requestUrl.pathname) {
+        case '/':
+          return createTextResponse(
+            [
+              '<title>Battle Brothers Legends build planner</title>',
+              '<meta property="og:site_name" content="Battle Brothers Legends build planner" />',
+              '<script src="/assets/app.js"></script>',
+            ].join(''),
+            'text/html; charset=utf-8',
+          )
+        case '/assets/app.js':
+          return createUnreadStaticResponse(requestUrl.pathname, 'application/javascript')
+        case '/robots.txt':
+          return createTextResponse(
+            'User-agent: *\nAllow: /\n\nSitemap: https://battlebrothers.academy/sitemap.xml\n',
+            'text/plain; charset=utf-8',
+          )
+        case '/seo/og-image-v2.png':
+          return createUnreadStaticResponse(requestUrl.pathname, 'image/png')
+        case '/sitemap.xml':
+          return createTextResponse(
+            '<urlset><url><loc>https://battlebrothers.academy/</loc></url></urlset>',
+            'application/xml',
+          )
+        case '/version.json':
+          return createTextResponse(
+            JSON.stringify({ commitSha: expectedCommitSha }),
+            'application/json',
+          )
+        default:
+          throw new Error(`Unexpected probe path: ${requestUrl.pathname}`)
+      }
+    })
+
+    const readinessStatus = await loadProductionReadinessStatus(createOptions())
+
+    expect(readinessStatus.staticFiles).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          label: 'social image',
+          ok: true,
+        }),
+        expect.objectContaining({
+          label: '/assets/app.js',
+          ok: true,
+        }),
+      ]),
+    )
+    expect(cancelledPaths.toSorted()).toEqual(['/assets/app.js', '/seo/og-image-v2.png'])
   })
 })
