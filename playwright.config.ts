@@ -8,6 +8,7 @@ const isProductionE2e = process.env.PLAYWRIGHT_BASE_URL !== undefined
 const isContinuousIntegration = process.env.CI !== undefined
 const playwrightWorkerCount = process.env.CI ? 2 : 6
 const shouldStartDevelopmentServer = process.env.PLAYWRIGHT_BASE_URL === undefined
+const productionTestTimeoutMs = 90_000
 const productionProjects: Project[] = [
   {
     name: 'chromium-desktop',
@@ -31,6 +32,7 @@ export default defineConfig({
   ...(isProductionE2e
     ? {
         projects: productionProjects,
+        timeout: productionTestTimeoutMs,
       }
     : {}),
   ...(shouldStartDevelopmentServer
