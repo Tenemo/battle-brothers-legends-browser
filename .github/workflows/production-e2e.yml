@@ -16,8 +16,36 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  validate-manual-production-mode:
+    name: validate manual production mode
+    if: >-
+      ${{
+        github.event_name == 'workflow_dispatch'
+      }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: reject misleading non-production manual runs
+        run: |
+          case "${{ github.ref_name }}" in
+            master|main)
+              echo "Manual production e2e is allowed for production branch '${{ github.ref_name }}'."
+              ;;
+            *)
+              echo "Manual production e2e always targets $PLAYWRIGHT_BASE_URL."
+              echo "Branch '${{ github.ref_name }}' is not a production branch, so its tests can disagree with the live deployment."
+              echo "Run this workflow from master/main after the deploy you want to verify."
+              exit 1
+              ;;
+          esac
+
   wait-for-production-deploy:
     name: wait for production deploy
+    if: >-
+      ${{
+        github.event_name != 'workflow_dispatch' ||
+        github.ref_name == 'master' ||
+        github.ref_name == 'main'
+      }}
     runs-on: ubuntu-latest
     timeout-minutes: 40
 
@@ -32,29 +60,31 @@ jobs:
 
       - name: wait for stable production readiness
         run: |
-          set -- \
+          node scripts/wait-for-production-deploy.ts \
+            --commit ${{ github.sha }} \
             --web "$PLAYWRIGHT_BASE_URL" \
             --timeout-ms 1800000 \
             --interval-ms 15000 \
             --request-timeout-ms 10000 \
             --required-stable-checks 2
 
-          if [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
-            set -- --commit ${{ github.sha }} "$@"
-          else
-            echo "Branch ${{ github.ref_name }} production e2e targets the live site without requiring branch commit ${{ github.sha }} to be deployed."
-            echo "Browser tests will run from ${{ github.ref_name }} against $PLAYWRIGHT_BASE_URL."
-          fi
-
-          node scripts/wait-for-production-deploy.ts "$@"
-
   production-e2e-browser:
     name: production e2e browser
-    needs: [wait-for-production-deploy]
+    needs: [validate-manual-production-mode, wait-for-production-deploy]
     if: >-
       ${{
         always() &&
-        needs.wait-for-production-deploy.result == 'success'
+        (
+          (
+            github.event_name != 'workflow_dispatch' &&
+            needs.wait-for-production-deploy.result == 'success'
+          ) ||
+          (
+            github.event_name == 'workflow_dispatch' &&
+            needs.validate-manual-production-mode.result == 'success' &&
+            needs.wait-for-production-deploy.result == 'success'
+          )
+        )
       }}
     runs-on: ubuntu-latest
     container:
@@ -83,22 +113,11 @@ jobs:
       - name: install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: verify production readiness from browser runner
-        run: |
-          set -- \
-            --web "$PLAYWRIGHT_BASE_URL" \
-            --timeout-ms 1800000 \
-            --interval-ms 15000 \
-            --request-timeout-ms 10000 \
-            --required-stable-checks 2
-
-          if [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
-            set -- --commit ${{ github.sha }} "$@"
-          else
-            echo "Branch ${{ github.ref_name }} browser e2e targets live production without commit pinning."
-          fi
-
-          node scripts/wait-for-production-deploy.ts "$@"
+      - name: verify production browser readiness
+        run: >-
+          pnpm run test:e2e:production --
+          tests/e2e/00-production-browser-readiness.spec.ts
+          --project=chromium-desktop
 
       - name: run production browser e2e
         # Intentional: production coverage stays full-suite against the
@@ -120,12 +139,17 @@ jobs:
   production-e2e:
     name: production e2e
     if: always()
-    needs: [wait-for-production-deploy, production-e2e-browser]
+    needs: [validate-manual-production-mode, wait-for-production-deploy, production-e2e-browser]
     runs-on: ubuntu-latest
 
     steps:
       - name: assert production e2e jobs passed
         run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ needs.validate-manual-production-mode.result }}" != "success" ]; then
+            echo "validate-manual-production-mode result: ${{ needs.validate-manual-production-mode.result }}"
+            exit 1
+          fi
+
           if [ "${{ needs.wait-for-production-deploy.result }}" != "success" ]; then
             echo "wait-for-production-deploy result: ${{ needs.wait-for-production-deploy.result }}"
             exit 1
