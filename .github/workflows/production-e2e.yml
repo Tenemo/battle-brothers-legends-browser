@@ -20,6 +20,8 @@ jobs:
     name: wait for production deploy
     runs-on: ubuntu-latest
     timeout-minutes: 40
+    outputs:
+      production-commit-sha: ${{ steps.wait_for_production_deploy.outputs['production-commit-sha'] }}
 
     steps:
       - uses: actions/checkout@v6
@@ -31,6 +33,7 @@ jobs:
           node-version: 24.14.1
 
       - name: wait for stable production readiness
+        id: wait_for_production_deploy
         run: |
           set -- \
             --web "$PLAYWRIGHT_BASE_URL" \
@@ -67,9 +70,19 @@ jobs:
       HOME: /root
 
     steps:
+      - name: assert production commit resolved
+        run: |
+          if [ -z "${{ needs['wait-for-production-deploy'].outputs['production-commit-sha'] }}" ]; then
+            echo "wait-for-production-deploy did not resolve a production commit SHA."
+            exit 1
+          fi
+
+          echo "Running browser tests from deployed production commit ${{ needs['wait-for-production-deploy'].outputs['production-commit-sha'] }}."
+
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: ${{ needs['wait-for-production-deploy'].outputs['production-commit-sha'] }}
 
       - uses: pnpm/action-setup@v5
         with:
@@ -83,22 +96,11 @@ jobs:
       - name: install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: verify production readiness from browser runner
-        run: |
-          set -- \
-            --web "$PLAYWRIGHT_BASE_URL" \
-            --timeout-ms 1800000 \
-            --interval-ms 15000 \
-            --request-timeout-ms 10000 \
-            --required-stable-checks 2
-
-          if [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
-            set -- --commit ${{ github.sha }} "$@"
-          else
-            echo "Branch ${{ github.ref_name }} browser e2e targets live production without commit pinning."
-          fi
-
-          node scripts/wait-for-production-deploy.ts "$@"
+      - name: verify production browser readiness
+        run: >-
+          pnpm run test:e2e:production --
+          tests/e2e/00-production-browser-readiness.spec.ts
+          --project=chromium-desktop
 
       - name: run production browser e2e
         # Intentional: production coverage stays full-suite against the

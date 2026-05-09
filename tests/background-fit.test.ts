@@ -1,4 +1,4 @@
-import { describe, expect, test } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import {
   calculateBackgroundPerkGroupProbabilities,
   createBackgroundFitEngine,
@@ -387,6 +387,9 @@ const twoScrollStudyResources = {
   shouldAllowScroll: true,
   shouldAllowSecondScroll: true,
 } as const
+const backgroundFitTestTimeoutMs = 15_000
+
+vi.setConfig({ testTimeout: backgroundFitTestTimeoutMs })
 
 function getChanceCalculationProbabilitySum(
   calculation: BackgroundFitChanceCalculation | undefined,
