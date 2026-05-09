@@ -1,9 +1,109 @@
-import { expect, test } from '@playwright/test'
+import { expect, test, type APIRequestContext } from '@playwright/test'
 import { rootSeoMetadata } from '../../src/lib/seo-metadata'
 
 const productionSiteUrl = rootSeoMetadata.url
 const siteDescription = rootSeoMetadata.description
 const socialImageUrl = rootSeoMetadata.image.url
+const staticResourceProbeIntervals = process.env.PLAYWRIGHT_BASE_URL
+  ? [1000, 2000, 5000, 5000]
+  : [100, 250, 500]
+const staticResourceProbeTimeoutMs = process.env.PLAYWRIGHT_BASE_URL ? 30000 : 5000
+
+type StaticResourceProbe = {
+  bodyText: string
+  contentType: string
+  ok: boolean
+  status: number | null
+}
+
+async function loadStaticResourceProbe(
+  request: APIRequestContext,
+  path: string,
+  shouldReadText: boolean,
+): Promise<StaticResourceProbe> {
+  try {
+    const response = await request.get(path, {
+      headers: {
+        'cache-control': 'no-store',
+        pragma: 'no-cache',
+      },
+      timeout: 10000,
+    })
+
+    return {
+      bodyText: shouldReadText ? await response.text() : '',
+      contentType: response.headers()['content-type'] ?? '',
+      ok: response.ok(),
+      status: response.status(),
+    }
+  } catch {
+    return {
+      bodyText: '',
+      contentType: '',
+      ok: false,
+      status: null,
+    }
+  }
+}
+
+function formatStaticResourceProbeFailure(path: string, probe: StaticResourceProbe): string {
+  return `${path} status=${probe.status ?? 'unreachable'} contentType=${probe.contentType || 'missing'}`
+}
+
+async function expectStaticResource(
+  request: APIRequestContext,
+  path: string,
+  {
+    contentTypeIncludes,
+    expectedSnippets = [],
+    shouldReadText = expectedSnippets.length > 0,
+  }: {
+    contentTypeIncludes?: string
+    expectedSnippets?: string[]
+    shouldReadText?: boolean
+  } = {},
+): Promise<StaticResourceProbe> {
+  let successfulProbe: StaticResourceProbe | null = null
+
+  await expect
+    .poll(
+      async () => {
+        const probe = await loadStaticResourceProbe(request, path, shouldReadText)
+        const hasExpectedContentType =
+          contentTypeIncludes === undefined || probe.contentType.includes(contentTypeIncludes)
+        const missingSnippet =
+          expectedSnippets.find((expectedSnippet) => !probe.bodyText.includes(expectedSnippet)) ??
+          null
+
+        if (probe.ok && hasExpectedContentType && missingSnippet === null) {
+          successfulProbe = probe
+
+          return 'ok'
+        }
+
+        return [
+          formatStaticResourceProbeFailure(path, probe),
+          contentTypeIncludes && !hasExpectedContentType
+            ? `expected content type containing ${contentTypeIncludes}`
+            : null,
+          missingSnippet ? `missing ${missingSnippet}` : null,
+        ]
+          .filter((failureDetail): failureDetail is string => failureDetail !== null)
+          .join(' ')
+      },
+      {
+        intervals: staticResourceProbeIntervals,
+        timeout: staticResourceProbeTimeoutMs,
+      },
+    )
+    .toBe('ok')
+
+  if (!successfulProbe) {
+    throw new Error(`${path} did not return a successful static resource probe.`)
+  }
+
+  return successfulProbe
+}
 
 test('exposes the expected static SEO metadata contract', async ({ page }) => {
   await page.goto('/')
@@ -143,44 +243,57 @@ test('exposes the expected static SEO metadata contract', async ({ page }) => {
 })
 
 test('serves robots, sitemap, and the social preview image', async ({ request }) => {
-  const robotsResponse = await request.get('/robots.txt')
-  expect(robotsResponse.ok()).toBe(true)
-  const robotsText = await robotsResponse.text()
+  const robotsResponse = await expectStaticResource(request, '/robots.txt', {
+    contentTypeIncludes: 'text/plain',
+    expectedSnippets: ['User-agent: *', 'Allow: /', `Sitemap: ${productionSiteUrl}sitemap.xml`],
+  })
+  const robotsText = robotsResponse.bodyText
   expect(robotsText).toContain('User-agent: *')
   expect(robotsText).toContain('Allow: /')
   expect(robotsText).toContain(`Sitemap: ${productionSiteUrl}sitemap.xml`)
 
-  const sitemapResponse = await request.get('/sitemap.xml')
-  expect(sitemapResponse.ok()).toBe(true)
-  const sitemapText = await sitemapResponse.text()
+  const sitemapResponse = await expectStaticResource(request, '/sitemap.xml', {
+    contentTypeIncludes: 'xml',
+    expectedSnippets: [`<loc>${productionSiteUrl}</loc>`],
+  })
+  const sitemapText = sitemapResponse.bodyText
   expect(sitemapText).toContain(`<loc>${productionSiteUrl}</loc>`)
   expect(sitemapText).not.toMatch(/<loc>[^<]*\?[^<]*<\/loc>/)
 
-  const socialImageResponse = await request.get('/seo/og-image-v2.png')
-  expect(socialImageResponse.ok()).toBe(true)
+  await expectStaticResource(request, '/seo/og-image-v2.png', {
+    contentTypeIncludes: 'image/png',
+    shouldReadText: false,
+  })
 
-  const faviconPngResponse = await request.get('/favicon/favicon-96x96.png')
-  expect(faviconPngResponse.ok()).toBe(true)
+  await expectStaticResource(request, '/favicon/favicon-96x96.png', {
+    shouldReadText: false,
+  })
 
-  const faviconSvgResponse = await request.get('/favicon/favicon.svg')
-  expect(faviconSvgResponse.ok()).toBe(true)
+  await expectStaticResource(request, '/favicon/favicon.svg', {
+    shouldReadText: false,
+  })
 
-  const faviconIcoResponse = await request.get('/favicon/favicon.ico')
-  expect(faviconIcoResponse.ok()).toBe(true)
+  await expectStaticResource(request, '/favicon/favicon.ico', {
+    shouldReadText: false,
+  })
 
-  const appleTouchIconResponse = await request.get('/favicon/apple-touch-icon.png')
-  expect(appleTouchIconResponse.ok()).toBe(true)
+  await expectStaticResource(request, '/favicon/apple-touch-icon.png', {
+    shouldReadText: false,
+  })
 
-  const manifestResponse = await request.get('/favicon/site.webmanifest')
-  expect(manifestResponse.ok()).toBe(true)
+  const manifestResponse = await expectStaticResource(request, '/favicon/site.webmanifest', {
+    shouldReadText: true,
+  })
 
-  const webApplicationIcon192Response = await request.get('/favicon/web-app-manifest-192x192.png')
-  expect(webApplicationIcon192Response.ok()).toBe(true)
+  await expectStaticResource(request, '/favicon/web-app-manifest-192x192.png', {
+    shouldReadText: false,
+  })
 
-  const webApplicationIcon512Response = await request.get('/favicon/web-app-manifest-512x512.png')
-  expect(webApplicationIcon512Response.ok()).toBe(true)
+  await expectStaticResource(request, '/favicon/web-app-manifest-512x512.png', {
+    shouldReadText: false,
+  })
 
-  const manifest = await manifestResponse.json()
+  const manifest = JSON.parse(manifestResponse.bodyText)
   expect(manifest).toEqual({
     name: rootSeoMetadata.applicationName,
     short_name: rootSeoMetadata.shortName,

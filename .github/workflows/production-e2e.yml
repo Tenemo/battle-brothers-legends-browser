@@ -2,11 +2,14 @@ name: production e2e
 
 on:
   push:
-    branches: [master, main]
+    branches: [development, master, main]
   workflow_dispatch:
 
 permissions:
   contents: read
+
+env:
+  PRODUCTION_WEB_BASE_URL: https://battlebrothers.academy
 
 concurrency:
   group: production-e2e-${{ github.ref }}
@@ -17,8 +20,6 @@ jobs:
     name: wait for production deploy
     runs-on: ubuntu-latest
     timeout-minutes: 40
-    outputs:
-      production-commit-sha: ${{ steps.wait-for-production-deploy.outputs.production-commit-sha }}
 
     steps:
       - uses: actions/checkout@v6
@@ -30,21 +31,20 @@ jobs:
           node-version: 24.14.1
 
       - name: wait for stable production readiness
-        id: wait-for-production-deploy
         run: |
           production_readiness_args=(
-            --web https://battlebrothers.academy
+            --web "$PRODUCTION_WEB_BASE_URL"
             --timeout-ms 1800000
             --interval-ms 15000
             --request-timeout-ms 10000
             --required-stable-checks 2
           )
 
-          if [ "${{ github.event_name }}" != "workflow_dispatch" ] || [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
+          if [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
             production_readiness_args=(--commit ${{ github.sha }} "${production_readiness_args[@]}")
           else
-            echo "Manual branch production e2e targets the live site without requiring branch commit ${{ github.sha }} to be deployed."
-            echo "Browser tests will checkout the live production commit reported by version.json."
+            echo "Branch ${{ github.ref_name }} production e2e targets the live site without requiring branch commit ${{ github.sha }} to be deployed."
+            echo "Browser tests will run from ${{ github.ref_name }} against $PRODUCTION_WEB_BASE_URL."
           fi
 
           node scripts/wait-for-production-deploy.ts "${production_readiness_args[@]}"
@@ -66,13 +66,12 @@ jobs:
     env:
       CI: true
       HOME: /root
-      PLAYWRIGHT_BASE_URL: https://battlebrothers.academy
+      PLAYWRIGHT_BASE_URL: ${{ env.PRODUCTION_WEB_BASE_URL }}
 
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          ref: ${{ needs.wait-for-production-deploy.outputs.production-commit-sha }}
 
       - uses: pnpm/action-setup@v5
         with:
@@ -85,6 +84,24 @@ jobs:
 
       - name: install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: verify production readiness from browser runner
+        run: |
+          production_readiness_args=(
+            --web "$PLAYWRIGHT_BASE_URL"
+            --timeout-ms 1800000
+            --interval-ms 15000
+            --request-timeout-ms 10000
+            --required-stable-checks 2
+          )
+
+          if [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
+            production_readiness_args=(--commit ${{ github.sha }} "${production_readiness_args[@]}")
+          else
+            echo "Branch ${{ github.ref_name }} browser e2e targets live production without commit pinning."
+          fi
+
+          node scripts/wait-for-production-deploy.ts "${production_readiness_args[@]}"
 
       - name: run production browser e2e
         # Intentional: production coverage stays full-suite against the
