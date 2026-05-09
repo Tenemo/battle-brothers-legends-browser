@@ -1,9 +1,10 @@
 import { test } from '@playwright/test'
 
 import { gotoBuildPlanner } from './support/build-planner-page'
+import { hasConfiguredPlaywrightBaseUrl } from './support/playwright-environment'
 
 test.skip(
-  process.env.PLAYWRIGHT_BASE_URL === undefined,
+  !hasConfiguredPlaywrightBaseUrl,
   'Production browser readiness only runs against the deployed site.',
 )
 

@@ -3,11 +3,13 @@ import { defineConfig, devices, type Project } from '@playwright/test'
 const developmentServerCommand =
   process.platform === 'win32' ? 'pnpm.cmd run dev:test' : 'pnpm run dev:test'
 const localBaseUrl = 'http://127.0.0.1:4173'
-const baseUrl = process.env.PLAYWRIGHT_BASE_URL ?? localBaseUrl
-const isProductionE2e = process.env.PLAYWRIGHT_BASE_URL !== undefined
+const configuredPlaywrightBaseUrl = process.env.PLAYWRIGHT_BASE_URL?.trim()
+const playwrightBaseUrl = configuredPlaywrightBaseUrl ? configuredPlaywrightBaseUrl : undefined
+const baseUrl = playwrightBaseUrl ?? localBaseUrl
+const isProductionE2e = playwrightBaseUrl !== undefined
 const isContinuousIntegration = process.env.CI !== undefined
 const playwrightWorkerCount = process.env.CI ? 2 : 6
-const shouldStartDevelopmentServer = process.env.PLAYWRIGHT_BASE_URL === undefined
+const shouldStartDevelopmentServer = playwrightBaseUrl === undefined
 const productionTestTimeoutMs = 90_000
 const productionProjects: Project[] = [
   {

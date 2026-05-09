@@ -1,13 +1,14 @@
 import { expect, test, type APIRequestContext } from '@playwright/test'
 import { rootSeoMetadata } from '../../src/lib/seo-metadata'
+import { hasConfiguredPlaywrightBaseUrl } from './support/playwright-environment'
 
 const productionSiteUrl = rootSeoMetadata.url
 const siteDescription = rootSeoMetadata.description
 const socialImageUrl = rootSeoMetadata.image.url
-const staticResourceProbeIntervals = process.env.PLAYWRIGHT_BASE_URL
+const staticResourceProbeIntervals = hasConfiguredPlaywrightBaseUrl
   ? [1000, 2000, 5000, 5000]
   : [100, 250, 500]
-const staticResourceProbeTimeoutMs = process.env.PLAYWRIGHT_BASE_URL ? 30000 : 5000
+const staticResourceProbeTimeoutMs = hasConfiguredPlaywrightBaseUrl ? 30000 : 5000
 const staticResourceRequestTimeoutMs = Math.min(10000, Math.floor(staticResourceProbeTimeoutMs / 2))
 
 type StaticResourceProbe = {
