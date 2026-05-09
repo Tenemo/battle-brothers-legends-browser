@@ -1,4 +1,11 @@
-import { forwardRef, useMemo, type CSSProperties, type ReactNode, type Ref } from 'react'
+import {
+  forwardRef,
+  useCallback,
+  useMemo,
+  type CSSProperties,
+  type ReactNode,
+  type Ref,
+} from 'react'
 import {
   Virtuoso,
   VirtuosoMockContext,
@@ -109,12 +116,24 @@ export function VirtualizedList<Item>({
     [emptyPlaceholder, itemClassName, listClassName],
   )
   const effectiveInitialItemCount = Math.min(initialItemCount, data.length)
+  const getVirtualizedItemKey = useCallback<ComputeItemKey<Item, VirtualizedListContext>>(
+    (index, item, itemContext) =>
+      item === undefined
+        ? `${testId}-missing-virtualized-item-${index}`
+        : computeItemKey(index, item, itemContext),
+    [computeItemKey, testId],
+  )
+  const renderVirtualizedItem = useCallback(
+    (index: number, item: Item | undefined) =>
+      item === undefined ? null : itemContent(index, item),
+    [itemContent],
+  )
   const list = (
     <Virtuoso<Item, VirtualizedListContext>
       className={className}
       aria-hidden={isAriaHidden}
       components={virtualizedListComponents as Components<Item, VirtualizedListContext>}
-      computeItemKey={computeItemKey}
+      computeItemKey={getVirtualizedItemKey}
       context={context}
       data={data}
       data-scroll-container="true"
@@ -123,7 +142,7 @@ export function VirtualizedList<Item>({
       heightEstimates={heightEstimates}
       increaseViewportBy={increaseViewportBy}
       initialItemCount={effectiveInitialItemCount}
-      itemContent={(index, item) => itemContent(index, item)}
+      itemContent={renderVirtualizedItem}
       minOverscanItemCount={minOverscanItemCount}
       onScroll={onScroll}
       overscan={overscan}

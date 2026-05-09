@@ -24,7 +24,7 @@ export default defineConfig({
     baseURL: baseUrl,
     headless: true,
     screenshot: 'only-on-failure',
-    trace: isProductionE2e || isContinuousIntegration ? 'retain-on-failure' : 'on-first-retry',
+    trace: isProductionE2e ? 'retain-on-failure' : 'on-first-retry',
     video: isProductionE2e && isContinuousIntegration ? 'retain-on-failure' : 'off',
   },
   workers: playwrightWorkerCount,
