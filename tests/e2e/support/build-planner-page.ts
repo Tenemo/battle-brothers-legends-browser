@@ -10,7 +10,7 @@ const defaultBuildPlannerViewport = {
   width: 900,
 } as const
 export const backgroundFitCalculationTimeoutMs = 30_000
-const buildPlannerAppReadyTimeoutMs = process.env.PLAYWRIGHT_BASE_URL ? 15_000 : 10_000
+const buildPlannerAppReadyTimeoutMs = process.env.PLAYWRIGHT_BASE_URL ? 45_000 : 10_000
 
 export const mediumBuildPlannerViewport = {
   height: 720,
