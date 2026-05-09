@@ -456,7 +456,7 @@ export async function gotoBuildPlanner(
   await gotoBuildPlannerUrl(page, '/', viewport)
 }
 
-async function expectBuildPlannerAppReady(page: Page): Promise<void> {
+export async function expectBuildPlannerAppReady(page: Page): Promise<void> {
   await expect
     .poll(
       async () => {

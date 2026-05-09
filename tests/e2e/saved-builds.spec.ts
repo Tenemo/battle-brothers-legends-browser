@@ -1,6 +1,7 @@
 import { expect, type Page, test } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
+  expectBuildPlannerAppReady,
   expectNoDocumentHorizontalOverflow,
   expectSearchParam,
   getBuildPerksBar,
@@ -241,6 +242,7 @@ test('loading a legacy saved build clears current planner filters', async ({ pag
     },
   ])
   await page.reload()
+  await expectBuildPlannerAppReady(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
@@ -324,6 +326,7 @@ test('keeps many saved builds scrollable inside the saved builds dialog', async 
   await gotoBuildPlanner(page, { width: 1280, height: 620 })
   await seedSavedBuildRecords(page, createOverflowSavedBuildRecords(12))
   await page.reload()
+  await expectBuildPlannerAppReady(page)
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
   await expect(getBuildPerksBar(page)).toBeVisible()
   await expect(getBuildSharedGroupsList(page)).toBeVisible()

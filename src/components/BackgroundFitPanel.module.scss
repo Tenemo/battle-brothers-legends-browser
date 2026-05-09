@@ -547,7 +547,7 @@
 
   .backgroundFitSearchField {
     position: relative;
-    z-index: var(--z-index-popover);
+    z-index: var(--z-index-tooltip);
     flex: 0 0 auto;
   }
 
