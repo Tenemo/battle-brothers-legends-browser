@@ -32,22 +32,21 @@ jobs:
 
       - name: wait for stable production readiness
         run: |
-          production_readiness_args=(
-            --web "$PRODUCTION_WEB_BASE_URL"
-            --timeout-ms 1800000
-            --interval-ms 15000
-            --request-timeout-ms 10000
+          set -- \
+            --web "$PRODUCTION_WEB_BASE_URL" \
+            --timeout-ms 1800000 \
+            --interval-ms 15000 \
+            --request-timeout-ms 10000 \
             --required-stable-checks 2
-          )
 
           if [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
-            production_readiness_args=(--commit ${{ github.sha }} "${production_readiness_args[@]}")
+            set -- --commit ${{ github.sha }} "$@"
           else
             echo "Branch ${{ github.ref_name }} production e2e targets the live site without requiring branch commit ${{ github.sha }} to be deployed."
             echo "Browser tests will run from ${{ github.ref_name }} against $PRODUCTION_WEB_BASE_URL."
           fi
 
-          node scripts/wait-for-production-deploy.ts "${production_readiness_args[@]}"
+          node scripts/wait-for-production-deploy.ts "$@"
 
   production-e2e-browser:
     name: production e2e browser
@@ -87,21 +86,20 @@ jobs:
 
       - name: verify production readiness from browser runner
         run: |
-          production_readiness_args=(
-            --web "$PLAYWRIGHT_BASE_URL"
-            --timeout-ms 1800000
-            --interval-ms 15000
-            --request-timeout-ms 10000
+          set -- \
+            --web "$PLAYWRIGHT_BASE_URL" \
+            --timeout-ms 1800000 \
+            --interval-ms 15000 \
+            --request-timeout-ms 10000 \
             --required-stable-checks 2
-          )
 
           if [ "${{ github.ref_name }}" = "master" ] || [ "${{ github.ref_name }}" = "main" ]; then
-            production_readiness_args=(--commit ${{ github.sha }} "${production_readiness_args[@]}")
+            set -- --commit ${{ github.sha }} "$@"
           else
             echo "Branch ${{ github.ref_name }} browser e2e targets live production without commit pinning."
           fi
 
-          node scripts/wait-for-production-deploy.ts "${production_readiness_args[@]}"
+          node scripts/wait-for-production-deploy.ts "$@"
 
       - name: run production browser e2e
         # Intentional: production coverage stays full-suite against the
