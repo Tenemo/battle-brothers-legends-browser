@@ -62,7 +62,7 @@ import type { BuildPerkPillSelection } from './BuildPerkPill'
 import { BuildToggleButton, PlannerSectionChevron, type BuildRequirement } from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import buildPlannerStyles from './BuildPlanner.module.scss'
-import catenaryChainIconPath from '../assets/catenary-chain.svg'
+import mustHaveRequirementIconPath from '../assets/must-have-requirement.svg'
 import styles from './DetailPanel.module.scss'
 
 type DetailPanelProps = {
@@ -3020,18 +3020,18 @@ function BackgroundDetail({
         <div className={styles.detailBackgroundFitMatchColumn} data-requirement-scope="must-have">
           <span
             aria-label="Must-have perk groups"
-            className={styles.detailRequirementChainOverlay}
-            data-testid="detail-requirement-chain-overlay"
+            className={styles.detailRequirementMustHaveOverlay}
+            data-testid="detail-requirement-must-have-overlay"
             role="img"
             title="Must-have perk groups"
           >
             <img
               alt=""
               aria-hidden="true"
-              className={styles.detailRequirementChainImage}
+              className={styles.detailRequirementMustHaveImage}
               draggable={false}
               height="64"
-              src={catenaryChainIconPath}
+              src={mustHaveRequirementIconPath}
               width="64"
             />
           </span>

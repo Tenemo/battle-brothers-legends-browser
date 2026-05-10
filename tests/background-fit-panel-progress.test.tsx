@@ -1,6 +1,6 @@
-import { act, render, screen } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { StrictMode } from 'react'
-import { afterEach, describe, expect, test, vi } from 'vitest'
+import { describe, expect, test, vi } from 'vitest'
 import { BackgroundFitPanel } from '../src/components/BackgroundFitPanel'
 import type { BackgroundFitCalculationProgress } from '../src/lib/background-fit'
 import { PlannerInteractionTestProvider } from './PlannerInteractionTestProvider'
@@ -47,24 +47,8 @@ function createStrictModeBackgroundFitPanelProgress(progress: BackgroundFitCalcu
   return <StrictMode>{createBackgroundFitPanelProgress(progress)}</StrictMode>
 }
 
-function advanceProgressTimersByStepCount(stepCount: number) {
-  for (let stepIndex = 0; stepIndex < stepCount; stepIndex += 1) {
-    act(() => {
-      vi.advanceTimersByTime(backgroundFitProgressCountMinimumStepDurationMs)
-    })
-  }
-}
-
-const backgroundFitProgressCountMinimumStepDurationMs = 10
-
 describe('background fit panel progress', () => {
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  test('animates processed background count with a minimum ten millisecond step', () => {
-    vi.useFakeTimers()
-
+  test('renders clamped worker progress directly', () => {
     const { rerender } = renderBackgroundFitPanelProgress({
       checkedBackgroundCount: 5,
       totalBackgroundCount: 5,
@@ -73,61 +57,36 @@ describe('background fit panel progress', () => {
     const progressBar = screen.getByRole('progressbar', { name: 'Background fit progress' })
 
     expect(progressBar).toHaveAttribute('aria-valuenow', '5')
-    expect(screen.getByText('Checking backgrounds 0/5.')).toBeInTheDocument()
-
-    act(() => {
-      vi.advanceTimersByTime(9)
-    })
-
-    expect(progressBar).toHaveAttribute('aria-valuenow', '5')
-
-    act(() => {
-      vi.advanceTimersByTime(1)
-    })
-
-    expect(screen.getByText('Checking backgrounds 1/5.')).toBeInTheDocument()
-
-    advanceProgressTimersByStepCount(4)
-
     expect(screen.getByText('Checking backgrounds 5/5.')).toBeInTheDocument()
-
-    act(() => {
-      vi.advanceTimersByTime(200)
-    })
 
     rerender(
       createStrictModeBackgroundFitPanelProgress({
-        checkedBackgroundCount: 10,
+        checkedBackgroundCount: 12,
         totalBackgroundCount: 10,
       }),
     )
 
-    expect(screen.getByText('Checking backgrounds 5/10.')).toBeInTheDocument()
+    expect(progressBar).toHaveAttribute('aria-valuenow', '10')
+    expect(screen.getByText('Checking backgrounds 10/10.')).toBeInTheDocument()
 
-    act(() => {
-      vi.advanceTimersByTime(9)
-    })
+    rerender(
+      createStrictModeBackgroundFitPanelProgress({
+        checkedBackgroundCount: -3,
+        totalBackgroundCount: 10,
+      }),
+    )
 
-    expect(screen.getByText('Checking backgrounds 5/10.')).toBeInTheDocument()
-
-    act(() => {
-      vi.advanceTimersByTime(1)
-    })
-
-    expect(screen.getByText('Checking backgrounds 6/10.')).toBeInTheDocument()
+    expect(progressBar).toHaveAttribute('aria-valuenow', '0')
+    expect(screen.getByText('Checking backgrounds 0/10.')).toBeInTheDocument()
   })
 
-  test('does not move the displayed count backward when worker progress arrives out of order', () => {
-    vi.useFakeTimers()
-
+  test('updates the displayed count from the latest worker progress without timer state', () => {
     const { rerender } = renderBackgroundFitPanelProgress({
       checkedBackgroundCount: 8,
       totalBackgroundCount: 10,
     })
 
-    advanceProgressTimersByStepCount(5)
-
-    expect(screen.getByText('Checking backgrounds 5/10.')).toBeInTheDocument()
+    expect(screen.getByText('Checking backgrounds 8/10.')).toBeInTheDocument()
 
     rerender(
       createStrictModeBackgroundFitPanelProgress({
@@ -136,11 +95,7 @@ describe('background fit panel progress', () => {
       }),
     )
 
-    act(() => {
-      vi.advanceTimersByTime(10)
-    })
-
-    expect(screen.getByText('Checking backgrounds 5/10.')).toBeInTheDocument()
+    expect(screen.getByText('Checking backgrounds 3/10.')).toBeInTheDocument()
 
     rerender(
       createStrictModeBackgroundFitPanelProgress({
@@ -149,10 +104,6 @@ describe('background fit panel progress', () => {
       }),
     )
 
-    act(() => {
-      vi.advanceTimersByTime(10)
-    })
-
-    expect(screen.getByText('Checking backgrounds 6/10.')).toBeInTheDocument()
+    expect(screen.getByText('Checking backgrounds 8/10.')).toBeInTheDocument()
   })
 })

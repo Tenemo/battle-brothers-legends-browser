@@ -3553,7 +3553,7 @@ export function createBackgroundFitEngine(
     /*
      * Background eligibility is based only on must-have perks. Optional perks are still scored
      * against the same native outcome distribution, but they are not allowed to exclude a
-     * background that can satisfy the required part of the build. Keeping the split here avoids
+     * background that can satisfy the required part of the build. Keeping this separation here avoids
      * leaking display concepts into the combinatorics code that calculates legal native rolls,
      * books, and scrolls.
      */

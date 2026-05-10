@@ -6,10 +6,15 @@ const localBaseUrl = 'http://127.0.0.1:4173'
 const configuredPlaywrightBaseUrl = process.env.PLAYWRIGHT_BASE_URL?.trim()
 const playwrightBaseUrl = configuredPlaywrightBaseUrl ? configuredPlaywrightBaseUrl : undefined
 const baseUrl = playwrightBaseUrl ?? localBaseUrl
-const isProductionE2e = playwrightBaseUrl !== undefined
+const hasConfiguredPlaywrightBaseUrl = playwrightBaseUrl !== undefined
+const isLocalPlaywrightBaseUrl =
+  playwrightBaseUrl === undefined
+    ? false
+    : ['127.0.0.1', '::1', '[::1]', 'localhost'].includes(new URL(playwrightBaseUrl).hostname)
+const isProductionE2e = hasConfiguredPlaywrightBaseUrl && !isLocalPlaywrightBaseUrl
 const isContinuousIntegration = process.env.CI !== undefined
 const playwrightWorkerCount = process.env.CI ? 2 : 6
-const shouldStartDevelopmentServer = playwrightBaseUrl === undefined
+const shouldStartDevelopmentServer = !hasConfiguredPlaywrightBaseUrl
 const productionTestTimeoutMs = 90_000
 const productionProjects: Project[] = [
   {
@@ -20,9 +25,48 @@ const productionProjects: Project[] = [
     },
   },
 ]
+const localProjects: Project[] = [
+  ...productionProjects,
+  {
+    name: 'chrome-desktop',
+    use: {
+      ...devices['Desktop Chrome'],
+      channel: 'chrome',
+    },
+  },
+  {
+    name: 'firefox-desktop',
+    use: {
+      ...devices['Desktop Firefox'],
+      browserName: 'firefox',
+    },
+  },
+  {
+    name: 'webkit-desktop',
+    use: {
+      ...devices['Desktop Safari'],
+      browserName: 'webkit',
+    },
+  },
+  {
+    name: 'mobile-chrome-pixel',
+    use: {
+      ...devices['Pixel 5'],
+      browserName: 'chromium',
+    },
+  },
+  {
+    name: 'mobile-webkit-iphone',
+    use: {
+      ...devices['iPhone 12'],
+      browserName: 'webkit',
+    },
+  },
+]
 
 export default defineConfig({
   testDir: './tests/e2e',
+  projects: isProductionE2e ? productionProjects : localProjects,
   use: {
     baseURL: baseUrl,
     headless: true,
@@ -33,7 +77,6 @@ export default defineConfig({
   workers: playwrightWorkerCount,
   ...(isProductionE2e
     ? {
-        projects: productionProjects,
         timeout: productionTestTimeoutMs,
       }
     : {}),

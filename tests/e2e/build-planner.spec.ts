@@ -137,7 +137,7 @@ async function getPickedPerkNameLayoutMetrics(pickedPerkTile: Locator) {
   })
 }
 
-async function getRequirementChainScaleMetrics(
+async function getRequirementMustHaveScaleMetrics(
   page: Page,
   viewport: { height: number; width: number },
 ) {
@@ -146,35 +146,42 @@ async function getRequirementChainScaleMetrics(
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
 
   return page.evaluate(() => {
-    function readRequirementChainMetrics(tileSelector: string) {
+    function readRequirementMustHaveMetrics(tileSelector: string) {
       const tile = document.querySelector(tileSelector)
-      const chain = tile?.querySelector('[data-testid="planner-slot-requirement-chain"]')
+      const mustHaveRequirement = tile?.querySelector(
+        '[data-testid="planner-slot-requirement-must-have"]',
+      )
+      const mustHaveRequirementImage = mustHaveRequirement?.querySelector(
+        '[data-testid="planner-slot-requirement-must-have-image"]',
+      )
 
-      if (!(tile instanceof HTMLElement) || !(chain instanceof HTMLElement)) {
-        throw new Error(`Unable to find requirement chain metrics for ${tileSelector}.`)
+      if (!(tile instanceof HTMLElement) || !(mustHaveRequirementImage instanceof HTMLElement)) {
+        throw new Error(`Unable to find must-have requirement metrics for ${tileSelector}.`)
       }
 
       const tileRectangle = tile.getBoundingClientRect()
-      const chainRectangle = chain.getBoundingClientRect()
+      const mustHaveRequirementRectangle = mustHaveRequirementImage.getBoundingClientRect()
 
       return {
-        chainHeight: chainRectangle.height,
-        chainHeightRatio: chainRectangle.height / tileRectangle.height,
-        chainLeftOffset: chainRectangle.left - tileRectangle.left,
-        chainLeftRatio: (chainRectangle.left - tileRectangle.left) / tileRectangle.height,
-        chainTopOffset: chainRectangle.top - tileRectangle.top,
-        chainTopRatio: (chainRectangle.top - tileRectangle.top) / tileRectangle.height,
-        chainWidth: chainRectangle.width,
-        chainWidthRatio: chainRectangle.width / tileRectangle.height,
+        mustHaveHeight: mustHaveRequirementRectangle.height,
+        mustHaveHeightRatio: mustHaveRequirementRectangle.height / tileRectangle.height,
+        mustHaveLeftOffset: mustHaveRequirementRectangle.left - tileRectangle.left,
+        mustHaveLeftRatio:
+          (mustHaveRequirementRectangle.left - tileRectangle.left) / tileRectangle.height,
+        mustHaveTopOffset: mustHaveRequirementRectangle.top - tileRectangle.top,
+        mustHaveTopRatio:
+          (mustHaveRequirementRectangle.top - tileRectangle.top) / tileRectangle.height,
+        mustHaveWidth: mustHaveRequirementRectangle.width,
+        mustHaveWidthRatio: mustHaveRequirementRectangle.width / tileRectangle.height,
         tileHeight: tileRectangle.height,
       }
     }
 
     return {
-      legend: readRequirementChainMetrics(
+      legend: readRequirementMustHaveMetrics(
         '[data-testid="planner-requirement-legend-tile"][data-requirement="must-have"]',
       ),
-      picked: readRequirementChainMetrics(
+      picked: readRequirementMustHaveMetrics(
         '[data-planner-collection="picked-perks"] [data-testid="planner-slot-perk"][data-requirement="must-have"]',
       ),
     }
@@ -251,7 +258,7 @@ async function getPlannerWrapMetrics(page: Page) {
   })
 }
 
-test('build planner splits shared and individual perk groups without layout drift', async ({
+test('build planner separates shared and individual perk groups without layout drift', async ({
   page,
 }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
@@ -462,8 +469,8 @@ test('build planner splits shared and individual perk groups without layout drif
   )
 
   expect(infoTooltipLeft).toBeGreaterThanOrEqual(0)
-  await expect(infoTooltip).toContainText(/chain adds must-have perks/i)
-  await expect(infoTooltip).toContainText(/split adds optional perks/i)
+  await expect(infoTooltip).toContainText(/must-have perks set the main build chance/i)
+  await expect(infoTooltip).toContainText(/optional perks add full-build coverage/i)
   await expect(infoTooltip).toContainText(/scored separately from must-have perks/i)
   await page.mouse.move(1, 1)
   await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
@@ -1590,6 +1597,13 @@ test('visually highlights optional picked perks from matching group hover', asyn
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Brawny' })
   await expect(optionalBrawnyPickedPerkTile).toHaveAttribute('data-highlighted', 'false')
+  await expect
+    .poll(() =>
+      optionalBrawnyPickedPerkTile.evaluate(
+        (element) => window.getComputedStyle(element).backgroundColor,
+      ),
+    )
+    .not.toBe(activePlannerSurfaceColor)
   const optionalBrawnyBaseBackgroundColor = await optionalBrawnyPickedPerkTile.evaluate(
     (element) => window.getComputedStyle(element).backgroundColor,
   )
@@ -1998,35 +2012,35 @@ test('wraps picked perk names at spaces inside compact fixed tiles', async ({ pa
   )
 })
 
-test('keeps requirement chains scaled with picked perk tiles on compact desktop', async ({
+test('keeps must-have requirement indicators scaled with picked perk tiles on compact desktop', async ({
   page,
 }) => {
-  const largeDesktopMetrics = await getRequirementChainScaleMetrics(page, {
+  const largeDesktopMetrics = await getRequirementMustHaveScaleMetrics(page, {
     height: 1440,
     width: 2560,
   })
-  const compactDesktopMetrics = await getRequirementChainScaleMetrics(page, {
+  const compactDesktopMetrics = await getRequirementMustHaveScaleMetrics(page, {
     height: 768,
     width: 1366,
   })
   const ratioKeys = [
-    'chainHeightRatio',
-    'chainLeftRatio',
-    'chainTopRatio',
-    'chainWidthRatio',
+    'mustHaveHeightRatio',
+    'mustHaveLeftRatio',
+    'mustHaveTopRatio',
+    'mustHaveWidthRatio',
   ] as const
 
   expect(compactDesktopMetrics.picked.tileHeight).toBeLessThan(
     largeDesktopMetrics.picked.tileHeight,
   )
-  expect(compactDesktopMetrics.picked.chainWidth).toBeLessThan(
-    largeDesktopMetrics.picked.chainWidth,
+  expect(compactDesktopMetrics.picked.mustHaveWidth).toBeLessThan(
+    largeDesktopMetrics.picked.mustHaveWidth,
   )
   expect(compactDesktopMetrics.legend.tileHeight).toBeLessThan(
     largeDesktopMetrics.legend.tileHeight,
   )
-  expect(compactDesktopMetrics.legend.chainWidth).toBeLessThan(
-    largeDesktopMetrics.legend.chainWidth,
+  expect(compactDesktopMetrics.legend.mustHaveWidth).toBeLessThan(
+    largeDesktopMetrics.legend.mustHaveWidth,
   )
 
   for (const ratioKey of ratioKeys) {
@@ -2066,8 +2080,8 @@ test('marks picked perks as optional and separates them from must-have perks', a
     'title',
     'This is how optional perks look in the build. Optional perks stay visible for full-build coverage and are scored separately.',
   )
-  await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
-  await expect(optionalLegendTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(0)
+  await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-must-have')).toHaveCount(1)
+  await expect(optionalLegendTile.getByTestId('planner-slot-requirement-must-have')).toHaveCount(0)
   await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(0)
   await expect(optionalLegendTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(1)
   const requirementLegendPlacementMetrics = await page
@@ -2165,19 +2179,39 @@ test('marks picked perks as optional and separates them from must-have perks', a
 
     const mustHaveRectangle = mustHaveTile.getBoundingClientRect()
     const optionalRectangle = optionalTile.getBoundingClientRect()
+    const optionalRequirementIcon = optionalTile.querySelector(
+      '[data-testid="planner-slot-requirement-optional"]',
+    )
+    const optionalRequirementIconRectangle =
+      optionalRequirementIcon instanceof HTMLElement
+        ? optionalRequirementIcon.getBoundingClientRect()
+        : null
     const legendColumnGap = Number.parseFloat(window.getComputedStyle(legend).columnGap)
 
     return {
       legendColumnGap,
+      mustHaveHeight: mustHaveRectangle.height,
       mustHaveNameTextAlign: window.getComputedStyle(mustHaveName).textAlign,
       mustHaveRight: mustHaveRectangle.right,
       mustHaveTop: mustHaveRectangle.top,
       mustHaveTransform: window.getComputedStyle(mustHaveTile).transform,
+      mustHaveWidth: mustHaveRectangle.width,
       tileGap: optionalRectangle.left - mustHaveRectangle.right,
+      optionalHeight: optionalRectangle.height,
+      optionalIndicatorBottomOffset:
+        optionalRequirementIconRectangle === null
+          ? null
+          : optionalRectangle.bottom - optionalRequirementIconRectangle.bottom,
+      optionalIndicatorLeftOffset:
+        optionalRequirementIconRectangle === null
+          ? null
+          : optionalRequirementIconRectangle.left - optionalRectangle.left,
+      optionalIndicatorWidth: optionalRequirementIconRectangle?.width ?? null,
       optionalLeft: optionalRectangle.left,
       optionalNameTextAlign: window.getComputedStyle(optionalName).textAlign,
       optionalTop: optionalRectangle.top,
       optionalTransform: window.getComputedStyle(optionalTile).transform,
+      optionalWidth: optionalRectangle.width,
     }
   })
 
@@ -2202,6 +2236,29 @@ test('marks picked perks as optional and separates them from must-have perks', a
   expect(requirementLegendTileLayoutMetrics!.optionalNameTextAlign).toBe('center')
   expect(requirementLegendTileLayoutMetrics!.mustHaveTransform).toBe('none')
   expect(requirementLegendTileLayoutMetrics!.optionalTransform).toBe('none')
+  expect(
+    Math.abs(
+      requirementLegendTileLayoutMetrics!.optionalWidth -
+        requirementLegendTileLayoutMetrics!.mustHaveWidth,
+    ),
+  ).toBeLessThanOrEqual(0.5)
+  expect(
+    Math.abs(
+      requirementLegendTileLayoutMetrics!.optionalHeight -
+        requirementLegendTileLayoutMetrics!.mustHaveHeight,
+    ),
+  ).toBeLessThanOrEqual(0.5)
+  expect(requirementLegendTileLayoutMetrics!.optionalIndicatorLeftOffset).not.toBeNull()
+  expect(requirementLegendTileLayoutMetrics!.optionalIndicatorBottomOffset).not.toBeNull()
+  expect(requirementLegendTileLayoutMetrics!.optionalIndicatorWidth).not.toBeNull()
+  expect(requirementLegendTileLayoutMetrics!.optionalIndicatorLeftOffset!).toBeGreaterThanOrEqual(0)
+  expect(requirementLegendTileLayoutMetrics!.optionalIndicatorBottomOffset!).toBeGreaterThanOrEqual(
+    0,
+  )
+  expect(
+    requirementLegendTileLayoutMetrics!.optionalIndicatorWidth! /
+      requirementLegendTileLayoutMetrics!.optionalHeight,
+  ).toBeLessThan(0.25)
   const clarityPickedPerkTile = buildPerksBar
     .getByTestId('planner-slot-perk')
     .filter({ hasText: 'Clarity' })
@@ -2211,12 +2268,14 @@ test('marks picked perks as optional and separates them from must-have perks', a
 
   await expect(clarityPickedPerkTile).toHaveAttribute('data-requirement', 'must-have')
   await expect(perfectFocusPickedPerkTile).toHaveAttribute('data-requirement', 'must-have')
-  await expect(clarityPickedPerkTile.getByTestId('planner-slot-requirement-chain')).toHaveCount(1)
+  await expect(clarityPickedPerkTile.getByTestId('planner-slot-requirement-must-have')).toHaveCount(
+    1,
+  )
   await expect(clarityPickedPerkTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(
     0,
   )
   await expect(
-    perfectFocusPickedPerkTile.getByTestId('planner-slot-requirement-chain'),
+    perfectFocusPickedPerkTile.getByTestId('planner-slot-requirement-must-have'),
   ).toHaveCount(1)
   await expect(buildPerksBar.getByTestId('planner-picked-perk-name')).toHaveText([
     'Clarity',
@@ -2274,7 +2333,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
   ])
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-requirement', 'optional')
   await expect(
-    optionalClarityPickedPerkTile.getByTestId('planner-slot-requirement-chain'),
+    optionalClarityPickedPerkTile.getByTestId('planner-slot-requirement-must-have'),
   ).toHaveCount(0)
   await expect(
     optionalClarityPickedPerkTile.getByTestId('planner-slot-requirement-optional'),
@@ -2306,18 +2365,20 @@ test('marks picked perks as optional and separates them from must-have perks', a
         return null
       }
 
-      const iconRectangle = optionalRequirementIcon.getBoundingClientRect()
       const iconSvg = optionalRequirementIcon.querySelector('svg')
       const tileRectangle = pickedPerkTile.getBoundingClientRect()
+
+      if (!(iconSvg instanceof SVGElement)) {
+        return null
+      }
+
+      const iconRectangle = iconSvg.getBoundingClientRect()
 
       return {
         bottomOffset: tileRectangle.bottom - iconRectangle.bottom,
         iconCenterX: iconRectangle.left + iconRectangle.width / 2,
         iconCenterY: iconRectangle.top + iconRectangle.height / 2,
-        iconSvgWidth:
-          iconSvg instanceof SVGElement
-            ? Number.parseFloat(window.getComputedStyle(iconSvg).width)
-            : null,
+        iconSvgWidth: iconRectangle.width,
         leftOffset: iconRectangle.left - tileRectangle.left,
         tileCenterX: tileRectangle.left + tileRectangle.width / 2,
         tileCenterY: tileRectangle.top + tileRectangle.height / 2,
@@ -2467,11 +2528,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
 
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-requirement', 'optional')
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
-  await optionalClarityPickedPerkTile.dispatchEvent('mousemove', {
-    bubbles: true,
-    clientX: 32,
-    clientY: 32,
-  })
+  await optionalClarityPickedPerkTile.hover()
 
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
     timeout: 2500,
@@ -2888,7 +2945,7 @@ test('clears the build and restores planner placeholders', async ({ page }) => {
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
   await expect(
     getBuildPerksBar(page).getByText(
-      'Use the chain/split control in the detail panel or the search results list.',
+      'Use the must-have/optional control in the detail panel or the search results list.',
     ),
   ).toBeVisible()
   const placeholderMetrics = await getBuildPerksBar(page).evaluate((buildPerksBar) => {

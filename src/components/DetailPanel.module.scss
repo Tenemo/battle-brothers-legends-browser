@@ -310,7 +310,7 @@
   .detailTalentAttributeIcon {
     display: block;
     object-fit: contain;
-    filter: drop-shadow(var(--shadow-chain-drop));
+    filter: drop-shadow(var(--shadow-icon-drop));
 
     @include size(var(--icon-size-xs));
 
@@ -353,7 +353,7 @@
   .detailStartingAttributeIcon {
     display: block;
     object-fit: contain;
-    filter: drop-shadow(var(--shadow-chain-drop));
+    filter: drop-shadow(var(--shadow-icon-drop));
 
     @include size(var(--icon-size-xs));
 
@@ -543,7 +543,7 @@
     }
   }
 
-  .detailRequirementChainOverlay {
+  .detailRequirementMustHaveOverlay {
     position: absolute;
     top: calc(var(--primitive-length-negative-0-9rem) - var(--primitive-length-2rem) + 20px);
     right: calc(var(--primitive-length-negative-0-15rem) - var(--primitive-length-3-25rem) - 30px);
@@ -551,7 +551,7 @@
     display: block;
     width: var(--primitive-length-8-7rem);
     height: var(--primitive-length-8-7rem);
-    filter: drop-shadow(var(--shadow-chain-drop));
+    filter: drop-shadow(var(--shadow-icon-drop));
     line-height: 0;
     opacity: 0.8;
     pointer-events: none;
@@ -559,7 +559,7 @@
     transform: rotate(60deg) scaleX(-1);
   }
 
-  .detailRequirementChainImage {
+  .detailRequirementMustHaveImage {
     display: block;
     width: 100%;
     height: 100%;
@@ -789,7 +789,7 @@
   .detailChanceExplanationResourceIcon {
     display: block;
     object-fit: contain;
-    filter: drop-shadow(var(--shadow-chain-drop));
+    filter: drop-shadow(var(--shadow-icon-drop));
 
     @include size(var(--icon-size-xs));
   }

@@ -127,9 +127,32 @@ jobs:
       - name: verify Netlify edge manifest
         run: pnpm check:netlify-manifest
 
-  e2e:
+  e2e-linux:
+    name: e2e linux (${{ matrix.project.name }})
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - name: chromium-desktop
+            slug: chromium-desktop
+            browser_install: chromium
+          - name: chrome-desktop
+            slug: chrome-desktop
+            browser_install: chrome
+          - name: firefox-desktop
+            slug: firefox-desktop
+            browser_install: firefox
+          - name: webkit-desktop
+            slug: webkit-desktop
+            browser_install: webkit
+          - name: mobile-chrome-pixel
+            slug: mobile-chrome-pixel
+            browser_install: chromium
+          - name: mobile-webkit-iphone
+            slug: mobile-webkit-iphone
+            browser_install: webkit
 
     steps:
       - uses: actions/checkout@v6
@@ -149,18 +172,84 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: install Playwright browsers
-        run: pnpm exec playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps ${{ matrix.project.browser_install }}
 
       - name: run e2e tests
-        run: pnpm test:e2e
+        run: pnpm run test:e2e -- --project=${{ matrix.project.name }}
 
       - name: upload Playwright artifacts
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: playwright-artifacts
+          name: playwright-artifacts-${{ matrix.project.slug }}
           path: |
             test-results
             playwright-report
           if-no-files-found: ignore
           retention-days: 7
+
+  e2e-macos-webkit:
+    name: e2e macOS (${{ matrix.project.name }})
+    runs-on: macos-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        project:
+          - name: webkit-desktop
+            slug: webkit-desktop
+          - name: mobile-webkit-iphone
+            slug: mobile-webkit-iphone
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v5
+        with:
+          version: 10.33.0
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24.14.1
+          cache: pnpm
+
+      - name: install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: install Playwright WebKit
+        run: pnpm exec playwright install webkit
+
+      - name: run WebKit e2e tests
+        run: pnpm run test:e2e -- --project=${{ matrix.project.name }}
+
+      - name: upload Playwright artifacts
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-macos-artifacts-${{ matrix.project.slug }}
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7
+
+  e2e:
+    name: e2e
+    if: always()
+    needs: [e2e-linux, e2e-macos-webkit]
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: assert e2e jobs passed
+        run: |
+          if [ "${{ needs['e2e-linux'].result }}" != "success" ]; then
+            echo "e2e-linux result: ${{ needs['e2e-linux'].result }}"
+            exit 1
+          fi
+
+          if [ "${{ needs['e2e-macos-webkit'].result }}" != "success" ]; then
+            echo "e2e-macos-webkit result: ${{ needs['e2e-macos-webkit'].result }}"
+            exit 1
+          fi

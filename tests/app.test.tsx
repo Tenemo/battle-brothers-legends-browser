@@ -185,7 +185,7 @@ describe('app', () => {
     expect(perkSearchInput).toHaveFocus()
   })
 
-  test('splits origin and ancient scroll perk search filters', async () => {
+  test('separates origin and ancient scroll perk search filters', async () => {
     const user = userEvent.setup()
     await renderInteractiveApp()
     const perkSearchInput = screen.getByLabelText('Search perks')
@@ -356,22 +356,24 @@ describe('app', () => {
 
     await user.click(within(backgroundFitPanel).getByRole('button', { name: 'Filter backgrounds' }))
 
-    const allowBookCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+    const backgroundFiltersGroup = screen.getByRole('group', { name: 'Background filters' })
+
+    const allowBookCheckbox = within(backgroundFiltersGroup).getByRole('checkbox', {
       name: 'Allow a book',
     })
-    const allowScrollCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+    const allowScrollCheckbox = within(backgroundFiltersGroup).getByRole('checkbox', {
       name: 'Allow a scroll',
     })
-    const allowTwoScrollsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+    const allowTwoScrollsCheckbox = within(backgroundFiltersGroup).getByRole('checkbox', {
       name: 'Allow two scrolls',
     })
-    const everyTwoVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+    const everyTwoVeteranLevelsCheckbox = within(backgroundFiltersGroup).getByRole('checkbox', {
       name: 'Perk every 2 veteran levels',
     })
-    const everyThreeVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+    const everyThreeVeteranLevelsCheckbox = within(backgroundFiltersGroup).getByRole('checkbox', {
       name: 'Perk every 3 veteran levels',
     })
-    const everyFourVeteranLevelsCheckbox = within(backgroundFitPanel).getByRole('checkbox', {
+    const everyFourVeteranLevelsCheckbox = within(backgroundFiltersGroup).getByRole('checkbox', {
       name: 'Perk every 4 veteran levels',
     })
 

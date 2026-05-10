@@ -24,7 +24,7 @@ import styles from './BuildPlanner.module.scss'
 export type { BuildPlannerSavedBuild, SavedBuildOperationStatus } from './build-planner-types'
 
 const buildPlannerGuidance =
-  'Use the chain/split control in the detail panel or search results to collect perk picks. Chain adds must-have perks for the main build chance; split adds optional perks for full-build coverage. Optional perks move to the end, stay visible, and are scored separately from must-have perks.'
+  'Use the must-have/optional control in the detail panel or search results to collect perk picks. Must-have perks set the main build chance; optional perks add full-build coverage. Optional perks move to the end, stay visible, and are scored separately from must-have perks.'
 
 function loadClearBuildConfirmationDialogModule() {
   return import('./ClearBuildConfirmationDialog')

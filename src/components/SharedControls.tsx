@@ -1,5 +1,5 @@
 import { type ReactNode, useRef } from 'react'
-import { ChevronRight, Funnel, Link, Split, UserRound } from 'lucide-react'
+import { ChevronRight, CircleDashed, Funnel, Link, UserRound } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import styles from './SharedControls.module.scss'
 
@@ -194,7 +194,7 @@ export function BuildRequirementIcon({
       strokeWidth={2}
     />
   ) : (
-    <Split
+    <CircleDashed
       aria-hidden="true"
       className={iconClassName}
       data-requirement={requirement}
@@ -249,7 +249,7 @@ export function BuildToggleButton({
     <span
       className={joinClassNames(styles.buildToggleButtonGroup, className)}
       data-compact={isCompact}
-      data-testid="build-toggle-split-button"
+      data-testid="build-toggle-requirement-button"
     >
       <button
         aria-label={`Add ${perkName} to build${locationSuffix}`}

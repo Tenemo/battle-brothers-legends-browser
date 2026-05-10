@@ -216,7 +216,7 @@ test('resets the perk result scroll when category filters change', async ({ page
     .toBeLessThanOrEqual(1)
 })
 
-test('splits origin and ancient scroll perk search filters', async ({ page }) => {
+test('separates origin and ancient scroll perk search filters', async ({ page }) => {
   await gotoBuildPlanner(page)
 
   const resultsList = getResultsList(page)

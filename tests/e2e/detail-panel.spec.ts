@@ -645,7 +645,7 @@ test('detail history buttons stay inside page detail history', async ({ page }) 
   const previousDetailButton = detailPanel.getByRole('button', { name: 'Show previous detail' })
   const nextDetailButton = detailPanel.getByRole('button', { name: 'Show next detail' })
   const buildToggleButton = detailPanel.getByRole('button', { name: 'Add Berserk to build' })
-  const buildToggleControl = detailPanel.getByTestId('build-toggle-split-button')
+  const buildToggleControl = detailPanel.getByTestId('build-toggle-requirement-button')
 
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Berserk' })).toBeVisible()
   await expect(previousDetailButton).toBeVisible()

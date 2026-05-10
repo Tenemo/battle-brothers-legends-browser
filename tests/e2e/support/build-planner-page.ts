@@ -222,6 +222,62 @@ export async function expectLocatorVisibleInVirtualizedScrollContainer({
     return
   }
 
+  const initialScrollMetrics = await scrollContainer.evaluate((element) => {
+    const scrollElement = element as HTMLElement
+    const computedStyle = window.getComputedStyle(scrollElement)
+
+    return {
+      maximumScrollTop: Math.max(0, scrollElement.scrollHeight - scrollElement.clientHeight),
+      overflowY: computedStyle.overflowY,
+    }
+  })
+
+  if (initialScrollMetrics.maximumScrollTop === 0 && initialScrollMetrics.overflowY === 'visible') {
+    const scrollContainerDocumentTop = await scrollContainer.evaluate(
+      (element) => window.scrollY + element.getBoundingClientRect().top,
+    )
+
+    await page.evaluate((scrollTop) => {
+      window.scrollTo(0, Math.max(0, scrollTop - 24))
+    }, scrollContainerDocumentTop)
+    await waitForVirtualizedScrollRender(page)
+
+    if (await waitForLocatorVisible(target, 500)) {
+      return
+    }
+
+    for (let scrollStepIndex = 0; scrollStepIndex < maximumScrollStepCount; scrollStepIndex += 1) {
+      const scrollMetrics = await page.evaluate(() => {
+        const scrollElement = document.scrollingElement ?? document.documentElement
+        const scrollTopBeforeStep = window.scrollY
+        const maximumScrollTop = Math.max(0, scrollElement.scrollHeight - window.innerHeight)
+        const scrollDelta = Math.max(160, window.innerHeight * 0.65)
+        const nextScrollTop = Math.min(maximumScrollTop, scrollTopBeforeStep + scrollDelta)
+
+        window.scrollTo(0, nextScrollTop)
+
+        return {
+          maximumScrollTop,
+          scrollTopAfterStep: window.scrollY,
+          scrollTopBeforeStep,
+        }
+      })
+
+      await waitForVirtualizedScrollRender(page)
+
+      if (await isLocatorCurrentlyVisible(target)) {
+        return
+      }
+
+      if (
+        scrollMetrics.scrollTopAfterStep >= scrollMetrics.maximumScrollTop ||
+        scrollMetrics.scrollTopAfterStep === scrollMetrics.scrollTopBeforeStep
+      ) {
+        break
+      }
+    }
+  }
+
   for (let scrollStepIndex = 0; scrollStepIndex < maximumScrollStepCount; scrollStepIndex += 1) {
     const scrollMetrics = await scrollContainer.evaluate((element) => {
       const scrollElement = element as HTMLElement

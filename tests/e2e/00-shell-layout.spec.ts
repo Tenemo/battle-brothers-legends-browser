@@ -691,7 +691,10 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
 
           return {
             hasScrollContainerAttribute: element.dataset.scrollContainer === 'true',
-            standardScrollbarColor: computedStyle.scrollbarColor,
+            standardScrollbarColor:
+              typeof computedStyle.scrollbarColor === 'string'
+                ? computedStyle.scrollbarColor
+                : null,
             scrollbarGutter: computedStyle.scrollbarGutter,
             scrollbarWidth: supportsWebKitScrollbars
               ? scrollbarStyle.width
@@ -717,7 +720,7 @@ test('uses one app scrollbar style across desktop viewport sizes', async ({ page
     expect(scrollbarMeasurement!.scrollbarWidth).not.toBe('auto')
     expect(scrollbarMeasurement!.thumbBackground).not.toBe('rgba(0, 0, 0, 0)')
     if (scrollbarMeasurement!.supportsWebKitScrollbars) {
-      expect(scrollbarMeasurement!.standardScrollbarColor).toBe('auto')
+      expect([null, 'auto']).toContain(scrollbarMeasurement!.standardScrollbarColor)
     } else {
       expect(scrollbarMeasurement!.standardScrollbarColor).not.toBe('auto')
     }
@@ -946,7 +949,14 @@ test('keeps dense mobile builds compact without pushing search multiple screens 
   }
 })
 
-test('lets the mobile document scroll when the pointer is over results', async ({ page }) => {
+test('lets the mobile document scroll with wheel input over results', async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name === 'mobile-webkit-iphone',
+    'Mobile WebKit does not support Playwright wheel input.',
+  )
+
   await gotoBuildPlanner(page, { height: 844, width: 390 })
   await expectNoDocumentHorizontalOverflow(page)
 
