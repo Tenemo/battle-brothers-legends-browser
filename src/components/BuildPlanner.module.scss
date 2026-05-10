@@ -1041,6 +1041,9 @@
     .buildPlanner {
       --planner-group-row-min-height: var(--planner-compact-group-row-min-height);
       --planner-perk-row-min-height: var(--primitive-length-2-72rem);
+
+      // Keep this in sync with --planner-perk-row-min-height / --planner-base-perk-row-min-height.
+      // Firefox does not support that division in calc() for this scale value.
       --planner-picked-perk-tile-scale: 0.7884;
       --planner-row-label-width: var(--planner-default-row-label-width);
       --planner-slot-width: var(--primitive-length-11-4rem);

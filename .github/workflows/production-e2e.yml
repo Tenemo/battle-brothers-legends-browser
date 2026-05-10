@@ -98,7 +98,7 @@ jobs:
 
       - name: verify production browser readiness
         run: >-
-          pnpm run test:e2e:production --
+          pnpm exec playwright test --workers=1
           tests/e2e/00-production-browser-readiness.spec.ts
           --project=chromium-desktop
 
