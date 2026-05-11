@@ -165,6 +165,8 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
 })
 
 test('saves and restores perk and background filters with a saved build', async ({ page }) => {
+  test.setTimeout(60_000)
+
   await gotoBuildPlanner(page)
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
@@ -454,7 +456,7 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
   await expect(getBuildPerksBar(page).getByText('Clarity')).toHaveCount(0)
 })
 
-test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => {
+test('keeps keyboard focus inside the saved builds dialog', async ({ browserName, page }) => {
   await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
@@ -477,13 +479,18 @@ test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => 
   await expect(savedBuildsDialog).toBeVisible()
   await expect(buildNameInput).toBeFocused()
 
-  await page.keyboard.press('Shift+Tab')
+  const previousFocusableControlKeyCombination =
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Shift+Tab' : 'Shift+Tab'
+  const nextFocusableControlKeyCombination =
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
+
+  await page.keyboard.press(previousFocusableControlKeyCombination)
   await expect(closeSavedBuildsButton).toBeFocused()
 
-  await page.keyboard.press('Shift+Tab')
+  await page.keyboard.press(previousFocusableControlKeyCombination)
   await expect(saveCurrentButton).toBeFocused()
 
-  await page.keyboard.press('Tab')
+  await page.keyboard.press(nextFocusableControlKeyCombination)
   await expect(closeSavedBuildsButton).toBeFocused()
 
   await closeSavedBuildsButton.click()

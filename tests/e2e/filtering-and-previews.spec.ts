@@ -824,6 +824,7 @@ test('keeps search result and repository hover states fixed in place', async ({ 
   await perfectFitInspectButton.click()
   await expect(page.getByRole('heading', { level: 2, name: 'Perfect Fit' })).toBeVisible()
   await perfectFocusInspectButton.scrollIntoViewIfNeeded()
+  await page.mouse.move(0, 0)
 
   const resultRowBeforeHover = await perfectFocusResultRow.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()
