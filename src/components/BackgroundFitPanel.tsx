@@ -64,6 +64,7 @@ const backgroundFilterTooltips = {
   secondStudyScroll:
     'Counts a second ancient scroll when Bright is available and the first scroll is allowed.',
 } as const
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 const getBackgroundFitItemKey: ComputeItemKey<RankedBackgroundFit, unknown> = (
   _index,
@@ -450,7 +451,7 @@ export function BackgroundFitPanel({
     }
   }, [closeBackgroundFitFilterMenu, isBackgroundFilterMenuOpen])
 
-  useLayoutEffect(() => {
+  useIsomorphicLayoutEffect(() => {
     if (!isBackgroundFilterMenuOpen) {
       return
     }
