@@ -115,10 +115,8 @@ async function expectHighlightedPillBoundaryGap(
       const range = document.createRange()
       range.setStart(textNode, startOffset)
       range.setEnd(textNode, endOffset)
-      const rectangle = range.getBoundingClientRect()
-      range.detach()
 
-      return rectangle
+      return range.getBoundingClientRect()
     }
 
     if (checkedBoundary === 'before-highlight') {
