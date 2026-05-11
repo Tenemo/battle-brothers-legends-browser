@@ -12,6 +12,7 @@ const defaultBuildPlannerViewport = {
   width: 900,
 } as const
 export const backgroundFitCalculationTimeoutMs = 30_000
+export const buildPerkTooltipPreviewTimeoutMs = 10_000
 const buildPlannerAppReadyTimeoutMs = hasConfiguredPlaywrightBaseUrl ? 45_000 : 10_000
 
 export const mediumBuildPlannerViewport = {

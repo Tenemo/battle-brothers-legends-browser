@@ -1,5 +1,6 @@
 import { expect, test, type Locator } from '@playwright/test'
 import {
+  buildPerkTooltipPreviewTimeoutMs,
   getDetailPanel,
   expectSearchParam,
   expectBackgroundFitCalculationComplete,
@@ -506,9 +507,11 @@ test('shows the dominant study resource strategy for the reported Peddler build'
   await expectImageToLoad(muscularityCoveredPerkIcon)
   await muscularityCoveredPerkPill.hover()
   await expect(muscularityCoveredPerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
-  await expect(page.getByTestId('build-perk-tooltip')).toBeVisible({ timeout: 2500 })
+  await expect(page.getByTestId('build-perk-tooltip')).toBeVisible({
+    timeout: buildPerkTooltipPreviewTimeoutMs,
+  })
   await page.mouse.move(1, 1)
   await expect(page.getByTestId('build-perk-tooltip')).toHaveCount(0)
   await expect(studyResourcePlan.getByText('Heavy Armor')).toHaveCount(0)

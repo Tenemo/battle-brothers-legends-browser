@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   addSelectedPerkToBuild,
+  buildPerkTooltipPreviewTimeoutMs,
   ensureBackgroundFitPanelExpanded,
   expectCssRgbColorsToMatch,
   getBackgroundFitPanel,
@@ -540,7 +541,7 @@ test('build planner separates shared and individual perk groups without layout d
   })
 
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
   const tooltipTimerStyle = await pickedPerkTile.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
@@ -597,7 +598,7 @@ test('build planner separates shared and individual perk groups without layout d
 
   const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
 
-  await expect(buildPerkTooltip).toBeVisible({ timeout: 2500 })
+  await expect(buildPerkTooltip).toBeVisible({ timeout: buildPerkTooltipPreviewTimeoutMs })
   await expect(buildPerkTooltip).toHaveAttribute('role', 'dialog')
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(buildPerkTooltip.getByTestId('build-perk-tooltip-title')).toHaveCount(0)
@@ -1438,7 +1439,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
 
   await battleForgedPill.hover()
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
   const pillTooltipTimerStyle = await battleForgedPill.evaluate((element) => {
     const computedStyle = window.getComputedStyle(element, '::after')
@@ -1479,7 +1480,7 @@ test('separates planner group card hover from icon and perk pill hover states', 
   expectCssRgbColorsToMatch(iconBorderAfterPerkHover, iconBorderBeforeCardHover)
   const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
 
-  await expect(buildPerkTooltip).toBeVisible({ timeout: 2500 })
+  await expect(buildPerkTooltip).toBeVisible({ timeout: buildPerkTooltipPreviewTimeoutMs })
   await expect(battleForgedPill).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(battleForgedPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(buildPerkTooltip).not.toContainText('Battle Forged')
@@ -2487,7 +2488,7 @@ test('cancels a picked perk tooltip timer before marking the perk optional', asy
 
   await clarityPickedPerkTile.hover()
   await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
 
@@ -2518,7 +2519,7 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
 
   await clarityPickedPerkTile.hover()
   await expect(clarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
   await clarityPickedPerkTile.getByTestId('planner-slot-optional-button').click()
 
@@ -2531,9 +2532,11 @@ test('starts a picked perk tooltip timer from mouse movement after marking the p
   await optionalClarityPickedPerkTile.hover()
 
   await expect(optionalClarityPickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
-  await expect(page.getByTestId('build-perk-tooltip')).toBeVisible({ timeout: 2500 })
+  await expect(page.getByTestId('build-perk-tooltip')).toBeVisible({
+    timeout: buildPerkTooltipPreviewTimeoutMs,
+  })
   await expect(page.getByTestId('build-perk-tooltip')).toContainText(
     /An additional \+10% of any damage/i,
   )

@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import {
   addPerkToBuildFromResults,
   backgroundFitCalculationTimeoutMs,
+  buildPerkTooltipPreviewTimeoutMs,
   collectVirtualizedTextContentInScrollContainer,
   enableCategory,
   ensureBackgroundFitPanelExpanded,
@@ -60,12 +61,12 @@ async function openFirstApprenticeOtherNativePerkTooltip(
 
   await otherNativePerkPill.hover()
   await expect(otherNativePerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
 
   const tooltip = page.getByTestId('build-perk-tooltip')
 
-  await expect(tooltip).toBeVisible({ timeout: 2500 })
+  await expect(tooltip).toBeVisible({ timeout: buildPerkTooltipPreviewTimeoutMs })
 
   return { perkName, tooltip }
 }
@@ -304,7 +305,7 @@ test('removes picked perks from the timer-launched perk tooltip', async ({ page 
   await expect(pickedPerkTile).toBeVisible()
   await pickedPerkTile.hover()
   await expect(pickedPerkTile).toHaveAttribute('data-tooltip-pending', 'true', {
-    timeout: 2500,
+    timeout: buildPerkTooltipPreviewTimeoutMs,
   })
 
   const tooltip = page.getByTestId('build-perk-tooltip')
@@ -312,7 +313,7 @@ test('removes picked perks from the timer-launched perk tooltip', async ({ page 
     name: 'Remove Clarity from build from tooltip',
   })
 
-  await expect(tooltip).toBeVisible({ timeout: 2500 })
+  await expect(tooltip).toBeVisible({ timeout: buildPerkTooltipPreviewTimeoutMs })
   const removeButtonStyleBeforeHover = await readButtonInteractiveColorStyle(removeButton)
   const removeButtonStyleKeyBeforeHover = JSON.stringify(removeButtonStyleBeforeHover)
 
@@ -800,12 +801,14 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(axePerkPill).toBeVisible()
   await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'false')
   await axePerkPill.hover()
-  await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true', { timeout: 2500 })
+  await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true', {
+    timeout: buildPerkTooltipPreviewTimeoutMs,
+  })
   await expect(pickedAxePerkTile).toHaveAttribute('data-highlighted', 'true')
   await expect(pickedAxePerkTile).toHaveAttribute('data-tooltip-pending', 'false')
   const buildPerkTooltip = page.getByTestId('build-perk-tooltip')
 
-  await expect(buildPerkTooltip).toBeVisible({ timeout: 2500 })
+  await expect(buildPerkTooltip).toBeVisible({ timeout: buildPerkTooltipPreviewTimeoutMs })
   await expect(axePerkPill).toHaveAttribute('data-tooltip-pending', 'true')
   await expect(pickedAxePerkTile).toHaveAttribute('data-tooltip-pending', 'false')
   await expect(buildPerkTooltip).not.toContainText('Axe Mastery')
