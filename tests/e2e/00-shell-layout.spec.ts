@@ -503,8 +503,10 @@ test('keeps the below-desktop section order consistent across the mobile boundar
   }
 })
 
-test('keeps dense picked builds compact across desktop viewport sizes', async ({ page }) => {
-  for (const expectation of denseDesktopViewportExpectations) {
+for (const expectation of denseDesktopViewportExpectations) {
+  const { height, width } = expectation.viewportSize
+
+  test(`keeps dense picked builds compact at ${width}x${height}`, async ({ page }) => {
     await gotoBuildPlannerUrl(page, denseDesktopBuildUrl, expectation.viewportSize)
 
     await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
@@ -573,8 +575,8 @@ test('keeps dense picked builds compact across desktop viewport sizes', async ({
     expect(desktopMetrics.workspaceHeight).toBeGreaterThanOrEqual(
       expectation.minimumWorkspaceHeight,
     )
-  }
-})
+  })
+}
 
 test('keeps desktop side rails thin and mobile rails touchable', async ({ page }) => {
   await gotoBuildPlanner(page, { height: 768, width: 1366 })
