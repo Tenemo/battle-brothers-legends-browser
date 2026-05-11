@@ -255,6 +255,18 @@ function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
   const companionMatch = /^companion_(1h|2h|ranged)$/.exec(sourceLabel)
   const originCompanionMatch = /^legend_companion_(melee|ranged)$/.exec(sourceLabel)
 
+  if (sourceLabel === 'legend_legion_gladiator') {
+    return 'Variant: Legion'
+  }
+
+  if (sourceLabel === 'legend_beggar_commander') {
+    return 'Challenge: original beggar'
+  }
+
+  if (sourceLabel === 'legend_beggar_commander_op') {
+    return 'Challenge: scaling beggar'
+  }
+
   if (companionMatch) {
     return companionMatch[1] === '1h'
       ? 'Starting: Shield'

@@ -181,6 +181,29 @@ async function expectHighlightedPillBoundaryGap(
   expect(boundaryMetrics?.gap ?? 0).toBeGreaterThan(1)
 }
 
+async function getVisibleDisambiguatorLabelsForBackground(
+  page: Page,
+  backgroundName: string,
+): Promise<string[]> {
+  return page.evaluate((expectedBackgroundName) => {
+    return [...document.querySelectorAll('[data-testid="background-fit-card"]')]
+      .filter((cardElement) => {
+        const headingElement = cardElement.querySelector('h3')
+
+        return headingElement?.textContent?.trim() === expectedBackgroundName
+      })
+      .flatMap((cardElement) =>
+        [
+          ...cardElement.querySelectorAll(
+            '[data-testid="background-fit-disambiguator"][data-background-pill-kind="disambiguator"]',
+          ),
+        ].map((pillElement) => pillElement.textContent?.trim() ?? ''),
+      )
+      .filter((label) => label.length > 0)
+      .sort((firstLabel, secondLabel) => firstLabel.localeCompare(secondLabel))
+  }, backgroundName)
+}
+
 test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }) => {
   test.setTimeout(60_000)
 
@@ -1724,23 +1747,42 @@ test('hides redundant background disambiguator pills when they only repeat the n
 test('keeps duplicate background disambiguator spaces visible when highlighted', async ({
   page,
 }) => {
-  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
+  await gotoBuildPlannerUrl(page, '/?origin-backgrounds=true', mediumBuildPlannerViewport)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
   const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
-  const legionGladiatorPill = backgroundFitPanel
+  const originalBeggarPill = backgroundFitPanel
     .getByTestId('background-fit-disambiguator')
-    .filter({ hasText: 'Variant: Legion gladiator' })
+    .filter({ hasText: 'Challenge: original beggar' })
+
+  await backgroundSearchInput.fill('beggar')
+
+  await expect(originalBeggarPill).toHaveCount(1)
+  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'before-highlight')
+
+  await backgroundSearchInput.fill('original')
+
+  await expect(originalBeggarPill).toHaveCount(1)
+  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'after-highlight')
+})
+
+test('labels duplicate backgrounds by gameplay distinction', async ({ page }) => {
+  await gotoBuildPlannerUrl(page, '/?origin-backgrounds=true', mediumBuildPlannerViewport)
+
+  const backgroundFitPanel = getBackgroundFitPanel(page)
+  const backgroundSearchInput = backgroundFitPanel.getByLabel('Search backgrounds')
+
+  await backgroundSearchInput.fill('framed beggar')
+
+  await expect
+    .poll(() => getVisibleDisambiguatorLabelsForBackground(page, 'Framed Beggar'))
+    .toEqual(['Challenge: original beggar', 'Challenge: scaling beggar'])
 
   await backgroundSearchInput.fill('gladiator')
 
-  await expect(legionGladiatorPill).toHaveCount(1)
-  await expectHighlightedPillBoundaryGap(legionGladiatorPill, 'before-highlight')
-
-  await backgroundSearchInput.fill('legion')
-
-  await expect(legionGladiatorPill).toHaveCount(1)
-  await expectHighlightedPillBoundaryGap(legionGladiatorPill, 'after-highlight')
+  await expect
+    .poll(() => getVisibleDisambiguatorLabelsForBackground(page, 'Gladiator'))
+    .toEqual(['Variant: Legion'])
 })
 
 test('keeps zero-match backgrounds after matching backgrounds in the full ranked list', async ({
