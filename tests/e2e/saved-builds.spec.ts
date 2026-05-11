@@ -29,12 +29,24 @@ const savedBuildsDatabaseName = 'battle-brothers-legends-browser'
 const savedBuildsStoreName = 'saved-builds'
 
 async function clearBuildWithConfirmation(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Clear build' }).click()
+  const clearBuildButton = page.getByTestId('clear-build-button')
+
+  await clearBuildButton.click()
 
   const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
 
   await expect(clearBuildDialog).toBeVisible()
   await clearBuildDialog.getByRole('button', { name: 'Clear build' }).click()
+  await expect(clearBuildDialog).toHaveCount(0)
+  await expect(clearBuildButton).toBeDisabled()
+  await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
+}
+
+async function closeSavedBuildsDialog(page: Page): Promise<void> {
+  const savedBuildsDialog = page.getByRole('dialog', { name: 'Saved builds' })
+
+  await savedBuildsDialog.getByRole('button', { name: 'Close saved builds' }).click()
+  await expect(savedBuildsDialog).toHaveCount(0)
 }
 
 function createOverflowSavedBuildRecords(savedBuildCount: number): IndexedDbSavedBuildRecord[] {
@@ -131,7 +143,7 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
 
   await expect(page.getByRole('status')).toHaveText('Saved build')
   await expect(page.getByTestId('saved-builds-list')).toContainText('Calm focus')
-  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await closeSavedBuildsDialog(page)
   await clearBuildWithConfirmation(page)
   await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 
@@ -165,6 +177,8 @@ test('saves a build locally, copies its link, and loads it after a reload', asyn
 })
 
 test('saves and restores perk and background filters with a saved build', async ({ page }) => {
+  test.setTimeout(60_000)
+
   await gotoBuildPlanner(page)
 
   await page.getByRole('button', { name: 'Enable category Traits' }).click()
@@ -186,7 +200,7 @@ test('saves and restores perk and background filters with a saved build', async 
   await page.getByLabel('Build name').fill('Filtered calm')
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
   await expect(page.getByRole('status')).toHaveText('Saved build')
-  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await closeSavedBuildsDialog(page)
 
   await gotoBuildPlannerUrl(page, '/')
   await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
@@ -307,7 +321,7 @@ test('keeps local save and load controls usable on mobile', async ({ page }) => 
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
   await expect(page.getByRole('status')).toHaveText('Saved build')
 
-  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await closeSavedBuildsDialog(page)
   await page.getByRole('button', { name: 'Clear build' }).click()
   const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
 
@@ -419,7 +433,7 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
   await page.getByLabel('Build name').fill('Overwrite target')
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
   await expect(page.getByRole('status')).toHaveText('Saved build')
-  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await closeSavedBuildsDialog(page)
 
   await clearBuildWithConfirmation(page)
   await searchPerks(page, 'Axe Mastery')
@@ -445,7 +459,7 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
     .click()
   await expect(page.getByRole('status')).toHaveText('Saved build')
 
-  await page.getByRole('button', { name: 'Close saved builds' }).click()
+  await closeSavedBuildsDialog(page)
   await clearBuildWithConfirmation(page)
   await page.getByRole('button', { name: 'Saved builds' }).click()
   await savedBuild.getByRole('button', { name: 'Load saved build Overwrite target' }).click()
@@ -454,7 +468,7 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
   await expect(getBuildPerksBar(page).getByText('Clarity')).toHaveCount(0)
 })
 
-test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => {
+test('keeps keyboard focus inside the saved builds dialog', async ({ browserName, page }) => {
   await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
@@ -477,13 +491,18 @@ test('keeps keyboard focus inside the saved builds dialog', async ({ page }) => 
   await expect(savedBuildsDialog).toBeVisible()
   await expect(buildNameInput).toBeFocused()
 
-  await page.keyboard.press('Shift+Tab')
+  const previousFocusableControlKeyCombination =
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Shift+Tab' : 'Shift+Tab'
+  const nextFocusableControlKeyCombination =
+    browserName === 'webkit' && process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
+
+  await page.keyboard.press(previousFocusableControlKeyCombination)
   await expect(closeSavedBuildsButton).toBeFocused()
 
-  await page.keyboard.press('Shift+Tab')
+  await page.keyboard.press(previousFocusableControlKeyCombination)
   await expect(saveCurrentButton).toBeFocused()
 
-  await page.keyboard.press('Tab')
+  await page.keyboard.press(nextFocusableControlKeyCombination)
   await expect(closeSavedBuildsButton).toBeFocused()
 
   await closeSavedBuildsButton.click()

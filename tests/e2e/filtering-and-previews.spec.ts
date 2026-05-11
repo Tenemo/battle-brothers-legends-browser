@@ -216,7 +216,7 @@ test('resets the perk result scroll when category filters change', async ({ page
     .toBeLessThanOrEqual(1)
 })
 
-test('splits origin and ancient scroll perk search filters', async ({ page }) => {
+test('separates origin and ancient scroll perk search filters', async ({ page }) => {
   await gotoBuildPlanner(page)
 
   const resultsList = getResultsList(page)
@@ -824,6 +824,7 @@ test('keeps search result and repository hover states fixed in place', async ({ 
   await perfectFitInspectButton.click()
   await expect(page.getByRole('heading', { level: 2, name: 'Perfect Fit' })).toBeVisible()
   await perfectFocusInspectButton.scrollIntoViewIfNeeded()
+  await page.mouse.move(0, 0)
 
   const resultRowBeforeHover = await perfectFocusResultRow.evaluate((element) => {
     const rectangle = element.getBoundingClientRect()

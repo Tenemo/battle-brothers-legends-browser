@@ -175,7 +175,7 @@ describe('build planner', () => {
     )
   })
 
-  test('splits shared and individual perk groups by how many picked perks they cover', () => {
+  test('separates shared and individual perk groups by how many picked perks they cover', () => {
     expect(
       getBuildPlannerGroups([samplePerk, matchingSharedCoveragePerk, overlappingPerk]),
     ).toEqual({

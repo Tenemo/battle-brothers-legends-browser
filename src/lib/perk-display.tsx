@@ -255,6 +255,18 @@ function formatBackgroundDisambiguatorLabel(disambiguator: string): string {
   const companionMatch = /^companion_(1h|2h|ranged)$/.exec(sourceLabel)
   const originCompanionMatch = /^legend_companion_(melee|ranged)$/.exec(sourceLabel)
 
+  if (sourceLabel === 'legend_legion_gladiator') {
+    return 'Variant: Legion'
+  }
+
+  if (sourceLabel === 'legend_beggar_commander') {
+    return 'Challenge: original beggar'
+  }
+
+  if (sourceLabel === 'legend_beggar_commander_op') {
+    return 'Challenge: scaling beggar'
+  }
+
   if (companionMatch) {
     return companionMatch[1] === '1h'
       ? 'Starting: Shield'
@@ -462,15 +474,46 @@ export function getAnchoredTooltipStyle(anchorRectangle: TooltipAnchorRectangle)
   }
 
   const viewportPadding = 12
+  const tooltipMinimumUsefulHeight = 160
   const tooltipMaximumWidth = Math.min(360, window.innerWidth - viewportPadding * 2)
+  const availableHeightBelowAnchor = window.innerHeight - anchorRectangle.bottom - viewportPadding
+  const availableHeightAboveAnchor = anchorRectangle.top - viewportPadding
+  const shouldPlaceTooltipAboveAnchor =
+    availableHeightBelowAnchor < tooltipMinimumUsefulHeight &&
+    availableHeightAboveAnchor > availableHeightBelowAnchor
+  const availableTooltipHeight = shouldPlaceTooltipAboveAnchor
+    ? availableHeightAboveAnchor
+    : availableHeightBelowAnchor
+  const tooltipMaximumHeight = Math.max(
+    0,
+    Math.min(
+      window.innerHeight - viewportPadding * 2,
+      Math.max(tooltipMinimumUsefulHeight, availableTooltipHeight),
+    ),
+  )
   const left = Math.max(
     viewportPadding,
     Math.min(anchorRectangle.left, window.innerWidth - tooltipMaximumWidth - viewportPadding),
   )
+  const verticalPlacementStyle = shouldPlaceTooltipAboveAnchor
+    ? {
+        bottom: `${Math.max(viewportPadding, window.innerHeight - anchorRectangle.top)}px`,
+      }
+    : {
+        top: `${Math.max(
+          viewportPadding,
+          Math.min(
+            anchorRectangle.bottom,
+            window.innerHeight - viewportPadding - tooltipMinimumUsefulHeight,
+          ),
+        )}px`,
+      }
 
   return {
     left: `${left}px`,
+    maxHeight: `${tooltipMaximumHeight}px`,
     maxWidth: `${tooltipMaximumWidth}px`,
-    top: `${anchorRectangle.bottom}px`,
+    overflowY: 'auto',
+    ...verticalPlacementStyle,
   }
 }

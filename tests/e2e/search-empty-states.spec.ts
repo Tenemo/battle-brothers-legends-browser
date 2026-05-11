@@ -1,10 +1,5 @@
 import { expect, test } from '@playwright/test'
-import {
-  expectLocatorVisibleInVirtualizedScrollContainer,
-  getResultsList,
-  gotoBuildPlanner,
-  searchPerks,
-} from './support/build-planner-page'
+import { getResultsList, gotoBuildPlanner, searchPerks } from './support/build-planner-page'
 
 test('searches imported metadata fields and shows a real empty state', async ({ page }) => {
   await gotoBuildPlanner(page)
@@ -23,15 +18,12 @@ test('searches imported metadata fields and shows a real empty state', async ({ 
     }),
   ).toBeVisible()
 
-  await searchPerks(page, 'Beast Slayer')
-  await expectLocatorVisibleInVirtualizedScrollContainer({
-    label: 'Perfect Focus search result',
-    page,
-    scrollContainer: getResultsList(page),
-    target: getResultsList(page).getByRole('button', {
+  await searchPerks(page, 'Beast Slayer Perfect Focus')
+  await expect(
+    getResultsList(page).getByRole('button', {
       name: 'Inspect Perfect Focus',
     }),
-  })
+  ).toBeVisible()
 
   await searchPerks(page, 'zzzz impossible perk')
 

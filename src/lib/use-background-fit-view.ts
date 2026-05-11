@@ -1,4 +1,4 @@
-import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import type { BackgroundFitCalculationProgress, BackgroundFitView } from './background-fit'
 import {
   createBackgroundFitWorkerClient,
@@ -30,6 +30,19 @@ type BackgroundFitProgressState = {
   progress: BackgroundFitCalculationProgress
 }
 
+type BackgroundFitSnapshot = {
+  backgroundFitErrorState: BackgroundFitErrorState | null
+  backgroundFitPartialViewState: BackgroundFitPartialViewState | null
+  backgroundFitProgressState: BackgroundFitProgressState | null
+  backgroundFitViewState: BackgroundFitViewState | null
+}
+
+type BackgroundFitSnapshotStore = {
+  getSnapshot: () => BackgroundFitSnapshot
+  subscribe: (listener: () => void) => () => void
+  update: (updater: (snapshot: BackgroundFitSnapshot) => BackgroundFitSnapshot) => void
+}
+
 type UseBackgroundFitViewOptions = {
   allPerksById: ReadonlyMap<string, LegendsBackgroundFitPerkRecord>
   optionalPickedPerkIds: string[]
@@ -47,6 +60,46 @@ type UseBackgroundFitViewResult = {
   completedBackgroundFitView: BackgroundFitView | null
   isBackgroundFitProgressVisible: boolean
   isBackgroundFitViewLoading: boolean
+}
+
+const initialBackgroundFitSnapshot: BackgroundFitSnapshot = {
+  backgroundFitErrorState: null,
+  backgroundFitPartialViewState: null,
+  backgroundFitProgressState: null,
+  backgroundFitViewState: null,
+}
+
+function scheduleBackgroundFitSnapshotNotification(callback: () => void): () => void {
+  if (typeof window === 'undefined') {
+    callback()
+
+    return () => {}
+  }
+
+  if (typeof window.requestIdleCallback === 'function') {
+    const idleCallbackId = window.requestIdleCallback(callback, { timeout: 100 })
+
+    return () => window.cancelIdleCallback(idleCallbackId)
+  }
+
+  if (typeof window.requestAnimationFrame === 'function') {
+    let secondAnimationFrameId: number | null = null
+    const firstAnimationFrameId = window.requestAnimationFrame(() => {
+      secondAnimationFrameId = window.requestAnimationFrame(callback)
+    })
+
+    return () => {
+      window.cancelAnimationFrame(firstAnimationFrameId)
+
+      if (secondAnimationFrameId !== null) {
+        window.cancelAnimationFrame(secondAnimationFrameId)
+      }
+    }
+  }
+
+  const timeoutId = window.setTimeout(callback, 32)
+
+  return () => window.clearTimeout(timeoutId)
 }
 
 function createBackgroundFitViewKey({
@@ -72,6 +125,48 @@ function createBackgroundFitViewKey({
   ].join('\u0001')
 }
 
+function createBackgroundFitSnapshotStore(): BackgroundFitSnapshotStore {
+  let snapshot = initialBackgroundFitSnapshot
+  let cancelScheduledNotification: (() => void) | null = null
+  const listeners = new Set<() => void>()
+
+  function notifyListeners() {
+    cancelScheduledNotification = null
+
+    for (const listener of listeners) {
+      listener()
+    }
+  }
+
+  function scheduleListenerNotification() {
+    cancelScheduledNotification ??= scheduleBackgroundFitSnapshotNotification(notifyListeners)
+  }
+
+  return {
+    getSnapshot() {
+      return snapshot
+    },
+    subscribe(listener) {
+      listeners.add(listener)
+
+      return () => {
+        listeners.delete(listener)
+      }
+    },
+    update(updater) {
+      const nextSnapshot = updater(snapshot)
+
+      if (nextSnapshot === snapshot) {
+        return
+      }
+
+      snapshot = nextSnapshot
+
+      scheduleListenerNotification()
+    },
+  }
+}
+
 export function useBackgroundFitView({
   allPerksById,
   optionalPickedPerkIds,
@@ -81,14 +176,17 @@ export function useBackgroundFitView({
   shouldAllowSecondBackgroundStudyScroll,
   shouldLoadBackgroundFitView,
 }: UseBackgroundFitViewOptions): UseBackgroundFitViewResult {
-  const [backgroundFitViewState, setBackgroundFitViewState] =
-    useState<BackgroundFitViewState | null>(null)
-  const [backgroundFitPartialViewState, setBackgroundFitPartialViewState] =
-    useState<BackgroundFitPartialViewState | null>(null)
-  const [backgroundFitErrorState, setBackgroundFitErrorState] =
-    useState<BackgroundFitErrorState | null>(null)
-  const [backgroundFitProgressState, setBackgroundFitProgressState] =
-    useState<BackgroundFitProgressState | null>(null)
+  const [backgroundFitSnapshotStore] = useState(createBackgroundFitSnapshotStore)
+  const {
+    backgroundFitErrorState,
+    backgroundFitPartialViewState,
+    backgroundFitProgressState,
+    backgroundFitViewState,
+  } = useSyncExternalStore(
+    backgroundFitSnapshotStore.subscribe,
+    backgroundFitSnapshotStore.getSnapshot,
+    backgroundFitSnapshotStore.getSnapshot,
+  )
   const backgroundFitWorkerClientRef = useRef<BackgroundFitWorkerClient | null>(null)
   const latestBackgroundFitRequestIdRef = useRef(0)
   const backgroundFitProgressByViewKeyRef = useRef(
@@ -208,16 +306,17 @@ export function useBackgroundFitView({
 
           backgroundFitProgressByViewKey.set(backgroundFitViewKey, progress)
 
-          startTransition(() => {
-            setBackgroundFitProgressState({
-              key: backgroundFitViewKey,
-              progress,
-            })
-            setBackgroundFitPartialViewState({
+          backgroundFitSnapshotStore.update((snapshot) => ({
+            ...snapshot,
+            backgroundFitPartialViewState: {
               key: backgroundFitViewKey,
               view,
-            })
-          })
+            },
+            backgroundFitProgressState: {
+              key: backgroundFitViewKey,
+              progress,
+            },
+          }))
         },
         onProgress(progress) {
           if (isCancelled || latestBackgroundFitRequestIdRef.current !== requestId) {
@@ -226,12 +325,13 @@ export function useBackgroundFitView({
 
           backgroundFitProgressByViewKey.set(backgroundFitViewKey, progress)
 
-          startTransition(() => {
-            setBackgroundFitProgressState({
+          backgroundFitSnapshotStore.update((snapshot) => ({
+            ...snapshot,
+            backgroundFitProgressState: {
               key: backgroundFitViewKey,
               progress,
-            })
-          })
+            },
+          }))
         },
       },
     )
@@ -254,22 +354,22 @@ export function useBackgroundFitView({
               }
             : null
 
-        startTransition(() => {
-          setBackgroundFitErrorState(null)
-          setBackgroundFitPartialViewState(null)
-          setBackgroundFitProgressState(
+        backgroundFitSnapshotStore.update((snapshot) => ({
+          ...snapshot,
+          backgroundFitErrorState: null,
+          backgroundFitPartialViewState: null,
+          backgroundFitProgressState:
             completionProgress === null
               ? null
               : {
                   key: backgroundFitViewKey,
                   progress: completionProgress,
                 },
-          )
-          setBackgroundFitViewState({
+          backgroundFitViewState: {
             key: backgroundFitViewKey,
             view: nextBackgroundFitView,
-          })
-        })
+          },
+        }))
 
         if (completionProgress !== null) {
           const completionProgressDurationMs = Math.max(
@@ -287,11 +387,14 @@ export function useBackgroundFitView({
               return
             }
 
-            startTransition(() => {
-              setBackgroundFitProgressState((currentProgressState) =>
-                currentProgressState?.key === backgroundFitViewKey ? null : currentProgressState,
-              )
-            })
+            backgroundFitSnapshotStore.update((snapshot) =>
+              snapshot.backgroundFitProgressState?.key === backgroundFitViewKey
+                ? {
+                    ...snapshot,
+                    backgroundFitProgressState: null,
+                  }
+                : snapshot,
+            )
           }, completionProgressDurationMs)
         }
       })
@@ -301,12 +404,15 @@ export function useBackgroundFitView({
         }
 
         backgroundFitProgressByViewKey.delete(backgroundFitViewKey)
-        setBackgroundFitErrorState({
-          key: backgroundFitViewKey,
-          message: error instanceof Error ? error.message : 'Background fit calculation failed.',
-        })
-        setBackgroundFitPartialViewState(null)
-        setBackgroundFitProgressState(null)
+        backgroundFitSnapshotStore.update((snapshot) => ({
+          ...snapshot,
+          backgroundFitErrorState: {
+            key: backgroundFitViewKey,
+            message: error instanceof Error ? error.message : 'Background fit calculation failed.',
+          },
+          backgroundFitPartialViewState: null,
+          backgroundFitProgressState: null,
+        }))
       })
 
     return () => {
@@ -317,6 +423,7 @@ export function useBackgroundFitView({
     backgroundFitErrorMessage,
     completedBackgroundFitView,
     backgroundFitViewKey,
+    backgroundFitSnapshotStore,
     clearBackgroundFitCompletionProgressTimeout,
     getBackgroundFitWorkerClient,
     optionalPickedPerkIds,

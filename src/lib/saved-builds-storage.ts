@@ -34,6 +34,7 @@ const savedBuildsDatabaseName = 'battle-brothers-legends-browser'
 const savedBuildsDatabaseVersion = 1
 const savedBuildsStoreName = 'saved-builds'
 const savedBuildSchemaVersion = 1
+const storagePersistenceRequestTimeoutMs = 1000
 const maximumSavedBuildNameLength = 80
 const maximumSavedBuildPerkCount = 500
 const maximumSavedBuildFilterValueCount = 500
@@ -310,6 +311,44 @@ function createIndexedDbTransactionPromise(transaction: IDBTransaction): Promise
   })
 }
 
+async function waitForIndexedDbRequestAndTransaction<Result>(
+  transaction: IDBTransaction,
+  request: IDBRequest<Result>,
+): Promise<Result> {
+  const transactionPromise = createIndexedDbTransactionPromise(transaction)
+  const handledTransactionPromise = transactionPromise.catch(() => undefined)
+
+  try {
+    const result = await createIndexedDbRequestPromise(request)
+    await transactionPromise
+
+    return result
+  } catch (error) {
+    await handledTransactionPromise
+
+    throw error
+  }
+}
+
+async function waitForStoragePersistenceResult(
+  storagePersistencePromise: Promise<boolean>,
+): Promise<boolean | null> {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+
+  try {
+    return await Promise.race([
+      storagePersistencePromise,
+      new Promise<null>((resolve) => {
+        timeoutId = setTimeout(() => resolve(null), storagePersistenceRequestTimeoutMs)
+      }),
+    ])
+  } finally {
+    if (timeoutId !== undefined) {
+      clearTimeout(timeoutId)
+    }
+  }
+}
+
 function openSavedBuildsDatabase(): Promise<IDBDatabase> {
   const indexedDatabase = globalThis.indexedDB
 
@@ -459,8 +498,7 @@ export async function listSavedBuildRecords(): Promise<SavedBuildRecord[]> {
   try {
     const transaction = database.transaction(savedBuildsStoreName, 'readonly')
     const request = transaction.objectStore(savedBuildsStoreName).getAll()
-    const records = await createIndexedDbRequestPromise<unknown[]>(request)
-    await createIndexedDbTransactionPromise(transaction)
+    const records = await waitForIndexedDbRequestAndTransaction(transaction, request)
 
     return sortSavedBuildRecords(records.flatMap((record) => readSavedBuildRecord(record) ?? []))
   } finally {
@@ -474,8 +512,7 @@ export async function saveSavedBuildRecord(savedBuild: SavedBuildRecord): Promis
   try {
     const transaction = database.transaction(savedBuildsStoreName, 'readwrite')
     const request = transaction.objectStore(savedBuildsStoreName).put(savedBuild)
-    await createIndexedDbRequestPromise(request)
-    await createIndexedDbTransactionPromise(transaction)
+    await waitForIndexedDbRequestAndTransaction(transaction, request)
   } finally {
     database.close()
   }
@@ -487,8 +524,7 @@ export async function deleteSavedBuildRecord(savedBuildId: string): Promise<void
   try {
     const transaction = database.transaction(savedBuildsStoreName, 'readwrite')
     const request = transaction.objectStore(savedBuildsStoreName).delete(savedBuildId)
-    await createIndexedDbRequestPromise(request)
-    await createIndexedDbTransactionPromise(transaction)
+    await waitForIndexedDbRequestAndTransaction(transaction, request)
   } finally {
     database.close()
   }
@@ -520,7 +556,15 @@ export async function requestSavedBuildPersistence(): Promise<SavedBuildPersiste
       return 'best-effort'
     }
 
-    return (await navigator.storage.persist()) ? 'persistent' : 'best-effort'
+    const persistenceRequestResult = await waitForStoragePersistenceResult(
+      navigator.storage.persist(),
+    )
+
+    if (persistenceRequestResult === null) {
+      return 'unknown'
+    }
+
+    return persistenceRequestResult ? 'persistent' : 'best-effort'
   } catch {
     return 'unknown'
   }

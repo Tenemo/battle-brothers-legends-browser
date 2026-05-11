@@ -1,5 +1,5 @@
 import { useId, type RefObject } from 'react'
-import catenaryChainUrl from '../assets/catenary-chain.svg'
+import mustHaveRequirementIconUrl from '../assets/must-have-requirement.svg'
 import { joinClassNames } from '../lib/class-names'
 import type {
   BuildPlannerGroupedPerkGroup,
@@ -118,23 +118,23 @@ function getHighlightedBuildPerkIdsForEmphasis({
   return highlightedBuildPerkIds
 }
 
-function PlannerSlotRequirementChain() {
+function PlannerSlotRequirementMustHave() {
   return (
     <span
       aria-label="Must-have perk"
-      className={styles.plannerSlotRequirementChain}
-      data-testid="planner-slot-requirement-chain"
+      className={styles.plannerSlotRequirementMustHave}
+      data-testid="planner-slot-requirement-must-have"
       role="img"
       title="Must-have perk"
     >
       <img
         alt=""
         aria-hidden="true"
-        className={styles.plannerSlotRequirementImage}
-        data-testid="planner-slot-requirement-chain-image"
+        className={styles.plannerSlotRequirementMustHaveImage}
+        data-testid="planner-slot-requirement-must-have-image"
         draggable={false}
         height="64"
-        src={catenaryChainUrl}
+        src={mustHaveRequirementIconUrl}
         width="64"
       />
     </span>
@@ -171,7 +171,7 @@ export function BuildPlannerRequirementLegend() {
         data-testid="planner-requirement-legend-tile"
         title={mustHaveLegendTileTitle}
       >
-        <PlannerSlotRequirementChain />
+        <PlannerSlotRequirementMustHave />
         <div className={styles.plannerSlotPerkInspect}>
           <span className={styles.plannerPickedPerkName} data-testid="planner-picked-perk-name">
             Must-have
@@ -479,7 +479,7 @@ export function BuildPlannerBoard({
                       )
                     }}
                   >
-                    {!pickedPerk.isOptional ? <PlannerSlotRequirementChain /> : null}
+                    {!pickedPerk.isOptional ? <PlannerSlotRequirementMustHave /> : null}
                     {pickedPerk.isOptional ? <PlannerSlotRequirementOptional /> : null}
                     <button
                       aria-label={`${pickedPerk.perkName}, view from build planner`}
@@ -569,7 +569,8 @@ export function BuildPlannerBoard({
                 <div className={styles.plannerSlotCopy}>
                   <strong className={styles.plannerSlotName}>Pick a perk to start</strong>
                   <p className={styles.plannerSlotMeta} data-testid="planner-slot-meta">
-                    Use the chain/split control in the detail panel or the search results list.
+                    Use the must-have/optional control in the detail panel or the search results
+                    list.
                   </p>
                 </div>
               </div>

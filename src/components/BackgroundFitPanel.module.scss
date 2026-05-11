@@ -359,7 +359,7 @@
   .backgroundFitStudyResourceBadge {
     flex: 0 0 auto;
     object-fit: contain;
-    filter: drop-shadow(var(--shadow-chain-drop));
+    filter: drop-shadow(var(--shadow-icon-drop));
     cursor: help;
     pointer-events: auto;
 
@@ -367,7 +367,7 @@
   }
 
   .backgroundFitStudyResourceBadgeOptionalOnly {
-    filter: drop-shadow(var(--shadow-chain-drop))
+    filter: drop-shadow(var(--shadow-icon-drop))
       drop-shadow(0 0 var(--primitive-length-0-24rem) var(--border-success))
       drop-shadow(0 0 0.06rem var(--text-success));
   }
@@ -392,6 +392,7 @@
   }
 
   .backgroundFitDisambiguator {
+    display: inline-block;
     flex: 0 0 auto;
     max-width: 100%;
     margin-top: 0;
@@ -549,6 +550,16 @@
     position: relative;
     z-index: var(--z-index-tooltip);
     flex: 0 0 auto;
+  }
+
+  .backgroundFitFilterPopover {
+    position: fixed;
+    top: 0;
+    right: auto;
+    left: 0;
+    z-index: var(--z-index-modal);
+    max-height: min(var(--primitive-length-24rem), calc(100dvh - var(--space-3xl)));
+    overflow-y: auto;
   }
 
   @include desktop {

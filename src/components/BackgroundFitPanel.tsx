@@ -3,11 +3,13 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
   type CSSProperties,
 } from 'react'
+import { createPortal } from 'react-dom'
 import type { ComputeItemKey, VirtuosoHandle } from 'react-virtuoso'
 import { joinClassNames } from '../lib/class-names'
 import {
@@ -50,7 +52,6 @@ const emptyBackgroundFitView: BackgroundFitView = {
   supportedBuildTargetPerkGroups: [],
   unsupportedBuildTargetPerkGroups: [],
 }
-const backgroundFitProgressCountMinimumStepDurationMs = 10
 const backgroundFilterTooltips = {
   eventBackgrounds:
     'Shows backgrounds that are not available from regular recruitment but can be gained from events, contracts, encounters, or settlement situations.',
@@ -63,6 +64,7 @@ const backgroundFilterTooltips = {
   secondStudyScroll:
     'Counts a second ancient scroll when Bright is available and the first scroll is allowed.',
 } as const
+const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect
 
 const getBackgroundFitItemKey: ComputeItemKey<RankedBackgroundFit, unknown> = (
   _index,
@@ -96,89 +98,17 @@ function getClampedCheckedBackgroundCount(progress: BackgroundFitCalculationProg
   )
 }
 
-function useDisplayedCheckedBackgroundCount(progress: BackgroundFitCalculationProgress): number {
-  const targetCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
-  const [displayedCheckedBackgroundCount, setDisplayedCheckedBackgroundCount] = useState(0)
-  const displayedCheckedBackgroundCountRef = useRef(0)
-  const progressIntervalIdRef = useRef<number | null>(null)
-  const targetCheckedBackgroundCountRef = useRef(targetCheckedBackgroundCount)
-
-  useEffect(() => {
-    function clearProgressInterval() {
-      if (progressIntervalIdRef.current === null) {
-        return
-      }
-
-      window.clearInterval(progressIntervalIdRef.current)
-      progressIntervalIdRef.current = null
-    }
-
-    targetCheckedBackgroundCountRef.current = Math.max(
-      displayedCheckedBackgroundCountRef.current,
-      targetCheckedBackgroundCount,
-    )
-
-    if (
-      displayedCheckedBackgroundCountRef.current >= targetCheckedBackgroundCountRef.current ||
-      progressIntervalIdRef.current !== null
-    ) {
-      return
-    }
-
-    progressIntervalIdRef.current = window.setInterval(() => {
-      let shouldClearProgressInterval = false
-
-      setDisplayedCheckedBackgroundCount((currentCheckedBackgroundCount) => {
-        if (currentCheckedBackgroundCount >= targetCheckedBackgroundCountRef.current) {
-          displayedCheckedBackgroundCountRef.current = currentCheckedBackgroundCount
-          shouldClearProgressInterval = true
-
-          return currentCheckedBackgroundCount
-        }
-
-        const nextCheckedBackgroundCount = Math.min(
-          currentCheckedBackgroundCount + 1,
-          targetCheckedBackgroundCountRef.current,
-        )
-
-        displayedCheckedBackgroundCountRef.current = nextCheckedBackgroundCount
-        shouldClearProgressInterval =
-          nextCheckedBackgroundCount >= targetCheckedBackgroundCountRef.current
-
-        return nextCheckedBackgroundCount
-      })
-
-      if (shouldClearProgressInterval) {
-        clearProgressInterval()
-      }
-    }, backgroundFitProgressCountMinimumStepDurationMs)
-  }, [targetCheckedBackgroundCount])
-
-  useEffect(
-    () => () => {
-      if (progressIntervalIdRef.current !== null) {
-        window.clearInterval(progressIntervalIdRef.current)
-        progressIntervalIdRef.current = null
-      }
-    },
-    [],
-  )
-
-  return displayedCheckedBackgroundCount
-}
-
 function BackgroundFitProgressIndicator({
   progress,
 }: {
   progress: BackgroundFitCalculationProgress
 }) {
-  const displayedCheckedBackgroundCount = useDisplayedCheckedBackgroundCount(progress)
   const actualCheckedBackgroundCount = getClampedCheckedBackgroundCount(progress)
   const displayedProgressPercent =
     progress.totalBackgroundCount > 0
       ? Math.min(
           100,
-          Math.max(0, (displayedCheckedBackgroundCount / progress.totalBackgroundCount) * 100),
+          Math.max(0, (actualCheckedBackgroundCount / progress.totalBackgroundCount) * 100),
         )
       : 0
   const progressBarStyle = {
@@ -188,7 +118,7 @@ function BackgroundFitProgressIndicator({
   return (
     <>
       <p className={styles.backgroundFitProgressText}>
-        Checking backgrounds {displayedCheckedBackgroundCount}/{progress.totalBackgroundCount}.
+        Checking backgrounds {actualCheckedBackgroundCount}/{progress.totalBackgroundCount}.
       </p>
       <div
         aria-label="Background fit progress"
@@ -278,7 +208,11 @@ export function BackgroundFitPanel({
   const backgroundFitFilterMenuId = useId()
   const backgroundFitResultsScrollRef = useRef<HTMLElement | null>(null)
   const backgroundFitResultsVirtuosoRef = useRef<VirtuosoHandle | null>(null)
+  const backgroundFitFilterButtonRef = useRef<HTMLButtonElement | null>(null)
   const backgroundFitFilterMenuRef = useRef<HTMLDivElement | null>(null)
+  const backgroundFitFilterPopoverRef = useRef<HTMLDivElement | null>(null)
+  const [backgroundFitFilterPopoverPlacement, setBackgroundFitFilterPopoverPlacement] =
+    useState<CSSProperties | null>(null)
   const hasPickedPerks = pickedPerkCount > 0
   const hasSupportedBackgroundFitTargets =
     effectiveBackgroundFitView.supportedBuildTargetPerkGroups.length > 0
@@ -378,6 +312,51 @@ export function BackgroundFitPanel({
     }
   }, [hoveredPerkId, onClearPerkGroupHover, onCloseBuildPerkHover, onCloseBuildPerkTooltip])
 
+  const updateBackgroundFitFilterPopoverPlacement = useCallback(() => {
+    const filterButton = backgroundFitFilterButtonRef.current
+    const filterPopover = backgroundFitFilterPopoverRef.current
+
+    if (filterButton === null || filterPopover === null) {
+      return
+    }
+
+    const filterButtonRectangle = filterButton.getBoundingClientRect()
+    const filterPopoverRectangle = filterPopover.getBoundingClientRect()
+    const viewportMargin = 8
+    const popoverGap = 8
+    const maximumLeft = Math.max(
+      viewportMargin,
+      window.innerWidth - viewportMargin - filterPopoverRectangle.width,
+    )
+    const left = Math.min(
+      maximumLeft,
+      Math.max(viewportMargin, filterButtonRectangle.right - filterPopoverRectangle.width),
+    )
+    const topBelowButton = filterButtonRectangle.bottom + popoverGap
+    const topAboveButton = filterButtonRectangle.top - filterPopoverRectangle.height - popoverGap
+    const hasRoomBelow =
+      topBelowButton + filterPopoverRectangle.height <= window.innerHeight - viewportMargin
+    const top = hasRoomBelow
+      ? topBelowButton
+      : Math.max(
+          viewportMargin,
+          Math.min(
+            topAboveButton,
+            window.innerHeight - viewportMargin - filterPopoverRectangle.height,
+          ),
+        )
+
+    setBackgroundFitFilterPopoverPlacement({
+      left,
+      top,
+    })
+  }, [])
+
+  const closeBackgroundFitFilterMenu = useCallback(() => {
+    setIsBackgroundFilterMenuOpen(false)
+    setBackgroundFitFilterPopoverPlacement(null)
+  }, [])
+
   const renderBackgroundFit = useCallback(
     (backgroundFitIndex: number, backgroundFit: RankedBackgroundFit) => (
       <BackgroundFitCard
@@ -456,12 +435,13 @@ export function BackgroundFitPanel({
     function handleDocumentPointerDown(event: PointerEvent) {
       if (
         event.target instanceof Node &&
-        backgroundFitFilterMenuRef.current?.contains(event.target)
+        (backgroundFitFilterMenuRef.current?.contains(event.target) ||
+          backgroundFitFilterPopoverRef.current?.contains(event.target))
       ) {
         return
       }
 
-      setIsBackgroundFilterMenuOpen(false)
+      closeBackgroundFitFilterMenu()
     }
 
     document.addEventListener('pointerdown', handleDocumentPointerDown)
@@ -469,7 +449,23 @@ export function BackgroundFitPanel({
     return () => {
       document.removeEventListener('pointerdown', handleDocumentPointerDown)
     }
-  }, [isBackgroundFilterMenuOpen])
+  }, [closeBackgroundFitFilterMenu, isBackgroundFilterMenuOpen])
+
+  useIsomorphicLayoutEffect(() => {
+    if (!isBackgroundFilterMenuOpen) {
+      return
+    }
+
+    updateBackgroundFitFilterPopoverPlacement()
+
+    window.addEventListener('resize', updateBackgroundFitFilterPopoverPlacement)
+    window.addEventListener('scroll', updateBackgroundFitFilterPopoverPlacement, true)
+
+    return () => {
+      window.removeEventListener('resize', updateBackgroundFitFilterPopoverPlacement)
+      window.removeEventListener('scroll', updateBackgroundFitFilterPopoverPlacement, true)
+    }
+  }, [isBackgroundFilterMenuOpen, updateBackgroundFitFilterPopoverPlacement])
 
   return (
     <>
@@ -507,10 +503,8 @@ export function BackgroundFitPanel({
                   }
 
                   event.preventDefault()
-                  setIsBackgroundFilterMenuOpen(false)
-                  event.currentTarget
-                    .querySelector<HTMLButtonElement>('[data-background-fit-filter-button="true"]')
-                    ?.focus()
+                  closeBackgroundFitFilterMenu()
+                  backgroundFitFilterButtonRef.current?.focus()
                 }}
                 ref={backgroundFitFilterMenuRef}
               >
@@ -524,10 +518,16 @@ export function BackgroundFitPanel({
                   data-testid="background-fit-filter-button"
                   onClick={() => {
                     clearBackgroundFitInteractiveHover()
-                    setIsBackgroundFilterMenuOpen(
-                      (wasBackgroundFilterMenuOpen) => !wasBackgroundFilterMenuOpen,
-                    )
+
+                    if (isBackgroundFilterMenuOpen) {
+                      closeBackgroundFitFilterMenu()
+                      return
+                    }
+
+                    setBackgroundFitFilterPopoverPlacement(null)
+                    setIsBackgroundFilterMenuOpen(true)
                   }}
+                  ref={backgroundFitFilterButtonRef}
                   type="button"
                 >
                   <FunnelIcon
@@ -536,114 +536,134 @@ export function BackgroundFitPanel({
                     testId="background-fit-filter-icon"
                   />
                 </button>
-                {isBackgroundFilterMenuOpen ? (
-                  <div
-                    aria-label="Background filters"
-                    className={sharedStyles.filterPopover}
-                    id={backgroundFitFilterMenuId}
-                    role="group"
-                  >
-                    <label
-                      className={sharedStyles.filterOption}
-                      title={backgroundFilterTooltips.originBackgrounds}
-                    >
-                      <input
-                        checked={shouldIncludeOriginBackgrounds}
-                        data-testid="origin-backgrounds-checkbox"
-                        onChange={(event) => {
-                          clearBackgroundFitInteractiveHover()
-                          onOriginBackgroundsChange(event.target.checked)
+                {isBackgroundFilterMenuOpen && typeof document !== 'undefined'
+                  ? createPortal(
+                      <div
+                        aria-label="Background filters"
+                        className={joinClassNames(
+                          sharedStyles.filterPopover,
+                          styles.backgroundFitFilterPopover,
+                        )}
+                        id={backgroundFitFilterMenuId}
+                        onKeyDown={(event) => {
+                          if (event.key !== 'Escape') {
+                            return
+                          }
+
+                          event.preventDefault()
+                          closeBackgroundFitFilterMenu()
+                          backgroundFitFilterButtonRef.current?.focus()
                         }}
-                        type="checkbox"
-                      />
-                      <span>Origin backgrounds</span>
-                    </label>
-                    <label
-                      className={sharedStyles.filterOption}
-                      title={backgroundFilterTooltips.eventBackgrounds}
-                    >
-                      <input
-                        checked={shouldIncludeEventBackgrounds}
-                        data-testid="event-backgrounds-checkbox"
-                        onChange={(event) => {
-                          clearBackgroundFitInteractiveHover()
-                          onEventBackgroundsChange(event.target.checked)
-                        }}
-                        type="checkbox"
-                      />
-                      <span>Event backgrounds</span>
-                    </label>
-                    <label
-                      className={sharedStyles.filterOption}
-                      title={backgroundFilterTooltips.studyBook}
-                    >
-                      <input
-                        checked={shouldAllowBackgroundStudyBook}
-                        data-testid="background-study-book-checkbox"
-                        onChange={(event) => {
-                          clearBackgroundFitInteractiveHover()
-                          onBackgroundStudyBookChange(event.target.checked)
-                        }}
-                        type="checkbox"
-                      />
-                      <span>Allow a book</span>
-                    </label>
-                    <label
-                      className={sharedStyles.filterOption}
-                      title={backgroundFilterTooltips.studyScroll}
-                    >
-                      <input
-                        checked={shouldAllowBackgroundStudyScroll}
-                        data-testid="background-study-scroll-checkbox"
-                        onChange={(event) => {
-                          clearBackgroundFitInteractiveHover()
-                          onBackgroundStudyScrollChange(event.target.checked)
-                        }}
-                        type="checkbox"
-                      />
-                      <span>Allow a scroll</span>
-                    </label>
-                    <label
-                      className={sharedStyles.filterOption}
-                      title={backgroundFilterTooltips.secondStudyScroll}
-                    >
-                      <input
-                        checked={
-                          shouldAllowBackgroundStudyScroll && shouldAllowSecondBackgroundStudyScroll
-                        }
-                        data-testid="background-study-second-scroll-checkbox"
-                        disabled={!shouldAllowBackgroundStudyScroll}
-                        onChange={(event) => {
-                          clearBackgroundFitInteractiveHover()
-                          onSecondBackgroundStudyScrollChange(event.target.checked)
-                        }}
-                        type="checkbox"
-                      />
-                      <span>Allow two scrolls</span>
-                    </label>
-                    {availableBackgroundVeteranPerkLevelIntervals.map((interval) => (
-                      <label
-                        className={sharedStyles.filterOption}
-                        key={interval}
-                        title={formatBackgroundVeteranPerkLevelIntervalFilterTitle(interval)}
+                        ref={backgroundFitFilterPopoverRef}
+                        role="group"
+                        style={backgroundFitFilterPopoverPlacement ?? undefined}
                       >
-                        <input
-                          checked={selectedBackgroundVeteranPerkLevelIntervalSet.has(interval)}
-                          data-testid={`background-veteran-perk-${interval}-checkbox`}
-                          onChange={(event) => {
-                            clearBackgroundFitInteractiveHover()
-                            onBackgroundVeteranPerkLevelIntervalChange(
-                              interval,
-                              event.target.checked,
-                            )
-                          }}
-                          type="checkbox"
-                        />
-                        <span>{formatBackgroundVeteranPerkLevelIntervalFilterLabel(interval)}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : null}
+                        <label
+                          className={sharedStyles.filterOption}
+                          title={backgroundFilterTooltips.originBackgrounds}
+                        >
+                          <input
+                            checked={shouldIncludeOriginBackgrounds}
+                            data-testid="origin-backgrounds-checkbox"
+                            onChange={(event) => {
+                              clearBackgroundFitInteractiveHover()
+                              onOriginBackgroundsChange(event.target.checked)
+                            }}
+                            type="checkbox"
+                          />
+                          <span>Origin backgrounds</span>
+                        </label>
+                        <label
+                          className={sharedStyles.filterOption}
+                          title={backgroundFilterTooltips.eventBackgrounds}
+                        >
+                          <input
+                            checked={shouldIncludeEventBackgrounds}
+                            data-testid="event-backgrounds-checkbox"
+                            onChange={(event) => {
+                              clearBackgroundFitInteractiveHover()
+                              onEventBackgroundsChange(event.target.checked)
+                            }}
+                            type="checkbox"
+                          />
+                          <span>Event backgrounds</span>
+                        </label>
+                        <label
+                          className={sharedStyles.filterOption}
+                          title={backgroundFilterTooltips.studyBook}
+                        >
+                          <input
+                            checked={shouldAllowBackgroundStudyBook}
+                            data-testid="background-study-book-checkbox"
+                            onChange={(event) => {
+                              clearBackgroundFitInteractiveHover()
+                              onBackgroundStudyBookChange(event.target.checked)
+                            }}
+                            type="checkbox"
+                          />
+                          <span>Allow a book</span>
+                        </label>
+                        <label
+                          className={sharedStyles.filterOption}
+                          title={backgroundFilterTooltips.studyScroll}
+                        >
+                          <input
+                            checked={shouldAllowBackgroundStudyScroll}
+                            data-testid="background-study-scroll-checkbox"
+                            onChange={(event) => {
+                              clearBackgroundFitInteractiveHover()
+                              onBackgroundStudyScrollChange(event.target.checked)
+                            }}
+                            type="checkbox"
+                          />
+                          <span>Allow a scroll</span>
+                        </label>
+                        <label
+                          className={sharedStyles.filterOption}
+                          title={backgroundFilterTooltips.secondStudyScroll}
+                        >
+                          <input
+                            checked={
+                              shouldAllowBackgroundStudyScroll &&
+                              shouldAllowSecondBackgroundStudyScroll
+                            }
+                            data-testid="background-study-second-scroll-checkbox"
+                            disabled={!shouldAllowBackgroundStudyScroll}
+                            onChange={(event) => {
+                              clearBackgroundFitInteractiveHover()
+                              onSecondBackgroundStudyScrollChange(event.target.checked)
+                            }}
+                            type="checkbox"
+                          />
+                          <span>Allow two scrolls</span>
+                        </label>
+                        {availableBackgroundVeteranPerkLevelIntervals.map((interval) => (
+                          <label
+                            className={sharedStyles.filterOption}
+                            key={interval}
+                            title={formatBackgroundVeteranPerkLevelIntervalFilterTitle(interval)}
+                          >
+                            <input
+                              checked={selectedBackgroundVeteranPerkLevelIntervalSet.has(interval)}
+                              data-testid={`background-veteran-perk-${interval}-checkbox`}
+                              onChange={(event) => {
+                                clearBackgroundFitInteractiveHover()
+                                onBackgroundVeteranPerkLevelIntervalChange(
+                                  interval,
+                                  event.target.checked,
+                                )
+                              }}
+                              type="checkbox"
+                            />
+                            <span>
+                              {formatBackgroundVeteranPerkLevelIntervalFilterLabel(interval)}
+                            </span>
+                          </label>
+                        ))}
+                      </div>,
+                      document.body,
+                    )
+                  : null}
               </div>
             }
             value={backgroundFitInputValue}
