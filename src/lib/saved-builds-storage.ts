@@ -311,6 +311,25 @@ function createIndexedDbTransactionPromise(transaction: IDBTransaction): Promise
   })
 }
 
+async function waitForIndexedDbRequestAndTransaction<Result>(
+  transaction: IDBTransaction,
+  request: IDBRequest<Result>,
+): Promise<Result> {
+  const transactionPromise = createIndexedDbTransactionPromise(transaction)
+  const handledTransactionPromise = transactionPromise.catch(() => undefined)
+
+  try {
+    const result = await createIndexedDbRequestPromise(request)
+    await transactionPromise
+
+    return result
+  } catch (error) {
+    await handledTransactionPromise
+
+    throw error
+  }
+}
+
 async function waitForStoragePersistenceResult(
   storagePersistencePromise: Promise<boolean>,
 ): Promise<boolean | null> {
@@ -478,10 +497,8 @@ export async function listSavedBuildRecords(): Promise<SavedBuildRecord[]> {
 
   try {
     const transaction = database.transaction(savedBuildsStoreName, 'readonly')
-    const transactionPromise = createIndexedDbTransactionPromise(transaction)
     const request = transaction.objectStore(savedBuildsStoreName).getAll()
-    const records = await createIndexedDbRequestPromise<unknown[]>(request)
-    await transactionPromise
+    const records = await waitForIndexedDbRequestAndTransaction(transaction, request)
 
     return sortSavedBuildRecords(records.flatMap((record) => readSavedBuildRecord(record) ?? []))
   } finally {
@@ -494,10 +511,8 @@ export async function saveSavedBuildRecord(savedBuild: SavedBuildRecord): Promis
 
   try {
     const transaction = database.transaction(savedBuildsStoreName, 'readwrite')
-    const transactionPromise = createIndexedDbTransactionPromise(transaction)
     const request = transaction.objectStore(savedBuildsStoreName).put(savedBuild)
-    await createIndexedDbRequestPromise(request)
-    await transactionPromise
+    await waitForIndexedDbRequestAndTransaction(transaction, request)
   } finally {
     database.close()
   }
@@ -508,10 +523,8 @@ export async function deleteSavedBuildRecord(savedBuildId: string): Promise<void
 
   try {
     const transaction = database.transaction(savedBuildsStoreName, 'readwrite')
-    const transactionPromise = createIndexedDbTransactionPromise(transaction)
     const request = transaction.objectStore(savedBuildsStoreName).delete(savedBuildId)
-    await createIndexedDbRequestPromise(request)
-    await transactionPromise
+    await waitForIndexedDbRequestAndTransaction(transaction, request)
   } finally {
     database.close()
   }

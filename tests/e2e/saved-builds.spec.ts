@@ -29,12 +29,17 @@ const savedBuildsDatabaseName = 'battle-brothers-legends-browser'
 const savedBuildsStoreName = 'saved-builds'
 
 async function clearBuildWithConfirmation(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Clear build' }).click()
+  const clearBuildButton = page.getByTestId('clear-build-button')
+
+  await clearBuildButton.click()
 
   const clearBuildDialog = page.getByRole('alertdialog', { name: 'Clear this build?' })
 
   await expect(clearBuildDialog).toBeVisible()
   await clearBuildDialog.getByRole('button', { name: 'Clear build' }).click()
+  await expect(clearBuildDialog).toHaveCount(0)
+  await expect(clearBuildButton).toBeDisabled()
+  await expect(getBuildPerksBar(page).getByText('Pick a perk to start')).toBeVisible()
 }
 
 function createOverflowSavedBuildRecords(savedBuildCount: number): IndexedDbSavedBuildRecord[] {

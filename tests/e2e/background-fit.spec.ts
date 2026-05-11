@@ -204,6 +204,21 @@ async function getVisibleDisambiguatorLabelsForBackground(
   }, backgroundName)
 }
 
+async function expectLocatorWithinViewport(
+  page: Page,
+  locator: Locator,
+  label: string,
+): Promise<void> {
+  const locatorBox = await getRequiredLocatorBoundingBox(locator, label)
+  const viewport = page.viewportSize()
+
+  expect(viewport).not.toBeNull()
+  expect(locatorBox.x).toBeGreaterThanOrEqual(0)
+  expect(locatorBox.y).toBeGreaterThanOrEqual(0)
+  expect(locatorBox.x + locatorBox.width).toBeLessThanOrEqual(viewport!.width)
+  expect(locatorBox.y + locatorBox.height).toBeLessThanOrEqual(viewport!.height)
+}
+
 test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }) => {
   test.setTimeout(60_000)
 
@@ -249,11 +264,12 @@ test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }
   expect(tooltipActionLayout?.rightGap ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(14)
   expect(tooltipActionLayout?.topGap ?? Number.POSITIVE_INFINITY).toBeLessThanOrEqual(14)
 
-  await mustHaveTooltipState.tooltip
-    .getByRole('button', {
-      name: `Add ${mustHaveTooltipState.perkName} to build from tooltip`,
-    })
-    .click()
+  const addMustHaveFromTooltipButton = mustHaveTooltipState.tooltip.getByRole('button', {
+    name: `Add ${mustHaveTooltipState.perkName} to build from tooltip`,
+  })
+
+  await expectLocatorWithinViewport(page, addMustHaveFromTooltipButton, 'must-have tooltip button')
+  await addMustHaveFromTooltipButton.click()
 
   await expect(
     getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
@@ -264,11 +280,12 @@ test('adds unpicked perks from the timer-launched perk tooltip', async ({ page }
 
   const optionalTooltipState = await openFirstApprenticeOtherNativePerkTooltip(page)
 
-  await optionalTooltipState.tooltip
-    .getByRole('button', {
-      name: `Add ${optionalTooltipState.perkName} as optional from tooltip`,
-    })
-    .click()
+  const addOptionalFromTooltipButton = optionalTooltipState.tooltip.getByRole('button', {
+    name: `Add ${optionalTooltipState.perkName} as optional from tooltip`,
+  })
+
+  await expectLocatorWithinViewport(page, addOptionalFromTooltipButton, 'optional tooltip button')
+  await addOptionalFromTooltipButton.click()
 
   await expect(
     getBuildPerksBar(page).getByTestId('planner-slot-perk').filter({
@@ -1209,7 +1226,7 @@ test('filters source backgrounds from the background search menu', async ({ page
   expect(clearButtonBox.x).toBeLessThan(filterButtonBox.x)
   await expect(
     backgroundFitPanel.getByText('No backgrounds match "crusader starting roster".'),
-  ).toBeVisible()
+  ).toBeVisible({ timeout: backgroundFitCalculationTimeoutMs })
 
   await filterBackgroundsButton.click()
 
