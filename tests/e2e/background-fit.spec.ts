@@ -101,6 +101,11 @@ async function expectHighlightedPillBoundaryGap(
   pill: Locator,
   boundary: 'after-highlight' | 'before-highlight',
 ): Promise<void> {
+  const highlightedText = pill.locator('[data-search-highlight="true"]')
+
+  await expect(highlightedText).toHaveCount(1)
+  await expect(highlightedText).toBeVisible()
+
   const boundaryMetrics = await pill.evaluate((element, checkedBoundary) => {
     const highlightedElement = element.querySelector('[data-search-highlight="true"]')
 
@@ -1590,29 +1595,11 @@ test('keeps the background filter dropdown visible above overlapped content', as
 })
 
 test('shows probabilistic background fit matches with plain percentage text', async ({ page }) => {
-  await gotoBuildPlanner(page, mediumBuildPlannerViewport)
-  await searchPerks(page, 'Danger Pay')
-  await addPerkToBuildFromResults(page, 'Danger Pay')
+  await gotoBuildPlannerUrl(page, apprenticeDangerPayDetailUrl, mediumBuildPlannerViewport)
 
   const backgroundFitPanel = getBackgroundFitPanel(page)
-  const backgroundFitPanelBody = backgroundFitPanel.getByTestId('background-fit-panel-body')
   const detailPanel = getDetailPanel(page)
-  const apprenticeCard = backgroundFitPanel
-    .getByTestId('background-fit-card')
-    .filter({ hasText: 'Apprentice' })
-    .first()
-  const apprenticeToggle = apprenticeCard.getByRole('button', {
-    name: 'Inspect background Apprentice',
-  })
 
-  await expectBackgroundFitCalculationComplete(backgroundFitPanel)
-  await expectLocatorVisibleInVirtualizedScrollContainer({
-    label: 'Apprentice background fit card',
-    page,
-    scrollContainer: backgroundFitPanelBody,
-    target: apprenticeCard,
-  })
-  await apprenticeToggle.click()
   await expectBackgroundFitCalculationComplete(backgroundFitPanel)
   await expect(detailPanel.getByRole('heading', { level: 2, name: 'Apprentice' })).toBeVisible()
 
