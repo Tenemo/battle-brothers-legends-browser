@@ -2,6 +2,7 @@ import {
   buildShareSeoData,
   type BuildShareSeoPerkRecord,
 } from '../data/build-share-seo-data.generated'
+import { addLegacyPerkUrlAliases } from './legacy-perk-url-aliases'
 
 type BuildShareSeoPerk = {
   perkName: string
@@ -76,11 +77,19 @@ function createPerkUrlLabel(perk: BuildShareSeoPerkRecord): string {
 
 function createPerkIdByLookupValue(perks: BuildShareSeoPerkRecord[]): Map<string, string> {
   const nextPerkIdByLookupValue = new Map<string, string>()
+  const availablePerkIdentifiers = new Set<string>()
 
   for (const perk of perks) {
+    availablePerkIdentifiers.add(perk.id)
     nextPerkIdByLookupValue.set(normalizeLookupValue(perk.id), perk.id)
     nextPerkIdByLookupValue.set(normalizeLookupValue(createPerkUrlLabel(perk)), perk.id)
   }
+
+  addLegacyPerkUrlAliases({
+    availablePerkIdentifiers,
+    normalizeLookupValue,
+    perkIdentifierByLookupValue: nextPerkIdByLookupValue,
+  })
 
   return nextPerkIdByLookupValue
 }

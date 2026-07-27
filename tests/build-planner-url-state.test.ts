@@ -141,6 +141,30 @@ const duplicateNamePerks: LegendsPerkRecord[] = [
   },
 ]
 const duplicateNamePerksById = new Map(duplicateNamePerks.map((perk) => [perk.id, perk]))
+const renamedPerks: LegendsPerkRecord[] = [
+  {
+    ...samplePerks[0],
+    id: 'perk.legend_double_strike',
+    perkConstName: 'LegendDoubleStrike',
+    perkName: 'Flux',
+    searchText: 'Flux traits vicious',
+  },
+  {
+    ...samplePerks[0],
+    id: 'perk.legend_daze',
+    perkConstName: 'LegendDaze',
+    perkName: 'Stupefy',
+    searchText: 'Stupefy traits vicious',
+  },
+  {
+    ...samplePerks[0],
+    id: 'perk.legend_magic_daze',
+    perkConstName: 'LegendMagicDaze',
+    perkName: 'Stupefy',
+    searchText: 'Stupefy magic spell',
+  },
+]
+const renamedPerksById = new Map(renamedPerks.map((perk) => [perk.id, perk]))
 
 describe('build planner url state', () => {
   test('serializes only one perk group with filters and build query params', () => {
@@ -816,6 +840,40 @@ describe('build planner url state', () => {
         perkGroupOptionsByCategory,
       }).pickedPerkIds,
     ).toEqual(['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning'])
+  })
+
+  test('restores renamed perks from legacy links and writes their current labels', () => {
+    const restoredUrlState = readBuildPlannerUrlState(
+      '?detail=perk&perk=Double+Strike&build=Double+Strike,Daze--perk.legend_daze,Daze--perk.legend_magic_daze&optional=Double+Strike,Daze--perk.legend_magic_daze',
+      {
+        availableCategoryNames,
+        perks: renamedPerks,
+        perkGroupOptionsByCategory,
+      },
+    )
+
+    expect(restoredUrlState).toMatchObject({
+      detailSelection: {
+        perkId: 'perk.legend_double_strike',
+        type: 'perk',
+      },
+      optionalPerkIds: ['perk.legend_double_strike', 'perk.legend_magic_daze'],
+      pickedPerkIds: ['perk.legend_double_strike', 'perk.legend_daze', 'perk.legend_magic_daze'],
+    })
+
+    const currentSearchParams = new URLSearchParams(
+      createBuildPlannerUrlSearch(restoredUrlState, {
+        availableCategoryNames,
+        perksById: renamedPerksById,
+        perkGroupOptionsByCategory,
+      }),
+    )
+
+    expect(currentSearchParams.get('perk')).toBe('Flux')
+    expect(currentSearchParams.get('build')).toBe(
+      'Flux,Stupefy--perk.legend_daze,Stupefy--perk.legend_magic_daze',
+    )
+    expect(currentSearchParams.get('optional')).toBe('Flux,Stupefy--perk.legend_magic_daze')
   })
 
   test('omits the query string entirely when only default state needs to be shared', () => {

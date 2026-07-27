@@ -23,7 +23,7 @@ describe('root social image generation', () => {
     expect(svg).toContain('fill="url(#warm-accent)"')
     expect(svg).toContain('fill="url(#line-pattern)"')
     expect(svg).toContain('text-decoration="underline"')
-    expect(svg).toContain('Legends 19.3.22')
+    expect(svg).toContain('Legends 19.4.18')
   })
 
   test('produces a non-empty PNG with the expected file signature', async () => {

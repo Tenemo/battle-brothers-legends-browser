@@ -457,6 +457,8 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
   await savedBuild
     .getByRole('button', { name: 'Confirm overwrite saved build Overwrite target' })
     .click()
+  await expect(savedBuild).toContainText('Axe Mastery')
+  await expect(savedBuild).not.toContainText('Clarity')
   await expect(page.getByRole('status')).toHaveText('Saved build')
 
   await closeSavedBuildsDialog(page)

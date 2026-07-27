@@ -13,6 +13,7 @@ const sharedBuildSearchCases = [
   '?search=clarity&category=Traits&build=Clarity,Perfect+Focus,Clarity',
   '?search=clarity&build=Clarity,Perfect+Focus,Peaceable&optional=Peaceable,Perfect+Focus',
   '?build=Chain+Lightning--perk.legend_chain_lightning,Chain+Lightning--perk.legend_magic_chain_lightning',
+  '?build=Double+Strike,Daze--perk.legend_daze,Daze--perk.legend_magic_daze&optional=Double+Strike,Daze--perk.legend_magic_daze',
   '?build=Meisters%C3%A4nger,Minnes%C3%A4nger',
   '?build=Student,Muscularity,Battle+Forged,Immovable+Object,Brawny,Steadfast,Steel+Brow,Perfect+Fit,Axe+Mastery,Battle+Flow,Balance,Mind+over+Body,Lone+Wolf,Last+Stand,Berserk,Killing+Frenzy,Swagger,Rebound,Hold+Out,Underdog,Assured+Conquest,Colossus,Tactical+Maneuvers,Nine+Lives,Crippling+Strikes,Perfect+Focus&optional=Perfect+Focus,Student',
 ]
@@ -62,5 +63,21 @@ describe('build share SEO', () => {
 
     expect(seoPayload.imagePath).toBe(socialPreviewPayload.imagePath)
     expect(socialPreviewPayload.topBackgroundFits.length).toBeGreaterThan(0)
+  })
+
+  test('canonicalizes legacy renamed perk labels to the current mod names', () => {
+    const seoPayload = createBuildShareSeoPayloadFromSearch(
+      '?build=Double+Strike,Daze--perk.legend_daze,Daze--perk.legend_magic_daze&optional=Double+Strike,Daze--perk.legend_magic_daze',
+    )
+
+    expect(seoPayload.canonicalSearch).toBe(
+      '?build=Flux,Stupefy--perk.legend_daze,Stupefy--perk.legend_magic_daze&optional=Flux,Stupefy--perk.legend_magic_daze',
+    )
+    expect(seoPayload.pickedPerkCount).toBe(3)
+    expect(seoPayload.pickedPerks).toEqual([
+      { perkName: 'Flux' },
+      { perkName: 'Stupefy' },
+      { perkName: 'Stupefy' },
+    ])
   })
 })

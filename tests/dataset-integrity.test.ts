@@ -22,7 +22,7 @@ const legendsPlannerMetadataDataset =
 
 const expectedDuplicatePerkNamesByName = new Map<string, string[]>([
   ['Chain Lightning', ['perk.legend_chain_lightning', 'perk.legend_magic_chain_lightning']],
-  ['Daze', ['perk.legend_daze', 'perk.legend_magic_daze']],
+  ['Stupefy', ['perk.legend_daze', 'perk.legend_magic_daze']],
   ['Levitate', ['perk.legend_levitation', 'perk.legend_magic_levitate']],
   ['Sleep', ['perk.legend_sleep', 'perk.legend_magic_sleep']],
   ['Teleport', ['perk.legend_teleport', 'perk.legend_magic_teleport']],
@@ -251,6 +251,28 @@ function getMissingBackgroundTraitDescriptionEntries(
 }
 
 describe('generated dataset integrity', () => {
+  test('tracks the current Legends release and its Executioner background', () => {
+    const executionerBackground = legendsBackgroundFitDataset.backgroundFitBackgrounds.find(
+      (background) => background.backgroundId === 'background.executioner',
+    )
+
+    expect(legendsBackgroundFitDataset.referenceVersion).toBe('19.4.18')
+    expect(executionerBackground).toMatchObject({
+      backgroundName: 'Executioner',
+      dailyCost: 12,
+      excludedTalentAttributeNames: ['Ranged skill'],
+      hasRegularRecruitment: true,
+      iconPath: 'ui/backgrounds/background_72.png',
+    })
+    expect(executionerBackground?.categories.Weapon?.perkGroupIds).toEqual([
+      'CleaverTree',
+      'SwordTree',
+      'AxeTree',
+      'PolearmTree',
+    ])
+    expect(legendsPerkCatalogDataset.backgroundSourceTable.backgroundNames).toContain('Executioner')
+  })
+
   test('keeps only the compact runtime data files in src/data', () => {
     expect(readdirSync(path.join(process.cwd(), 'src', 'data')).toSorted()).toEqual([
       'build-share-seo-data.generated.ts',

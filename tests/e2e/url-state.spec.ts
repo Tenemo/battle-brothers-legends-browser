@@ -107,3 +107,30 @@ test('restores duplicate-name build perks from disambiguated shared links', asyn
   await expectSearchParam(page, 'origin-backgrounds', null)
   await expectSearchParam(page, 'event-backgrounds', null)
 })
+
+test('restores renamed perks from legacy shared links', async ({ page }) => {
+  await gotoBuildPlannerUrl(
+    page,
+    '/?build=Double+Strike,Daze--perk.legend_daze,Daze--perk.legend_magic_daze&optional=Double+Strike,Daze--perk.legend_magic_daze',
+    { width: 900, height: 720 },
+  )
+
+  await expect(page.getByRole('heading', { level: 1, name: 'Build planner' })).toBeVisible()
+  await expect(page.getByText('3 perks picked.')).toBeVisible()
+  await expect(
+    getBuildPerksBar(page).getByRole('button', {
+      name: 'Flux, view from build planner',
+    }),
+  ).toHaveCount(1)
+  await expect(
+    getBuildPerksBar(page).getByRole('button', {
+      name: 'Stupefy, view from build planner',
+    }),
+  ).toHaveCount(2)
+  await expectSearchParam(
+    page,
+    'build',
+    'Flux,Stupefy--perk.legend_daze,Stupefy--perk.legend_magic_daze',
+  )
+  await expectSearchParam(page, 'optional', 'Flux,Stupefy--perk.legend_magic_daze')
+})
