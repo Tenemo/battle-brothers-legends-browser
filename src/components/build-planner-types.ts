@@ -20,11 +20,6 @@ export type BuildPlannerSavedBuild = {
 }
 
 export type SavedBuildOperationStatus =
-  | 'copied'
-  | 'copy-error'
-  | 'deleted'
-  | 'idle'
-  | 'loaded'
-  | 'saved'
+  'copied' | 'copy-error' | 'deleted' | 'idle' | 'loaded' | 'saved'
 
 export type PlannerPerkGroupSelection = BuildPerkPillSelection

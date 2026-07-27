@@ -1040,9 +1040,7 @@ test('shows picked categories and perk groups with requirement icons and keeps p
             `button[aria-label="Inspect ${perkName}"]`,
           ) as HTMLButtonElement | null
           const perkRow = inspectButton?.closest('[data-testid="perk-row"]') as
-            | HTMLElement
-            | null
-            | undefined
+            HTMLElement | null | undefined
 
           if (perkRow == null) {
             return null
@@ -1075,9 +1073,7 @@ test('shows picked categories and perk groups with requirement icons and keeps p
         `button[aria-label="Inspect ${perkName}"]`,
       ) as HTMLButtonElement | null
       const perkRow = inspectButton?.closest('[data-testid="perk-row"]') as
-        | HTMLElement
-        | null
-        | undefined
+        HTMLElement | null | undefined
 
       if (perkRow == null) {
         return null

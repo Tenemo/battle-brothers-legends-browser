@@ -99,17 +99,21 @@ async function expectImageToLoad(imageLocator: Locator): Promise<void> {
 
 async function expectHighlightedPillBoundaryGap(
   pill: Locator,
+  expectedHighlightedText: string,
   boundary: 'after-highlight' | 'before-highlight',
 ): Promise<void> {
-  const highlightedText = pill.locator('[data-search-highlight="true"]')
+  const highlightedText = pill
+    .locator('[data-search-highlight="true"]')
+    .filter({ hasText: expectedHighlightedText })
 
   await expect(highlightedText).toHaveCount(1)
+  await expect(highlightedText).toHaveText(expectedHighlightedText, { ignoreCase: true })
   await expect(highlightedText).toBeVisible()
 
-  const boundaryMetrics = await pill.evaluate((element, checkedBoundary) => {
-    const highlightedElement = element.querySelector('[data-search-highlight="true"]')
+  const boundaryMetrics = await highlightedText.evaluate((highlightedElement, checkedBoundary) => {
+    const element = highlightedElement.parentElement
 
-    if (!(highlightedElement instanceof HTMLElement)) {
+    if (!(element instanceof HTMLElement)) {
       return null
     }
 
@@ -1763,12 +1767,12 @@ test('keeps duplicate background disambiguator spaces visible when highlighted',
   await backgroundSearchInput.fill('beggar')
 
   await expect(originalBeggarPill).toHaveCount(1)
-  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'before-highlight')
+  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'beggar', 'before-highlight')
 
   await backgroundSearchInput.fill('original')
 
   await expect(originalBeggarPill).toHaveCount(1)
-  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'after-highlight')
+  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'original', 'after-highlight')
 })
 
 test('labels duplicate backgrounds by gameplay distinction', async ({ page }) => {

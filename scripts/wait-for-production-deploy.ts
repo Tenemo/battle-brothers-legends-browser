@@ -202,7 +202,7 @@ async function getJsonResponse(
     },
     signal: AbortSignal.timeout(requestTimeoutMs),
   })
-  let body = null
+  let body: unknown
 
   try {
     body = await response.json()

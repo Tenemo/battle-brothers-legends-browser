@@ -1,0 +1,14 @@
+allowBuilds:
+  '@parcel/watcher': false
+  esbuild: true
+  netlify-cli: false
+  sharp: true
+  unix-dgram: false
+minimumReleaseAgeExclude:
+  - jsdom@30.0.0
+  - netlify-cli@27.0.1
+overrides:
+  '@opentelemetry/api': 1.8.0
+  '@opentelemetry/core@<2.8.0': 2.10.0
+  'brace-expansion@<=5.0.7': 5.0.8
+  'sharp@<0.35.0': 0.35.3

@@ -4,13 +4,7 @@ type LegendsSourceFile = {
 }
 
 export type LegendsDynamicBackgroundCategoryName =
-  | 'Weapon'
-  | 'Defense'
-  | 'Traits'
-  | 'Enemy'
-  | 'Class'
-  | 'Profession'
-  | 'Magic'
+  'Weapon' | 'Defense' | 'Traits' | 'Enemy' | 'Class' | 'Profession' | 'Magic'
 
 export type LegendsPerkPlacement = {
   categoryName: string

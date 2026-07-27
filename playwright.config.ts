@@ -68,6 +68,12 @@ const localProjects: Project[] = [
     use: {
       ...devices['Desktop Firefox'],
       browserName: 'firefox',
+      launchOptions: {
+        firefoxUserPrefs: {
+          // Avoid Firefox's session-store teardown race when Playwright removes the final context.
+          'browser.tabs.closeWindowWithLastTab': false,
+        },
+      },
     },
   },
   {
