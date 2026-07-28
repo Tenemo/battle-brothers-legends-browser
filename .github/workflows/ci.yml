@@ -24,17 +24,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.0
+          version: 11.17.0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.14.1
+          node-version: 24.18.0
           cache: pnpm
 
       - name: install dependencies
@@ -57,17 +57,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.0
+          version: 11.17.0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.14.1
+          node-version: 24.18.0
           cache: pnpm
 
       - name: install dependencies
@@ -81,17 +81,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.0
+          version: 11.17.0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.14.1
+          node-version: 24.18.0
           cache: pnpm
 
       - name: install dependencies
@@ -105,17 +105,17 @@ jobs:
     timeout-minutes: 20
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.0
+          version: 11.17.0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.14.1
+          node-version: 24.18.0
           cache: pnpm
 
       - name: install dependencies
@@ -155,17 +155,17 @@ jobs:
             browser_install: webkit
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.0
+          version: 11.17.0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.14.1
+          node-version: 24.18.0
           cache: pnpm
 
       - name: install dependencies
@@ -202,17 +202,17 @@ jobs:
             slug: mobile-webkit-iphone
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v5
+      - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.0
+          version: 11.17.0
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
-          node-version: 24.14.1
+          node-version: 24.18.0
           cache: pnpm
 
       - name: install dependencies

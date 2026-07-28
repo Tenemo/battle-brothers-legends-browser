@@ -91,7 +91,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
       } catch (error) {
         const errorMessage = getSavedBuildErrorMessage(error)
         setSavedBuildsErrorMessage(errorMessage)
-        throw new Error(errorMessage)
+        throw new Error(errorMessage, { cause: error })
       }
     },
     [referenceVersion, reloadSavedBuilds],
@@ -141,7 +141,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
       } catch (error) {
         const errorMessage = getSavedBuildErrorMessage(error)
         setSavedBuildsErrorMessage(errorMessage)
-        throw new Error(errorMessage)
+        throw new Error(errorMessage, { cause: error })
       }
     },
     [referenceVersion, reloadSavedBuilds, savedBuilds],
@@ -156,7 +156,7 @@ export function useSavedBuilds({ referenceVersion }: { referenceVersion: string 
       } catch (error) {
         const errorMessage = getSavedBuildErrorMessage(error)
         setSavedBuildsErrorMessage(errorMessage)
-        throw new Error(errorMessage)
+        throw new Error(errorMessage, { cause: error })
       }
     },
     [reloadSavedBuilds],

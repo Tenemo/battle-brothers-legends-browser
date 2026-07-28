@@ -3527,21 +3527,19 @@ export function createBackgroundFitEngine(
 
       return {
         rankedBackgroundFits: getEmptyBackgroundFitSummaries()
-          .map(
-            (backgroundFitSummary): RankedBackgroundFit => ({
-              ...backgroundFitSummary,
-              buildReachabilityProbability,
-              expectedCoveredMustHavePerkCount: 0,
-              expectedCoveredOptionalPerkCount: 0,
-              fullBuildStudyResourceRequirement: null,
-              fullBuildReachabilityProbability: buildReachabilityProbability,
-              guaranteedCoveredMustHavePerkCount: 0,
-              guaranteedCoveredOptionalPerkCount: 0,
-              maximumNativeCoveredPickedPerkCount: 0,
-              mustHaveBuildReachabilityProbability: buildReachabilityProbability,
-              mustHaveStudyResourceRequirement: null,
-            }),
-          )
+          .map((backgroundFitSummary): RankedBackgroundFit => ({
+            ...backgroundFitSummary,
+            buildReachabilityProbability,
+            expectedCoveredMustHavePerkCount: 0,
+            expectedCoveredOptionalPerkCount: 0,
+            fullBuildStudyResourceRequirement: null,
+            fullBuildReachabilityProbability: buildReachabilityProbability,
+            guaranteedCoveredMustHavePerkCount: 0,
+            guaranteedCoveredOptionalPerkCount: 0,
+            maximumNativeCoveredPickedPerkCount: 0,
+            mustHaveBuildReachabilityProbability: buildReachabilityProbability,
+            mustHaveStudyResourceRequirement: null,
+          }))
           .toSorted(compareRankedBackgroundFits),
         supportedBuildTargetPerkGroups: [],
         unsupportedBuildTargetPerkGroups: [],

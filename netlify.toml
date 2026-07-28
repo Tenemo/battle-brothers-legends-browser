@@ -4,8 +4,8 @@ edge_functions = "netlify/generated-edge-functions"
 publish = "dist"
 
 [build.environment]
-NODE_VERSION = "24.14.1"
-PNPM_VERSION = "10.33.0"
+NODE_VERSION = "24.18.0"
+PNPM_VERSION = "11.17.0"
 
 [dev]
 command = "pnpm dev"

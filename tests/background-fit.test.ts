@@ -2105,7 +2105,7 @@ describe('background fit', () => {
       'Killing Frenzy',
       'In the Zone',
       'First Blood',
-      'Double Strike',
+      'Flux',
       'Bloody Harvest',
     ]
     const reportedOptionalPerkNames = [
@@ -2113,7 +2113,7 @@ describe('background fit', () => {
       'Killing Frenzy',
       'In the Zone',
       'First Blood',
-      'Double Strike',
+      'Flux',
       'Bloody Harvest',
     ]
     const perksByName = new Map(
@@ -2149,7 +2149,7 @@ describe('background fit', () => {
     )
     const peddlerBackgroundFit = backgroundFitView.rankedBackgroundFits[peddlerRankIndex]
 
-    expect(peddlerRankIndex + 1).toBe(12)
+    expect(peddlerRankIndex + 1).toBe(13)
     expect(peddlerBackgroundFit.mustHaveBuildReachabilityProbability).toBeCloseTo(
       0.5333333333333337,
       12,
@@ -2310,7 +2310,7 @@ describe('background fit', () => {
       'Killing Frenzy',
       'In the Zone',
       'First Blood',
-      'Double Strike',
+      'Flux',
       'Bloody Harvest',
       'Onslaught',
     ]
@@ -2319,7 +2319,7 @@ describe('background fit', () => {
       'Killing Frenzy',
       'In the Zone',
       'First Blood',
-      'Double Strike',
+      'Flux',
       'Bloody Harvest',
       'Onslaught',
     ]

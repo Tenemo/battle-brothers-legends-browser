@@ -1,4 +1,5 @@
 import { expect, type Page, test } from '@playwright/test'
+import { savedBuildOperationStatusVisibleDurationMilliseconds } from '../../src/components/build-planner-types'
 import {
   addPerkToBuildFromResults,
   expectBuildPlannerAppReady,
@@ -420,6 +421,7 @@ test('keeps many saved builds scrollable inside the saved builds dialog', async 
 })
 
 test('overwrites a saved build after confirmation', async ({ page }) => {
+  await page.clock.install()
   await gotoBuildPlanner(page)
 
   await searchPerks(page, 'Clarity')
@@ -430,17 +432,27 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
     'cursor',
     'help',
   )
+  await page.evaluate(() => {
+    if (!navigator.storage) {
+      return
+    }
+
+    Object.defineProperties(navigator.storage, {
+      persist: {
+        configurable: true,
+        value: async () => false,
+      },
+      persisted: {
+        configurable: true,
+        value: async () => false,
+      },
+    })
+  })
   await page.getByLabel('Build name').fill('Overwrite target')
+  const clockPauseTime = await page.evaluate(() => Date.now() + 60_000)
+  await page.clock.pauseAt(clockPauseTime)
   await page.getByRole('button', { exact: true, name: 'Save current' }).click()
   await expect(page.getByRole('status')).toHaveText('Saved build')
-  await closeSavedBuildsDialog(page)
-
-  await clearBuildWithConfirmation(page)
-  await searchPerks(page, 'Axe Mastery')
-  await addPerkToBuildFromResults(page, 'Axe Mastery')
-
-  await page.getByRole('button', { name: 'Saved builds' }).click()
-
   const savedBuild = page
     .getByTestId('saved-builds-list')
     .getByTestId('saved-build-card')
@@ -448,15 +460,35 @@ test('overwrites a saved build after confirmation', async ({ page }) => {
   const overwriteSavedBuildButton = savedBuild.getByRole('button', {
     name: 'Overwrite saved build Overwrite target',
   })
+  const confirmOverwriteSavedBuildButton = savedBuild.getByRole('button', {
+    name: 'Confirm overwrite saved build Overwrite target',
+  })
+
+  await page.clock.runFor(savedBuildOperationStatusVisibleDurationMilliseconds - 400)
+  await expect(overwriteSavedBuildButton).toHaveText('Overwrite')
+  await overwriteSavedBuildButton.click()
+  await expect(confirmOverwriteSavedBuildButton).toHaveText('Confirm?')
+  await confirmOverwriteSavedBuildButton.click()
+  await expect(overwriteSavedBuildButton).toHaveText('Overwrite')
+  await page.clock.runFor(500)
+  await expect(page.getByRole('status')).toHaveText('Saved build')
+  await page.clock.runFor(savedBuildOperationStatusVisibleDurationMilliseconds - 500 + 1)
+  await expect(page.getByRole('status')).toHaveCount(0)
+  await page.clock.resume()
+
+  await closeSavedBuildsDialog(page)
+  await clearBuildWithConfirmation(page)
+  await searchPerks(page, 'Axe Mastery')
+  await addPerkToBuildFromResults(page, 'Axe Mastery')
+
+  await page.getByRole('button', { name: 'Saved builds' }).click()
 
   await expect(overwriteSavedBuildButton).toHaveText('Overwrite')
   await overwriteSavedBuildButton.click()
-  await expect(
-    savedBuild.getByRole('button', { name: 'Confirm overwrite saved build Overwrite target' }),
-  ).toHaveText('Confirm?')
-  await savedBuild
-    .getByRole('button', { name: 'Confirm overwrite saved build Overwrite target' })
-    .click()
+  await expect(confirmOverwriteSavedBuildButton).toHaveText('Confirm?')
+  await confirmOverwriteSavedBuildButton.click()
+  await expect(savedBuild).toContainText('Axe Mastery')
+  await expect(savedBuild).not.toContainText('Clarity')
   await expect(page.getByRole('status')).toHaveText('Saved build')
 
   await closeSavedBuildsDialog(page)

@@ -339,14 +339,6 @@ export const buildShareSeoData = {
       perkName: 'Darkflight',
     },
     {
-      id: 'perk.legend_daze',
-      perkName: 'Daze',
-    },
-    {
-      id: 'perk.legend_magic_daze',
-      perkName: 'Daze',
-    },
-    {
       id: 'perk.legend_specialist_sharpshooter',
       perkName: 'Death from Above',
     },
@@ -405,10 +397,6 @@ export const buildShareSeoData = {
     {
       id: 'perk.legend_dogwhisperer',
       perkName: 'Dog Whisperer',
-    },
-    {
-      id: 'perk.legend_double_strike',
-      perkName: 'Double Strike',
     },
     {
       id: 'perk.legend_mastery_dual_wield',
@@ -525,6 +513,10 @@ export const buildShareSeoData = {
     {
       id: 'perk.mastery.flail',
       perkName: 'Flail Mastery',
+    },
+    {
+      id: 'perk.legend_double_strike',
+      perkName: 'Flux',
     },
     {
       id: 'perk.legend_horse_flying_change',
@@ -1291,6 +1283,14 @@ export const buildShareSeoData = {
       perkName: 'Stun',
     },
     {
+      id: 'perk.legend_daze',
+      perkName: 'Stupefy',
+    },
+    {
+      id: 'perk.legend_magic_daze',
+      perkName: 'Stupefy',
+    },
+    {
       id: 'perk.legend_summon_catapult',
       perkName: 'Summon Catapult',
     },
@@ -1479,7 +1479,7 @@ export const buildShareSeoData = {
       perkName: 'Zombie bite',
     },
   ],
-  referenceVersion: '19.3.26',
+  referenceVersion: '19.4.18',
 } satisfies BuildShareSeoData
 
 export type { BuildShareSeoPerkRecord }

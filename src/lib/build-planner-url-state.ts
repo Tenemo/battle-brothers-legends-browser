@@ -8,6 +8,7 @@ import {
   baselineBackgroundVeteranPerkLevelIntervals,
   normalizeBackgroundVeteranPerkLevelIntervals,
 } from './background-veteran-perks'
+import { addLegacyPerkUrlAliases } from './legacy-perk-url-aliases'
 
 export type BuildPlannerUrlPerkGroupOption = {
   perkGroupId: string
@@ -197,14 +198,22 @@ function createPerkUrlLabel(
 function createPerkIdByLookupValue(perks: LegendsPerkUrlRecord[]): Map<string, string> {
   const perkNameCountByLookupValue = createPerkNameCountByLookupValue(perks)
   const perkIdByLookupValue = new Map<string, string>()
+  const availablePerkIdentifiers = new Set<string>()
 
   for (const perk of perks) {
+    availablePerkIdentifiers.add(perk.id)
     perkIdByLookupValue.set(normalizeLookupValue(perk.id), perk.id)
     perkIdByLookupValue.set(
       normalizeLookupValue(createPerkUrlLabel(perk, perkNameCountByLookupValue)),
       perk.id,
     )
   }
+
+  addLegacyPerkUrlAliases({
+    availablePerkIdentifiers,
+    normalizeLookupValue,
+    perkIdentifierByLookupValue: perkIdByLookupValue,
+  })
 
   return perkIdByLookupValue
 }

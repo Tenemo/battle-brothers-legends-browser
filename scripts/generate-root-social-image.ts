@@ -39,7 +39,7 @@ const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel-Bold.ttf')
 const sourceSansRegularFontPath = path.join(fontDirectoryPath, 'SourceSans3-Regular.ttf')
 const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Semibold.ttf')
 const sourceSansBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Bold.ttf')
-const fallbackLegendsReferenceVersion = '19.3.22'
+const fallbackLegendsReferenceVersion = '19.4.18'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null

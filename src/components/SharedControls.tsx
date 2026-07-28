@@ -1,5 +1,5 @@
 import { type ReactNode, useRef } from 'react'
-import { ChevronRight, CircleDashed, Funnel, Link, UserRound } from 'lucide-react'
+import { ChevronRight, Funnel, Link, Split, UserRound } from 'lucide-react'
 import { joinClassNames } from '../lib/class-names'
 import styles from './SharedControls.module.scss'
 
@@ -194,7 +194,7 @@ export function BuildRequirementIcon({
       strokeWidth={2}
     />
   ) : (
-    <CircleDashed
+    <Split
       aria-hidden="true"
       className={iconClassName}
       data-requirement={requirement}

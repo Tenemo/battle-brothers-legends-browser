@@ -99,17 +99,21 @@ async function expectImageToLoad(imageLocator: Locator): Promise<void> {
 
 async function expectHighlightedPillBoundaryGap(
   pill: Locator,
+  expectedHighlightedText: string,
   boundary: 'after-highlight' | 'before-highlight',
 ): Promise<void> {
-  const highlightedText = pill.locator('[data-search-highlight="true"]')
+  const highlightedText = pill
+    .locator('[data-search-highlight="true"]')
+    .filter({ hasText: expectedHighlightedText })
 
   await expect(highlightedText).toHaveCount(1)
+  await expect(highlightedText).toHaveText(expectedHighlightedText, { ignoreCase: true })
   await expect(highlightedText).toBeVisible()
 
-  const boundaryMetrics = await pill.evaluate((element, checkedBoundary) => {
-    const highlightedElement = element.querySelector('[data-search-highlight="true"]')
+  const boundaryMetrics = await highlightedText.evaluate((highlightedElement, checkedBoundary) => {
+    const element = highlightedElement.parentElement
 
-    if (!(highlightedElement instanceof HTMLElement)) {
+    if (!(element instanceof HTMLElement)) {
       return null
     }
 
@@ -718,7 +722,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     detailPanel.getByRole('heading', { exact: true, level: 4, name: 'Optional' }),
   ).toBeVisible()
-  await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
+  const optionalPerkGroupsMarker = detailPanel.getByRole('img', {
+    name: 'Optional perk groups',
+  })
+  await expect(optionalPerkGroupsMarker).toBeVisible()
+  await expect(optionalPerkGroupsMarker.locator('svg.lucide-split')).toHaveCount(1)
   await expect(detailPanel.getByText('Must-have study route')).toHaveCount(0)
   await expect(detailPanel.getByText('Additional optional-only study route')).toHaveCount(0)
   const detailVeteranPerkBadges = detailPanel.getByTestId('detail-background-veteran-perk-badge')
@@ -1763,12 +1771,12 @@ test('keeps duplicate background disambiguator spaces visible when highlighted',
   await backgroundSearchInput.fill('beggar')
 
   await expect(originalBeggarPill).toHaveCount(1)
-  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'before-highlight')
+  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'beggar', 'before-highlight')
 
   await backgroundSearchInput.fill('original')
 
   await expect(originalBeggarPill).toHaveCount(1)
-  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'after-highlight')
+  await expectHighlightedPillBoundaryGap(originalBeggarPill, 'original', 'after-highlight')
 })
 
 test('labels duplicate backgrounds by gameplay distinction', async ({ page }) => {
