@@ -1,6 +1,6 @@
 import { useId, useMemo, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowLeft, ArrowRight, Split } from 'lucide-react'
+import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { formatDisplayBulletText } from '../lib/bullet-display'
 import {
   formatBackgroundFitProbabilityLabel,
@@ -59,7 +59,12 @@ import {
 } from './BackgroundFitCard'
 import { BuildPerkGroupTile } from './BuildPerkGroupTile'
 import type { BuildPerkPillSelection } from './BuildPerkPill'
-import { BuildToggleButton, PlannerSectionChevron, type BuildRequirement } from './SharedControls'
+import {
+  BuildRequirementIcon,
+  BuildToggleButton,
+  PlannerSectionChevron,
+  type BuildRequirement,
+} from './SharedControls'
 import sharedStyles from './SharedControls.module.scss'
 import buildPlannerStyles from './BuildPlanner.module.scss'
 import mustHaveRequirementIconPath from '../assets/must-have-requirement.svg'
@@ -3052,7 +3057,10 @@ function BackgroundDetail({
             role="img"
             title="Optional perk groups"
           >
-            <Split aria-hidden="true" className={styles.detailRequirementOptionalIcon} />
+            <BuildRequirementIcon
+              className={styles.detailRequirementOptionalIcon}
+              requirement="optional"
+            />
           </span>
           <div className={styles.detailBackgroundFitMatchColumnHeader}>
             <h4>Optional</h4>

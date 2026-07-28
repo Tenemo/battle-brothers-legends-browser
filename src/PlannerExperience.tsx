@@ -6,6 +6,7 @@ import {
   type BuildPlannerSavedBuild,
   type SavedBuildOperationStatus,
 } from './components/BuildPlanner'
+import { savedBuildOperationStatusVisibleDurationMilliseconds } from './components/build-planner-types'
 import { CategorySidebar } from './components/CategorySidebar'
 import { DetailPanel } from './components/DetailPanel'
 import { PerkResults } from './components/PerkResults'
@@ -191,6 +192,17 @@ export function PlannerExperience() {
   })
   const [savedBuildOperationStatus, setSavedBuildOperationStatus] =
     useState<SavedBuildOperationStatus>('idle')
+  const [savedBuildOperationStatusRevision, setSavedBuildOperationStatusRevision] = useState(0)
+
+  function showSavedBuildOperationStatus(
+    nextSavedBuildOperationStatus: Exclude<SavedBuildOperationStatus, 'idle'>,
+  ) {
+    setSavedBuildOperationStatus(nextSavedBuildOperationStatus)
+    setSavedBuildOperationStatusRevision(
+      (currentSavedBuildOperationStatusRevision) => currentSavedBuildOperationStatusRevision + 1,
+    )
+  }
+
   const savedBuildViews = useMemo<BuildPlannerSavedBuild[]>(
     () =>
       savedBuilds.map((savedBuild) => {
@@ -393,12 +405,12 @@ export function PlannerExperience() {
 
     const resetSavedBuildOperationStatusTimeout = window.setTimeout(() => {
       setSavedBuildOperationStatus('idle')
-    }, 1600)
+    }, savedBuildOperationStatusVisibleDurationMilliseconds)
 
     return () => {
       window.clearTimeout(resetSavedBuildOperationStatusTimeout)
     }
-  }, [savedBuildOperationStatus])
+  }, [savedBuildOperationStatus, savedBuildOperationStatusRevision])
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
@@ -662,7 +674,7 @@ export function PlannerExperience() {
       pickedPerkIds,
       plannerFilters: createSavedBuildPlannerFilters(currentUrlState),
     })
-    setSavedBuildOperationStatus('saved')
+    showSavedBuildOperationStatus('saved')
   }
 
   async function handleOverwriteSavedBuild(savedBuildId: string) {
@@ -671,7 +683,7 @@ export function PlannerExperience() {
       pickedPerkIds,
       plannerFilters: createSavedBuildPlannerFilters(currentUrlState),
     })
-    setSavedBuildOperationStatus('saved')
+    showSavedBuildOperationStatus('saved')
   }
 
   function handleLoadSavedBuild(savedBuildId: string) {
@@ -694,12 +706,12 @@ export function PlannerExperience() {
       clearAllHover()
       resetShareBuildStatus()
     })
-    setSavedBuildOperationStatus('loaded')
+    showSavedBuildOperationStatus('loaded')
   }
 
   async function handleDeleteSavedBuild(savedBuildId: string) {
     await deleteSavedBuild(savedBuildId)
-    setSavedBuildOperationStatus('deleted')
+    showSavedBuildOperationStatus('deleted')
   }
 
   async function handleCopySavedBuildLink(savedBuildId: string) {
@@ -729,9 +741,9 @@ export function PlannerExperience() {
               savedBuild.optionalPerkIds,
             ),
       )
-      setSavedBuildOperationStatus('copied')
+      showSavedBuildOperationStatus('copied')
     } catch {
-      setSavedBuildOperationStatus('copy-error')
+      showSavedBuildOperationStatus('copy-error')
     }
   }
 

@@ -2085,6 +2085,7 @@ test('marks picked perks as optional and separates them from must-have perks', a
   await expect(optionalLegendTile.getByTestId('planner-slot-requirement-must-have')).toHaveCount(0)
   await expect(mustHaveLegendTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(0)
   await expect(optionalLegendTile.getByTestId('planner-slot-requirement-optional')).toHaveCount(1)
+  await expect(optionalLegendTile.locator('svg.lucide-split')).toHaveCount(1)
   const requirementLegendPlacementMetrics = await page
     .getByTestId('build-planner-header')
     .evaluate((buildPlannerHeader) => {

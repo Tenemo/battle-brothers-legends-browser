@@ -722,7 +722,11 @@ test('shows the background fit panel for a picked build and keeps the shell view
   await expect(
     detailPanel.getByRole('heading', { exact: true, level: 4, name: 'Optional' }),
   ).toBeVisible()
-  await expect(detailPanel.getByRole('img', { name: 'Optional perk groups' })).toBeVisible()
+  const optionalPerkGroupsMarker = detailPanel.getByRole('img', {
+    name: 'Optional perk groups',
+  })
+  await expect(optionalPerkGroupsMarker).toBeVisible()
+  await expect(optionalPerkGroupsMarker.locator('svg.lucide-split')).toHaveCount(1)
   await expect(detailPanel.getByText('Must-have study route')).toHaveCount(0)
   await expect(detailPanel.getByText('Additional optional-only study route')).toHaveCount(0)
   const detailVeteranPerkBadges = detailPanel.getByTestId('detail-background-veteran-perk-badge')

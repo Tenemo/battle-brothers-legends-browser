@@ -22,4 +22,6 @@ export type BuildPlannerSavedBuild = {
 export type SavedBuildOperationStatus =
   'copied' | 'copy-error' | 'deleted' | 'idle' | 'loaded' | 'saved'
 
+export const savedBuildOperationStatusVisibleDurationMilliseconds = 1600
+
 export type PlannerPerkGroupSelection = BuildPerkPillSelection
