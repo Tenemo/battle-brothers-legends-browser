@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict'
 import { existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 import { describe, expect, test } from 'vitest'
@@ -281,10 +282,13 @@ describe('generated dataset integrity', () => {
       (perk) => perk.id === 'perk.battle_flow',
     )
 
-    expect(perfectFocus?.descriptionParagraphs).toContain(
+    assert(perfectFocus, 'The perk catalog must include Perfect Focus (perk.legend_perfect_focus)')
+    assert(battleFlow, 'The perk catalog must include Battle Flow (perk.battle_flow)')
+
+    expect(perfectFocus.descriptionParagraphs).toContain(
       '• Costs 0 AP and 30 Fatigue, but Fatigue cost will increase by 50% for each subsequent use this combat. The Fatigue cost will be reduced by 50% at the start of each turn down to 30.',
     )
-    expect(battleFlow?.descriptionParagraphs).toContain(
+    expect(battleFlow.descriptionParagraphs).toContain(
       'Passive: • Once per turn, upon killing an opponent, reduce current Fatigue by 10% of characters base maximum Fatigue (before penalties due to armor weight are applied).',
     )
   })
