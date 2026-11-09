@@ -883,6 +883,9 @@ test('virtualizes unfiltered phone results without restoring the nested scroll t
   const resultsList = page.getByTestId('results-list')
   const renderedPerkNames = resultsList.getByTestId('perk-name')
   await expect(resultsList.getByTestId('perk-row').first()).toBeInViewport()
+  await expect
+    .poll(() => resultsList.evaluate((element) => element.scrollHeight))
+    .toBeGreaterThan(30000)
   const initialPerkNames = await renderedPerkNames.allTextContents()
   await resultsList.evaluate((element) => {
     if (getComputedStyle(element).overflowY === 'visible') {
