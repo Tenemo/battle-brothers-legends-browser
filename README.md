@@ -21,4 +21,4 @@ Use it to:
 - Inspect perk, perk group, and background details.
 - Save, load, and share builds from the browser.
 
-The planner uses Legends data, game icons, background rules, scenario sources, and dynamic perk group information to keep build planning fast and readable.
+The planner supports [Legends 19.4.22](https://github.com/Battle-Brothers-Legends/Legends-public/releases/tag/19.4.22), using its perk data, game icons, background rules, scenario sources, and dynamic perk group information to keep build planning fast and readable.

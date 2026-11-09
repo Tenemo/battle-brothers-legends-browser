@@ -877,14 +877,36 @@ test('virtualizes unfiltered phone results without restoring the nested scroll t
   await gotoBuildPlanner(page, { height: 740, width: 761 })
   await page.getByRole('button', { name: 'Show all categories' }).click()
   await expect(page.getByRole('button', { name: /Show \d+ more perks/u })).toHaveCount(0)
+  // Scrollbar widths can keep WebKit in the phone layout at this boundary.
+  // Check that scrolling reaches more perks, not a browser-dependent overscan row count.
+  await page.getByLabel('Search perks').scrollIntoViewIfNeeded()
+  const resultsList = page.getByTestId('results-list')
+  const renderedPerkNames = resultsList.getByTestId('perk-name')
+  await expect(resultsList.getByTestId('perk-row').first()).toBeInViewport()
   await expect
-    .poll(async () =>
-      page
-        .getByTestId('results-list')
-        .getByTestId('perk-row')
-        .evaluateAll((rows) => rows.length),
-    )
-    .toBeGreaterThan(8)
+    .poll(() => resultsList.evaluate((element) => element.scrollHeight))
+    .toBeGreaterThan(30000)
+  const initialPerkNames = await renderedPerkNames.allTextContents()
+  await resultsList.evaluate((element) => {
+    if (getComputedStyle(element).overflowY === 'visible') {
+      window.scrollTo(
+        0,
+        element.getBoundingClientRect().top + window.scrollY + element.scrollHeight / 2,
+      )
+    } else {
+      element.scrollTop = element.scrollHeight / 2
+    }
+  })
+  await expect
+    .poll(async () => {
+      const currentPerkNames = await renderedPerkNames.allTextContents()
+      return (
+        currentPerkNames.some((name) => !initialPerkNames.includes(name)) &&
+        new Set([...initialPerkNames, ...currentPerkNames]).size > 8 &&
+        currentPerkNames.length < 40
+      )
+    })
+    .toBe(true)
 })
 
 test('keeps dense mobile builds compact without pushing search multiple screens down', async ({

@@ -4,6 +4,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 
 import { Resvg } from '@resvg/resvg-js'
 
+import legendsPlannerMetadata from '../src/data/legends-planner-metadata.json' with { type: 'json' }
 import {
   escapeXml,
   renderSocialImageBackground,
@@ -27,27 +28,16 @@ const bookIconPath = path.join(
   'perks',
   'perk_21.png',
 )
-const legendsPerkCatalogDataPath = path.join(
-  projectRootDirectoryPath,
-  'src',
-  'data',
-  'legends-perk-catalog.json',
-)
 const fontDirectoryPath = path.join(projectRootDirectoryPath, 'scripts', 'assets', 'fonts')
 const cinzelRegularFontPath = path.join(fontDirectoryPath, 'Cinzel.ttf')
 const cinzelBoldFontPath = path.join(fontDirectoryPath, 'Cinzel-Bold.ttf')
 const sourceSansRegularFontPath = path.join(fontDirectoryPath, 'SourceSans3-Regular.ttf')
 const sourceSansSemiBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Semibold.ttf')
 const sourceSansBoldFontPath = path.join(fontDirectoryPath, 'SourceSans3-Bold.ttf')
-const fallbackLegendsReferenceVersion = '19.4.18'
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null
-}
 
 export async function createRootSocialImageSvg({
   bookIconDataUrl = '',
-  referenceVersion = fallbackLegendsReferenceVersion,
+  referenceVersion = legendsPlannerMetadata.referenceVersion,
 }: {
   bookIconDataUrl?: string
   referenceVersion?: string
@@ -92,25 +82,9 @@ async function createBookIconDataUrl(): Promise<string> {
   return `data:image/png;base64,${bookIcon.toString('base64')}`
 }
 
-async function readLegendsReferenceVersion(): Promise<string> {
-  try {
-    const legendsPerkCatalogData = JSON.parse(
-      await readFile(legendsPerkCatalogDataPath, 'utf8'),
-    ) as unknown
-
-    return isRecord(legendsPerkCatalogData) &&
-      typeof legendsPerkCatalogData.referenceVersion === 'string'
-      ? legendsPerkCatalogData.referenceVersion
-      : fallbackLegendsReferenceVersion
-  } catch {
-    return fallbackLegendsReferenceVersion
-  }
-}
-
 export async function renderRootSocialImagePng(): Promise<Uint8Array> {
   const svg = await createRootSocialImageSvg({
     bookIconDataUrl: await createBookIconDataUrl(),
-    referenceVersion: await readLegendsReferenceVersion(),
   })
   const renderer = new Resvg(svg, {
     fitTo: {
