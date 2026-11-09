@@ -16,6 +16,26 @@ import {
 
 const maximumTypographyFontSizeDifference = 0.1
 
+for (const { perkName, description } of [
+  {
+    perkName: 'Perfect Focus',
+    description:
+      'Fatigue cost will increase by 50% for each subsequent use this combat. The Fatigue cost will be reduced by 50% at the start of each turn down to 30.',
+  },
+  {
+    perkName: 'Battle Flow',
+    description: 'reduce current Fatigue by 10% of characters base maximum Fatigue',
+  },
+]) {
+  test(`shows the updated ${perkName} description`, async ({ page }) => {
+    await gotoBuildPlanner(page)
+    await searchPerks(page, perkName)
+    await inspectPerkFromResults(page, perkName)
+
+    await expect(getDetailPanel(page)).toContainText(description)
+  })
+}
+
 function readBackgroundSourceProbabilityLabel(label: string): number {
   const normalizedLabel = label.trim()
 

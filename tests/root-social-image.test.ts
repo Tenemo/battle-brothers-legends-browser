@@ -1,4 +1,5 @@
 import { describe, expect, test } from 'vitest'
+import legendsPlannerMetadata from '../src/data/legends-planner-metadata.json'
 import {
   createRootSocialImageSvg,
   renderRootSocialImagePng,
@@ -23,7 +24,14 @@ describe('root social image generation', () => {
     expect(svg).toContain('fill="url(#warm-accent)"')
     expect(svg).toContain('fill="url(#line-pattern)"')
     expect(svg).toContain('text-decoration="underline"')
-    expect(svg).toContain('Legends 19.4.18')
+    expect(svg).toContain(`Legends ${legendsPlannerMetadata.referenceVersion}`)
+  })
+
+  test('escapes an explicitly supplied release label', async () => {
+    const svg = await createRootSocialImageSvg({ referenceVersion: 'preview <19.4.22> & next' })
+
+    expect(svg).toContain('Legends preview &lt;19.4.22&gt; &amp; next')
+    expect(svg).not.toContain('Legends preview <19.4.22> & next')
   })
 
   test('produces a non-empty PNG with the expected file signature', async () => {

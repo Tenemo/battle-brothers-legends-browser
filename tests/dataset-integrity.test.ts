@@ -256,7 +256,7 @@ describe('generated dataset integrity', () => {
       (background) => background.backgroundId === 'background.executioner',
     )
 
-    expect(legendsBackgroundFitDataset.referenceVersion).toBe('19.4.18')
+    expect(legendsBackgroundFitDataset.referenceVersion).toBe('19.4.22')
     expect(executionerBackground).toMatchObject({
       backgroundName: 'Executioner',
       dailyCost: 12,
@@ -271,6 +271,22 @@ describe('generated dataset integrity', () => {
       'PolearmTree',
     ])
     expect(legendsPerkCatalogDataset.backgroundSourceTable.backgroundNames).toContain('Executioner')
+  })
+
+  test('includes the updated Perfect Focus cost and Battle Flow fatigue recovery', () => {
+    const perfectFocus = legendsPerkCatalogDataset.perks.find(
+      (perk) => perk.id === 'perk.legend_perfect_focus',
+    )
+    const battleFlow = legendsPerkCatalogDataset.perks.find(
+      (perk) => perk.id === 'perk.battle_flow',
+    )
+
+    expect(perfectFocus?.descriptionParagraphs).toContain(
+      '• Costs 0 AP and 30 Fatigue, but Fatigue cost will increase by 50% for each subsequent use this combat. The Fatigue cost will be reduced by 50% at the start of each turn down to 30.',
+    )
+    expect(battleFlow?.descriptionParagraphs).toContain(
+      'Passive: • Once per turn, upon killing an opponent, reduce current Fatigue by 10% of characters base maximum Fatigue (before penalties due to armor weight are applied).',
+    )
   })
 
   test('keeps only the compact runtime data files in src/data', () => {
